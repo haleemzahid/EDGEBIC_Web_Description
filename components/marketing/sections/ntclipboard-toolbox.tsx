@@ -124,13 +124,13 @@ export function NTClipboardToolBox(): React.JSX.Element {
                             </svg>
                             Transform Your Business
                         </div> */}
-            <h2 className="mb-6  bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 bg-clip-text text-5xl font-extrabold text-transparent md:text-6xl">
+            {/* <h2 className="mb-6  bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 bg-clip-text text-5xl font-extrabold text-transparent md:text-6xl">
               What's in Your Scheduling Tool Box?
             </h2>
             <p className="mx-auto max-w-3xl text-2xl font-medium text-slate-600 dark:text-slate-400">
               Transform your production scheduling challenges into competitive
               advantages
-            </p>
+            </p> */}
           </div>
 
           {/* Tool Box Comparison Grid */}
@@ -266,7 +266,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
 
           {/* Solutions for Every Business Size */}
           <div className="mt-6">
-            <div className="mb-6 text-center">
+            {/* <div className="mb-6 text-center">
               <h2 className="mb-4 text-3xl font-bold md:text-4xl">
                 From Job Shops to SMBs to Multi-Nationals
               </h2>
@@ -274,7 +274,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 Solutions to fit any production scheduling application and
                 budget
               </p>
-            </div>
+            </div> */}
 
             <div className="grid gap-8 md:grid-cols-3">
               {/* Excel Templates - Operations Manager */}
