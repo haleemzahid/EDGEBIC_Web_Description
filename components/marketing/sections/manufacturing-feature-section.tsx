@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { NTClipboardToolBox } from './ntclipboard-toolbox';
 
 export function ManufacturingFeatureSection(): React.JSX.Element {
   return (
@@ -532,6 +533,8 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             </Link>
           </div>
         </div>
+
+        <NTClipboardToolBox />
 
         {/* Testimonials Section */}
         <div className="mt-6">

@@ -19,7 +19,6 @@ export default function IndexPage(): React.JSX.Element {
     <>
       <NTClipboardHero />
       <AwardsSection />
-      <NTClipboardToolBox />
       {/* <NTClipboardSummary /> */}
       <ManufacturingFeatureSection />
       {/* <NTClipboardTestimonials /> */}
