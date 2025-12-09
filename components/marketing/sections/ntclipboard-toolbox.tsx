@@ -468,7 +468,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     <div className="relative aspect-video bg-slate-100 dark:bg-slate-800">
                       <VideoPlayer
                         videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/12/RMDB%20updated%20thumbnail.mp4"
-                        title="Resource Manager DB & EDGEBIC Suite"
+                        title="Resource Manager DB & EDGE Suite"
                         thumbnail="https://www.usersolutions.com/wp-content/uploads/2022/11/advanced-1.png"
                         onPlayStateChange={(isPlaying) =>
                           handleVideoPlayState('advanced', isPlaying)
@@ -480,7 +480,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     <div className="mb-6">
                       <div className="mb-4 flex items-center gap-3">
                         <h3 className="text-2xl font-bold text-orange-700 dark:text-orange-300">
-                          Resource Manager DB & EDGEBIC Suite
+                          Resource Manager DB & EDGE Suite
                         </h3>
                       </div>
                       <p className="mb-4 text-orange-600 dark:text-orange-400">
@@ -543,7 +543,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                           href="/edgebi"
                           target="_blank"
                         >
-                          View EDGEBIC Details
+                          View EDGE Details
                         </Link>
                       </Button>
                     </div>
