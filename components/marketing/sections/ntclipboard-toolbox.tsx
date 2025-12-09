@@ -136,10 +136,10 @@ export function NTClipboardToolBox(): React.JSX.Element {
           {/* Tool Box Comparison Grid */}
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
             {/* WhiteBox Mess Card */}
-            <div className="group relative h-[320px] [perspective:1000px]">
-              <div className="relative size-full transition-transform duration-700 [transform-style:preserve-3d] group-hover:[transform:rotateX(180deg)]">
-                {/* Front Side - White Card */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-white p-8 text-center shadow-lg [backface-visibility:hidden] dark:bg-slate-900">
+            {/* <div className="group relative h-[320px] [perspective:1000px]"> */}
+            <div className="relative size-full transition-transform duration-700 [transform-style:preserve-3d] group-hover:[transform:rotateX(180deg)]">
+              {/* Front Side - White Card */}
+              {/* <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-white p-8 text-center shadow-lg [backface-visibility:hidden] dark:bg-slate-900">
                   <div className="mb-6">
                     <img
                       src="https://www.usersolutions.com/wp-content/uploads/2022/09/whiteboard_icon.svg"
@@ -150,10 +150,10 @@ export function NTClipboardToolBox(): React.JSX.Element {
                   <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
                     WhiteBox Mess
                   </h3>
-                </div>
+                </div> */}
 
-                {/* Back Side - Blue Panel */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 p-8 text-center shadow-2xl [backface-visibility:hidden] [transform:rotateX(180deg)]">
+              {/* Back Side - Blue Panel */}
+              {/* <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 p-8 text-center shadow-2xl [backface-visibility:hidden] [transform:rotateX(180deg)]">
                   <div className="text-white">
                     <h3 className="mb-4 text-lg font-bold">
                       Efficient & Visual Automatic Schedule
@@ -165,15 +165,15 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     </p>
                     <div className="mx-auto h-1 w-16 rounded-full bg-white/50" />
                   </div>
-                </div>
-              </div>
+                </div> */}
             </div>
+            {/* </div> */}
 
             {/* Excel Relief Card */}
-            <div className="group relative h-[320px] [perspective:1000px]">
-              <div className="relative size-full transition-transform duration-700 [transform-style:preserve-3d] group-hover:[transform:rotateX(180deg)]">
-                {/* Front Side - White Card */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-white p-8 text-center shadow-lg [backface-visibility:hidden] dark:bg-slate-900">
+            {/* <div className="group relative h-[320px] [perspective:1000px]"> */}
+            <div className="relative size-full transition-transform duration-700 [transform-style:preserve-3d] group-hover:[transform:rotateX(180deg)]">
+              {/* Front Side - White Card */}
+              {/* <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-white p-8 text-center shadow-lg [backface-visibility:hidden] dark:bg-slate-900">
                   <div className="mb-6">
                     <img
                       src="https://www.usersolutions.com/wp-content/uploads/2022/09/excel_icon.svg"
@@ -184,10 +184,10 @@ export function NTClipboardToolBox(): React.JSX.Element {
                   <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
                     Excel Relief
                   </h3>
-                </div>
+                </div> */}
 
-                {/* Back Side - Blue Panel */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 p-8 text-center shadow-2xl [backface-visibility:hidden] [transform:rotateX(180deg)]">
+              {/* Back Side - Blue Panel */}
+              {/* <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 p-8 text-center shadow-2xl [backface-visibility:hidden] [transform:rotateX(180deg)]">
                   <div className="text-white">
                     <h3 className="mb-4 text-lg font-bold">Excel Relief</h3>
                     <p className="text-md mb-4 leading-relaxed">
@@ -196,15 +196,15 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     </p>
                     <div className="mx-auto h-1 w-16 rounded-full bg-white/50" />
                   </div>
-                </div>
-              </div>
+                </div> */}
             </div>
+            {/* </div> */}
 
             {/* ERP Constraints Card */}
-            <div className="group relative h-[320px] [perspective:1000px]">
-              <div className="relative size-full transition-transform duration-700 [transform-style:preserve-3d] group-hover:[transform:rotateX(180deg)]">
-                {/* Front Side - White Card */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-white p-8 text-center shadow-lg [backface-visibility:hidden] dark:bg-slate-900">
+            {/* <div className="group relative h-[320px] [perspective:1000px]"> */}
+            <div className="relative size-full transition-transform duration-700 [transform-style:preserve-3d] group-hover:[transform:rotateX(180deg)]">
+              {/* Front Side - White Card */}
+              {/* <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-white p-8 text-center shadow-lg [backface-visibility:hidden] dark:bg-slate-900">
                   <div className="mb-6">
                     <img
                       src="https://www.usersolutions.com/wp-content/uploads/2022/09/erp_icon.svg"
@@ -215,10 +215,10 @@ export function NTClipboardToolBox(): React.JSX.Element {
                   <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
                     ERP Constraints
                   </h3>
-                </div>
+                </div> */}
 
-                {/* Back Side - Blue Panel */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 p-8 text-center shadow-2xl [backface-visibility:hidden] [transform:rotateX(180deg)]">
+              {/* Back Side - Blue Panel */}
+              {/* <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 p-8 text-center shadow-2xl [backface-visibility:hidden] [transform:rotateX(180deg)]">
                   <div className="text-white">
                     <h3 className="mb-4 text-lg font-bold">Enhanced ERP</h3>
                     <p className="text-md mb-4 leading-relaxed">
@@ -227,15 +227,15 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     </p>
                     <div className="mx-auto h-1 w-16 rounded-full bg-white/50" />
                   </div>
-                </div>
-              </div>
+                </div> */}
             </div>
+            {/* </div> */}
 
             {/* Custom Chaos Card */}
-            <div className="group relative h-[320px] [perspective:1000px]">
-              <div className="relative size-full transition-transform duration-700 [transform-style:preserve-3d] group-hover:[transform:rotateX(180deg)]">
-                {/* Front Side - White Card */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-white p-8 text-center shadow-lg [backface-visibility:hidden] dark:bg-slate-900">
+            {/* <div className="group relative h-[320px] [perspective:1000px]"> */}
+            <div className="relative size-full transition-transform duration-700 [transform-style:preserve-3d] group-hover:[transform:rotateX(180deg)]">
+              {/* Front Side - White Card */}
+              {/* <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-white p-8 text-center shadow-lg [backface-visibility:hidden] dark:bg-slate-900">
                   <div className="mb-6">
                     <img
                       src="https://www.usersolutions.com/wp-content/uploads/2022/09/custom_icon.svg"
@@ -246,10 +246,10 @@ export function NTClipboardToolBox(): React.JSX.Element {
                   <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
                     Custom Chaos
                   </h3>
-                </div>
+                </div> */}
 
-                {/* Back Side - Blue Panel */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 p-8 text-center shadow-2xl [backface-visibility:hidden] [transform:rotateX(180deg)]">
+              {/* Back Side - Blue Panel */}
+              {/* <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 p-8 text-center shadow-2xl [backface-visibility:hidden] [transform:rotateX(180deg)]">
                   <div className="text-white">
                     <h3 className="mb-4 text-lg font-bold">
                       Fits like a Glove
@@ -259,9 +259,9 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     </p>
                     <div className="mx-auto h-1 w-16 rounded-full bg-white/50" />
                   </div>
-                </div>
-              </div>
+                </div> */}
             </div>
+            {/* </div> */}
           </div>
 
           {/* Solutions for Every Business Size */}
@@ -317,27 +317,27 @@ export function NTClipboardToolBox(): React.JSX.Element {
                         <span className="text-sm">
                           Spreadsheet Operations Manager
                         </span>
-                        <span className="font-bold text-green-600">$39</span>
+                        <span className="font-bold text-green-600">FREE</span>
                       </div>
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm">Spreadsheet QC</span>
-                        <span className="font-bold text-green-600">$39</span>
+                        <span className="font-bold text-green-600">FREE</span>
                       </div>
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm">Workcell Planner</span>
-                        <span className="font-bold text-green-600">$39</span>
+                        <span className="font-bold text-green-600">FREE</span>
                       </div>
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm">Spreadsheet Scheduler</span>
-                        <span className="font-bold text-green-600">$39</span>
+                        <span className="font-bold text-green-600">FREE</span>
                       </div>
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm">Workcenter Scheduler XL</span>
-                        <span className="font-bold text-green-600">$500</span>
+                        <span className="font-bold text-green-600">FREE</span>
                       </div>
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm">Resource Manager XL</span>
-                        <span className="font-bold text-green-600">$1200</span>
+                        <span className="font-bold text-green-600">FREE</span>
                       </div>
                     </div>
 
@@ -359,7 +359,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
 
                     <div className="text-center">
                       <div className="mb-2 text-3xl font-bold text-green-700 dark:text-green-300">
-                        $39 - $1,200
+                        FREE
                       </div>
                       <p className="text-sm text-muted-foreground">
                         Excel-based solutions
