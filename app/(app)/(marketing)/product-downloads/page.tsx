@@ -240,45 +240,6 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                     <div className="text-lg font-semibold">$39</div>
                   </td>
                 </tr>
-                <tr>
-                  <td className="px-6 py-4">
-                    <details className="group">
-                      <summary className="flex cursor-pointer items-center gap-2 font-medium text-gray-900 hover:text-blue-600 dark:text-white">
-                        <span className="text-sm transition-transform group-open:rotate-90">
-                          ▶
-                        </span>
-                        <div className="flex-1">
-                          <div className="font-medium">
-                            Workcenter Scheduler XL
-                          </div>
-                          <div className="text-2xl font-bold text-green-600">
-                            Free
-                          </div>
-                        </div>
-                      </summary>
-                      <div className="mt-2 pl-6 text-sm text-gray-600 dark:text-gray-400">
-                        Advanced scheduling solution for manufacturing
-                        operations with enhanced features for workcenter
-                        management and optimization.
-                      </div>
-                    </details>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <Link
-                      href={Routes.Contact}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      Contact Us
-                    </Link>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <CheckCircle className="mx-auto size-5 text-green-500" />
-                  </td>
-                  <td className="px-6 py-4 text-center">-</td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="text-lg font-semibold">$500</div>
-                  </td>
-                </tr>
                 <tr className="bg-gray-50 dark:bg-gray-700">
                   <td className="px-6 py-4">
                     <details className="group">
