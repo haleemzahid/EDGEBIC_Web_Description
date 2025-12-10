@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { CheckCircle } from 'lucide-react';
 
+import { NTClipboardToolBox } from '@/components/marketing/sections/ntclipboard-toolbox';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Routes } from '@/constants/routes';
@@ -37,10 +38,7 @@ export default function ProductDownloadsPage(): React.JSX.Element {
           <h1 className="mb-6 text-4xl font-bold">
             Production Scheduling Products
           </h1>
-          <p className="mx-auto max-w-7xl text-lg text-muted-foreground">
-            Free Trial & Samples
-          </p>
-          <div className="mt-4">
+          <div className="mt-6">
             <Link
               href={Routes.ExcelTemplates}
               className="font-medium text-blue-600 hover:text-blue-800"
@@ -66,186 +64,11 @@ export default function ProductDownloadsPage(): React.JSX.Element {
         </div>
 
         {/* Main Products Section */}
-        <div className="mb-6 grid grid-cols-1 gap-8 lg:grid-cols-3">
-          {/* Starter - EDGEBIC */}
-          <div className="overflow-hidden rounded-lg border bg-white shadow-lg dark:bg-gray-800">
-            <div className="relative">
-              <Image
-                src="https://www.usersolutions.com/wp-content/uploads/2022/10/starter.png"
-                alt="Silver banner with $1000 text"
-                width={400}
-                height={100}
-                className="w-full object-cover"
-              />
-            </div>
-            <div className="p-4">
-              <video
-                controls
-                className="mb-4 w-full rounded-lg"
-                preload="metadata"
-              >
-                <source
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/Welcome-to-Job-Scheduler-Lite-JSL.mp4"
-                  type="video/mp4"
-                />
-                Your browser does not support the video tag.
-              </video>
-            </div>
-            <div className="p-6">
-              <div className="mb-4 text-center">
-                <span className="inline-block rounded-full bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                  Starter
-                </span>
-              </div>
-              <h3 className="mb-4 text-center text-xl font-bold">EDGEBIC</h3>
-              <div className="mb-6 text-center">
-                <span className="text-lg font-semibold text-green-600">
-                  60-Day Trial
-                </span>
-              </div>
-              <div className="space-y-3">
-                <Link
-                  href="/jsl-job-scheduler-lite-download"
-                  className="block w-full rounded bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700"
-                >
-                  Download Now
-                </Link>
-                <Link
-                  href={Routes.Contact}
-                  className="block w-full rounded border border-blue-600 px-4 py-2 text-center font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                >
-                  Request Live Demo
-                </Link>
-                <Link
-                  href="/jsl-job-scheduler-lite"
-                  className="block w-full rounded border border-gray-300 px-4 py-2 text-center font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                >
-                  Learn More
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          {/* Advanced - Resource Manager DB */}
-          <div className="overflow-hidden rounded-lg border bg-white shadow-lg dark:bg-gray-800">
-            <div className="relative">
-              <Image
-                src="https://www.usersolutions.com/wp-content/uploads/2022/11/advanced-1.png"
-                alt="Blue banner indicating over $5000 savings or cost"
-                width={400}
-                height={100}
-                className="w-full object-cover"
-              />
-            </div>
-            <div className="p-4">
-              <video
-                controls
-                className="mb-4 w-full rounded-lg"
-                preload="metadata"
-              >
-                <source
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/12/RMDB updated thumbnail.mp4"
-                  type="video/mp4"
-                />
-                Your browser does not support the video tag.
-              </video>
-            </div>
-            <div className="p-6">
-              <div className="mb-4 text-center">
-                <span className="inline-block rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-                  Advanced
-                </span>
-              </div>
-              <h3 className="mb-4 text-center text-xl font-bold">
-                Resource Manager DB
-              </h3>
-              <div className="mb-6 text-center">
-                <span className="text-lg font-semibold text-green-600">
-                  30-Day Trial
-                </span>
-              </div>
-              <div className="space-y-3">
-                <Link
-                  href={Routes.Contact}
-                  className="block w-full rounded bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700"
-                >
-                  Request Live Demo
-                </Link>
-                <div className="block w-full rounded border border-gray-300 px-4 py-2 text-center text-gray-500">
-                  Contact for Trial
-                </div>
-                <Link
-                  href="/resource-manager-db-2"
-                  className="block w-full rounded border border-gray-300 px-4 py-2 text-center font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                >
-                  Learn More
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          {/* Premium - EDGEBIC */}
-          <div className="overflow-hidden rounded-lg border bg-white shadow-lg dark:bg-gray-800">
-            <div className="relative">
-              <Image
-                src="https://www.usersolutions.com/wp-content/uploads/2022/11/Premium-1.png"
-                alt="Yellow price tag banner, $2500+ offer"
-                width={400}
-                height={100}
-                className="w-full object-cover"
-              />
-            </div>
-            <div className="p-4">
-              <video
-                controls
-                className="mb-4 w-full rounded-lg"
-                preload="metadata"
-              >
-                <source
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/12/EDGEBIC updated thumbnail.mp4"
-                  type="video/mp4"
-                />
-                Your browser does not support the video tag.
-              </video>
-            </div>
-            <div className="p-6">
-              <div className="mb-4 text-center">
-                <span className="inline-block rounded-full bg-yellow-100 px-3 py-1 text-sm font-semibold text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300">
-                  Premium
-                </span>
-              </div>
-              <h3 className="mb-4 text-center text-xl font-bold">
-                EDGEBIC (Bundled w/ RMDB)
-              </h3>
-              <div className="mb-6 text-center">
-                <span className="text-lg font-semibold text-green-600">
-                  30-Day Trial
-                </span>
-              </div>
-              <div className="space-y-3">
-                <Link
-                  href={Routes.Contact}
-                  className="block w-full rounded bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700"
-                >
-                  Request Live Demo
-                </Link>
-                <div className="block w-full rounded border border-gray-300 px-4 py-2 text-center text-gray-500">
-                  Contact for Trial
-                </div>
-                <Link
-                  href="/edgebi"
-                  className="block w-full rounded border border-gray-300 px-4 py-2 text-center font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                >
-                  Learn More
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
+        <NTClipboardToolBox />
 
         {/* Excel Products Section */}
-        <section>
-          <h2 className="mb-6 text-center text-3xl font-semibold">
+        <section className='mt-6'>
+          <h2 className=" mb-6 text-center text-3xl font-semibold">
             Excel Products
           </h2>
 
