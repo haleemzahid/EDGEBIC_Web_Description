@@ -85,149 +85,62 @@ export default function ProductDownloadsPage(): React.JSX.Element {
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
                 <tr>
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      Spreadsheet Scheduler
-                    </div>
-                    <div className="text-2xl font-bold text-green-600">Free</div>
-                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                      The Spreadsheet Scheduler contains ready-to-use,
-                      practical models for Project Management, Scheduling
-                      Customer Jobs and Employees, Generating Calendars and
-                      Gantt Charts.
-                    </div>
+                  <td className="px-6 py-3">
+                    <span className="font-medium text-gray-900 dark:text-white">Spreadsheet Scheduler</span>
+                    <span className="ml-2 font-bold text-green-600">Free</span>
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex flex-col gap-2">
-                      <Link
-                        href="/spreadsheet-scheduler"
-                        className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
-                      >
-                        Information
-                      </Link>
-                      <Link
-                        href={Routes.Contact}
-                        className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
-                      >
-                        Request Free Product
-                      </Link>
+                  <td className="px-6 py-3 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <Link href="/spreadsheet-scheduler" className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700">Info</Link>
+                      <Link href={Routes.Contact} className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">Request Free</Link>
                     </div>
                   </td>
                 </tr>
                 <tr className="bg-gray-50 dark:bg-gray-700">
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      Workcell Planner
-                    </div>
-                    <div className="text-2xl font-bold text-green-600">Free</div>
-                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                      Single cell capacity planning for machine shops and
-                      fabricators. Allows easy what if analysis of the
-                      interaction of setup time, lot size, efficiency,
-                      operation yield, and work practices.
-                    </div>
+                  <td className="px-6 py-3">
+                    <span className="font-medium text-gray-900 dark:text-white">Workcell Planner</span>
+                    <span className="ml-2 font-bold text-green-600">Free</span>
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex flex-col gap-2">
-                      <Link
-                        href="/workcell-planner"
-                        className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
-                      >
-                        Information
-                      </Link>
-                      <Link
-                        href={Routes.Contact}
-                        className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
-                      >
-                        Request Free Product
-                      </Link>
+                  <td className="px-6 py-3 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <Link href="/workcell-planner" className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700">Info</Link>
+                      <Link href={Routes.Contact} className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">Request Free</Link>
                     </div>
                   </td>
                 </tr>
                 <tr>
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      Operations Manager
-                    </div>
-                    <div className="text-2xl font-bold text-green-600">Free</div>
-                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                      Dozens of templates for Forecasting, Inventory
-                      Management, MRP, Production Planning, Quality Control
-                      and many more.
-                    </div>
+                  <td className="px-6 py-3">
+                    <span className="font-medium text-gray-900 dark:text-white">Operations Manager</span>
+                    <span className="ml-2 font-bold text-green-600">Free</span>
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex flex-col gap-2">
-                      <Link
-                        href="/operations-manager"
-                        className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
-                      >
-                        Information
-                      </Link>
-                      <Link
-                        href={Routes.Contact}
-                        className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
-                      >
-                        Request Free Product
-                      </Link>
+                  <td className="px-6 py-3 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <Link href="/operations-manager" className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700">Info</Link>
+                      <Link href={Routes.Contact} className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">Request Free</Link>
                     </div>
                   </td>
                 </tr>
                 <tr className="bg-gray-50 dark:bg-gray-700">
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      Spreadsheet QC
-                    </div>
-                    <div className="text-2xl font-bold text-green-600">Free</div>
-                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                      Spreadsheet QC makes statistical process and quality
-                      control more accessible by automating the main
-                      techniques in a familiar form, the spreadsheet.
-                    </div>
+                  <td className="px-6 py-3">
+                    <span className="font-medium text-gray-900 dark:text-white">Spreadsheet QC</span>
+                    <span className="ml-2 font-bold text-green-600">Free</span>
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex flex-col gap-2">
-                      <Link
-                        href="/spreadsheet-qc"
-                        className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
-                      >
-                        Information
-                      </Link>
-                      <Link
-                        href={Routes.Contact}
-                        className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
-                      >
-                        Request Free Product
-                      </Link>
+                  <td className="px-6 py-3 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <Link href="/spreadsheet-qc" className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700">Info</Link>
+                      <Link href={Routes.Contact} className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">Request Free</Link>
                     </div>
                   </td>
                 </tr>
                 <tr>
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      Resource Manager for Excel
-                    </div>
-                    <div className="text-2xl font-bold text-green-600">Free</div>
-                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                      Comprehensive resource management solution built for
-                      Excel, providing advanced planning and tracking
-                      capabilities for manufacturing operations.
-                    </div>
+                  <td className="px-6 py-3">
+                    <span className="font-medium text-gray-900 dark:text-white">Resource Manager for Excel</span>
+                    <span className="ml-2 font-bold text-green-600">Free</span>
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex flex-col gap-2">
-                      <Link
-                        href="/resource-manager-for-excel-2"
-                        className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
-                      >
-                        Information
-                      </Link>
-                      <Link
-                        href={Routes.Contact}
-                        className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
-                      >
-                        Request Free Product
-                      </Link>
+                  <td className="px-6 py-3 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <Link href="/resource-manager-for-excel-2" className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700">Info</Link>
+                      <Link href={Routes.Contact} className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">Request Free</Link>
                     </div>
                   </td>
                 </tr>
