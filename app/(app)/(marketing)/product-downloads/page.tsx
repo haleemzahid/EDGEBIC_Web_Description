@@ -4,7 +4,6 @@ import * as React from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
 import Link from 'next/link';
-import { CheckCircle } from 'lucide-react';
 
 import { NTClipboardToolBox } from '@/components/marketing/sections/ntclipboard-toolbox';
 import { Badge } from '@/components/ui/badge';
@@ -82,15 +81,6 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                   <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
                     Information
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                    Sample
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                    Videos
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                    Buy Now
-                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
@@ -134,9 +124,6 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                       </Link>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-center">---------</td>
-                  <td className="px-6 py-4 text-center">-</td>
-                  <td className="px-6 py-4 text-center">---------</td>
                 </tr>
                 <tr className="bg-gray-50 dark:bg-gray-700">
                   <td className="px-6 py-4">
@@ -178,9 +165,6 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                       </Link>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-center">---------</td>
-                  <td className="px-6 py-4 text-center">-</td>
-                  <td className="px-6 py-4 text-center">---------</td>
                 </tr>
                 <tr>
                   <td className="px-6 py-4">
@@ -219,9 +203,6 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                       </Link>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-center">---------</td>
-                  <td className="px-6 py-4 text-center">-</td>
-                  <td className="px-6 py-4 text-center">---------</td>
                 </tr>
                 <tr className="bg-gray-50 dark:bg-gray-700">
                   <td className="px-6 py-4">
@@ -260,9 +241,6 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                       </Link>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-center">---------</td>
-                  <td className="px-6 py-4 text-center">-</td>
-                  <td className="px-6 py-4 text-center">---------</td>
                 </tr>
                 <tr>
                   <td className="px-6 py-4">
@@ -303,11 +281,6 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                       </Link>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <CheckCircle className="mx-auto size-5 text-green-500" />
-                  </td>
-                  <td className="px-6 py-4 text-center">-</td>
-                  <td className="px-6 py-4 text-center">---------</td>
                 </tr>
               </tbody>
             </table>
