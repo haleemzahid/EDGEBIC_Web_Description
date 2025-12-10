@@ -150,8 +150,7 @@ export const FOOTER_LINKS: Array<{
         href: Routes.ProductDownloads,
         external: false
       },
-      { name: 'Product Videos', href: Routes.ProductVideos, external: false },
-      { name: 'Pricing', href: Routes.Pricing, external: false }
+      { name: 'Product Videos', href: Routes.ProductVideos, external: false }
     ]
   },
   {
