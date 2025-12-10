@@ -86,27 +86,16 @@ export default function ProductDownloadsPage(): React.JSX.Element {
               <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
                 <tr>
                   <td className="px-6 py-4">
-                    <details className="group">
-                      <summary className="flex cursor-pointer items-center gap-2 font-medium text-gray-900 hover:text-blue-600 dark:text-white">
-                        <span className="text-sm transition-transform group-open:rotate-90">
-                          ▶
-                        </span>
-                        <div className="flex-1">
-                          <div className="font-medium">
-                            Spreadsheet Scheduler
-                          </div>
-                          <div className="text-2xl font-bold text-green-600">
-                            Free
-                          </div>
-                        </div>
-                      </summary>
-                      <div className="mt-2 pl-6 text-sm text-gray-600 dark:text-gray-400">
-                        The Spreadsheet Scheduler contains ready-to-use,
-                        practical models for Project Management, Scheduling
-                        Customer Jobs and Employees, Generating Calendars and
-                        Gantt Charts.
-                      </div>
-                    </details>
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      Spreadsheet Scheduler
+                    </div>
+                    <div className="text-2xl font-bold text-green-600">Free</div>
+                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                      The Spreadsheet Scheduler contains ready-to-use,
+                      practical models for Project Management, Scheduling
+                      Customer Jobs and Employees, Generating Calendars and
+                      Gantt Charts.
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-center">
                     <div className="flex flex-col gap-2">
@@ -127,27 +116,16 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                 </tr>
                 <tr className="bg-gray-50 dark:bg-gray-700">
                   <td className="px-6 py-4">
-                    <details className="group">
-                      <summary className="flex cursor-pointer items-center gap-2 font-medium text-gray-900 hover:text-blue-600 dark:text-white">
-                        <span className="text-sm transition-transform group-open:rotate-90">
-                          ▶
-                        </span>
-                        <div className="flex-1">
-                          <div className="font-medium">Workcell Planner</div>
-                          <div className="text-2xl font-bold text-green-600">
-                            Free
-                          </div>
-                        </div>
-                      </summary>
-                      <div className="mt-2 pl-6 text-sm text-gray-600 dark:text-gray-400">
-                        Single cell capacity planning for machine shops and
-                        fabricators. Allows easy what if analysis of the
-                        interaction of setup time, lot size, efficiency,
-                        operation yield, and work practices. Allows analysis of
-                        flow with multiple setups per part vs. batch and the
-                        payoff on throughput of set up reduction results.
-                      </div>
-                    </details>
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      Workcell Planner
+                    </div>
+                    <div className="text-2xl font-bold text-green-600">Free</div>
+                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                      Single cell capacity planning for machine shops and
+                      fabricators. Allows easy what if analysis of the
+                      interaction of setup time, lot size, efficiency,
+                      operation yield, and work practices.
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-center">
                     <div className="flex flex-col gap-2">
@@ -168,24 +146,15 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                 </tr>
                 <tr>
                   <td className="px-6 py-4">
-                    <details className="group">
-                      <summary className="flex cursor-pointer items-center gap-2 font-medium text-gray-900 hover:text-blue-600 dark:text-white">
-                        <span className="text-sm transition-transform group-open:rotate-90">
-                          ▶
-                        </span>
-                        <div className="flex-1">
-                          <div className="font-medium">Operations Manager</div>
-                          <div className="text-2xl font-bold text-green-600">
-                            Free
-                          </div>
-                        </div>
-                      </summary>
-                      <div className="mt-2 pl-6 text-sm text-gray-600 dark:text-gray-400">
-                        Dozens of templates for Forecasting, Inventory
-                        Management, MRP, Production Planning, Quality Control
-                        and many more.
-                      </div>
-                    </details>
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      Operations Manager
+                    </div>
+                    <div className="text-2xl font-bold text-green-600">Free</div>
+                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                      Dozens of templates for Forecasting, Inventory
+                      Management, MRP, Production Planning, Quality Control
+                      and many more.
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-center">
                     <div className="flex flex-col gap-2">
@@ -206,24 +175,15 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                 </tr>
                 <tr className="bg-gray-50 dark:bg-gray-700">
                   <td className="px-6 py-4">
-                    <details className="group">
-                      <summary className="flex cursor-pointer items-center gap-2 font-medium text-gray-900 hover:text-blue-600 dark:text-white">
-                        <span className="text-sm transition-transform group-open:rotate-90">
-                          ▶
-                        </span>
-                        <div className="flex-1">
-                          <div className="font-medium">Spreadsheet QC</div>
-                          <div className="text-2xl font-bold text-green-600">
-                            Free
-                          </div>
-                        </div>
-                      </summary>
-                      <div className="mt-2 pl-6 text-sm text-gray-600 dark:text-gray-400">
-                        Spreadsheet QC makes statistical process and quality
-                        control more accessible by automating the main
-                        techniques in a familiar form, the spreadsheet.
-                      </div>
-                    </details>
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      Spreadsheet QC
+                    </div>
+                    <div className="text-2xl font-bold text-green-600">Free</div>
+                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                      Spreadsheet QC makes statistical process and quality
+                      control more accessible by automating the main
+                      techniques in a familiar form, the spreadsheet.
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-center">
                     <div className="flex flex-col gap-2">
@@ -244,26 +204,15 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                 </tr>
                 <tr>
                   <td className="px-6 py-4">
-                    <details className="group">
-                      <summary className="flex cursor-pointer items-center gap-2 font-medium text-gray-900 hover:text-blue-600 dark:text-white">
-                        <span className="text-sm transition-transform group-open:rotate-90">
-                          ▶
-                        </span>
-                        <div className="flex-1">
-                          <div className="font-medium">
-                            Resource Manager for Excel
-                          </div>
-                          <div className="text-2xl font-bold text-green-600">
-                            Free
-                          </div>
-                        </div>
-                      </summary>
-                      <div className="mt-2 pl-6 text-sm text-gray-600 dark:text-gray-400">
-                        Comprehensive resource management solution built for
-                        Excel, providing advanced planning and tracking
-                        capabilities for manufacturing operations.
-                      </div>
-                    </details>
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      Resource Manager for Excel
+                    </div>
+                    <div className="text-2xl font-bold text-green-600">Free</div>
+                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                      Comprehensive resource management solution built for
+                      Excel, providing advanced planning and tracking
+                      capabilities for manufacturing operations.
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-center">
                     <div className="flex flex-col gap-2">
