@@ -190,7 +190,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                         asChild
                       >
                         <Link
-                          href="/excel-applications"
+                          href="/excel-templates"
                           target="_blank"
                           rel="noopener noreferrer"
                         >

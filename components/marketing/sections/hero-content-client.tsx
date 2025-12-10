@@ -99,7 +99,7 @@ export function HeroContent(): React.JSX.Element {
                 onClick={handleFirstVideoButtonClick}
                 className="inline-flex items-center justify-center gap-2 rounded bg-[#004a8f] px-8 py-3.5 text-base font-semibold text-white transition-colors hover:bg-[#003d75]"
               >
-                Free Trial
+                Next Step
               </button>
               <button
                 onClick={handleSecondVideoButtonClick}
