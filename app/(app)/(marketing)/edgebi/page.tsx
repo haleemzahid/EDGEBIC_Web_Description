@@ -204,7 +204,7 @@ export default function EDGEBIPage(): React.JSX.Element {
                 <div className="relative aspect-video">
                   <VideoPlayer
                     videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/12/EDGEBIC%20updated%20thumbnail.mp4"
-                    title="EDGEBIC Suite Demo"
+                    title="EDGE Suite Demo"
                     thumbnail="https://www.usersolutions.com/wp-content/uploads/2022/11/Premium-1.png"
                     onPlayStateChange={setIsVideoPlaying}
                   />

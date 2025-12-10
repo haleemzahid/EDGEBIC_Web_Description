@@ -19,6 +19,7 @@ import {
 
 import { GridSection } from '@/components/marketing/fragments/grid-section';
 import { SiteHeading } from '@/components/marketing/fragments/site-heading';
+import { NTClipboardToolBox } from '@/components/marketing/sections/ntclipboard-toolbox';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -104,12 +105,6 @@ function VideoPlayer({
 export function ProductionPlanningSolutions(): React.JSX.Element {
   const router = useRouter();
   const [isVideoPlaying, setIsVideoPlaying] = React.useState(false);
-  const [isStarterVideoPlaying, setIsStarterVideoPlaying] =
-    React.useState(false);
-  const [isAdvancedVideoPlaying, setIsAdvancedVideoPlaying] =
-    React.useState(false);
-  const [isPremiumVideoPlaying, setIsPremiumVideoPlaying] =
-    React.useState(false);
 
   return (
     <GridSection hideVerticalGridLines>
@@ -181,228 +176,8 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
             </div>
           </div>
 
-          {/* Product Tiers - Clean Design Like Attachment */}
-          <div className="mb-6 grid gap-8 lg:grid-cols-3">
-            {/* Starter Tier */}
-            <div className="relative w-full overflow-hidden rounded-xl border bg-white shadow-lg transition-shadow hover:shadow-xl dark:border-slate-700 dark:bg-slate-900">
-              {/* Badge */}
-              <div
-                className={`absolute right-4 top-4 z-10 transition-opacity duration-300 ${
-                  isStarterVideoPlaying ? 'opacity-0' : 'opacity-100'
-                }`}
-              >
-                <span className="rounded-full bg-blue-500 px-3 py-1 text-xs font-semibold text-white">
-                  STARTER
-                </span>
-              </div>
-
-              {/* Video Section */}
-              <div className="relative aspect-video bg-slate-100 dark:bg-slate-800">
-                <VideoPlayer
-                  videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/10/Welcome-to-Job-Scheduler-Lite-JSL.mp4"
-                  title="EDGEBIC Demo"
-                  thumbnail=""
-                  onPlayStateChange={setIsStarterVideoPlaying}
-                />
-              </div>
-
-              {/* Content */}
-              <div className="p-6">
-                <h3 className="mb-2 text-xl font-bold text-blue-600">
-                  EDGEBIC
-                </h3>
-                <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
-                  Perfect for Job Shops & Small Manufacturers
-                </p>
-
-                {/* Features */}
-                <div className="mb-6 space-y-2">
-                  {[
-                    'Shop Scheduling Made Easy',
-                    'Forward Scheduling',
-                    'Finite Capacity',
-                    'Free Trials Available'
-                  ].map((feature, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2"
-                    >
-                      <div className="size-1.5 rounded-full bg-blue-500" />
-                      <span className="text-sm text-slate-700 dark:text-slate-300">
-                        {feature}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* View Details Button */}
-                <Button
-                  variant="outline"
-                  className="mb-4 w-full border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400"
-                  onClick={() => router.push('/jsl-job-scheduler-lite')}
-                >
-                  View Details
-                </Button>
-
-                {/* Price */}
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    $1,000+
-                  </div>
-                  <div className="text-sm text-slate-500">
-                    Starting investment
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Advanced Tier (Popular) */}
-            <div className="relative w-full overflow-hidden rounded-xl border bg-white shadow-lg transition-shadow hover:shadow-xl dark:border-slate-700 dark:bg-slate-900">
-              {/* Badge */}
-              <div
-                className={`absolute right-4 top-4 z-10 transition-opacity duration-300 ${
-                  isAdvancedVideoPlaying ? 'opacity-0' : 'opacity-100'
-                }`}
-              >
-                <span className="rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white">
-                  POPULAR
-                </span>
-              </div>
-
-              {/* Video Section */}
-              <div className="relative aspect-video bg-slate-100 dark:bg-slate-800">
-                <VideoPlayer
-                  videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/12/RMDB updated thumbnail.mp4"
-                  title="Resource Manager DB Demo"
-                  thumbnail=""
-                  onPlayStateChange={setIsAdvancedVideoPlaying}
-                />
-              </div>
-
-              {/* Content */}
-              <div className="p-6">
-                <h3 className="mb-2 text-xl font-bold text-orange-600">
-                  Resource Manager DB
-                </h3>
-                <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
-                  Ideal for Growing SMBs & Mid-Size Companies
-                </p>
-
-                {/* Features */}
-                <div className="mb-6 space-y-2">
-                  {[
-                    'Production Scheduling Your Way',
-                    'Flexible & Adaptable',
-                    'Easy APS & MRP Implementation',
-                    'Free Trials Available',
-                    'Advanced Analytics'
-                  ].map((feature, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2"
-                    >
-                      <div className="size-1.5 rounded-full bg-orange-500" />
-                      <span className="text-sm text-slate-700 dark:text-slate-300">
-                        {feature}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* View Details Button */}
-                <Button
-                  variant="outline"
-                  className="mb-4 w-full border-orange-200 text-orange-600 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400"
-                  onClick={() => router.push('/resource-manager-db-2')}
-                >
-                  View Details
-                </Button>
-
-                {/* Price */}
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">
-                    $5,000+
-                  </div>
-                  <div className="text-sm text-slate-500">
-                    Advanced solution
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Premium Tier */}
-            <div className="relative w-full overflow-hidden rounded-xl border bg-white shadow-lg transition-shadow hover:shadow-xl dark:border-slate-700 dark:bg-slate-900">
-              {/* Badge */}
-              <div
-                className={`absolute right-4 top-4 z-10 transition-opacity duration-300 ${
-                  isPremiumVideoPlaying ? 'opacity-0' : 'opacity-100'
-                }`}
-              >
-                <span className="rounded-full bg-purple-500 px-3 py-1 text-xs font-semibold text-white">
-                  PREMIUM
-                </span>
-              </div>
-
-              {/* Video Section */}
-              <div className="relative aspect-video bg-slate-100 dark:bg-slate-800">
-                <VideoPlayer
-                  videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/12/EDGEBIC updated thumbnail.mp4"
-                  title="EDGEBIC Suite Demo"
-                  thumbnail=""
-                  onPlayStateChange={setIsPremiumVideoPlaying}
-                />
-              </div>
-
-              {/* Content */}
-              <div className="p-6">
-                <h3 className="mb-2 text-xl font-bold text-purple-600">
-                  EDGEBIC Suite
-                </h3>
-                <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
-                  Enterprise-Grade for Multi-Nationals
-                </p>
-
-                {/* Features */}
-                <div className="mb-6 space-y-2">
-                  {[
-                    'Heat Map Reports',
-                    'Schedule Key Dates',
-                    'Live Embedded Excel',
-                    'Advanced Drag & Drop'
-                  ].map((feature, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2"
-                    >
-                      <div className="size-1.5 rounded-full bg-purple-500" />
-                      <span className="text-sm text-slate-700 dark:text-slate-300">
-                        {feature}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* View Details Button */}
-                <Button
-                  variant="outline"
-                  className="mb-4 w-full border-purple-200 text-purple-600 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400"
-                  onClick={() => router.push('/edgebi')}
-                >
-                  View Details
-                </Button>
-
-                {/* Price */}
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">
-                    $25,000+
-                  </div>
-                  <div className="text-sm text-slate-500">
-                    Enterprise solution
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Product Tiers - Using NTClipboardToolBox */}
+          <NTClipboardToolBox />
 
           {/* Customer Testimonials */}
           <div className="mb-6">
@@ -609,7 +384,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
                     <Zap className="size-5" />
-                    EDGEBIC Suite
+                    EDGE Suite
                   </CardTitle>
                   <CardDescription>
                     Graphical overlay with business intelligence for intuitive
@@ -742,7 +517,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       Resource Manager DB
                     </th>
                     <th className="p-4 text-center font-semibold text-purple-600 dark:text-purple-400">
-                      EDGEBIC Suite
+                      EDGE Suite
                     </th>
                   </tr>
                 </thead>
