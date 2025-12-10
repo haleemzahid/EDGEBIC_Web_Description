@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowUpRightIcon, CalendarIcon, UserIcon } from 'lucide-react';
+import { ArrowUpRightIcon } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,10 +26,7 @@ const successStories = [
       'Resource Manager-DB product provided a unique combination of planning, scheduling, and tracking functionality within a single, yet flexible system.',
     author: 'Scott Bennett, Enevate',
     logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/01-300x300.png',
-    date: 'September 8, 2022',
-    readTime: '4 min read',
-    category: 'Success Story',
-    href: '#'
+    href: '/success_stories/resource-manager-db-innovates-li-ion-battery-production-scheduling-for-enevate'
   },
   {
     id: 2,
@@ -41,10 +38,7 @@ const successStories = [
       'The system was incredibly easy to adopt and we saw immediate returns on our investment.',
     author: 'Ohio Furniture Manufacturer',
     logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/02-300x300.png',
-    date: 'August 15, 2022',
-    readTime: '5 min read',
-    category: 'Case Study',
-    href: '#'
+    href: '/success_stories/amish-easily-adopt-rapidly-amortize-new-production-scheduling-system'
   },
   {
     id: 3,
@@ -55,10 +49,7 @@ const successStories = [
       'This solution enabled us to systematically identify and resolve bottlenecks in our production process.',
     author: 'BAE Systems/Ordinance Systems Inc.',
     logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/03-300x300.png',
-    date: 'July 22, 2022',
-    readTime: '6 min read',
-    category: 'ERP Integration',
-    href: '#'
+    href: '/success_stories/capacity-and-production-planning-add-on-for-erp'
   },
   {
     id: 4,
@@ -70,10 +61,7 @@ const successStories = [
       'Perfect solution for smaller manufacturers looking for affordable, flexible MRP systems.',
     author: 'Sleepmasters',
     logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/04-300x300.png',
-    date: 'June 10, 2022',
-    readTime: '4 min read',
-    category: 'Manufacturing',
-    href: '#'
+    href: '/success_stories/affordable-easy-to-implement-mrp-for-smaller-manufacturer'
   },
   {
     id: 5,
@@ -84,10 +72,7 @@ const successStories = [
       'We have found these products complement traditional MRP and Shop Control systems perfectly.',
     author: 'A.G. Raymond & Company',
     logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/AGRaymond33f-161208-5849d765f1422.jpg',
-    date: 'May 18, 2022',
-    readTime: '5 min read',
-    category: 'Consulting',
-    href: '#'
+    href: '/success_stories/complements-traditional-mrp-and-shop-control-systems'
   },
   {
     id: 6,
@@ -98,7 +83,7 @@ const successStories = [
       'Integrated scheduling solutions have transformed our consulting project delivery capabilities.',
     author: 'GEMS Healthcare Solutions',
     logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/07-300x300.png',
-    href: '#'
+    href: '/success_stories/finite-capacity-resource-scheduling-for-consulting-projects'
   },
   {
     id: 7,
@@ -110,9 +95,8 @@ const successStories = [
       'The new scheduling system replaced our complex Excel program with an intuitive, coordinated solution.',
     author: 'Kyocera Corporation',
     logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/06-300x300.png',
-    href: '#'
+    href: '/success_stories/quick-and-easy-production-scheduling-replaces-complex-custom-excel-program'
   },
-
   {
     id: 8,
     title: 'Repair Shops Triple On-Time Shipping Percentage – from 30% to >90%',
@@ -121,7 +105,7 @@ const successStories = [
     quote: 'We tripled our on-time shipping percentage from 30% to over 90%.',
     author: 'GE Railcar Services Corporation',
     logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/GE-Rail-Services-Logoghj-161208-5849e6633a5d5-58e6958736b16.jpg',
-    href: '#'
+    href: '/success_stories/repair-shops-triple-on-time-shipping-percentage-from-30-to-90'
   },
   {
     id: 9,
@@ -132,7 +116,7 @@ const successStories = [
       'We significantly increased throughput while improving our on-time shipping performance.',
     author: 'Technical Glass Products',
     logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/logo-tgpa-blue0-161208-5849d3ed255df.jpg',
-    href: '#'
+    href: '/success_stories/job-shop-increases-throughput-while-improving-shipping-on-time'
   },
   {
     id: 10,
@@ -144,7 +128,7 @@ const successStories = [
       "Successfully implemented finite capacity scheduling for one of the world's most complex manufacturing environments.",
     author: 'US Navy',
     logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/GrayAmNavy-Taglogo00-1634-58c6b882c5bd7.jpg',
-    href: '#'
+    href: '/success_stories/finite-capacity-scheduling-of-worlds-largest-aircraft-carrier-nimitz'
   },
   {
     id: 11,
@@ -156,7 +140,7 @@ const successStories = [
       'RM-DB provides the flexible scheduling solution we needed for our complex manufacturing processes.',
     author: 'Plastilite Corporation',
     logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/Plastilite-161208-5849e7913fd3c.jpg',
-    href: '#'
+    href: '/success_stories/erp-vendor-and-manufacturer-both-turn-to-rm-db-for-flexible-scheduling'
   },
   {
     id: 12,
@@ -168,7 +152,7 @@ const successStories = [
       'We are now able to schedule labor resources several months in advance, greatly increasing customer satisfaction.',
     author: 'Joe Van Wagner, Cummins Engine',
     logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/cumminslogo-59492683dd7a2.png',
-    href: '#'
+    href: '/success_stories/scheduling-labor-out-several-months-increases-customer-satisfaction'
   }
 ];
 
@@ -176,44 +160,27 @@ export function NTClipboardSuccessStories(): React.JSX.Element {
   return (
     <div className="bg-background">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-blue-800 py-6 dark:from-blue-700 dark:to-blue-900">
-        <div className="absolute inset-0 bg-black/10" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="py-6">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <Badge
               variant="outline"
-              className="mb-4 h-8 rounded-full border-white/30 bg-white/10 px-3 text-sm font-medium text-white shadow-sm hover:bg-white/20"
+              className="mb-4 h-8 rounded-full px-3 text-sm font-medium shadow-sm"
             >
               Customer Success
             </Badge>
-            <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
+            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
               Customer Success Stories
             </h1>
-            <p className="mx-auto mt-6 max-w-4xl text-xl text-blue-100">
-              Click on logos or Read More to view just a sample of our
-              customers' success stories. You too can realize great success by
-              working with US!
+            <p className="mx-auto mt-4 max-w-4xl text-lg text-muted-foreground">
+              Discover how our customers have achieved great success with our solutions.
             </p>
-            <p className="mx-auto mt-4 max-w-4xl text-lg text-blue-100">
-              Contact US today to discover how easy and affordable it is to
-              become even more competitive and profitable through efficient
-              production planning, scheduling, tracking, combined with improved
-              communications.
-            </p>
-            <div className="mt-8">
-              <Link
-                href="/contact"
-                className="inline-flex items-center rounded-full bg-yellow-400 px-8 py-3 text-lg font-semibold text-black transition-all hover:bg-yellow-300 hover:shadow-lg"
-              >
-                Contact US Today
-              </Link>
-            </div>
           </div>
         </div>
       </section>
 
       {/* Success Stories Grid */}
-      <section className="py-6">
+      <section className="pt-6">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-6 text-center">
             <h2 className="text-3xl  font-bold text-foreground sm:text-4xl">
@@ -242,23 +209,7 @@ export function NTClipboardSuccessStories(): React.JSX.Element {
                   />
                 </div>
                 <CardHeader className="pb-4">
-                  <div className="mb-2 flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <CalendarIcon className="size-4" />
-                      {story.date}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <UserIcon className="size-4" />
-                      {story.readTime}
-                    </div>
-                  </div>
-                  <Badge
-                    variant="secondary"
-                    className="mb-3 w-fit"
-                  >
-                    {story.category}
-                  </Badge>
-                  <CardTitle className="line-clamp-2 transition-colors group-hover:text-blue-600">
+                  <CardTitle className="line-clamp-2 text-lg transition-colors group-hover:text-blue-600">
                     {story.title}
                   </CardTitle>
                 </CardHeader>
@@ -274,11 +225,7 @@ export function NTClipboardSuccessStories(): React.JSX.Element {
                       — {story.author}
                     </footer>
                   </blockquote>
-                  <Link
-                    href={story.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
+                  <Link href={story.href}>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -295,48 +242,25 @@ export function NTClipboardSuccessStories(): React.JSX.Element {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800 py-6 dark:from-blue-700 dark:to-blue-900">
-        <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-white">
-            Ready to Create Your Own Success Story?
-          </h2>
-          <p className="mt-4 text-xl text-blue-100">
-            Contact us today to discover how we can help you achieve similar
-            results.
-          </p>
-          <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
-            <Link
-              href="/contact"
-              className="inline-flex items-center justify-center rounded-full bg-yellow-400 px-8 py-3 text-lg font-semibold text-black transition-all hover:bg-yellow-300 hover:shadow-lg"
-            >
-              Get Started Today
-            </Link>
-            <Link
-              href="/pricing"
-              className="inline-flex items-center justify-center rounded-full border-2 border-white px-8 py-3 text-lg font-semibold text-white transition-all hover:bg-white hover:text-blue-600"
-            >
-              View Pricing
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* Awards Section */}
       <section className="pt-6">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
-            <CardContent className="p-8 text-center">
-              <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
-                CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
-              </h2>
-              <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
-                alt="Collection of industry and business awards logos"
-                className="mx-auto h-auto max-w-full"
-              />
-            </CardContent>
-          </Card>
+        <div className="container mx-auto px-4">
+          <div className="mx-auto max-w-7xl">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+              <CardContent className="p-8 text-center">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                  CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
+                </h3>
+                <Image
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  alt="Collection of industry and business awards logos"
+                  width={1024}
+                  height={128}
+                  className="mx-auto h-auto max-w-full"
+                />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </section>
     </div>
