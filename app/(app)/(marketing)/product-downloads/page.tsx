@@ -119,18 +119,24 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                     </details>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <Link
-                      href={Routes.Contact}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      Contact Us
-                    </Link>
+                    <div className="flex flex-col gap-2">
+                      <Link
+                        href="/spreadsheet-scheduler"
+                        className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
+                      >
+                        Information
+                      </Link>
+                      <Link
+                        href={Routes.Contact}
+                        className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
+                      >
+                        Request Free Product
+                      </Link>
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-center">---------</td>
                   <td className="px-6 py-4 text-center">-</td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="text-lg font-semibold">$39</div>
-                  </td>
+                  <td className="px-6 py-4 text-center">---------</td>
                 </tr>
                 <tr className="bg-gray-50 dark:bg-gray-700">
                   <td className="px-6 py-4">
@@ -157,18 +163,24 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                     </details>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <Link
-                      href={Routes.Contact}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      Contact us
-                    </Link>
+                    <div className="flex flex-col gap-2">
+                      <Link
+                        href="/workcell-planner"
+                        className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
+                      >
+                        Information
+                      </Link>
+                      <Link
+                        href={Routes.Contact}
+                        className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
+                      >
+                        Request Free Product
+                      </Link>
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-center">---------</td>
                   <td className="px-6 py-4 text-center">-</td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="text-lg font-semibold">$39</div>
-                  </td>
+                  <td className="px-6 py-4 text-center">---------</td>
                 </tr>
                 <tr>
                   <td className="px-6 py-4">
@@ -192,18 +204,24 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                     </details>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <Link
-                      href="/operations-manager"
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      View Doc
-                    </Link>
+                    <div className="flex flex-col gap-2">
+                      <Link
+                        href="/operations-manager"
+                        className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
+                      >
+                        Information
+                      </Link>
+                      <Link
+                        href={Routes.Contact}
+                        className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
+                      >
+                        Request Free Product
+                      </Link>
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-center">---------</td>
                   <td className="px-6 py-4 text-center">-</td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="text-lg font-semibold">$5</div>
-                  </td>
+                  <td className="px-6 py-4 text-center">---------</td>
                 </tr>
                 <tr className="bg-gray-50 dark:bg-gray-700">
                   <td className="px-6 py-4">
@@ -227,20 +245,26 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                     </details>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <Link
-                      href={Routes.Contact}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      Contact us
-                    </Link>
+                    <div className="flex flex-col gap-2">
+                      <Link
+                        href="/spreadsheet-qc"
+                        className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
+                      >
+                        Information
+                      </Link>
+                      <Link
+                        href={Routes.Contact}
+                        className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
+                      >
+                        Request Free Product
+                      </Link>
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-center">---------</td>
                   <td className="px-6 py-4 text-center">-</td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="text-lg font-semibold">$39</div>
-                  </td>
+                  <td className="px-6 py-4 text-center">---------</td>
                 </tr>
-                <tr className="bg-gray-50 dark:bg-gray-700">
+                <tr>
                   <td className="px-6 py-4">
                     <details className="group">
                       <summary className="flex cursor-pointer items-center gap-2 font-medium text-gray-900 hover:text-blue-600 dark:text-white">
@@ -264,20 +288,26 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                     </details>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <Link
-                      href={Routes.Contact}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      Contact Us
-                    </Link>
+                    <div className="flex flex-col gap-2">
+                      <Link
+                        href="/resource-manager-for-excel-2"
+                        className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
+                      >
+                        Information
+                      </Link>
+                      <Link
+                        href={Routes.Contact}
+                        className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
+                      >
+                        Request Free Product
+                      </Link>
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-center">
                     <CheckCircle className="mx-auto size-5 text-green-500" />
                   </td>
                   <td className="px-6 py-4 text-center">-</td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="text-lg font-semibold">$1200</div>
-                  </td>
+                  <td className="px-6 py-4 text-center">---------</td>
                 </tr>
               </tbody>
             </table>
