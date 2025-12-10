@@ -279,7 +279,7 @@ export default function CheckoutPage() {
             </p>
             <div className="space-x-4">
               <Link
-                href="/contact"
+                href="/contact-us"
                 className="inline-block rounded-lg bg-gray-600 px-6 py-3 text-white transition-colors hover:bg-gray-700"
               >
                 Contact Us

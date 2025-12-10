@@ -1,7 +1,6 @@
 export enum Routes {
   Root = '/',
-  Contact = '/contact',
-  ContactUs = '/contact-us',
+  Contact = '/contact-us',
   Features = '/features',
   SummaryFeatures = '/summary-features',
   WhyUserSolutions = '/why-user-solutions',

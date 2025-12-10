@@ -23,13 +23,13 @@ export const mainNavItems: NavItem[] = [
     icon: HomeIcon
   },
   {
-    title: 'Contacts',
+    title: 'CRM',
     href: Routes.Contacts,
     icon: UsersIcon
   },
   {
     title: 'Blog',
-    href: 'http://localhost:3000/admin/login',
+    href: 'https://payloadcms-theta.vercel.app/',
     icon: FileTextIcon
   },
   {

@@ -42,7 +42,7 @@ export function FloatingCTA(): React.JSX.Element {
         <span className="font-semibold">248.486.6365</span>
       </Link>
       <Link
-        href={Routes.ContactUs}
+        href={Routes.Contact}
         className={cn(
           buttonVariants({ variant: 'outline', size: 'lg' }),
           'group gap-2 rounded-full shadow-lg transition-all hover:scale-105 hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950'

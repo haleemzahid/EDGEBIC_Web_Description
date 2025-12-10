@@ -310,7 +310,7 @@ export default function Product2Page(): React.JSX.Element {
               size="lg"
               className="gap-2"
             >
-              <Link href="/contact">Schedule a Live Demo</Link>
+              <Link href="/contact-us">Schedule a Live Demo</Link>
             </Button>
           </div>
         </div>
@@ -381,7 +381,7 @@ export default function Product2Page(): React.JSX.Element {
               </Button>
               <Button variant="outline">
                 <Link
-                  href="/contact"
+                  href="/contact-us"
                   className="flex items-center gap-2"
                 >
                   Schedule Demo

@@ -131,7 +131,7 @@ export default function CovidPressReleasePage() {
             <div className="mt-6 border-t border-gray-200 pt-8 dark:border-gray-700">
               <div className="flex flex-wrap gap-4">
                 <Link
-                  href="/contact"
+                  href="/contact-us"
                   className="rounded-lg bg-blue-600 px-6 py-3 text-white transition-colors hover:bg-blue-700"
                 >
                   Contact Us

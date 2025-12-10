@@ -98,7 +98,7 @@ export default function NavigationDemoPage(): React.JSX.Element {
                 <Link href={Routes.Features}>
                   <Button variant="outline">Features</Button>
                 </Link>
-                <Link href={Routes.ContactUs}>
+                <Link href={Routes.Contact}>
                   <Button variant="outline">Contact</Button>
                 </Link>
                 <Link href={Routes.JobSchedulerLite}>

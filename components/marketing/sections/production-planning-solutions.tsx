@@ -153,26 +153,38 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
             </div>
           </div>
 
-          {/* Video Section */}
+          {/* Video Section - Side by Side Layout */}
           <div className="mb-6">
-            <div className="relative mx-auto max-w-7xl overflow-hidden rounded-2xl border bg-slate-100 shadow-2xl dark:bg-slate-800">
-              <div className="relative aspect-video">
-                <VideoPlayer
-                  videoUrl="https://youtu.be/IR8NhOlV_zM"
-                  title="Production Planning and Scheduling Solutions Demo"
-                  thumbnail=""
-                  onPlayStateChange={setIsVideoPlaying}
-                />
+            <div className="grid items-center gap-8 md:grid-cols-2">
+              {/* Video */}
+              <div className="relative overflow-hidden rounded-xl border bg-slate-100 shadow-lg dark:bg-slate-800">
+                <div className="relative aspect-video">
+                  <VideoPlayer
+                    videoUrl="https://youtu.be/IR8NhOlV_zM"
+                    title="Production Planning and Scheduling Solutions Demo"
+                    thumbnail=""
+                    onPlayStateChange={setIsVideoPlaying}
+                  />
+                </div>
               </div>
-            </div>
-            <div className="mt-6 text-center">
-              <h3 className="mb-2 text-xl font-bold text-slate-900 dark:text-white">
-                Want to get your production in the groove?
-              </h3>
-              <p className="text-slate-700 dark:text-slate-300">
-                Watch this classic video and get your operations movin' and
-                groovin' today!
-              </p>
+              {/* Text Content */}
+              <div className="space-y-4">
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                  Want to get your production in the groove?
+                </h3>
+                <p className="text-lg text-slate-700 dark:text-slate-300">
+                  Watch this classic video and get your operations movin' and
+                  groovin' today!
+                </p>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => router.push('/contact-us')}
+                >
+                  Learn More
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -724,7 +736,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               <Button
                 size="lg"
                 className="gap-2"
-                onClick={() => router.push('/contact')}
+                onClick={() => router.push('/contact-us')}
               >
                 <Users className="size-4" />
                 Schedule a Live Demo

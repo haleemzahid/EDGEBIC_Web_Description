@@ -418,7 +418,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                                         <Link href="/product-2">See Feature List</Link>
                                     </Button> */}
             {/* <Button variant="outline">
-                                        <Link href="/contact">Schedule Demo</Link>
+                                        <Link href="/contact-us">Schedule Demo</Link>
                                     </Button> */}
             {/* </div>
                 </div>

@@ -309,7 +309,7 @@ export default function CompareProductsPage(): React.JSX.Element {
                 size="lg"
                 asChild
               >
-                <Link href="/contact">Schedule Demo</Link>
+                <Link href="/contact-us">Schedule Demo</Link>
               </Button>
               <Button
                 size="lg"

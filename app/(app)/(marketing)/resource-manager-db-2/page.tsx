@@ -204,7 +204,7 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
     },
     {
       label: 'Live Demo',
-      href: Routes.ContactUs,
+      href: Routes.Contact,
       description: 'Schedule a personalized demonstration'
     }
   ];

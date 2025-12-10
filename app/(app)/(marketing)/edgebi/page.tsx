@@ -82,7 +82,7 @@ export default function EDGEBIPage(): React.JSX.Element {
     },
     {
       label: 'Live Demo',
-      href: '/contact',
+      href: '/contact-us',
       external: true,
       description: 'Schedule a personalized demonstration'
     }
@@ -174,7 +174,7 @@ export default function EDGEBIPage(): React.JSX.Element {
                   className="bg-gradient-to-r from-purple-500 to-purple-700 text-white hover:from-purple-600 hover:to-purple-800"
                 >
                   <Link
-                    href="/contact"
+                    href="/contact-us"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2"

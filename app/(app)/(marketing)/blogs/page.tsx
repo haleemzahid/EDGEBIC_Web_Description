@@ -26,7 +26,7 @@ export default function BlogsPage() {
               soon for updates!
             </p>
             <Link
-              href="/contact"
+              href="/contact-us"
               className="inline-block rounded-lg bg-blue-600 px-6 py-3 text-white transition-colors hover:bg-blue-700"
             >
               Contact Us for Updates

@@ -195,15 +195,13 @@ export function NTClipboardExcelTemplates(): React.JSX.Element {
 
                 {/* Action Button */}
                 <Link
-                  href={app.href}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-700"
+                  href="/contact-us"
+                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-700"
                 >
                   <InfoIcon className="size-4" />
                   Request Free Product
                 </Link>
 
-                {/* Hover effect */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-green-600/5 to-emerald-600/5 opacity-0 transition-opacity group-hover:opacity-100" />
               </div>
             ))}
           </div>
@@ -223,7 +221,7 @@ export function NTClipboardExcelTemplates(): React.JSX.Element {
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link
-                href="/contact"
+                href="/contact-us"
                 className="inline-flex items-center gap-2 rounded-full bg-green-600 px-8 py-4 text-lg font-semibold text-white shadow-lg transition-all hover:bg-green-700 hover:shadow-xl"
               >
                 Get Started Today

@@ -401,7 +401,7 @@ export default function OperationsManagerPage(): React.JSX.Element {
                     variant="outline"
                     asChild
                   >
-                    <Link href={Routes.ContactUs}>Contact Us</Link>
+                    <Link href={Routes.Contact}>Contact Us</Link>
                   </Button>
                   <Button
                     size="lg"
