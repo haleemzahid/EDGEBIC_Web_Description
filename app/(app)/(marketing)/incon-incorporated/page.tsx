@@ -1,23 +1,28 @@
-import Link from 'next/link';
+import type { Metadata } from 'next';
+import Image from 'next/image';
 
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
-export default function InconIncorporatedPage(): React.JSX.Element {
+export const metadata: Metadata = {
+  title: 'INCON Incorporated | User Solutions',
+  description:
+    'Hi-tech Connector Mfr Accurately Schedules Labor with MRP Add-On.',
+  openGraph: {
+    title: 'INCON Incorporated | User Solutions',
+    description:
+      'Hi-tech Connector Mfr Accurately Schedules Labor with MRP Add-On.',
+    url: 'https://www.usersolutions.com/incon-incorporate/'
+  }
+};
+
+export default function InconIncorporatedPage() {
   return (
     <div className="min-h-screen">
-      {/* Hero Section with Logo */}
-      <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 py-6 text-white">
+      {/* Hero Section */}
+      <section className="py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
-            <div className="mb-6">
-              <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/10/logo003-58c6bad38b32e.jpg"
-                alt="INCON blue text logo on white background"
-                className="mx-auto h-auto max-w-xs rounded-lg bg-white p-4"
-              />
-            </div>
-            <h1 className="mb-6 text-4xl font-bold md:text-5xl">
+            <h1 className="mb-6 text-3xl font-bold text-foreground md:text-4xl lg:text-5xl">
               Hi-tech Connector Mfr Accurately Schedules Labor with MRP Add-On
             </h1>
           </div>
@@ -25,43 +30,67 @@ export default function InconIncorporatedPage(): React.JSX.Element {
       </section>
 
       {/* Main Content */}
-      <section className="py-6">
-        <div className="container mx-auto max-w-7xl px-4">
-          <Card>
-            <CardContent className="pt-8">
-              <p className="mb-6 text-lg leading-relaxed text-muted-foreground">
+      <section>
+        <div className="container mx-auto px-4">
+          <div className="mx-auto max-w-4xl">
+            {/* Logo */}
+            <div className="mb-8 flex justify-center">
+              <Image
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/logo003-58c6bad38b32e.jpg"
+                alt="INCON"
+                width={230}
+                height={153}
+                className="h-auto"
+                unoptimized
+              />
+            </div>
+
+            {/* Testimonial */}
+            <div className="space-y-6">
+              <p className="leading-relaxed text-gray-700 dark:text-gray-300">
                 For awhile, we had been seeking better scheduling information
                 out of our system. Exact Software recommended Resource
                 Manager-DB from User Solutions. We found that not only was the
                 product quick to integrate with our Macola system, it also
                 integrated easily with our current custom labor tracking system
                 and provides the needed visibility for us to plan labor more
-                accurately " according Ted.
+                accurately.
               </p>
-              <p className="text-lg leading-relaxed text-muted-foreground">
-                "Finally, we can see in advance how to staff the plant for most
+              <p className="leading-relaxed text-gray-700 dark:text-gray-300">
+                Finally, we can see in advance how to staff the plant for most
                 efficient scheduling and respond accurately to our customers
                 with realistic promise dates.
               </p>
-              <p className="mt-6 text-right font-semibold text-slate-900 dark:text-white">
+              <p className="font-semibold text-gray-900 dark:text-white">
                 Ted Schultz
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+        </div>
+      </section>
 
-          {/* Awards Section */}
-          <Card className="mt-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
-            <CardContent className="p-8 text-center">
-              <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
-                CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
-              </h3>
-              <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
-                alt="Collection of industry and business awards logos"
-                className="mx-auto h-auto max-w-full"
-              />
-            </CardContent>
-          </Card>
+      {/* Awards Banner */}
+      <section className="py-6">
+        <div className="container mx-auto px-4">
+          <div className="mx-auto max-w-7xl">
+            <Card className="rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow dark:from-blue-900/20 dark:to-blue-800/20">
+              <CardContent className="p-8 text-center">
+                <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                  Celebrating 25 Years of Award Winning Software!
+                </h2>
+                <div className="relative mx-auto h-auto w-full max-w-4xl">
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                    alt="Collection of industry and business awards logos"
+                    width={1024}
+                    height={128}
+                    className="mx-auto h-auto max-w-full"
+                    unoptimized
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </section>
     </div>
