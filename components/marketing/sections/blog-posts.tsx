@@ -47,8 +47,19 @@ export async function BlogPosts(): Promise<React.JSX.Element> {
                 <Link
                   key={post.id || index}
                   href={post.slug}
-                  className="md:duration-2000 flex h-full flex-col space-y-4 text-clip border-dashed py-6 md:rounded-2xl md:px-6 md:shadow md:transition-shadow md:hover:shadow-xl dark:md:bg-accent/40 dark:md:hover:bg-accent"
+                  className="md:duration-2000 flex h-full flex-col overflow-hidden text-clip border-dashed md:rounded-2xl md:shadow md:transition-shadow md:hover:shadow-xl dark:md:bg-accent/40 dark:md:hover:bg-accent"
                 >
+                  {/* Featured Image */}
+                  {post.featuredImage && (
+                    <div className="relative aspect-video w-full overflow-hidden">
+                      <img
+                        src={post.featuredImage}
+                        alt={post.title}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="flex flex-1 flex-col space-y-4 p-6">
                   <div className="flex flex-row items-center justify-between text-muted-foreground">
                     <span className="text-sm">{post.category}</span>
                     <time
@@ -82,6 +93,7 @@ export async function BlogPosts(): Promise<React.JSX.Element> {
                       Read more
                       <ArrowRightIcon className="size-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
                     </div>
+                  </div>
                   </div>
                 </Link>
               ))}

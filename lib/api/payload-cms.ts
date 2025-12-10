@@ -249,8 +249,12 @@ export function transformPayloadPostToPost(post: PayloadPost) {
   const authorAvatar = post.author?.avatar?.url || firstAuthor?.avatar?.url;
 
   // Get featured image from various possible sources
+  // hero.media contains url like /api/media/file/image.webp
   const featuredImageUrl =
-    post.featuredImage?.url || post.heroImage?.url || post.hero?.media?.url;
+    post.featuredImage?.url ||
+    post.heroImage?.url ||
+    post.hero?.media?.url ||
+    post.meta?.image?.url;
 
   // Construct full URL for featured image if it's a relative path
   const featuredImage = featuredImageUrl
