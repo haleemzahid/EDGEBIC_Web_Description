@@ -5,6 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { DownloadIcon, FileSpreadsheetIcon, InfoIcon } from 'lucide-react';
 
+import { Card, CardContent } from '@/components/ui/card';
+
 const excelApplications = [
   {
     id: 2,
@@ -104,15 +106,6 @@ export function NTClipboardExcelTemplates(): React.JSX.Element {
               quality control, and operations management. Choose the product
               that best suits your company's needs.
             </p>
-            <div className="mt-8">
-              <Link
-                href="/product-downloads"
-                className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-8 py-3 text-lg font-semibold text-black transition-all hover:bg-yellow-300 hover:shadow-lg"
-              >
-                <DownloadIcon className="size-5" />
-                Free Trial & Samples
-              </Link>
-            </div>
           </div>
         </div>
         {/* Decorative background elements */}
@@ -239,21 +232,24 @@ export function NTClipboardExcelTemplates(): React.JSX.Element {
       </section>
 
       {/* Awards Banner */}
-      <section className="bg-background py-6">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h3 className="mb-6 text-2xl font-bold text-foreground">
-              CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
-            </h3>
-            <div className="flex justify-center">
-              <Image
-                src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
-                alt="Collection of industry and business awards logos"
-                width={1024}
-                height={128}
-                className="h-auto max-w-full"
-              />
-            </div>
+      <section className="py-6">
+        <div className="container mx-auto px-4">
+          <div className="mx-auto max-w-7xl">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+              <CardContent className="p-8 text-center">
+                <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                  CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
+                </h2>
+                <Image
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  alt="Collection of industry and business awards logos"
+                  width={1024}
+                  height={128}
+                  className="mx-auto h-auto max-w-full"
+                  unoptimized
+                />
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
