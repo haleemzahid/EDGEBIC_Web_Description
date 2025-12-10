@@ -49,7 +49,7 @@ export default function CapacityProductionPlanningPage() {
             <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
               {/* Content Column */}
               <div className="space-y-6">
-                <p className="text-lg text-gray-700 dark:text-gray-300" style={{ fontSize: '18px' }}>
+                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
                   BAE Systems/Ordinance Systems Inc. set out to design and
                   implement a process that would enable our manufacturing
                   personnel to systematically identify process, equipment, labor,
@@ -64,7 +64,7 @@ export default function CapacityProductionPlanningPage() {
                   discontinue its use for production planning activities.
                 </p>
 
-                <p className="text-lg text-gray-700 dark:text-gray-300" style={{ fontSize: '18px' }}>
+                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
                   After a review process, that included sending sample data from
                   our ERP System, we selected User Solutions' Resource Manager-DB
                   solution. User Solutions has always been highly responsive in
@@ -73,7 +73,7 @@ export default function CapacityProductionPlanningPage() {
                   centers loaded.
                 </p>
 
-                <p className="text-lg text-gray-700 dark:text-gray-300" style={{ fontSize: '18px' }}>
+                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
                   Now, we have a solution that has become a vital tool in our
                   production planning and scheduling activities. We are extremely
                   satisfied with the offering and are pleased to recommend to
@@ -81,7 +81,7 @@ export default function CapacityProductionPlanningPage() {
                   either integrated with ERP or standalone.
                 </p>
 
-                <p className="text-lg text-gray-700 dark:text-gray-300" style={{ fontSize: '18px' }}>
+                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
                   <strong>Marc Phillippi</strong>
                   <br />
                   ERP Systems Manager
