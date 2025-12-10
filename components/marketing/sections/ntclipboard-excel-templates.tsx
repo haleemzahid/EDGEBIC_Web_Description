@@ -7,22 +7,6 @@ import { DownloadIcon, FileSpreadsheetIcon, InfoIcon } from 'lucide-react';
 
 const excelApplications = [
   {
-    id: 1,
-    title: 'Spreadsheet Scheduler',
-    description:
-      'Comprehensive scheduling solution for manufacturing operations with visual timeline management and resource allocation.',
-    features: [
-      'Visual scheduling interface',
-      'Resource capacity planning',
-      'Production timeline management',
-      'Job prioritization tools'
-    ],
-    singleUserPrice: '$39',
-    fiveUserPrice: '$78',
-    href: '/products/spreadsheet-scheduler',
-    icon: <FileSpreadsheetIcon className="size-8" />
-  },
-  {
     id: 2,
     title: 'Spreadsheet QC',
     description:
@@ -33,8 +17,8 @@ const excelApplications = [
       'Compliance monitoring',
       'Statistical process control'
     ],
-    singleUserPrice: '$39',
-    fiveUserPrice: '$78',
+    singleUserPrice: 'FREE',
+    fiveUserPrice: 'FREE',
     href: '/products/spreadsheet-qc',
     icon: <FileSpreadsheetIcon className="size-8" />
   },
@@ -49,8 +33,8 @@ const excelApplications = [
       'Capacity planning',
       'Efficiency metrics'
     ],
-    singleUserPrice: '$39',
-    fiveUserPrice: '$78',
+    singleUserPrice: 'FREE',
+    fiveUserPrice: 'FREE',
     href: '/products/workcell-planner',
     icon: <FileSpreadsheetIcon className="size-8" />
   },
@@ -65,8 +49,8 @@ const excelApplications = [
       'Performance tracking',
       'Operational analytics'
     ],
-    singleUserPrice: '$5-$39',
-    fiveUserPrice: '$10-$78',
+    singleUserPrice: 'FREE',
+    fiveUserPrice: 'FREE',
     href: '/operations-manager',
     icon: <FileSpreadsheetIcon className="size-8" />
   },
@@ -81,8 +65,8 @@ const excelApplications = [
       'Real-time updates',
       'Excel integration'
     ],
-    singleUserPrice: '$5-$39',
-    fiveUserPrice: '$10-$78',
+    singleUserPrice: 'FREE',
+    fiveUserPrice: 'FREE',
     href: '/products/workcenter-excel',
     icon: <FileSpreadsheetIcon className="size-8" />
   },
@@ -97,8 +81,8 @@ const excelApplications = [
       'Constraint management',
       'MRP integration'
     ],
-    singleUserPrice: '$5-$39',
-    fiveUserPrice: '$10-$78',
+    singleUserPrice: 'FREE',
+    fiveUserPrice: 'FREE',
     href: '/products/resource-manager-excel',
     icon: <FileSpreadsheetIcon className="size-8" />
   }
@@ -215,7 +199,7 @@ export function NTClipboardExcelTemplates(): React.JSX.Element {
                   className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-700"
                 >
                   <InfoIcon className="size-4" />
-                  Info/Buy
+                  Request Free Product
                 </Link>
 
                 {/* Hover effect */}

@@ -44,51 +44,6 @@ export default function ExcelApplicationsPage() {
         <div className="mx-auto px-4">
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-8 md:grid-cols-3">
-              {/* Spreadsheet Scheduler */}
-              <Card>
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-2xl dark:text-white">
-                      Spreadsheet Scheduler
-                    </CardTitle>
-                    <span className="text-3xl">📊</span>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="mb-2 text-sm font-semibold dark:text-gray-300">
-                          Single User
-                        </h3>
-                        <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                          $39
-                        </p>
-                      </div>
-                      <div>
-                        <h3 className="mb-2 text-sm font-semibold dark:text-gray-300">
-                          Five Users
-                        </h3>
-                        <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                          $78
-                        </p>
-                      </div>
-                    </div>
-                    <Link
-                      href="/spreadsheet-scheduler"
-                      className="block w-full"
-                    >
-                      <Button
-                        size="lg"
-                        className="w-full"
-                      >
-                        Info/Buy
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Spreadsheet QC */}
               <Card>
                 <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30">
