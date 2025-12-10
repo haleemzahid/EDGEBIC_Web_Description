@@ -47,8 +47,7 @@ export default function ErpVendorManufacturerPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
-              {/* Content Column */}
+            <div className="mx-auto max-w-4xl">
               <div className="space-y-6">
                 <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
                   User Solutions has announced another successful manufacturing
@@ -106,6 +105,25 @@ export default function ErpVendorManufacturerPage() {
                 </blockquote>
 
                 <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                  Within one week, User Solutions accomplished:
+                </p>
+
+                <ul className="list-disc space-y-2 pl-6 text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                  <li>Breaking down key scheduling data</li>
+                  <li>Entering routings with alternate workcenters</li>
+                  <li>Managing variable chest and tool sizes</li>
+                  <li>Importing open orders from the ERP system</li>
+                  <li>Generating an optimized, finite capacity constrained schedule</li>
+                  <li>Exporting updated dates back to synchronize with MRP and Inventory</li>
+                </ul>
+
+                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                  User Solutions proactively added functionality to select optimal
+                  workcenters and corresponding chests and molds without additional
+                  charges.
+                </p>
+
+                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
                   Jon concludes, "It was refreshing to work with a vendor who
                   absolutely delivered on their promise. Initially, they expected
                   to have a prototype of the process implemented in one week.
@@ -115,20 +133,6 @@ export default function ErpVendorManufacturerPage() {
                   scheduling techniques, to give User Solutions and Resource
                   Manager-DB a try."
                 </p>
-              </div>
-
-              {/* Image Column */}
-              <div className="lg:sticky lg:top-6">
-                <div className="rounded-lg bg-gradient-to-br from-green-50 to-emerald-100 p-8 text-center dark:from-green-900/20 dark:to-emerald-800/20">
-                  <h3 className="mb-4 text-2xl font-bold text-green-800 dark:text-green-300">
-                    Plastilite Corporation
-                  </h3>
-                  <p className="text-[18px] leading-relaxed text-green-700 dark:text-green-400">
-                    Providing insulated and protective packing solutions to
-                    companies shipping perishable and fragile products across
-                    the United States.
-                  </p>
-                </div>
               </div>
             </div>
           </div>
