@@ -14,7 +14,7 @@ export function Solution(): React.JSX.Element {
   return (
     <GridSection>
       <div className="bg-diagonal-lines">
-        <div className="flex flex-col gap-24 bg-background py-20 lg:mx-12 lg:border-x">
+        <div className="flex flex-col gap-24 bg-background py-6 lg:mx-12 lg:border-x">
           <div className="container relative space-y-10">
             <div>
               <h2 className="mb-2.5 text-3xl font-semibold md:text-5xl">

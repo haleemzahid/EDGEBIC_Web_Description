@@ -42,7 +42,7 @@ const DATA = [
 export function CareersPositions(): React.JSX.Element {
   return (
     <GridSection>
-      <div className="space-y-12 py-20">
+      <div className="space-y-12 py-6">
         <h2 className="text-center text-3xl font-semibold md:text-4xl">
           Open Positions
         </h2>

@@ -69,7 +69,7 @@ const DATA_ACCORDION = [
 export function TermsOfUse(): React.JSX.Element {
   return (
     <GridSection>
-      <div className="container space-y-16 py-20">
+      <div className="container space-y-16 py-6">
         <SiteHeading
           badge="Legal"
           title="Terms of Use"

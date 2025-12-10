@@ -29,7 +29,7 @@ const DATA = [
 export function Problem(): React.JSX.Element {
   return (
     <GridSection>
-      <div className="px-4 py-20 text-center">
+      <div className="px-4 py-6 text-center">
         <h2 className="text-3xl font-semibold md:text-5xl">
           <TextGenerateWithSelectBoxEffect words="Attention Grabbing Title" />
         </h2>

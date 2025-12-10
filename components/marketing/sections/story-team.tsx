@@ -23,7 +23,7 @@ const DATA = [
 export function StoryTeam(): React.JSX.Element {
   return (
     <GridSection>
-      <div className="container max-w-7xl py-20">
+      <div className="container max-w-7xl py-6">
         <h2 className="mb-6 text-sm font-medium uppercase tracking-wider text-muted-foreground ">
           The visionaries
         </h2>

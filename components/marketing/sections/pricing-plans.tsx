@@ -46,7 +46,7 @@ const plans = {
 export function PricingPlans(): React.JSX.Element {
   return (
     <GridSection>
-      <div className="container space-y-20 py-20">
+      <div className="container space-y-20 py-6">
         <SiteHeading
           badge="Pricing"
           title="Plans for your business"

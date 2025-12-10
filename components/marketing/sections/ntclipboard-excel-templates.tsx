@@ -94,28 +94,23 @@ export function NTClipboardExcelTemplates(): React.JSX.Element {
   return (
     <div className="bg-background">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-blue-800 py-6 dark:from-blue-700 dark:to-blue-900">
-        <div className="absolute inset-0 bg-black/10" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="py-6">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
+            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
               Excel Applications
             </h1>
-            <p className="mx-auto mt-6 max-w-4xl text-xl text-blue-100">
+            <p className="mx-auto mt-6 max-w-4xl text-xl text-muted-foreground">
               Powerful Excel-based manufacturing solutions for scheduling,
               quality control, and operations management. Choose the product
               that best suits your company's needs.
             </p>
           </div>
         </div>
-        {/* Decorative background elements */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          <div className="size-96 rounded-full bg-white/5 blur-3xl" />
-        </div>
       </section>
 
       {/* Applications Grid */}
-      <section className="py-20">
+      <section className="py-6">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-6 text-center">
             <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">

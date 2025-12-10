@@ -21,7 +21,7 @@ export async function BlogPosts(): Promise<React.JSX.Element> {
 
   return (
     <GridSection>
-      <div className="container space-y-20 py-20">
+      <div className="container space-y-20 py-6">
         <SiteHeading
           badge="Blog Posts"
           title="Insights & News"

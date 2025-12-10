@@ -5,7 +5,7 @@ import { GridSection } from '@/components/marketing/fragments/grid-section';
 export function StoryVision(): React.JSX.Element {
   return (
     <GridSection>
-      <div className="container max-w-7xl py-20">
+      <div className="container max-w-7xl py-6">
         <div className="grid gap-16 lg:grid-cols-2">
           <div>
             <h2 className="mb-6 text-sm font-medium uppercase tracking-wider text-muted-foreground">

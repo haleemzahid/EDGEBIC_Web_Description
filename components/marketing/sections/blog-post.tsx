@@ -15,11 +15,11 @@ type BlogPostProps = {
     published: string;
     category: string;
     author:
-      | {
-          name?: string;
-          avatar?: string;
-        }
-      | undefined;
+    | {
+      name?: string;
+      avatar?: string;
+    }
+    | undefined;
     body?: {
       raw: string;
       code: string;
@@ -50,7 +50,7 @@ export function BlogPost({ post }: BlogPostProps): React.JSX.Element {
 
   return (
     <div className="border-b">
-      <div className="container mx-auto flex max-w-3xl flex-col space-y-4 py-20">
+      <div className="container mx-auto flex max-w-3xl flex-col space-y-4 py-6">
         <div className="mx-auto w-full min-w-0">
           <Link
             href="/blog"
@@ -102,7 +102,7 @@ export function BlogPost({ post }: BlogPostProps): React.JSX.Element {
         </div>
       </div>
       <Separator />
-      <div className="container mx-auto max-w-3xl py-20">
+      <div className="container mx-auto max-w-3xl py-6">
         <div className="space-y-8">
           {/* Main content */}
           {isLexicalContent ? (
@@ -127,11 +127,10 @@ export function BlogPost({ post }: BlogPostProps): React.JSX.Element {
                     href={link.url || '#'}
                     target={link.newTab ? '_blank' : undefined}
                     rel={link.newTab ? 'noopener noreferrer' : undefined}
-                    className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                      isOutline
+                    className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors ${isOutline
                         ? 'border border-input bg-background hover:bg-accent hover:text-accent-foreground'
                         : 'bg-primary text-primary-foreground hover:bg-primary/90'
-                    }`}
+                      }`}
                   >
                     {link.label}
                   </a>
