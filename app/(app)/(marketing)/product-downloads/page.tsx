@@ -80,7 +80,7 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                     Product
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                    30 Day Trials
+                    Information
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
                     Sample
