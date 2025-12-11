@@ -1,7 +1,8 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function ProductionSchedulingProductsVideosPage() {
   return (
@@ -21,12 +22,22 @@ export default function ProductionSchedulingProductsVideosPage() {
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
             {/* Welcome */}
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="text-2xl">Welcome</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-4 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+            <div className="mb-8 grid items-center gap-8 md:grid-cols-2">
+              <div>
+                <h2 className="mb-4 text-2xl font-bold">Welcome</h2>
+                <p className="mb-4 text-muted-foreground">
+                  Welcome to User Solutions product video gallery. Explore our
+                  comprehensive manufacturing software solutions designed to streamline
+                  your production scheduling and planning processes.
+                </p>
+                <p className="text-muted-foreground">
+                  From Excel-based tools to enterprise-grade database solutions, our
+                  videos demonstrate how each product can help you optimize workflows,
+                  reduce scheduling conflicts, and improve overall manufacturing efficiency.
+                </p>
+              </div>
+              <div className="overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                <div className="aspect-video">
                   <iframe
                     src="https://www.youtube.com/embed/y-TMN1e-xlc"
                     title="Welcome Video"
@@ -35,263 +46,215 @@ export default function ProductionSchedulingProductsVideosPage() {
                     allowFullScreen
                   />
                 </div>
-                <p className="text-muted-foreground">
-                  Welcome to User Solutions product video gallery. Explore our
-                  comprehensive manufacturing software solutions.
-                </p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             {/* Video Grid - 2 columns */}
-            <div className="mb-6 grid gap-6 md:grid-cols-2">
+            <div className="mb-8 grid gap-8 md:grid-cols-2">
               {/* Resource Manager DB */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-xl">Resource Manager DB</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="mb-4 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
-                    <iframe
-                      src="https://www.youtube.com/embed/kn92TIHhbm8"
-                      title="Resource Manager DB Video"
-                      className="size-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  </div>
-                  <p className="mb-4 text-sm text-muted-foreground">
-                    Summary of Resource Manager DB database-driven production
-                    scheduling solution
-                  </p>
-                  <Link href="/resource-manager-db-2">
-                    <Button
-                      size="sm"
-                      className="w-full"
-                    >
-                      Learn More
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
+              <div>
+                <h3 className="mb-3 text-xl font-bold">Resource Manager DB</h3>
+                <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                  <iframe
+                    src="https://www.youtube.com/embed/kn92TIHhbm8"
+                    title="Resource Manager DB Video"
+                    className="size-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+                <p className="mb-3 text-sm text-muted-foreground">
+                  Summary of Resource Manager DB database-driven production
+                  scheduling solution
+                </p>
+                <Link href="/resource-manager-db-2">
+                  <Button size="sm">Learn More</Button>
+                </Link>
+              </div>
 
               {/* Workcenter Scheduler XL */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-xl">
-                    Workcenter Scheduler XL
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="mb-4 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
-                    <iframe
-                      src="https://www.youtube.com/embed/L4wDboRFU6k"
-                      title="Workcenter Scheduler XL Video"
-                      className="size-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  </div>
-                  <p className="mb-4 text-sm text-muted-foreground">
-                    Complete overview of WorkCenter Scheduler XL for production
-                    scheduling
-                  </p>
-                  <Link href="/workcenter-schedulerxl">
-                    <Button
-                      size="sm"
-                      className="w-full"
-                    >
-                      Learn More
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
+              <div>
+                <h3 className="mb-3 text-xl font-bold">Workcenter Scheduler XL</h3>
+                <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                  <iframe
+                    src="https://www.youtube.com/embed/L4wDboRFU6k"
+                    title="Workcenter Scheduler XL Video"
+                    className="size-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+                <p className="mb-3 text-sm text-muted-foreground">
+                  Complete overview of WorkCenter Scheduler XL for production
+                  scheduling
+                </p>
+                <Link href="/workcenter-schedulerxl">
+                  <Button size="sm">Learn More</Button>
+                </Link>
+              </div>
 
               {/* Resource Manager For Excel */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-xl">
-                    Resource Manager For Excel
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="mb-4 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
-                    <iframe
-                      src="https://www.youtube.com/embed/DRWDNVq31l4"
-                      title="Resource Manager For Excel Video"
-                      className="size-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  </div>
-                  <p className="mb-4 text-sm text-muted-foreground">
-                    Summary of Resource Manager for Excel integrated scheduling
-                    solution
-                  </p>
-                  <Link href="/resource-manager-for-excel-2">
-                    <Button
-                      size="sm"
-                      className="w-full"
-                    >
-                      Learn More
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
+              <div>
+                <h3 className="mb-3 text-xl font-bold">Resource Manager For Excel</h3>
+                <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                  <iframe
+                    src="https://www.youtube.com/embed/DRWDNVq31l4"
+                    title="Resource Manager For Excel Video"
+                    className="size-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+                <p className="mb-3 text-sm text-muted-foreground">
+                  Summary of Resource Manager for Excel integrated scheduling
+                  solution
+                </p>
+                <Link href="/resource-manager-for-excel-2">
+                  <Button size="sm">Learn More</Button>
+                </Link>
+              </div>
 
               {/* EDGEBIC */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-xl">EDGEBIC</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="mb-4 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
-                    <iframe
-                      src="https://www.youtube.com/embed/snltXMHeojU"
-                      title="EDGEBIC Video"
-                      className="size-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  </div>
-                  <p className="mb-4 text-sm text-muted-foreground">
-                    Introduction to EDGEBIC for simplified production scheduling
-                  </p>
-                  <Link href="/jsl-job-scheduler-lite">
-                    <Button
-                      size="sm"
-                      className="w-full"
-                    >
-                      Learn More
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
+              <div>
+                <h3 className="mb-3 text-xl font-bold">EDGEBIC</h3>
+                <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                  <iframe
+                    src="https://www.youtube.com/embed/snltXMHeojU"
+                    title="EDGEBIC Video"
+                    className="size-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+                <p className="mb-3 text-sm text-muted-foreground">
+                  Introduction to EDGEBIC for simplified production scheduling
+                </p>
+                <Link href="/jsl-job-scheduler-lite">
+                  <Button size="sm">Learn More</Button>
+                </Link>
+              </div>
             </div>
 
             {/* Training Videos Section */}
-            <Card className="mb-6 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20">
-              <CardHeader>
-                <CardTitle className="text-2xl">
-                  Resource Manager Training Videos (RMX)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="mb-6 text-muted-foreground">
-                  Complete training video series covering all aspects of
-                  Resource Manager for Excel
-                </p>
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div>
-                    <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">
-                      RMX Initialization — Building Bills of Resource
-                    </h3>
-                    <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
-                      <iframe
-                        src="https://www.youtube.com/embed/Br2b8h-drfY"
-                        title="RMX Initialization Training"
-                        className="size-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Learn how to build Bills of Resource in Resource Manager
-                      for Excel
-                    </p>
+            <div className="mb-8">
+              <h2 className="mb-4 text-2xl font-bold">
+                Resource Manager Training Videos (RMX)
+              </h2>
+              <p className="mb-6 text-muted-foreground">
+                Complete training video series covering all aspects of
+                Resource Manager for Excel
+              </p>
+              <div className="grid gap-8 md:grid-cols-2">
+                <div>
+                  <h3 className="mb-3 text-lg font-semibold">
+                    RMX Initialization — Building Bills of Resource
+                  </h3>
+                  <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                    <iframe
+                      src="https://www.youtube.com/embed/Br2b8h-drfY"
+                      title="RMX Initialization Training"
+                      className="size-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
                   </div>
-                  <div>
-                    <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">
-                      RMX Initialization — Production Operations List
-                    </h3>
-                    <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
-                      <iframe
-                        src="https://www.youtube.com/embed/Fg9WZcSCKoA"
-                        title="RMX Production Operations Training"
-                        className="size-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Setting up Production Operations List in Resource Manager
-                      for Excel
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">
-                      RMX Scheduling — Forecast Calendar
-                    </h3>
-                    <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
-                      <iframe
-                        src="https://www.youtube.com/embed/bmCEFVJlkr4"
-                        title="RMX Forecast Calendar Training"
-                        className="size-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Using Forecast Calendar for production planning in
-                      Resource Manager for Excel
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">
-                      RMX — Master Scheduling
-                    </h3>
-                    <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
-                      <iframe
-                        src="https://www.youtube.com/embed/Fc-zM31PrrQ"
-                        title="RMX Master Scheduling Training"
-                        className="size-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Master scheduling techniques and best practices with
-                      Resource Manager for Excel
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">
-                      RMX — Summary Report
-                    </h3>
-                    <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
-                      <iframe
-                        src="https://www.youtube.com/embed/tOy099sVThQ"
-                        title="RMX Reporting Training"
-                        className="size-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Generating and analyzing Summary Reports in Resource
-                      Manager for Excel
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">
-                      Resource Manager for Excel — Intro Part 1
-                    </h3>
-                    <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
-                      <iframe
-                        src="https://www.youtube.com/embed/74uO2H-eevc"
-                        title="RMX Introduction Part 1"
-                        className="size-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      First part introduction to Resource Manager for Excel
-                      features and setup
-                    </p>
-                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Learn how to build Bills of Resource in Resource Manager
+                    for Excel
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
+                <div>
+                  <h3 className="mb-3 text-lg font-semibold">
+                    RMX Initialization — Production Operations List
+                  </h3>
+                  <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                    <iframe
+                      src="https://www.youtube.com/embed/Fg9WZcSCKoA"
+                      title="RMX Production Operations Training"
+                      className="size-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Setting up Production Operations List in Resource Manager
+                    for Excel
+                  </p>
+                </div>
+                <div>
+                  <h3 className="mb-3 text-lg font-semibold">
+                    RMX Scheduling — Forecast Calendar
+                  </h3>
+                  <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                    <iframe
+                      src="https://www.youtube.com/embed/bmCEFVJlkr4"
+                      title="RMX Forecast Calendar Training"
+                      className="size-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Using Forecast Calendar for production planning in
+                    Resource Manager for Excel
+                  </p>
+                </div>
+                <div>
+                  <h3 className="mb-3 text-lg font-semibold">
+                    RMX — Master Scheduling
+                  </h3>
+                  <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                    <iframe
+                      src="https://www.youtube.com/embed/Fc-zM31PrrQ"
+                      title="RMX Master Scheduling Training"
+                      className="size-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Master scheduling techniques and best practices with
+                    Resource Manager for Excel
+                  </p>
+                </div>
+                <div>
+                  <h3 className="mb-3 text-lg font-semibold">
+                    RMX — Summary Report
+                  </h3>
+                  <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                    <iframe
+                      src="https://www.youtube.com/embed/tOy099sVThQ"
+                      title="RMX Reporting Training"
+                      className="size-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Generating and analyzing Summary Reports in Resource
+                    Manager for Excel
+                  </p>
+                </div>
+                <div>
+                  <h3 className="mb-3 text-lg font-semibold">
+                    Resource Manager for Excel — Intro Part 1
+                  </h3>
+                  <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                    <iframe
+                      src="https://www.youtube.com/embed/74uO2H-eevc"
+                      title="RMX Introduction Part 1"
+                      className="size-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    First part introduction to Resource Manager for Excel
+                    features and setup
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -305,10 +268,13 @@ export default function ProductionSchedulingProductsVideosPage() {
                 <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
+                  width={1024}
+                  height={128}
                   className="mx-auto h-auto max-w-full"
+                  unoptimized
                 />
               </CardContent>
             </Card>
