@@ -28,7 +28,7 @@ export default function LimitPage(): React.JSX.Element {
                 size="lg"
                 className="bg-white text-blue-600 hover:bg-gray-100"
               >
-                Buy Now
+                Request Free Product
               </Button>
             </div>
           </div>

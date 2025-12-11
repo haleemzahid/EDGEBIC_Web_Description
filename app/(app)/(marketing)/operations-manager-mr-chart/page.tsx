@@ -1,5 +1,6 @@
 import * as React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,12 +29,14 @@ export default function MrChartPage(): React.JSX.Element {
               Quality Management
             </p>
             <div className="flex flex-col justify-center gap-4 sm:flex-row">
-              <Button
-                size="lg"
-                className="bg-white text-blue-600 hover:bg-gray-100"
-              >
-                Buy Now
-              </Button>
+              <Link href="/contact-us">
+                <Button
+                  size="lg"
+                  className="bg-white text-blue-600 hover:bg-gray-100"
+                >
+                  Request Free Product
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

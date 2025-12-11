@@ -10,7 +10,7 @@ export default function BuyNowRMEPage() {
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              Resource Manager For Excel - Buy Now
+              Resource Manager For Excel - Request Free Product
             </h1>
           </div>
         </div>

@@ -19,7 +19,7 @@ export default function BuyNowSSPage() {
               </Badge>
             </div>
             <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              Spreadsheet Scheduler - Buy Now
+              Spreadsheet Scheduler - Request Free Product
             </h1>
           </div>
         </div>

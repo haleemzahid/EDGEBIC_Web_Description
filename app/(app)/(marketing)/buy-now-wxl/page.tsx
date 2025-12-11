@@ -20,7 +20,7 @@ export default function BuyNowWXLPage() {
               </Badge>
             </div>
             <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              Workcenter Scheduler XL - Buy Now
+              Workcenter Scheduler XL - Request Free Product
             </h1>
           </div>
         </div>

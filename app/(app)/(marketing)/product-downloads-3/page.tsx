@@ -212,7 +212,7 @@ export default function ProductDownloads3Page() {
                       Live Video
                     </th>
                     <th className="border p-4 text-center font-semibold">
-                      Buy Now
+                      Request Free Product
                     </th>
                   </tr>
                 </thead>

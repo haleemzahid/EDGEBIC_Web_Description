@@ -22,27 +22,27 @@ export default function OperationsManagerPage(): React.JSX.Element {
       items: [
         {
           title: 'Simple exponential smoothing',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-simple'
         },
         {
           title: 'Smoothing linear, exponential, and damped trends',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-trendsmooth'
         },
         {
           title: 'Ratio-to-moving-average seasonal adjustment',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-multimon'
         },
         {
           title: 'Difference-to-moving-average seas. adj. for mo. data',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-additmon'
         },
         {
           title: 'Complete Forecasting package',
-          price: '$10',
+          price: 'FREE',
           infoLink: '/docs/forecasting-package.pdf',
           isPackage: true
         }
@@ -54,32 +54,32 @@ export default function OperationsManagerPage(): React.JSX.Element {
       items: [
         {
           title: 'Economic order quantity',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-eoq'
         },
         {
           title: 'EOQ with backorders',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-eoqback'
         },
         {
           title: 'EOQ with quantity discounts',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-eoqdisc'
         },
         {
           title: 'EOQ for production lot sizes',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-eoqprod'
         },
         {
           title: 'Reorder points and safety stocks',
-          price: '$15',
+          price: 'FREE',
           infoLink: '/operations-manager-rop'
         },
         {
           title: 'Complete Inventory Management Package',
-          price: '$10',
+          price: 'FREE',
           infoLink: '/docs/inventory-management-package.pdf',
           isPackage: true
         }
@@ -92,17 +92,17 @@ export default function OperationsManagerPage(): React.JSX.Element {
       items: [
         {
           title: 'MRP Inventory Plan',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-mrp1'
         },
         {
           title: 'Period-Order-Quantity',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-poq'
         },
         {
           title: 'Complete MRP Package',
-          price: '$10',
+          price: 'FREE',
           infoLink: '/docs/mrp-package.pdf',
           isPackage: true
         }
@@ -114,22 +114,22 @@ export default function OperationsManagerPage(): React.JSX.Element {
       items: [
         {
           title: 'Aggregate production planning',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-app'
         },
         {
           title: 'Run-Out Time production planning',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-runout'
         },
         {
           title: 'Learning curves',
-          price: '$10',
+          price: 'FREE',
           infoLink: '/operations-manager-learn'
         },
         {
           title: 'Complete Production Planning Package',
-          price: '$10',
+          price: 'FREE',
           infoLink: '/docs/production-planning-package.pdf',
           isPackage: true
         }
@@ -142,12 +142,12 @@ export default function OperationsManagerPage(): React.JSX.Element {
       items: [
         {
           title: 'Center-of-Gravity method for locating dist. cntrs',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-location'
         },
         {
           title: 'Complete Facility Location Package',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/docs/facility-location-package.pdf',
           isPackage: true
         }
@@ -159,22 +159,22 @@ export default function OperationsManagerPage(): React.JSX.Element {
       items: [
         {
           title: 'Job sequencing for a single work station',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-sked1aa'
         },
         {
           title: 'Job sequencing for 2 work stations in a series',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-sked2a'
         },
         {
           title: 'Job sequencing for 3 work stations in a series',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-sked3a'
         },
         {
           title: 'Complete Scheduling Package',
-          price: '$10',
+          price: 'FREE',
           infoLink: '/docs/scheduling-package.pdf',
           isPackage: true
         }
@@ -186,37 +186,37 @@ export default function OperationsManagerPage(): React.JSX.Element {
       items: [
         {
           title: 'Acceptance Sampling',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-acceptsa'
         },
         {
           title: 'Control chart for mean and range',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-mr-chart'
         },
         {
           title: 'Control chart for individual observations',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-i-chart'
         },
         {
           title: 'Control chart for perfect defective',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-p-chart'
         },
         {
           title: 'Control chart for number of defects',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-cu-chart'
         },
         {
           title: 'Control limit calculator',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-limit'
         },
         {
           title: 'Complete Quality Control Package',
-          price: '$10',
+          price: 'FREE',
           infoLink: '/docs/quality-control-package.pdf',
           isPackage: true
         }
@@ -228,17 +228,17 @@ export default function OperationsManagerPage(): React.JSX.Element {
       items: [
         {
           title: 'Single-Server Queues',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-singleeq'
         },
         {
           title: 'Multi-Server Queues',
-          price: '$5',
+          price: 'FREE',
           infoLink: '/operations-manager-multiq'
         },
         {
           title: 'Complete Analysis of Waiting Lines',
-          price: '$10',
+          price: 'FREE',
           infoLink: '/docs/waiting-lines-package.pdf',
           isPackage: true
         }
@@ -326,8 +326,9 @@ export default function OperationsManagerPage(): React.JSX.Element {
                               <Button
                                 size="sm"
                                 className="bg-blue-600 hover:bg-blue-700"
+                                asChild
                               >
-                                Buy Now
+                                <Link href="/contact-us">Request Free</Link>
                               </Button>
                             </div>
                           </div>

@@ -107,12 +107,12 @@ export default function ThankYouDownloadTrendsmoothPage() {
                   Purchase the full version or schedule a demo with our team
                 </p>
                 <div className="flex flex-col justify-center gap-4 sm:flex-row">
-                  <Link href="/pricing">
+                  <Link href="/contact-us">
                     <Button
                       size="lg"
                       className="bg-blue-600 text-white hover:bg-blue-700"
                     >
-                      Buy Now
+                      Request Free Product
                     </Button>
                   </Link>
                   <Link href="/contact-us">

@@ -34,12 +34,12 @@ export default function WorkcenterSchedulerXLInDepthPage() {
                   Live Demo
                 </Button>
               </Link>
-              <Link href="/pricing">
+              <Link href="/contact-us">
                 <Button
                   size="lg"
                   className="bg-white text-blue-600 hover:bg-gray-100"
                 >
-                  Buy Now
+                  Request Free Product
                 </Button>
               </Link>
             </div>
