@@ -2,10 +2,7 @@ import * as React from 'react';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, Calendar, Newspaper, Award, Megaphone } from 'lucide-react';
 
-import { SiteHeading } from '@/components/marketing/fragments/site-heading';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { createTitle } from '@/lib/utils';
 
@@ -15,285 +12,276 @@ export const metadata: Metadata = {
     "View User Solutions' press announcements and media coverage to stay up-to-date on our innovative production planning and scheduling solutions."
 };
 
-// Press Releases Data
-const pressReleases = [
-  {
-    title: 'FREE Webinar Hosted by Purdue MEP to Improve Production Scheduling',
-    date: '2023',
-    link: 'https://www.prnewswire.com/news-releases/free-webinar-hosted-by-purdue-mep-and-user-solutions-to-improve-production-scheduling-301874765.html',
-    featured: true,
-    image: 'https://www.usersolutions.com/wp-content/uploads/2023/07/MEP_H-Full-CMYK_1-crop-1-1024x164.jpg'
-  },
-  {
-    title: 'User Solutions announces revolutionary method for Production Planning and Scheduling evaluations',
-    date: 'Oct 29, 2023',
-    link: 'https://www.prnewswire.com/news-releases/user-solutions-inc-announces-revolutionary-method-for-production-planning-and-scheduling-evaluations-301970812.html'
-  },
-  {
-    title: 'Forging Ahead: Leveraging ERP Data for Enhanced Planning and Scheduling',
-    date: 'Oct 28, 2023',
-    link: 'https://www.prnewswire.com/news-releases/forging-ahead-leveraging-erp-data-for-enhanced-planning-and-scheduling-301970725.html'
-  },
-  {
-    title: 'User Solutions continues University partnerships for real-life Production Scheduling experience',
-    date: 'Oct 28, 2023',
-    link: 'https://www.prnewswire.com/news-releases/user-solutions-continues-partnerships-with-multiple-universitys-for-real-life-experience-on-launching-a-production-scheduling-offering-301970708.html'
-  },
-  {
-    title: 'User Solutions Unveils Revolutionary Manufacturing Software',
-    date: 'Oct 4, 2023',
-    link: 'https://www.prnewswire.com/news-releases/user-solution-unveils-revolutionary-manufacturing-software-customized-solutions-for-enhanced-scheduling-and-planning-301946707.html'
-  }
-];
-
-// Media Coverage Data
 const mediaCoverage = [
   {
     title: 'Top 10 Manufacturing KPIs in 2024',
     source: 'Industry Publication',
     image: 'https://www.usersolutions.com/wp-content/uploads/2024/02/sdf.jpg',
-    link: '/top-10-manufacturing-kpis-in-2024'
+    link: 'https://www.usersolutions.com/top-10-manufacturing-kpis-in-2024/'
   },
   {
     title: 'User Solutions Joins COVID Fight with Production Scheduling Software',
     source: "Today's Medical Developments, Processing Magazine, IEN",
     image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/2020.png',
-    links: [
-      { name: "Today's Medical Developments", url: 'https://www.todaysmedicaldevelopments.com/product/user-solutions-covid-free-rmx-software-quoting/' },
-      { name: 'Processing Magazine', url: 'https://www.processingmagazine.com/covid-19/article/21134726/user-solutions-joins-fight-against-covid19-offers-free-production-scheduling-software' },
-      { name: 'IEN', url: 'https://www.ien.com/software/news/21129098/user-solutions-joins-covid-fight-with-production-scheduling-software' }
-    ]
+    link: 'https://www.todaysmedicaldevelopments.com/product/user-solutions-covid-free-rmx-software-quoting/'
   },
   {
-    title: 'Production Scheduling System for Amish Woodshop Cuts Lead Time',
+    title: 'Production Scheduling System for Amish Woodshop Cuts Lead Time, Inefficiency',
     source: 'Woodworking Network',
     image: 'https://www.usersolutions.com/wp-content/uploads/2023/01/amish.png',
     link: '#'
   },
   {
-    title: 'User Solutions named Top ERP Solutions Transforming Business 2016',
+    title: 'User Solutions Named Top ERP Solutions Transforming Business 2016',
     source: 'CIO Applications',
     image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/2016.png',
     link: 'https://www.cioapplications.com/magazines/May/ERP2016/'
   },
   {
-    title: 'Quick and Easy Excel-based MRP Software',
+    title: 'Quick and Easy Excel-Based MRP Software for Small and Large Manufacturing',
     source: 'OR/MS Today',
     image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/2018.png',
     link: 'http://www.orms-today.org/'
   },
   {
-    title: 'Software Schedules Maintenance with Military Precision',
-    source: 'IMPO',
+    title: 'APICS Profiles in Manufacturing',
+    source: 'APICS',
+    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/2015.png',
+    link: '#'
+  },
+  {
+    title: 'Software Schedules Maintenance With Military Precision',
+    source: 'IMPO - Industrial Maintenance & Plant Operations',
     image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/2014.png',
     link: 'http://www.impomag.com/'
+  },
+  {
+    title: 'Small Manufacturers Seek Best ERP Fit',
+    source: 'SME-Manufacturing Engineering',
+    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/image06.png',
+    link: 'https://www.sme.org/'
+  },
+  {
+    title: 'Fireproof Planning – Cool Scheduling Solution',
+    source: 'APICS',
+    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/2011.png',
+    link: '#'
   }
 ];
 
-// Recent Articles Data
-const recentArticles = [
+const pressReleases = [
+  {
+    title: 'FREE Webinar Hosted by Purdue MEP to Improve Production Scheduling',
+    image: 'https://www.usersolutions.com/wp-content/uploads/2023/07/MEP_H-Full-CMYK_1-crop-1-1024x164.jpg',
+    link: 'https://www.prnewswire.com/news-releases/free-webinar-hosted-by-purdue-mep-and-user-solutions-to-improve-production-scheduling-301874765.html'
+  },
+  {
+    title: 'User Solutions, Inc. Announces Revolutionary Method for Production Planning and Scheduling Evaluations',
+    date: 'October 29, 2023',
+    image: 'https://www.usersolutions.com/wp-content/uploads/2023/12/simple_image.jpg',
+    link: 'https://www.prnewswire.com/news-releases/user-solutions-inc-announces-revolutionary-method-for-production-planning-and-scheduling-evaluations-301970812.html'
+  },
+  {
+    title: 'Forging Ahead Leveraging ERP Data for Enhanced Planning and Scheduling',
+    date: 'October 28, 2023',
+    image: 'https://www.usersolutions.com/wp-content/uploads/2023/12/VFEDGE.jpg',
+    link: 'https://www.prnewswire.com/news-releases/forging-ahead-leveraging-erp-data-for-enhanced-planning-and-scheduling-301970725.html'
+  },
+  {
+    title: "User Solutions Continues Partnerships with Multiple University's for Real-Life Experience on Launching a Production Scheduling Offering",
+    date: 'October 28, 2023',
+    image: 'https://www.usersolutions.com/wp-content/uploads/2023/12/2023-12-24-1-1024x537.png',
+    link: 'https://www.prnewswire.com/news-releases/user-solutions-continues-partnerships-with-multiple-universitys-for-real-life-experience-on-launching-a-production-scheduling-offering-301970708.html'
+  },
+  {
+    title: 'User Solution Unveils Revolutionary Manufacturing Software: Customized Solutions for Enhanced Scheduling and Planning',
+    date: 'October 4, 2023',
+    image: 'https://www.usersolutions.com/wp-content/uploads/2023/12/Screenshot-12-1024x561.png',
+    link: 'https://www.prnewswire.com/news-releases/user-solution-unveils-revolutionary-manufacturing-software-customized-solutions-for-enhanced-scheduling-and-planning-301946707.html'
+  }
+];
+
+const blogArticles = [
   {
     title: 'Enhancing Supply Chain Visibility through Advanced Scheduling Solutions',
     date: 'May 26, 2024',
-    category: 'Supply Chain',
-    link: '/enhancing-supply-chain-visibility-through-advanced-scheduling-solutions',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/usersolutionsimage-300x211.png'
+    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/usersolutionsimage-300x211.png',
+    link: 'https://www.usersolutions.com/enhancing-supply-chain-visibility-through-advanced-scheduling-solutions/'
   },
   {
     title: 'The Role of Technology in Modern Production Planning and Scheduling',
     date: 'May 16, 2024',
-    category: 'Technology',
-    link: '/erp-solutions-for-production-planning',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2022/07/AirCraftMaint.jpg'
+    image: 'https://www.usersolutions.com/wp-content/uploads/2022/07/AirCraftMaint.jpg',
+    link: 'https://www.usersolutions.com/erp-solutions-for-production-planning/'
   },
   {
     title: 'Implementing Lean Manufacturing Principles for Improved Production Efficiency',
     date: 'May 6, 2024',
-    category: 'Manufacturing',
-    link: '/lean-manufacturing-solutions',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2024/02/sdf.jpg'
+    image: 'https://www.usersolutions.com/wp-content/uploads/2024/02/sdf.jpg',
+    link: 'https://www.usersolutions.com/lean-manufacturing-solutions/'
   },
   {
     title: 'Li-ion Battery Production Scheduling Software',
-    date: 'Sep 8, 2022',
-    category: 'Software',
-    link: '/li-ion-battery-production-scheduling-software',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/image04-300x163.png'
+    date: 'September 8, 2022',
+    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/image04-300x163.png',
+    link: 'https://www.usersolutions.com/li-ion-battery-production-scheduling-software/'
   },
   {
     title: 'Scheduling System Narrows Skills Gap for Fire-Rated Glass',
-    date: 'Sep 8, 2022',
-    category: 'Case Study',
-    link: '/scheduling-system-narrows-skills-gap-for-fire-rated-glass',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/image3-300x163.png'
+    date: 'September 8, 2022',
+    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/image3-300x163.png',
+    link: 'https://www.usersolutions.com/scheduling-system-narrows-skills-gap-for-fire-rated-glass/'
   },
   {
-    title: 'Small Manufacturer Success with Planning & Scheduling Tools',
-    date: 'Sep 8, 2022',
-    category: 'Success Story',
-    link: '/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/image06-1-300x163.png'
+    title: 'Small Manufacturer and Job Shop Uses Planning, Scheduling, and Tracking Tools',
+    date: 'September 8, 2022',
+    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/image06-1-300x163.png',
+    link: 'https://www.usersolutions.com/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive/'
+  },
+  {
+    title: 'User Solutions, Inc. Named as One of Top ERP Solutions Transforming Business 2016',
+    date: 'September 8, 2022',
+    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/image05-300x163.png',
+    link: 'https://www.usersolutions.com/user-solutions-inc-named-as-one-of-top-erp-solutions-transforming-business-2016-by-cio-applications-as-they-celebrate-25-years-in-business/'
+  },
+  {
+    title: 'Celebrating National Manufacturing Day',
+    date: 'July 18, 2022',
+    image: 'https://www.usersolutions.com/wp-content/uploads/2022/07/celebrating-300x163.png',
+    link: 'https://www.usersolutions.com/random-events-and-covariance/'
   }
 ];
 
-export default async function NewsPage(): Promise<React.JSX.Element> {
+export default function NewsPage(): React.JSX.Element {
   return (
     <div className="min-h-screen">
-      {/* Header */}
       <div className="container mx-auto max-w-7xl px-4 pt-6">
-        <SiteHeading
-          badge="News & Updates"
-          title="Latest News"
-          description="Stay up-to-date with our press announcements, media coverage, and industry insights"
-        />
-      </div>
-
-
-      {/* Press Releases */}
-      <section className="container mx-auto max-w-7xl px-4 py-6">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-            <Megaphone className="size-5 text-blue-600 dark:text-blue-400" />
-          </div>
-          <h2 className="text-2xl font-bold">Press Releases</h2>
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <h1 className="mb-4 text-4xl font-bold text-foreground">Latest News</h1>
+          <p className="text-lg text-muted-foreground">
+            Stay up-to-date with our press announcements, media coverage, and industry insights
+          </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {pressReleases.map((item, index) => (
-            <Card key={index} className="group transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-              <CardContent className="p-5">
-                <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="size-4" />
-                  {item.date}
-                </div>
-                <h3 className="mb-3 font-semibold transition-colors group-hover:text-blue-600">
-                  {item.title}
-                </h3>
-                <Link
-                  href={item.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800"
-                >
-                  Read More <ArrowRight className="size-3" />
-                </Link>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      {/* Recent Articles */}
-      <section className="bg-slate-50 py-6 dark:bg-slate-900/50">
-        <div className="container mx-auto max-w-7xl px-4">
-          <div className="mb-6 flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-              <Newspaper className="size-5 text-green-600 dark:text-green-400" />
+        {/* Video Section */}
+        <div className="mb-8">
+          <h2 className="mb-4 text-2xl font-bold text-foreground">Company Overview</h2>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="overflow-hidden rounded-lg">
+              <div className="relative aspect-video w-full">
+                <iframe
+                  src="https://www.youtube.com/embed/IR8NhOlV_zM"
+                  title="User Solutions Company Overview"
+                  className="absolute inset-0 size-full rounded-lg"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
             </div>
-            <h2 className="text-2xl font-bold">Recent Articles</h2>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {recentArticles.map((article, index) => (
-              <Card key={index} className="group overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                <div className="relative aspect-video overflow-hidden">
-                  <Image
-                    src={article.image}
-                    alt={article.title}
-                    fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    unoptimized
-                  />
-                  <div className="absolute left-3 top-3">
-                    <Badge variant="secondary" className="bg-white/90 text-xs">
-                      {article.category}
-                    </Badge>
-                  </div>
-                </div>
-                <CardContent className="p-5">
-                  <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
-                    <Calendar className="size-3" />
-                    {article.date}
-                  </div>
-                  <h3 className="mb-3 line-clamp-2 font-semibold transition-colors group-hover:text-blue-600">
-                    {article.title}
-                  </h3>
-                  <Link
-                    href={article.link}
-                    className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800"
-                  >
-                    Read More <ArrowRight className="size-3" />
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
+            <div>
+              <h3 className="mb-3 text-xl font-semibold">90 Second Company Overview</h3>
+              <p className="text-muted-foreground">
+                Watch our company overview video to learn about User Solutions and our manufacturing software solutions for production planning, scheduling, and resource management.
+              </p>
+            </div>
           </div>
         </div>
-      </section>
 
-      {/* Media Coverage */}
-      <section className="container mx-auto max-w-7xl px-4 py-6">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
-            <Award className="size-5 text-purple-600 dark:text-purple-400" />
-          </div>
-          <h2 className="text-2xl font-bold">Media Coverage</h2>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {mediaCoverage.map((item, index) => (
-            <Card key={index} className="group overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-              <div className="relative aspect-video overflow-hidden bg-slate-100">
+        {/* Sample Media Coverage */}
+        <div className="mb-8">
+          <h2 className="mb-4 text-2xl font-bold text-foreground">Sample Media Coverage</h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {mediaCoverage.map((item, index) => (
+              <div key={index} className="overflow-hidden rounded-lg border">
                 <Image
                   src={item.image}
                   alt={item.title}
-                  fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  width={300}
+                  height={200}
+                  className="h-40 w-full object-cover"
                   unoptimized
                 />
-              </div>
-              <CardContent className="p-5">
-                <p className="mb-2 text-xs font-medium text-purple-600 dark:text-purple-400">
-                  {item.source}
-                </p>
-                <h3 className="mb-3 line-clamp-2 font-semibold transition-colors group-hover:text-blue-600">
-                  {item.title}
-                </h3>
-                {item.links ? (
-                  <div className="flex flex-wrap gap-2">
-                    {item.links.map((link, i) => (
-                      <Link
-                        key={i}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-blue-600 hover:underline"
-                      >
-                        {link.name}
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
+                <div className="p-3">
                   <Link
-                    href={item.link!}
-                    target={item.link!.startsWith('http') ? '_blank' : undefined}
-                    rel={item.link!.startsWith('http') ? 'noopener noreferrer' : undefined}
-                    className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800"
+                    href={item.link}
+                    target={item.link.startsWith('http') ? '_blank' : undefined}
+                    rel={item.link.startsWith('http') ? 'noopener noreferrer' : undefined}
+                    className="font-medium hover:text-blue-600"
                   >
-                    Read More <ArrowRight className="size-3" />
+                    {item.title}
                   </Link>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  <p className="mt-1 text-sm text-muted-foreground">{item.source}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </section>
 
-      {/* Awards Section */}
-      <section className="container mx-auto max-w-7xl px-4">
-        <Card className="overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-blue-100 shadow-lg dark:from-blue-900/20 dark:to-blue-800/20">
+        {/* Press Releases */}
+        <div className="mb-8">
+          <h2 className="mb-4 text-2xl font-bold text-foreground">Press Releases</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            {pressReleases.map((item, index) => (
+              <div key={index} className="overflow-hidden rounded-lg border">
+                <Image
+                  src={item.image}
+                  alt={item.title}
+                  width={400}
+                  height={200}
+                  className="h-40 w-full object-cover"
+                  unoptimized
+                />
+                <div className="p-3">
+                  <Link
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium hover:text-blue-600"
+                  >
+                    {item.title}
+                  </Link>
+                  {item.date && <p className="mt-1 text-sm text-muted-foreground">{item.date}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Blog Articles */}
+        <div className="mb-8">
+          <h2 className="mb-4 text-2xl font-bold text-foreground">Blog Articles</h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {blogArticles.map((article, index) => (
+              <div key={index} className="overflow-hidden rounded-lg border">
+                <Image
+                  src={article.image}
+                  alt={article.title}
+                  width={300}
+                  height={163}
+                  className="h-32 w-full object-cover"
+                  unoptimized
+                />
+                <div className="p-3">
+                  <Link
+                    href={article.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium hover:text-blue-600"
+                  >
+                    {article.title}
+                  </Link>
+                  <p className="mt-1 text-xs text-muted-foreground">{article.date}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Awards */}
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
           <CardContent className="p-8 text-center">
-            <h2 className="mb-2 text-2xl font-bold text-slate-900 dark:text-white">
+            <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
               CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
             </h2>
             <Image
@@ -306,7 +294,7 @@ export default async function NewsPage(): Promise<React.JSX.Element> {
             />
           </CardContent>
         </Card>
-      </section>
+      </div>
     </div>
   );
 }
