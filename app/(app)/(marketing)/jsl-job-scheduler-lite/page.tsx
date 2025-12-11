@@ -1,7 +1,6 @@
 import * as React from 'react';
+import Link from 'next/link';
 
-import { JSLDownloadForm } from '@/components/marketing/sections/jsl-download-form';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -9,26 +8,20 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 py-6 text-white">
+      <section className="py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
-            <Badge
-              variant="outline"
-              className="mb-6 h-8 rounded-full border-white/30 bg-white/10 px-3 text-sm font-medium text-white shadow-sm"
-            >
-              EDGEBIC
-            </Badge>
-            <h1 className="mb-6 text-4xl font-bold text-white sm:text-5xl md:text-6xl">
+            <h1 className="mb-6 text-4xl font-bold text-foreground sm:text-5xl md:text-6xl">
               EDGEBIC
             </h1>
-            <p className="mb-6 text-xl text-white/90 md:text-2xl">
+            <p className="mb-6 text-xl text-muted-foreground md:text-2xl">
               Entry-level production scheduling solution designed for job shops
               and small manufacturers
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Button
                 size="lg"
-                className="bg-white text-blue-700 hover:bg-blue-50"
+                className="cursor-pointer"
                 asChild
               >
                 <a
@@ -129,17 +122,6 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                       InSights and reporting
                     </li>
                   </ul>
-                  <Button
-                    className="w-fit"
-                    asChild
-                  >
-                    <a
-                      href="https://www.usersolutions.com/wp-content/uploads/2022/10/JSLsetup.zip"
-                      download="JSLsetup.zip"
-                    >
-                      Download Free Trial
-                    </a>
-                  </Button>
                 </div>
               </div>
 
@@ -367,57 +349,6 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                     />
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Pricing */}
-          <div className="text-center">
-            <div className="mx-auto max-w-2xl rounded-3xl bg-white p-8 shadow-xl dark:bg-slate-900">
-              <div className="mb-4">
-                <span className="inline-block rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                  STARTER PRICING
-                </span>
-              </div>
-              <h2 className="mb-4 text-3xl font-bold">Starting at $1,000+</h2>
-              <p className="mb-6 text-lg text-muted-foreground">
-                Perfect entry-level investment for job shops and small
-                manufacturers
-              </p>
-              <div className="space-y-2 text-muted-foreground">
-                <p>✓ Free trials available</p>
-                <p>✓ Quick implementation</p>
-                <p>✓ Excel data import capability</p>
-                <p>✓ 25 years of award-winning software heritage</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Call to Action */}
-          <div className="mt-6 text-center">
-            <div className="mx-auto max-w-7xl rounded-3xl bg-gradient-to-br from-blue-600 to-blue-800 p-8 text-white">
-              <h3 className="mb-4 text-2xl font-bold">
-                Ready to Transform Your Production Scheduling?
-              </h3>
-              <p className="mb-6 text-lg opacity-90">
-                Join thousands of manufacturers who trust User Solutions for
-                their production planning needs
-              </p>
-              <div className="mb-4 flex flex-wrap justify-center gap-4">
-                <Button
-                  className="bg-gray-100 text-black hover:bg-gray-100"
-                  asChild
-                >
-                  <a
-                    href="https://www.usersolutions.com/wp-content/uploads/2022/10/JSLsetup.zip"
-                    download="JSLsetup.zip"
-                  >
-                    Download Free Trial
-                  </a>
-                </Button>
-                <Button className="bg-gray-100 text-black hover:bg-gray-100">
-                  Contact Sales: 248.486.6365
-                </Button>
               </div>
             </div>
           </div>
