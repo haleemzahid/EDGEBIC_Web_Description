@@ -72,13 +72,13 @@ export default function ProductionSchedulingProductsVideosPage() {
                 </Link>
               </div>
 
-              {/* Workcenter Scheduler XL */}
+              {/*   */}
               <div>
-                <h3 className="mb-3 text-xl font-bold">Workcenter Scheduler XL</h3>
+                <h3 className="mb-3 text-xl font-bold"> </h3>
                 <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
                   <iframe
                     src="https://www.youtube.com/embed/L4wDboRFU6k"
-                    title="Workcenter Scheduler XL Video"
+                    title="  Video"
                     className="size-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen

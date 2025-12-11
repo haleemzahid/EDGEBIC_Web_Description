@@ -14,7 +14,7 @@ export default function WorkcenterSchedulerXLPage() {
           <div className="mx-auto max-w-7xl">
             <h2 className="mb-4 text-2xl font-bold">Overview</h2>
             <p className="text-muted-foreground">
-              Workcenter Scheduler XL (WCXL) is an Excel based simple
+              (WCXL) is an Excel based simple
               scheduler for getting visibility on workcenter loading to ship
               on time. Check out the videos for a quick overview, then
               download the fully functional trial or — better yet, simply
@@ -31,7 +31,7 @@ export default function WorkcenterSchedulerXLPage() {
           <div className="mx-auto max-w-7xl">
             <h2 className="mb-4 text-2xl font-bold">Summary</h2>
             <p className="mb-4 text-muted-foreground">
-              Workcenter Scheduler XL (WCXL) an Excel Add-On, offers a
+              (WCXL) an Excel Add-On, offers a
               finite capacity scheduler for job shops, fabricators,
               service/repair shops, that have a simple, linear sequence of
               work that can be scheduled forward from a start date. (NOTE:
@@ -56,7 +56,7 @@ export default function WorkcenterSchedulerXLPage() {
           <div className="mx-auto max-w-7xl">
             <blockquote className="border-l-4 border-blue-500 pl-6">
               <p className="mb-2 italic text-muted-foreground">
-                "With Workcenter Scheduler XL, we knew: Daily schedules for
+                "With  , we knew: Daily schedules for
                 Workcenters, Capacity requirements including Bottlenecks and
                 Backlog, Strategic management information for optimizing
                 on-time performance"

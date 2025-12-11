@@ -110,7 +110,7 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
       icon: <Globe className="size-6" />,
       title: 'Core Products Enhancement',
       description:
-        'Released new versions of all core products: Resource Manager for Excel, Workcenter Scheduler XL, and Resource Manager-DB. RMDB offered choice of MS JET or SQL Server backends. Significant Advanced Planning and Scheduling improvements from increased customer feedback.',
+        'Released new versions of all core products: Resource Manager for Excel,  , and Resource Manager-DB. RMDB offered choice of MS JET or SQL Server backends. Significant Advanced Planning and Scheduling improvements from increased customer feedback.',
       highlight: 'Product Maturity'
     },
     {
@@ -174,7 +174,7 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
       icon: <Award className="size-6" />,
       title: 'GE Partnership Success',
       description:
-        'Announced Resource Manager (version 2) for Excel 97 with 64,000 rows capacity and multi-user capability. Partnered with General Electric Capital – Railcar Services for "Noah" (later Workcenter Scheduler XL), improving on-time delivery from 30% to 90%+ managing 200,000 railcars at $20/day - phenomenal ROI.',
+        'Announced Resource Manager (version 2) for Excel 97 with 64,000 rows capacity and multi-user capability. Partnered with General Electric Capital – Railcar Services for "Noah" (later  ), improving on-time delivery from 30% to 90%+ managing 200,000 railcars at $20/day - phenomenal ROI.',
       highlight: 'Major Win'
     },
     {
@@ -245,18 +245,16 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
             {milestones.map((milestone, index) => (
               <div
                 key={index}
-                className={`relative mb-6 flex items-center ${
-                  index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'
-                } flex-col md:justify-between`}
+                className={`relative mb-6 flex items-center ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'
+                  } flex-col md:justify-between`}
               >
                 {/* Timeline dot */}
                 <div className="absolute left-8 top-1/2 z-10 flex size-4 -translate-y-1/2 items-center justify-center rounded-full bg-orange-500 ring-4 ring-white dark:ring-slate-900 md:left-1/2 md:-translate-x-1/2" />
 
                 {/* Content */}
                 <div
-                  className={`ml-20 w-full md:ml-0 md:w-5/12 ${
-                    index % 2 === 0 ? 'md:pr-8' : 'md:pl-8'
-                  }`}
+                  className={`ml-20 w-full md:ml-0 md:w-5/12 ${index % 2 === 0 ? 'md:pr-8' : 'md:pl-8'
+                    }`}
                 >
                   <div className="rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-6 dark:from-slate-900 dark:to-slate-800">
                     <div className="mb-4 flex items-center gap-3">

@@ -131,10 +131,10 @@ export default function ProductionSchedulingProductsOldPage() {
                 </CardContent>
               </Card>
 
-              {/* Workcenter Scheduler XL */}
+              {/*   */}
               <Card>
                 <CardHeader className="bg-indigo-50 dark:bg-indigo-900/20">
-                  <CardTitle>Workcenter Scheduler XL</CardTitle>
+                  <CardTitle> </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
                   <p className="mb-4 text-muted-foreground">

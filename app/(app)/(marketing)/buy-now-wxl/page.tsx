@@ -20,7 +20,7 @@ export default function BuyNowWXLPage() {
               </Badge>
             </div>
             <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              Workcenter Scheduler XL - Request Free Product
+              - Request Free Product
             </h1>
           </div>
         </div>
@@ -37,7 +37,7 @@ export default function BuyNowWXLPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <p className="text-lg leading-relaxed text-muted-foreground">
-                Workcenter Scheduler XL (WCXL) is an Excel based simple
+                (WCXL) is an Excel based simple
                 scheduler for getting visibility on workcenter loading to ship
                 on time. Check out the videos for a quick overview, then
                 download the fully functional trial or — better yet, simply

@@ -23,7 +23,7 @@ export default function ThankYouWorkCenterSchedulerXLPage() {
               Thank You for Your Download!
             </h1>
             <p className="text-xl text-white/90">
-              Your Workcenter Scheduler XL download is ready
+              Your   download is ready
             </p>
           </div>
         </div>

@@ -18,7 +18,7 @@ export default function ThankYouDownloadWorkcenterSchedulerXLPage() {
               Thank You for Downloading!
             </h1>
             <p className="mb-6 text-xl md:text-2xl">
-              Your Workcenter Scheduler XL download should begin shortly
+              Your   download should begin shortly
             </p>
           </div>
         </div>
@@ -36,7 +36,7 @@ export default function ThankYouDownloadWorkcenterSchedulerXLPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <p className="text-center">
-                  Your Workcenter Scheduler XL software download should begin
+                  Your   software download should begin
                   automatically. If your download doesn't start, please check
                   your browser's download folder or contact our support team.
                 </p>

@@ -54,9 +54,9 @@ export function NTClipboardVideo({
     },
     {
       url: 'https://www.youtube.com/watch?v=fvvMj__YHbw',
-      title: 'Workcenter Scheduler XL — Summary',
+      title: '  — Summary',
       description:
-        'Summary of Workcenter Scheduler XL features and capabilities',
+        'Summary of   features and capabilities',
       category: 'Product Demo'
     },
     {

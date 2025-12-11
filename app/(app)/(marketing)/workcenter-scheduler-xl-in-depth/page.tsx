@@ -19,7 +19,7 @@ export default function WorkcenterSchedulerXLInDepthPage() {
               Finite Capacity Scheduling
             </Badge>
             <h1 className="mb-6 text-4xl font-bold md:text-5xl">
-              Workcenter Scheduler XL: In Depth
+              : In Depth
             </h1>
             <p className="mb-6 text-xl md:text-2xl">
               Complete Finite Capacity Planning and Job Scheduling
@@ -57,7 +57,7 @@ export default function WorkcenterSchedulerXLInDepthPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <p className="text-lg leading-relaxed text-muted-foreground">
-                  Workcenter Scheduler XL (WCXL) is a high performance planning
+                  (WCXL) is a high performance planning
                   and scheduling offering for Job Shops, Fabricators,
                   Service/Repair Shops, and others where customer service and
                   shipping on time is vital. WCXL will enhance the

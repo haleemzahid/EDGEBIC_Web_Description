@@ -49,25 +49,25 @@ export default function ProductVideoPage() {
               </CardContent>
             </Card>
 
-            {/* Workcenter Scheduler XL Overview */}
+            {/*   Overview */}
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="text-2xl">
-                  Workcenter Scheduler XL Overview
+                  Overview
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="mb-4 flex aspect-video items-center justify-center rounded-lg bg-gray-100">
                   <p className="text-gray-500">
-                    Video: Workcenter Scheduler XL Overview
+                    Video:   Overview
                   </p>
                 </div>
                 <p className="mb-4 text-gray-700">
-                  See how Workcenter Scheduler XL simplifies production
+                  See how   simplifies production
                   scheduling with powerful Excel-based tools.
                 </p>
                 <Link href="/workcenter-schedulerxl">
-                  <Button>Learn More About Workcenter Scheduler XL</Button>
+                  <Button>Learn More About  </Button>
                 </Link>
               </CardContent>
             </Card>
@@ -88,22 +88,22 @@ export default function ProductVideoPage() {
               </CardContent>
             </Card>
 
-            {/* Workcenter Scheduler XL Intro */}
+            {/*   Intro */}
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="text-2xl">
-                  Workcenter Scheduler XL Intro
+                  Intro
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="mb-4 flex aspect-video items-center justify-center rounded-lg bg-gray-100">
                   <p className="text-gray-500">
-                    Video: Workcenter Scheduler XL Introduction
+                    Video:   Introduction
                   </p>
                 </div>
                 <p className="mb-4 text-gray-700">
                   Introduction to the key features and capabilities of
-                  Workcenter Scheduler XL.
+                  .
                 </p>
                 <Link href="/workcenter-schedulerxl">
                   <Button>Learn More</Button>

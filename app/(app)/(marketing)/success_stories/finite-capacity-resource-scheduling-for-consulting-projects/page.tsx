@@ -8,12 +8,12 @@ export const metadata: Metadata = {
   title:
     'Finite Capacity Resource Scheduling for Consulting Projects | User Solutions',
   description:
-    'GEMS Healthcare Solutions uses Workcenter Scheduler XL to manage multiple consulting projects with shared resources.',
+    'GEMS Healthcare Solutions uses   to manage multiple consulting projects with shared resources.',
   openGraph: {
     title:
       'Finite Capacity Resource Scheduling for Consulting Projects | User Solutions',
     description:
-      'GEMS Healthcare Solutions uses Workcenter Scheduler XL to manage multiple consulting projects with shared resources.',
+      'GEMS Healthcare Solutions uses   to manage multiple consulting projects with shared resources.',
     url: 'https://www.usersolutions.com/success-stories/finite-capacity-resource-scheduling-for-consulting-projects'
   }
 };
@@ -65,7 +65,7 @@ export default function ConsultingProjectsSchedulingPage() {
                   our staff handles multiple accounts, and our biggest challenge
                   was finding a resource scheduling system which would allow us to
                   share the same resources across multiple projects. User
-                  Solutions' Workcenter Scheduler XL provided that solution".
+                  Solutions'   provided that solution".
                 </p>
 
                 <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
@@ -97,7 +97,7 @@ export default function ConsultingProjectsSchedulingPage() {
               <div className="lg:sticky lg:top-6">
                 <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/07/wCXL-1024x342.png"
-                  alt="Workcenter Scheduler XL interface"
+                  alt="  interface"
                   width={1024}
                   height={342}
                   className="h-auto w-full rounded-lg shadow-md"
