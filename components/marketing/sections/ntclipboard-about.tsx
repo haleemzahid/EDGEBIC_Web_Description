@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Users } from 'lucide-react';
 
 import { GridSection } from '@/components/marketing/fragments/grid-section';
@@ -19,6 +20,25 @@ export function NTClipboardAbout(): React.JSX.Element {
         "In 1991, Jim Convis spun off User Solutions from Lotus where he was adapting Lotus 1-2-3 to better serve the manufacturing market. Starting with a series of simple templates (found in Operations Manager, still available today), he found folks wanted to use familiar tools (such as the spreadsheet) as the preferred method to solve common production scheduling issues. For over 30+ years, Jim has tried to listen to what customers were asking for and developing an architecture to support all types of challenges in all sorts of environments. Jim has a BS in Applied Mathematics/Physics from University of Colorado and worked at GM/EDS implementing the first Micro-Processor Cell Controller back in the 80's.",
       philosophy:
         'With a vision statement of "Listen and Deliver" you could add \'guaranteed\' to complete our philosophy on making you successful.'
+    },
+    {
+      name: 'Haleem Khan',
+      title: 'Development Manager at User Solutions | CEO at Dawloom',
+      link: 'https://www.dawloom.com/',
+      image: 'https://www.dawloom.com/team/Haleem%20Khan.png',
+      description:
+        'Haleem brings over a decade of software development experience and leads the company with expertise in .NET and custom software solutions. His deep technical knowledge combined with business acumen helps drive innovation and deliver high-quality solutions to clients.',
+      philosophy:
+        'Haleem believes in building robust, scalable software that solves real business problems and delivers lasting value to customers.'
+    },
+    {
+      name: 'Mudasir Nadeem',
+      title: 'Web Developer',
+      image: '/images/MudasirNadeem.png',
+      description:
+        'Mudasir Nadeem is a versatile web developer with expertise in front-end and back-end technologies, helping businesses build dynamic, responsive websites. His skills span modern frameworks and technologies that enable seamless user experiences.',
+      philosophy:
+        'Mudasir Nadeem is passionate about creating clean, efficient code and staying current with the latest web development trends and best practices.'
     },
     {
       name: 'Dennis Johnson',
@@ -59,24 +79,6 @@ export function NTClipboardAbout(): React.JSX.Element {
         'Jack graduated high school in 2020 and has since been accepted into an exclusive software engineering program at Grand Circus in Detroit -- the program Jack is enrolled in had a narrow, eight-percent acceptance rate. Having built a subscriber base on YouTube of 7,000+ over a few years, he is an accomplished video editor & producer for various businesses.',
       philosophy:
         'Jack brings fresh digital marketing perspective and technical skills to help User Solutions connect with the next generation of manufacturing professionals.'
-    },
-    {
-      name: 'Haleem Khan',
-      title: 'CEO & Senior .NET Developer',
-      image: 'https://www.dawloom.com/team/Haleem%20Khan.png',
-      description:
-        'Haleem brings over a decade of software development experience and leads the company with expertise in .NET and custom software solutions. His deep technical knowledge combined with business acumen helps drive innovation and deliver high-quality solutions to clients.',
-      philosophy:
-        'Haleem believes in building robust, scalable software that solves real business problems and delivers lasting value to customers.'
-    },
-    {
-      name: 'Mudasir Nadeem',
-      title: 'Web Developer',
-      image: '/images/MudasirNadeem.png',
-      description:
-        'Mudasir Nadeem is a versatile web developer with expertise in front-end and back-end technologies, helping businesses build dynamic, responsive websites. His skills span modern frameworks and technologies that enable seamless user experiences.',
-      philosophy:
-        'Mudasir Nadeem is passionate about creating clean, efficient code and staying current with the latest web development trends and best practices.'
     }
   ];
 
@@ -126,6 +128,19 @@ export function NTClipboardAbout(): React.JSX.Element {
                     </h3>
                     <p className="mb-4 text-lg font-medium text-orange-600 dark:text-orange-400">
                       {member.title}
+                      {member.link && (
+                        <>
+                          {' '}
+                          <Link
+                            href={member.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline dark:text-blue-400"
+                          >
+                            dawloom.com
+                          </Link>
+                        </>
+                      )}
                     </p>
                     <p className="mb-4 text-slate-700 dark:text-slate-300">
                       {member.description}
