@@ -8,7 +8,6 @@ import {
   Award,
   CheckCircle,
   Clock,
-  Download,
   Play,
   Settings,
   Star,
@@ -132,25 +131,6 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               Contact us to discuss which product is the best fit for your
               application and budget.
             </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Button
-                size="lg"
-                className="gap-2"
-                onClick={() => router.push('/product-downloads')}
-              >
-                <Download className="size-4" />
-                Free Trial & Samples
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="gap-2 dark:hover:bg-slate-800"
-                onClick={() => router.push('/excel-templates')}
-              >
-                <Settings className="size-4" />
-                Excel Products
-              </Button>
-            </div>
           </div>
 
           {/* Video Section - Side by Side Layout */}
