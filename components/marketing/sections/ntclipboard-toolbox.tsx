@@ -174,10 +174,6 @@ export function NTClipboardToolBox(): React.JSX.Element {
                         <span className="font-bold text-green-600">FREE</span>
                       </div>
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm">Workcenter Scheduler XL</span>
-                        <span className="font-bold text-green-600">FREE</span>
-                      </div>
-                      <div className="flex items-center justify-between gap-2">
                         <span className="text-sm">Resource Manager XL</span>
                         <span className="font-bold text-green-600">FREE</span>
                       </div>

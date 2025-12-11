@@ -62,109 +62,107 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
           </div>
 
           {/* Software Demo Video Section */}
-          <Card className="mb-6">
-            <CardHeader className="text-center">
-              <CardTitle className="text-3xl">See JSL in Action</CardTitle>
-              <p className="text-muted-foreground">
+          <div className="mb-6">
+            <div className="mb-6 text-center">
+              <h2 className="text-3xl font-bold text-foreground">See JSL in Action</h2>
+              <p className="mt-2 text-muted-foreground">
                 Watch how EDGEBIC simplifies production scheduling
               </p>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-2">
-                {/* Video Section */}
-                <div className="overflow-hidden rounded-lg shadow-lg">
-                  <div className="relative aspect-video w-full">
-                    {/* Replace with actual video URL when available */}
-                    <iframe
-                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/Welcome-to-Job-Scheduler-Lite-JSL.mp4"
-                      title="EDGEBIC   Demo Video"
-                      className="absolute inset-0 size-full rounded-lg"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  </div>
+            </div>
+            <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-2">
+              {/* Video Section */}
+              <div className="overflow-hidden rounded-lg shadow-lg">
+                <div className="relative aspect-video w-full">
+                  {/* Replace with actual video URL when available */}
+                  <iframe
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/Welcome-to-Job-Scheduler-Lite-JSL.mp4"
+                    title="EDGEBIC Demo Video"
+                    className="absolute inset-0 size-full rounded-lg"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
                 </div>
+              </div>
 
-                {/* Video Description */}
-                <div className="flex flex-col justify-center">
-                  <h3 className="mb-4 text-2xl font-semibold">
-                    Complete JSL Walkthrough
-                  </h3>
-                  <p className="mb-4 text-muted-foreground">
-                    Watch this comprehensive demonstration of Job Scheduler
-                    Lite's key features:
+              {/* Video Description */}
+              <div className="flex flex-col justify-center">
+                <h3 className="mb-4 text-2xl font-semibold">
+                  Complete JSL Walkthrough
+                </h3>
+                <p className="mb-4 text-muted-foreground">
+                  Watch this comprehensive demonstration of Job Scheduler
+                  Lite&apos;s key features:
+                </p>
+                <ul className="mb-6 space-y-2 text-muted-foreground">
+                  <li className="flex items-center gap-2">
+                    <div className="size-2 rounded-full bg-blue-500" />
+                    Interactive menu navigation
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="size-2 rounded-full bg-blue-500" />
+                    Data import from Excel
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="size-2 rounded-full bg-blue-500" />
+                    Forward/Reverse scheduling
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="size-2 rounded-full bg-blue-500" />
+                    Capacity planning setup
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="size-2 rounded-full bg-blue-500" />
+                    InSights and reporting
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Additional Screenshots Row */}
+            <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="overflow-hidden rounded-lg shadow-lg">
+                <img
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/mnn.jpeg"
+                  alt="JSL software menu options and interface"
+                  className="h-[200px] w-full object-cover"
+                />
+                <div className="p-3">
+                  <h4 className="text-sm font-semibold">Menu System</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Intuitive navigation
                   </p>
-                  <ul className="mb-6 space-y-2 text-muted-foreground">
-                    <li className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-blue-500" />
-                      Interactive menu navigation
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-blue-500" />
-                      Data import from Excel
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-blue-500" />
-                      Forward/Reverse scheduling
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-blue-500" />
-                      Capacity planning setup
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-blue-500" />
-                      InSights and reporting
-                    </li>
-                  </ul>
                 </div>
               </div>
 
-              {/* Additional Screenshots Row */}
-              <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <div className="overflow-hidden rounded-lg shadow-lg">
-                  <img
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/mnn.jpeg"
-                    alt="JSL software menu options and interface"
-                    className="h-[200px] w-full object-cover"
-                  />
-                  <div className="p-3">
-                    <h4 className="text-sm font-semibold">Menu System</h4>
-                    <p className="text-xs text-muted-foreground">
-                      Intuitive navigation
-                    </p>
-                  </div>
-                </div>
-
-                <div className="overflow-hidden rounded-lg shadow-lg">
-                  <img
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/insight-1.png"
-                    alt="JSL InSights scheduling interface"
-                    className="h-[200px] w-full object-cover"
-                  />
-                  <div className="p-3">
-                    <h4 className="text-sm font-semibold">InSights View</h4>
-                    <p className="text-xs text-muted-foreground">
-                      Visual scheduling
-                    </p>
-                  </div>
-                </div>
-
-                <div className="overflow-hidden rounded-lg shadow-lg md:col-span-2 lg:col-span-1">
-                  <img
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/schdle.png"
-                    alt="JSL scheduling interface"
-                    className="h-[200px] w-full object-cover"
-                  />
-                  <div className="p-3">
-                    <h4 className="text-sm font-semibold">Scheduling Engine</h4>
-                    <p className="text-xs text-muted-foreground">
-                      Capacity planning
-                    </p>
-                  </div>
+              <div className="overflow-hidden rounded-lg shadow-lg">
+                <img
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/insight-1.png"
+                  alt="JSL InSights scheduling interface"
+                  className="h-[200px] w-full object-cover"
+                />
+                <div className="p-3">
+                  <h4 className="text-sm font-semibold">InSights View</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Visual scheduling
+                  </p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+
+              <div className="overflow-hidden rounded-lg shadow-lg md:col-span-2 lg:col-span-1">
+                <img
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/schdle.png"
+                  alt="JSL scheduling interface"
+                  className="h-[200px] w-full object-cover"
+                />
+                <div className="p-3">
+                  <h4 className="text-sm font-semibold">Scheduling Engine</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Capacity planning
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Key Features */}
           <div className="mb-6">
