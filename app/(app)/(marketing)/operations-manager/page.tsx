@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Routes } from '@/constants/routes';
 
 export const metadata: Metadata = {
   title: 'Operations Manager',
@@ -340,79 +339,6 @@ export default function OperationsManagerPage(): React.JSX.Element {
               </CardContent>
             </Card>
           ))}
-        </div>
-
-        {/* Complete Package */}
-        <div className="mx-auto max-w-7xl">
-          <Card className="mt-6 border-4 border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20">
-            <CardContent className="p-8">
-              <div className="text-center">
-                <Badge
-                  variant="secondary"
-                  className="mb-4 bg-green-200 text-green-800"
-                >
-                  BEST VALUE
-                </Badge>
-                <h2 className="mb-4 text-4xl font-bold text-green-800 dark:text-green-300">
-                  Complete Operations Manager Package
-                </h2>
-                <p className="mb-6 text-xl text-muted-foreground">
-                  Get all Operations Manager templates in one comprehensive
-                  package
-                </p>
-                <div className="flex items-center justify-center space-x-6">
-                  <span className="text-5xl font-bold text-green-600">$39</span>
-                  <div className="flex space-x-4">
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      asChild
-                    >
-                      <Link href="/docs/operations-manager-complete.pdf">
-                        View Documentation
-                      </Link>
-                    </Button>
-                    <Button
-                      size="lg"
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      Buy Complete Package
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Call to Action */}
-        <div className="mx-auto !mt-6 max-w-7xl">
-          <Card>
-            <CardContent className="p-8">
-              <div className="text-center">
-                <h2 className="mb-4 text-3xl font-bold">Need Help Choosing?</h2>
-                <p className="mb-6 text-lg text-muted-foreground">
-                  Contact us for personalized recommendations based on your
-                  specific needs
-                </p>
-                <div className="flex justify-center space-x-4">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    asChild
-                  >
-                    <Link href={Routes.Contact}>Contact Us</Link>
-                  </Button>
-                  <Button
-                    size="lg"
-                    asChild
-                  >
-                    <a href="tel:248.486.6365">Call 248.486.6365</a>
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Awards Section */}
