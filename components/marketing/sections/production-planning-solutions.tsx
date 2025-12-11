@@ -172,7 +172,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
           <NTClipboardToolBox />
 
           {/* Customer Testimonials */}
-          <div className="mb-6">
+          <div className="my-6">
             <h2 className="mb-6 text-center text-2xl font-bold text-slate-900 dark:text-white">
               What Our Customers Say
             </h2>
