@@ -59,6 +59,24 @@ export function NTClipboardAbout(): React.JSX.Element {
         'Jack graduated high school in 2020 and has since been accepted into an exclusive software engineering program at Grand Circus in Detroit -- the program Jack is enrolled in had a narrow, eight-percent acceptance rate. Having built a subscriber base on YouTube of 7,000+ over a few years, he is an accomplished video editor & producer for various businesses.',
       philosophy:
         'Jack brings fresh digital marketing perspective and technical skills to help User Solutions connect with the next generation of manufacturing professionals.'
+    },
+    {
+      name: 'Haleem Khan',
+      title: 'CEO & Senior .NET Developer',
+      image: 'https://www.dawloom.com/team/Haleem%20Khan.png',
+      description:
+        'Haleem brings over a decade of software development experience and leads the company with expertise in .NET and custom software solutions. His deep technical knowledge combined with business acumen helps drive innovation and deliver high-quality solutions to clients.',
+      philosophy:
+        'Haleem believes in building robust, scalable software that solves real business problems and delivers lasting value to customers.'
+    },
+    {
+      name: 'Mudasir Nadeem',
+      title: 'Web Developer',
+      image: '/images/MudasirNadeem.png',
+      description:
+        'Mudasir Nadeem is a versatile web developer with expertise in front-end and back-end technologies, helping businesses build dynamic, responsive websites. His skills span modern frameworks and technologies that enable seamless user experiences.',
+      philosophy:
+        'Mudasir Nadeem is passionate about creating clean, efficient code and staying current with the latest web development trends and best practices.'
     }
   ];
 
@@ -77,21 +95,21 @@ export function NTClipboardAbout(): React.JSX.Element {
             {teamMembers.map((member, index) => (
               <div
                 key={index}
-                className={`!mt-5 flex flex-col items-center gap-8 ${
-                  index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'
-                }`}
+                className={`!mt-5 flex flex-col items-center gap-8 ${index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'
+                  }`}
               >
                 {/* Profile Image */}
                 <div className="w-full lg:w-1/3">
                   <div className="mx-auto size-80 overflow-hidden rounded-full">
                     <div className="flex size-full items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700">
-                      {member.image.startsWith('http') ? (
+                      {member.image && (member.image.startsWith('http') || member.image.startsWith('/')) ? (
                         <Image
                           src={member.image}
                           alt={member.name}
                           width={300}
                           height={300}
                           className="size-full rounded-full object-cover"
+                          unoptimized={member.image.startsWith('http')}
                         />
                       ) : (
                         <Users className="size-24 text-slate-400" />
