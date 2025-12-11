@@ -9,7 +9,7 @@ import { createTitle } from '@/lib/utils';
 export const metadata: Metadata = {
   title: createTitle('News'),
   description:
-    "View User Solutions' press announcements and media coverage to stay up-to-date on our innovative production planning and scheduling solutions."
+    "View User Solutions' press announcements and media coverage to stay up-to-date on our innovative production planning and scheduling solutions and how they can help manufacturers become more competitive and profitable through efficient resource management."
 };
 
 const mediaCoverage = [
@@ -160,7 +160,7 @@ export default function NewsPage(): React.JSX.Element {
         <div className="mb-8 text-center">
           <h1 className="mb-4 text-4xl font-bold text-foreground">Latest News</h1>
           <p className="text-lg text-muted-foreground">
-            Stay up-to-date with our press announcements, media coverage, and industry insights
+            View User Solutions' press announcements and media coverage to stay up-to-date on our innovative production planning and scheduling solutions and how they can help manufacturers become more competitive and profitable through efficient resource management
           </p>
         </div>
 
