@@ -1,30 +1,18 @@
 import Link from 'next/link';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function ProductionSchedulingProductsVideosPage() {
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-cyan-600 py-6 text-white">
-        <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-7xl text-center">
-            <Badge
-              variant="outline"
-              className="mb-6 h-8 rounded-full border-white/30 bg-white/10 px-3 text-sm font-medium text-white shadow-sm"
-            >
-              📹 VIDEO LIBRARY
-            </Badge>
-            <h1 className="mb-6 text-4xl font-bold md:text-5xl">
-              Product Videos
-            </h1>
-            <p className="mb-6 text-xl text-blue-100">
-              Production Scheduling Products | Excel Applications | Resource
-              Manager for Excel (RMX) Videos
-            </p>
-          </div>
+      {/* Header */}
+      <section className="pt-6">
+        <div className="container mx-auto max-w-7xl px-4 text-center">
+          <h1 className="mb-4 text-4xl font-bold">Product Videos</h1>
+          <p className="text-lg text-muted-foreground">
+            Production Scheduling Products | Excel Applications | Resource Manager for Excel (RMX) Videos
+          </p>
         </div>
       </section>
 
@@ -301,55 +289,6 @@ export default function ProductionSchedulingProductsVideosPage() {
                       features and setup
                     </p>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="bg-gray-50 pb-8 pt-6 dark:bg-slate-900/50">
-        <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-7xl">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-center text-2xl">
-                  Ready to See More?
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="mb-6 text-center text-muted-foreground">
-                  Schedule a live demo to see our solutions in action with your
-                  actual data
-                </p>
-                <div className="flex flex-col justify-center gap-4 sm:flex-row">
-                  <Link href="/contact-us">
-                    <Button
-                      size="lg"
-                      className="text-lg"
-                    >
-                      Schedule Demo
-                    </Button>
-                  </Link>
-                  <Link href="/videos">
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="text-lg"
-                    >
-                      All Videos
-                    </Button>
-                  </Link>
-                  <Link href="/excel-applications">
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="text-lg"
-                    >
-                      View Products
-                    </Button>
-                  </Link>
                 </div>
               </CardContent>
             </Card>
