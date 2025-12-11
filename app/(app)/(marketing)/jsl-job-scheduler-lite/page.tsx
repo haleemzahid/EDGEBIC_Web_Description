@@ -40,32 +40,26 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
       <div className="container mx-auto px-4 pt-6">
         <div className="mx-auto max-w-7xl">
           {/* Overview */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-3xl">Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid items-center gap-8 md:grid-cols-2">
-                <div>
-                  <p className="text-lg leading-relaxed text-muted-foreground">
-                    Welcome to EDGEBIC . Designed as an entry level production
-                    scheduling offering that allows users to quickly create a
-                    series of routing steps then schedule according to capacity
-                    limitations, direction (Forward or Reverse), and Priorities.
-                    It also offers a quick method to load data either directly
-                    or importing from an Excel sheet.
-                  </p>
-                </div>
-                <div className="overflow-hidden rounded-lg shadow-lg">
-                  <img
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/insight-1.png"
-                    alt="EDGEBIC production scheduling software interface"
-                    className="h-auto w-full"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="mb-6 grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <h2 className="mb-6 text-3xl font-bold text-foreground">Overview</h2>
+              <p className="text-lg leading-relaxed text-muted-foreground">
+                Welcome to EDGEBIC . Designed as an entry level production
+                scheduling offering that allows users to quickly create a
+                series of routing steps then schedule according to capacity
+                limitations, direction (Forward or Reverse), and Priorities.
+                It also offers a quick method to load data either directly
+                or importing from an Excel sheet.
+              </p>
+            </div>
+            <div className="overflow-hidden rounded-lg shadow-lg">
+              <img
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/insight-1.png"
+                alt="EDGEBIC production scheduling software interface"
+                className="h-auto w-full"
+              />
+            </div>
+          </div>
 
           {/* Software Demo Video Section */}
           <Card className="mb-6">
