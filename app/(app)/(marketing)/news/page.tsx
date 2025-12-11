@@ -164,30 +164,6 @@ export default function NewsPage(): React.JSX.Element {
           </p>
         </div>
 
-        {/* Video Section */}
-        <div className="mb-8">
-          <h2 className="mb-4 text-2xl font-bold text-foreground">Company Overview</h2>
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="overflow-hidden rounded-lg">
-              <div className="relative aspect-video w-full">
-                <iframe
-                  src="https://www.youtube.com/embed/IR8NhOlV_zM"
-                  title="User Solutions Company Overview"
-                  className="absolute inset-0 size-full rounded-lg"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            </div>
-            <div>
-              <h3 className="mb-3 text-xl font-semibold">90 Second Company Overview</h3>
-              <p className="text-muted-foreground">
-                Watch our company overview video to learn about User Solutions and our manufacturing software solutions for production planning, scheduling, and resource management.
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Sample Media Coverage */}
         <div className="mb-8">
           <h2 className="mb-4 text-2xl font-bold text-foreground">Sample Media Coverage</h2>
