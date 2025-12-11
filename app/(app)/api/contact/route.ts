@@ -8,8 +8,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { z } from 'zod';
 
+import { Caching, OrganizationCacheKey } from '@/data/caching';
 import { prisma } from '@/lib/db/prisma';
 import { sendContactFormEmail } from '@/lib/smtp/send-contact-form-email';
 
@@ -81,6 +83,14 @@ export async function POST(request: NextRequest) {
         isRead: false
       }
     });
+
+    // Revalidate contacts cache so new contact shows immediately in CRM
+    revalidateTag(
+      Caching.createOrganizationTag(
+        OrganizationCacheKey.Contacts,
+        organization.id
+      )
+    );
 
     // Send email notification to both recipients
     const recipients = [

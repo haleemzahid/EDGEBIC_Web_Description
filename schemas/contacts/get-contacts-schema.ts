@@ -7,7 +7,8 @@ export enum GetContactsSortBy {
   Name = 'name',
   Email = 'email',
   Phone = 'phone',
-  Stage = 'stage'
+  Stage = 'stage',
+  CreatedAt = 'createdAt'
 }
 
 export enum RecordsOption {

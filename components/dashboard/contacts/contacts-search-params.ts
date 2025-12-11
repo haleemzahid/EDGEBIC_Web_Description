@@ -20,10 +20,10 @@ export const searchParams = {
     RecordsOption.All
   ),
   sortBy: parseAsStringLiteral(Object.values(GetContactsSortBy)).withDefault(
-    GetContactsSortBy.Name
+    GetContactsSortBy.CreatedAt
   ),
   sortDirection: parseAsStringLiteral(Object.values(SortDirection)).withDefault(
-    SortDirection.Asc
+    SortDirection.Desc
   ),
   searchQuery: parseAsString.withDefault(''),
   tags: parseAsArrayOf(parseAsString).withDefault([])
