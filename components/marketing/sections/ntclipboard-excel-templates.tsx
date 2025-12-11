@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { DownloadIcon, FileSpreadsheetIcon, InfoIcon } from 'lucide-react';
+import { FileSpreadsheetIcon, InfoIcon } from 'lucide-react';
 
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -110,13 +110,13 @@ export function NTClipboardExcelTemplates(): React.JSX.Element {
       </section>
 
       {/* Applications Grid */}
-      <section className="py-6">
+      <section className="pt-6">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-6 text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground">
               Manufacturing Excel Applications
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-2xl text-md text-muted-foreground">
               Streamline your manufacturing operations with our comprehensive
               suite of Excel-based applications
             </p>
@@ -196,39 +196,9 @@ export function NTClipboardExcelTemplates(): React.JSX.Element {
         </div>
       </section>
 
-      {/* Call to Action */}
-      <section className="bg-gradient-to-r from-slate-900 to-slate-800 py-6 dark:from-slate-800 dark:to-slate-700">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Want to get your production in the groove?
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-xl text-slate-300 dark:text-slate-200">
-              Watch our classic video and get your operations movin' and
-              groovin' today!
-            </p>
-            <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link
-                href="/contact-us"
-                className="inline-flex items-center gap-2 rounded-full bg-green-600 px-8 py-4 text-lg font-semibold text-white shadow-lg transition-all hover:bg-green-700 hover:shadow-xl"
-              >
-                Get Started Today
-              </Link>
-              <Link
-                href="/product-downloads"
-                className="inline-flex items-center gap-2 rounded-full border-2 border-white px-8 py-4 text-lg font-semibold text-white transition-all hover:bg-white hover:text-slate-900"
-              >
-                <DownloadIcon className="size-5" />
-                Download Samples
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Awards Banner */}
-      <section className="py-6">
-        <div className="container mx-auto px-4">
+      <section>
+        <div className="container mt-6 mx-auto px-4">
           <div className="mx-auto max-w-7xl">
             <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
               <CardContent className="p-8 text-center">

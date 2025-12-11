@@ -54,13 +54,6 @@ export const MENU_LINKS = [
         external: false
       },
       {
-        title: 'News',
-        description: 'Latest news, press releases, and media coverage',
-        icon: <NewspaperIcon className="size-5 shrink-0" />,
-        href: Routes.News,
-        external: false
-      },
-      {
         title: 'Blog',
         description: 'Insights, articles, and updates',
         icon: <BookIcon className="size-5 shrink-0" />,
