@@ -14,7 +14,7 @@ export function SiteHeading({
   description
 }: SiteHeadingProps): React.JSX.Element {
   return (
-    <div className="mx-auto flex max-w-7xl flex-col items-center gap-6 text-center">
+    <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 text-center">
       {badge && (
         <Badge
           variant="outline"

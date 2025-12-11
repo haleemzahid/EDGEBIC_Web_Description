@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { Award, Mail, MapPin, Phone, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 
 import { GridSection } from '@/components/marketing/fragments/grid-section';
 import { SiteHeading } from '@/components/marketing/fragments/site-heading';
@@ -62,70 +62,17 @@ export function NTClipboardAbout(): React.JSX.Element {
     }
   ];
 
-  const companyStats = [
-    {
-      icon: <Users className="size-8" />,
-      number: '30+',
-      label: 'Years of Excellence',
-      description: 'Serving manufacturing industry since 1991'
-    },
-    {
-      icon: <Award className="size-8" />,
-      number: '1000+',
-      label: 'Satisfied Customers',
-      description: 'Worldwide manufacturing solutions'
-    },
-    {
-      icon: <MapPin className="size-8" />,
-      number: '25+',
-      label: 'Countries Served',
-      description: 'Global reach with local expertise'
-    }
-  ];
-
   return (
     <GridSection hideVerticalGridLines>
       <div className="container pt-6">
         <SiteHeading
           badge="About Us"
-          title="Providing Advanced Planning Scheduling and Tracking Software"
-          description="Meet the team behind 30+ years of manufacturing excellence and innovation"
+          title="Meet Our Team"
+          description="The experts behind 30+ years of manufacturing software excellence"
         />
 
-        {/* Company Stats */}
-        <div className="mx-auto mt-8 grid max-w-4xl grid-cols-1 gap-8 md:grid-cols-3">
-          {companyStats.map((stat, index) => (
-            <div
-              key={index}
-              className="rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-6 text-center dark:from-slate-900 dark:to-slate-800"
-            >
-              <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/50 dark:text-orange-400">
-                {stat.icon}
-              </div>
-              <div className="mb-2 text-3xl font-bold text-slate-900 dark:text-white">
-                {stat.number}
-              </div>
-              <div className="mb-1 text-lg font-semibold text-orange-600 dark:text-orange-400">
-                {stat.label}
-              </div>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                {stat.description}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Team Leaders Section */}
+        {/* Team Members Section */}
         <div className="mt-8">
-          <div className="mb-6 text-center">
-            <h2 className="mb-4 text-3xl font-bold text-slate-900 dark:text-white">
-              Team Leaders
-            </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400">
-              Product Support and Sales Experts
-            </p>
-          </div>
-
           <div className="space-y-12">
             {teamMembers.map((member, index) => (
               <div
@@ -174,49 +121,6 @@ export function NTClipboardAbout(): React.JSX.Element {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* Company Recognition */}
-        <div className="mt-8 text-center">
-          <div className="rounded-3xl border bg-gradient-to-br from-orange-50 to-red-50 p-8 dark:from-orange-900/20 dark:to-red-900/20">
-            <h3 className="mb-4 text-2xl font-bold text-slate-900 dark:text-white">
-              Celebrating 30+ Years of Award Winning Software!
-            </h3>
-            <p className="mb-6 text-lg text-slate-700 dark:text-slate-300">
-              Recognized by industry leaders and trusted by manufacturers
-              worldwide
-            </p>
-
-            {/* Contact Information */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="flex items-center justify-center gap-2 text-slate-700 dark:text-slate-300">
-                <Mail className="size-5 text-orange-600" />
-                <span>us@usersolutions.com</span>
-              </div>
-              <div className="flex items-center justify-center gap-2 text-slate-700 dark:text-slate-300">
-                <Phone className="size-5 text-orange-600" />
-                <span>248.486.6365</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Mission Statement */}
-        <div className="mt-8 text-center">
-          <div className="mx-auto max-w-3xl rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-8 dark:from-slate-900 dark:to-slate-800">
-            <h3 className="mb-4 text-2xl font-bold text-slate-900 dark:text-white">
-              Our Mission
-            </h3>
-            <p className="mb-4 text-lg text-slate-700 dark:text-slate-300">
-              At User Solutions, we believe manufacturing software should be
-              intuitive, affordable, and adaptable to your unique workflow. We
-              don't force you to change how you work - instead, we create
-              solutions that fit seamlessly into your existing processes.
-            </p>
-            <p className="text-xl font-semibold text-orange-600 dark:text-orange-400">
-              "Listen and Deliver" - Guaranteed
-            </p>
           </div>
         </div>
 
