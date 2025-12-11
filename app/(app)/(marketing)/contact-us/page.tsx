@@ -199,10 +199,8 @@ export default function ContactUsPage() {
                             id="productInterest"
                             {...register('productInterest')}
                             className="w-full border-b border-input bg-transparent px-2 py-3 text-foreground focus:border-primary focus:outline-none"
+                            defaultValue="production-planning"
                           >
-                            <option value="">
-                              Production Planning & Scheduling
-                            </option>
                             <option value="production-planning">
                               Production Planning & Scheduling
                             </option>
@@ -225,8 +223,9 @@ export default function ContactUsPage() {
                             id="hearAboutUs"
                             {...register('hearAboutUs')}
                             className="w-full border-b border-input bg-transparent px-2 py-3 text-foreground focus:border-primary focus:outline-none"
+                            defaultValue="not-specified"
                           >
-                            <option value="">
+                            <option value="not-specified">
                               Where did you hear about US?
                             </option>
                             <option value="google">Google Search</option>
