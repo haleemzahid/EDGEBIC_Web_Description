@@ -130,49 +130,49 @@ const blogArticles = [
     title: 'Enhancing Supply Chain Visibility through Advanced Scheduling Solutions',
     date: 'May 26, 2024',
     image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/usersolutionsimage-300x211.png',
-    link: 'https://www.usersolutions.com/enhancing-supply-chain-visibility-through-advanced-scheduling-solutions/'
+    link: '/enhancing-supply-chain-visibility-through-advanced-scheduling-solutions/'
   },
   {
     title: 'The Role of Technology in Modern Production Planning and Scheduling',
     date: 'May 16, 2024',
     image: 'https://www.usersolutions.com/wp-content/uploads/2022/07/AirCraftMaint.jpg',
-    link: 'https://www.usersolutions.com/erp-solutions-for-production-planning/'
+    link: '/erp-solutions-for-production-planning/'
   },
   {
     title: 'Implementing Lean Manufacturing Principles for Improved Production Efficiency',
     date: 'May 6, 2024',
     image: 'https://www.usersolutions.com/wp-content/uploads/2024/02/sdf.jpg',
-    link: 'https://www.usersolutions.com/lean-manufacturing-solutions/'
+    link: '/lean-manufacturing-solutions/'
   },
   {
     title: 'Li-ion Battery Production Scheduling Software',
     date: 'September 8, 2022',
     image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/image04-300x163.png',
-    link: 'https://www.usersolutions.com/li-ion-battery-production-scheduling-software/'
+    link: '/li-ion-battery-production-scheduling-software/'
   },
   {
     title: 'Scheduling System Narrows Skills Gap for Fire-Rated Glass',
     date: 'September 8, 2022',
     image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/image3-300x163.png',
-    link: 'https://www.usersolutions.com/scheduling-system-narrows-skills-gap-for-fire-rated-glass/'
+    link: '/scheduling-system-narrows-skills-gap-for-fire-rated-glass/'
   },
   {
     title: 'Small Manufacturer and Job Shop Uses Planning, Scheduling, and Tracking Tools',
     date: 'September 8, 2022',
     image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/image06-1-300x163.png',
-    link: 'https://www.usersolutions.com/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive/'
+    link: '/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive/'
   },
   {
     title: 'User Solutions, Inc. Named as One of Top ERP Solutions Transforming Business 2016',
     date: 'September 8, 2022',
     image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/image05-300x163.png',
-    link: 'https://www.usersolutions.com/user-solutions-inc-named-as-one-of-top-erp-solutions-transforming-business-2016-by-cio-applications-as-they-celebrate-25-years-in-business/'
+    link: '/user-solutions-inc-named-as-one-of-top-erp-solutions-transforming-business-2016-by-cio-applications-as-they-celebrate-25-years-in-business/'
   },
   {
     title: 'Celebrating National Manufacturing Day',
     date: 'July 18, 2022',
     image: 'https://www.usersolutions.com/wp-content/uploads/2022/07/celebrating-300x163.png',
-    link: 'https://www.usersolutions.com/random-events-and-covariance/'
+    link: '/random-events-and-covariance/'
   }
 ];
 
