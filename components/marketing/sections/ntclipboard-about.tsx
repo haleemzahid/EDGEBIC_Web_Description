@@ -25,6 +25,9 @@ export function NTClipboardAbout(): React.JSX.Element {
       name: 'Haleem Khan',
       title: 'Development Manager at User Solutions | CEO at Dawloom',
       link: 'https://www.dawloom.com/',
+      fiverr: 'https://www.fiverr.com/haleemzahid',
+      linkedin: 'https://www.linkedin.com/in/haleemzahid35/',
+      facebook: 'https://www.facebook.com/haleem.zahid',
       image: 'https://www.dawloom.com/team/Haleem%20Khan.png',
       description:
         'Haleem brings over a decade of software development experience and leads the company with expertise in .NET and custom software solutions. His deep technical knowledge combined with business acumen helps drive innovation and deliver high-quality solutions to clients.',
@@ -39,6 +42,24 @@ export function NTClipboardAbout(): React.JSX.Element {
         'Mudasir Nadeem is a versatile web developer with expertise in front-end and back-end technologies, helping businesses build dynamic, responsive websites. His skills span modern frameworks and technologies that enable seamless user experiences.',
       philosophy:
         'Mudasir Nadeem is passionate about creating clean, efficient code and staying current with the latest web development trends and best practices.'
+    },
+    {
+      name: 'Shahid Khan',
+      title: '.NET Senior Developer',
+      image: 'https://www.dawloom.com/team/Shahid%20Khan.png',
+      description:
+        'Shahid is a highly skilled .NET developer with extensive experience building scalable and high-performance applications for businesses of all sizes.',
+      philosophy:
+        'Shahid believes in writing clean, maintainable code that stands the test of time and delivers exceptional value to clients.'
+    },
+    {
+      name: 'Hamza Khan',
+      title: '.NET Desktop & Mobile Developer',
+      image: 'https://www.dawloom.com/team/Hamza%20Khan.jpg',
+      description:
+        'Hamza brings 5+ years of experience in developing desktop and mobile applications using .NET technologies, providing seamless user experiences.',
+      philosophy:
+        'Hamza is dedicated to creating intuitive applications that bridge the gap between powerful functionality and user-friendly design.'
     },
     {
       name: 'Dennis Johnson',
@@ -138,6 +159,45 @@ export function NTClipboardAbout(): React.JSX.Element {
                             className="text-blue-600 hover:underline dark:text-blue-400"
                           >
                             dawloom.com
+                          </Link>
+                        </>
+                      )}
+                      {member.fiverr && (
+                        <>
+                          {' | '}
+                          <Link
+                            href={member.fiverr}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-green-600 hover:underline dark:text-green-400"
+                          >
+                            Fiverr
+                          </Link>
+                        </>
+                      )}
+                      {member.linkedin && (
+                        <>
+                          {' | '}
+                          <Link
+                            href={member.linkedin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-700 hover:underline dark:text-blue-300"
+                          >
+                            LinkedIn
+                          </Link>
+                        </>
+                      )}
+                      {member.facebook && (
+                        <>
+                          {' | '}
+                          <Link
+                            href={member.facebook}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline dark:text-blue-400"
+                          >
+                            Facebook
                           </Link>
                         </>
                       )}
