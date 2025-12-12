@@ -209,9 +209,11 @@ export function NTClipboardSuccessStories(): React.JSX.Element {
                   />
                 </div>
                 <CardHeader className="pb-4">
-                  <CardTitle className="line-clamp-2 text-lg transition-colors group-hover:text-blue-600">
-                    {story.title}
-                  </CardTitle>
+                  <Link href={story.href}>
+                    <CardTitle className="line-clamp-2 cursor-pointer text-lg transition-colors hover:text-blue-600 group-hover:text-blue-600">
+                      {story.title}
+                    </CardTitle>
+                  </Link>
                 </CardHeader>
                 <CardContent className="pt-0">
                   <CardDescription className="mb-4 line-clamp-3">
