@@ -183,10 +183,10 @@ export function NTClipboardSuccessStories(): React.JSX.Element {
       <section className="pt-6">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-6 text-center">
-            <h2 className="text-3xl  font-bold text-foreground sm:text-4xl">
+            <h2 className="text-2xl  font-bold text-foreground">
               Discover How Easy and Affordable It Is
             </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
+            <p className="mt-4 text-[18px] text-muted-foreground">
               To become even more competitive and profitable through efficient
               production planning, scheduling, tracking, combined with improved
               communications.
