@@ -199,13 +199,13 @@ export default function NewsPage(): React.JSX.Element {
           <h2 className="mb-4 text-2xl font-bold text-foreground">Press Releases</h2>
           <div className="grid gap-4 md:grid-cols-2">
             {pressReleases.map((item, index) => (
-              <div key={index} className="overflow-hidden rounded-lg border">
+              <div key={index} className={`overflow-hidden rounded-lg border ${index === 0 ? 'md:col-span-2' : ''}`}>
                 <Image
                   src={item.image}
                   alt={item.title}
-                  width={400}
-                  height={200}
-                  className="h-40 w-full object-cover"
+                  width={index === 0 ? 1024 : 400}
+                  height={index === 0 ? 300 : 200}
+                  className={`w-full object-contain ${index === 0 ? 'h-auto max-h-96' : 'h-70 object-cover'}`}
                   unoptimized
                 />
                 <div className="p-3">
