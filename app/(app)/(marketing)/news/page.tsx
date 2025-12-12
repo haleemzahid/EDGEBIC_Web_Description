@@ -181,7 +181,7 @@ export default function NewsPage(): React.JSX.Element {
     <div className="min-h-screen">
       <div className="container mx-auto max-w-7xl px-4 pt-6">
         {/* Header */}
-        <div className="mb-8 text-center">
+        <div className="mb-6 text-center">
           <h1 className="mb-4 text-4xl font-bold text-foreground">Latest News</h1>
           <p className="text-lg text-muted-foreground">
             View User Solutions' press announcements and media coverage to stay up-to-date on our innovative production planning and scheduling solutions and how they can help manufacturers become more competitive and profitable through efficient resource management
@@ -189,7 +189,7 @@ export default function NewsPage(): React.JSX.Element {
         </div>
 
         {/* Sample Media Coverage */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h2 className="mb-4 text-2xl font-bold text-foreground">Sample Media Coverage</h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {mediaCoverage.map((item, index) => (
@@ -246,7 +246,7 @@ export default function NewsPage(): React.JSX.Element {
         </div>
 
         {/* Press Releases */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h2 className="mb-4 text-2xl font-bold text-foreground">Press Releases</h2>
           <div className="grid gap-4 md:grid-cols-2">
             {pressReleases.map((item, index) => (
@@ -276,7 +276,7 @@ export default function NewsPage(): React.JSX.Element {
         </div>
 
         {/* Blog Articles */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h2 className="mb-4 text-2xl font-bold text-foreground">Blog Articles</h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {blogArticles.map((article, index) => (
