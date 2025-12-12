@@ -6,11 +6,11 @@ import { NTClipboardToolBox } from './ntclipboard-toolbox';
 
 export function ManufacturingFeatureSection(): React.JSX.Element {
   return (
-    <section className="bg-white py-6 dark:bg-slate-900">
+    <section className="bg-white py-6">
       <div className="mx-auto max-w-7xl px-6">
         <div className="lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-[#003d5c] dark:text-white ">
+            <h2 className="text-2xl font-bold text-[#003d5c] ">
               EDGEBIC simplifies production planning and scheduling
             </h2>
             <div>
@@ -34,10 +34,10 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
           </div>
 
           <div className="mt-6 space-y-4 lg:mt-0">
-            <h3 className="text-xl font-bold text-[#003d5c] dark:text-white md:text-2xl">
+            <h3 className="text-xl font-bold text-[#003d5c] md:text-2xl">
               Accurate production scheduling with real-time visibility
             </h3>
-            <p className="text-base leading-relaxed text-slate-700 dark:text-slate-300">
+            <p className="text-base leading-relaxed text-slate-700">
               Promise accurate lead times with finite capacity scheduling.
               Optimize resource utilization with drag-and-drop schedule
               adjustments and real-time reporting for better decision making.
@@ -45,7 +45,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             <div>
               <Link
                 href="/resource-manager-db-2"
-                className="inline-flex items-center justify-center rounded-md border-2 border-[#003d5c] bg-transparent px-5 py-2 text-sm font-semibold text-[#003d5c] transition-colors hover:bg-[#003d5c] hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-slate-900"
+                className="inline-flex items-center justify-center rounded-md border-2 border-[#003d5c] bg-transparent px-5 py-2 text-sm font-semibold text-[#003d5c] transition-colors hover:bg-[#003d5c] hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 View Details
               </Link>
@@ -55,10 +55,10 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
 
         <div className="mt-6 lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
           <div className="mt-6 space-y-4 lg:mt-0">
-            <h3 className="text-xl font-bold text-[#003d5c] dark:text-white md:text-2xl">
+            <h3 className="text-xl font-bold text-[#003d5c] md:text-2xl">
               Integrated MRP and capacity planning
             </h3>
-            <p className="text-base leading-relaxed text-slate-700 dark:text-slate-300">
+            <p className="text-base leading-relaxed text-slate-700">
               Manage material requirements, prevent bottlenecks with finite
               capacity scheduling, and optimize workcenter loading with visual
               heat maps and what-if analysis capabilities.
@@ -66,7 +66,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             <div className="mt-6">
               <Link
                 href="/resource-manager-db-2"
-                className="inline-flex items-center justify-center rounded-md border-2 border-[#003d5c] bg-transparent px-5 py-2 text-sm font-medium text-[#003d5c] transition-all duration-200 hover:bg-[#003d5c] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#003d5c] focus:ring-offset-2 dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-[#003d5c] dark:focus:ring-white dark:focus:ring-offset-slate-900"
+                className="inline-flex items-center justify-center rounded-md border-2 border-[#003d5c] bg-transparent px-5 py-2 text-sm font-medium text-[#003d5c] transition-all duration-200 hover:bg-[#003d5c] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#003d5c] focus:ring-offset-2]"
               >
                 View Details
               </Link>
@@ -92,10 +92,10 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
           </div>
 
           <div className="mt-6 space-y-4 lg:mt-0">
-            <h3 className="text-xl font-bold text-[#003d5c] dark:text-white md:text-2xl">
+            <h3 className="text-xl font-bold text-[#003d5c] md:text-2xl">
               Feature
             </h3>
-            <ul className="space-y-2 text-base leading-relaxed text-slate-700 dark:text-slate-300">
+            <ul className="space-y-2 text-base leading-relaxed text-slate-700">
               <li className="flex items-start">
                 <span className="mr-2 mt-1 text-[#2FB8DE]">◉</span>
                 <span>Finite Planning & Scheduling</span>
@@ -124,7 +124,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             <div className="mt-6">
               <Link
                 href="/resource-manager-db-in-depth"
-                className="inline-flex items-center justify-center rounded-md border-2 border-[#003d5c] bg-transparent px-5 py-2 text-sm font-medium text-[#003d5c] transition-all duration-200 hover:bg-[#003d5c] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#003d5c] focus:ring-offset-2 dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-[#003d5c] dark:focus:ring-white dark:focus:ring-offset-slate-900"
+                className="inline-flex items-center justify-center rounded-md border-2 border-[#003d5c] bg-transparent px-5 py-2 text-sm font-medium text-[#003d5c] transition-all duration-200 hover:bg-[#003d5c] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#003d5c] focus:ring-offset-2]"
               >
                 View Details
               </Link>
@@ -135,17 +135,17 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
         {/* Real-time inventory overview */}
         <div className="mt-6 lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
           <div className="mt-6 space-y-4 lg:mt-0">
-            <h3 className="text-xl font-bold text-[#003d5c] dark:text-white md:text-2xl">
+            <h3 className="text-xl font-bold text-[#003d5c] md:text-2xl">
               Real-time inventory overview
             </h3>
-            <p className="text-base leading-relaxed text-slate-700 dark:text-slate-300">
+            <p className="text-base leading-relaxed text-slate-700">
               Prevent stock-outs, lower inventory levels, automate inventory
               transactions, view purchase requirements, track lots, and more.
             </p>
             <div className="mt-6">
               <Link
                 href="/production-scheduling-products"
-                className="inline-flex items-center justify-center rounded-md border-2 border-[#003d5c] bg-transparent px-5 py-2 text-sm font-medium text-[#003d5c] transition-all duration-200 hover:bg-[#003d5c] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#003d5c] focus:ring-offset-2 dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-[#003d5c] dark:focus:ring-white dark:focus:ring-offset-slate-900"
+                className="inline-flex items-center justify-center rounded-md border-2 border-[#003d5c] bg-transparent px-5 py-2 text-sm font-medium text-[#003d5c] transition-all duration-200 hover:bg-[#003d5c] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#003d5c] focus:ring-offset-2]"
               >
                 View Details
               </Link>
@@ -163,7 +163,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
 
         {/* Integrated Manufacturing Software for Business Growth */}
         <div className="mt-6">
-          <h2 className="text-center text-3xl font-bold text-[#003d5c] dark:text-white md:text-4xl">
+          <h2 className="text-center text-3xl font-bold text-[#003d5c] md:text-4xl">
             Integrated Manufacturing Software for Business Growth
           </h2>
 
@@ -242,10 +242,10 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   />
                 </svg>
               </div>
-              <h3 className="mb-3 text-xl font-bold text-[#003d5c] dark:text-white">
+              <h3 className="mb-3 text-xl font-bold text-[#003d5c]">
                 Production Planning
               </h3>
-              <p className="text-base text-slate-700 dark:text-slate-300">
+              <p className="text-base text-slate-700">
                 Generate reliable, detailed production plans. Balance materials
                 and capacity with actual demand. Effortlessly reschedule
                 production orders.
@@ -292,10 +292,10 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   />
                 </svg>
               </div>
-              <h3 className="mb-3 text-xl font-bold text-[#003d5c] dark:text-white">
+              <h3 className="mb-3 text-xl font-bold text-[#003d5c]">
                 Inventory
               </h3>
-              <p className="text-base text-slate-700 dark:text-slate-300">
+              <p className="text-base text-slate-700">
                 Always know what you have in stock. Easily avoid inventory
                 shortages and excess. Track inventory by lot or batch, use
                 serial numbers and barcodes.
@@ -354,10 +354,10 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   />
                 </svg>
               </div>
-              <h3 className="mb-3 text-xl font-bold text-[#003d5c] dark:text-white">
+              <h3 className="mb-3 text-xl font-bold text-[#003d5c]">
                 Sales Management
               </h3>
-              <p className="text-base text-slate-700 dark:text-slate-300">
+              <p className="text-base text-slate-700">
                 Calculate order costs and lead times in just a few clicks. Send
                 confirmed orders straight to production. Easily manage invoices,
                 shipping, and returns.
@@ -408,10 +408,10 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   />
                 </svg>
               </div>
-              <h3 className="mb-3 text-xl font-bold text-[#003d5c] dark:text-white">
+              <h3 className="mb-3 text-xl font-bold text-[#003d5c]">
                 Workforce
               </h3>
-              <p className="text-base text-slate-700 dark:text-slate-300">
+              <p className="text-base text-slate-700">
                 Stay informed on your labor requirements and utilization.
                 Provide shop floor workers with a simple interface for reporting
                 orders and material use.
@@ -453,10 +453,10 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   />
                 </svg>
               </div>
-              <h3 className="mb-3 text-xl font-bold text-[#003d5c] dark:text-white">
+              <h3 className="mb-3 text-xl font-bold text-[#003d5c]">
                 Procurement
               </h3>
-              <p className="text-base text-slate-700 dark:text-slate-300">
+              <p className="text-base text-slate-700">
                 Easily forecast your procurement requirements. Create pre-filled
                 purchase orders in one click. Manage supplier relationships.
                 Compare terms and reliability.
@@ -513,10 +513,10 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   />
                 </svg>
               </div>
-              <h3 className="mb-3 text-xl font-bold text-[#003d5c] dark:text-white">
+              <h3 className="mb-3 text-xl font-bold text-[#003d5c]">
                 Finances
               </h3>
-              <p className="text-base text-slate-700 dark:text-slate-300">
+              <p className="text-base text-slate-700">
                 Manage transactions, track income and expenses, and create
                 accurate reports. Streamline accounting tasks and make better
                 financial decisions.
@@ -553,14 +553,14 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             </div>
           </div>
 
-          <h2 className="text-center text-3xl font-bold text-[#003d5c] dark:text-white md:text-4xl">
+          <h2 className="text-center text-3xl font-bold text-[#003d5c] md:text-4xl">
             Trusted by Manufacturers Worldwide for Over 25 Years
           </h2>
 
           {/* Testimonial Cards */}
           <div className="mt-6 grid gap-8 md:grid-cols-3">
             {/* Testimonial 1 */}
-            <div className="flex flex-col rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-700 dark:bg-slate-800">
+            <div className="flex flex-col rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
               <div className="mb-4 flex items-start gap-4">
                 <div className="relative shrink-0">
                   <div className="flex size-16 items-center justify-center overflow-hidden rounded-full bg-slate-200">
@@ -576,13 +576,13 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   </div>
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="mb-1 font-bold text-[#003d5c] dark:text-white">
+                  <h3 className="mb-1 font-bold text-[#003d5c]">
                     Joel K.
                   </h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                  <p className="text-sm text-slate-600">
                     Lean Facilitator
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-500">
+                  <p className="text-xs text-slate-500">
                     Furniture
                   </p>
                 </div>
@@ -600,11 +600,11 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 ))}
               </div>
 
-              <h4 className="mb-3 text-left text-lg font-semibold text-[#003d5c] dark:text-white">
+              <h4 className="mb-3 text-left text-lg font-semibold text-[#003d5c]">
                 "Flexible MRP with great ongoing support"
               </h4>
 
-              <p className="mb-4 line-clamp-3 flex-1 text-left text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+              <p className="mb-4 line-clamp-3 flex-1 text-left text-sm leading-relaxed text-slate-700">
                 A unique scheduling system with the flexibility we need for
                 custom jobs that have many variables, at the right price point.
                 User Solutions has great ongoing support needed for our
@@ -637,7 +637,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             </div>
 
             {/* Testimonial 2 */}
-            <div className="flex flex-col rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-700 dark:bg-slate-800">
+            <div className="flex flex-col rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
               <div className="mb-4 flex items-start gap-4">
                 <div className="relative shrink-0">
                   <div className="flex size-16 items-center justify-center overflow-hidden rounded-full bg-slate-200">
@@ -653,13 +653,13 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   </div>
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="mb-1 font-bold text-[#003d5c] dark:text-white">
+                  <h3 className="mb-1 font-bold text-[#003d5c]">
                     Robert K.
                   </h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                  <p className="text-sm text-slate-600">
                     Epicor ERP Consultant
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-500">
+                  <p className="text-xs text-slate-500">
                     Management Consulting
                   </p>
                 </div>
@@ -677,12 +677,12 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 ))}
               </div>
 
-              <h4 className="mb-3 text-left text-lg font-semibold text-[#003d5c] dark:text-white">
+              <h4 className="mb-3 text-left text-lg font-semibold text-[#003d5c]">
                 "Resource Manager DB Review"
               </h4>
 
               <div className="mb-2 text-left">
-                <span className="inline-flex items-center text-xs font-medium text-green-700 dark:text-green-400">
+                <span className="inline-flex items-center text-xs font-medium text-green-700">
                   <svg
                     className="mr-1 size-4"
                     viewBox="0 0 20 20"
@@ -698,7 +698,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </span>
               </div>
 
-              <p className="mb-4 line-clamp-3 flex-1 text-left text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+              <p className="mb-4 line-clamp-3 flex-1 text-left text-sm leading-relaxed text-slate-700">
                 Being a seasoned Epicor Software ERP implementation consultant
                 and also a customer for Resource Manager DB (RMDB) in a previous
                 role working for Instruments For Research And Industry (IFRAI),
@@ -734,7 +734,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             </div>
 
             {/* Testimonial 3 */}
-            <div className="flex flex-col rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-700 dark:bg-slate-800">
+            <div className="flex flex-col rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
               <div className="mb-4 flex items-start gap-4">
                 <div className="relative shrink-0">
                   <div className="flex size-16 items-center justify-center overflow-hidden rounded-full bg-slate-200">
@@ -750,13 +750,13 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   </div>
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="mb-1 font-bold text-[#003d5c] dark:text-white">
+                  <h3 className="mb-1 font-bold text-[#003d5c]">
                     Mike W.
                   </h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                  <p className="text-sm text-slate-600">
                     Regional Manager
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-500">
+                  <p className="text-xs text-slate-500">
                     Management Consulting
                   </p>
                 </div>
@@ -774,12 +774,12 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 ))}
               </div>
 
-              <h4 className="mb-3 text-left text-lg font-semibold text-[#003d5c] dark:text-white">
+              <h4 className="mb-3 text-left text-lg font-semibold text-[#003d5c]">
                 "Resource Manager Capabilities"
               </h4>
 
               <div className="mb-2 text-left">
-                <span className="inline-flex items-center text-xs font-medium text-green-700 dark:text-green-400">
+                <span className="inline-flex items-center text-xs font-medium text-green-700">
                   <svg
                     className="mr-1 size-4"
                     viewBox="0 0 20 20"
@@ -795,7 +795,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </span>
               </div>
 
-              <p className="mb-4 line-clamp-3 flex-1 text-left text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+              <p className="mb-4 line-clamp-3 flex-1 text-left text-sm leading-relaxed text-slate-700">
                 The software has many desirable capabilities, including the
                 ability to engage in capacity planning by resource. However, the
                 most powerful feature is the ability to engage in "what if"
@@ -834,7 +834,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
 
           {/* Customer Logos */}
           <div className="mt-6">
-            <h3 className="mb-6 text-center text-2xl font-bold text-[#003d5c] dark:text-white">
+            <h3 className="mb-6 text-center text-2xl font-bold text-[#003d5c]">
               Some of our customers
             </h3>
             <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
@@ -842,7 +842,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 href="https://lifecore.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center rounded-lg border border-slate-200 bg-slate-900 p-6 shadow-sm transition-all hover:shadow-md dark:border-slate-700 dark:bg-slate-800"
+                className="flex items-center justify-center rounded-lg border border-slate-200 bg-slate-900 p-6 shadow-sm transition-all hover:shadow-md"
               >
                 <img
                   src="https://lifecore.com/wp-content/uploads/2025/11/Lifecore-Inj-CDMO_Logo_REV_v2.png"
@@ -854,7 +854,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 href="https://www.viking-forge.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md dark:border-slate-700 dark:bg-slate-800"
+                className="flex items-center justify-center rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md"
               >
                 <img
                   src="https://www.viking-forge.com/wp-content/uploads/2020/02/vklogo.jpg"
@@ -866,9 +866,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 href="https://mtmmanufacturing.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md dark:border-slate-700 dark:bg-slate-800"
+                className="flex items-center justify-center rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md"
               >
-                <span className="text-center text-lg font-bold text-[#003d5c] dark:text-white">
+                <span className="text-center text-lg font-bold text-[#003d5c]">
                   MTM Manufacturing
                 </span>
               </a>
@@ -876,7 +876,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 href="https://www.dawloom.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md dark:border-slate-700 dark:bg-slate-800"
+                className="flex items-center justify-center rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md"
               >
                 <img
                   src="https://www.dawloom.com/logos/FULL%20COLOR%20NO%20BCKG.svg"

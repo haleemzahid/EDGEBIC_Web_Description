@@ -22,19 +22,19 @@ export default function LeanManufacturingAmplifierPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-orange-50 via-white to-amber-50 py-6 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <section className="bg-gradient-to-br from-orange-50 via-white to-amber-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <Badge
               variant="outline"
-              className="mb-6 h-8 rounded-full px-4 text-sm font-medium shadow-sm dark:border-white/30 dark:bg-white/10 dark:text-white"
+              className="mb-6 h-8 rounded-full px-4 text-sm font-medium shadow-sm"
             >
               Success Story
             </Badge>
             <h1 className="mb-6 bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-3xl font-bold text-transparent md:text-4xl lg:text-5xl">
               Lean Manufacturing Realized by Hi-Tech Amplifier Manufacturer
             </h1>
-            <p className="mx-auto mb-4 max-w-3xl text-xl text-gray-700 dark:text-gray-300">
+            <p className="mx-auto mb-4 max-w-3xl text-xl text-gray-700">
               Learn how lean manufacturing principles transformed production
               efficiency in high-tech electronics.
             </p>
@@ -46,8 +46,8 @@ export default function LeanManufacturingAmplifierPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <div className="prose prose-lg dark:prose-invert mx-auto">
-              <p className="text-gray-700 dark:text-gray-300">
+            <div className="prose prose-lg mx-auto">
+              <p className="text-gray-700">
                 Instruments For Industry, Inc (IFI), is a leader in the design
                 and manufacture of Solid State and Traveling Wave Tube
                 Amplifiers (both pulsed and CW). IFI equipment is used
@@ -55,14 +55,14 @@ export default function LeanManufacturingAmplifierPage() {
                 leading supplier of high power transmitters.
               </p>
 
-              <p className="text-gray-700 dark:text-gray-300">
+              <p className="text-gray-700">
                 IFI has implemented Resource Manager-DB to support a transition
                 to LEAN Manufacturing methods while still maintaining the
                 benefits of traditional MRP applications. IFI found the combined
                 capabilities provided them unsurpassed flexibility.
               </p>
 
-              <p className="text-gray-700 dark:text-gray-300">
+              <p className="text-gray-700">
                 In a traditional MRP environment, material replenishment is
                 based on a delicate balance of controlled inventory levels and
                 scheduled demands against that inventory. Naturally there are
@@ -72,7 +72,7 @@ export default function LeanManufacturingAmplifierPage() {
                 organization and are contrary to LEAN Manufacturing Practices.
               </p>
 
-              <p className="text-gray-700 dark:text-gray-300">
+              <p className="text-gray-700">
                 In the LEAN World, the MRP system does not function and is not
                 required. The system generated replenishment reorder signal is
                 replaced with a visually triggered reorder signal based on
@@ -82,7 +82,7 @@ export default function LeanManufacturingAmplifierPage() {
                 non-system based replenishment requirement.
               </p>
 
-              <p className="text-gray-700 dark:text-gray-300">
+              <p className="text-gray-700">
                 Resource Manager LEAN System provides the benefit of a MRP based
                 purchasing system while streamlining the purchasing function.
                 The system generated demand for material procurement is replaced
@@ -97,9 +97,9 @@ export default function LeanManufacturingAmplifierPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
               <CardContent className="p-8 text-center">
-                <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h2 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
                 <div className="relative mx-auto h-auto w-full max-w-4xl">

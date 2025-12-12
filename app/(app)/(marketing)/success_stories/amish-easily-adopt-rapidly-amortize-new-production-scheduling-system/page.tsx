@@ -50,7 +50,7 @@ export default function AmishProductionPage() {
             <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
               {/* Content Column */}
               <div className="space-y-6">
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Nestled quietly in the heart of Ohio's Amish countryside is a
                   furniture destination, offering an eclectic showroom of
                   hand-crafted selections in the modern, rustic, traditional,
@@ -61,7 +61,7 @@ export default function AmishProductionPage() {
                   hardwood furniture.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Homestead Furniture's core values reflect the local culture of
                   craftsmanship and fair business dealings. They are surrounded by
                   people who turn, bend, stain, carve and otherwise craft
@@ -71,29 +71,29 @@ export default function AmishProductionPage() {
                   manufacturing.
                 </p>
 
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-2xl font-bold text-gray-900">
                   Improvements
                 </h2>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   <strong>On the fabrication technique side:</strong> AmishBilt™
                   heirloom approach, proprietary Protekt™ finishing, cutting edge
                   color lab for proprietary paint and stain shades, advanced
                   stressing operations.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   <strong>On the manufacturing methodological side:</strong>
                   Implementing the Kaizen cell method of manufacturing, lean
                   inventory management, continuous improvement principles, Six
                   Sigma tactics.
                 </p>
 
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-2xl font-bold text-gray-900">
                   Last Hurdle
                 </h2>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   With all these advanced techniques and methodologies in place,
                   the antiquated production scheduling system surfaced as a
                   bottleneck holding them back. The current process was a full
@@ -103,7 +103,7 @@ export default function AmishProductionPage() {
                   would do.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   The article published in FDMC Magazine describes how a 40
                   hr/week production scheduling task, requiring an experienced
                   production scheduler, was reduced to a mere 2 hour task by the
@@ -156,9 +156,9 @@ export default function AmishProductionPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image

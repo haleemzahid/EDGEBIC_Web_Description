@@ -49,7 +49,7 @@ export default function ComplementsTraditionalMrpPage() {
             <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
               {/* Content Column */}
               <div className="space-y-6">
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Arnold Quesenberry, Senior Consultant for A.G. Raymond & Co.
                   Inc. has been using Resource Manager in conjunction with
                   consulting projects. "We have found these products are a perfect
@@ -59,7 +59,7 @@ export default function ComplementsTraditionalMrpPage() {
                   the current system".
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Mr. Quesenberry continues, "In addition to complementing
                   traditional systems, the Resource Manager is the perfect
                   beginning system for companies just getting started with
@@ -69,7 +69,7 @@ export default function ComplementsTraditionalMrpPage() {
                   basic scheduling, inventory management, even purchasing.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Our customers love the fact that since the Resource Manager is
                   compatible with Excel, they are immediately comfortable with
                   running the system."
@@ -96,9 +96,9 @@ export default function ComplementsTraditionalMrpPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image

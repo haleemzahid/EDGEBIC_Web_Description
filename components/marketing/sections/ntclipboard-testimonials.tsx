@@ -53,9 +53,9 @@ export function NTClipboardTestimonials(): React.JSX.Element {
           {testimonials.map((testimonial, index) => (
             <div
               key={index}
-              className="group relative overflow-hidden rounded-3xl border bg-white p-8 shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl dark:bg-slate-900"
+              className="group relative overflow-hidden rounded-3xl border bg-white p-8 shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 to-red-50/50 opacity-0 transition-opacity group-hover:opacity-100 dark:from-orange-900/10 dark:to-red-900/10" />
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 to-red-50/50 opacity-0 transition-opacity group-hover:opacity-100" />
               <div className="relative">
                 {/* Quote Icon */}
                 <div className="mb-4 flex size-12 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-red-500 text-white">
@@ -73,19 +73,19 @@ export function NTClipboardTestimonials(): React.JSX.Element {
                 </div>
 
                 {/* Quote */}
-                <blockquote className="mb-6 text-slate-700 dark:text-slate-300">
+                <blockquote className="mb-6 text-slate-700">
                   "{testimonial.quote}"
                 </blockquote>
 
                 {/* Author */}
                 <div className="border-t pt-4">
-                  <div className="font-semibold text-slate-900 dark:text-white">
+                  <div className="font-semibold text-slate-900">
                     {testimonial.name}
                   </div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">
+                  <div className="text-sm text-slate-600">
                     {testimonial.role}
                   </div>
-                  <div className="text-sm font-medium text-orange-600 dark:text-orange-400">
+                  <div className="text-sm font-medium text-orange-600">
                     {testimonial.company}
                   </div>
                 </div>
@@ -117,9 +117,9 @@ export function NTClipboardTestimonials(): React.JSX.Element {
         </div>
 
         {/* Awards & Recognition */}
-        <Card className="mt-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+        <Card className="mt-6 bg-gradient-to-br from-blue-50 to-blue-100">
           <CardContent className="p-8 text-center">
-            <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+            <h3 className="mb-6 text-2xl font-bold text-slate-900">
               CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
             </h3>
             <img

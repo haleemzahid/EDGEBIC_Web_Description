@@ -49,7 +49,7 @@ export default function RepairShopsTriplePage() {
             <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
               {/* Content Column */}
               <div className="space-y-6">
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   GE Railcar Services Corporation, a unit of General Electric
                   Corporation manages a fleet of over 180,000 railcars throughout
                   North America and has successfully deployed Workcenter
@@ -60,7 +60,7 @@ export default function RepairShopsTriplePage() {
                   shops located throughout U.S. and Canada."
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Reporting on some of the major benefits of Workcenter
                   SchedulerXL, Mr. Barich replies, "Over the past several years,
                   Workcenter SchedulerXL has successfully helped our repair
@@ -69,7 +69,7 @@ export default function RepairShopsTriplePage() {
                   we have improved our overall shop cycle time by several days.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Workcenter SchedulerXL is also helping our shop Production
                   Control Managers better manage the railcar repair process by
                   preventing over booking of workcenter resources, establishing
@@ -106,9 +106,9 @@ export default function RepairShopsTriplePage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image

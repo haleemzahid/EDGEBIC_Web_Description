@@ -183,7 +183,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                 </CardContent>
               </Card>
 
-              <div className="rounded-2xl bg-white p-6 shadow-lg dark:bg-slate-900">
+              <div className="rounded-2xl bg-white p-6 shadow-lg">
                 <h3 className="mb-3 text-xl font-semibold">Resources</h3>
                 <p className="mb-4 text-muted-foreground">
                   Add workcenters with name, description, and capacity.
@@ -199,7 +199,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
             </div>
 
             <div className="space-y-6">
-              <div className="rounded-2xl bg-white p-6 shadow-lg dark:bg-slate-900">
+              <div className="rounded-2xl bg-white p-6 shadow-lg">
                 <h3 className="mb-3 text-xl font-semibold">Orders</h3>
                 <p className="mb-4 text-muted-foreground">
                   Enter orders with workcenters and timing in sequential order.
@@ -213,7 +213,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                 </div>
               </div>
 
-              <div className="rounded-2xl bg-white p-6 shadow-lg dark:bg-slate-900">
+              <div className="rounded-2xl bg-white p-6 shadow-lg">
                 <h3 className="mb-3 text-xl font-semibold">
                   Finished Goods/Routing
                 </h3>
@@ -229,7 +229,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                 </div>
               </div>
 
-              <div className="rounded-2xl bg-white p-6 shadow-lg dark:bg-slate-900">
+              <div className="rounded-2xl bg-white p-6 shadow-lg">
                 <h3 className="mb-3 text-xl font-semibold">Schedule</h3>
                 <p className="mb-4 text-muted-foreground">
                   Advanced scheduling engine with capacity planning and
@@ -244,7 +244,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                 </div>
               </div>
 
-              <div className="rounded-2xl bg-white p-6 shadow-lg dark:bg-slate-900">
+              <div className="rounded-2xl bg-white p-6 shadow-lg">
                 <h3 className="mb-3 text-xl font-semibold">InSights</h3>
                 <p className="mb-4 text-muted-foreground">
                   Comprehensive Gantt charts, calendar views, efficiency
@@ -264,9 +264,9 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
 
         {/* Pricing */}
         <div className="mb-6 text-center">
-          <div className="mx-auto max-w-2xl rounded-3xl bg-white p-8 shadow-xl dark:bg-slate-900">
+          <div className="mx-auto max-w-2xl rounded-3xl bg-white p-8 shadow-xl">
             <div className="mb-4">
-              <span className="inline-block rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+              <span className="inline-block rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-800">
                 STARTER PRICING
               </span>
             </div>

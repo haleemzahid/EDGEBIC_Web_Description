@@ -26,7 +26,7 @@ function VercelLogo(): React.JSX.Element {
       strokeLinejoin="round"
       viewBox="0 0 16 16"
       aria-label="Vercel Logo"
-      className="text-black dark:text-white"
+      className="text-black"
     >
       <g clipPath="url(#clip0_872_3186)">
         <circle
@@ -43,7 +43,7 @@ function VercelLogo(): React.JSX.Element {
           clipRule="evenodd"
           d="M8 4.5L11.5 10.625H4.5L8 4.5Z"
           fill="currentColor"
-          className="text-white dark:text-black"
+          className="text-white"
         />
       </g>
       <defs>
@@ -52,7 +52,7 @@ function VercelLogo(): React.JSX.Element {
             width="16"
             height="16"
             fill="currentColor"
-            className="text-white dark:text-black"
+            className="text-white"
           />
         </clipPath>
       </defs>
@@ -126,7 +126,7 @@ export function AiAdvisorCard(props: CardProps): React.JSX.Element {
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex-col items-start space-y-4 rounded-b-xl bg-neutral-50 pt-6 dark:bg-neutral-900">
+      <CardFooter className="flex-col items-start space-y-4 rounded-b-xl bg-neutral-50 pt-6">
         <h3 className="text-base font-semibold sm:text-lg">AI Advisor</h3>
         <div className="min-h-10 max-w-md text-sm text-muted-foreground">
           Vercel has been contacted 4 times in the past year. Suggested next

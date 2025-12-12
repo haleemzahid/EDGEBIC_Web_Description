@@ -284,7 +284,7 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
 
             {/* Video Section */}
             <div className="mb-6">
-              <div className="relative mx-auto max-w-7xl overflow-hidden rounded-2xl border bg-slate-100 shadow-2xl dark:bg-slate-800">
+              <div className="relative mx-auto max-w-7xl overflow-hidden rounded-2xl border bg-slate-100 shadow-2xl">
                 <div className="relative aspect-video">
                   <VideoPlayer
                     videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/12/RMDB%20updated%20thumbnail.mp4"
@@ -302,7 +302,7 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
       {/* Summary Section */}
       <section
         id="summary"
-        className="bg-slate-50 py-6 dark:bg-slate-900"
+        className="bg-slate-50 py-6"
       >
         <div className="container mx-auto max-w-7xl px-4">
           <div className="mb-6 text-center">
@@ -380,9 +380,9 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="group rounded-lg border bg-white p-6 shadow-sm transition-all hover:shadow-md dark:bg-slate-800"
+                className="group rounded-lg border bg-white p-6 shadow-sm transition-all hover:shadow-md"
               >
-                <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-gradient-to-r from-orange-100 to-red-100 text-orange-600 dark:from-orange-900 dark:to-red-900 dark:text-orange-400">
+                <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-gradient-to-r from-orange-100 to-red-100 text-orange-600">
                   <feature.icon className="size-6" />
                 </div>
                 <h3 className="mb-2 font-semibold">{feature.title}</h3>
@@ -407,8 +407,8 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <div className="rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 p-8 text-center dark:from-blue-900/20 dark:to-blue-800/20">
-              <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+            <div className="rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 p-8 text-center">
+              <h3 className="mb-6 text-2xl font-bold text-slate-900">
                 CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
               </h3>
               <Image

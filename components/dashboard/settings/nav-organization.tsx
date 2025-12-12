@@ -41,13 +41,7 @@ export function NavOrganization(props: SidebarGroupProps): React.JSX.Element {
                       : 'text-muted-foreground'
                   )}
                 />
-                <span
-                  className={
-                    pathname.startsWith(item.href)
-                      ? 'dark:text-foreground'
-                      : 'dark:text-muted-foreground'
-                  }
-                >
+                <span>
                   {item.title}
                 </span>
               </Link>

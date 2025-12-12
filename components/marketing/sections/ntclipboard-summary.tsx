@@ -15,8 +15,8 @@ export function NTClipboardSummary(): React.JSX.Element {
         <div className="mx-auto max-w-7xl">
           <div className="mb-6 grid gap-8 md:grid-cols-2">
             {/* Problems */}
-            <div className="rounded-2xl border border-red-200 bg-red-50/50 p-6 dark:border-red-800 dark:bg-red-900/20">
-              <h3 className="mb-6 text-2xl font-bold text-red-800 dark:text-red-200">
+            <div className="rounded-2xl border border-red-200 bg-red-50/50 p-6">
+              <h3 className="mb-6 text-2xl font-bold text-red-800">
                 Common Production Planning Struggles
               </h3>
               <div className="space-y-4">
@@ -33,7 +33,7 @@ export function NTClipboardSummary(): React.JSX.Element {
                     className="flex items-start gap-3"
                   >
                     <div className="mt-1 size-2 shrink-0 rounded-full bg-red-500" />
-                    <span className="text-red-700 dark:text-red-300">
+                    <span className="text-red-700">
                       {problem}
                     </span>
                   </div>
@@ -42,8 +42,8 @@ export function NTClipboardSummary(): React.JSX.Element {
             </div>
 
             {/* Solutions */}
-            <div className="rounded-2xl border border-green-200 bg-green-50/50 p-6 dark:border-green-800 dark:bg-green-900/20">
-              <h3 className="mb-6 text-2xl font-bold text-green-800 dark:text-green-200">
+            <div className="rounded-2xl border border-green-200 bg-green-50/50 p-6">
+              <h3 className="mb-6 text-2xl font-bold text-green-800">
                 EDGEBIC Resource Manager-DB (RMDB) Delivers
               </h3>
               <div className="space-y-4">
@@ -62,7 +62,7 @@ export function NTClipboardSummary(): React.JSX.Element {
                     <div className="mt-1 flex size-5 shrink-0 items-center justify-center rounded-full bg-green-500">
                       <CheckIcon className="size-3 text-white" />
                     </div>
-                    <span className="text-green-700 dark:text-green-300">
+                    <span className="text-green-700">
                       {solution}
                     </span>
                   </div>
@@ -72,13 +72,13 @@ export function NTClipboardSummary(): React.JSX.Element {
           </div>
 
           {/* Key Features */}
-          <div className=" rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-8 dark:from-slate-900 dark:to-slate-800 md:p-6">
+          <div className=" rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-8 md:p-6">
             <h3 className="mb-6 text-center text-3xl font-bold">
               Deep Functionality for Every Production Challenge
             </h3>
             <div className="grid gap-6 md:grid-cols-3">
               <div className="text-center">
-                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30">
+                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-orange-100">
                   <div className="size-8 rounded bg-gradient-to-r from-orange-500 to-red-500" />
                 </div>
                 <h4 className="mb-2 font-semibold">Flexible Scheduling</h4>
@@ -88,7 +88,7 @@ export function NTClipboardSummary(): React.JSX.Element {
                 </p>
               </div>
               <div className="text-center">
-                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30">
+                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-orange-100">
                   <div className="size-8 rounded bg-gradient-to-r from-orange-500 to-red-500" />
                 </div>
                 <h4 className="mb-2 font-semibold">Smart Optimization</h4>
@@ -98,7 +98,7 @@ export function NTClipboardSummary(): React.JSX.Element {
                 </p>
               </div>
               <div className="text-center">
-                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30">
+                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-orange-100">
                   <div className="size-8 rounded bg-gradient-to-r from-orange-500 to-red-500" />
                 </div>
                 <h4 className="mb-2 font-semibold">Easy Integration</h4>
@@ -138,11 +138,11 @@ export function NTClipboardSummary(): React.JSX.Element {
           {/* 
           Risk-Free Demo CTA 
           <div className="text-center">
-            <div className="mx-auto max-w-2xl rounded-2xl border-2 border-dashed border-orange-300 bg-orange-50/50 p-8 dark:border-orange-700 dark:bg-orange-900/20">
-              <h3 className="mb-4 text-2xl font-bold text-orange-800 dark:text-orange-200">
+            <div className="mx-auto max-w-2xl rounded-2xl border-2 border-dashed border-orange-300 bg-orange-50/50 p-8">
+              <h3 className="mb-4 text-2xl font-bold text-orange-800">
                 See EDGEBIC in Action - Risk Free!
               </h3>
-              <p className="mb-6 text-orange-700 dark:text-orange-300">
+              <p className="mb-6 text-orange-700">
                 Schedule a live demo using your actual data in its current form.
                 No preparation required, no risk involved.
               </p>

@@ -9,24 +9,24 @@ export default function StudentsFreeTrialPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 via-white to-green-50 py-6 dark:from-blue-950 dark:via-gray-900 dark:to-green-950">
+      <section className="bg-gradient-to-br from-blue-50 via-white to-green-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <div className="mb-6">
               <Badge
                 variant="outline"
-                className="h-8 rounded-full border-blue-200 bg-blue-50 px-3 text-sm font-medium text-blue-700 shadow-sm dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-300"
+                className="h-8 rounded-full border-blue-200 bg-blue-50 px-3 text-sm font-medium text-blue-700 shadow-sm"
               >
                 STUDENTS FREE TRIAL
               </Badge>
             </div>
-            <h1 className="mb-6 bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-4xl font-bold text-transparent dark:from-blue-400 dark:to-green-400 md:text-5xl">
+            <h1 className="mb-6 bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-4xl font-bold text-transparent md:text-5xl">
               Resource Manager For Excel
             </h1>
-            <h2 className="mb-6 text-2xl font-semibold text-gray-700 dark:text-gray-200 md:text-3xl">
+            <h2 className="mb-6 text-2xl font-semibold text-gray-700 md:text-3xl">
               Free Trial Download for Students
             </h2>
-            <p className="mb-6 text-xl text-gray-700 dark:text-gray-300">
+            <p className="mb-6 text-xl text-gray-700">
               Gain valuable hands-on experience in Manufacturing Planning,
               Scheduling, and Execution
             </p>
@@ -43,14 +43,14 @@ export default function StudentsFreeTrialPage() {
                 <CardTitle>About Resource Manager For Excel (RMX)</CardTitle>
               </CardHeader>
               <CardContent className="prose max-w-none">
-                <p className="mb-4 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="mb-4 text-lg leading-relaxed text-gray-700">
                   Resource Manager for Excel (RMX) offers MRP and Shop
                   Scheduling on a flexible and powerful platform. Ambitious
                   Operations Management students can use RMX to gain valuable
                   hands-on experience in mastering important skills in many
                   areas of Manufacturing Planning, Scheduling, and Execution.
                 </p>
-                <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-lg leading-relaxed text-gray-700">
                   With RMX supporting up to a million rows of data, and with
                   Excel 360 fully cloud compatible, you can even tackle big data
                   applications and share results on the web. A fully functional
@@ -61,45 +61,45 @@ export default function StudentsFreeTrialPage() {
               </CardContent>
             </Card>
 
-            <Card className="mb-6 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30">
+            <Card className="mb-6 border-blue-200 bg-blue-50">
               <CardHeader>
                 <CardTitle>Installation Instructions</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-start">
-                    <span className="mr-3 text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    <span className="mr-3 text-2xl font-bold text-blue-600">
                       1.
                     </span>
                     <div>
                       <h3 className="mb-2 text-lg font-semibold">Download</h3>
-                      <p className="text-gray-700 dark:text-gray-300">
+                      <p className="text-gray-700">
                         Fill in the short form below to immediately download a
                         free student copy of Resource Manager for Excel
                       </p>
                     </div>
                   </div>
                   <div className="flex items-start">
-                    <span className="mr-3 text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    <span className="mr-3 text-2xl font-bold text-blue-600">
                       2.
                     </span>
                     <div>
                       <h3 className="mb-2 text-lg font-semibold">
                         Unzip and Install
                       </h3>
-                      <p className="text-gray-700 dark:text-gray-300">
+                      <p className="text-gray-700">
                         Simply Unzip and run installer (SetupRMX.exe) to extract
                         RMX2018EAM.xlsm to C:\Users\Public\US-RMX
                       </p>
                     </div>
                   </div>
                   <div className="flex items-start">
-                    <span className="mr-3 text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    <span className="mr-3 text-2xl font-bold text-blue-600">
                       3.
                     </span>
                     <div>
                       <h3 className="mb-2 text-lg font-semibold">Launch</h3>
-                      <p className="text-gray-700 dark:text-gray-300">
+                      <p className="text-gray-700">
                         A desktop shortcut icon is included. Click on desktop
                         icon to open RMX or open file (RMX2018EAM.xlsm) directly
                         from Excel
@@ -107,14 +107,14 @@ export default function StudentsFreeTrialPage() {
                     </div>
                   </div>
                   <div className="flex items-start">
-                    <span className="mr-3 text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    <span className="mr-3 text-2xl font-bold text-blue-600">
                       4.
                     </span>
                     <div>
                       <h3 className="mb-2 text-lg font-semibold">
                         Enable Macros
                       </h3>
-                      <p className="text-gray-700 dark:text-gray-300">
+                      <p className="text-gray-700">
                         If prompted, enable macros to run the application
                       </p>
                     </div>
@@ -128,7 +128,7 @@ export default function StudentsFreeTrialPage() {
                 <CardTitle>For Future Career Use</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="mb-4 text-gray-700 dark:text-gray-300">
+                <p className="mb-4 text-gray-700">
                   Keep US in mind when you are fully engaged at work and looking
                   for tools to improve your production scheduling. Resource
                   Manager-DB is a wonderful upgrade of RMX and is a strategic
@@ -147,19 +147,19 @@ export default function StudentsFreeTrialPage() {
             </Card>
 
             {/* Download Form Card */}
-            <Card className="bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-950/30 dark:to-blue-950/30">
+            <Card className="bg-gradient-to-br from-green-50 to-blue-50">
               <CardHeader>
                 <CardTitle className="text-center text-2xl">
                   Student Free Trial
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="mb-6 text-center text-gray-700 dark:text-gray-300">
+                <p className="mb-6 text-center text-gray-700">
                   Fill in the form to immediately download your free student
                   copy
                 </p>
                 <div className="space-y-4 text-center">
-                  <p className="italic text-gray-600 dark:text-gray-400">
+                  <p className="italic text-gray-600">
                     Contact us to request your student free trial download
                   </p>
                   <div className="flex flex-col justify-center gap-4 sm:flex-row">
@@ -189,7 +189,7 @@ export default function StudentsFreeTrialPage() {
       </section>
 
       {/* Resources Section */}
-      <section className="bg-gray-50 pb-8 pt-6 dark:bg-gray-900/50">
+      <section className="bg-gray-50 pb-8 pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
             <Card>
@@ -221,9 +221,9 @@ export default function StudentsFreeTrialPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100">
               <CardHeader>
-                <CardTitle className="text-center text-2xl text-blue-900 dark:text-white">
+                <CardTitle className="text-center text-2xl text-blue-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </CardTitle>
               </CardHeader>

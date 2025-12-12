@@ -248,7 +248,7 @@ function HeroIllustration(): React.JSX.Element {
             className="invisible"
           />
         </ScrollArea>
-        <div className="relative mb-1 w-full rounded-xl dark:border-none dark:bg-background">
+        <div className="relative mb-1 w-full rounded-xl">
           <SupportiveDashedGridLines />
           <div className="relative z-20 bg-background">
             <UnderlinedTabsContent value="feature1">
@@ -322,9 +322,9 @@ export function Hero(): React.JSX.Element {
         <HeroIllustration />
 
         {/* Awards Section */}
-        <Card className="mt-16 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+        <Card className="mt-16 bg-gradient-to-br from-blue-50 to-blue-100">
           <CardContent className="p-8 text-center">
-            <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+            <h3 className="mb-6 text-2xl font-bold text-slate-900">
               CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
             </h3>
             <div className="flex justify-center">

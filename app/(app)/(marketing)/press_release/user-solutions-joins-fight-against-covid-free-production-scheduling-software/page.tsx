@@ -30,12 +30,12 @@ export default function CovidPressReleasePage() {
         <div className="mx-auto max-w-4xl">
           <article className="prose prose-lg max-w-none">
             <header className="mb-6">
-              <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+              <p className="text-lg font-semibold text-gray-700">
                 South Lyon, MI - April 7, 2020
               </p>
             </header>
 
-            <div className="space-y-6 leading-relaxed text-gray-700 dark:text-gray-300">
+            <div className="space-y-6 leading-relaxed text-gray-700">
               <p>
                 User Solutions, a producer of production scheduling software
                 systems, announces it will offer Resource Manager for Excel
@@ -57,13 +57,13 @@ export default function CovidPressReleasePage() {
                 situation and then reverting it all back.
               </p>
 
-              <blockquote className="my-6 border-l-4 border-blue-600 p-6 dark:border-blue-400">
-                <p className="mb-4 text-lg italic text-gray-800 dark:text-gray-200">
+              <blockquote className="my-6 border-l-4 border-blue-600 p-6">
+                <p className="mb-4 text-lg italic text-gray-800">
                   "During our 30 plus years' of experience, we are used to
                   helping{' '}
                   <Link
                     href="/success-stories"
-                    className="text-blue-600 hover:underline dark:text-blue-400"
+                    className="text-blue-600 hover:underline"
                   >
                     manufacturers
                   </Link>{' '}
@@ -76,7 +76,7 @@ export default function CovidPressReleasePage() {
                   them time, productivity and substantial costs through the use
                   of our RMX."
                 </p>
-                <cite className="font-semibold text-gray-600 dark:text-gray-400">
+                <cite className="font-semibold text-gray-600">
                   - Jim Convis, President of User Solutions
                 </cite>
               </blockquote>
@@ -111,11 +111,11 @@ export default function CovidPressReleasePage() {
                 goes to show that businesses of all kinds can do their part."
               </p>
 
-              <div className="my-6 rounded-lg border border-gray-200 p-6 dark:border-gray-700">
-                <h3 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">
+              <div className="my-6 rounded-lg border border-gray-200 p-6">
+                <h3 className="mb-4 text-xl font-bold text-gray-800">
                   About User Solutions, Inc.
                 </h3>
-                <p className="text-gray-700 dark:text-gray-300">
+                <p className="text-gray-700">
                   User Solutions, Inc. was founded in 1991 in response to the
                   demand for lower cost, easy to learn and use software
                   solutions for the manufacturing and operations management
@@ -128,7 +128,7 @@ export default function CovidPressReleasePage() {
               </div>
             </div>
 
-            <div className="mt-6 border-t border-gray-200 pt-8 dark:border-gray-700">
+            <div className="mt-6 border-t border-gray-200 pt-8">
               <div className="flex flex-wrap gap-4">
                 <Link
                   href="/contact-us"
@@ -144,7 +144,7 @@ export default function CovidPressReleasePage() {
                 </Link>
                 <Link
                   href="/press_release"
-                  className="rounded-lg border border-gray-300 px-6 py-3 text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                  className="rounded-lg border border-gray-300 px-6 py-3 text-gray-700 transition-colors hover:bg-gray-50"
                 >
                   More Press Releases
                 </Link>
@@ -158,9 +158,9 @@ export default function CovidPressReleasePage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <img

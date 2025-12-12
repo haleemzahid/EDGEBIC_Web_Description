@@ -22,7 +22,7 @@ export default function AdvancedSchedulingSolutionsTagPage() {
         >
           Advanced Scheduling Solutions Tag
         </Badge>
-        <h1 className="mb-4 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-4xl font-bold text-transparent dark:from-green-400 dark:to-emerald-400 md:text-5xl">
+        <h1 className="mb-4 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-4xl font-bold text-transparent md:text-5xl">
           Advanced Scheduling Solutions
         </h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
@@ -48,7 +48,7 @@ export default function AdvancedSchedulingSolutionsTagPage() {
               />
             </div>
             <CardContent className="p-6">
-              <h2 className="mb-3 text-2xl font-bold text-slate-900 dark:text-white">
+              <h2 className="mb-3 text-2xl font-bold text-slate-900">
                 Enhancing Supply Chain Visibility through Advanced Scheduling
                 Solutions
               </h2>
@@ -67,9 +67,9 @@ export default function AdvancedSchedulingSolutionsTagPage() {
       </div>
 
       {/* Award Logo Card */}
-      <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow dark:from-blue-900/20 dark:to-blue-800/20">
+      <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
         <CardContent className="p-8 text-center">
-          <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+          <h2 className="mb-6 text-2xl font-bold text-slate-900">
             CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
           </h2>
           <div className="relative mx-auto h-auto w-full max-w-4xl">

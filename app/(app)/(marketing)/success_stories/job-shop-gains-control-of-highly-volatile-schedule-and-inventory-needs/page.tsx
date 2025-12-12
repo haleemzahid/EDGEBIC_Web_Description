@@ -22,12 +22,12 @@ export default function JobShopGainsControlPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-green-50 via-white to-emerald-50 py-6 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <section className="bg-gradient-to-br from-green-50 via-white to-emerald-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <Badge
               variant="outline"
-              className="mb-6 h-8 rounded-full px-4 text-sm font-medium shadow-sm dark:border-white/30 dark:bg-white/10 dark:text-white"
+              className="mb-6 h-8 rounded-full px-4 text-sm font-medium shadow-sm"
             >
               Success Story
             </Badge>
@@ -35,7 +35,7 @@ export default function JobShopGainsControlPage() {
               Job Shop Gains Control of Highly Volatile Schedule and Inventory
               Needs
             </h1>
-            <p className="mx-auto mb-4 max-w-3xl text-xl text-gray-700 dark:text-gray-300">
+            <p className="mx-auto mb-4 max-w-3xl text-xl text-gray-700">
               Learn how advanced scheduling solutions helped a job shop master
               complex production challenges.
             </p>
@@ -59,8 +59,8 @@ export default function JobShopGainsControlPage() {
               />
             </div>
 
-            <div className="prose prose-lg dark:prose-invert mx-auto">
-              <blockquote className="border-l-4 border-green-600 pl-4 italic text-gray-700 dark:text-gray-300">
+            <div className="prose prose-lg mx-auto">
+              <blockquote className="border-l-4 border-green-600 pl-4 italic text-gray-700">
                 <p>
                   "Our products are constantly changing and, for only a few
                   hours per month, the Resource Manager provides the ideal
@@ -68,7 +68,7 @@ export default function JobShopGainsControlPage() {
                   schedules, and manage our inventory. Since we are already
                   familiar with Excel, there wasn't even a learning curve."
                 </p>
-                <footer className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+                <footer className="mt-2 text-sm font-medium text-gray-900">
                   -Jim Muraski, Production Control Manager of Assembled Products
                   Group
                 </footer>
@@ -82,9 +82,9 @@ export default function JobShopGainsControlPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
               <CardContent className="p-8 text-center">
-                <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h2 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
                 <div className="relative mx-auto h-auto w-full max-w-4xl">

@@ -35,13 +35,13 @@ export default function RMDBv6PressReleasePage() {
         <div className="mx-auto max-w-4xl">
           <article className="prose prose-lg max-w-none">
             <header className="mb-6">
-              <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+              <p className="text-lg font-semibold text-gray-700">
                 South Lyon, MI - June 9, 2016
               </p>
             </header>
 
-            <div className="space-y-6 leading-relaxed text-gray-700 dark:text-gray-300">
-              <p className="text-xl font-medium text-gray-900 dark:text-white">
+            <div className="space-y-6 leading-relaxed text-gray-700">
+              <p className="text-xl font-medium text-gray-900">
                 Enevate Corporation, a cutting-edge developer and licensor of
                 advanced Li-ion battery technology, has selected User Solutions'
                 Resource Manager database (RMDB) to manage production of their
@@ -58,7 +58,7 @@ export default function RMDBv6PressReleasePage() {
               </p>
 
               <blockquote className="my-6 border-l-4 border-blue-600 pl-6">
-                <p className="mb-4 text-lg italic text-gray-800 dark:text-gray-200">
+                <p className="mb-4 text-lg italic text-gray-800">
                   "Resource Manager database's flexible configuration allows us
                   to model our unique manufacturing processes with up to 10
                   level deep sub-assemblies. The system gives us complete
@@ -66,12 +66,12 @@ export default function RMDBv6PressReleasePage() {
                   the quality standards required for our advanced battery
                   technology."
                 </p>
-                <cite className="font-semibold text-gray-600 dark:text-gray-400">
+                <cite className="font-semibold text-gray-600">
                   - Scott Bennett, Supply Chain Manager, Enevate Corporation
                 </cite>
               </blockquote>
 
-              <h3 className="mb-4 mt-8 text-2xl font-bold text-gray-900 dark:text-white">
+              <h3 className="mb-4 mt-8 text-2xl font-bold text-gray-900">
                 Greenfield Manufacturing Facility
               </h3>
               <p>
@@ -90,7 +90,7 @@ export default function RMDBv6PressReleasePage() {
                 into capacity and delivery commitments.
               </p>
 
-              <h3 className="mb-4 mt-8 text-2xl font-bold text-gray-900 dark:text-white">
+              <h3 className="mb-4 mt-8 text-2xl font-bold text-gray-900">
                 Advanced Scheduling for Complex Production
               </h3>
               <p>
@@ -106,13 +106,13 @@ export default function RMDBv6PressReleasePage() {
                 include:
               </p>
 
-              <ul className="my-6 space-y-3 text-gray-700 dark:text-gray-300">
+              <ul className="my-6 space-y-3 text-gray-700">
                 <li className="flex items-start">
-                  <span className="mr-2 text-blue-600 dark:text-blue-400">
+                  <span className="mr-2 text-blue-600">
                     •
                   </span>
                   <span>
-                    <strong className="text-gray-900 dark:text-white">
+                    <strong className="text-gray-900">
                       Deep BOM Support
                     </strong>{' '}
                     - Handles complex, multi-level bill of materials up to 10
@@ -120,11 +120,11 @@ export default function RMDBv6PressReleasePage() {
                   </span>
                 </li>
                 <li className="flex items-start">
-                  <span className="mr-2 text-blue-600 dark:text-blue-400">
+                  <span className="mr-2 text-blue-600">
                     •
                   </span>
                   <span>
-                    <strong className="text-gray-900 dark:text-white">
+                    <strong className="text-gray-900">
                       Flexible Configuration
                     </strong>{' '}
                     - Easily adapts to unique manufacturing processes and
@@ -132,11 +132,11 @@ export default function RMDBv6PressReleasePage() {
                   </span>
                 </li>
                 <li className="flex items-start">
-                  <span className="mr-2 text-blue-600 dark:text-blue-400">
+                  <span className="mr-2 text-blue-600">
                     •
                   </span>
                   <span>
-                    <strong className="text-gray-900 dark:text-white">
+                    <strong className="text-gray-900">
                       Complete Visibility
                     </strong>{' '}
                     - Clear insight into production schedule, capacity, and
@@ -144,11 +144,11 @@ export default function RMDBv6PressReleasePage() {
                   </span>
                 </li>
                 <li className="flex items-start">
-                  <span className="mr-2 text-blue-600 dark:text-blue-400">
+                  <span className="mr-2 text-blue-600">
                     •
                   </span>
                   <span>
-                    <strong className="text-gray-900 dark:text-white">
+                    <strong className="text-gray-900">
                       Quality Focus
                     </strong>{' '}
                     - Supports the precise tracking required for high-tech
@@ -156,11 +156,11 @@ export default function RMDBv6PressReleasePage() {
                   </span>
                 </li>
                 <li className="flex items-start">
-                  <span className="mr-2 text-blue-600 dark:text-blue-400">
+                  <span className="mr-2 text-blue-600">
                     •
                   </span>
                   <span>
-                    <strong className="text-gray-900 dark:text-white">
+                    <strong className="text-gray-900">
                       Scalability
                     </strong>{' '}
                     - Designed to grow with the business as production ramps up
@@ -168,7 +168,7 @@ export default function RMDBv6PressReleasePage() {
                 </li>
               </ul>
 
-              <h3 className="mb-4 mt-8 text-2xl font-bold text-gray-900 dark:text-white">
+              <h3 className="mb-4 mt-8 text-2xl font-bold text-gray-900">
                 About Enevate Corporation
               </h3>
               <p>
@@ -182,11 +182,11 @@ export default function RMDBv6PressReleasePage() {
                 at its own manufacturing facility.
               </p>
 
-              <div className="mt-8 rounded-lg border border-gray-200 p-6 dark:border-gray-700">
-                <h4 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">
+              <div className="mt-8 rounded-lg border border-gray-200 p-6">
+                <h4 className="mb-4 text-lg font-bold text-gray-900">
                   About User Solutions
                 </h4>
-                <p className="text-gray-700 dark:text-gray-300">
+                <p className="text-gray-700">
                   User Solutions has been providing production scheduling
                   software to manufacturers since 1982. Resource Manager
                   database (RMDB) is our flagship product, helping companies
@@ -198,17 +198,17 @@ export default function RMDBv6PressReleasePage() {
                 </p>
               </div>
 
-              <div className="mt-8 space-y-2 border-t border-gray-200 pt-6 dark:border-gray-700">
-                <p className="font-semibold text-gray-900 dark:text-white">
+              <div className="mt-8 space-y-2 border-t border-gray-200 pt-6">
+                <p className="font-semibold text-gray-900">
                   For More Information:
                 </p>
-                <p className="text-gray-700 dark:text-gray-300">
+                <p className="text-gray-700">
                   User Solutions, Inc.
                   <br />
                   Email:{' '}
                   <a
                     href="mailto:us@usersolutions.com"
-                    className="text-blue-600 hover:underline dark:text-blue-400"
+                    className="text-blue-600 hover:underline"
                   >
                     us@usersolutions.com
                   </a>
@@ -216,7 +216,7 @@ export default function RMDBv6PressReleasePage() {
                   Phone:{' '}
                   <a
                     href="tel:248.486.6365"
-                    className="text-blue-600 hover:underline dark:text-blue-400"
+                    className="text-blue-600 hover:underline"
                   >
                     248.486.6365
                   </a>
@@ -224,7 +224,7 @@ export default function RMDBv6PressReleasePage() {
                   Website:{' '}
                   <Link
                     href="/resource-manager-db-2"
-                    className="text-blue-600 hover:underline dark:text-blue-400"
+                    className="text-blue-600 hover:underline"
                   >
                     Learn more about Resource Manager DB
                   </Link>
@@ -234,32 +234,32 @@ export default function RMDBv6PressReleasePage() {
           </article>
 
           {/* Related Links */}
-          <div className="mt-6 rounded-lg border border-gray-200 p-6 dark:border-gray-700">
-            <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">
+          <div className="mt-6 rounded-lg border border-gray-200 p-6">
+            <h3 className="mb-4 text-lg font-bold text-gray-900">
               Related Resources
             </h3>
             <div className="space-y-2">
               <Link
                 href="/resource-manager-db-2"
-                className="block text-blue-600 hover:underline dark:text-blue-400"
+                className="block text-blue-600 hover:underline"
               >
                 → Learn more about Resource Manager DB
               </Link>
               <Link
                 href="/product-downloads"
-                className="block text-blue-600 hover:underline dark:text-blue-400"
+                className="block text-blue-600 hover:underline"
               >
                 → Download Free Trial
               </Link>
               <Link
                 href="/success_stories"
-                className="block text-blue-600 hover:underline dark:text-blue-400"
+                className="block text-blue-600 hover:underline"
               >
                 → Read Customer Success Stories
               </Link>
               <Link
                 href="/press_release"
-                className="block text-blue-600 hover:underline dark:text-blue-400"
+                className="block text-blue-600 hover:underline"
               >
                 ← Back to Press Releases
               </Link>
@@ -272,9 +272,9 @@ export default function RMDBv6PressReleasePage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h2 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
                 <Image

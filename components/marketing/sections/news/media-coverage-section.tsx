@@ -33,7 +33,7 @@ export function MediaCoverageSection({
         {items.map((item, index) => (
           <div
             key={index}
-            className="overflow-hidden rounded-lg bg-white shadow-md dark:bg-gray-800"
+            className="overflow-hidden rounded-lg bg-white shadow-md"
           >
             <div className="relative aspect-video">
               <Image

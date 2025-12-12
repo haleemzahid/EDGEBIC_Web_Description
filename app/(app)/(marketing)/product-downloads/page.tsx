@@ -26,7 +26,7 @@ export default function ProductDownloadsPage(): React.JSX.Element {
         <div className="mx-auto mb-4 flex items-center justify-center">
           <Badge
             variant="outline"
-            className="h-8 rounded-full px-3 text-sm font-medium shadow-sm dark:border-white/30 dark:bg-white/10 dark:text-white"
+            className="h-8 rounded-full px-3 text-sm font-medium shadow-sm"
           >
             Product Downloads
           </Badge>
@@ -48,11 +48,11 @@ export default function ProductDownloadsPage(): React.JSX.Element {
         </div>
 
         {/* Download Instructions */}
-        <div className="mb-6 rounded-lg bg-yellow-50 p-6 dark:bg-yellow-900/20">
-          <h3 className="mb-3 text-lg font-semibold text-yellow-800 dark:text-yellow-200">
+        <div className="mb-6 rounded-lg bg-yellow-50 p-6">
+          <h3 className="mb-3 text-lg font-semibold text-yellow-800">
             NOTE ON DOWNLOADS:
           </h3>
-          <p className="text-yellow-700 dark:text-yellow-300">
+          <p className="text-yellow-700">
             Every Download Now (.zip) gives you two options – save or open. We
             recommend that you select open, then extract the setup file for WCXL
             or RMX to the directory of your choice (or just downloads). Then run
@@ -72,21 +72,21 @@ export default function ProductDownloadsPage(): React.JSX.Element {
           </h2>
 
           <div className="overflow-x-auto">
-            <table className="w-full rounded-lg border bg-white shadow-lg dark:bg-gray-800">
-              <thead className="bg-gray-50 dark:bg-gray-700">
+            <table className="w-full rounded-lg border bg-white shadow-lg">
+              <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                     Product
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                  <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
                     Information
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
+              <tbody className="divide-y divide-gray-200">
                 <tr>
                   <td className="px-6 py-3">
-                    <span className="font-medium text-gray-900 dark:text-white">Spreadsheet Scheduler</span>
+                    <span className="font-medium text-gray-900">Spreadsheet Scheduler</span>
                     <span className="ml-2 font-bold text-green-600">Free</span>
                   </td>
                   <td className="px-6 py-3 text-center">
@@ -96,9 +96,9 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                     </div>
                   </td>
                 </tr>
-                <tr className="bg-gray-50 dark:bg-gray-700">
+                <tr className="bg-gray-50">
                   <td className="px-6 py-3">
-                    <span className="font-medium text-gray-900 dark:text-white">Workcell Planner</span>
+                    <span className="font-medium text-gray-900">Workcell Planner</span>
                     <span className="ml-2 font-bold text-green-600">Free</span>
                   </td>
                   <td className="px-6 py-3 text-center">
@@ -110,7 +110,7 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                 </tr>
                 <tr>
                   <td className="px-6 py-3">
-                    <span className="font-medium text-gray-900 dark:text-white">Operations Manager</span>
+                    <span className="font-medium text-gray-900">Operations Manager</span>
                     <span className="ml-2 font-bold text-green-600">Free</span>
                   </td>
                   <td className="px-6 py-3 text-center">
@@ -120,9 +120,9 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                     </div>
                   </td>
                 </tr>
-                <tr className="bg-gray-50 dark:bg-gray-700">
+                <tr className="bg-gray-50">
                   <td className="px-6 py-3">
-                    <span className="font-medium text-gray-900 dark:text-white">Spreadsheet QC</span>
+                    <span className="font-medium text-gray-900">Spreadsheet QC</span>
                     <span className="ml-2 font-bold text-green-600">Free</span>
                   </td>
                   <td className="px-6 py-3 text-center">
@@ -134,7 +134,7 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                 </tr>
                 <tr>
                   <td className="px-6 py-3">
-                    <span className="font-medium text-gray-900 dark:text-white">Resource Manager for Excel</span>
+                    <span className="font-medium text-gray-900">Resource Manager for Excel</span>
                     <span className="ml-2 font-bold text-green-600">Free</span>
                   </td>
                   <td className="px-6 py-3 text-center">
@@ -162,9 +162,9 @@ export default function ProductDownloadsPage(): React.JSX.Element {
         <section className="pt-6">
           <div className="container mx-auto px-4">
             <div className="mx-auto max-w-7xl">
-              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+              <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
                 <CardContent className="p-8 text-center">
-                  <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                  <h3 className="mb-6 text-2xl font-bold text-slate-900">
                     CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                   </h3>
                   <Image

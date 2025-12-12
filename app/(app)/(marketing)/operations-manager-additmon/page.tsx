@@ -10,7 +10,7 @@ export default function AdditmonPage(): React.JSX.Element {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800 py-6 text-white dark:from-blue-800 dark:to-blue-900">
+      <section className="bg-gradient-to-r from-blue-600 to-blue-800 py-6 text-white">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <div className="mb-6">
@@ -130,7 +130,7 @@ export default function AdditmonPage(): React.JSX.Element {
                   choosing a seasonal pattern.
                 </p>
 
-                <div className="rounded-lg bg-blue-50 p-6 dark:bg-blue-900/20">
+                <div className="rounded-lg bg-blue-50 p-6">
                   <h3 className="mb-4 text-xl font-semibold text-blue-600">
                     Key Features of ADDITMON
                   </h3>
@@ -193,7 +193,7 @@ export default function AdditmonPage(): React.JSX.Element {
                 </p>
 
                 <div className="grid gap-6 md:grid-cols-2">
-                  <Card className="border-2 border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-900/10">
+                  <Card className="border-2 border-green-200 bg-green-50/50">
                     <CardHeader>
                       <CardTitle className="text-xl text-green-600">
                         Question 1: Consistency
@@ -208,7 +208,7 @@ export default function AdditmonPage(): React.JSX.Element {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-2 border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-900/10">
+                  <Card className="border-2 border-blue-200 bg-blue-50/50">
                     <CardHeader>
                       <CardTitle className="text-xl text-blue-600">
                         Question 2: Explanation
@@ -224,8 +224,8 @@ export default function AdditmonPage(): React.JSX.Element {
                   </Card>
                 </div>
 
-                <div className="rounded-lg bg-yellow-50 p-6 dark:bg-yellow-900/20">
-                  <p className="text-lg font-semibold text-yellow-800 dark:text-yellow-200">
+                <div className="rounded-lg bg-yellow-50 p-6">
+                  <p className="text-lg font-semibold text-yellow-800">
                     ⚠️ Important Note
                   </p>
                   <p className="mt-2 text-muted-foreground">
@@ -326,7 +326,7 @@ export default function AdditmonPage(): React.JSX.Element {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 p-6 dark:from-blue-900/20 dark:to-purple-900/20">
+                <div className="rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 p-6">
                   <h3 className="mb-4 text-xl font-semibold">
                     Testing Approach
                   </h3>
@@ -337,7 +337,7 @@ export default function AdditmonPage(): React.JSX.Element {
                     forecasts.
                   </p>
                   <div className="grid gap-4 md:grid-cols-2">
-                    <div className="rounded-lg bg-white p-4 dark:bg-gray-800">
+                    <div className="rounded-lg bg-white p-4">
                       <h4 className="mb-2 font-semibold text-blue-600">
                         MULTIMON
                       </h4>
@@ -346,7 +346,7 @@ export default function AdditmonPage(): React.JSX.Element {
                         seasonal patterns
                       </p>
                     </div>
-                    <div className="rounded-lg bg-white p-4 dark:bg-gray-800">
+                    <div className="rounded-lg bg-white p-4">
                       <h4 className="mb-2 font-semibold text-purple-600">
                         ADDITMON
                       </h4>
@@ -367,7 +367,7 @@ export default function AdditmonPage(): React.JSX.Element {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
                 <h2 className="mb-6 text-2xl font-bold text-foreground">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!

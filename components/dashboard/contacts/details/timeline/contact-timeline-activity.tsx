@@ -140,7 +140,7 @@ function ValueBadge({
         'block w-full truncate font-normal',
         variant === 'Old' && 'line-through',
         isEmpty &&
-          'border-neutral-300 text-muted-foreground opacity-65 dark:border-neutral-700'
+          'border-neutral-300 text-muted-foreground opacity-65'
       )}
       variant={isEmpty ? 'secondary' : 'outline'}
       title={text}

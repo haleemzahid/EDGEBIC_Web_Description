@@ -30,13 +30,13 @@ export default function ManufacturingDayPressReleasePage() {
         <div className="mx-auto max-w-4xl">
           <article className="prose prose-lg max-w-none">
             <header className="mb-6">
-              <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+              <p className="text-lg font-semibold text-gray-700">
                 South Lyon, MI - October 2, 2020
               </p>
             </header>
 
-            <div className="space-y-6 leading-relaxed text-gray-700 dark:text-gray-300">
-              <p className="text-xl font-medium text-gray-900 dark:text-white">
+            <div className="space-y-6 leading-relaxed text-gray-700">
+              <p className="text-xl font-medium text-gray-900">
                 All manufacturers would do well to focus on operations
                 management as the 'secret sauce' that can determine a
                 manufacturer's ability to compete.
@@ -47,11 +47,11 @@ export default function ManufacturingDayPressReleasePage() {
                 time with much attention focused on:
               </p>
 
-              <div className="my-6 rounded-lg border border-blue-200 p-6 dark:border-blue-800">
-                <h3 className="mb-4 text-xl font-bold text-gray-900 dark:text-white">
+              <div className="my-6 rounded-lg border border-blue-200 p-6">
+                <h3 className="mb-4 text-xl font-bold text-gray-900">
                   Key Manufacturing Challenges
                 </h3>
-                <ul className="space-y-3 text-gray-700 dark:text-gray-300">
+                <ul className="space-y-3 text-gray-700">
                   <li className="flex items-start">
                     <span className="mr-2 text-blue-600">•</span>
                     <span>
@@ -78,7 +78,7 @@ export default function ManufacturingDayPressReleasePage() {
                 </ul>
               </div>
 
-              <h3 className="mb-4 mt-8 text-2xl font-bold text-gray-900 dark:text-white">
+              <h3 className="mb-4 mt-8 text-2xl font-bold text-gray-900">
                 So What Can We Do to Help?
               </h3>
 
@@ -87,11 +87,11 @@ export default function ManufacturingDayPressReleasePage() {
                 manufacturing market, continues to do its part by:
               </p>
 
-              <div className="my-6 rounded-lg border border-blue-200 p-6 dark:border-blue-800">
-                <h3 className="mb-4 text-xl font-bold text-gray-900 dark:text-white">
+              <div className="my-6 rounded-lg border border-blue-200 p-6">
+                <h3 className="mb-4 text-xl font-bold text-gray-900">
                   User Solutions' Commitment
                 </h3>
-                <ul className="space-y-3 text-gray-700 dark:text-gray-300">
+                <ul className="space-y-3 text-gray-700">
                   <li className="flex items-start">
                     <span className="mr-2 text-blue-600">1.</span>
                     <span>
@@ -127,25 +127,25 @@ export default function ManufacturingDayPressReleasePage() {
                 possible.
               </p>
 
-              <blockquote className="my-8 border-l-4 border-blue-600 p-6 dark:border-blue-400">
-                <p className="mb-4 text-lg italic text-gray-800 dark:text-gray-200">
+              <blockquote className="my-8 border-l-4 border-blue-600 p-6">
+                <p className="mb-4 text-lg italic text-gray-800">
                   "Resource Manager is unique in that it easily adapts to the
                   way people are running their business today."
                 </p>
-                <cite className="font-semibold text-gray-600 dark:text-gray-400">
+                <cite className="font-semibold text-gray-600">
                   - Mike Parks, as Director of Georgia Tech's CMIT, an affiliate
                   of the NIST Manufacturing Extension Partnership (MEP)
                 </cite>
               </blockquote>
 
-              <h3 className="mb-4 mt-8 text-2xl font-bold text-gray-900 dark:text-white">
+              <h3 className="mb-4 mt-8 text-2xl font-bold text-gray-900">
                 Manufacturing: The Backbone of American Innovation
               </h3>
               <p>
                 The manufacturing sector continues to be a cornerstone of the
                 American economy:
               </p>
-              <ul className="ml-6 space-y-3 text-gray-700 dark:text-gray-300">
+              <ul className="ml-6 space-y-3 text-gray-700">
                 <li className="flex items-start">
                   <span className="mr-2 text-blue-600">•</span>
                   <span>
@@ -175,8 +175,8 @@ export default function ManufacturingDayPressReleasePage() {
                 </li>
               </ul>
 
-              <blockquote className="my-6 border-l-4 border-blue-600 p-6 dark:border-blue-400">
-                <p className="mb-4 text-lg italic text-gray-800 dark:text-gray-200">
+              <blockquote className="my-6 border-l-4 border-blue-600 p-6">
+                <p className="mb-4 text-lg italic text-gray-800">
                   "National Manufacturing Day is an opportunity to celebrate the
                   ingenuity, dedication, and resilience of American
                   manufacturers. At User Solutions, we're proud to support this
@@ -186,12 +186,12 @@ export default function ManufacturingDayPressReleasePage() {
                   about making things—it's about innovation, quality, and the
                   American spirit of continuous improvement."
                 </p>
-                <cite className="font-semibold text-gray-600 dark:text-gray-400">
+                <cite className="font-semibold text-gray-600">
                   - Jim Convis, President of User Solutions
                 </cite>
               </blockquote>
 
-              <h3 className="mb-4 mt-8 text-2xl font-bold text-gray-900 dark:text-white">
+              <h3 className="mb-4 mt-8 text-2xl font-bold text-gray-900">
                 Technology Driving Manufacturing Excellence
               </h3>
               <p>
@@ -207,11 +207,11 @@ export default function ManufacturingDayPressReleasePage() {
                 manufacturing's most persistent challenges:
               </p>
 
-              <div className="my-6 rounded-lg bg-gradient-to-r from-orange-50 to-red-50 p-6 dark:from-orange-900/20 dark:to-red-900/20">
-                <h3 className="mb-4 text-xl font-bold text-gray-900 dark:text-white">
+              <div className="my-6 rounded-lg bg-gradient-to-r from-orange-50 to-red-50 p-6">
+                <h3 className="mb-4 text-xl font-bold text-gray-900">
                   How Advanced Scheduling Makes Manufacturing Great
                 </h3>
-                <ul className="space-y-3 text-gray-700 dark:text-gray-300">
+                <ul className="space-y-3 text-gray-700">
                   <li className="flex items-start">
                     <span className="mr-2 text-orange-600">•</span>
                     <span>
@@ -254,7 +254,7 @@ export default function ManufacturingDayPressReleasePage() {
                 </ul>
               </div>
 
-              <h3 className="mb-4 mt-8 text-2xl font-bold text-gray-900 dark:text-white">
+              <h3 className="mb-4 mt-8 text-2xl font-bold text-gray-900">
                 Supporting American Manufacturing
               </h3>
               <p>
@@ -276,11 +276,11 @@ export default function ManufacturingDayPressReleasePage() {
                 manufacturing.
               </p>
 
-              <div className="my-6 rounded-lg border border-gray-200 p-6 dark:border-gray-700">
-                <h4 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">
+              <div className="my-6 rounded-lg border border-gray-200 p-6">
+                <h4 className="mb-4 text-lg font-bold text-gray-900">
                   Join the Celebration
                 </h4>
-                <p className="text-gray-700 dark:text-gray-300">
+                <p className="text-gray-700">
                   National Manufacturing Day events are held nationwide,
                   offering opportunities for students, educators, and community
                   members to learn about modern manufacturing careers and the
@@ -289,7 +289,7 @@ export default function ManufacturingDayPressReleasePage() {
                     href="https://www.mfgday.com"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline dark:text-blue-400"
+                    className="text-blue-600 hover:underline"
                   >
                     mfgday.com
                   </a>{' '}
@@ -298,7 +298,7 @@ export default function ManufacturingDayPressReleasePage() {
                 </p>
               </div>
 
-              <h3 className="mb-4 mt-8 text-2xl font-bold text-gray-900 dark:text-white">
+              <h3 className="mb-4 mt-8 text-2xl font-bold text-gray-900">
                 Free Resources for Manufacturers
               </h3>
               <p>
@@ -310,11 +310,11 @@ export default function ManufacturingDayPressReleasePage() {
                 operation.
               </p>
 
-              <div className="mt-8 rounded-lg border border-gray-200 p-6 dark:border-gray-700">
-                <h4 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">
+              <div className="mt-8 rounded-lg border border-gray-200 p-6">
+                <h4 className="mb-4 text-lg font-bold text-gray-900">
                   About User Solutions
                 </h4>
-                <p className="text-gray-700 dark:text-gray-300">
+                <p className="text-gray-700">
                   User Solutions has been providing innovative production
                   scheduling and planning software to manufacturers for over 30
                   years. Our mission is to help American manufacturers maintain
@@ -325,17 +325,17 @@ export default function ManufacturingDayPressReleasePage() {
                 </p>
               </div>
 
-              <div className="mt-8 space-y-2 border-t border-gray-200 pt-6 dark:border-gray-700">
-                <p className="font-semibold text-gray-900 dark:text-white">
+              <div className="mt-8 space-y-2 border-t border-gray-200 pt-6">
+                <p className="font-semibold text-gray-900">
                   For More Information:
                 </p>
-                <p className="text-gray-700 dark:text-gray-300">
+                <p className="text-gray-700">
                   User Solutions, Inc.
                   <br />
                   Email:{' '}
                   <a
                     href="mailto:us@usersolutions.com"
-                    className="text-blue-600 hover:underline dark:text-blue-400"
+                    className="text-blue-600 hover:underline"
                   >
                     us@usersolutions.com
                   </a>
@@ -343,7 +343,7 @@ export default function ManufacturingDayPressReleasePage() {
                   Phone:{' '}
                   <a
                     href="tel:248.486.6365"
-                    className="text-blue-600 hover:underline dark:text-blue-400"
+                    className="text-blue-600 hover:underline"
                   >
                     248.486.6365
                   </a>
@@ -351,7 +351,7 @@ export default function ManufacturingDayPressReleasePage() {
                   Website:{' '}
                   <Link
                     href="/resource-manager-db-2"
-                    className="text-blue-600 hover:underline dark:text-blue-400"
+                    className="text-blue-600 hover:underline"
                   >
                     Learn more about Resource Manager DB
                   </Link>
@@ -361,32 +361,32 @@ export default function ManufacturingDayPressReleasePage() {
           </article>
 
           {/* Related Links */}
-          <div className="mt-6 rounded-lg border border-gray-200 p-6 dark:border-gray-700">
-            <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">
+          <div className="mt-6 rounded-lg border border-gray-200 p-6">
+            <h3 className="mb-4 text-lg font-bold text-gray-900">
               Related Resources
             </h3>
             <div className="space-y-2">
               <Link
                 href="/resource-manager-db-2"
-                className="block text-blue-600 hover:underline dark:text-blue-400"
+                className="block text-blue-600 hover:underline"
               >
                 → Learn more about Resource Manager DB
               </Link>
               <Link
                 href="/success_stories"
-                className="block text-blue-600 hover:underline dark:text-blue-400"
+                className="block text-blue-600 hover:underline"
               >
                 → Read Customer Success Stories
               </Link>
               <Link
                 href="/product-downloads"
-                className="block text-blue-600 hover:underline dark:text-blue-400"
+                className="block text-blue-600 hover:underline"
               >
                 → Download Free Trial
               </Link>
               <Link
                 href="/press_release"
-                className="block text-blue-600 hover:underline dark:text-blue-400"
+                className="block text-blue-600 hover:underline"
               >
                 ← Back to Press Releases
               </Link>
@@ -399,9 +399,9 @@ export default function ManufacturingDayPressReleasePage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h2 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
                 <Image

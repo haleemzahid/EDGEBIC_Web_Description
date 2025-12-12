@@ -240,7 +240,7 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
           {/* Timeline */}
           <div className="relative">
             {/* Timeline line */}
-            <div className="absolute left-8 top-0 h-full w-px bg-gradient-to-b from-orange-300 via-orange-500 to-orange-700 dark:from-orange-400 dark:via-orange-500 dark:to-orange-600 md:left-1/2" />
+            <div className="absolute left-8 top-0 h-full w-px bg-gradient-to-b from-orange-300 via-orange-500 to-orange-700 md:left-1/2" />
 
             {milestones.map((milestone, index) => (
               <div
@@ -249,33 +249,33 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
                   } flex-col md:justify-between`}
               >
                 {/* Timeline dot */}
-                <div className="absolute left-8 top-1/2 z-10 flex size-4 -translate-y-1/2 items-center justify-center rounded-full bg-orange-500 ring-4 ring-white dark:ring-slate-900 md:left-1/2 md:-translate-x-1/2" />
+                <div className="absolute left-8 top-1/2 z-10 flex size-4 -translate-y-1/2 items-center justify-center rounded-full bg-orange-500 ring-4 ring-white md:left-1/2 md:-translate-x-1/2" />
 
                 {/* Content */}
                 <div
                   className={`ml-20 w-full md:ml-0 md:w-5/12 ${index % 2 === 0 ? 'md:pr-8' : 'md:pl-8'
                     }`}
                 >
-                  <div className="rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-6 dark:from-slate-900 dark:to-slate-800">
+                  <div className="rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-6">
                     <div className="mb-4 flex items-center gap-3">
-                      <div className="flex items-center justify-center rounded-full bg-orange-100 p-2 text-orange-600 dark:bg-orange-900/50 dark:text-orange-400">
+                      <div className="flex items-center justify-center rounded-full bg-orange-100 p-2 text-orange-600">
                         {milestone.icon}
                       </div>
                       <div>
-                        <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                        <div className="text-2xl font-bold text-orange-600">
                           {milestone.year}
                         </div>
-                        <div className="text-sm font-medium text-orange-500 dark:text-orange-300">
+                        <div className="text-sm font-medium text-orange-500">
                           {milestone.highlight}
                         </div>
                       </div>
                     </div>
 
-                    <h3 className="mb-3 text-xl font-bold text-slate-900 dark:text-white">
+                    <h3 className="mb-3 text-xl font-bold text-slate-900">
                       {milestone.title}
                     </h3>
 
-                    <p className="text-slate-700 dark:text-slate-300">
+                    <p className="text-slate-700">
                       {milestone.description}
                     </p>
                   </div>
@@ -289,18 +289,18 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
 
           {/* Summary */}
           <div className="mt-8 text-center">
-            <div className="rounded-3xl border bg-gradient-to-br from-orange-50 to-red-50 p-8 dark:from-orange-900/20 dark:to-red-900/20">
-              <h3 className="mb-4 text-2xl font-bold text-slate-900 dark:text-white">
+            <div className="rounded-3xl border bg-gradient-to-br from-orange-50 to-red-50 p-8">
+              <h3 className="mb-4 text-2xl font-bold text-slate-900">
                 Our Legacy & Future
               </h3>
-              <p className="mb-4 text-lg text-slate-700 dark:text-slate-300">
+              <p className="mb-4 text-lg text-slate-700">
                 From our founding in 1991 to today, User Solutions has
                 consistently delivered innovative, affordable, and flexible
                 manufacturing solutions. We've evolved from Lotus 1-2-3
                 templates to cutting-edge cloud-based systems while maintaining
                 our core commitment to customer success.
               </p>
-              <p className="text-xl font-semibold text-orange-600 dark:text-orange-400">
+              <p className="text-xl font-semibold text-orange-600">
                 30+ Years of Production Planning Excellence - Here's to the
                 Future!
               </p>
@@ -308,9 +308,9 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
           </div>
 
           {/* Awards Section */}
-          <Card className="mt-8 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+          <Card className="mt-8 bg-gradient-to-br from-blue-50 to-blue-100">
             <CardContent className="p-8 text-center">
-              <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+              <h3 className="mb-6 text-2xl font-bold text-slate-900">
                 CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
               </h3>
               <div className="flex justify-center">

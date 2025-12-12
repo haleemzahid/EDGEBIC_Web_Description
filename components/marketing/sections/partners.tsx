@@ -147,9 +147,9 @@ export function PartnersSection(): React.JSX.Element {
           {partnerStats.map((stat, index) => (
             <div
               key={index}
-              className="rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-6 text-center dark:from-slate-900 dark:to-slate-800"
+              className="rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-6 text-center"
             >
-              <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl bg-white text-primary shadow-lg dark:bg-slate-800">
+              <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl bg-white text-primary shadow-lg">
                 {stat.icon}
               </div>
               <div className="text-3xl font-bold text-primary">
@@ -301,9 +301,9 @@ export function PartnersSection(): React.JSX.Element {
 
         {/* Awards Section - Moved to end */}
         <div className="mx-auto mt-16 max-w-7xl">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
             <CardContent className="p-8 text-center">
-              <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+              <h3 className="mb-6 text-2xl font-bold text-slate-900">
                 CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
               </h3>
               <Image

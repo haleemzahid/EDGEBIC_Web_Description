@@ -31,30 +31,30 @@ export function NTClipboardMission(): React.JSX.Element {
           {/* Mission Section */}
           <div
             id="mission-statement"
-            className="rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-8 text-center dark:from-slate-900 dark:to-slate-800 md:p-12"
+            className="rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-8 text-center md:p-12"
           >
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-100 to-red-100 px-6 py-3 text-sm font-medium text-orange-800 dark:from-orange-900/30 dark:to-red-900/30 dark:text-orange-200">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-100 to-red-100 px-6 py-3 text-sm font-medium text-orange-800">
               <TargetIcon className="size-4" />
               Mission Statement
             </div>
 
-            <blockquote className="mb-6 text-2xl font-bold leading-relaxed text-slate-900 dark:text-white md:text-3xl">
+            <blockquote className="mb-6 text-2xl font-bold leading-relaxed text-slate-900 md:text-3xl">
               "Empower manufacturers to become more competitive and profitable
               through efficient resource management tools that are affordable,
               adaptable, and easily implemented."
             </blockquote>
 
-            <p className="mb-6 text-lg text-slate-700 dark:text-slate-300">
+            <p className="mb-6 text-lg text-slate-700">
               Since 1991, what makes US unique is we work with you to solve
               production planning, scheduling, and tracking challenges your way.
             </p>
 
-            <p className="mb-6 text-xl font-semibold text-orange-700 dark:text-orange-300">
+            <p className="mb-6 text-xl font-semibold text-orange-700">
               User Solutions: LISTEN and DELIVER. LISTEN to the customer,
               understand their needs, and DELIVER a solution.
             </p>
 
-            <p className="text-lg leading-relaxed text-slate-700 dark:text-slate-300">
+            <p className="text-lg leading-relaxed text-slate-700">
               We look forward to hearing from you and learning of your
               challenges and the opportunity to deliver an affordable solution
               that fits you like a glove!
@@ -64,12 +64,12 @@ export function NTClipboardMission(): React.JSX.Element {
           {/* Solutions Section */}
           <div
             id="solutions"
-            className="rounded-3xl border bg-gradient-to-br from-orange-50 to-red-50 p-8 dark:from-orange-900/20 dark:to-red-900/20 md:p-12"
+            className="rounded-3xl border bg-gradient-to-br from-orange-50 to-red-50 p-8 md:p-12"
           >
-            <h3 className="mb-6 text-center text-2xl font-bold text-slate-900 dark:text-white md:text-3xl">
+            <h3 className="mb-6 text-center text-2xl font-bold text-slate-900 md:text-3xl">
               Complete Manufacturing Solutions Portfolio
             </h3>
-            <p className="mb-6 text-center text-lg text-slate-700 dark:text-slate-300">
+            <p className="mb-6 text-center text-lg text-slate-700">
               From adding a Finite Capacity Scheduling capability to any ERP
               system, or providing Material Requirements Planning for smaller
               operations who only have a simple accounting solution, or
@@ -80,41 +80,41 @@ export function NTClipboardMission(): React.JSX.Element {
             </p>
 
             <div className="grid gap-6 md:grid-cols-2">
-              <div className="rounded-2xl border border-orange-200 bg-white/50 p-6 dark:border-orange-800 dark:bg-slate-800/50">
-                <h4 className="mb-3 text-xl font-semibold text-orange-700 dark:text-orange-300">
+              <div className="rounded-2xl border border-orange-200 bg-white/50 p-6">
+                <h4 className="mb-3 text-xl font-semibold text-orange-700">
                   ERP Enhancement
                 </h4>
-                <p className="text-slate-600 dark:text-slate-400">
+                <p className="text-slate-600">
                   Add Finite Capacity Scheduling capability to any existing ERP
                   system without disrupting current operations.
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-orange-200 bg-white/50 p-6 dark:border-orange-800 dark:bg-slate-800/50">
-                <h4 className="mb-3 text-xl font-semibold text-orange-700 dark:text-orange-300">
+              <div className="rounded-2xl border border-orange-200 bg-white/50 p-6">
+                <h4 className="mb-3 text-xl font-semibold text-orange-700">
                   Small Business Solutions
                 </h4>
-                <p className="text-slate-600 dark:text-slate-400">
+                <p className="text-slate-600">
                   Material Requirements Planning for smaller operations with
                   simple accounting solutions - no complex ERP required.
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-orange-200 bg-white/50 p-6 dark:border-orange-800 dark:bg-slate-800/50">
-                <h4 className="mb-3 text-xl font-semibold text-orange-700 dark:text-orange-300">
+              <div className="rounded-2xl border border-orange-200 bg-white/50 p-6">
+                <h4 className="mb-3 text-xl font-semibold text-orange-700">
                   Job Shop Scheduling
                 </h4>
-                <p className="text-slate-600 dark:text-slate-400">
+                <p className="text-slate-600">
                   Simple, effective Job Shop Scheduling Solutions designed for
                   custom manufacturing environments.
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-orange-200 bg-white/50 p-6 dark:border-orange-800 dark:bg-slate-800/50">
-                <h4 className="mb-3 text-xl font-semibold text-orange-700 dark:text-orange-300">
+              <div className="rounded-2xl border border-orange-200 bg-white/50 p-6">
+                <h4 className="mb-3 text-xl font-semibold text-orange-700">
                   Educational Templates
                 </h4>
-                <p className="text-slate-600 dark:text-slate-400">
+                <p className="text-slate-600">
                   Production and Operations Management educational templates for
                   learning and training purposes.
                 </p>
@@ -125,9 +125,9 @@ export function NTClipboardMission(): React.JSX.Element {
           {/* Values Section */}
           <div
             id="values"
-            className="rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-8 dark:from-slate-900 dark:to-slate-800 md:p-12"
+            className="rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-8 md:p-12"
           >
-            <h3 className="mb-6 text-center text-2xl font-bold text-slate-900 dark:text-white md:text-3xl">
+            <h3 className="mb-6 text-center text-2xl font-bold text-slate-900 md:text-3xl">
               Our Core Values
             </h3>
             <div className="grid gap-8 md:grid-cols-3">
@@ -169,14 +169,14 @@ export function NTClipboardMission(): React.JSX.Element {
           {/* Contact Section */}
           <div
             id="contact-info"
-            className="rounded-3xl border bg-gradient-to-br from-blue-50 to-slate-50 p-8 dark:from-blue-900/20 dark:to-slate-900 md:p-12"
+            className="rounded-3xl border bg-gradient-to-br from-blue-50 to-slate-50 p-8 md:p-12"
           >
-            <h3 className="mb-6 text-center text-2xl font-bold text-slate-900 dark:text-white md:text-3xl">
+            <h3 className="mb-6 text-center text-2xl font-bold text-slate-900 md:text-3xl">
               Get in Touch
             </h3>
             <div className="grid gap-8 md:grid-cols-3">
               <div className="text-center">
-                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
                   <PhoneIcon className="size-8" />
                 </div>
                 <h4 className="mb-2 text-lg font-semibold">Phone</h4>
@@ -184,7 +184,7 @@ export function NTClipboardMission(): React.JSX.Element {
               </div>
 
               <div className="text-center">
-                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
                   <MailIcon className="size-8" />
                 </div>
                 <h4 className="mb-2 text-lg font-semibold">Email</h4>
@@ -192,7 +192,7 @@ export function NTClipboardMission(): React.JSX.Element {
               </div>
 
               <div className="text-center">
-                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
                   <MapPinIcon className="size-8" />
                 </div>
                 <h4 className="mb-2 text-lg font-semibold">Location</h4>
@@ -208,9 +208,9 @@ export function NTClipboardMission(): React.JSX.Element {
           {/* History Section */}
           <div
             id="history"
-            className="rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-8 dark:from-slate-900 dark:to-slate-800 md:p-12"
+            className="rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-8 md:p-12"
           >
-            <h3 className="mb-6 text-center text-2xl font-bold text-slate-900 dark:text-white md:text-3xl">
+            <h3 className="mb-6 text-center text-2xl font-bold text-slate-900 md:text-3xl">
               Our Journey: 30+ Years of Manufacturing Excellence
             </h3>
 
@@ -226,10 +226,10 @@ export function NTClipboardMission(): React.JSX.Element {
                       91
                     </div>
                     <div className="ml-6 md:ml-0 md:mr-6 md:text-right">
-                      <h4 className="text-xl font-bold text-slate-900 dark:text-white">
+                      <h4 className="text-xl font-bold text-slate-900">
                         1991: Foundation
                       </h4>
-                      <p className="text-slate-600 dark:text-slate-400">
+                      <p className="text-slate-600">
                         User Solutions was founded with a vision to empower
                         manufacturers through innovative resource management
                         solutions.
@@ -245,10 +245,10 @@ export function NTClipboardMission(): React.JSX.Element {
                       95
                     </div>
                     <div className="ml-6 md:ml-0 md:mr-6">
-                      <h4 className="text-xl font-bold text-slate-900 dark:text-white">
+                      <h4 className="text-xl font-bold text-slate-900">
                         1995: First ERP Integration
                       </h4>
-                      <p className="text-slate-600 dark:text-slate-400">
+                      <p className="text-slate-600">
                         Developed our first Finite Capacity Scheduling solution
                         integrated with major ERP systems.
                       </p>
@@ -263,10 +263,10 @@ export function NTClipboardMission(): React.JSX.Element {
                       00
                     </div>
                     <div className="ml-6 md:ml-0 md:mr-6 md:text-right">
-                      <h4 className="text-xl font-bold text-slate-900 dark:text-white">
+                      <h4 className="text-xl font-bold text-slate-900">
                         2000: Small Business Focus
                       </h4>
-                      <p className="text-slate-600 dark:text-slate-400">
+                      <p className="text-slate-600">
                         Launched specialized Material Requirements Planning
                         solutions for smaller manufacturing operations.
                       </p>
@@ -281,10 +281,10 @@ export function NTClipboardMission(): React.JSX.Element {
                       10
                     </div>
                     <div className="ml-6 md:ml-0 md:mr-6">
-                      <h4 className="text-xl font-bold text-slate-900 dark:text-white">
+                      <h4 className="text-xl font-bold text-slate-900">
                         2010: Job Shop Revolution
                       </h4>
-                      <p className="text-slate-600 dark:text-slate-400">
+                      <p className="text-slate-600">
                         Introduced simple but powerful Job Shop Scheduling
                         Solutions for custom manufacturing environments.
                       </p>
@@ -299,10 +299,10 @@ export function NTClipboardMission(): React.JSX.Element {
                       20
                     </div>
                     <div className="ml-6 md:ml-0 md:mr-6 md:text-right">
-                      <h4 className="text-xl font-bold text-slate-900 dark:text-white">
+                      <h4 className="text-xl font-bold text-slate-900">
                         2020: Digital Transformation
                       </h4>
-                      <p className="text-slate-600 dark:text-slate-400">
+                      <p className="text-slate-600">
                         Embraced digital transformation with cloud-ready
                         solutions and educational templates for the next
                         generation.
@@ -318,10 +318,10 @@ export function NTClipboardMission(): React.JSX.Element {
                       NOW
                     </div>
                     <div className="ml-6 md:ml-0 md:mr-6">
-                      <h4 className="text-xl font-bold text-slate-900 dark:text-white">
+                      <h4 className="text-xl font-bold text-slate-900">
                         Today: Innovation Continues
                       </h4>
-                      <p className="text-slate-600 dark:text-slate-400">
+                      <p className="text-slate-600">
                         Still listening, still delivering. Ready to help you
                         Make Manufacturing Great Again with solutions that fit
                         like a glove.
@@ -332,7 +332,7 @@ export function NTClipboardMission(): React.JSX.Element {
               </div>
 
               <div className="mt-6 text-center">
-                <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-100 to-red-100 px-6 py-3 text-orange-800 dark:from-orange-900/30 dark:to-red-900/30 dark:text-orange-200">
+                <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-100 to-red-100 px-6 py-3 text-orange-800">
                   <AwardIcon className="size-5" />
                   30+ Years of Innovation Excellence
                 </div>

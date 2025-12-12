@@ -127,14 +127,14 @@ export default function CompareProductsPage(): React.JSX.Element {
   ];
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
+    <div className="min-h-screen bg-white">
       {/* Hero Section */}
       <GridSection hideVerticalGridLines>
         <div className="container pt-6">
           <div className="mx-auto max-w-7xl">
             {/* Hero Header */}
             <div className="mb-6 text-center">
-              <h1 className="mb-6 text-4xl font-bold text-slate-900 dark:text-white md:text-6xl">
+              <h1 className="mb-6 text-4xl font-bold text-slate-900 md:text-6xl">
                 Production Planning and Scheduling Solutions
               </h1>
               <p className="mb-6 text-xl text-muted-foreground">
@@ -166,16 +166,16 @@ export default function CompareProductsPage(): React.JSX.Element {
 
           {/* Responsive Comparison Table */}
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
+            <table className="w-full border-collapse rounded-lg border border-slate-200 bg-white">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-700">
-                  <th className="border-r border-slate-200 p-6 text-left dark:border-slate-700">
+                <tr className="border-b border-slate-200">
+                  <th className="border-r border-slate-200 p-6 text-left">
                     <span className="text-lg font-semibold">Features</span>
                   </th>
                   {products.map((product, index) => (
                     <th
                       key={index}
-                      className="border-r border-slate-200 p-6 text-center last:border-r-0 dark:border-slate-700"
+                      className="border-r border-slate-200 p-6 text-center last:border-r-0"
                     >
                       <div className="space-y-4">
                         <Image
@@ -218,15 +218,15 @@ export default function CompareProductsPage(): React.JSX.Element {
                 {features.map((feature, featureIndex) => (
                   <tr
                     key={featureIndex}
-                    className="border-b border-slate-200 last:border-b-0 dark:border-slate-700"
+                    className="border-b border-slate-200 last:border-b-0"
                   >
-                    <td className="border-r border-slate-200 p-4 font-medium dark:border-slate-700">
+                    <td className="border-r border-slate-200 p-4 font-medium">
                       {feature}
                     </td>
                     {products.map((product, productIndex) => (
                       <td
                         key={productIndex}
-                        className="border-r border-slate-200 p-4 text-center last:border-r-0 dark:border-slate-700"
+                        className="border-r border-slate-200 p-4 text-center last:border-r-0"
                       >
                         {product.features[
                           feature as keyof typeof product.features
@@ -246,7 +246,7 @@ export default function CompareProductsPage(): React.JSX.Element {
       </section>
 
       {/* Customer Testimonials */}
-      <section className="bg-slate-50 py-6 dark:bg-slate-900">
+      <section className="bg-slate-50 py-6">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="mb-6 text-center">
             <h2 className="mb-4 text-3xl font-bold md:text-4xl">
@@ -261,7 +261,7 @@ export default function CompareProductsPage(): React.JSX.Element {
             {testimonials.map((testimonial, index) => (
               <div
                 key={index}
-                className="rounded-lg bg-white p-6 shadow-sm dark:bg-slate-800"
+                className="rounded-lg bg-white p-6 shadow-sm"
               >
                 <div className="mb-4 flex">
                   {[...Array(5)].map((_, i) => (
@@ -298,7 +298,7 @@ export default function CompareProductsPage(): React.JSX.Element {
       {/* Call to Action */}
       <section className="py-6">
         <div className="container mx-auto max-w-7xl px-4 text-center">
-          <div className="rounded-2xl border bg-slate-50 p-8 dark:bg-slate-800">
+          <div className="rounded-2xl border bg-slate-50 p-8">
             <h2 className="mb-4 text-3xl font-bold">Ready to Get Started?</h2>
             <p className="mb-6 text-lg text-muted-foreground">
               Schedule a Live Demo Today! Choose the product that best suits
@@ -324,7 +324,7 @@ export default function CompareProductsPage(): React.JSX.Element {
       </section>
 
       {/* Awards Section */}
-      <section className="bg-slate-50 py-6 dark:bg-slate-900">
+      <section className="bg-slate-50 py-6">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="text-center">
             <h3 className="mb-6 text-2xl font-bold">

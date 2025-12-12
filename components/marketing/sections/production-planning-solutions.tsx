@@ -95,7 +95,7 @@ function VideoPlayer({
 
   // Fallback for other video types
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-slate-200 dark:bg-slate-700">
+    <div className="absolute inset-0 flex items-center justify-center bg-slate-200">
       <p className="text-slate-500">Video format not supported</p>
     </div>
   );
@@ -127,7 +127,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
         <div className="mx-auto mt-8 max-w-7xl">
           {/* Contact CTA */}
           <div className="mb-6 text-center">
-            <p className="mb-6 text-lg text-slate-700 dark:text-slate-300">
+            <p className="mb-6 text-lg text-slate-700">
               Contact us to discuss which product is the best fit for your
               application and budget.
             </p>
@@ -137,7 +137,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
           <div className="mb-6">
             <div className="grid items-center gap-8 md:grid-cols-2">
               {/* Video */}
-              <div className="relative overflow-hidden rounded-xl border bg-slate-100 shadow-lg dark:bg-slate-800">
+              <div className="relative overflow-hidden rounded-xl border bg-slate-100 shadow-lg">
                 <div className="relative aspect-video">
                   <VideoPlayer
                     videoUrl="https://youtu.be/IR8NhOlV_zM"
@@ -149,10 +149,10 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               </div>
               {/* Text Content */}
               <div className="space-y-4">
-                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="text-2xl font-bold text-slate-900">
                   Want to get your production in the groove?
                 </h3>
-                <p className="text-lg text-slate-700 dark:text-slate-300">
+                <p className="text-lg text-slate-700">
                   Watch this classic video and get your operations movin' and
                   groovin' today!
                 </p>
@@ -173,11 +173,11 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
 
           {/* Customer Testimonials */}
           <div className="my-6">
-            <h2 className="mb-6 text-center text-2xl font-bold text-slate-900 dark:text-white">
+            <h2 className="mb-6 text-center text-2xl font-bold text-slate-900">
               What Our Customers Say
             </h2>
             <div className="grid gap-6 md:grid-cols-3">
-              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50">
                 <CardContent className="p-6">
                   <div className="mb-4 flex items-center gap-2">
                     <Star className="size-5 fill-yellow-400 text-yellow-400" />
@@ -186,16 +186,16 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     <Star className="size-5 fill-yellow-400 text-yellow-400" />
                     <Star className="size-5 fill-yellow-400 text-yellow-400" />
                   </div>
-                  <blockquote className="mb-4 text-slate-700 dark:text-slate-300">
+                  <blockquote className="mb-4 text-slate-700">
                     "Best choice for MRP and project management software"
                   </blockquote>
-                  <cite className="text-sm font-medium text-slate-900 dark:text-white">
+                  <cite className="text-sm font-medium text-slate-900">
                     — Sleepmaster Ltd
                   </cite>
                   <div className="mt-3">
                     <Link
                       href="/sleepmaster-ltd"
-                      className="text-sm text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                      className="text-sm text-blue-600 underline hover:text-blue-800"
                     >
                       Read More
                     </Link>
@@ -203,7 +203,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
+              <Card className="bg-gradient-to-br from-green-50 to-emerald-50">
                 <CardContent className="p-6">
                   <div className="mb-4 flex items-center gap-2">
                     <Star className="size-5 fill-yellow-400 text-yellow-400" />
@@ -212,16 +212,16 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     <Star className="size-5 fill-yellow-400 text-yellow-400" />
                     <Star className="size-5 fill-yellow-400 text-yellow-400" />
                   </div>
-                  <blockquote className="mb-4 text-slate-700 dark:text-slate-300">
+                  <blockquote className="mb-4 text-slate-700">
                     "Manufacturing scheduling software with fantastic support"
                   </blockquote>
-                  <cite className="text-sm font-medium text-slate-900 dark:text-white">
+                  <cite className="text-sm font-medium text-slate-900">
                     — Cook Compression
                   </cite>
                   <div className="mt-3">
                     <Link
                       href="/cook-compression"
-                      className="text-sm text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                      className="text-sm text-blue-600 underline hover:text-blue-800"
                     >
                       Read More
                     </Link>
@@ -229,7 +229,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20">
+              <Card className="bg-gradient-to-br from-purple-50 to-violet-50">
                 <CardContent className="p-6">
                   <div className="mb-4 flex items-center gap-2">
                     <Star className="size-5 fill-yellow-400 text-yellow-400" />
@@ -238,16 +238,16 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     <Star className="size-5 fill-yellow-400 text-yellow-400" />
                     <Star className="size-5 fill-yellow-400 text-yellow-400" />
                   </div>
-                  <blockquote className="mb-4 text-slate-700 dark:text-slate-300">
+                  <blockquote className="mb-4 text-slate-700">
                     "Easy ERP add-on for manufacturing resource planning"
                   </blockquote>
-                  <cite className="text-sm font-medium text-slate-900 dark:text-white">
+                  <cite className="text-sm font-medium text-slate-900">
                     — Incon Incorporated
                   </cite>
                   <div className="mt-3">
                     <Link
                       href="/incon-incorporated"
-                      className="text-sm text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                      className="text-sm text-blue-600 underline hover:text-blue-800"
                     >
                       Read More
                     </Link>
@@ -259,10 +259,10 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
 
           {/* Production Scheduling Features Section */}
           <div className="mb-6">
-            <h2 className="mb-6 text-center text-3xl font-bold text-slate-900 dark:text-white">
+            <h2 className="mb-6 text-center text-3xl font-bold text-slate-900">
               Production Scheduling Features
             </h2>
-            <p className="mb-6 text-center text-lg text-slate-600 dark:text-slate-400">
+            <p className="mb-6 text-center text-lg text-slate-600">
               Comprehensive production planning and scheduling capabilities
               designed to optimize your manufacturing operations
             </p>
@@ -270,9 +270,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
             {/* Features Grid */}
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {/* EDGEBIC Features */}
-              <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 dark:border-blue-700 dark:from-blue-900/20 dark:to-blue-800/20">
+              <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                  <CardTitle className="flex items-center gap-2 text-blue-700">
                     <Target className="size-5" />
                     EDGEBIC
                   </CardTitle>
@@ -305,7 +305,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       className="flex items-center gap-2"
                     >
                       <CheckCircle className="size-4 text-blue-600" />
-                      <span className="text-sm text-slate-700 dark:text-slate-300">
+                      <span className="text-sm text-slate-700">
                         {feature}
                       </span>
                     </div>
@@ -314,9 +314,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               </Card>
 
               {/* Resource Manager DB Features */}
-              <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100 dark:border-orange-700 dark:from-orange-900/20 dark:to-orange-800/20">
+              <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                  <CardTitle className="flex items-center gap-2 text-orange-700">
                     <Settings className="size-5" />
                     Resource Manager DB
                   </CardTitle>
@@ -363,7 +363,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       className="flex items-center gap-2"
                     >
                       <CheckCircle className="size-4 text-orange-600" />
-                      <span className="text-sm text-slate-700 dark:text-slate-300">
+                      <span className="text-sm text-slate-700">
                         {feature}
                       </span>
                     </div>
@@ -372,9 +372,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               </Card>
 
               {/* EDGEBIC Features */}
-              <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100 dark:border-purple-700 dark:from-purple-900/20 dark:to-purple-800/20 md:col-span-2 lg:col-span-1">
+              <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100 md:col-span-2 lg:col-span-1">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+                  <CardTitle className="flex items-center gap-2 text-purple-700">
                     <Zap className="size-5" />
                     EDGE Suite
                   </CardTitle>
@@ -407,7 +407,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       className="flex items-center gap-2"
                     >
                       <CheckCircle className="size-4 text-purple-600" />
-                      <span className="text-sm text-slate-700 dark:text-slate-300">
+                      <span className="text-sm text-slate-700">
                         {feature}
                       </span>
                     </div>
@@ -419,35 +419,35 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
             {/* Key Benefits Section */}
             <div className="mt-6 grid gap-6 md:grid-cols-3">
               <div className="text-center">
-                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-blue-100">
                   <Clock className="size-8 text-blue-600" />
                 </div>
-                <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-white">
+                <h3 className="mb-2 text-lg font-semibold text-slate-900">
                   Save Time
                 </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
+                <p className="text-sm text-slate-600">
                   Reduce planning time by up to 75% with automated scheduling
                 </p>
               </div>
               <div className="text-center">
-                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-green-100">
                   <Target className="size-8 text-green-600" />
                 </div>
-                <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-white">
+                <h3 className="mb-2 text-lg font-semibold text-slate-900">
                   Increase Efficiency
                 </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
+                <p className="text-sm text-slate-600">
                   Optimize resource utilization and reduce bottlenecks
                 </p>
               </div>
               <div className="text-center">
-                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
+                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-purple-100">
                   <Users className="size-8 text-purple-600" />
                 </div>
-                <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-white">
+                <h3 className="mb-2 text-lg font-semibold text-slate-900">
                   Better Collaboration
                 </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
+                <p className="text-sm text-slate-600">
                   Real-time visibility across all teams and departments
                 </p>
               </div>
@@ -456,10 +456,10 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
 
           {/* Feature Comparison Matrix */}
           <div className="mb-6">
-            <h2 className="mb-6 text-center text-3xl font-bold text-slate-900 dark:text-white">
+            <h2 className="mb-6 text-center text-3xl font-bold text-slate-900">
               Choose the Right Solution for Your Business
             </h2>
-            <p className="mb-6 text-center text-lg text-slate-600 dark:text-slate-400">
+            <p className="mb-6 text-center text-lg text-slate-600">
               Compare features across our product range to find the perfect fit
             </p>
 
@@ -476,7 +476,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     detail.setAttribute('open', 'true')
                   );
                 }}
-                className="text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
+                className="text-blue-600 hover:bg-blue-50"
               >
                 Expand All
               </Button>
@@ -489,26 +489,26 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                   );
                   details.forEach((detail) => detail.removeAttribute('open'));
                 }}
-                className="text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
+                className="text-blue-600 hover:bg-blue-50"
               >
                 Close All
               </Button>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px] rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+              <table className="w-full min-w-[800px] rounded-lg border border-slate-200 bg-white">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-700">
-                    <th className="p-4 text-left font-semibold text-slate-900 dark:text-white">
+                  <tr className="border-b border-slate-200">
+                    <th className="p-4 text-left font-semibold text-slate-900">
                       Features
                     </th>
-                    <th className="p-4 text-center font-semibold text-blue-600 dark:text-blue-400">
+                    <th className="p-4 text-center font-semibold text-blue-600">
                       EDGEBIC
                     </th>
-                    <th className="p-4 text-center font-semibold text-orange-600 dark:text-orange-400">
+                    <th className="p-4 text-center font-semibold text-orange-600">
                       Resource Manager DB
                     </th>
-                    <th className="p-4 text-center font-semibold text-purple-600 dark:text-purple-400">
+                    <th className="p-4 text-center font-semibold text-purple-600">
                       EDGE Suite
                     </th>
                   </tr>
@@ -662,20 +662,20 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                   ].map((row, i) => (
                     <React.Fragment key={i}>
                       <tr
-                        className={`border-b border-slate-100 dark:border-slate-800 ${i % 2 === 0 ? 'bg-slate-50 dark:bg-slate-900/50' : ''}`}
+                        className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-slate-50' : ''}`}
                       >
                         <td className="p-4">
                           <details
                             data-feature={`feature-${i}`}
                             className="group"
                           >
-                            <summary className="flex cursor-pointer items-center gap-2 font-medium text-slate-900 hover:text-blue-600 dark:text-white">
+                            <summary className="flex cursor-pointer items-center gap-2 font-medium text-slate-900 hover:text-blue-600">
                               <span className="text-sm transition-transform group-open:rotate-90">
                                 ▶
                               </span>
                               {row.feature}
                             </summary>
-                            <div className="mt-2 pl-6 text-sm text-slate-600 dark:text-slate-400">
+                            <div className="mt-2 pl-6 text-sm text-slate-600">
                               {row.description}
                             </div>
                           </details>
@@ -710,7 +710,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
 
             {/* Call to Action */}
             <div className="mt-8 text-center">
-              <p className="mb-4 text-slate-600 dark:text-slate-400">
+              <p className="mb-4 text-slate-600">
                 Not sure which solution is right for you?
               </p>
               <Button
@@ -727,9 +727,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
           {/* 25 Years Anniversary with Real Award Logos */}
           <div className="mb-6">
             <div className="mx-auto max-w-7xl">
-              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+              <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
                 <CardContent className="p-8 text-center">
-                  <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                  <h2 className="mb-6 text-2xl font-bold text-slate-900">
                     CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                   </h2>
                   <img

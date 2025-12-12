@@ -55,7 +55,7 @@ export function AwardsSection(): React.JSX.Element {
   return (
     <section className="mt-6">
       <div className="mx-auto max-w-7xl px-6">
-        <h2 className="mb-10 text-center text-2xl font-bold text-slate-900 dark:text-white md:text-3xl lg:mb-12">
+        <h2 className="mb-10 text-center text-2xl font-bold text-slate-900 md:text-3xl lg:mb-12">
           Award-winning Manufacturing Software
         </h2>
         <div className="relative overflow-hidden pb-4">

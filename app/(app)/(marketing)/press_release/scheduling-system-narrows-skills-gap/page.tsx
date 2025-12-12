@@ -34,13 +34,13 @@ export default function SkillsGapPressReleasePage() {
         <div className="mx-auto max-w-4xl">
           <article className="prose prose-lg max-w-none">
             <header className="mb-6">
-              <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+              <p className="text-lg font-semibold text-gray-700">
                 South Lyon, MI - August 31, 2016
               </p>
             </header>
 
-            <div className="space-y-6 leading-relaxed text-gray-700 dark:text-gray-300">
-              <p className="text-xl font-medium text-gray-900 dark:text-white">
+            <div className="space-y-6 leading-relaxed text-gray-700">
+              <p className="text-xl font-medium text-gray-900">
                 User Solutions, a provider of production scheduling software
                 solutions for manufacturers and job shops, today announces that
                 Technical Glass Products, the recognized leader in the
@@ -50,13 +50,13 @@ export default function SkillsGapPressReleasePage() {
               </p>
 
               <blockquote className="my-6 border-l-4 border-blue-600 pl-6">
-                <p className="mb-4 text-lg italic text-gray-800 dark:text-gray-200">
+                <p className="mb-4 text-lg italic text-gray-800">
                   "RMDB, along with our cross-trained workforce gives us a
                   competitive advantage to quickly respond to new market
                   conditions and business fluctuations without incurring
                   additional expense."
                 </p>
-                <cite className="font-semibold text-gray-600 dark:text-gray-400">
+                <cite className="font-semibold text-gray-600">
                   - Scott McNeill, Technical Glass Products
                 </cite>
               </blockquote>
@@ -92,7 +92,7 @@ export default function SkillsGapPressReleasePage() {
               </p>
 
               <blockquote className="my-6 border-l-4 border-blue-600 pl-6">
-                <p className="mb-4 text-lg italic text-gray-800 dark:text-gray-200">
+                <p className="mb-4 text-lg italic text-gray-800">
                   "The Resource Manager-DB solution has once again exceeded our
                   expectations regarding its adaptability. With only a couple of
                   days of remote guidance from User Solutions, we greatly
@@ -105,14 +105,14 @@ export default function SkillsGapPressReleasePage() {
                   quickly respond to new market conditions and business
                   fluctuations without incurring additional expense."
                 </p>
-                <cite className="font-semibold text-gray-600 dark:text-gray-400">
+                <cite className="font-semibold text-gray-600">
                   - Scott McNeill, Production Scheduler, Technical Glass
                   Products
                 </cite>
               </blockquote>
 
               <blockquote className="my-6 border-l-4 border-blue-600 pl-6">
-                <p className="mb-4 text-lg italic text-gray-800 dark:text-gray-200">
+                <p className="mb-4 text-lg italic text-gray-800">
                   "After running their 'what-if' scenarios, we had TGP batch
                   load all the new cycle times, then run a workcenter loading
                   report that quickly displayed the total hours for each
@@ -125,12 +125,12 @@ export default function SkillsGapPressReleasePage() {
                   easy for these cross-trained workers to move from one
                   operation to the next without missing a beat."
                 </p>
-                <cite className="font-semibold text-gray-600 dark:text-gray-400">
+                <cite className="font-semibold text-gray-600">
                   - Jim Convis, VP, User Solutions
                 </cite>
               </blockquote>
 
-              <h3 className="mb-4 mt-8 text-2xl font-bold text-gray-900 dark:text-white">
+              <h3 className="mb-4 mt-8 text-2xl font-bold text-gray-900">
                 About User Solutions, Inc.
               </h3>
               <p>
@@ -143,7 +143,7 @@ export default function SkillsGapPressReleasePage() {
                 implementation.
               </p>
 
-              <h3 className="mb-4 mt-8 text-2xl font-bold text-gray-900 dark:text-white">
+              <h3 className="mb-4 mt-8 text-2xl font-bold text-gray-900">
                 About Technical Glass Products (TGP)
               </h3>
               <p>
@@ -157,17 +157,17 @@ export default function SkillsGapPressReleasePage() {
                 commercial buildings.
               </p>
 
-              <div className="mt-8 space-y-2 border-t border-gray-200 pt-6 dark:border-gray-700">
-                <p className="font-semibold text-gray-900 dark:text-white">
+              <div className="mt-8 space-y-2 border-t border-gray-200 pt-6">
+                <p className="font-semibold text-gray-900">
                   For More Information:
                 </p>
-                <p className="text-gray-700 dark:text-gray-300">
+                <p className="text-gray-700">
                   User Solutions, Inc.
                   <br />
                   Email:{' '}
                   <a
                     href="mailto:us@usersolutions.com"
-                    className="text-blue-600 hover:underline dark:text-blue-400"
+                    className="text-blue-600 hover:underline"
                   >
                     us@usersolutions.com
                   </a>
@@ -175,7 +175,7 @@ export default function SkillsGapPressReleasePage() {
                   Phone:{' '}
                   <a
                     href="tel:248.486.6365"
-                    className="text-blue-600 hover:underline dark:text-blue-400"
+                    className="text-blue-600 hover:underline"
                   >
                     248.486.6365
                   </a>
@@ -183,7 +183,7 @@ export default function SkillsGapPressReleasePage() {
                   Website:{' '}
                   <Link
                     href="/resource-manager-db-2"
-                    className="text-blue-600 hover:underline dark:text-blue-400"
+                    className="text-blue-600 hover:underline"
                   >
                     Learn more about Resource Manager DB
                   </Link>
@@ -193,8 +193,8 @@ export default function SkillsGapPressReleasePage() {
           </article>
 
           {/* Related Links */}
-          <div className="mt-6 rounded-lg border bg-slate-50 p-6 dark:bg-slate-900">
-            <h3 className="mb-4 text-lg font-bold   dark:text-white">
+          <div className="mt-6 rounded-lg border bg-slate-50 p-6">
+            <h3 className="mb-4 text-lg font-bold">
               Related Resources
             </h3>
             <div className="space-y-2">
@@ -231,9 +231,9 @@ export default function SkillsGapPressReleasePage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h2 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
                 <Image

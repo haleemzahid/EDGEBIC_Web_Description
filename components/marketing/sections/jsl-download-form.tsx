@@ -242,11 +242,11 @@ export function JSLDownloadForm(): React.JSX.Element {
         </Form>
 
         <div className="mt-6 text-center">
-          <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-950/20">
-            <h4 className="font-semibold text-blue-900 dark:text-blue-100">
+          <div className="rounded-lg bg-blue-50 p-4">
+            <h4 className="font-semibold text-blue-900">
               System Requirements
             </h4>
-            <p className="text-sm text-blue-800 dark:text-blue-200">
+            <p className="text-sm text-blue-800">
               Excel installed (used as report writer). .NET Framework support
               included with Windows 10+.
             </p>

@@ -47,7 +47,7 @@ export default function InconIncorporatedPage() {
 
             {/* Testimonial */}
             <div className="space-y-6">
-              <p className="leading-relaxed text-gray-700 dark:text-gray-300">
+              <p className="leading-relaxed text-gray-700">
                 For awhile, we had been seeking better scheduling information
                 out of our system. Exact Software recommended Resource
                 Manager-DB from User Solutions. We found that not only was the
@@ -56,12 +56,12 @@ export default function InconIncorporatedPage() {
                 and provides the needed visibility for us to plan labor more
                 accurately.
               </p>
-              <p className="leading-relaxed text-gray-700 dark:text-gray-300">
+              <p className="leading-relaxed text-gray-700">
                 Finally, we can see in advance how to staff the plant for most
                 efficient scheduling and respond accurately to our customers
                 with realistic promise dates.
               </p>
-              <p className="font-semibold text-gray-900 dark:text-white">
+              <p className="font-semibold text-gray-900">
                 Ted Schultz
               </p>
             </div>
@@ -73,9 +73,9 @@ export default function InconIncorporatedPage() {
       <section className="py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h2 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
                 <Image

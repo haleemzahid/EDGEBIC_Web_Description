@@ -67,7 +67,7 @@ export function CookiePolicy(): React.JSX.Element {
         />
         <Alert
           variant="warning"
-          className="rounded-lg border border-yellow-500 dark:border-yellow-900"
+          className="rounded-lg border border-yellow-500"
         >
           <AlertDescription className="ml-3 text-base">
             This policy provides a general framework. It should be reviewed and
@@ -80,7 +80,7 @@ export function CookiePolicy(): React.JSX.Element {
           {DATA_CARDS.map((item, index) => (
             <Card
               key={index}
-              className="border-none dark:bg-accent/40"
+              className="border-none"
             >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">

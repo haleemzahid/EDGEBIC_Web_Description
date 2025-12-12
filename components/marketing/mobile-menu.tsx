@@ -9,7 +9,6 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { RemoveScroll } from 'react-remove-scroll';
 
 import { ExternalLink } from '@/components/marketing/fragments/external-link';
-import { ThemeSwitcher } from '@/components/marketing/fragments/theme-switcher';
 import { DOCS_LINKS, MENU_LINKS } from '@/components/marketing/marketing-links';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -242,10 +241,6 @@ function MainMobileMenu({
             </li>
           ))}
         </ul>
-        <div className="flex w-full items-center justify-between gap-2 border-y border-border/40 p-4">
-          <div className="text-base font-medium">Theme</div>
-          <ThemeSwitcher />
-        </div>
       </div>
     </div>
   );
@@ -316,10 +311,6 @@ function DocsMobileMenu({
             </li>
           ))}
         </ul>
-        <div className="flex w-full items-center justify-between gap-2 border-y border-border/40 p-4">
-          <div className="text-base font-medium">Theme</div>
-          <ThemeSwitcher />
-        </div>
       </div>
     </div>
   );

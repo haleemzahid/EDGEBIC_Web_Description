@@ -47,7 +47,7 @@ export default function CookCompressionPage() {
 
             {/* Testimonial */}
             <div className="space-y-6">
-              <p className="leading-relaxed text-gray-700 dark:text-gray-300">
+              <p className="leading-relaxed text-gray-700">
                 I feel thankful. For cause, I am dubious when dealing with
                 enterprises and guarantees by long distance; more so when
                 considering the promises made by others for software solutions,
@@ -70,9 +70,9 @@ export default function CookCompressionPage() {
       <section className="py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
               <CardContent className="p-8 text-center">
-                <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h2 className="mb-6 text-2xl font-bold text-slate-900">
                   Celebrating 25 Years of Award Winning Software!
                 </h2>
                 <div className="relative mx-auto h-auto w-full max-w-4xl">

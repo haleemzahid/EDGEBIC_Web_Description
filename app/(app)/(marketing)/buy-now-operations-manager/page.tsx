@@ -8,7 +8,7 @@ export default function BuyNowOperationsManagerPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800 py-6 text-white dark:from-blue-800 dark:to-blue-900">
+      <section className="bg-gradient-to-r from-blue-600 to-blue-800 py-6 text-white">
         <div className="container mx-auto px-4 text-center">
           <div className="mx-auto max-w-7xl">
             <h1 className="mb-6 text-4xl font-bold md:text-5xl">
@@ -91,7 +91,7 @@ export default function BuyNowOperationsManagerPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
                 <h2 className="mb-6 text-3xl font-bold text-foreground">
                   Ready to Purchase?

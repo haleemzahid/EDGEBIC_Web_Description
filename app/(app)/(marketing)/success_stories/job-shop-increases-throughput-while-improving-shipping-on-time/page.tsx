@@ -49,7 +49,7 @@ export default function JobShopThroughputPage() {
             <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
               {/* Content Column */}
               <div className="space-y-6">
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Technical Glass Products in Snoqualmie, WA started out reviewing
                   the Resource Manager for Excel product line but quickly settled
                   on Resource Manager-DB for multi-user support, advanced
@@ -62,7 +62,7 @@ export default function JobShopThroughputPage() {
                   having all their core systems on SQL Server.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   According to Scott McNeil, Master Production Scheduler for
                   Technical Glass, "It's very refreshing to work with a vendor
                   like User Solutions who seems to be able to easily adapt to
@@ -78,7 +78,7 @@ export default function JobShopThroughputPage() {
                   market share."
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Technical Glass Products (TGP) has been using RMDB for years for
                   finite capacity production scheduling. They selected RMDB
                   because of how it could quickly adapt to their operational flow
@@ -94,7 +94,7 @@ export default function JobShopThroughputPage() {
                   schedule to date for historical analysis.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Leveraging RMDB's flexible configuration toolset, within only a
                   few days of remote support, User Solutions was able to guide TGP
                   through blending in new time studies with cross-trained skill
@@ -109,7 +109,7 @@ export default function JobShopThroughputPage() {
                 </p>
 
                 <blockquote className="border-l-4 border-purple-600 pl-4 italic">
-                  <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-[18px] leading-relaxed text-gray-700">
                     "The Resource Manager-DB solution has once again exceeded our
                     expectations regarding its adaptability. With only a couple of
                     days of remote guidance from User Solutions, we greatly
@@ -122,7 +122,7 @@ export default function JobShopThroughputPage() {
                     quickly respond to new market conditions and business
                     fluctuations without incurring additional expense."
                   </p>
-                  <footer className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+                  <footer className="mt-2 text-sm font-medium text-gray-900">
                     - Scott McNeill, Production Scheduler, Technical Glass
                     Products
                   </footer>
@@ -157,9 +157,9 @@ export default function JobShopThroughputPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image

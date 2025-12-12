@@ -47,7 +47,7 @@ export async function BlogPosts(): Promise<React.JSX.Element> {
                 <Link
                   key={post.id || index}
                   href={post.slug}
-                  className="md:duration-2000 flex h-full flex-col overflow-hidden text-clip border-dashed md:rounded-2xl md:shadow md:transition-shadow md:hover:shadow-xl dark:md:bg-accent/40 dark:md:hover:bg-accent"
+                  className="md:duration-2000 flex h-full flex-col overflow-hidden text-clip border-dashed md:rounded-2xl md:shadow md:transition-shadow md:hover:shadow-xl"
                 >
                   {/* Featured Image */}
                   {post.featuredImage && (

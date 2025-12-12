@@ -290,12 +290,12 @@ export default function OperationsManagerPage(): React.JSX.Element {
                   {category.items.map((item, itemIndex) => (
                     <Card
                       key={itemIndex}
-                      className={`border-2 ${item.isPackage ? 'border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/20' : 'border-gray-200'}`}
+                      className={`border-2 ${item.isPackage ? 'border-orange-200 bg-orange-50' : 'border-gray-200'}`}
                     >
                       <CardContent className="p-6">
                         <div className="flex flex-col space-y-4">
                           <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                            <h3 className="text-lg font-semibold text-gray-900">
                               {item.title}
                             </h3>
                             {item.isPackage && (
@@ -345,9 +345,9 @@ export default function OperationsManagerPage(): React.JSX.Element {
         {/* Awards Section */}
         <div className="mx-auto max-w-7xl">
           <section className="pt-6">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image

@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { useTheme } from 'next-themes';
 import { type SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 import { type ZodSchema } from 'zod';
@@ -105,7 +104,6 @@ export function OnboardingWizard({
   className,
   ...other
 }: OnboardingWizardProps): React.JSX.Element {
-  const { theme } = useTheme();
   const [currentStep, setCurrentStep] = React.useState<Step>(
     !organization.completedOnboarding ? Step.Organization : Step.Theme
   );
@@ -117,7 +115,7 @@ export function OnboardingWizard({
       action: FileUploadAction.None,
       image: user?.image,
       name: user?.name ?? 'Unkown',
-      theme: (theme as 'light' | 'dark' | 'system') ?? 'system'
+      theme: 'light'
     }
   });
   const Component = components[currentStep];

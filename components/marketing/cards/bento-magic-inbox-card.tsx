@@ -52,10 +52,10 @@ export function BentoMagicInboxCard({
           <div className="relative flex h-full flex-col items-center justify-center">
             {/* Rings */}
             <div className="absolute blur-[1px]">
-              <div className="absolute left-1/2 top-1/2 ml-[calc(-216/2/16*1rem)] mt-[calc(-216/2/16*1rem)] size-[calc(216/16*1rem)] rounded-full border opacity-60 dark:opacity-100" />
-              <div className="opacity-12.5 absolute left-1/2 top-1/2 ml-[calc(-280/2/16*1rem)] mt-[calc(-280/2/16*1rem)] size-[calc(280/16*1rem)] rounded-full border opacity-50 dark:opacity-90" />
-              <div className="absolute left-1/2 top-1/2 ml-[calc(-344/2/16*1rem)] mt-[calc(-344/2/16*1rem)] size-[calc(344/16*1rem)] rounded-full border opacity-40 dark:opacity-80" />
-              <div className="opacity-7.5 absolute left-1/2 top-1/2 ml-[calc(-408/2/16*1rem)] mt-[calc(-408/2/16*1rem)] size-[calc(408/16*1rem)] rounded-full border opacity-30 dark:opacity-70" />
+              <div className="absolute left-1/2 top-1/2 ml-[calc(-216/2/16*1rem)] mt-[calc(-216/2/16*1rem)] size-[calc(216/16*1rem)] rounded-full border opacity-60" />
+              <div className="opacity-12.5 absolute left-1/2 top-1/2 ml-[calc(-280/2/16*1rem)] mt-[calc(-280/2/16*1rem)] size-[calc(280/16*1rem)] rounded-full border opacity-50" />
+              <div className="absolute left-1/2 top-1/2 ml-[calc(-344/2/16*1rem)] mt-[calc(-344/2/16*1rem)] size-[calc(344/16*1rem)] rounded-full border opacity-40" />
+              <div className="opacity-7.5 absolute left-1/2 top-1/2 ml-[calc(-408/2/16*1rem)] mt-[calc(-408/2/16*1rem)] size-[calc(408/16*1rem)] rounded-full border opacity-30" />
             </div>
             {/* Icons */}
             <div className="flex flex-row gap-4">
@@ -83,7 +83,7 @@ export function BentoMagicInboxCard({
                 viewBox="0 0 128 55"
                 fill="none"
                 aria-hidden="true"
-                className="absolute inset-0 size-full stroke-neutral-200 opacity-80 dark:stroke-neutral-800"
+                className="absolute inset-0 size-full stroke-neutral-200 opacity-80"
               >
                 <path d="M64 0v25M8 0v8c0 8.837 7.163 16 16 16h24c8.837 0 16 7.163 16 16v15M120 0v8c0 8.837-7.163 16-16 16H80c-5.922 0-11.093 3.218-13.86 8" />
               </svg>

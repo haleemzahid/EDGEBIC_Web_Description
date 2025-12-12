@@ -45,23 +45,23 @@ function HeroAnimation(): React.JSX.Element {
       transition={{ delay: 0.6, duration: 0.6 }}
       className="relative mx-auto mt-6 max-w-4xl"
     >
-      <div className="rounded-2xl border bg-gradient-to-br from-slate-50 to-slate-100 p-8 shadow-2xl dark:from-slate-900 dark:to-slate-800">
+      <div className="rounded-2xl border bg-gradient-to-br from-slate-50 to-slate-100 p-8 shadow-2xl">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <div className="rounded-xl bg-white p-6 text-center shadow-lg dark:bg-slate-800">
+          <div className="rounded-xl bg-white p-6 text-center shadow-lg">
             <FileTextIcon className="mx-auto mb-4 size-12 text-blue-500" />
             <h3 className="mb-2 text-lg font-semibold">PDF Input</h3>
             <p className="text-sm text-muted-foreground">
               Copy structured data from any PDF document
             </p>
           </div>
-          <div className="rounded-xl bg-white p-6 text-center shadow-lg dark:bg-slate-800">
+          <div className="rounded-xl bg-white p-6 text-center shadow-lg">
             <ZapIcon className="mx-auto mb-4 size-12 text-yellow-500" />
             <h3 className="mb-2 text-lg font-semibold">Smart Parsing</h3>
             <p className="text-sm text-muted-foreground">
               Intelligent extraction of parts, quantities, descriptions
             </p>
           </div>
-          <div className="rounded-xl bg-white p-6 text-center shadow-lg dark:bg-slate-800">
+          <div className="rounded-xl bg-white p-6 text-center shadow-lg">
             <ClipboardIcon className="mx-auto mb-4 size-12 text-green-500" />
             <h3 className="mb-2 text-lg font-semibold">Clipboard Ready</h3>
             <p className="text-sm text-muted-foreground">
@@ -90,11 +90,11 @@ export async function NTClipboardHero(): Promise<React.JSX.Element> {
           transition={{ duration: 0.6 }}
           className="text-center"
         >
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-100 to-red-100 px-4 py-2 text-sm font-medium text-orange-800 dark:from-orange-900/30 dark:to-red-900/30 dark:text-orange-200">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-100 to-red-100 px-4 py-2 text-sm font-medium text-orange-800">
             <ClipboardIcon className="size-4" />
             Revolutionary PDF Workflow Tool
           </div>
-          <h1 className="mb-6 bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-4xl font-bold text-transparent dark:from-white dark:to-slate-300 md:text-6xl lg:text-7xl">
+          <h1 className="mb-6 bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-4xl font-bold text-transparent md:text-6xl lg:text-7xl">
             Copy PDF Data
             <br />
             Like Never Before

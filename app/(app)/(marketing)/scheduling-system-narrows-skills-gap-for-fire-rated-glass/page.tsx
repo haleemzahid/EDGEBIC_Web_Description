@@ -20,19 +20,19 @@ export default function SchedulingSystemSkillsGapPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-orange-50 via-white to-red-50 py-6 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <section className="bg-gradient-to-br from-orange-50 via-white to-red-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <Badge
               variant="outline"
-              className="mb-6 h-8 rounded-full border-orange-600/30 px-4 text-sm font-medium text-orange-700 shadow-sm dark:border-orange-400/30 dark:text-orange-300"
+              className="mb-6 h-8 rounded-full border-orange-600/30 px-4 text-sm font-medium text-orange-700 shadow-sm"
             >
               Customer Success Story
             </Badge>
             <h1 className="mb-6 bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-3xl font-bold text-transparent md:text-4xl lg:text-5xl">
               Scheduling System Narrows Skills Gap for Fire-Rated Glass
             </h1>
-            <p className="mb-4 text-xl text-gray-700 dark:text-gray-300">
+            <p className="mb-4 text-xl text-gray-700">
               User Solutions&apos; Resource Manager-DB enables Technical Glass
               Products to strategically cross-train their way to optimization
             </p>
@@ -48,7 +48,7 @@ export default function SchedulingSystemSkillsGapPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <h3 className="text-2xl font-bold text-gray-900">
                     South Lyon, MI - August 31, 2016
                   </h3>
                 </CardContent>
@@ -59,7 +59,7 @@ export default function SchedulingSystemSkillsGapPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <p className="mb-4 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 text-lg leading-relaxed text-gray-700">
                     User Solutions, a provider of production scheduling software
                     solutions for manufacturers and job shops, today announces
                     that Technical Glass Products, the recognized leader in the
@@ -74,13 +74,13 @@ export default function SchedulingSystemSkillsGapPage() {
             {/* Scott McNeill Quote 1 */}
             <Card className="mb-6 border-l-4 border-orange-600">
               <CardContent className="pt-6">
-                <blockquote className="mb-4 text-lg italic leading-relaxed text-gray-700 dark:text-gray-300">
+                <blockquote className="mb-4 text-lg italic leading-relaxed text-gray-700">
                   &quot;RMDB, along with our cross-trained workforce gives us a
                   competitive advantage to quickly respond to new market
                   conditions and business fluctuations without incurring
                   additional expense.&quot;
                 </blockquote>
-                <p className="font-semibold text-gray-900 dark:text-white">
+                <p className="font-semibold text-gray-900">
                   – Scott McNeill, Technical Glass Products
                 </p>
               </CardContent>
@@ -90,7 +90,7 @@ export default function SchedulingSystemSkillsGapPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <p className="mb-6 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-6 text-lg leading-relaxed text-gray-700">
                     Technical Glass Products (TGP) has been using RMDB for years
                     for finite capacity production scheduling. They selected
                     RMDB because of how it could quickly adapt to their
@@ -107,7 +107,7 @@ export default function SchedulingSystemSkillsGapPage() {
                     date for historical analysis.
                   </p>
 
-                  <p className="mb-6 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-6 text-lg leading-relaxed text-gray-700">
                     Leveraging RMDB&apos;s flexible configuration toolset,
                     within only a few days of remote support, User Solutions was
                     able to guide TGP through blending in new time studies with
@@ -128,7 +128,7 @@ export default function SchedulingSystemSkillsGapPage() {
             {/* Scott McNeill Quote 2 */}
             <Card className="mb-6 border-l-4 border-red-600">
               <CardContent className="pt-6">
-                <blockquote className="mb-4 text-lg italic leading-relaxed text-gray-700 dark:text-gray-300">
+                <blockquote className="mb-4 text-lg italic leading-relaxed text-gray-700">
                   &quot;The Resource Manager-DB solution has once again exceeded
                   our expectations regarding its adaptability. With only a
                   couple of days of remote guidance from User Solutions, we
@@ -141,7 +141,7 @@ export default function SchedulingSystemSkillsGapPage() {
                   quickly respond to new market conditions and business
                   fluctuations without incurring additional expense.&quot;
                 </blockquote>
-                <p className="font-semibold text-gray-900 dark:text-white">
+                <p className="font-semibold text-gray-900">
                   – Scott McNeill, Production Scheduler, Technical Glass
                   Products
                 </p>
@@ -151,7 +151,7 @@ export default function SchedulingSystemSkillsGapPage() {
             {/* Jim Convis Quote */}
             <Card className="mb-6 border-l-4 border-blue-600">
               <CardContent className="pt-6">
-                <blockquote className="text-lg italic leading-relaxed text-gray-700 dark:text-gray-300">
+                <blockquote className="text-lg italic leading-relaxed text-gray-700">
                   &quot;After running their &apos;what-if&apos; scenarios, we
                   had TGP batch load all the new cycle times, then run a
                   workcenter loading report that quickly displayed the total
@@ -165,7 +165,7 @@ export default function SchedulingSystemSkillsGapPage() {
                   to move from one operation to the next without missing a
                   beat.&quot;
                 </blockquote>
-                <p className="mt-4 font-semibold text-gray-900 dark:text-white">
+                <p className="mt-4 font-semibold text-gray-900">
                   – Jim Convis, VP of User Solutions
                 </p>
               </CardContent>
@@ -175,10 +175,10 @@ export default function SchedulingSystemSkillsGapPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="mb-4 text-2xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="mb-4 text-2xl font-bold text-gray-900">
                     About User Solutions, Inc.
                   </h2>
-                  <p className="mb-4 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 text-lg leading-relaxed text-gray-700">
                     User Solutions, Inc. was founded in 1991 in response to the
                     demand for lower cost, easy to learn and use software
                     solutions for the manufacturing and operations management
@@ -195,10 +195,10 @@ export default function SchedulingSystemSkillsGapPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="mb-4 text-2xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="mb-4 text-2xl font-bold text-gray-900">
                     About Technical Glass Products (TGP)
                   </h2>
-                  <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-lg leading-relaxed text-gray-700">
                     Since 1980, Technical Glass Products (TGP) has been
                     supplying the architectural and commercial building industry
                     with innovative solutions for specialized glazing needs. TGP
@@ -214,9 +214,9 @@ export default function SchedulingSystemSkillsGapPage() {
 
             {/* Awards Banner */}
             <div>
-              <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow dark:from-blue-900/20 dark:to-blue-800/20">
+              <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
                 <CardContent className="p-8 text-center">
-                  <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                  <h2 className="mb-6 text-2xl font-bold text-slate-900">
                     CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                   </h2>
                   <img

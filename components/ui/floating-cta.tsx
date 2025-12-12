@@ -45,7 +45,7 @@ export function FloatingCTA(): React.JSX.Element {
         href={Routes.Contact}
         className={cn(
           buttonVariants({ variant: 'outline', size: 'lg' }),
-          'group gap-2 rounded-full shadow-lg transition-all hover:scale-105 hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950'
+          'group gap-2 rounded-full shadow-lg transition-all hover:scale-105 hover:border-blue-600 hover:bg-blue-50'
         )}
       >
         <Mail className="size-5" />

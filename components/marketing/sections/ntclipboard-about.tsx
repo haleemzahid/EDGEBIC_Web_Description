@@ -124,7 +124,7 @@ export function NTClipboardAbout(): React.JSX.Element {
                 {/* Profile Image */}
                 <div className="w-full lg:w-1/3">
                   <div className="mx-auto size-80 overflow-hidden rounded-full">
-                    <div className="flex size-full items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700">
+                    <div className="flex size-full items-center justify-center rounded-full bg-slate-200">
                       {member.image && (member.image.startsWith('http') || member.image.startsWith('/')) ? (
                         <Image
                           src={member.image}
@@ -143,11 +143,11 @@ export function NTClipboardAbout(): React.JSX.Element {
 
                 {/* Profile Content */}
                 <div className="w-full text-center lg:w-2/3 lg:text-left">
-                  <div className="rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-8 dark:from-slate-900 dark:to-slate-800">
-                    <h3 className="mb-2 text-2xl font-bold text-slate-900 dark:text-white">
+                  <div className="rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-8">
+                    <h3 className="mb-2 text-2xl font-bold text-slate-900">
                       {member.name}
                     </h3>
-                    <p className="mb-4 text-lg font-medium text-orange-600 dark:text-orange-400">
+                    <p className="mb-4 text-lg font-medium text-orange-600">
                       {member.title}
                       {member.link && (
                         <>
@@ -156,7 +156,7 @@ export function NTClipboardAbout(): React.JSX.Element {
                             href={member.link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline dark:text-blue-400"
+                            className="text-blue-600 hover:underline"
                           >
                             dawloom.com
                           </Link>
@@ -169,7 +169,7 @@ export function NTClipboardAbout(): React.JSX.Element {
                             href={member.fiverr}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-green-600 hover:underline dark:text-green-400"
+                            className="text-green-600 hover:underline"
                           >
                             Fiverr
                           </Link>
@@ -182,7 +182,7 @@ export function NTClipboardAbout(): React.JSX.Element {
                             href={member.linkedin}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-700 hover:underline dark:text-blue-300"
+                            className="text-blue-700 hover:underline"
                           >
                             LinkedIn
                           </Link>
@@ -195,18 +195,18 @@ export function NTClipboardAbout(): React.JSX.Element {
                             href={member.facebook}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline dark:text-blue-400"
+                            className="text-blue-600 hover:underline"
                           >
                             Facebook
                           </Link>
                         </>
                       )}
                     </p>
-                    <p className="mb-4 text-slate-700 dark:text-slate-300">
+                    <p className="mb-4 text-slate-700">
                       {member.description}
                     </p>
                     {member.philosophy && (
-                      <blockquote className="border-l-4 border-orange-500 bg-orange-50 p-4 italic text-slate-800 dark:bg-orange-900/20 dark:text-slate-200">
+                      <blockquote className="border-l-4 border-orange-500 bg-orange-50 p-4 italic text-slate-800">
                         {member.philosophy}
                       </blockquote>
                     )}
@@ -218,9 +218,9 @@ export function NTClipboardAbout(): React.JSX.Element {
         </div>
 
         {/* Awards Section */}
-        <Card className="mt-8 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+        <Card className="mt-8 bg-gradient-to-br from-blue-50 to-blue-100">
           <CardContent className="p-8 text-center">
-            <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+            <h3 className="mb-6 text-2xl font-bold text-slate-900">
               CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
             </h3>
             <Image

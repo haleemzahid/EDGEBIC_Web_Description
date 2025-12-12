@@ -228,7 +228,7 @@ export function Testimonials(): React.JSX.Element {
                         delay: Math.random() * 0.4,
                         duration: 1
                       }}
-                      className="mb-4 flex w-full break-inside-avoid flex-col items-center justify-between gap-6 rounded-xl border bg-background p-4 dark:[border:1px_solid_rgba(255,255,255,.1)] dark:[box-shadow:0_-20px_80px_-20px_#ffffff1f_inset]"
+                      className="mb-4 flex w-full break-inside-avoid flex-col items-center justify-between gap-6 rounded-xl border bg-background p-4]]"
                     >
                       <div className="select-none text-sm font-normal text-muted-foreground">
                         {testimonial.description}

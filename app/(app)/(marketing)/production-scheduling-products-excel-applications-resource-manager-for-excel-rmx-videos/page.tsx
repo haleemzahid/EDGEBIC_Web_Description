@@ -36,7 +36,7 @@ export default function ProductionSchedulingProductsVideosPage() {
                   reduce scheduling conflicts, and improve overall manufacturing efficiency.
                 </p>
               </div>
-              <div className="overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+              <div className="overflow-hidden rounded-lg bg-slate-100">
                 <div className="aspect-video">
                   <iframe
                     src="https://www.youtube.com/embed/y-TMN1e-xlc"
@@ -54,7 +54,7 @@ export default function ProductionSchedulingProductsVideosPage() {
               {/* Resource Manager DB */}
               <div>
                 <h3 className="mb-3 text-xl font-bold">Resource Manager DB</h3>
-                <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100">
                   <iframe
                     src="https://www.youtube.com/embed/kn92TIHhbm8"
                     title="Resource Manager DB Video"
@@ -75,7 +75,7 @@ export default function ProductionSchedulingProductsVideosPage() {
               {/*   */}
               <div>
                 <h3 className="mb-3 text-xl font-bold"> </h3>
-                <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100">
                   <iframe
                     src="https://www.youtube.com/embed/L4wDboRFU6k"
                     title="  Video"
@@ -96,7 +96,7 @@ export default function ProductionSchedulingProductsVideosPage() {
               {/* Resource Manager For Excel */}
               <div>
                 <h3 className="mb-3 text-xl font-bold">Resource Manager For Excel</h3>
-                <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100">
                   <iframe
                     src="https://www.youtube.com/embed/DRWDNVq31l4"
                     title="Resource Manager For Excel Video"
@@ -117,7 +117,7 @@ export default function ProductionSchedulingProductsVideosPage() {
               {/* EDGEBIC */}
               <div>
                 <h3 className="mb-3 text-xl font-bold">EDGEBIC</h3>
-                <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100">
                   <iframe
                     src="https://www.youtube.com/embed/snltXMHeojU"
                     title="EDGEBIC Video"
@@ -149,7 +149,7 @@ export default function ProductionSchedulingProductsVideosPage() {
                   <h3 className="mb-3 text-lg font-semibold">
                     RMX Initialization — Building Bills of Resource
                   </h3>
-                  <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                  <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100">
                     <iframe
                       src="https://www.youtube.com/embed/Br2b8h-drfY"
                       title="RMX Initialization Training"
@@ -167,7 +167,7 @@ export default function ProductionSchedulingProductsVideosPage() {
                   <h3 className="mb-3 text-lg font-semibold">
                     RMX Initialization — Production Operations List
                   </h3>
-                  <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                  <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100">
                     <iframe
                       src="https://www.youtube.com/embed/Fg9WZcSCKoA"
                       title="RMX Production Operations Training"
@@ -185,7 +185,7 @@ export default function ProductionSchedulingProductsVideosPage() {
                   <h3 className="mb-3 text-lg font-semibold">
                     RMX Scheduling — Forecast Calendar
                   </h3>
-                  <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                  <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100">
                     <iframe
                       src="https://www.youtube.com/embed/bmCEFVJlkr4"
                       title="RMX Forecast Calendar Training"
@@ -203,7 +203,7 @@ export default function ProductionSchedulingProductsVideosPage() {
                   <h3 className="mb-3 text-lg font-semibold">
                     RMX — Master Scheduling
                   </h3>
-                  <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                  <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100">
                     <iframe
                       src="https://www.youtube.com/embed/Fc-zM31PrrQ"
                       title="RMX Master Scheduling Training"
@@ -221,7 +221,7 @@ export default function ProductionSchedulingProductsVideosPage() {
                   <h3 className="mb-3 text-lg font-semibold">
                     RMX — Summary Report
                   </h3>
-                  <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                  <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100">
                     <iframe
                       src="https://www.youtube.com/embed/tOy099sVThQ"
                       title="RMX Reporting Training"
@@ -239,7 +239,7 @@ export default function ProductionSchedulingProductsVideosPage() {
                   <h3 className="mb-3 text-lg font-semibold">
                     Resource Manager for Excel — Intro Part 1
                   </h3>
-                  <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                  <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100">
                     <iframe
                       src="https://www.youtube.com/embed/74uO2H-eevc"
                       title="RMX Introduction Part 1"
@@ -263,9 +263,9 @@ export default function ProductionSchedulingProductsVideosPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image

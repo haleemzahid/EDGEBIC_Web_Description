@@ -22,12 +22,12 @@ export default function ProductionWhatIfScenarioPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-6 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <section className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <Badge
               variant="outline"
-              className="mb-6 h-8 rounded-full px-4 text-sm font-medium shadow-sm dark:border-white/30 dark:bg-white/10 dark:text-white"
+              className="mb-6 h-8 rounded-full px-4 text-sm font-medium shadow-sm"
             >
               Success Story
             </Badge>
@@ -35,7 +35,7 @@ export default function ProductionWhatIfScenarioPage() {
               Production What-If Scenario Gantt Chart Secures Largest Customer
               Order
             </h1>
-            <p className="mx-auto mb-4 max-w-3xl text-xl text-gray-700 dark:text-gray-300">
+            <p className="mx-auto mb-4 max-w-3xl text-xl text-gray-700">
               Discover how Turner Suspension Bicycles leveraged advanced
               planning and scheduling tools to manage their biggest order.
             </p>
@@ -59,8 +59,8 @@ export default function ProductionWhatIfScenarioPage() {
               />
             </div>
 
-            <div className="prose prose-lg dark:prose-invert mx-auto">
-              <p className="lead text-gray-700 dark:text-gray-300">
+            <div className="prose prose-lg mx-auto">
+              <p className="lead text-gray-700">
                 Turner Suspension Bicycles, Inc. of Murrieta, CA manufactures
                 top-of-the-line, world-class mountain bikes. From the birth of
                 the first BURNER All Terrain Bikes (ATB) in 1992, to the current
@@ -83,11 +83,11 @@ export default function ProductionWhatIfScenarioPage() {
                 />
               </div>
 
-              <h2 className="mt-8 text-2xl font-bold text-gray-900 dark:text-white">
+              <h2 className="mt-8 text-2xl font-bold text-gray-900">
                 Planning and Scheduling Customer Orders
               </h2>
 
-              <p className="text-gray-700 dark:text-gray-300">
+              <p className="text-gray-700">
                 According to Mike Votaw, Production Manager, "While our
                 production numbers are small compared to many companies we still
                 suffer from many of the production scheduling pitfalls of much
@@ -99,7 +99,7 @@ export default function ProductionWhatIfScenarioPage() {
                 scheduling board and a fist-full of post-it notes."
               </p>
 
-              <p className="text-gray-700 dark:text-gray-300">
+              <p className="text-gray-700">
                 Under advice of a business consultant who had already set Turner
                 Bikes up with a basic accounting system using QuickBooks Pro,
                 Mr. Votaw downloaded a free trial of Resource Manager for XL, a
@@ -108,7 +108,7 @@ export default function ProductionWhatIfScenarioPage() {
                 program using their own operational data.
               </p>
 
-              <p className="text-gray-700 dark:text-gray-300">
+              <p className="text-gray-700">
                 According to Mike Votaw, "We are much too small for most of the
                 big, costly, complex programs out there, and we really didn't
                 want to toss out the progress we had made with QuickBooks. Plus,
@@ -118,7 +118,7 @@ export default function ProductionWhatIfScenarioPage() {
                 affordably."
               </p>
 
-              <p className="text-gray-700 dark:text-gray-300">
+              <p className="text-gray-700">
                 After a successful test trial of Resource Manager for Excel,
                 Mike ordered the program and began implementing it. In just a
                 few days, Mike had entered in all the basic shop constraints,
@@ -128,11 +128,11 @@ export default function ProductionWhatIfScenarioPage() {
                 done, in what order, and how long it takes.
               </p>
 
-              <h2 className="mt-8 text-2xl font-bold text-gray-900 dark:text-white">
+              <h2 className="mt-8 text-2xl font-bold text-gray-900">
                 Exceeding Expectations
               </h2>
 
-              <p className="text-gray-700 dark:text-gray-300">
+              <p className="text-gray-700">
                 Mike reports, "Now that we have the full program, its abilities
                 have exceeded our expectations. We have found it to be powerful
                 and relatively easy to learn. For the first time, we now have a
@@ -141,7 +141,7 @@ export default function ProductionWhatIfScenarioPage() {
                 flexibility to respond to new demands.
               </p>
 
-              <p className="text-gray-700 dark:text-gray-300">
+              <p className="text-gray-700">
                 For example, after only having the program a few weeks, the
                 owner came back from a trade show in Japan with the biggest
                 order in our history. When he asked me when we could deliver – I
@@ -163,7 +163,7 @@ export default function ProductionWhatIfScenarioPage() {
                 />
               </div>
 
-              <p className="text-gray-700 dark:text-gray-300">
+              <p className="text-gray-700">
                 Mike continues, "Resource Manager for Excel is helping us
                 achieve our goals of increased sales of more profitable products
                 (custom and special order) – without increasing our overhead.
@@ -176,7 +176,7 @@ export default function ProductionWhatIfScenarioPage() {
                 sub-contractors."
               </p>
 
-              <p className="text-gray-700 dark:text-gray-300">
+              <p className="text-gray-700">
                 While it was originally brought in to complement and integrate
                 with QuickBooks Inventory, it turned out that it was just easier
                 to do more in Resource Manager for Excel, including complete
@@ -199,11 +199,11 @@ export default function ProductionWhatIfScenarioPage() {
                 />
               </div>
 
-              <h2 className="mt-8 text-2xl font-bold text-gray-900 dark:text-white">
+              <h2 className="mt-8 text-2xl font-bold text-gray-900">
                 Refreshing Customer Support
               </h2>
 
-              <p className="text-gray-700 dark:text-gray-300">
+              <p className="text-gray-700">
                 Throughout this entire project and continuing to today, we are
                 very pleased with the customer support we have received from
                 User Solutions. They have responded quickly and thoroughly to
@@ -220,9 +220,9 @@ export default function ProductionWhatIfScenarioPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
               <CardContent className="p-8 text-center">
-                <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h2 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
                 <div className="relative mx-auto h-auto w-full max-w-4xl">

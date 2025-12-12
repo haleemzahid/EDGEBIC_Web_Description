@@ -213,19 +213,19 @@ export default function SuccessStoriesPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-6 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <section className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <Badge
               variant="outline"
-              className="mb-6 h-8 rounded-full border-blue-600/30 bg-blue-600/10 px-4 text-sm font-medium text-blue-700 shadow-sm dark:border-white/30 dark:bg-white/10 dark:text-white"
+              className="mb-6 h-8 rounded-full border-blue-600/30 bg-blue-600/10 px-4 text-sm font-medium text-blue-700 shadow-sm"
             >
               Customer Success Stories
             </Badge>
             <h1 className="mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-4xl font-bold text-transparent md:text-5xl lg:text-6xl">
               Manufacturing Success Stories
             </h1>
-            <p className="mx-auto mb-4 max-w-3xl text-xl text-gray-700 dark:text-gray-300">
+            <p className="mx-auto mb-4 max-w-3xl text-xl text-gray-700">
               Read how manufacturers across industries have improved on-time
               delivery, increased throughput, and optimized production
               scheduling with User Solutions software.
@@ -257,13 +257,13 @@ export default function SuccessStoriesPage() {
                           unoptimized
                         />
                       </div>
-                      <h2 className="mb-3 text-xl font-bold text-gray-900 transition-colors group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
+                      <h2 className="mb-3 text-xl font-bold text-gray-900 transition-colors group-hover:text-blue-600">
                         {story.title}
                       </h2>
-                      <p className="line-clamp-4 text-gray-600 dark:text-gray-400">
+                      <p className="line-clamp-4 text-gray-600">
                         {story.excerpt}
                       </p>
-                      <div className="mt-4 flex items-center text-blue-600 dark:text-blue-400">
+                      <div className="mt-4 flex items-center text-blue-600">
                         <span className="text-sm font-semibold">Read More</span>
                         <svg
                           className="ml-2 size-4 transition-transform group-hover:translate-x-1"
@@ -292,9 +292,9 @@ export default function SuccessStoriesPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <div className="relative mx-auto h-auto w-full max-w-4xl">

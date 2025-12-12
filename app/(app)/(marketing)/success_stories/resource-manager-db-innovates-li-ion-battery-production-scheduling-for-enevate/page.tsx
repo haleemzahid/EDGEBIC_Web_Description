@@ -51,17 +51,17 @@ export default function EnevatePage() {
               {/* Content Column */}
               <div className="space-y-6">
                 <blockquote className="border-l-4 border-rose-600 pl-4 italic">
-                  <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-[18px] leading-relaxed text-gray-700">
                     "Resource Manager-DB product provided a unique combination of
                     planning, scheduling, and tracking functionality within a
                     single, yet flexible system."
                   </p>
-                  <footer className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+                  <footer className="mt-2 text-sm font-medium text-gray-900">
                     - Scott Bennett, Enevate Corp.
                   </footer>
                 </blockquote>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   In 2015 Enevate Corporation, creator of the next generation of
                   Li-ion batteries was building out a greenfield manufacturing
                   facility which demanded a unique combination of planning,
@@ -73,18 +73,18 @@ export default function EnevatePage() {
                   provide a greater level of flexibility.
                 </p>
 
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-2xl font-bold text-gray-900">
                   Supply Chain Manager Empowerment
                 </h2>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   According to Scott Bennett, Supply Chain Manager for Enevate,
                   "We found that the User Solutions team and the Resource
                   Manager-DB product provided this unique combination we demanded
                   without sacrificing flexibility all at a palatable price point."
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Scott continues, "Due to our implementing brand new, original
                   processes to build our innovative batteries, we required dynamic
                   supply chain reconfiguration capability. We found Resource
@@ -96,7 +96,7 @@ export default function EnevatePage() {
                   surprisingly easy."
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Scott summarizes, "Not only is the product inherently flexible
                   to adapt to how we do our business, but also, as a company, User
                   Solutions continually accommodated our particular requests into
@@ -132,9 +132,9 @@ export default function EnevatePage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image

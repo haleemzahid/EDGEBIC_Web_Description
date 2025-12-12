@@ -50,7 +50,7 @@ export default function SchedulingLaborPage() {
             <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
               {/* Content Column */}
               <div className="space-y-6">
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Joe Van Wagner, Production Manager for Cummins Engine, selected
                   a Resource Manager to assist in scheduling labor and machine
                   resources. "We are in the midst of changing our corporate system
@@ -62,7 +62,7 @@ export default function SchedulingLaborPage() {
                   stop-gap solution for these areas."
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Cummins Engine has 33 locations around the U.S. and accessorizes
                   engines for custom applications. According to Mr. Van Wagner,
                   "We like the fact that Resource Manager for Excel has a
@@ -76,7 +76,7 @@ export default function SchedulingLaborPage() {
                   satisfaction."
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Joe continues, "The flexibility of the product is pretty
                   fantastic. We are able to download our Bills-Of-Materials from
                   the AS400 directly into Resource Manager for Excel, add labor
@@ -88,7 +88,7 @@ export default function SchedulingLaborPage() {
                   happen."
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Cummins Engine is a global power leader that designs,
                   manufactures, sells and services diesel engines and related
                   technology around the world. Cummins Engine serves its customers
@@ -126,9 +126,9 @@ export default function SchedulingLaborPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image

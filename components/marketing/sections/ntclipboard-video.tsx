@@ -220,13 +220,13 @@ export function NTClipboardVideo({
             {/* Category Stats */}
             <div className="mb-6 flex flex-wrap justify-center gap-3">
               {/* Overview Badge - Rounded with green accent */}
-              <div className="inline-flex items-center rounded-full border-2 border-green-200 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-300">
+              <div className="inline-flex items-center rounded-full border-2 border-green-200 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700">
                 🎯 Overview:{' '}
                 {productVideos.filter((v) => v.category === 'Overview').length}
               </div>
 
               {/* Product Demo Badge - Square with blue accent */}
-              <div className="inline-flex items-center rounded-full border-2 border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+              <div className="inline-flex items-center rounded-full border-2 border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm">
                 🚀 Product Demo:{' '}
                 {
                   productVideos.filter((v) => v.category === 'Product Demo')
@@ -235,7 +235,7 @@ export function NTClipboardVideo({
               </div>
 
               {/* Training Badge - Pill with orange accent and shadow */}
-              <div className="inline-flex items-center rounded-full border-2 border-orange-200 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-700 shadow-md dark:border-orange-800 dark:bg-orange-900/20 dark:text-orange-300">
+              <div className="inline-flex items-center rounded-full border-2 border-orange-200 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-700 shadow-md">
                 📚 Training:{' '}
                 {productVideos.filter((v) => v.category === 'Training').length}
               </div>
@@ -403,7 +403,7 @@ export function NTClipboardVideo({
 
               {/* Product Features */}
               <div className="mt-6 grid grid-cols-1 gap-6 text-left md:grid-cols-3">
-                <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-slate-800">
+                <div className="rounded-xl bg-white p-6 shadow-lg">
                   <h3 className="mb-2 text-lg font-semibold">
                     Production Scheduling
                   </h3>
@@ -412,7 +412,7 @@ export function NTClipboardVideo({
                     management and resource optimization.
                   </p>
                 </div>
-                <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-slate-800">
+                <div className="rounded-xl bg-white p-6 shadow-lg">
                   <h3 className="mb-2 text-lg font-semibold">
                     Resource Management
                   </h3>
@@ -421,7 +421,7 @@ export function NTClipboardVideo({
                     and capacity optimization.
                   </p>
                 </div>
-                <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-slate-800">
+                <div className="rounded-xl bg-white p-6 shadow-lg">
                   <h3 className="mb-2 text-lg font-semibold">
                     Real-Time Tracking
                   </h3>
@@ -439,9 +439,9 @@ export function NTClipboardVideo({
       {/* Awards Section */}
       <div className="container mx-auto px-4 py-6">
         <div className="mx-auto max-w-7xl">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
             <CardContent className="p-8 text-center">
-              <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+              <h3 className="mb-6 text-2xl font-bold text-slate-900">
                 CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
               </h3>
               <Image

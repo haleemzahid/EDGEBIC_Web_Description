@@ -5,11 +5,11 @@ import Link from 'next/link';
 
 export function CompleteViewSection(): React.JSX.Element {
   return (
-    <section className="bg-white py-6 dark:bg-slate-900 md:py-24">
+    <section className="bg-white py-6 md:py-24">
       <div className="mx-auto max-w-7xl px-6">
         <div className="lg:flex lg:items-center lg:gap-12">
           <div className="space-y-6 lg:w-1/3">
-            <h2 className="text-2xl font-bold text-[#003d5c] dark:text-white md:text-3xl lg:text-4xl">
+            <h2 className="text-2xl font-bold text-[#003d5c] md:text-3xl lg:text-4xl">
               MRPeasy helps manufacturers stay organized
             </h2>
             <div>
@@ -23,13 +23,13 @@ export function CompleteViewSection(): React.JSX.Element {
           </div>
 
           <div className="mt-12 lg:mt-0 lg:w-2/3">
-            <div className="rounded-lg bg-slate-50 p-8 dark:bg-slate-800">
+            <div className="rounded-lg bg-slate-50 p-8">
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div className="space-y-4">
-                  <h3 className="text-xl font-bold text-[#003d5c] dark:text-white md:text-2xl">
+                  <h3 className="text-xl font-bold text-[#003d5c] md:text-2xl">
                     A complete view of your business
                   </h3>
-                  <p className="text-base leading-relaxed text-slate-700 dark:text-slate-300">
+                  <p className="text-base leading-relaxed text-slate-700">
                     No more spreadsheets! Ensure seamless communication between
                     sales, production, warehousing, procurement, administration,
                     and finance.

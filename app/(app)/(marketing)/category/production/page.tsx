@@ -20,19 +20,19 @@ export default function ProductionCategoryPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-6 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <section className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <Badge
               variant="outline"
-              className="mb-6 h-8 rounded-full border-blue-600/30 px-4 text-sm font-medium text-blue-700 shadow-sm dark:border-blue-400/30 dark:text-blue-300"
+              className="mb-6 h-8 rounded-full border-blue-600/30 px-4 text-sm font-medium text-blue-700 shadow-sm"
             >
               Production Category
             </Badge>
             <h1 className="mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-3xl font-bold text-transparent md:text-4xl lg:text-5xl">
               Production
             </h1>
-            <p className="mb-4 text-xl text-gray-700 dark:text-gray-300">
+            <p className="mb-4 text-xl text-gray-700">
               Discover articles and resources about production planning and
               scheduling
             </p>
@@ -58,13 +58,13 @@ export default function ProductionCategoryPage() {
                   />
                 </div>
                 <CardContent className="flex flex-1 flex-col p-6">
-                  <h2 className="mb-4 text-2xl font-bold text-gray-900 hover:text-blue-600 dark:text-white dark:hover:text-blue-400">
+                  <h2 className="mb-4 text-2xl font-bold text-gray-900 hover:text-blue-600">
                     <a href="/erp-solutions-for-production-planning">
                       The Role of Technology in Modern Production Planning and
                       Scheduling
                     </a>
                   </h2>
-                  <p className="mb-4 flex-1 leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 flex-1 leading-relaxed text-gray-700">
                     Have you ever wondered how technology can transform the
                     traditional landscape of production planning and scheduling?
                     In an era where efficiency dictates market leaders, the
@@ -76,7 +76,7 @@ export default function ProductionCategoryPage() {
                   </p>
                   <a
                     href="/erp-solutions-for-production-planning"
-                    className="font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                    className="font-semibold text-blue-600 hover:text-blue-800"
                   >
                     Read More →
                   </a>
@@ -95,13 +95,13 @@ export default function ProductionCategoryPage() {
                   />
                 </div>
                 <CardContent className="flex flex-1 flex-col p-6">
-                  <h2 className="mb-4 text-2xl font-bold text-gray-900 hover:text-blue-600 dark:text-white dark:hover:text-blue-400">
+                  <h2 className="mb-4 text-2xl font-bold text-gray-900 hover:text-blue-600">
                     <a href="/lean-manufacturing-solutions">
                       Implementing Lean Manufacturing Principles for Improved
                       Production Efficiency
                     </a>
                   </h2>
-                  <p className="mb-4 flex-1 leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 flex-1 leading-relaxed text-gray-700">
                     Is your manufacturing process as streamlined and
                     cost-effective as it could be? In today&apos;s competitive
                     landscape, companies are constantly seeking methods to
@@ -113,7 +113,7 @@ export default function ProductionCategoryPage() {
                   </p>
                   <a
                     href="/lean-manufacturing-solutions"
-                    className="font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                    className="font-semibold text-blue-600 hover:text-blue-800"
                   >
                     Read More →
                   </a>
@@ -123,9 +123,9 @@ export default function ProductionCategoryPage() {
 
             {/* Awards Banner */}
             <div>
-              <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow dark:from-blue-900/20 dark:to-blue-800/20">
+              <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
                 <CardContent className="p-8 text-center">
-                  <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                  <h2 className="mb-6 text-2xl font-bold text-slate-900">
                     CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                   </h2>
                   <img

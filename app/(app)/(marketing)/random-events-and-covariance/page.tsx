@@ -20,19 +20,19 @@ export default function RandomEventsCovariancePage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-purple-50 via-white to-pink-50 py-6 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <section className="bg-gradient-to-br from-purple-50 via-white to-pink-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <Badge
               variant="outline"
-              className="mb-6 h-8 rounded-full border-purple-600/30 px-4 text-sm font-medium text-purple-700 shadow-sm dark:border-purple-400/30 dark:text-purple-300"
+              className="mb-6 h-8 rounded-full border-purple-600/30 px-4 text-sm font-medium text-purple-700 shadow-sm"
             >
               Operations Management Concepts
             </Badge>
             <h1 className="mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-3xl font-bold text-transparent md:text-4xl lg:text-5xl">
               Blame Random Events and Covariance
             </h1>
-            <p className="mb-4 text-xl text-gray-700 dark:text-gray-300">
+            <p className="mb-4 text-xl text-gray-700">
               Understanding the mathematical principles affecting your
               production scheduling
             </p>
@@ -48,7 +48,7 @@ export default function RandomEventsCovariancePage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-lg leading-relaxed text-gray-700">
                     Ever wonder why, after picking what you thought was the
                     shortest line, you&apos;re the last to get through? Or, why
                     traffic can come to an absolute stand-still on the freeway
@@ -66,10 +66,10 @@ export default function RandomEventsCovariancePage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="mb-6 text-3xl font-bold text-gray-900">
                     Random Events
                   </h2>
-                  <p className="mb-6 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-6 text-lg leading-relaxed text-gray-700">
                     Random events aren&apos;t predictable but also occur in
                     clusters. Think about it. By definition, you can&apos;t
                     predict a random event. &quot;They&quot; always say aircraft
@@ -79,7 +79,7 @@ export default function RandomEventsCovariancePage() {
                     reference to random events is known as &apos;Murphys
                     Law&apos; — anything that can go wrong, will go wrong.
                   </p>
-                  <p className="mb-6 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-6 text-lg leading-relaxed text-gray-700">
                     If the event is not deterministic, or predictable, then it
                     will not fall within a known interval of time. Therefore,
                     some intervals between events will be longer, some shorter.
@@ -104,10 +104,10 @@ export default function RandomEventsCovariancePage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="mb-6 text-3xl font-bold text-gray-900">
                     Covariance
                   </h2>
-                  <p className="mb-6 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-6 text-lg leading-relaxed text-gray-700">
                     The second, less familiar mathematical principal is a
                     phenomenon called covariance. Typically considered a vary
                     sophisticated mathematical concept with corresponding
@@ -124,7 +124,7 @@ export default function RandomEventsCovariancePage() {
                       />
                     </div>
                   </div>
-                  <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-lg leading-relaxed text-gray-700">
                     If there is a possible delay, in a series of events, things
                     tend towards the maximum delay. Now you know why your
                     &apos;short&apos; line is the longest. Teller changes, price
@@ -136,9 +136,9 @@ export default function RandomEventsCovariancePage() {
 
             {/* Awards Banner */}
             <div>
-              <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow dark:from-blue-900/20 dark:to-blue-800/20">
+              <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
                 <CardContent className="p-8 text-center">
-                  <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                  <h2 className="mb-6 text-2xl font-bold text-slate-900">
                     CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                   </h2>
                   <img

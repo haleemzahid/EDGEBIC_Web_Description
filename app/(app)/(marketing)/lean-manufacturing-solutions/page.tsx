@@ -18,19 +18,19 @@ export default function LeanManufacturingSolutionsPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-green-50 via-white to-emerald-50 py-6 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <section className="bg-gradient-to-br from-green-50 via-white to-emerald-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <Badge
               variant="outline"
-              className="mb-6 h-8 rounded-full border-green-600/30 px-4 text-sm font-medium text-green-700 shadow-sm dark:border-green-400/30 dark:text-green-300"
+              className="mb-6 h-8 rounded-full border-green-600/30 px-4 text-sm font-medium text-green-700 shadow-sm"
             >
               Operational Excellence
             </Badge>
             <h1 className="mb-6 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-3xl font-bold text-transparent md:text-4xl lg:text-5xl">
               Lean Manufacturing Solutions
             </h1>
-            <p className="mb-4 text-xl text-gray-700 dark:text-gray-300">
+            <p className="mb-4 text-xl text-gray-700">
               Eliminate waste, maximize value, and achieve continuous
               improvement
             </p>
@@ -46,7 +46,7 @@ export default function LeanManufacturingSolutionsPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-lg leading-relaxed text-gray-700">
                     Is your manufacturing process as streamlined and
                     cost-effective as it could be? In today&apos;s competitive
                     landscape, companies are constantly seeking methods to
@@ -67,10 +67,10 @@ export default function LeanManufacturingSolutionsPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="mb-6 text-3xl font-bold text-gray-900">
                     What is Lean Manufacturing?
                   </h2>
-                  <p className="mb-4 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 text-lg leading-relaxed text-gray-700">
                     Lean manufacturing is a systematic approach to minimizing
                     waste within a manufacturing system while also maximizing
                     productivity. It involves various techniques and
@@ -79,7 +79,7 @@ export default function LeanManufacturingSolutionsPage() {
                     lean is the pursuit of making every aspect of manufacturing
                     as efficient, streamlined, and waste-free as possible.
                   </p>
-                  <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-lg leading-relaxed text-gray-700">
                     Integrating enterprise resource management software into
                     this philosophy enhances its effectiveness. Tools that
                     provide real-time data and analytics help identify
@@ -94,10 +94,10 @@ export default function LeanManufacturingSolutionsPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="mb-6 text-3xl font-bold text-gray-900">
                     The Five Principles of Lean
                   </h2>
-                  <p className="mb-4 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 text-lg leading-relaxed text-gray-700">
                     The five core principles of lean manufacturing include
                     defining value, mapping the value stream, creating flow,
                     establishing pull, and pursuing perfection. Each principle
@@ -106,7 +106,7 @@ export default function LeanManufacturingSolutionsPage() {
                     transform a cluttered production line into a smooth-running
                     operation.
                   </p>
-                  <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-lg leading-relaxed text-gray-700">
                     Custom resource management solutions play a pivotal role in
                     this transformation. They enable manufacturers to tailor
                     their resource management practices precisely to their
@@ -121,10 +121,10 @@ export default function LeanManufacturingSolutionsPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="mb-6 text-3xl font-bold text-gray-900">
                     Technology&apos;s Role in Lean Manufacturing
                   </h2>
-                  <p className="mb-4 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 text-lg leading-relaxed text-gray-700">
                     How does technology streamline operations in ways
                     traditional methods cannot? Advanced manufacturing resource
                     planning software integrates seamlessly with lean strategies
@@ -133,7 +133,7 @@ export default function LeanManufacturingSolutionsPage() {
                     technologically adept at handling complex production
                     schedules.
                   </p>
-                  <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-lg leading-relaxed text-gray-700">
                     Resource optimization solutions leverage big data analytics
                     and IoT integration to forecast issues before they become
                     impediments. This predictive capability is vital in
@@ -148,10 +148,10 @@ export default function LeanManufacturingSolutionsPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="mb-6 text-3xl font-bold text-gray-900">
                     Reducing Waste with Lean Tools
                   </h2>
-                  <p className="mb-4 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 text-lg leading-relaxed text-gray-700">
                     Lean tools such as Kaizen, Kanban, and 5S are integral in
                     identifying and reducing waste. These tools foster an
                     environment of continuous improvement and help maintain the
@@ -159,7 +159,7 @@ export default function LeanManufacturingSolutionsPage() {
                     ERP solutions for manufacturers, these tools can
                     significantly enhance operational efficiency.
                   </p>
-                  <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-lg leading-relaxed text-gray-700">
                     At User Solutions, Inc., we provide customized tools that
                     integrate with existing workflows, helping businesses
                     achieve a significant reduction in waste while maximizing
@@ -173,17 +173,17 @@ export default function LeanManufacturingSolutionsPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="mb-6 text-3xl font-bold text-gray-900">
                     Empowering Employees through Lean
                   </h2>
-                  <p className="mb-4 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 text-lg leading-relaxed text-gray-700">
                     Employee involvement is a critical component of successful
                     lean implementation. Empowering workers to identify
                     inefficiencies and suggest improvements leads to a more
                     engaged workforce and a more productive environment. How can
                     companies facilitate this empowerment effectively?
                   </p>
-                  <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-lg leading-relaxed text-gray-700">
                     By implementing enterprise resource management software that
                     provides employees with easy access to necessary information
                     and analytics, businesses can make informed decisions
@@ -197,17 +197,17 @@ export default function LeanManufacturingSolutionsPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="mb-6 text-3xl font-bold text-gray-900">
                     Measuring Success in Lean Implementations
                   </h2>
-                  <p className="mb-4 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 text-lg leading-relaxed text-gray-700">
                     What metrics are most effective for assessing the success of
                     lean implementations? Key performance indicators (KPIs) like
                     lead time, defect rates, and overall equipment effectiveness
                     (OEE) provide tangible measures of lean&apos;s impact on
                     manufacturing processes.
                   </p>
-                  <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-lg leading-relaxed text-gray-700">
                     With custom resource management solutions from User
                     Solutions, Inc., manufacturers can tailor their tracking and
                     reporting systems to focus on these crucial metrics,
@@ -221,10 +221,10 @@ export default function LeanManufacturingSolutionsPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="mb-6 text-3xl font-bold text-gray-900">
                     Future Trends in Lean Manufacturing
                   </h2>
-                  <p className="mb-4 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 text-lg leading-relaxed text-gray-700">
                     As technology evolves, so do the applications of lean
                     manufacturing. The future will likely see a greater
                     integration of AI and machine learning in manufacturing
@@ -236,7 +236,7 @@ export default function LeanManufacturingSolutionsPage() {
                     not just tools but essential components of a modern,
                     efficient, and responsive manufacturing environment.
                   </p>
-                  <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-lg leading-relaxed text-gray-700">
                     Lean manufacturing isn&apos;t just a methodology; it&apos;s
                     a proven strategy for operational excellence. By
                     implementing lean principles, technology, and customized
@@ -255,9 +255,9 @@ export default function LeanManufacturingSolutionsPage() {
 
             {/* Awards Banner */}
             <div>
-              <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow dark:from-blue-900/20 dark:to-blue-800/20">
+              <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
                 <CardContent className="p-8 text-center">
-                  <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                  <h2 className="mb-6 text-2xl font-bold text-slate-900">
                     CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                   </h2>
                   <img

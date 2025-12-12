@@ -76,7 +76,7 @@ export function LatestNewsSection(): React.JSX.Element {
       <div className="container py-6">
         {/* Section Header */}
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white md:text-4xl">
+          <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">
             LATEST NEWS
           </h2>
 
@@ -93,12 +93,12 @@ export function LatestNewsSection(): React.JSX.Element {
 
         {/* News Carousel */}
         <div className="relative">
-          <div className="overflow-hidden rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 p-8 dark:from-blue-900/20 dark:to-blue-800/20">
+          <div className="overflow-hidden rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 p-8">
             <div className="flex items-center justify-between">
               {/* Navigation Buttons */}
               <button
                 onClick={prevSlide}
-                className="flex size-10 items-center justify-center rounded-full bg-white/80 text-blue-600 shadow-md transition-all hover:bg-white hover:shadow-lg dark:bg-gray-800/80 dark:text-blue-400 dark:hover:bg-gray-800"
+                className="flex size-10 items-center justify-center rounded-full bg-white/80 text-blue-600 shadow-md transition-all hover:bg-white hover:shadow-lg"
                 aria-label="Previous news item"
                 title="Previous news item"
               >
@@ -116,15 +116,15 @@ export function LatestNewsSection(): React.JSX.Element {
                     transition={{ duration: 0.8, ease: 'easeOut' }}
                     className="text-center"
                   >
-                    <div className="mb-4 text-sm font-semibold text-blue-600 dark:text-blue-400">
+                    <div className="mb-4 text-sm font-semibold text-blue-600">
                       Slide Heading
                     </div>
-                    <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 md:text-xl">
+                    <h3 className="text-lg font-medium text-gray-800 md:text-xl">
                       {newsItems[currentIndex].title}
                     </h3>
                     <Link
                       href={newsItems[currentIndex].link}
-                      className="mt-4 inline-block font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                      className="mt-4 inline-block font-semibold text-blue-600 hover:text-blue-800"
                     >
                       Click Here
                     </Link>
@@ -134,7 +134,7 @@ export function LatestNewsSection(): React.JSX.Element {
 
               <button
                 onClick={nextSlide}
-                className="flex size-10 items-center justify-center rounded-full bg-white/80 text-blue-600 shadow-md transition-all hover:bg-white hover:shadow-lg dark:bg-gray-800/80 dark:text-blue-400 dark:hover:bg-gray-800"
+                className="flex size-10 items-center justify-center rounded-full bg-white/80 text-blue-600 shadow-md transition-all hover:bg-white hover:shadow-lg"
                 aria-label="Next news item"
                 title="Next news item"
               >
@@ -150,8 +150,8 @@ export function LatestNewsSection(): React.JSX.Element {
                   onClick={() => setCurrentIndex(index)}
                   className={`size-3 rounded-full transition-all ${
                     index === currentIndex
-                      ? 'bg-blue-600 dark:bg-blue-400'
-                      : 'bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500'
+                      ? 'bg-blue-600'
+                      : 'bg-gray-300 hover:bg-gray-400'
                   }`}
                   aria-label={`Go to slide ${index + 1}`}
                   title={`Go to slide ${index + 1}`}

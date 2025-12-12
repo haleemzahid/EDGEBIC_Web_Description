@@ -3,8 +3,6 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import NiceModal from '@ebay/nice-modal-react';
-import { MonitorIcon, MoonIcon, SunIcon } from 'lucide-react';
-import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
 
 import { logOut } from '@/actions/auth/log-out';
@@ -20,13 +18,6 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 import {
   SidebarGroup,
   SidebarMenu,
@@ -50,7 +41,6 @@ export function NavUser({
   ...other
 }: NavUserProps): React.JSX.Element {
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
 
   const handleNavigateToProfilePage = (): void => {
     router.push(Routes.Profile);
@@ -146,40 +136,6 @@ export function NavUser({
                   Command Menu
                   <DropdownMenuShortcut>⌘K</DropdownMenuShortcut>
                 </DropdownMenuItem> */}
-                <DropdownMenuItem
-                  className="flex cursor-default flex-row justify-between !bg-transparent"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <p>Theme</p>
-                  <Select
-                    value={theme}
-                    onValueChange={setTheme}
-                  >
-                    <SelectTrigger className="h-[28px] w-[96px] px-2 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="light">
-                        <span className="flex flex-row items-center gap-1 text-xs">
-                          <SunIcon className="size-4 shrink-0 text-muted-foreground" />
-                          Light
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="dark">
-                        <span className="flex flex-row items-center gap-1 text-xs">
-                          <MoonIcon className="size-4 shrink-0 text-muted-foreground" />
-                          Dark
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="system">
-                        <span className="flex flex-row items-center gap-1 text-xs">
-                          <MonitorIcon className="size-4 shrink-0 text-muted-foreground" />
-                          System
-                        </span>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogOut}>

@@ -48,12 +48,12 @@ export default function BuyNowSSPage() {
               </p>
 
               {/* Contact Form Section */}
-              <div className="mt-8 rounded-lg bg-gray-50 p-6 dark:bg-gray-800/50">
+              <div className="mt-8 rounded-lg bg-gray-50 p-6">
                 <form className="space-y-4">
                   <div>
                     <label
                       htmlFor="name"
-                      className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      className="mb-1 block text-sm font-medium text-gray-700"
                     >
                       Name
                     </label>
@@ -61,14 +61,14 @@ export default function BuyNowSSPage() {
                       type="text"
                       id="name"
                       name="name"
-                      className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                      className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="email"
-                      className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      className="mb-1 block text-sm font-medium text-gray-700"
                     >
                       Email
                     </label>
@@ -76,14 +76,14 @@ export default function BuyNowSSPage() {
                       type="email"
                       id="email"
                       name="email"
-                      className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                      className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="phone"
-                      className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      className="mb-1 block text-sm font-medium text-gray-700"
                     >
                       Phone
                     </label>
@@ -91,14 +91,14 @@ export default function BuyNowSSPage() {
                       type="tel"
                       id="phone"
                       name="phone"
-                      className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                      className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="message"
-                      className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      className="mb-1 block text-sm font-medium text-gray-700"
                     >
                       Message
                     </label>
@@ -106,7 +106,7 @@ export default function BuyNowSSPage() {
                       id="message"
                       name="message"
                       rows={4}
-                      className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                      className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
@@ -127,9 +127,9 @@ export default function BuyNowSSPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <img

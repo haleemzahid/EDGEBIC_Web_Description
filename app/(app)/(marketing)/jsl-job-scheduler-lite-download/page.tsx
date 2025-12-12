@@ -43,8 +43,8 @@ export default function JSLDownloadPage(): React.JSX.Element {
 
       {/* System Requirements */}
       <div className="mb-6 text-center">
-        <div className="inline-block rounded-lg bg-blue-50 px-6 py-4 dark:bg-blue-950/20">
-          <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+        <div className="inline-block rounded-lg bg-blue-50 px-6 py-4">
+          <p className="text-sm font-medium text-blue-800">
             <strong>System Requirements:</strong> Excel installed (used as
             report writer).
           </p>
@@ -64,12 +64,12 @@ export default function JSLDownloadPage(): React.JSX.Element {
       </div>
 
       {/* Installation Instructions */}
-      <div className="mb-6 rounded-lg bg-gray-50 p-8 dark:bg-gray-900/50">
+      <div className="mb-6 rounded-lg bg-gray-50 p-8">
         <h2 className="mb-6 text-2xl font-semibold">
           Installation Instructions
         </h2>
 
-        <div className="space-y-4 text-gray-700 dark:text-gray-300">
+        <div className="space-y-4 text-gray-700">
           <p>
             Then, download and install <strong>JSLsetup.exe</strong> this
             installs to C:\ProgramFiles In this part of installation, it checks
@@ -102,7 +102,7 @@ export default function JSLDownloadPage(): React.JSX.Element {
           </p>
         </div>
 
-        <div className="mt-6 space-y-4 text-gray-700 dark:text-gray-300">
+        <div className="mt-6 space-y-4 text-gray-700">
           <p>
             The database will default to <strong>C:\ProgramData\EDGEBIC</strong>
           </p>
@@ -118,9 +118,9 @@ export default function JSLDownloadPage(): React.JSX.Element {
 
       {/* Awards Section */}
       <section className="pt-6">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
           <CardContent className="p-8 text-center">
-            <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+            <h2 className="mb-6 text-2xl font-bold text-slate-900">
               CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
             </h2>
             <div className="flex justify-center">

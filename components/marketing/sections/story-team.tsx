@@ -33,7 +33,7 @@ export function StoryTeam(): React.JSX.Element {
               key={index}
               className="space-y-8"
             >
-              <Avatar className="size-24 border-4 border-neutral-200 dark:border-neutral-800">
+              <Avatar className="size-24 border-4 border-neutral-200">
                 <AvatarImage
                   src={person.image}
                   alt={person.name}

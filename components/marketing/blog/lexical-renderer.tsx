@@ -164,7 +164,7 @@ export function LexicalRenderer({
   }
 
   return (
-    <div className="prose prose-neutral dark:prose-invert max-w-none">
+    <div className="prose prose-neutral max-w-none">
       {content.root.children.map((node, index) => renderNode(node, index))}
     </div>
   );

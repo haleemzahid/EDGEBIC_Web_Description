@@ -104,19 +104,19 @@ export default function UsersolAdmin2AuthorPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-6 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <section className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <Badge
               variant="outline"
-              className="mb-6 h-8 rounded-full border-blue-600/30 px-4 text-sm font-medium text-blue-700 shadow-sm dark:border-blue-400/30 dark:text-blue-300"
+              className="mb-6 h-8 rounded-full border-blue-600/30 px-4 text-sm font-medium text-blue-700 shadow-sm"
             >
               Author Profile
             </Badge>
-            <h1 className="mb-6 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-4xl font-bold text-transparent dark:from-blue-400 dark:to-cyan-400 md:text-5xl">
+            <h1 className="mb-6 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-4xl font-bold text-transparent md:text-5xl">
               usersol-admin-2
             </h1>
-            <p className="text-xl text-gray-700 dark:text-gray-300">
+            <p className="text-xl text-gray-700">
               Expert articles on manufacturing solutions, production scheduling,
               and supply chain management.
             </p>
@@ -151,7 +151,7 @@ export default function UsersolAdmin2AuthorPage() {
 
                     {/* Article Content */}
                     <CardContent className="flex flex-col justify-center p-6">
-                      <h2 className="mb-3 text-2xl font-bold text-slate-900 dark:text-white">
+                      <h2 className="mb-3 text-2xl font-bold text-slate-900">
                         {article.title}
                       </h2>
                       <p className="text-sm text-muted-foreground">
@@ -164,9 +164,9 @@ export default function UsersolAdmin2AuthorPage() {
             ))}
 
             {/* Award Logo Card */}
-            <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
               <CardContent className="p-8 text-center">
-                <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h2 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
                 <div className="relative mx-auto h-auto w-full max-w-4xl">

@@ -70,14 +70,14 @@ export default function ThankYouSpreadsheetSchedulerPage() {
                     Send data or post questions anytime to{' '}
                     <a
                       href="mailto:us@usersolutions.com"
-                      className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                      className="font-medium text-blue-600 hover:underline"
                     >
                       us@usersolutions.com
                     </a>{' '}
                     or at{' '}
                     <a
                       href="tel:248.486.6365"
-                      className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                      className="font-medium text-blue-600 hover:underline"
                     >
                       248.486.6365
                     </a>
@@ -119,7 +119,7 @@ export default function ThankYouSpreadsheetSchedulerPage() {
                     </p>
                     <Link
                       href="/workcell-planner"
-                      className="text-blue-600 hover:underline dark:text-blue-400"
+                      className="text-blue-600 hover:underline"
                     >
                       Learn More →
                     </Link>
@@ -135,7 +135,7 @@ export default function ThankYouSpreadsheetSchedulerPage() {
                     </p>
                     <Link
                       href="/resource-manager-for-excel-2"
-                      className="text-blue-600 hover:underline dark:text-blue-400"
+                      className="text-blue-600 hover:underline"
                     >
                       Learn More →
                     </Link>
@@ -151,7 +151,7 @@ export default function ThankYouSpreadsheetSchedulerPage() {
                     </p>
                     <Link
                       href="/operations-manager"
-                      className="text-blue-600 hover:underline dark:text-blue-400"
+                      className="text-blue-600 hover:underline"
                     >
                       Learn More →
                     </Link>
@@ -167,9 +167,9 @@ export default function ThankYouSpreadsheetSchedulerPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <div className="flex justify-center">

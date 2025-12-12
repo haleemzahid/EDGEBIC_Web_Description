@@ -2,7 +2,6 @@ import * as React from 'react';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
-import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Routes } from '@/constants/routes';
 import { dedupedAuth } from '@/lib/auth';
 import { getPathname } from '@/lib/network/get-pathname';
@@ -29,7 +28,6 @@ export default async function AuthLayout({
       <main className="flex flex-col items-center justify-center p-2">
         {children}
       </main>
-      <ThemeToggle className="fixed bottom-2 right-2 rounded-full" />
     </div>
   );
 }

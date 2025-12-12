@@ -50,7 +50,7 @@ export default function AircraftCarrierNimitzPage() {
             <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
               {/* Content Column */}
               <div className="space-y-6">
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   The USS Nimitz is one of the Navy's nuclear-powered aircraft
                   carriers, classified as a "super carrier" and the lead ship of
                   its class. With a displacement of 100K+ tons, a length of 1K+
@@ -59,11 +59,11 @@ export default function AircraftCarrierNimitzPage() {
                   needs to be scheduled two years out.
                 </p>
 
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-2xl font-bold text-gray-900">
                   The Challenge
                 </h2>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Christopher D. Gates, the Assistant Reactor Maintenance Officer,
                   was tasked with augmenting a maintenance schedule system both in
                   port and at sea for the power train of the aircraft carrier USS
@@ -73,7 +73,7 @@ export default function AircraftCarrierNimitzPage() {
                   inquiries.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   According to Chris, "The problem I was trying to solve was level
                   loading the over 26,000 tasks I receive from the Preventive
                   Maintenance Program, due on a periodic-based schedule, along
@@ -84,7 +84,7 @@ export default function AircraftCarrierNimitzPage() {
                   list."
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   The maintenance and production for the four plants received data
                   from disparate, proprietary databases which, due to security
                   access restrictions, could not be combined or integrated.
@@ -93,7 +93,7 @@ export default function AircraftCarrierNimitzPage() {
                   at-sea schedules averaging 4 to 10 months.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   The disparate systems provided the preventative maintenance
                   tasks and resource requirements from one, the corrective
                   maintenance tasks and resource requirements from another and
@@ -105,7 +105,7 @@ export default function AircraftCarrierNimitzPage() {
                   still left Chris without capacity considerations.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Implementation was urgent so it would need to be easy and
                   familiar enough for rapid adoption by some 400+ sailors and a
                   non-proprietary software platform to avoid the required military
@@ -117,18 +117,18 @@ export default function AircraftCarrierNimitzPage() {
                   impossibility.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Although a solid and rather impressive scheduling system had
                   been developed by the user out of Excel, it did not possess the
                   sophistication of a finite capacity planning and scheduling or
                   load leveling system.
                 </p>
 
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-2xl font-bold text-gray-900">
                   The Solution
                 </h2>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   "I found User Solutions while browsing the internet for Finite
                   Capacity Scheduling and ERP systems based in Excel," Chris
                   explained. "As soon as I started using their product Resource
@@ -137,7 +137,7 @@ export default function AircraftCarrierNimitzPage() {
                   which changes almost by the hour."
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Resource Manager for Excel (RMX) from User Solutions is, out of
                   the box, a resource management planning, scheduling and tracking
                   system that can perform intricate finite capacity scheduling
@@ -148,14 +148,14 @@ export default function AircraftCarrierNimitzPage() {
                   in Excel, not to mention the famously rapid calculation speeds.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   The new expanded version of RMX, v2014, which leverages the
                   expanded version of Excel 2013, supporting 1,000,000 rows of
                   data and 16k columns per sheet, along with unlimited sheets, was
                   perfectly positioned to accommodate the Nimitz's needs.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   "RMX is one of the fastest, if not the fastest, finite capacity
                   scheduler combined with materials requirements planning (MRPII)
                   due to its leveraging the speed with which Excel performs
@@ -167,7 +167,7 @@ export default function AircraftCarrierNimitzPage() {
                   optimize their production scheduling."
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Chris funnels the data from the disparate systems into a
                   Bill-of-Resource (BOR) in RMX. RMX is designed to adapt to
                   whatever data the user has, which means in this case, Chris
@@ -210,9 +210,9 @@ export default function AircraftCarrierNimitzPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image

@@ -19,19 +19,19 @@ export default function UncategorizedCategoryPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-purple-50 via-white to-pink-50 py-6 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <section className="bg-gradient-to-br from-purple-50 via-white to-pink-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <Badge
               variant="outline"
-              className="mb-6 h-8 rounded-full border-purple-600/30 px-4 text-sm font-medium text-purple-700 shadow-sm dark:border-purple-400/30 dark:text-purple-300"
+              className="mb-6 h-8 rounded-full border-purple-600/30 px-4 text-sm font-medium text-purple-700 shadow-sm"
             >
               Articles & Insights
             </Badge>
             <h1 className="mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-3xl font-bold text-transparent md:text-4xl lg:text-5xl">
               Uncategorized
             </h1>
-            <p className="mb-4 text-xl text-gray-700 dark:text-gray-300">
+            <p className="mb-4 text-xl text-gray-700">
               Explore various articles and resources about manufacturing
               solutions
             </p>
@@ -55,12 +55,12 @@ export default function UncategorizedCategoryPage() {
                   />
                 </div>
                 <CardContent className="flex flex-1 flex-col p-6">
-                  <h2 className="mb-3 text-xl font-bold text-gray-900 hover:text-purple-600 dark:text-white dark:hover:text-purple-400">
+                  <h2 className="mb-3 text-xl font-bold text-gray-900 hover:text-purple-600">
                     <a href="/li-ion-battery-production-scheduling-software">
                       Li-ion Battery Production Scheduling Software
                     </a>
                   </h2>
-                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-700">
                     Resource Manager-DB V6 Transforms Li-ion Battery Production
                     Scheduling User Solutions, a leader in flexible production
                     scheduling and planning software, has released Resource
@@ -72,7 +72,7 @@ export default function UncategorizedCategoryPage() {
                   </p>
                   <a
                     href="/li-ion-battery-production-scheduling-software"
-                    className="text-sm font-semibold text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300"
+                    className="text-sm font-semibold text-purple-600 hover:text-purple-800"
                   >
                     Read More →
                   </a>
@@ -89,12 +89,12 @@ export default function UncategorizedCategoryPage() {
                   />
                 </div>
                 <CardContent className="flex flex-1 flex-col p-6">
-                  <h2 className="mb-3 text-xl font-bold text-gray-900 hover:text-purple-600 dark:text-white dark:hover:text-purple-400">
+                  <h2 className="mb-3 text-xl font-bold text-gray-900 hover:text-purple-600">
                     <a href="/scheduling-system-narrows-skills-gap-for-fire-rated-glass">
                       Scheduling System Narrows Skills Gap for Fire-Rated Glass
                     </a>
                   </h2>
-                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-700">
                     Scheduling System Narrows Skills Gap for Fire-Rated Glass
                     User Solutions&apos; Resource Manager-DB enables Technical
                     Glass Products to strategically cross-train their way to
@@ -106,7 +106,7 @@ export default function UncategorizedCategoryPage() {
                   </p>
                   <a
                     href="/scheduling-system-narrows-skills-gap-for-fire-rated-glass"
-                    className="text-sm font-semibold text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300"
+                    className="text-sm font-semibold text-purple-600 hover:text-purple-800"
                   >
                     Read More →
                   </a>
@@ -123,13 +123,13 @@ export default function UncategorizedCategoryPage() {
                   />
                 </div>
                 <CardContent className="flex flex-1 flex-col p-6">
-                  <h2 className="mb-3 text-xl font-bold text-gray-900 hover:text-purple-600 dark:text-white dark:hover:text-purple-400">
+                  <h2 className="mb-3 text-xl font-bold text-gray-900 hover:text-purple-600">
                     <a href="/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive">
                       Small Manufacturer and Job Shop Uses Planning, Scheduling,
                       and Tracking Tools
                     </a>
                   </h2>
-                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-700">
                     Small Manufacturer and Job Shop Uses Planning, Scheduling,
                     and Tracking Tools from User Solutions, Inc. to Become More
                     Efficient and Competitive Resource Manager for Excel and
@@ -140,7 +140,7 @@ export default function UncategorizedCategoryPage() {
                   </p>
                   <a
                     href="/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive"
-                    className="text-sm font-semibold text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300"
+                    className="text-sm font-semibold text-purple-600 hover:text-purple-800"
                   >
                     Read More →
                   </a>
@@ -157,12 +157,12 @@ export default function UncategorizedCategoryPage() {
                   />
                 </div>
                 <CardContent className="flex flex-1 flex-col p-6">
-                  <h2 className="mb-3 text-xl font-bold text-gray-900 hover:text-purple-600 dark:text-white dark:hover:text-purple-400">
+                  <h2 className="mb-3 text-xl font-bold text-gray-900 hover:text-purple-600">
                     <a href="/user-solutions-inc-named-as-one-of-top-erp-solutions-transforming-business-2016-by-cio-applications-as-they-celebrate-25-years-in-business">
                       User Solutions Named Top ERP Solution by CIO Applications
                     </a>
                   </h2>
-                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-700">
                     User Solutions, Inc. named as one of top ERP Solutions
                     Transforming Business 2016 by CIO Applications, as they
                     celebrate 25 years in business. User Solutions receives
@@ -173,7 +173,7 @@ export default function UncategorizedCategoryPage() {
                   </p>
                   <a
                     href="/user-solutions-inc-named-as-one-of-top-erp-solutions-transforming-business-2016-by-cio-applications-as-they-celebrate-25-years-in-business"
-                    className="text-sm font-semibold text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300"
+                    className="text-sm font-semibold text-purple-600 hover:text-purple-800"
                   >
                     Read More →
                   </a>
@@ -190,12 +190,12 @@ export default function UncategorizedCategoryPage() {
                   />
                 </div>
                 <CardContent className="flex flex-1 flex-col p-6">
-                  <h2 className="mb-3 text-xl font-bold text-gray-900 hover:text-purple-600 dark:text-white dark:hover:text-purple-400">
+                  <h2 className="mb-3 text-xl font-bold text-gray-900 hover:text-purple-600">
                     <a href="/random-events-and-covariance">
                       Celebrating National Manufacturing Day
                     </a>
                   </h2>
-                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-700">
                     Blame Random Events and Covariance Ever wonder why, after
                     picking what you thought was the shortest line, you&apos;re
                     the last to get through? Or, why traffic can come to an
@@ -205,7 +205,7 @@ export default function UncategorizedCategoryPage() {
                   </p>
                   <a
                     href="/random-events-and-covariance"
-                    className="text-sm font-semibold text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300"
+                    className="text-sm font-semibold text-purple-600 hover:text-purple-800"
                   >
                     Read More →
                   </a>
@@ -222,12 +222,12 @@ export default function UncategorizedCategoryPage() {
                   />
                 </div>
                 <CardContent className="flex flex-1 flex-col p-6">
-                  <h2 className="mb-3 text-xl font-bold text-gray-900 hover:text-purple-600 dark:text-white dark:hover:text-purple-400">
+                  <h2 className="mb-3 text-xl font-bold text-gray-900 hover:text-purple-600">
                     <a href="/lets-make-manufacturing-great-again">
                       User Solutions Joins Fight Against Covid – Free Software
                     </a>
                   </h2>
-                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-700">
                     Let&apos;s Make Manufacturing Great Again© this National
                     Manufacturing Day 2017 This year&apos;s National
                     Manufacturing Day arrives at a most dynamic time with much
@@ -239,7 +239,7 @@ export default function UncategorizedCategoryPage() {
                   </p>
                   <a
                     href="/lets-make-manufacturing-great-again"
-                    className="text-sm font-semibold text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300"
+                    className="text-sm font-semibold text-purple-600 hover:text-purple-800"
                   >
                     Read More →
                   </a>
@@ -249,9 +249,9 @@ export default function UncategorizedCategoryPage() {
 
             {/* Awards Banner */}
             <div>
-              <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow dark:from-blue-900/20 dark:to-blue-800/20">
+              <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
                 <CardContent className="p-8 text-center">
-                  <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                  <h2 className="mb-6 text-2xl font-bold text-slate-900">
                     CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                   </h2>
                   <img

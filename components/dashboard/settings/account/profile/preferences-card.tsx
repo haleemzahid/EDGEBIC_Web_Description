@@ -1,12 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import { useTheme } from 'next-themes';
 import { type SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { updatePreferences } from '@/actions/account/update-preferences';
-import { ThemeOption } from '@/components/dashboard/settings/account/profile/theme-option';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -23,7 +21,6 @@ import {
   FormMessage,
   FormProvider
 } from '@/components/ui/form';
-import { RadioCardItem, RadioCards } from '@/components/ui/radio-card';
 import {
   Select,
   SelectContent,
@@ -47,13 +44,12 @@ export function PreferencesCard({
   preferences,
   ...other
 }: PreferencesCardProps): React.JSX.Element {
-  const { theme, setTheme } = useTheme();
   const methods = useZodForm({
     schema: updatePreferencesSchema,
     mode: 'onSubmit',
     defaultValues: {
       locale: preferences.locale,
-      theme: (theme as 'light' | 'dark' | 'system') ?? 'light'
+      theme: 'light'
     }
   });
   const canSubmit = !methods.formState.isSubmitting;
@@ -64,7 +60,6 @@ export function PreferencesCard({
     const result = await updatePreferences(values);
     if (!result?.serverError && !result?.validationErrors) {
       toast.success('Preferences updated');
-      setTheme(values.theme);
     } else {
       toast.error("Couldn't update preferences");
     }
@@ -117,38 +112,6 @@ export function PreferencesCard({
                       </SelectContent>
                     </Select>
                   </FormControl> */}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={methods.control}
-              name="theme"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Theme</FormLabel>
-                  <FormDescription>
-                    Select the theme for the application.
-                  </FormDescription>
-                  <FormControl>
-                    <RadioCards
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      className="flex flex-row flex-wrap gap-4"
-                      disabled={methods.formState.isSubmitting}
-                    >
-                      {(['light', 'dark', 'system'] as const).map((theme) => (
-                        <RadioCardItem
-                          key={theme}
-                          value={theme}
-                          className="border-none p-0 hover:bg-transparent data-[state=checked]:bg-transparent"
-                          checkClassName="bottom-8 group-data-[state=checked]:bg-blue-500 group-data-[state=checked]:!border-blue-500"
-                        >
-                          <ThemeOption theme={theme} />{' '}
-                        </RadioCardItem>
-                      ))}
-                    </RadioCards>
-                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

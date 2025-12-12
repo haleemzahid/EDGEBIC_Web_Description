@@ -28,7 +28,7 @@ export function Logos(): React.JSX.Element {
             <BlurFade
               key={index}
               delay={0.2 + index * 0.2}
-              className="flex items-center justify-center text-neutral-700 dark:text-neutral-300"
+              className="flex items-center justify-center text-neutral-700"
             >
               <Icon className="h-6 w-auto" />
             </BlurFade>

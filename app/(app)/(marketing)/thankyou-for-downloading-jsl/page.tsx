@@ -46,7 +46,7 @@ export default function ThankYouJSLPage() {
               <div className="mb-6 text-center">
                 <Link
                   href="/jsl-job-scheduler-lite-download"
-                  className="inline-block rounded-lg bg-blue-600 px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+                  className="inline-block rounded-lg bg-blue-600 px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-blue-700"
                 >
                   Download EDGEBIC
                 </Link>
@@ -68,14 +68,14 @@ export default function ThankYouJSLPage() {
                   Send data or post questions anytime to{' '}
                   <Link
                     href="mailto:us@usersolutions.com"
-                    className="font-semibold text-blue-600 hover:underline dark:text-blue-400"
+                    className="font-semibold text-blue-600 hover:underline"
                   >
                     us@usersolutions.com
                   </Link>{' '}
                   or at{' '}
                   <Link
                     href="tel:248.486.1934"
-                    className="font-semibold text-blue-600 hover:underline dark:text-blue-400"
+                    className="font-semibold text-blue-600 hover:underline"
                   >
                     248.486.1934
                   </Link>
@@ -112,9 +112,9 @@ export default function ThankYouJSLPage() {
       <section>
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900 sm:text-3xl">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <img

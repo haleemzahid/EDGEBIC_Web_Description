@@ -49,7 +49,7 @@ export default function ConsultingProjectsSchedulingPage() {
             <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
               {/* Content Column */}
               <div className="space-y-6">
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   GEMS Healthcare Solutions a wholly-owned subsidiary of GE
                   Medical Systems headquartered in San Ramon, California, provides
                   integrated data mining, Internet-based benchmarking and
@@ -58,7 +58,7 @@ export default function ConsultingProjectsSchedulingPage() {
                   services.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   According to Shavonna Portue, Director, Product Operations
                   "Delivering accurate information to our customers in a timely
                   manner is the core of our business. Each financial analyst on
@@ -68,7 +68,7 @@ export default function ConsultingProjectsSchedulingPage() {
                   Solutions'   provided that solution".
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Shavonna continues "We tried several options before Workcenter
                   Scheduler XL, including Microsoft Project. We found the others
                   to be difficult to maintain in our environment, or simply
@@ -82,7 +82,7 @@ export default function ConsultingProjectsSchedulingPage() {
                   example of what a customer solution provider should be".
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Shavonna reports on key benefits from using Workcenter Scheduler
                   XL "Setting accurate customer expectations has been the greatest
                   benefit. We are able to track problem areas and get good
@@ -113,9 +113,9 @@ export default function ConsultingProjectsSchedulingPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image

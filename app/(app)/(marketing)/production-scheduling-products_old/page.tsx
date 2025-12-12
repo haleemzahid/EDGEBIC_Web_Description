@@ -7,15 +7,15 @@ export default function ProductionSchedulingProductsOldPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 via-white to-green-50 py-6 dark:from-blue-950/20 dark:via-slate-900 dark:to-green-950/20">
+      <section className="bg-gradient-to-br from-blue-50 via-white to-green-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
-            <div className="mb-6 rounded-lg border-2 border-yellow-400 bg-yellow-100 p-4 dark:border-yellow-600 dark:bg-yellow-900/30">
-              <p className="font-semibold text-yellow-800 dark:text-yellow-200">
+            <div className="mb-6 rounded-lg border-2 border-yellow-400 bg-yellow-100 p-4">
+              <p className="font-semibold text-yellow-800">
                 📢 This is an archived version. View our{' '}
                 <Link
                   href="/excel-applications"
-                  className="text-yellow-900 underline dark:text-yellow-100"
+                  className="text-yellow-900 underline"
                 >
                   latest products page
                 </Link>
@@ -86,7 +86,7 @@ export default function ProductionSchedulingProductsOldPage() {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {/* EDGEBIC */}
               <Card>
-                <CardHeader className="bg-blue-50 dark:bg-blue-900/20">
+                <CardHeader className="bg-blue-50">
                   <CardTitle>EDGEBIC </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
@@ -102,7 +102,7 @@ export default function ProductionSchedulingProductsOldPage() {
 
               {/* Resource Manager DB */}
               <Card>
-                <CardHeader className="bg-purple-50 dark:bg-purple-900/20">
+                <CardHeader className="bg-purple-50">
                   <CardTitle>Resource Manager DB</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
@@ -118,7 +118,7 @@ export default function ProductionSchedulingProductsOldPage() {
 
               {/* EDGEBIC */}
               <Card>
-                <CardHeader className="bg-green-50 dark:bg-green-900/20">
+                <CardHeader className="bg-green-50">
                   <CardTitle>EDGEBIC</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
@@ -133,7 +133,7 @@ export default function ProductionSchedulingProductsOldPage() {
 
               {/*   */}
               <Card>
-                <CardHeader className="bg-indigo-50 dark:bg-indigo-900/20">
+                <CardHeader className="bg-indigo-50">
                   <CardTitle> </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
@@ -148,7 +148,7 @@ export default function ProductionSchedulingProductsOldPage() {
 
               {/* Resource Manager for Excel */}
               <Card>
-                <CardHeader className="bg-teal-50 dark:bg-teal-900/20">
+                <CardHeader className="bg-teal-50">
                   <CardTitle>Resource Manager for Excel</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
@@ -163,7 +163,7 @@ export default function ProductionSchedulingProductsOldPage() {
 
               {/* Operations Manager */}
               <Card>
-                <CardHeader className="bg-orange-50 dark:bg-orange-900/20">
+                <CardHeader className="bg-orange-50">
                   <CardTitle>Operations Manager</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
@@ -178,7 +178,7 @@ export default function ProductionSchedulingProductsOldPage() {
             </div>
 
             <div className="mt-8 text-center">
-              <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20">
+              <Card className="border-blue-200 bg-blue-50">
                 <CardContent className="pt-6">
                   <h3 className="mb-4 text-xl font-semibold">
                     Other Excel Template Solutions
@@ -199,13 +199,13 @@ export default function ProductionSchedulingProductsOldPage() {
       </section>
 
       {/* Testimonials */}
-      <section className="bg-gray-50 py-6 dark:bg-slate-900/50">
+      <section className="bg-gray-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-6 md:grid-cols-3">
               <Card>
                 <CardContent className="pt-6">
-                  <p className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
+                  <p className="mb-4 text-lg font-semibold text-slate-900">
                     "Best choice for MRP and project management software"
                   </p>
                   <p className="text-muted-foreground">– Sleepmaster Ltd</p>
@@ -214,7 +214,7 @@ export default function ProductionSchedulingProductsOldPage() {
 
               <Card>
                 <CardContent className="pt-6">
-                  <p className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
+                  <p className="mb-4 text-lg font-semibold text-slate-900">
                     "Manufacturing scheduling software with fantastic support"
                   </p>
                   <p className="text-muted-foreground">– Cook Compression</p>
@@ -223,7 +223,7 @@ export default function ProductionSchedulingProductsOldPage() {
 
               <Card>
                 <CardContent className="pt-6">
-                  <p className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
+                  <p className="mb-4 text-lg font-semibold text-slate-900">
                     "Easy ERP add-on for manufacturing resource planning"
                   </p>
                   <p className="text-muted-foreground">– Incon Incorporated</p>
@@ -240,14 +240,14 @@ export default function ProductionSchedulingProductsOldPage() {
           <div className="mx-auto max-w-7xl text-center">
             <Card>
               <CardContent className="pt-8">
-                <h2 className="mb-4 text-3xl font-bold text-slate-900 dark:text-white">
+                <h2 className="mb-4 text-3xl font-bold text-slate-900">
                   Want to get your production in the groove?
                 </h2>
                 <p className="mb-6 text-xl text-muted-foreground">
                   Watch this classic video and get your operations movin' and
                   groovin' today!
                 </p>
-                <div className="mb-6 aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+                <div className="mb-6 aspect-video overflow-hidden rounded-lg bg-slate-100">
                   <iframe
                     src="https://www.youtube.com/embed/dQw4w9WgXcQ"
                     title="Production Scheduling Software Video"
@@ -266,9 +266,9 @@ export default function ProductionSchedulingProductsOldPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <img

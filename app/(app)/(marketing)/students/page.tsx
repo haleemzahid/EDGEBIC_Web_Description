@@ -134,7 +134,7 @@ export default function StudentsPage(): React.JSX.Element {
   ];
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
+    <div className="min-h-screen bg-white">
       {/* Hero Section */}
       <GridSection hideVerticalGridLines>
         <div className="container pt-6">
@@ -178,7 +178,7 @@ export default function StudentsPage(): React.JSX.Element {
 
             {/* Student Overview Image */}
             <div className="mt-6">
-              <div className="relative mx-auto max-w-7xl overflow-hidden rounded-2xl border bg-slate-100 shadow-2xl dark:bg-slate-800">
+              <div className="relative mx-auto max-w-7xl overflow-hidden rounded-2xl border bg-slate-100 shadow-2xl">
                 <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/07/ops-1024x768.png"
                   alt="Operations Management textbook with cruise ship photo"
@@ -193,7 +193,7 @@ export default function StudentsPage(): React.JSX.Element {
       </GridSection>
 
       {/* Summary Section */}
-      <section className="bg-slate-50 py-6 dark:bg-slate-900">
+      <section className="bg-slate-50 py-6">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="mb-6 text-center">
             <h2 className="mb-4 text-3xl font-bold md:text-4xl">
@@ -226,7 +226,7 @@ export default function StudentsPage(): React.JSX.Element {
               </p>
             </div>
             <div className="space-y-6">
-              <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-slate-800">
+              <div className="rounded-lg bg-white p-6 shadow-lg">
                 <h3 className="mb-4 text-xl font-bold">Educational Benefits</h3>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>• Hands-on experience with manufacturing planning</li>
@@ -240,7 +240,7 @@ export default function StudentsPage(): React.JSX.Element {
           </div>
 
           <div className="mt-6">
-            <blockquote className="border-l-4 border-slate-300 bg-white p-6 text-lg italic dark:border-slate-600 dark:bg-slate-800">
+            <blockquote className="border-l-4 border-slate-300 bg-white p-6 text-lg italic">
               "Adaptable and Flexible - Resource Manager for Excel is a great
               solution for manufacturers who are not ready for a full-blown
               MRPII, ERP, or Shop Management System but realize the value of
@@ -271,9 +271,9 @@ export default function StudentsPage(): React.JSX.Element {
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="group rounded-lg border bg-white p-6 shadow-sm transition-all hover:shadow-md dark:bg-slate-800"
+                className="group rounded-lg border bg-white p-6 shadow-sm transition-all hover:shadow-md"
               >
-                <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-slate-100 text-slate-600">
                   <feature.icon className="size-6" />
                 </div>
                 <h3 className="mb-2 font-semibold">{feature.title}</h3>
@@ -287,7 +287,7 @@ export default function StudentsPage(): React.JSX.Element {
       </section>
 
       {/* Student Resources Section */}
-      <section className="bg-slate-50 py-6 dark:bg-slate-900">
+      <section className="bg-slate-50 py-6">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="mb-6 text-center">
             <h2 className="mb-4 text-3xl font-bold md:text-4xl">
@@ -302,9 +302,9 @@ export default function StudentsPage(): React.JSX.Element {
             {studentResources.map((resource, index) => (
               <div
                 key={index}
-                className="group rounded-lg border bg-white p-6 shadow-sm transition-all hover:shadow-md dark:bg-slate-800"
+                className="group rounded-lg border bg-white p-6 shadow-sm transition-all hover:shadow-md"
               >
-                <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-slate-100 text-slate-600">
                   <resource.icon className="size-6" />
                 </div>
                 <h3 className="mb-2 font-semibold">{resource.title}</h3>
@@ -353,9 +353,9 @@ export default function StudentsPage(): React.JSX.Element {
             {benefits.map((benefit, index) => (
               <div
                 key={index}
-                className="rounded-lg bg-white p-8 shadow-lg dark:bg-slate-800"
+                className="rounded-lg bg-white p-8 shadow-lg"
               >
-                <h3 className="mb-4 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-4 text-2xl font-bold text-slate-900">
                   {benefit.title}
                 </h3>
                 <p className="mb-4 text-lg leading-relaxed">
@@ -369,7 +369,7 @@ export default function StudentsPage(): React.JSX.Element {
       </section>
 
       {/* Overview Section */}
-      <section className="bg-slate-50 py-6 dark:bg-slate-900">
+      <section className="bg-slate-50 py-6">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="mb-6 text-center">
             <h2 className="mb-4 text-3xl font-bold md:text-4xl">Overview</h2>
@@ -428,7 +428,7 @@ export default function StudentsPage(): React.JSX.Element {
       {/* Student Trial Section */}
       <section className="pt-6">
         <div className="container mx-auto max-w-7xl px-4 text-center">
-          <div className="rounded-2xl border bg-slate-50 p-8 dark:bg-slate-800">
+          <div className="rounded-2xl border bg-slate-50 p-8">
             <h2 className="mb-4 text-3xl font-bold">Ready to Get Started?</h2>
             <p className="mb-6 text-lg text-muted-foreground">
               With RMX supporting up to a million rows of data, and with Excel
@@ -474,9 +474,9 @@ export default function StudentsPage(): React.JSX.Element {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image

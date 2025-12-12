@@ -4,10 +4,10 @@ import * as React from 'react';
 
 export function IntegratedFeaturesSection(): React.JSX.Element {
   return (
-    <section className="bg-slate-50 py-16 dark:bg-slate-800 md:py-24">
+    <section className="bg-slate-50 py-16 md:py-24">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mb-16 text-center">
-          <h2 className="text-3xl font-bold text-[#003d5c] dark:text-white md:text-4xl lg:text-5xl">
+          <h2 className="text-3xl font-bold text-[#003d5c] md:text-4xl lg:text-5xl">
             Integrated Manufacturing Software for Business Growth
           </h2>
         </div>
@@ -104,10 +104,10 @@ export function IntegratedFeaturesSection(): React.JSX.Element {
                 />
               </svg>
             </div>
-            <h3 className="mb-4 text-2xl font-bold text-[#003d5c] dark:text-white">
+            <h3 className="mb-4 text-2xl font-bold text-[#003d5c]">
               Production Planning
             </h3>
-            <p className="text-base leading-relaxed text-slate-700 dark:text-slate-300">
+            <p className="text-base leading-relaxed text-slate-700">
               Generate reliable, detailed production plans. Balance materials
               and capacity with actual demand. Effortlessly reschedule
               production orders.
@@ -194,10 +194,10 @@ export function IntegratedFeaturesSection(): React.JSX.Element {
                 </g>
               </svg>
             </div>
-            <h3 className="mb-4 text-2xl font-bold text-[#003d5c] dark:text-white">
+            <h3 className="mb-4 text-2xl font-bold text-[#003d5c]">
               Inventory
             </h3>
-            <p className="text-base leading-relaxed text-slate-700 dark:text-slate-300">
+            <p className="text-base leading-relaxed text-slate-700">
               Always know what you have in stock. Easily avoid inventory
               shortages and excess. Track inventory by lot or batch, use serial
               numbers and barcodes.
@@ -361,10 +361,10 @@ export function IntegratedFeaturesSection(): React.JSX.Element {
                 </g>
               </svg>
             </div>
-            <h3 className="mb-4 text-2xl font-bold text-[#003d5c] dark:text-white">
+            <h3 className="mb-4 text-2xl font-bold text-[#003d5c]">
               Sales Management
             </h3>
-            <p className="text-base leading-relaxed text-slate-700 dark:text-slate-300">
+            <p className="text-base leading-relaxed text-slate-700">
               Calculate order costs and lead times in just a few clicks. Send
               confirmed orders straight to production. Easily manage invoices,
               shipping, and returns.

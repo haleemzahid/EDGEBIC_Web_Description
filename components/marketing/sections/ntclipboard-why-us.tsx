@@ -46,20 +46,20 @@ export function NTClipboardWhyUs(): React.JSX.Element {
           {benefits.map((benefit, index) => (
             <div
               key={index}
-              className="group relative  overflow-hidden rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-8 transition-all hover:shadow-lg dark:from-slate-900 dark:to-slate-800 md:p-8"
+              className="group relative  overflow-hidden rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-8 transition-all hover:shadow-lg md:p-8"
               style={{ marginTop: '20px' }}
             >
-              <div className="absolute inset-0 !mt-0 bg-gradient-to-br from-orange-50/50 to-red-50/50 opacity-0 transition-opacity group-hover:opacity-100 dark:from-orange-900/10 dark:to-red-900/10" />
+              <div className="absolute inset-0 !mt-0 bg-gradient-to-br from-orange-50/50 to-red-50/50 opacity-0 transition-opacity group-hover:opacity-100" />
               <div className="relative">
                 <div className="mb-2 flex items-center gap-4">
                   <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-red-500 text-white">
                     <benefit.icon className="size-6" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white md:text-3xl">
+                  <h3 className="text-xl font-bold text-slate-900 md:text-3xl">
                     {benefit.title}
                   </h3>
                 </div>
-                <p className="leading-relaxed text-slate-700 dark:text-slate-300">
+                <p className="leading-relaxed text-slate-700">
                   {benefit.description}
                 </p>
               </div>
@@ -108,9 +108,9 @@ export function NTClipboardWhyUs(): React.JSX.Element {
         </div>
 
         {/* Awards Section */}
-        <Card className="mt-8 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+        <Card className="mt-8 bg-gradient-to-br from-blue-50 to-blue-100">
           <CardContent className="p-8 text-center">
-            <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+            <h3 className="mb-6 text-2xl font-bold text-slate-900">
               CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
             </h3>
             <Image

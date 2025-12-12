@@ -126,18 +126,18 @@ export function NTClipboardExcelTemplates(): React.JSX.Element {
             {excelApplications.map((app) => (
               <div
                 key={app.id}
-                className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-8 shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl dark:border-gray-700 dark:bg-slate-800"
+                className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-8 shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl"
               >
                 {/* Header */}
                 <div className="mb-6 flex items-start gap-4">
-                  <div className="shrink-0 rounded-lg bg-green-100 p-3 text-green-600 dark:bg-green-900/30 dark:text-green-400">
+                  <div className="shrink-0 rounded-lg bg-green-100 p-3 text-green-600">
                     {app.icon}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    <h3 className="text-xl font-semibold text-gray-900">
                       {app.title}
                     </h3>
-                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                    <p className="mt-2 text-sm text-gray-600">
                       {app.description}
                     </p>
                   </div>
@@ -145,14 +145,14 @@ export function NTClipboardExcelTemplates(): React.JSX.Element {
 
                 {/* Features */}
                 <div className="mb-6">
-                  <h4 className="mb-3 text-sm font-medium text-gray-900 dark:text-white">
+                  <h4 className="mb-3 text-sm font-medium text-gray-900">
                     Key Features:
                   </h4>
                   <ul className="space-y-2">
                     {app.features.map((feature, index) => (
                       <li
                         key={index}
-                        className="flex items-center text-sm text-gray-600 dark:text-gray-300"
+                        className="flex items-center text-sm text-gray-600"
                       >
                         <div className="mr-3 size-1.5 rounded-full bg-green-500" />
                         {feature}
@@ -162,20 +162,20 @@ export function NTClipboardExcelTemplates(): React.JSX.Element {
                 </div>
 
                 {/* Pricing */}
-                <div className="mb-6 rounded-lg bg-gray-50 p-4 dark:bg-gray-700/50">
+                <div className="mb-6 rounded-lg bg-gray-50 p-4">
                   <div className="mb-2 flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <span className="text-sm font-medium text-gray-700">
                       Single User
                     </span>
-                    <span className="text-lg font-bold text-green-600 dark:text-green-400">
+                    <span className="text-lg font-bold text-green-600">
                       {app.singleUserPrice}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <span className="text-sm font-medium text-gray-700">
                       Five Users
                     </span>
-                    <span className="text-lg font-bold text-green-600 dark:text-green-400">
+                    <span className="text-lg font-bold text-green-600">
                       {app.fiveUserPrice}
                     </span>
                   </div>
@@ -200,9 +200,9 @@ export function NTClipboardExcelTemplates(): React.JSX.Element {
       <section>
         <div className="container mt-6 mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h2 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
                 <Image

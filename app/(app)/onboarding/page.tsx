@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation';
 
 import { LogOutButton } from '@/components/ui/onboarding/log-out-button';
 import { OnboardingWizard } from '@/components/ui/onboarding/onboarding-wizard';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Routes } from '@/constants/routes';
 import { getOnboardingData } from '@/data/onboarding/get-onboarding-data';
 import { createTitle } from '@/lib/utils';
@@ -25,7 +24,6 @@ export default async function OnboardingPage(): Promise<React.JSX.Element> {
         user={user}
         organization={organization}
       />
-      <ThemeToggle className="fixed bottom-2 right-2 rounded-full" />
     </div>
   );
 }

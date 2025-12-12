@@ -49,7 +49,7 @@ export default function ErpVendorManufacturerPage() {
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-4xl">
               <div className="space-y-6">
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   User Solutions has announced another successful manufacturing
                   scheduling application for Plastilite. Plastilite Corporation,
                   located in Omaha Nebraska, provides insulated and protective
@@ -60,7 +60,7 @@ export default function ErpVendorManufacturerPage() {
                   uses keeps growing.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   In order to continue their growth and improve manufacturing
                   competitiveness, Plastilite decided to implement a new ERP
                   System this year. Part of Plastilite's requirements was to
@@ -69,7 +69,7 @@ export default function ErpVendorManufacturerPage() {
                   running operations.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Fourth Shift, an ERP system from Softbrands, Inc., was the
                   frontrunner for addressing most of their accounting and
                   inventory needs, however the scheduling module was not flexible
@@ -77,7 +77,7 @@ export default function ErpVendorManufacturerPage() {
                   scheduling needs.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   According to Jon Ehly, Plastilite Chief Financial Officer,
                   Fourth Shift recommended Resource Manager-DB from User
                   Solutions, Inc. as an add-on for Fourth Shift to handle the
@@ -90,7 +90,7 @@ export default function ErpVendorManufacturerPage() {
                 </p>
 
                 <blockquote className="border-l-4 border-green-600 pl-4 italic">
-                  <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-[18px] leading-relaxed text-gray-700">
                     "We made the decision to go live with both systems in the same
                     week – a process I would not necessarily recommend for the
                     faint of heart. We had started the ERP Training and
@@ -99,16 +99,16 @@ export default function ErpVendorManufacturerPage() {
                     Monday and by Friday we had a complete optimized schedule
                     generated with full integration with our ERP System."
                   </p>
-                  <footer className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+                  <footer className="mt-2 text-sm font-medium text-gray-900">
                     - Jon Ehly, Plastilite Chief Financial Officer
                   </footer>
                 </blockquote>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Within one week, User Solutions accomplished:
                 </p>
 
-                <ul className="list-disc space-y-2 pl-6 text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <ul className="list-disc space-y-2 pl-6 text-[18px] leading-relaxed text-gray-700">
                   <li>Breaking down key scheduling data</li>
                   <li>Entering routings with alternate workcenters</li>
                   <li>Managing variable chest and tool sizes</li>
@@ -117,13 +117,13 @@ export default function ErpVendorManufacturerPage() {
                   <li>Exporting updated dates back to synchronize with MRP and Inventory</li>
                 </ul>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   User Solutions proactively added functionality to select optimal
                   workcenters and corresponding chests and molds without additional
                   charges.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Jon concludes, "It was refreshing to work with a vendor who
                   absolutely delivered on their promise. Initially, they expected
                   to have a prototype of the process implemented in one week.
@@ -143,9 +143,9 @@ export default function ErpVendorManufacturerPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image

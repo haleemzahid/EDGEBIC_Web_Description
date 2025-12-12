@@ -174,7 +174,7 @@ export default function Product2Page(): React.JSX.Element {
   ];
 
   return (
-    <div className="min-h-screen bg-white py-6 dark:bg-slate-950">
+    <div className="min-h-screen bg-white py-6">
       {/* Hero Section */}
       <GridSection hideVerticalGridLines>
         <div className="container max-w-7xl">
@@ -197,7 +197,7 @@ export default function Product2Page(): React.JSX.Element {
             <h2 className="mb-4 text-3xl font-bold md:text-4xl">
               Choose the Right Solution for Your Business
             </h2>
-            <p className="mb-4 text-lg text-slate-600 dark:text-slate-400">
+            <p className="mb-4 text-lg text-slate-600">
               Compare features across our product range to find the perfect fit
             </p>
           </div>
@@ -215,7 +215,7 @@ export default function Product2Page(): React.JSX.Element {
                   detail.setAttribute('open', 'true')
                 );
               }}
-              className="text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
+              className="text-blue-600 hover:bg-blue-50"
             >
               Expand All
             </Button>
@@ -228,7 +228,7 @@ export default function Product2Page(): React.JSX.Element {
                 );
                 details.forEach((detail) => detail.removeAttribute('open'));
               }}
-              className="text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
+              className="text-blue-600 hover:bg-blue-50"
             >
               Close All
             </Button>
@@ -236,19 +236,19 @@ export default function Product2Page(): React.JSX.Element {
 
           {/* Desktop Comparison Table with Expandable Features */}
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[800px] rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+            <table className="w-full min-w-[800px] rounded-lg border border-slate-200 bg-white">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-700">
-                  <th className="p-4 text-left font-semibold text-slate-900 dark:text-white">
+                <tr className="border-b border-slate-200">
+                  <th className="p-4 text-left font-semibold text-slate-900">
                     Features
                   </th>
-                  <th className="p-4 text-center font-semibold text-blue-600 dark:text-blue-400">
+                  <th className="p-4 text-center font-semibold text-blue-600">
                     EDGEBIC
                   </th>
-                  <th className="p-4 text-center font-semibold text-orange-600 dark:text-orange-400">
+                  <th className="p-4 text-center font-semibold text-orange-600">
                     Resource Manager DB
                   </th>
-                  <th className="p-4 text-center font-semibold text-purple-600 dark:text-purple-400">
+                  <th className="p-4 text-center font-semibold text-purple-600">
                     EDGE Suite
                   </th>
                 </tr>
@@ -256,19 +256,19 @@ export default function Product2Page(): React.JSX.Element {
               <tbody>
                 {featureComparison.map((row, i) => (
                   <React.Fragment key={i}>
-                    <tr className="border-b border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800/50">
+                    <tr className="border-b border-slate-200 hover:bg-slate-50">
                       <td className="p-4">
                         <details
                           data-feature={`feature-${i}`}
                           className="group"
                         >
-                          <summary className="flex cursor-pointer items-center gap-2 font-medium text-slate-900 hover:text-blue-600 dark:text-white">
+                          <summary className="flex cursor-pointer items-center gap-2 font-medium text-slate-900 hover:text-blue-600">
                             <span className="text-sm transition-transform group-open:rotate-90">
                               ▶
                             </span>
                             {row.feature}
                           </summary>
-                          <div className="mt-2 pl-6 text-sm text-slate-600 dark:text-slate-400">
+                          <div className="mt-2 pl-6 text-sm text-slate-600">
                             {row.description}
                           </div>
                         </details>
@@ -303,7 +303,7 @@ export default function Product2Page(): React.JSX.Element {
 
           {/* Call to Action */}
           <div className="mt-8 text-center">
-            <p className="mb-4 text-slate-600 dark:text-slate-400">
+            <p className="mb-4 text-slate-600">
               Not sure which solution is right for you?
             </p>
             <Button
@@ -332,7 +332,7 @@ export default function Product2Page(): React.JSX.Element {
             {testimonials.map((testimonial, index) => (
               <div
                 key={index}
-                className="rounded-lg bg-white p-6 shadow-lg dark:bg-slate-800"
+                className="rounded-lg bg-white p-6 shadow-lg"
               >
                 <Quote className="mb-4 size-8 text-slate-400" />
                 <blockquote className="mb-4 text-lg font-medium">
@@ -362,7 +362,7 @@ export default function Product2Page(): React.JSX.Element {
       {/* Call to Action Section */}
       <section className="pt-6">
         <div className="container mx-auto max-w-7xl px-4 text-center">
-          <div className="rounded-2xl border bg-slate-50 p-8 dark:bg-slate-800">
+          <div className="rounded-2xl border bg-slate-50 p-8">
             <h2 className="mb-4 text-3xl font-bold">
               Want to get your production in the groove?
             </h2>
@@ -404,9 +404,9 @@ export default function Product2Page(): React.JSX.Element {
       <section className="py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h2 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
                 <img

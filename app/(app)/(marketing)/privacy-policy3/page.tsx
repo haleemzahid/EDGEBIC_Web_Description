@@ -71,7 +71,7 @@ export default function PrivacyPolicy3Page() {
                   available here:
                   <a
                     href="https://automattic.com/privacy/"
-                    className="ml-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                    className="ml-1 text-blue-600 hover:text-blue-800"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -242,7 +242,7 @@ export default function PrivacyPolicy3Page() {
                     <strong>Email:</strong>{' '}
                     <Link
                       href="mailto:us@usersolutions.com"
-                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                      className="text-blue-600 hover:text-blue-800"
                     >
                       us@usersolutions.com
                     </Link>
@@ -251,7 +251,7 @@ export default function PrivacyPolicy3Page() {
                     <strong>Phone:</strong>{' '}
                     <Link
                       href="tel:248.486.6365"
-                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                      className="text-blue-600 hover:text-blue-800"
                     >
                       248.486.6365
                     </Link>
@@ -267,9 +267,9 @@ export default function PrivacyPolicy3Page() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <div className="flex justify-center">

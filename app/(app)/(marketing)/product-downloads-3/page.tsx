@@ -77,7 +77,7 @@ export default function ProductDownloads3Page() {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-sm">
               <thead>
-                <tr className="bg-gray-100 dark:bg-gray-800">
+                <tr className="bg-gray-100">
                   <th className="border p-3 text-left font-semibold">Product</th>
                   <th className="border p-3 text-center font-semibold">Trial</th>
                   <th className="border p-3 text-center font-semibold">Action</th>
@@ -87,7 +87,7 @@ export default function ProductDownloads3Page() {
                 {products.map((product) => (
                   <tr
                     key={product.name}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    className="hover:bg-gray-50"
                   >
                     <td className="border p-3">
                       <Link
@@ -123,9 +123,9 @@ export default function ProductDownloads3Page() {
       {/* Awards Banner */}
       <section className="pt-6">
         <div className="container mx-auto max-w-7xl px-4">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
             <CardContent className="p-8 text-center">
-              <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+              <h2 className="mb-6 text-2xl font-bold text-slate-900">
                 CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
               </h2>
               <Image

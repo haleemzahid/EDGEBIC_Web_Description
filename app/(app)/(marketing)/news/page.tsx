@@ -306,9 +306,9 @@ export default function NewsPage(): React.JSX.Element {
         </div>
 
         {/* Awards */}
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
           <CardContent className="p-8 text-center">
-            <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+            <h2 className="mb-6 text-2xl font-bold text-slate-900">
               CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
             </h2>
             <Image

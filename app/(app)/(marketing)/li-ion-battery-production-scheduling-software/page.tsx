@@ -21,12 +21,12 @@ export default function LiIonBatterySchedulingPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-amber-50 via-white to-yellow-50 py-6 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <section className="bg-gradient-to-br from-amber-50 via-white to-yellow-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <Badge
               variant="outline"
-              className="mb-6 h-8 rounded-full border-amber-600/30 px-4 text-sm font-medium text-amber-700 shadow-sm dark:border-amber-400/30 dark:text-amber-300"
+              className="mb-6 h-8 rounded-full border-amber-600/30 px-4 text-sm font-medium text-amber-700 shadow-sm"
             >
               Press Release - June 9, 2016
             </Badge>
@@ -34,7 +34,7 @@ export default function LiIonBatterySchedulingPage() {
               Resource Manager-DB V6 Transforms Li-ion Battery Production
               Scheduling
             </h1>
-            <p className="mb-4 text-xl text-gray-700 dark:text-gray-300">
+            <p className="mb-4 text-xl text-gray-700">
               User Solutions releases powerful upgrade driven by customer demand
               for flexibility
             </p>
@@ -50,7 +50,7 @@ export default function LiIonBatterySchedulingPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <p className="text-center text-lg font-semibold text-gray-700 dark:text-gray-300">
+                  <p className="text-center text-lg font-semibold text-gray-700">
                     South Lyon, MI - 6/9/2016
                   </p>
                 </CardContent>
@@ -61,13 +61,13 @@ export default function LiIonBatterySchedulingPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <p className="mb-4 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 text-lg leading-relaxed text-gray-700">
                     User Solutions, a leader in flexible production scheduling
                     and planning software, has released Resource Manager-DB
                     (RM-DB) V6. This upgrade was driven by customer demand for
                     more power and flexibility in manufacturing scheduling.
                   </p>
-                  <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-lg leading-relaxed text-gray-700">
                     RM-DB V6 introduces Bills-of-Resources that blend materials
                     and workcenters in any combination. It also adds finite
                     capacity planning, a unique sub-assembly management system
@@ -80,13 +80,13 @@ export default function LiIonBatterySchedulingPage() {
 
             {/* Scott Bennett Quote */}
             <div className="mb-6">
-              <Card className="border-l-4 border-amber-500 bg-amber-50/50 dark:bg-amber-900/10">
+              <Card className="border-l-4 border-amber-500 bg-amber-50/50">
                 <CardContent className="p-6">
-                  <p className="text-lg italic leading-relaxed text-gray-800 dark:text-gray-200">
+                  <p className="text-lg italic leading-relaxed text-gray-800">
                     &quot;Resource Manager-DB gives us a unique mix of planning,
                     scheduling, and tracking tools in one flexible system.&quot;
                   </p>
-                  <p className="mt-4 text-right text-base font-semibold text-gray-900 dark:text-gray-100">
+                  <p className="mt-4 text-right text-base font-semibold text-gray-900">
                     — Scott Bennett, Supply Chain Manager at Enevate Corp.
                   </p>
                 </CardContent>
@@ -97,10 +97,10 @@ export default function LiIonBatterySchedulingPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="mb-6 text-3xl font-bold text-gray-900">
                     Meeting Enevate&apos;s Unique Manufacturing Needs
                   </h2>
-                  <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-lg leading-relaxed text-gray-700">
                     In 2015, Enevate Corporation, a developer of next-generation
                     Li-ion batteries, built a new manufacturing facility. They
                     needed more than traditional ERP functions like costed
@@ -116,16 +116,16 @@ export default function LiIonBatterySchedulingPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="mb-6 text-3xl font-bold text-gray-900">
                     Supply Chain Manager Empowerment
                   </h2>
-                  <p className="mb-4 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 text-lg leading-relaxed text-gray-700">
                     Scott Bennett, Supply Chain Manager for Enevate, says,
                     &quot;The User Solutions team and Resource Manager-DB gave
                     us the unique combination we needed, without losing
                     flexibility, at a reasonable cost.&quot;
                   </p>
-                  <p className="mb-4 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 text-lg leading-relaxed text-gray-700">
                     Because Enevate was building new and original processes for
                     innovative batteries, they needed dynamic supply chain
                     reconfiguration. Resource Manager-DB&apos;s flexible format
@@ -135,7 +135,7 @@ export default function LiIonBatterySchedulingPage() {
                     different scenarios. Excel integration made managing data
                     sets simple and quick.
                   </p>
-                  <p className="mb-4 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 text-lg leading-relaxed text-gray-700">
                     Scott adds, &quot;The product adapts easily to our business
                     needs. User Solutions also customizes features to match our
                     requests. We have used deep sub-assembly structures,
@@ -143,7 +143,7 @@ export default function LiIonBatterySchedulingPage() {
                     workcenters and products in almost any combination. We keep
                     finding new ways to benefit from the tool.&quot;
                   </p>
-                  <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-lg leading-relaxed text-gray-700">
                     User Solutions also enhanced their Lot Management capability
                     with traceability, pick lists, and inventory valuation by
                     location and lot. They even combined Workcenters (for
@@ -158,7 +158,7 @@ export default function LiIonBatterySchedulingPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <div className="mb-4 flex justify-center overflow-hidden rounded-lg bg-white dark:bg-slate-800">
+                  <div className="mb-4 flex justify-center overflow-hidden rounded-lg bg-white">
                     <div className="relative h-96 w-full">
                       <Image
                         src="https://www.usersolutions.com/wp-content/uploads/2022/09/Manufacturing_Excel_Dashboard-1024x376-1.png"
@@ -176,27 +176,27 @@ export default function LiIonBatterySchedulingPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="mb-6 text-3xl font-bold text-gray-900">
                     Affordable, Compatible, and Scalable
                   </h2>
-                  <p className="mb-4 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 text-lg leading-relaxed text-gray-700">
                     A single user version ranges from $5,000 – $10,000 which
                     includes implementation assistance. Resource Manager-DB runs
                     with Windows and uses Excel for reports.
                   </p>
-                  <p className="mb-4 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-4 text-lg leading-relaxed text-gray-700">
                     Resource Manager-DB is the first tool that can be utilized
                     across the full manufacturing spectrum, from small shops
                     with no formal systems in place, all the way to large
                     multi-nationals needing to augment existing ERP systems.
                   </p>
-                  <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-lg leading-relaxed text-gray-700">
                     For more information or a free trial, contact{' '}
-                    <span className="font-semibold text-amber-700 dark:text-amber-400">
+                    <span className="font-semibold text-amber-700">
                       www.UserSolutions.com
                     </span>{' '}
                     or call{' '}
-                    <span className="font-semibold text-amber-700 dark:text-amber-400">
+                    <span className="font-semibold text-amber-700">
                       1(800) 321-8737
                     </span>
                   </p>
@@ -208,10 +208,10 @@ export default function LiIonBatterySchedulingPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="mb-6 text-3xl font-bold text-gray-900">
                     About User Solutions, Inc.
                   </h2>
-                  <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-lg leading-relaxed text-gray-700">
                     Founded in 1991, User Solutions creates affordable,
                     flexible, and easy-to-implement planning, scheduling, and
                     tracking software for manufacturing and operations. Their
@@ -225,10 +225,10 @@ export default function LiIonBatterySchedulingPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="mb-6 text-3xl font-bold text-gray-900">
                     About Enevate
                   </h2>
-                  <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-lg leading-relaxed text-gray-700">
                     Enevate Corporation develops advanced rechargeable energy
                     storage for mobile devices and drones. Its HD-Energy®
                     Li-ion batteries deliver major performance gains over
@@ -242,9 +242,9 @@ export default function LiIonBatterySchedulingPage() {
 
             {/* Awards Banner */}
             <div>
-              <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow dark:from-blue-900/20 dark:to-blue-800/20">
+              <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
                 <CardContent className="p-8 text-center">
-                  <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                  <h2 className="mb-6 text-2xl font-bold text-slate-900">
                     CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                   </h2>
                   <img

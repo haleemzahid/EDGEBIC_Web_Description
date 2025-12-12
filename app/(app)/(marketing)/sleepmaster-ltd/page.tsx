@@ -51,7 +51,7 @@ export default function SleepmasterLtdPage() {
             <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
               {/* Content Column */}
               <div className="space-y-6">
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Our situation is that we are a relatively small organization
                   (AUD$50M of sales) and we have an outdated MRP system. The
                   current system in Australia has no effective scheduling ability
@@ -61,11 +61,11 @@ export default function SleepmasterLtdPage() {
                   manufacturing experience.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   The problems we wanted to solve were therefore:
                 </p>
 
-                <ul className="list-disc space-y-2 pl-6 text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <ul className="list-disc space-y-2 pl-6 text-[18px] leading-relaxed text-gray-700">
                   <li>
                     Provide a scheduling system that allows quick changes in a
                     very dynamic demand situation
@@ -81,11 +81,11 @@ export default function SleepmasterLtdPage() {
                   </li>
                 </ul>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Resource Manager was chosen because:
                 </p>
 
-                <ul className="list-disc space-y-2 pl-6 text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <ul className="list-disc space-y-2 pl-6 text-[18px] leading-relaxed text-gray-700">
                   <li>It is very easy and intuitive to use</li>
                   <li>
                     It can be used in sections within days, without having the
@@ -101,19 +101,19 @@ export default function SleepmasterLtdPage() {
                   </li>
                 </ul>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   The biggest benefit relative to other systems looked at is its
                   simplicity to operate and speed at which it can generate results
                   in whichever area you want to start on.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   A whole system can be built up while it is generating value,
                   which is particularly valuable in a start up situation such as
                   our Chinese plant.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   We considered a number of other systems both local and global.
                   Most are far more expensive and comprehensive (eg. accounting
                   capability) but all require much higher cost and are much more
@@ -124,7 +124,7 @@ export default function SleepmasterLtdPage() {
                   In that sense it is also a very good MRP training tool also.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   <strong>Jim Steel</strong>
                   <br />
                   Operations Manager for Sleepmaster, LTD
@@ -159,9 +159,9 @@ export default function SleepmasterLtdPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image

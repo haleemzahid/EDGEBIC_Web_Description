@@ -139,7 +139,7 @@ export function NTClipboardFeatures(): React.JSX.Element {
               key={index}
               className="group relative overflow-hidden rounded-2xl border bg-background p-6 transition-all hover:-translate-y-1 hover:shadow-lg"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 to-red-50/50 opacity-0 transition-opacity group-hover:opacity-100 dark:from-orange-900/10 dark:to-red-900/10" />
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 to-red-50/50 opacity-0 transition-opacity group-hover:opacity-100" />
               <div className="relative">
                 <div className="mb-4 inline-flex size-12 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-red-500 text-white">
                   <feature.icon className="size-6" />
@@ -152,9 +152,9 @@ export function NTClipboardFeatures(): React.JSX.Element {
         </div>
 
         {/* Awards Section */}
-        <Card className="mt-8 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+        <Card className="mt-8 bg-gradient-to-br from-blue-50 to-blue-100">
           <CardContent className="p-8 text-center">
-            <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+            <h3 className="mb-6 text-2xl font-bold text-slate-900">
               CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
             </h3>
             <Image

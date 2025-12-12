@@ -20,19 +20,19 @@ export default function LetsMakeManufacturingGreatAgainPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 via-white to-green-50 py-6 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <section className="bg-gradient-to-br from-blue-50 via-white to-green-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <Badge
               variant="outline"
-              className="mb-6 h-8 rounded-full border-blue-600/30 px-4 text-sm font-medium text-blue-700 shadow-sm dark:border-blue-400/30 dark:text-blue-300"
+              className="mb-6 h-8 rounded-full border-blue-600/30 px-4 text-sm font-medium text-blue-700 shadow-sm"
             >
               National Manufacturing Day 2017
             </Badge>
             <h1 className="mb-6 bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-3xl font-bold text-transparent md:text-4xl lg:text-5xl">
               Let&apos;s Make Manufacturing Great Again©
             </h1>
-            <p className="mb-4 text-xl text-gray-700 dark:text-gray-300">
+            <p className="mb-4 text-xl text-gray-700">
               This National Manufacturing Day 2017
             </p>
           </div>
@@ -47,11 +47,11 @@ export default function LetsMakeManufacturingGreatAgainPage() {
             <div className="mb-6">
               <Card>
                 <CardContent className="p-6">
-                  <p className="mb-6 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-6 text-lg leading-relaxed text-gray-700">
                     This year&apos;s National Manufacturing Day arrives at a
                     most dynamic time with much attention focused on:
                   </p>
-                  <ul className="mb-6 space-y-3 text-lg text-gray-700 dark:text-gray-300">
+                  <ul className="mb-6 space-y-3 text-lg text-gray-700">
                     <li className="flex items-start">
                       <span className="mr-3 mt-1 text-blue-600">•</span>
                       <span>
@@ -78,16 +78,16 @@ export default function LetsMakeManufacturingGreatAgainPage() {
                     </li>
                   </ul>
 
-                  <h2 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="mb-6 text-3xl font-bold text-gray-900">
                     So what can we do to help Make Manufacturing Great Again©
                   </h2>
 
-                  <p className="mb-6 text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="mb-6 text-lg leading-relaxed text-gray-700">
                     User Solutions, Inc., celebrating their 25th year in serving
                     the manufacturing market, continues to do its part by:
                   </p>
 
-                  <ul className="mb-6 space-y-3 text-lg text-gray-700 dark:text-gray-300">
+                  <ul className="mb-6 space-y-3 text-lg text-gray-700">
                     <li className="flex items-start">
                       <span className="mr-3 mt-1 text-green-600">✓</span>
                       <span>
@@ -114,7 +114,7 @@ export default function LetsMakeManufacturingGreatAgainPage() {
                     </li>
                   </ul>
 
-                  <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-lg leading-relaxed text-gray-700">
                     We don&apos;t need to wait for new leadership, new laws, new
                     products, or new markets. A major part of any manufacturing
                     organization&apos;s bottom line success lies in its ability
@@ -131,13 +131,13 @@ export default function LetsMakeManufacturingGreatAgainPage() {
 
             {/* Testimonials - NIST/MEP Consortium */}
             <div className="mb-6">
-              <h2 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
+              <h2 className="mb-6 text-3xl font-bold text-gray-900">
                 Testimonials - NIST/MEP Consortium
               </h2>
 
               <Card className="mb-6 border-l-4 border-blue-600">
                 <CardContent className="pt-6">
-                  <blockquote className="text-lg italic leading-relaxed text-gray-700 dark:text-gray-300">
+                  <blockquote className="text-lg italic leading-relaxed text-gray-700">
                     &quot;The Resource Manager is a great solution for
                     manufacturers who are not ready for a full-blown MRPII, ERP,
                     or Shop Management System but who realize the value of
@@ -145,7 +145,7 @@ export default function LetsMakeManufacturingGreatAgainPage() {
                     unique in that it easily adapts to the way people are
                     running their business today.&quot;
                   </blockquote>
-                  <p className="mt-4 font-semibold text-gray-900 dark:text-white">
+                  <p className="mt-4 font-semibold text-gray-900">
                     – Mike Parks, as Director of Georgia Tech&apos;s CMIT, an
                     affiliate of the NIST Manufacturing Extension Partnership
                     (MEP)
@@ -153,7 +153,7 @@ export default function LetsMakeManufacturingGreatAgainPage() {
                 </CardContent>
               </Card>
 
-              <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+              <p className="text-lg leading-relaxed text-gray-700">
                 Since 1988, the Hollings Manufacturing Extension Partnership
                 (MEP) works directly with manufacturers to develop new products
                 and customers, expand and diversify markets, adopt new
@@ -167,7 +167,7 @@ export default function LetsMakeManufacturingGreatAgainPage() {
 
             {/* Testimonials - Education Commitment */}
             <div className="mb-6">
-              <h2 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
+              <h2 className="mb-6 text-3xl font-bold text-gray-900">
                 Testimonials - Education Commitment
               </h2>
 
@@ -175,7 +175,7 @@ export default function LetsMakeManufacturingGreatAgainPage() {
                 <div>
                   <Card className="h-full border-l-4 border-green-600">
                     <CardContent className="pt-6">
-                      <blockquote className="mb-4 text-base italic leading-relaxed text-gray-700 dark:text-gray-300">
+                      <blockquote className="mb-4 text-base italic leading-relaxed text-gray-700">
                         &quot;I have been involved in the production of store
                         fixtures for over ten years and every day was a struggle
                         until Resource Manager from User Solutions enabled me to
@@ -187,7 +187,7 @@ export default function LetsMakeManufacturingGreatAgainPage() {
                         Manager, we forecast a 20% increase in gross profits
                         next year.&quot;
                       </blockquote>
-                      <p className="font-semibold text-gray-900 dark:text-white">
+                      <p className="font-semibold text-gray-900">
                         – Greg Katz, VP of Manhattan Store Interiors
                       </p>
                     </CardContent>
@@ -221,7 +221,7 @@ export default function LetsMakeManufacturingGreatAgainPage() {
                 <div>
                   <Card className="h-full border-l-4 border-purple-600">
                     <CardContent className="pt-6">
-                      <p className="mb-4 text-base leading-relaxed text-gray-700 dark:text-gray-300">
+                      <p className="mb-4 text-base leading-relaxed text-gray-700">
                         ACE Controls, Inc., had a requirement to improve their
                         current system and to immediately implement a solution
                         for the day-to-day scheduling challenges of the machine
@@ -233,13 +233,13 @@ export default function LetsMakeManufacturingGreatAgainPage() {
                         for the company&apos;s existing Excel platform, already
                         used to communicate manufacturing reports.
                       </p>
-                      <blockquote className="mb-4 text-base italic leading-relaxed text-gray-700 dark:text-gray-300">
+                      <blockquote className="mb-4 text-base italic leading-relaxed text-gray-700">
                         &quot;The product is so flexible and adaptable; it is
                         quite easy to model different scenarios to determine if
                         a certain method or schedule can actually benefit our
                         bottom line.&quot;
                       </blockquote>
-                      <p className="font-semibold text-gray-900 dark:text-white">
+                      <p className="font-semibold text-gray-900">
                         – Dave Teumer, Buyer and Scheduling Manager, ACE
                         Controls
                       </p>
@@ -251,9 +251,9 @@ export default function LetsMakeManufacturingGreatAgainPage() {
 
             {/* Awards Banner */}
             <div>
-              <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow dark:from-blue-900/20 dark:to-blue-800/20">
+              <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
                 <CardContent className="p-8 text-center">
-                  <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                  <h2 className="mb-6 text-2xl font-bold text-slate-900">
                     CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                   </h2>
                   <img

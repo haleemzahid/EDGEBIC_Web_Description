@@ -77,7 +77,7 @@ export function ContactTasks({
 
 function Heading(props: React.PropsWithChildren): React.JSX.Element {
   return (
-    <h4 className="bg-neutral-50 px-6 py-3 text-sm font-medium text-muted-foreground dark:bg-neutral-900">
+    <h4 className="bg-neutral-50 px-6 py-3 text-sm font-medium text-muted-foreground">
       {props.children}
     </h4>
   );

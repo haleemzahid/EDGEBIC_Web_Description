@@ -26,7 +26,7 @@ export function Solution(): React.JSX.Element {
                 some of the features below don't exists.
               </p>
             </div>
-            <div className="mx-auto xl:container xl:rounded-xl xl:bg-neutral-50 xl:p-6 dark:xl:bg-neutral-900">
+            <div className="mx-auto xl:container xl:rounded-xl xl:bg-neutral-50 xl:p-6">
               <div className="grid auto-rows-[minmax(200px,auto)] grid-cols-12 gap-6">
                 <BentoCustomersCard
                   className="col-span-12 md:col-span-6 xl:col-span-4"

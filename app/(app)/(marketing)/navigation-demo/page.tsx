@@ -138,14 +138,14 @@ export default function NavigationDemoPage(): React.JSX.Element {
             ))}
           </div>
 
-          <Card className="border-blue-600 bg-blue-50 dark:bg-blue-950">
+          <Card className="border-blue-600 bg-blue-50">
             <CardHeader>
-              <CardTitle className="text-blue-900 dark:text-blue-100">
+              <CardTitle className="text-blue-900">
                 🎉 Congratulations!
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-blue-800 dark:text-blue-200">
+              <p className="text-blue-800">
                 Your EDGEBIC project now has a complete, smooth navigation
                 system! Check the NAVIGATION_GUIDE.md file for detailed usage
                 instructions and customization options.

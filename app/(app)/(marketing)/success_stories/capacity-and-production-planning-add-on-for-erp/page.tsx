@@ -49,7 +49,7 @@ export default function CapacityProductionPlanningPage() {
             <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
               {/* Content Column */}
               <div className="space-y-6">
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   BAE Systems/Ordinance Systems Inc. set out to design and
                   implement a process that would enable our manufacturing
                   personnel to systematically identify process, equipment, labor,
@@ -64,7 +64,7 @@ export default function CapacityProductionPlanningPage() {
                   discontinue its use for production planning activities.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   After a review process, that included sending sample data from
                   our ERP System, we selected User Solutions' Resource Manager-DB
                   solution. User Solutions has always been highly responsive in
@@ -73,7 +73,7 @@ export default function CapacityProductionPlanningPage() {
                   centers loaded.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   Now, we have a solution that has become a vital tool in our
                   production planning and scheduling activities. We are extremely
                   satisfied with the offering and are pleased to recommend to
@@ -81,7 +81,7 @@ export default function CapacityProductionPlanningPage() {
                   either integrated with ERP or standalone.
                 </p>
 
-                <p className="text-[18px] leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-[18px] leading-relaxed text-gray-700">
                   <strong>Marc Phillippi</strong>
                   <br />
                   ERP Systems Manager
@@ -110,9 +110,9 @@ export default function CapacityProductionPlanningPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image

@@ -8,7 +8,7 @@ export default function JSLJobSchedulerLiteInDepthPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800 py-6 text-white dark:from-blue-800 dark:to-blue-900">
+      <section className="bg-gradient-to-r from-blue-600 to-blue-800 py-6 text-white">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <Badge
@@ -122,40 +122,40 @@ export default function JSLJobSchedulerLiteInDepthPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4 text-center md:grid-cols-4">
-                <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+                <div className="rounded-lg bg-blue-50 p-4">
                   <p className="font-semibold">Import Data</p>
                 </div>
-                <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+                <div className="rounded-lg bg-blue-50 p-4">
                   <p className="font-semibold">Daily Hours</p>
                 </div>
-                <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+                <div className="rounded-lg bg-blue-50 p-4">
                   <p className="font-semibold">Holidays</p>
                 </div>
-                <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+                <div className="rounded-lg bg-blue-50 p-4">
                   <p className="font-semibold">Configure</p>
                 </div>
-                <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+                <div className="rounded-lg bg-blue-50 p-4">
                   <p className="font-semibold">Resources</p>
                 </div>
-                <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+                <div className="rounded-lg bg-blue-50 p-4">
                   <p className="font-semibold">Orders</p>
                 </div>
-                <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+                <div className="rounded-lg bg-blue-50 p-4">
                   <p className="font-semibold">FG / RL</p>
                 </div>
-                <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+                <div className="rounded-lg bg-blue-50 p-4">
                   <p className="font-semibold">Reports</p>
                 </div>
-                <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+                <div className="rounded-lg bg-blue-50 p-4">
                   <p className="font-semibold">Schedule</p>
                 </div>
-                <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+                <div className="rounded-lg bg-blue-50 p-4">
                   <p className="font-semibold">InSight</p>
                 </div>
-                <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+                <div className="rounded-lg bg-blue-50 p-4">
                   <p className="font-semibold">Export Data</p>
                 </div>
-                <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+                <div className="rounded-lg bg-blue-50 p-4">
                   <p className="font-semibold">Exit</p>
                 </div>
               </div>
@@ -483,9 +483,9 @@ export default function JSLJobSchedulerLiteInDepthPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <div className="flex justify-center">

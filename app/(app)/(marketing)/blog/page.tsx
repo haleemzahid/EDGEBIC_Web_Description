@@ -15,9 +15,9 @@ export default function BlogPage(): React.JSX.Element {
       {/* Awards Section */}
       <section className="pb-6 mt-12">
         <div className="mx-auto max-w-7xl">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
             <div className="p-8 text-center">
-              <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+              <h2 className="mb-6 text-2xl font-bold text-slate-900">
                 CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
               </h2>
               <img

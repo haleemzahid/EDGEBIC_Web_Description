@@ -19,14 +19,13 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle
 } from '@/components/ui/navigation-menu';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Routes } from '@/constants/routes';
 import { cn } from '@/lib/utils';
 
 export function Navbar(): React.JSX.Element {
   const pathname = usePathname();
   return (
-    <section className="w-full bg-white dark:bg-slate-900">
+    <section className="w-full bg-white">
       <div className="mx-auto px-6">
         <nav className="hidden h-20 items-center justify-between lg:flex">
           <Link
@@ -50,7 +49,7 @@ export function Navbar(): React.JSX.Element {
                               ? ''
                               : undefined
                           }
-                          className="h-20 rounded-none border-b-2 border-transparent text-[15px] font-medium text-slate-700 transition-all duration-200 hover:border-blue-600 hover:bg-transparent hover:text-blue-600 data-[active]:border-blue-600 data-[active]:text-blue-600 data-[state=open]:border-blue-600 data-[state=open]:bg-transparent data-[state=open]:text-blue-600 dark:text-slate-300 dark:hover:border-blue-400 dark:hover:text-blue-400 dark:data-[active]:border-blue-400 dark:data-[active]:text-blue-400 dark:data-[state=open]:border-blue-400 dark:data-[state=open]:text-blue-400"
+                          className="h-20 rounded-none border-b-2 border-transparent text-[15px] font-medium text-slate-700 transition-all duration-200 hover:border-blue-600 hover:bg-transparent hover:text-blue-600 data-[active]:border-blue-600 data-[active]:text-blue-600 data-[state=open]:border-blue-600 data-[state=open]:bg-transparent data-[state=open]:text-blue-600"
                         >
                           {item.title}
                         </NavigationMenuTrigger>
@@ -69,19 +68,19 @@ export function Navbar(): React.JSX.Element {
                                         ? 'noopener noreferrer'
                                         : undefined
                                     }
-                                    className="group flex select-none flex-row items-center gap-4 rounded-md p-3 leading-none no-underline outline-none transition-all duration-200 hover:bg-slate-100 hover:shadow-sm focus:bg-slate-100 dark:hover:bg-slate-800 dark:focus:bg-slate-800"
+                                    className="group flex select-none flex-row items-center gap-4 rounded-md p-3 leading-none no-underline outline-none transition-all duration-200 hover:bg-slate-100 hover:shadow-sm focus:bg-slate-100"
                                   >
-                                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border bg-background text-muted-foreground transition-all duration-200 group-hover:scale-105 group-hover:border-slate-400 group-hover:text-foreground dark:group-hover:border-slate-600">
+                                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border bg-background text-muted-foreground transition-all duration-200 group-hover:scale-105 group-hover:border-slate-400 group-hover:text-foreground">
                                       {subItem.icon}
                                     </div>
                                     <div>
-                                      <div className="text-sm font-medium text-slate-900 dark:text-white">
+                                      <div className="text-sm font-medium text-slate-900">
                                         {subItem.title}
                                         {subItem.external && (
                                           <ExternalLink className="-mt-2 ml-1 inline text-muted-foreground" />
                                         )}
                                       </div>
-                                      <p className="text-sm leading-snug text-slate-600 dark:text-slate-400">
+                                      <p className="text-sm leading-snug text-slate-600">
                                         {subItem.description}
                                       </p>
                                     </div>
@@ -110,11 +109,11 @@ export function Navbar(): React.JSX.Element {
                               item.external ? 'noopener noreferrer' : undefined
                             }
                             className={cn(
-                              'inline-flex h-20 items-center border-b-2 border-transparent px-3 text-[15px] font-medium text-slate-700 transition-all duration-200 hover:border-blue-600 hover:text-blue-600 dark:text-slate-300 dark:hover:border-blue-400 dark:hover:text-blue-400',
+                              'inline-flex h-20 items-center border-b-2 border-transparent px-3 text-[15px] font-medium text-slate-700 transition-all duration-200 hover:border-blue-600 hover:text-blue-600',
                               (item.href === Routes.Root
                                 ? pathname === '/'
                                 : pathname.startsWith(item.href)) &&
-                                'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                                'border-blue-600 text-blue-600'
                             )}
                           >
                             {item.title}

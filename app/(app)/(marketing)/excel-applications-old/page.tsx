@@ -8,15 +8,15 @@ export default function ExcelApplicationsOldPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-orange-50 via-white to-yellow-50 py-6 dark:from-orange-950/20 dark:via-slate-900 dark:to-yellow-950/20">
+      <section className="bg-gradient-to-br from-orange-50 via-white to-yellow-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
-            <div className="mb-6 rounded-lg border-2 border-yellow-400 bg-yellow-100 p-4 dark:border-yellow-600 dark:bg-yellow-900/30">
-              <p className="font-semibold text-yellow-800 dark:text-yellow-200">
+            <div className="mb-6 rounded-lg border-2 border-yellow-400 bg-yellow-100 p-4">
+              <p className="font-semibold text-yellow-800">
                 📢 This is an archived version. View the{' '}
                 <Link
                   href="/excel-applications"
-                  className="text-yellow-900 underline dark:text-yellow-100"
+                  className="text-yellow-900 underline"
                 >
                   latest Excel Applications page
                 </Link>
@@ -50,7 +50,7 @@ export default function ExcelApplicationsOldPage() {
             {/* All products in simple card format */}
             <div className="grid gap-6 md:grid-cols-2">
               <Card>
-                <CardHeader className="bg-blue-50 dark:bg-blue-900/20">
+                <CardHeader className="bg-blue-50">
                   <CardTitle>Spreadsheet Scheduler</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
@@ -64,7 +64,7 @@ export default function ExcelApplicationsOldPage() {
               </Card>
 
               <Card>
-                <CardHeader className="bg-purple-50 dark:bg-purple-900/20">
+                <CardHeader className="bg-purple-50">
                   <CardTitle>Spreadsheet QC</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
@@ -78,7 +78,7 @@ export default function ExcelApplicationsOldPage() {
               </Card>
 
               <Card>
-                <CardHeader className="bg-green-50 dark:bg-green-900/20">
+                <CardHeader className="bg-green-50">
                   <CardTitle>Workcell Planner</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
@@ -92,7 +92,7 @@ export default function ExcelApplicationsOldPage() {
               </Card>
 
               <Card>
-                <CardHeader className="bg-orange-50 dark:bg-orange-900/20">
+                <CardHeader className="bg-orange-50">
                   <CardTitle>Operations Manager</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
@@ -106,7 +106,7 @@ export default function ExcelApplicationsOldPage() {
               </Card>
 
               <Card>
-                <CardHeader className="bg-indigo-50 dark:bg-indigo-900/20">
+                <CardHeader className="bg-indigo-50">
                   <CardTitle>Workcenter for XL</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
@@ -120,7 +120,7 @@ export default function ExcelApplicationsOldPage() {
               </Card>
 
               <Card>
-                <CardHeader className="bg-teal-50 dark:bg-teal-900/20">
+                <CardHeader className="bg-teal-50">
                   <CardTitle>Resource Manager for Excel</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
@@ -138,13 +138,13 @@ export default function ExcelApplicationsOldPage() {
       </section>
 
       {/* Testimonials */}
-      <section className="bg-gray-50  py-6 dark:bg-slate-900/50">
+      <section className="bg-gray-50  py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-6 md:grid-cols-3">
               <Card>
                 <CardContent className="pt-6">
-                  <p className="mb-2 font-semibold text-slate-900 dark:text-white">
+                  <p className="mb-2 font-semibold text-slate-900">
                     "Best choice for MRP and project management software"
                   </p>
                   <p className="mb-4 text-muted-foreground">
@@ -158,7 +158,7 @@ export default function ExcelApplicationsOldPage() {
 
               <Card>
                 <CardContent className="pt-6">
-                  <p className="mb-2 font-semibold text-slate-900 dark:text-white">
+                  <p className="mb-2 font-semibold text-slate-900">
                     "Manufacturing scheduling software with fantastic support"
                   </p>
                   <p className="mb-4 text-muted-foreground">
@@ -172,7 +172,7 @@ export default function ExcelApplicationsOldPage() {
 
               <Card>
                 <CardContent className="pt-6">
-                  <p className="mb-2 font-semibold text-slate-900 dark:text-white">
+                  <p className="mb-2 font-semibold text-slate-900">
                     "Easy ERP add-on for manufacturing resource planning"
                   </p>
                   <p className="mb-4 text-muted-foreground">
@@ -214,9 +214,9 @@ export default function ExcelApplicationsOldPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h3 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">
+                <h3 className="mb-6 text-2xl font-bold text-slate-900 sm:text-3xl">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <img

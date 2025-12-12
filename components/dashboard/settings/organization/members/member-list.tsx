@@ -78,7 +78,7 @@ function MemberListItem({
             src={member.image}
             alt={member.name}
           />
-          <AvatarFallback className="rounded-full transition-colors duration-200 group-hover:bg-neutral-200 dark:group-hover:bg-neutral-700">
+          <AvatarFallback className="rounded-full transition-colors duration-200 group-hover:bg-neutral-200">
             {getInitials(member.name)}
           </AvatarFallback>
         </Avatar>

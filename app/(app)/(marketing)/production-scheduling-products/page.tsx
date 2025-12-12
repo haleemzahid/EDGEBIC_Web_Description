@@ -13,7 +13,7 @@ export default function ProductionSchedulingProductsPage() {
           <div className="mx-auto max-w-7xl text-center">
             <Badge
               variant="outline"
-              className="mb-4 h-8 rounded-full border-blue-600/30 px-3 text-sm font-medium text-blue-700 shadow-sm dark:border-white/30 dark:bg-white/10 dark:text-white"
+              className="mb-4 h-8 rounded-full border-blue-600/30 px-3 text-sm font-medium text-blue-700 shadow-sm"
             >
               Production Planning & Scheduling
             </Badge>
@@ -358,9 +358,9 @@ export default function ProductionSchedulingProductsPage() {
       <section className="py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">
+                <h2 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
                 <img
