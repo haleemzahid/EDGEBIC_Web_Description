@@ -16,6 +16,15 @@ import { cn } from '@/lib/utils';
 
 export function NavMain(props: SidebarGroupProps): React.JSX.Element {
   const pathname = usePathname();
+
+  // Check if item is active - exact match for /dashboard (Home), startsWith for others
+  const isItemActive = (href: string): boolean => {
+    if (href === '/dashboard') {
+      return pathname === '/dashboard';
+    }
+    return pathname.startsWith(href);
+  };
+
   return (
     <SidebarGroup {...props}>
       <SidebarMenu>
@@ -23,7 +32,7 @@ export function NavMain(props: SidebarGroupProps): React.JSX.Element {
           <SidebarMenuItem key={index}>
             <SidebarMenuButton
               asChild
-              isActive={pathname.startsWith(item.href)}
+              isActive={isItemActive(item.href)}
               tooltip={item.title}
             >
               <Link
@@ -33,14 +42,14 @@ export function NavMain(props: SidebarGroupProps): React.JSX.Element {
                 <item.icon
                   className={cn(
                     'size-4 shrink-0',
-                    pathname.startsWith(item.href)
+                    isItemActive(item.href)
                       ? 'text-foreground'
                       : 'text-muted-foreground'
                   )}
                 />
                 <span
                   className={
-                    pathname.startsWith(item.href)
+                    isItemActive(item.href)
                       ? 'dark:text-foreground'
                       : 'dark:text-muted-foreground'
                   }

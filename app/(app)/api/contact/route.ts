@@ -7,8 +7,8 @@
  * POST /api/contact
  */
 
-import { NextRequest, NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { Caching, OrganizationCacheKey } from '@/data/caching';
@@ -63,7 +63,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { firstName, lastName, email, phone, productInterest, hearAboutUs, message } = validationResult.data;
+    const {
+      firstName,
+      lastName,
+      email,
+      phone,
+      productInterest,
+      hearAboutUs,
+      message
+    } = validationResult.data;
 
     // Get or create organization
     const organization = await getOrCreateOrganization();
@@ -92,14 +100,20 @@ export async function POST(request: NextRequest) {
       )
     );
 
-    // Send email notification to both recipients
-    const recipients = [
-      'mudasirnadeem7979@gmail.com',
-      'haleemzahid35@gmail.com'
-    ];
+    // Send email notification to all recipients from env
+    const recipients = (process.env.EMAIL_CONTACT_RECIPIENTS || 'mudasirnadeem7979@gmail.com')
+      .split(',')
+      .map((email) => email.trim())
+      .filter((email) => email.length > 0);
+
+    console.log('EMAIL_CONTACT_RECIPIENTS env:', process.env.EMAIL_CONTACT_RECIPIENTS);
+    console.log('Sending emails to recipients:', recipients);
+
+    const emailResults: { recipient: string; success: boolean; error?: string }[] = [];
 
     for (const recipient of recipients) {
       try {
+        console.log(`Attempting to send email to: ${recipient}`);
         await sendContactFormEmail({
           recipient,
           firstName,
@@ -110,17 +124,29 @@ export async function POST(request: NextRequest) {
           hearAboutUs,
           message: message || undefined
         });
+        console.log(`Successfully sent email to: ${recipient}`);
+        emailResults.push({ recipient, success: true });
       } catch (emailError) {
-        console.error(`Error sending contact form email to ${recipient}:`, emailError);
-        // Don't fail the request if email fails - contact is already saved
+        console.error(
+          `Error sending contact form email to ${recipient}:`,
+          emailError
+        );
+        emailResults.push({ recipient, success: false, error: String(emailError) });
       }
     }
+
+    console.log('Email sending results:', emailResults);
 
     return NextResponse.json(
       {
         success: true,
         message: 'Contact submitted successfully',
-        id: contact.id
+        id: contact.id,
+        debug: {
+          recipientsFromEnv: process.env.EMAIL_CONTACT_RECIPIENTS,
+          recipientsParsed: recipients,
+          emailResults
+        }
       },
       { status: 200 }
     );
