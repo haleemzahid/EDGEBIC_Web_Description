@@ -15,57 +15,78 @@ export const metadata: Metadata = {
 const mediaCoverage = [
   {
     title: 'Top 10 Manufacturing KPIs in 2024',
-    source: 'Industry Publication',
     image: 'https://www.usersolutions.com/wp-content/uploads/2024/02/sdf.jpg',
-    link: 'https://www.usersolutions.com/top-10-manufacturing-kpis-in-2024/'
+    link: 'https://www.usersolutions.com/top-10-manufacturing-kpis-in-2024/',
+    sources: [
+      { name: 'What is a manufacturing KPI?', url: 'https://www.usersolutions.com/top-10-manufacturing-kpis-in-2024/' }
+    ]
   },
   {
     title: 'User Solutions Joins COVID Fight with Production Scheduling Software',
-    source: "Today's Medical Developments, Processing Magazine, IEN",
     image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/2020.png',
-    link: 'https://www.todaysmedicaldevelopments.com/product/user-solutions-covid-free-rmx-software-quoting/'
+    link: 'https://www.todaysmedicaldevelopments.com/product/user-solutions-covid-free-rmx-software-quoting/',
+    sources: [
+      { name: "Today's Medical Developments", url: 'https://www.todaysmedicaldevelopments.com/product/user-solutions-covid-free-rmx-software-quoting/' },
+      { name: 'Processing Magazine', url: 'https://www.processingmagazine.com/' },
+      { name: 'Eurocom PR', url: 'https://www.eurocompr.com/' },
+      { name: 'IEN', url: 'https://www.abortionclinics.org/' }
+    ]
   },
   {
     title: 'Production Scheduling System for Amish Woodshop Cuts Lead Time, Inefficiency',
-    source: 'Woodworking Network',
     image: 'https://www.usersolutions.com/wp-content/uploads/2023/01/amish.png',
-    link: '#'
+    link: 'https://www.woodworkingnetwork.com/',
+    sources: [
+      { name: 'Woodworking Network', url: 'https://www.woodworkingnetwork.com/' }
+    ]
   },
   {
     title: 'User Solutions Named Top ERP Solutions Transforming Business 2016',
-    source: 'CIO Applications',
     image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/2016.png',
-    link: 'https://www.cioapplications.com/magazines/May/ERP2016/'
+    link: 'https://www.cioapplications.com/magazines/May/ERP2016/',
+    sources: [
+      { name: 'CIO Applications', url: 'https://www.cioapplications.com/magazines/May/ERP2016/' }
+    ]
   },
   {
     title: 'Quick and Easy Excel-Based MRP Software for Small and Large Manufacturing',
-    source: 'OR/MS Today',
     image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/2018.png',
-    link: 'http://www.orms-today.org/'
+    link: 'http://www.orms-today.org/',
+    sources: [
+      { name: 'OR/MS Today', url: 'http://www.orms-today.org/' }
+    ]
   },
   {
     title: 'APICS Profiles in Manufacturing',
-    source: 'APICS',
     image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/2015.png',
-    link: '#'
+    link: 'https://www.ascm.org/',
+    sources: [
+      { name: 'APICS', url: 'https://www.ascm.org/' }
+    ]
   },
   {
     title: 'Software Schedules Maintenance With Military Precision',
-    source: 'IMPO - Industrial Maintenance & Plant Operations',
     image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/2014.png',
-    link: 'http://www.impomag.com/'
+    link: 'http://www.impomag.com/',
+    sources: [
+      { name: 'IMPO', url: 'http://www.impomag.com/' }
+    ]
   },
   {
     title: 'Small Manufacturers Seek Best ERP Fit',
-    source: 'SME-Manufacturing Engineering',
     image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/image06.png',
-    link: 'https://www.sme.org/'
+    link: 'https://www.sme.org/',
+    sources: [
+      { name: 'SME-Manufacturing Engineering', url: 'https://www.sme.org/' }
+    ]
   },
   {
     title: 'Fireproof Planning – Cool Scheduling Solution',
-    source: 'APICS',
     image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/2011.png',
-    link: '#'
+    link: 'https://www.ascm.org/',
+    sources: [
+      { name: 'APICS', url: 'https://www.ascm.org/' }
+    ]
   }
 ];
 
@@ -187,7 +208,19 @@ export default function NewsPage(): React.JSX.Element {
                   >
                     {item.title}
                   </Link>
-                  <p className="mt-1 text-sm text-muted-foreground">{item.source}</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {item.sources.map((source, sourceIndex) => (
+                      <Link
+                        key={sourceIndex}
+                        href={source.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block rounded bg-gray-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-gray-700"
+                      >
+                        {source.name}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}
