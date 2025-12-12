@@ -27,9 +27,9 @@ const mediaCoverage = [
     link: 'https://www.todaysmedicaldevelopments.com/product/user-solutions-covid-free-rmx-software-quoting/',
     sources: [
       { name: "Today's Medical Developments", url: 'https://www.todaysmedicaldevelopments.com/product/user-solutions-covid-free-rmx-software-quoting/' },
-      { name: 'Processing Magazine', url: 'https://www.processingmagazine.com/' },
-      { name: 'Eurocom PR', url: 'https://www.eurocompr.com/' },
-      { name: 'IEN', url: 'https://www.abortionclinics.org/' }
+      { name: 'Processing Magazine', url: 'https://www.processingmagazine.com/covid-19/article/21134726/user-solutions-joins-fight-against-covid-19-offers-free-production-scheduling-software' },
+      { name: 'Eurocom PR', url: 'https://www.eurocompr.com/news/ripple-effect-offers-free-pr-for-us-companies-who-fight-covid-19' },
+      { name: 'IEN', url: 'https://www.ien.com/software/news/21129098/user-solutions-joins-covid-fight-with-production-scheduling-software' }
     ]
   },
   {
