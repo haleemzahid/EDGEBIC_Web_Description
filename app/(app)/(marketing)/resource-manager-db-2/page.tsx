@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { GridSection } from '@/components/marketing/fragments/grid-section';
 import { SiteHeading } from '@/components/marketing/fragments/site-heading';
 import { RMDBFeatureList } from '@/components/marketing/sections/rmdb-feature-list';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function ResourceManagerDBPage(): React.JSX.Element {
   return (
@@ -100,18 +101,20 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
       </section>
 
       {/* Awards Section */}
-      <section className="py-6">
-        <div className="container mx-auto max-w-4xl px-4 text-center">
-          <h3 className="mb-6 text-2xl font-bold text-slate-900">
-            CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
-          </h3>
-          <Image
-            src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
-            alt="Collection of industry and business awards logos"
-            width={1024}
-            height={128}
-            className="mx-auto"
-          />
+      <section>
+        <div className="container mx-auto">
+          <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
+            <CardContent className="p-8 text-center">
+              <h3 className="mb-6 text-2xl font-bold text-slate-900">
+                CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
+              </h3>
+              <img
+                src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                alt="Collection of industry and business awards logos"
+                className="mx-auto h-auto max-w-full"
+              />
+            </CardContent>
+          </Card>
         </div>
       </section>
     </div>
