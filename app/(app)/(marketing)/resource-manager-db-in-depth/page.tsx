@@ -148,9 +148,9 @@ export default function ResourceManagerDBInDepthPage() {
             </div>
             <div>
               <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-Data-Import.png"
-                alt="RMDB Data Import"
-                className="w-full h-[400px] rounded-lg shadow-md"
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/Manufacturing_Excel_Dashboard-1024x376.png"
+                alt="Manufacturing Excel Dashboard"
+                className="w-full rounded-lg shadow-md"
               />
             </div>
           </div>
@@ -162,58 +162,37 @@ export default function ResourceManagerDBInDepthPage() {
         <div className="container mx-auto max-w-7xl px-4">
           <div className="grid items-center gap-8 md:grid-cols-2">
             <div>
-              <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/10/Manufacturing_Excel_Dashboard-1024x376.png"
-                alt="Manufacturing Excel Dashboard"
-                className="w-full rounded-lg shadow-md"
-              />
-            </div>
-            <div>
               <h2 className="mb-4 text-2xl font-bold">
-                Cruise Control Software for your Manufacturing Enterprise
+                Cruise Control Software for your Manufacturing Enterprise Fill'er Up
               </h2>
-              <h3 className="mb-3 text-xl font-semibold">Fill'er Up</h3>
               <p className="mb-4 text-slate-600">
-                Resource Manager-DB lets you easily work with your current data.
-                Import directly into Resource Manager-DB and let RMDB
-                automatically fill in the details. You can even maintain this
-                data in other systems, such as ERP, then refresh on demand.
+                Resource Manager-DB lets you easily work with your current data. Do you have
+                a product list somewhere? How about bills-of-material and/or routings? Sales
+                orders, inventory levels, even work-in-process data. Import directly into
+                Resource Manager-DB and let RMDB automatically fill in the details. You can
+                even maintain this data in other systems, such as ERP, then refresh on demand.
+                Starting from scratch? Resource Manager-DB features a clean and simple way to
+                create master item lists and dynamically create bills-of-resources.
               </p>
               <p className="mb-4 text-slate-600">
-                <strong>IMPORTANT TAKEAWAY #1:</strong> Load, edit, reload
-                entire data sets with the click of a button.
+                Resource Manager-DB is designed to work seamlessly with Excel. <strong>IMPORTANT
+                  TAKEAWAY #1:</strong> This provides great flexibility in rapid implementation
+                options as it allows you to load, edit, reload entire data sets with the click
+                of a button.
               </p>
               <p className="text-slate-600">
-                <strong>IMPORTANT TAKEAWAY #2:</strong> Reports run on any
-                version of Excel anywhere — Cloud, tablet, laptop, desktop,
-                on-site, off-site and enterprise wide.
+                <strong>IMPORTANT TAKEAWAY #2:</strong> Output reports can easily circulate
+                throughout the organization in familiar Excel format for editing and reimporting
+                back into Resource Manager-DB to update the system. Reports run on any version
+                of Excel anywhere — Cloud, tablet, laptop, desktop, on-site, off-site and
+                enterprise wide.
               </p>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Check the MAP Section */}
-      <section className="pt-6">
-        <div className="container mx-auto max-w-7xl px-4">
-          <div className="grid items-center gap-8 md:grid-cols-2">
             <div>
-              <h2 className="mb-4 text-2xl font-bold">Check the "MAP"</h2>
-              <p className="mb-4 text-slate-600">
-                With Resource Manager-DB, you have a single screen to control all your
-                orders. Simply enter the quantity and due date, optionally add customer
-                information, and schedule. That's it!
-              </p>
-              <p className="text-slate-600">
-                Only Resource Manager gives you quick and easy top level control for
-                recognizing the immediate benefits of an integrated manufacturing system.
-              </p>
-            </div>
-            <div className="flex justify-center">
               <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/10/usmap.gif"
-                alt="Treasure Map illustration"
-                className="max-w-sm rounded-lg"
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-Data-Import.png"
+                alt="RMDB Import Data Dialog"
+                className="w-full rounded-lg shadow-md"
               />
             </div>
           </div>
