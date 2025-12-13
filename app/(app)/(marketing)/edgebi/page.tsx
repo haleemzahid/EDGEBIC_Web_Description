@@ -81,7 +81,7 @@ export default function EDGEBIPage(): React.JSX.Element {
               <h1 className="mb-6 text-3xl font-bold  md:text-4xl">
                 Welcome to EDGEBI
               </h1>
-              <p className="mb-6 text-lg leading-relaxed text-slate-600">
+              <p className="mb-6 text-md leading-relaxed text-slate-600">
                 EDGEBI can be installed and configured per user preferences. EDGEBI installs
                 separately from RMDB but they share the same database with advanced security
                 options, its easy to configure view only users or power users who can make
@@ -95,19 +95,19 @@ export default function EDGEBIPage(): React.JSX.Element {
               <div className="flex flex-wrap gap-6">
                 <Link
                   href="#summary"
-                  className="text-lg text-slate-700  decoration-slate-300 underline-offset-4 hover:text-cyan-500 hover:decoration-cyan-500"
+                  className="text-md text-slate-700  decoration-slate-300 underline-offset-4 hover:text-cyan-500 hover:decoration-cyan-500"
                 >
                   Summary
                 </Link>
                 <Link
                   href="/resource-manager-db-2"
-                  className="text-lg text-slate-700  decoration-slate-300 underline-offset-4 hover:text-cyan-500 hover:decoration-cyan-500"
+                  className="text-md text-slate-700  decoration-slate-300 underline-offset-4 hover:text-cyan-500 hover:decoration-cyan-500"
                 >
                   RMDB
                 </Link>
                 <Link
                   href="/contact-us"
-                  className="text-lg text-slate-700  decoration-slate-300 underline-offset-4 hover:text-cyan-500 hover:decoration-cyan-500"
+                  className="text-md text-slate-700  decoration-slate-300 underline-offset-4 hover:text-cyan-500 hover:decoration-cyan-500"
                 >
                   Live Demo
                 </Link>
@@ -156,16 +156,8 @@ export default function EDGEBIPage(): React.JSX.Element {
             </div>
           </div>
 
-          {/* Second Section - Text and Image Side by Side */}
+          {/* 2nd Section - Image (left) - Text (right) */}
           <div className="mb-16 grid items-center gap-8 lg:grid-cols-2">
-            <div>
-              <p className="mb-4 text-xl text-slate-700">
-                Finally, you can manage your production scheduling with an intuitive graphical approach that can be easily customized.
-              </p>
-              <p className="text-xl text-slate-700">
-                EDGEBI is the ideal interface for managing the schedule produced by Resource Manager DB.
-              </p>
-            </div>
             <div>
               <Image
                 src="https://www.usersolutions.com/wp-content/uploads/2022/10/f2.png"
@@ -175,9 +167,17 @@ export default function EDGEBIPage(): React.JSX.Element {
                 className="rounded-lg shadow-lg"
               />
             </div>
+            <div>
+              <p className="mb-4 text-xl text-slate-700">
+                Finally, you can manage your production scheduling with an intuitive graphical approach that can be easily customized.
+              </p>
+              <p className="text-xl text-slate-700">
+                EDGEBI is the ideal interface for managing the schedule produced by Resource Manager DB.
+              </p>
+            </div>
           </div>
 
-          {/* 3rd Section - Color-coded Schedule Text with Heat Map Image Side by Side */}
+          {/* 3rd Section - Text (left) - Image (right) */}
           <div className="mb-16 grid items-center gap-8 lg:grid-cols-2">
             <div>
               <p className="text-xl text-slate-700">
@@ -195,16 +195,8 @@ export default function EDGEBIPage(): React.JSX.Element {
             </div>
           </div>
 
-          {/* 4th Section - Heat Map & Schedule Key Dates Side by Side */}
+          {/* 4th Section - Image (left) - Text (right) */}
           <div className="mb-16 grid items-center gap-8 lg:grid-cols-2">
-            <div>
-              <p className="mb-4 text-xl text-slate-700">
-                View the Heat Map to see your capacity loading, for entire schedule, at a glance.
-              </p>
-              <p className="text-xl text-slate-700">
-                Run the Schedule Key Dates reports, with an export to Excel to view all activity the way you want.
-              </p>
-            </div>
             <div>
               <Image
                 src="https://www.usersolutions.com/wp-content/uploads/2022/10/f4.png"
@@ -213,6 +205,14 @@ export default function EDGEBIPage(): React.JSX.Element {
                 height={400}
                 className="rounded-lg shadow-lg"
               />
+            </div>
+            <div>
+              <p className="mb-4 text-xl text-slate-700">
+                View the Heat Map to see your capacity loading, for entire schedule, at a glance.
+              </p>
+              <p className="text-xl text-slate-700">
+                Run the Schedule Key Dates reports, with an export to Excel to view all activity the way you want.
+              </p>
             </div>
           </div>
 
