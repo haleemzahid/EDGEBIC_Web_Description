@@ -49,6 +49,63 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
         </div>
       </GridSection>
 
+      {/* Navigation Tabs */}
+      <section className="py-6">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="flex flex-wrap gap-6 text-lg">
+            <Link href="#summary" className="text-slate-700 hover:text-cyan-500">
+              Summary
+            </Link>
+            <Link href="/resource-manager-db-in-depth" className="text-slate-700 hover:text-cyan-500">
+              In Depth
+            </Link>
+            <Link
+              href="https://www.usersolutions.com/wp-content/uploads/2022/10/rmdbquickstart23.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-700 hover:text-cyan-500"
+            >
+              Quick Start
+            </Link>
+            <Link href="/edgebi" className="text-slate-700 hover:text-cyan-500">
+              EDGEBI
+            </Link>
+            <Link href="/contact-us" className="text-slate-700 hover:text-cyan-500">
+              Live Demo
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Summary Section */}
+      <section id="summary" className="py-6">
+        <div className="container mx-auto max-w-7xl px-4">
+          <h2 className="mb-6 text-2xl font-bold text-cyan-500">
+            RESOURCE MANAGER DB: SUMMARY
+          </h2>
+          <p className="text-lg leading-relaxed">
+            If you have tried to use your ERP for creating a viable Production Schedule,
+            and still end up with a tangle of custom Excel Reports, messy whiteboard or
+            worse yet, late shipments, we can help. If you don't even have an ERP system,
+            and are struggling with production scheduling, we can help. Resource Manager-DB
+            (RMDB) was specifically architected to easily adapt to the way you work, using
+            your existing data. RMDB is easily configured, and/or reconfigured, on the fly
+            to address your most pressing issues, whenever and however they surface! This
+            is a truly unique advantage of RMDB and working with US: We can focus and
+            resolve your most pressing issues quickly — letting you reap immediate ROI.
+            Then, delve deeper without having to spend more! This approach is proven to
+            succeed where so many others don't. RMDB contains deep functionality to address
+            a multitude of challenges for production planning and scheduling: alternate
+            workcenters, complex routings & processes, discrete and/or batch, multiple
+            constraints (labor, machines, materials, etc.), advanced drag and drop graphical
+            calendar screens, downtime management, sub-assemblies, optimization, and much
+            more. To see first-hand how RMDB can help you with efficient and easy Production
+            Planning, Scheduling and Capacity Planning, schedule a live demo, even using
+            your data in its current form – RISK FREE!!
+          </p>
+        </div>
+      </section>
+
       {/* Screenshot Section */}
       <section className="py-6">
         <div className="container mx-auto max-w-7xl px-4">
