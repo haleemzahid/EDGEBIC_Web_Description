@@ -193,6 +193,62 @@ export default function ResourceManagerDBInDepthPage() {
         </div>
       </section>
 
+      {/* Check the MAP Section */}
+      <section className="pt-6">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <h2 className="mb-4 text-2xl font-bold">Check the "MAP"</h2>
+              <p className="mb-4 text-slate-600">
+                With Resource Manager-DB, you have a single screen to control all your
+                orders. Simply enter the quantity and due date, optionally add customer
+                information, and schedule. That's it!
+              </p>
+              <p className="text-slate-600">
+                Only Resource Manager gives you quick and easy top level control for
+                recognizing the immediate benefits of an integrated manufacturing system.
+              </p>
+            </div>
+            <div className="flex justify-center">
+              <img
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/treasure-map.png"
+                alt="Treasure Map illustration"
+                className="max-w-sm rounded-lg"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Relax, Cruise Control is on Section */}
+      <section className="pt-6">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <img
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-Schedule.png"
+                alt="RMDB Schedule Interface"
+                className="w-full rounded-lg shadow-md"
+              />
+            </div>
+            <div>
+              <h2 className="mb-4 text-2xl font-bold">Relax, Cruise Control is on</h2>
+              <p className="mb-4 text-slate-600">
+                The production calendar displays finite-capacity loading with bottlenecks
+                clearly marked by red flags. When schedule modifications are needed, you
+                can quickly adjust working calendars, reallocate resources, and regenerate
+                schedules.
+              </p>
+              <p className="text-slate-600">
+                Top-level changes can be implemented with a single mouse click. Resource
+                Manager-DB gives you complete control over your production schedule while
+                keeping the complexity hidden behind an intuitive interface.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Fine-Tuning Options Section */}
       <section className="pt-6">
         <div className="container mx-auto max-w-7xl px-4">
@@ -277,7 +333,8 @@ export default function ResourceManagerDBInDepthPage() {
               <p className="text-slate-600">
                 The report will tell you what you need to buy or make, how much,
                 and when – all consolidated on a single sheet. An instant, top
-                level MRP Report for all products and workcenter loading.
+                level MRP Report for all products and workcenter loading. View
+                over any time horizon – by day, week, or month.
               </p>
             </div>
 
@@ -407,35 +464,20 @@ export default function ResourceManagerDBInDepthPage() {
         </div>
       </section>
 
-      {/* Services & Partners Section */}
+      {/* Special Services & Partners Section */}
       <section className="pt-6">
         <div className="container mx-auto max-w-7xl px-4">
-          <div className="grid items-center gap-8 md:grid-cols-2">
-            <div>
-              <h2 className="mb-4 text-2xl font-bold">Services & Partners</h2>
-              <p className="mb-4 text-slate-600">
-                User Solutions offers direct services to help you get the most out of
-                Resource Manager-DB:
-              </p>
-              <ul className="mb-4 space-y-2 text-slate-600">
-                <li>• Automatic data integration with other systems</li>
-                <li>• Customized reports tailored to your needs</li>
-                <li>• On-site training and configuration</li>
-              </ul>
-              <p className="text-slate-600">
-                We have also partnered with complementary product and service providers
-                to deliver complete solutions that address your unique manufacturing
-                challenges.
-              </p>
-            </div>
-            <div className="flex items-center justify-center">
-              <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/10/ERP_Scheduling-300x245-1.png"
-                alt="ERP Scheduling Integration"
-                className="w-full max-w-md rounded-lg"
-              />
-            </div>
-          </div>
+          <h2 className="mb-4 text-2xl font-bold">
+            <span>Special</span>{' '}
+            <span>Services & Partners</span>
+          </h2>
+          <p className="text-slate-600">
+            User Solutions offers a variety of direct services to meet any special needs,
+            including: automatic data integration with other systems, customized reports,
+            on site training and configuration and much more. In addition, User Solutions
+            has partnered with a number of complementary product and service companies to
+            provide complete solutions focused on unique needs.
+          </p>
         </div>
       </section>
 
