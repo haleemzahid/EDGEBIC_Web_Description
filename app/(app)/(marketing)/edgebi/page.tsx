@@ -156,90 +156,76 @@ export default function EDGEBIPage(): React.JSX.Element {
             </div>
           </div>
 
+          {/* Second Section - Text and Image Side by Side */}
+          <div className="mb-16 grid items-center gap-8 lg:grid-cols-2">
+            <div>
+              <p className="mb-4 text-xl text-slate-700">
+                Finally, you can manage your production scheduling with an intuitive graphical approach that can be easily customized.
+              </p>
+              <p className="text-xl text-slate-700">
+                EDGEBI is the ideal interface for managing the schedule produced by Resource Manager DB.
+              </p>
+            </div>
+            <div>
+              <Image
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/f2.png"
+                alt="EDGEBI Schedule Management Interface"
+                width={800}
+                height={600}
+                className="rounded-lg shadow-lg"
+              />
+            </div>
+          </div>
+
+          {/* 3rd Section - Color-coded Schedule Text with Heat Map Image Side by Side */}
+          <div className="mb-16 grid items-center gap-8 lg:grid-cols-2">
+            <div>
+              <p className="text-xl text-slate-700">
+                Check out the color-coded schedule for up to the minute status on any job. Drag and drop any job segment from one workcenter to another workcenter with a simple click of a mouse, resize any segment based on real time issues – taking longer than planned, or shorter, you can even block out capacity for any downtime or maintenance event. Check out capacity utilization graph, finally press update button and reschedule to have schedule reflect reality.
+              </p>
+            </div>
+            <div>
+              <Image
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/f3.png"
+                alt="Heat Map - Color-coded capacity utilization"
+                width={800}
+                height={400}
+                className="rounded-lg shadow-lg"
+              />
+            </div>
+          </div>
+
+          {/* 4th Section - Heat Map & Schedule Key Dates Side by Side */}
+          <div className="mb-16 grid items-center gap-8 lg:grid-cols-2">
+            <div>
+              <p className="mb-4 text-xl text-slate-700">
+                View the Heat Map to see your capacity loading, for entire schedule, at a glance.
+              </p>
+              <p className="text-xl text-slate-700">
+                Run the Schedule Key Dates reports, with an export to Excel to view all activity the way you want.
+              </p>
+            </div>
+            <div>
+              <Image
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/f4.png"
+                alt="Schedule Key Dates Reports"
+                width={800}
+                height={400}
+                className="rounded-lg shadow-lg"
+              />
+            </div>
+          </div>
+
           <div className="space-y-16">
-            {/* First Feature */}
-            <div className="grid items-center gap-8 lg:grid-cols-2">
-              <div className="space-y-6">
-                <h3 className="text-2xl font-bold">
-                  Enhanced Drag-n-drop Graphical Environment
-                </h3>
-                <p className="text-lg leading-relaxed">
-                  EDGEBIC can be installed and configured per user preferences.
-                  EDGEBIC installs separately from RMDB but they share the same
-                  database with advanced security options, its easy to configure
-                  view only users or power users who can make direct changes to
-                  schedule.
-                </p>
-                <p className="text-lg leading-relaxed">
-                  Finally, you can manage your production scheduling with an
-                  intuitive graphical approach that can be easily customized.
-                </p>
-              </div>
-              <div>
-                <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/f2.png"
-                  alt="Screenshot of a project management software interface"
-                  width={600}
-                  height={400}
-                  className="rounded-lg shadow-lg"
-                />
-              </div>
-            </div>
 
-            {/* Second Feature */}
-            <div className="grid items-center gap-8 lg:grid-cols-2">
-              <div className="space-y-6 lg:order-2">
-                <h3 className="text-2xl font-bold">
-                  Color-coded Schedule Management
-                </h3>
-                <p className="text-lg leading-relaxed">
-                  Check out the color-coded schedule for up to the minute status
-                  on any job. Drag and drop any job segment from one workcenter
-                  to another workcenter with a simple click of a mouse, resize
-                  any segment based on real time issues – taking longer than
-                  planned, or shorter.
-                </p>
-                <p className="text-lg leading-relaxed">
-                  You can even block out capacity for any downtime or
-                  maintenance event. Check out capacity utilization graph,
-                  finally press update button and reschedule to have schedule
-                  reflect reality.
-                </p>
-              </div>
-              <div className="lg:order-1">
-                <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/f3.png"
-                  alt="Colorful project management Gantt chart with timeline"
-                  width={600}
-                  height={400}
-                  className="rounded-lg shadow-lg"
-                />
-              </div>
-            </div>
-
-            {/* Third Feature */}
-            <div className="grid items-center gap-8 lg:grid-cols-2">
-              <div className="space-y-6">
-                <h3 className="text-2xl font-bold">Heat Map Visualization</h3>
-                <p className="text-lg leading-relaxed">
-                  View the Heat Map to see your capacity loading, for entire
-                  schedule, at a glance. Run the Schedule Key Dates reports,
-                  with an export to Excel to view all activity the way you want.
-                </p>
-                <p className="text-lg leading-relaxed">
-                  Other reporting can be customized per your requests. EDGEBIC
-                  is the perfect, interactive, view for your application.
-                </p>
-              </div>
-              <div>
-                <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/f4.png"
-                  alt="Color-coded project timeline chart with percentage completion"
-                  width={600}
-                  height={400}
-                  className="rounded-lg shadow-lg"
-                />
-              </div>
+            {/* CTA Section */}
+            <div className="text-center">
+              <p className="mb-4 text-xl text-slate-700">
+                Now: Contact <Link href="/contact-us" className="font-semibold text-cyan-600 hover:text-cyan-700">US</Link> to discuss your specific application and challenges and let us prove out the solution with a free Proof Of Concept using your data!
+              </p>
+              <p className="text-xl text-slate-700">
+                With solutions for any application and budget, from job shops on up, better production scheduling is only a click away.
+              </p>
             </div>
           </div>
         </div>
