@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 
-import { Badge } from '@/components/ui/badge';
+
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
@@ -25,12 +25,6 @@ export default function SmartCoffeeMachinesPage() {
       <section className="bg-gradient-to-br from-rose-50 via-white to-red-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
-            <Badge
-              variant="outline"
-              className="mb-6 h-8 rounded-full px-4 text-sm font-medium shadow-sm"
-            >
-              Success Story
-            </Badge>
             <h1 className="mb-6 bg-gradient-to-r from-rose-600 to-red-600 bg-clip-text text-3xl font-bold text-transparent md:text-4xl lg:text-5xl">
               Smart Coffee Machines Get Smarter Purchasing with ERP Add-On
             </h1>

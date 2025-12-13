@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { Badge } from '@/components/ui/badge';
+
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function ThankYouSpreadsheetSchedulerPage() {
@@ -11,12 +11,6 @@ export default function ThankYouSpreadsheetSchedulerPage() {
       <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 py-6 text-white">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
-            <Badge
-              variant="outline"
-              className="mb-6 h-8 rounded-full border-white/30 bg-white/10 px-3 text-sm font-medium text-white shadow-sm"
-            >
-              DOWNLOAD CONFIRMATION
-            </Badge>
             <h1 className="mb-6 text-4xl font-bold text-white sm:text-5xl md:text-6xl">
               Thank You for Your Download!
             </h1>

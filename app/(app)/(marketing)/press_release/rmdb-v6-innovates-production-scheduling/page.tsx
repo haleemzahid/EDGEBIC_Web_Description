@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { Badge } from '@/components/ui/badge';
+
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function RMDBv6PressReleasePage() {
@@ -11,12 +11,6 @@ export default function RMDBv6PressReleasePage() {
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 py-6 text-white">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
-            <Badge
-              variant="outline"
-              className="mb-4 h-8 rounded-full border-white/30 bg-white/10 px-3 text-sm font-medium text-white shadow-sm hover:bg-white/20"
-            >
-              Press Release
-            </Badge>
             <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
               RMDB v6 Innovates Production Scheduling for Cutting Edge Battery
               Technology

@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { NTClipboardToolBox } from '@/components/marketing/sections/ntclipboard-toolbox';
-import { Badge } from '@/components/ui/badge';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Routes } from '@/constants/routes';
 import { createTitle } from '@/lib/utils';
@@ -24,12 +24,6 @@ export default function ProductDownloadsPage(): React.JSX.Element {
       <div className="container mx-auto px-4 pt-6">
         {/* Product Downloads Badge */}
         <div className="mx-auto mb-4 flex items-center justify-center">
-          <Badge
-            variant="outline"
-            className="h-8 rounded-full px-3 text-sm font-medium shadow-sm"
-          >
-            Product Downloads
-          </Badge>
         </div>
 
         {/* Header Section */}

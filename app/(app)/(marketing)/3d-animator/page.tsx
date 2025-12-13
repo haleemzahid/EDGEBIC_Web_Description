@@ -2,7 +2,6 @@ import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -14,12 +13,6 @@ export default function ThreeDAnimatorPage(): React.JSX.Element {
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <div className="mb-6">
-              <Badge
-                variant="outline"
-                className="h-8 rounded-full border-white/20 bg-white/10 px-3 text-sm font-medium text-white shadow-sm"
-              >
-                3D SIMULATION VISUALIZATION
-              </Badge>
             </div>
             <h1 className="mb-6 text-4xl font-bold md:text-6xl">3D Animator</h1>
             <p className="mb-6 text-xl md:text-2xl">

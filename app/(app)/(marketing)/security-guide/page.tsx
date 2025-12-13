@@ -2,7 +2,7 @@ import * as React from 'react';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 
-import { Badge } from '@/components/ui/badge';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { createTitle } from '@/lib/utils';
 
@@ -20,12 +20,6 @@ export default function SecurityGuidePage(): React.JSX.Element {
         <div className="mx-auto max-w-7xl">
           {/* Hero Section */}
           <div className="mb-6 text-center">
-            <Badge
-              variant="outline"
-              className="h-8 rounded-full px-3 text-sm font-medium shadow-sm"
-            >
-              SECURITY GUIDE
-            </Badge>
           </div>
           <h1 className="mb-6 bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-center text-5xl font-bold text-transparent md:text-6xl">
             Security Guide

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 
-import { Badge } from '@/components/ui/badge';
+
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
@@ -25,12 +25,6 @@ export default function JobShopThroughputPage() {
       <section className="py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
-            <Badge
-              variant="outline"
-              className="mb-6 h-8 rounded-full px-4 text-sm font-medium shadow-sm"
-            >
-              Success Story
-            </Badge>
             <h1 className="mb-6 text-3xl font-bold text-foreground md:text-4xl lg:text-5xl">
               Job Shop Increases Throughput While Improving Shipping On-Time
             </h1>

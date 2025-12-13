@@ -286,9 +286,9 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
               <div className="relative mx-auto max-w-7xl overflow-hidden rounded-2xl border bg-slate-100 shadow-2xl">
                 <div className="relative aspect-video">
                   <VideoPlayer
-                    videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/12/RMDB%20updated%20thumbnail.mp4"
+                    videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE%20BI%20User%20Solutions.mp4"
                     title="Resource Manager DB Demo"
-                    thumbnail="https://www.usersolutions.com/wp-content/uploads/2022/11/advanced-1.png"
+                    thumbnail="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
                     onPlayStateChange={setIsVideoPlaying}
                   />
                 </div>

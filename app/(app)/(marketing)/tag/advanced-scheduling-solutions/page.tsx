@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
@@ -16,12 +15,6 @@ export default function AdvancedSchedulingSolutionsTagPage() {
     <div className="container mx-auto max-w-7xl px-4 py-6">
       {/* Hero Section */}
       <div className="mb-6 text-center">
-        <Badge
-          className="mb-4 h-8 rounded-full px-4 text-sm"
-          variant="outline"
-        >
-          Advanced Scheduling Solutions Tag
-        </Badge>
         <h1 className="mb-4 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-4xl font-bold text-transparent md:text-5xl">
           Advanced Scheduling Solutions
         </h1>

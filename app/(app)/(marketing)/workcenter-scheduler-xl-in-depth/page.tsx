@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { Badge } from '@/components/ui/badge';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -12,12 +12,6 @@ export default function WorkcenterSchedulerXLInDepthPage() {
       <section className="bg-gradient-to-r from-blue-600 to-blue-800 py-6 text-white">
         <div className="container mx-auto px-4 text-center">
           <div className="mx-auto max-w-7xl">
-            <Badge
-              variant="outline"
-              className="mb-4 h-8 rounded-full border-white/30 bg-white/10 px-3 text-sm font-medium text-white shadow-sm hover:bg-white/20"
-            >
-              Finite Capacity Scheduling
-            </Badge>
             <h1 className="mb-6 text-4xl font-bold md:text-5xl">
               : In Depth
             </h1>

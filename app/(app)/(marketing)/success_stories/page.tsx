@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { Badge } from '@/components/ui/badge';
+ 
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
@@ -216,12 +216,6 @@ export default function SuccessStoriesPage() {
       <section className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
-            <Badge
-              variant="outline"
-              className="mb-6 h-8 rounded-full border-blue-600/30 bg-blue-600/10 px-4 text-sm font-medium text-blue-700 shadow-sm"
-            >
-              Customer Success Stories
-            </Badge>
             <h1 className="mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-4xl font-bold text-transparent md:text-5xl lg:text-6xl">
               Manufacturing Success Stories
             </h1>
