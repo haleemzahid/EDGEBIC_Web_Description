@@ -211,7 +211,7 @@ export default function ResourceManagerDBInDepthPage() {
             </div>
             <div className="flex justify-center">
               <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/10/treasure-map.png"
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/usmap.gif"
                 alt="Treasure Map illustration"
                 className="max-w-sm rounded-lg"
               />
@@ -226,7 +226,7 @@ export default function ResourceManagerDBInDepthPage() {
           <div className="grid items-center gap-8 md:grid-cols-2">
             <div>
               <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-Schedule.png"
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/rmscreen2.jpg"
                 alt="RMDB Schedule Interface"
                 className="w-full rounded-lg shadow-md"
               />
@@ -234,15 +234,18 @@ export default function ResourceManagerDBInDepthPage() {
             <div>
               <h2 className="mb-4 text-2xl font-bold">Relax, Cruise Control is on</h2>
               <p className="mb-4 text-slate-600">
-                The production calendar displays finite-capacity loading with bottlenecks
-                clearly marked by red flags. When schedule modifications are needed, you
-                can quickly adjust working calendars, reallocate resources, and regenerate
-                schedules.
+                That's it! You are in the driver's seat and cruise control is on. Enjoy the
+                view. Check the production calendar for a quick view of finite-capacity loading
+                on work centers and time-phased inventory levels. Bottlenecks are easy to spot
+                by the red flags. Run your favorite report to view schedule data the way you like it.
               </p>
               <p className="text-slate-600">
-                Top-level changes can be implemented with a single mouse click. Resource
-                Manager-DB gives you complete control over your production schedule while
-                keeping the complexity hidden behind an intuitive interface.
+                Need to correct a schedule? Quickly adjust working calendar, shift available
+                resources, and click to reschedule. For effortless cruise control of your
+                business, simply make the top level changes and regenerate the master schedule
+                with a click of the mouse. Change delivery due dates, split up quantities,
+                combine forward and reverse scheduling; all the options for a quick adjustment
+                are under your immediate control.
               </p>
             </div>
           </div>
@@ -272,6 +275,9 @@ export default function ResourceManagerDBInDepthPage() {
             </div>
             <div className="flex items-start gap-2">
               <span className="text-slate-600">• Regenerate schedules with new priorities</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-slate-600">• Sequence any time</span>
             </div>
             <div className="flex items-start gap-2">
               <span className="text-slate-600">• Complete inventory management</span>
@@ -309,7 +315,7 @@ export default function ResourceManagerDBInDepthPage() {
             {/* Gantt Report */}
             <div>
               <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/10/rmscreen2.jpg"
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/07b.jpg"
                 alt="Gantt Report"
                 className="mb-3 w-full rounded-lg"
               />
