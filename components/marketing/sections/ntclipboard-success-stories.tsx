@@ -173,7 +173,10 @@ export function NTClipboardSuccessStories(): React.JSX.Element {
               Customer Success Stories
             </h1>
             <p className="mx-auto mt-4 max-w-4xl text-lg text-muted-foreground">
-              Discover how our customers have achieved great success with our solutions.
+              Click on logos or Read More to view just a sample of our customers' success stories. You too can realize great success by working with <strong>US</strong>!
+            </p>
+            <p className="mx-auto mt-2 max-w-4xl text-lg text-muted-foreground">
+              Contact <strong>US</strong> today to discover how easy and affordable it is to become even more competitive and profitable through efficient production planning, scheduling, tracking, combined with improved communications.
             </p>
           </div>
         </div>
