@@ -148,10 +148,8 @@ export function ResourceManagementBlog() {
           {/* Blog Posts Grid */}
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {blogPosts.map((post, index) => (
-              <Card
-                key={index}
-                className="group overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-              >
+              <Link key={index} href={post.href} className="block">
+                <Card className="group h-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer">
                 <div className="aspect-video overflow-hidden bg-muted">
                   <img
                     src={post.image}
@@ -197,7 +195,8 @@ export function ResourceManagementBlog() {
                     </Button>
                   </Link>
                 </CardContent>
-              </Card>
+                </Card>
+              </Link>
             ))}
           </div>
         </div>

@@ -198,10 +198,8 @@ export function NTClipboardSuccessStories(): React.JSX.Element {
 
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {successStories.map((story) => (
-              <Card
-                key={story.id}
-                className="group overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-              >
+              <Link key={story.id} href={story.href} className="block">
+                <Card className="group h-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer">
                 <div className="aspect-video overflow-hidden bg-muted">
                   <Image
                     src={story.logo}
@@ -241,7 +239,8 @@ export function NTClipboardSuccessStories(): React.JSX.Element {
                     </Button>
                   </Link>
                 </CardContent>
-              </Card>
+                </Card>
+              </Link>
             ))}
           </div>
         </div>
