@@ -125,8 +125,15 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
         />
 
         <div className="mx-auto mt-8 max-w-7xl">
-          {/* Contact CTA */}
+          {/* Introduction */}
           <div className="mb-6 text-center">
+            <p className="mb-4 text-lg text-slate-700">
+              Discover powerful Production Planning and Scheduling Solutions
+              that help manufacturers boost efficiency—from Excel job shop tools
+              to advanced APS software that works either standalone or
+              integrates with your ERP. We look forward to resolving your
+              manufacturing scheduling challenges.
+            </p>
             <p className="mb-6 text-lg text-slate-700">
               Contact us to discuss which product is the best fit for your
               application and budget.
