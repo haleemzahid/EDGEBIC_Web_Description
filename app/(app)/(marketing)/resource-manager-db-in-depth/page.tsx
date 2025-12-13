@@ -226,17 +226,15 @@ export default function ResourceManagerDBInDepthPage() {
             system.
           </p>
 
-          {/* Gantt Report */}
-          <div className="mb-8 grid items-center gap-8 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* Gantt Report */}
             <div>
               <img
                 src="https://www.usersolutions.com/wp-content/uploads/2022/10/rmscreen2.jpg"
                 alt="Gantt Report"
-                className="w-full rounded-lg"
+                className="mb-3 w-full rounded-lg"
               />
-            </div>
-            <div>
-              <h3 className="mb-3 text-xl font-bold">Gantt Report</h3>
+              <h3 className="mb-2 text-lg font-bold">Gantt Report</h3>
               <p className="text-muted-foreground">
                 A great top-level view of all activity with details only a click
                 away. Instantly check the due dates of all jobs in schedule,
@@ -244,74 +242,58 @@ export default function ResourceManagerDBInDepthPage() {
                 meet critical dates.
               </p>
             </div>
-          </div>
 
-          {/* Summary Report */}
-          <div className="mb-8 grid items-center gap-8 md:grid-cols-2">
-            <div className="order-2 md:order-1">
-              <h3 className="mb-3 text-xl font-bold">Summary Report</h3>
+            {/* Summary Report */}
+            <div>
+              <img
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/sumrpt.jpg"
+                alt="Summary Report"
+                className="mb-3 w-full rounded-lg"
+              />
+              <h3 className="mb-2 text-lg font-bold">Summary Report</h3>
               <p className="text-muted-foreground">
                 The report will tell you what you need to buy or make, how much,
                 and when – all consolidated on a single sheet. An instant, top
                 level MRP Report for all products and workcenter loading.
               </p>
             </div>
-            <div className="order-1 md:order-2">
-              <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/10/sumrpt.jpg"
-                alt="Summary Report"
-                className="w-full rounded-lg"
-              />
-            </div>
-          </div>
 
-          {/* Item Report */}
-          <div className="mb-8 grid items-center gap-8 md:grid-cols-2">
+            {/* Item Report */}
             <div>
               <img
                 src="https://www.usersolutions.com/wp-content/uploads/2022/10/item.jpg"
                 alt="Item Report"
-                className="w-full rounded-lg"
+                className="mb-3 w-full rounded-lg"
               />
-            </div>
-            <div>
-              <h3 className="mb-3 text-xl font-bold">Item Report</h3>
+              <h3 className="mb-2 text-lg font-bold">Item Report</h3>
               <p className="text-muted-foreground">
                 Summarizes all requirements per part number. Ideal for
                 WorkCenter Loading, listing each job with start/completion times
                 and requirements.
               </p>
             </div>
-          </div>
 
-          {/* Calendar Report */}
-          <div className="mb-8 grid items-center gap-8 md:grid-cols-2">
-            <div className="order-2 md:order-1">
-              <h3 className="mb-3 text-xl font-bold">Calendar Report</h3>
+            {/* Calendar Report */}
+            <div>
+              <img
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/07b.jpg"
+                alt="Calendar Report"
+                className="mb-3 w-full rounded-lg"
+              />
+              <h3 className="mb-2 text-lg font-bold">Calendar Report</h3>
               <p className="text-muted-foreground">
                 View and print the schedule in familiar "wall calendar" format.
               </p>
             </div>
-            <div className="order-1 md:order-2">
-              <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/10/07b.jpg"
-                alt="Calendar Report"
-                className="w-full rounded-lg"
-              />
-            </div>
-          </div>
 
-          {/* Workcenter Report */}
-          <div className="mb-8 grid items-center gap-8 md:grid-cols-2">
+            {/* Workcenter Report */}
             <div>
               <img
                 src="https://www.usersolutions.com/wp-content/uploads/2022/10/RPT-DD1-300x241-1.png"
                 alt="Workcenter Report"
-                className="w-full rounded-lg"
+                className="mb-3 w-full rounded-lg"
               />
-            </div>
-            <div>
-              <h3 className="mb-3 text-xl font-bold">Workcenter Report</h3>
+              <h3 className="mb-2 text-lg font-bold">Workcenter Report</h3>
               <p className="text-muted-foreground">
                 Instant, real-time views of all critical workcenter activity by:
                 daily loading, backlog, % utilization, hours available and
@@ -320,37 +302,29 @@ export default function ResourceManagerDBInDepthPage() {
                 features a daily workcenter "to-do" list.
               </p>
             </div>
-          </div>
 
-          {/* Routing & Tree Report */}
-          <div className="mb-8 grid items-center gap-8 md:grid-cols-2">
-            <div className="order-2 md:order-1">
-              <h3 className="mb-3 text-xl font-bold">Routing & Tree Report</h3>
+            {/* Routing & Tree Report */}
+            <div>
+              <img
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/tree.jpg"
+                alt="Routing & Tree Report"
+                className="mb-3 w-full rounded-lg"
+              />
+              <h3 className="mb-2 text-lg font-bold">Routing & Tree Report</h3>
               <p className="text-muted-foreground">
                 Intuitive reports for visual bill-of-resource verification,
                 process flow and schedule feedback.
               </p>
             </div>
-            <div className="order-1 md:order-2">
-              <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/10/tree.jpg"
-                alt="Routing & Tree Report"
-                className="w-full rounded-lg"
-              />
-            </div>
-          </div>
 
-          {/* Production Report */}
-          <div className="mb-8 grid items-center gap-8 md:grid-cols-2">
+            {/* Production Report */}
             <div>
               <img
                 src="https://www.usersolutions.com/wp-content/uploads/2022/10/prodrpt.jpg"
                 alt="Production Report"
-                className="w-full rounded-lg"
+                className="mb-3 w-full rounded-lg"
               />
-            </div>
-            <div>
-              <h3 className="mb-3 text-xl font-bold">Production Report</h3>
+              <h3 className="mb-2 text-lg font-bold">Production Report</h3>
               <p className="text-muted-foreground">
                 Perfect for traveler or work order printout. Automatically
                 reconciles inventory and capacity for a job and lists sequence
@@ -359,12 +333,15 @@ export default function ResourceManagerDBInDepthPage() {
                 and variance reporting.
               </p>
             </div>
-          </div>
 
-          {/* Purchasing & Receiving */}
-          <div className="mb-8 grid items-center gap-8 md:grid-cols-2">
-            <div className="order-2 md:order-1">
-              <h3 className="mb-3 text-xl font-bold">Purchasing & Receiving</h3>
+            {/* Purchasing & Receiving */}
+            <div>
+              <img
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/porpt.jpg"
+                alt="Purchasing & Receiving Report"
+                className="mb-3 w-full rounded-lg"
+              />
+              <h3 className="mb-2 text-lg font-bold">Purchasing & Receiving</h3>
               <p className="text-muted-foreground">
                 Resource Manager-DB excels with its integrated purchasing and
                 receiving module. Designed to meet the tough requirements for
@@ -373,13 +350,6 @@ export default function ResourceManagerDBInDepthPage() {
                 open/closed status, and adjust inventory automatically. Auto-email
                 RFQs and POs to vendors.
               </p>
-            </div>
-            <div className="order-1 md:order-2">
-              <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/10/porpt.jpg"
-                alt="Purchasing & Receiving Report"
-                className="w-full rounded-lg"
-              />
             </div>
           </div>
         </div>
