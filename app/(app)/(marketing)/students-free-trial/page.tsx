@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { Badge } from '@/components/ui/badge';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -13,12 +13,6 @@ export default function StudentsFreeTrialPage() {
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <div className="mb-6">
-              <Badge
-                variant="outline"
-                className="h-8 rounded-full border-blue-200 bg-blue-50 px-3 text-sm font-medium text-blue-700 shadow-sm"
-              >
-                STUDENTS FREE TRIAL
-              </Badge>
             </div>
             <h1 className="mb-6 bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-4xl font-bold text-transparent md:text-5xl">
               Resource Manager For Excel

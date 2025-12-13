@@ -1,7 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
 
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function BuyNowWXLPage() {
@@ -12,13 +11,7 @@ export default function BuyNowWXLPage() {
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <div className="mb-6">
-              <Badge
-                variant="outline"
-                className="h-8 rounded-full border-white/20 bg-white/10 px-3 text-sm font-medium text-white shadow-sm"
-              >
-                BUY NOW
-              </Badge>
-            </div>
+              </div>
             <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
               - Request Free Product
             </h1>

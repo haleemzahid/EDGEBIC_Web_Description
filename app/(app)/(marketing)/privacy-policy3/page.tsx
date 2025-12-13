@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { Badge } from '@/components/ui/badge';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function PrivacyPolicy3Page() {
@@ -11,12 +11,6 @@ export default function PrivacyPolicy3Page() {
       <section className="py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto text-center">
-            <Badge
-              variant="outline"
-              className="mb-6 h-8 rounded-full px-3 text-sm font-medium shadow-sm"
-            >
-              PRIVACY POLICY
-            </Badge>
             <h1 className="mb-6 bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-4xl font-bold text-transparent md:text-5xl">
               Privacy Policy
             </h1>

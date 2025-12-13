@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { Badge } from '@/components/ui/badge';
+
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
@@ -23,12 +23,6 @@ export default function SupplyChainVisibilityPage() {
       <section className="bg-gradient-to-br from-teal-50 via-white to-cyan-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
-            <Badge
-              variant="outline"
-              className="mb-6 h-8 rounded-full border-teal-600/30 px-4 text-sm font-medium text-teal-700 shadow-sm"
-            >
-              Supply Chain Solutions
-            </Badge>
             <h1 className="mb-6 bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-3xl font-bold text-transparent md:text-4xl lg:text-5xl">
               Supply Chain Visibility Solutions for Modern Manufacturers
             </h1>

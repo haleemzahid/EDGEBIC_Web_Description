@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Badge } from '@/components/ui/badge';
+
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function TestPage() {
@@ -10,12 +10,6 @@ export default function TestPage() {
       <section className="py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
-            <Badge
-              variant="outline"
-              className="mb-6 h-8 rounded-full px-3 text-sm font-medium shadow-sm"
-            >
-              TEST PAGE
-            </Badge>
             <h1 className="mb-6 bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-4xl font-bold text-transparent sm:text-5xl md:text-6xl">
               Test Page
             </h1>

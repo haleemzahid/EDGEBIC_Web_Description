@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { Badge } from '@/components/ui/badge';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -12,12 +12,6 @@ export default function ExcelApplicationsPage() {
       <section className="bg-gradient-to-br from-green-50 via-white to-blue-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
-            <Badge
-              variant="outline"
-              className="mb-4 h-8 rounded-full border-green-600/30 px-3 text-sm font-medium text-green-700 shadow-sm"
-            >
-              Excel-Based Solutions
-            </Badge>
             <h1 className="mb-6 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-4xl font-bold text-transparent md:text-5xl">
               Excel Applications
             </h1>

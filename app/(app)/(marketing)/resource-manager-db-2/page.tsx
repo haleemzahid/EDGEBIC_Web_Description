@@ -15,33 +15,46 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
       <GridSection hideVerticalGridLines>
         <div className="container pt-6">
           <div className="mx-auto max-w-7xl">
-            {/* Text and Video Section */}
-            <div className="grid gap-8 lg:grid-cols-2">
-              {/* Text on Left */}
-              <div className="space-y-4">
-                <h2 className="text-3xl font-bold ">Resource Manager DB</h2>
-                <p className="text-[18px] leading-relaxed text-slate-600">
-                  Resource Manager-DB (RMDB) is a flexible and affordable production
-                  planning, scheduling, and tracking solution that is designed to
-                  adapt to your operations. We can work with whatever data you have
-                  in to achieve better production scheduling, just easier and
-                  quicker than you ever thought possible. Give{' '}
-                  <em className="font-semibold">US</em> a chance to prove it by
-                  scheduling a Live Demo today!
-                </p>
-              </div>
-              {/* Video on Right */}
-              <div className="overflow-hidden rounded-lg border shadow-lg">
-                <div className="aspect-video">
-                  <video
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/12/RMDB%20updated%20thumbnail.mp4"
+            {/* Navigation Pills */}
+            {/* <div className="mb-6 flex flex-wrap justify-center gap-3">
+                            {navigationItems.map((item, index) => (
+                                <Button
+                                    key={index}
+                                    variant={item.label === "Summary" ? "default" : "outline"}
+                                    size="sm"
+                                    className="group relative"
+                                    asChild
+                                >
+                                    <Link 
+                                        href={item.href}
+                                        {...(item.external && { target: "_blank", rel: "noopener noreferrer" })}
+                                        className="flex items-center gap-1"
+                                    >
+                                        {item.label}
+                                        {item.external && <ExternalLink className="size-3" />}
+                                    </Link>
+                                </Button>
+                            ))}
+                        </div> */}
+
+            {/* Hero Header */}
+            <div className="mb-6 text-center">
+              <SiteHeading
+                title="Resource Manager DB"
+                description="Resource Manager-DB (RMDB) is a flexible and affordable production planning, scheduling, and tracking solution that is designed to adapt to your operations. We can work with whatever data you have to achieve better production scheduling, just easier and quicker than you ever thought possible. Give US a chance to prove it by scheduling a Live Demo today!"
+              />
+            </div>
+
+            {/* Video Section */}
+            <div className="mb-6">
+              <div className="relative mx-auto max-w-7xl overflow-hidden rounded-2xl border bg-slate-100 shadow-2xl">
+                <div className="relative aspect-video">
+                  <VideoPlayer
+                    videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE%20BI%20User%20Solutions.mp4"
                     title="Resource Manager DB Demo"
-                    className="size-full"
-                    controls
-                    playsInline
-                  >
-                    Your browser does not support the video tag.
-                  </video>
+                    thumbnail="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
+                    onPlayStateChange={setIsVideoPlaying}
+                  />
                 </div>
               </div>
             </div>

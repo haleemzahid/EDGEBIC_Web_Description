@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { Badge } from '@/components/ui/badge';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -11,12 +11,6 @@ export default function ProductionSchedulingProductsPage() {
       <section className="bg-gradient-to-br from-blue-50 via-white to-purple-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
-            <Badge
-              variant="outline"
-              className="mb-4 h-8 rounded-full border-blue-600/30 px-3 text-sm font-medium text-blue-700 shadow-sm"
-            >
-              Production Planning & Scheduling
-            </Badge>
             <h1 className="mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-4xl font-bold text-transparent md:text-5xl">
               Production Planning and Scheduling Solutions
             </h1>

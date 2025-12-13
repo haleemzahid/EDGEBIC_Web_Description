@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 
 import { JSLDownloadForm } from '@/components/marketing/sections/jsl-download-form';
-import { Badge } from '@/components/ui/badge';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { createTitle } from '@/lib/utils';
 
@@ -18,12 +18,6 @@ export default function JSLDownloadPage(): React.JSX.Element {
     <div className="container mx-auto px-4 pt-6">
       {/* Page Badge */}
       <div className="mb-6 text-center">
-        <Badge
-          variant="outline"
-          className="h-8 rounded-full px-3 text-sm font-medium shadow-sm"
-        >
-          Download
-        </Badge>
       </div>
       {/* Header Section */}
       <div className="mb-6 text-center">

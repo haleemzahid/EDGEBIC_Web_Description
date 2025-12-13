@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { Badge } from '@/components/ui/badge';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -26,12 +26,6 @@ export default function TopERPSolutions2016Page() {
       <section className="bg-gradient-to-br from-purple-50 via-white to-blue-50 py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
-            <Badge
-              variant="outline"
-              className="mb-6 h-8 rounded-full border-purple-600/30 px-4 text-sm font-medium text-purple-700 shadow-sm"
-            >
-              CIO Applications Recognition 2016
-            </Badge>
             <h1 className="mb-6 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-3xl font-bold text-transparent md:text-4xl lg:text-5xl">
               User Solutions, Inc. Named as One of Top ERP Solutions
               Transforming Business 2016
