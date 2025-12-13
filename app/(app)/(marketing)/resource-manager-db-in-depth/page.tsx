@@ -116,9 +116,7 @@ export default function ResourceManagerDBInDepthPage() {
                 and easy-to-implement tools.
               </p>
               <p className="text-slate-600">
-                The unique architecture facilitates custom configuration, in
-                hours or days, vs. typical custom programming taking weeks or
-                months.
+                The unique architecture facilitates custom configuration, in hours or days, vs. typical custom programming taking weeks or months. By driving our product development based on your requests, combined with the rapid custom configuration abilities of RMDB, the result is a solution that fits your operation like a glove, quickly and affordably. Featuring easy integration with Excel, ERP, accounting, custom or other legacy systems, RMDB will provide you unsurpassed improvements in production planning and scheduling and enterprise-wide communication.
               </p>
             </div>
           </div>
