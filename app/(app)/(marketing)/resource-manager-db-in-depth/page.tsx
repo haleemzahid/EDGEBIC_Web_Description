@@ -199,19 +199,43 @@ export default function ResourceManagerDBInDepthPage() {
         </div>
       </section>
 
-      {/* Relax, Cruise Control is on Section */}
+      {/* Check the MAP Section */}
       <section className="pt-6">
         <div className="container mx-auto max-w-7xl px-4">
+          <h2 className="mb-6 text-2xl font-bold">Check the "MAP"</h2>
           <div className="grid items-center gap-8 md:grid-cols-2">
-            <div>
+            <div className="flex justify-center">
               <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/10/rmscreen2.jpg"
-                alt="RMDB Schedule Interface"
-                className="w-full rounded-lg shadow-md"
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/usmap.gif"
+                alt="Treasure Map illustration"
+                className="max-w-xs"
               />
             </div>
             <div>
-              <h2 className="mb-4 text-2xl font-bold">Relax, Cruise Control is on</h2>
+              <p className="mb-4 text-slate-600">
+                <span className="px-1">Where do you need to go?</span> Which orders need to be
+                shipped when? Resource Manager features a simple, single, screen to control
+                your whole operation.
+              </p>
+              <p className="mb-4 text-slate-600">
+                Enter (or link with outside system), the quantities and due dates. Optionally
+                add detailed customer or order information. Now schedule.
+              </p>
+              <p className="text-slate-600">
+                Only Resource Manager gives you quick and easy top level control for recognizing
+                the immediate benefits of an integrated manufacturing system
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Relax, Cruise Control is on Section */}
+      <section className="pt-6">
+        <div className="container mx-auto max-w-7xl px-4">
+          <h2 className="mb-6 text-2xl font-bold">Relax, Cruise Control is on</h2>
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
               <p className="mb-4 text-slate-600">
                 That's it! You are in the driver's seat and cruise control is on. Enjoy the
                 view. Check the production calendar for a quick view of finite-capacity loading
@@ -226,6 +250,13 @@ export default function ResourceManagerDBInDepthPage() {
                 combine forward and reverse scheduling; all the options for a quick adjustment
                 are under your immediate control.
               </p>
+            </div>
+            <div>
+              <img
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-MainMenu.png"
+                alt="RMDB Main Menu Interface"
+                className="w-full rounded-lg shadow-md"
+              />
             </div>
           </div>
         </div>
@@ -419,36 +450,6 @@ export default function ResourceManagerDBInDepthPage() {
           </div>
         </div>
       </section>
-
-      {/* Target Markets */}
-      <section className="pt-6">
-        <div className="container mx-auto max-w-7xl px-4">
-          <div className="grid items-center gap-8 md:grid-cols-2">
-            <div>
-              <h2 className="mb-4 text-2xl font-bold">Who Uses RMDB?</h2>
-              <ul className="space-y-2 text-slate-600">
-                <li>• Job shops</li>
-                <li>• Small-medium manufacturers</li>
-                <li>• Multi-nationals</li>
-              </ul>
-              <p className="mt-4 text-slate-600">
-                Featuring easy integration with Excel, ERP, accounting, custom
-                or other legacy systems, RMDB will provide you unsurpassed
-                improvements in production planning and scheduling and
-                enterprise-wide communication.
-              </p>
-            </div>
-            <div>
-              <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/10/usmap.gif"
-                alt="US Map showing customer locations"
-                className="w-full"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Special Services & Partners Section */}
       <section className="pt-6">
         <div className="container mx-auto max-w-7xl px-4">
