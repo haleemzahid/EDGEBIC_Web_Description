@@ -3,14 +3,6 @@
 import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import {
-  Database,
-  Phone
-} from 'lucide-react';
-
-import { GridSection } from '@/components/marketing/fragments/grid-section';
-import { SiteHeading } from '@/components/marketing/fragments/site-heading';
-import { Button } from '@/components/ui/button';
 
 // Video Player Component
 function VideoPlayer({
@@ -81,52 +73,54 @@ export default function EDGEBIPage(): React.JSX.Element {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <GridSection hideVerticalGridLines>
-        <div className="container pt-6">
-          <div className="mx-auto max-w-7xl">
-            {/* Hero Header */}
-            <div className="mb-6 text-center">
-              <SiteHeading
-                title="Welcome to EDGEBIC"
-                description="EDGEBIC stands for Enhanced Drag-n-drop Graphical Environment with Business Intelligence. A graphical overlay for Resource Manager DB. Finally, you can manage your production scheduling with an intuitive graphical approach that can be easily customized."
-              />
-              <div className="flex flex-wrap justify-center gap-4">
-                <Button
-                  size="lg"
-                  className="bg-gradient-to-r from-purple-500 to-purple-700 text-white hover:from-purple-600 hover:to-purple-800"
+      <section className="py-8">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="grid items-center gap-8 lg:grid-cols-2">
+            {/* Left - Text Content */}
+            <div>
+              <h1 className="mb-6 text-3xl font-bold  md:text-4xl">
+                Welcome to EDGEBI
+              </h1>
+              <p className="mb-6 text-lg leading-relaxed text-slate-600">
+                EDGEBI can be installed and configured per user preferences. EDGEBI installs
+                separately from RMDB but they share the same database with advanced security
+                options, its easy to configure view only users or power users who can make
+                direct changes to schedule. Such as: Change length of any job segment, block
+                out capacity due to any event either planned or unplanned, create custom
+                reporting, add notes to any job, at any workcenter, as desired, and so much
+                more. Contact <em className="font-semibold">US</em> for a demo focused on your operations.
+              </p>
+
+              {/* Navigation Links */}
+              <div className="flex flex-wrap gap-6">
+                <Link
+                  href="#summary"
+                  className="text-lg text-slate-700  decoration-slate-300 underline-offset-4 hover:text-cyan-500 hover:decoration-cyan-500"
                 >
-                  <Link
-                    href="/contact-us"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2"
-                  >
-                    <Phone className="size-5" />
-                    Contact US for Demo
-                  </Link>
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
+                  Summary
+                </Link>
+                <Link
+                  href="/resource-manager-db-2"
+                  className="text-lg text-slate-700  decoration-slate-300 underline-offset-4 hover:text-cyan-500 hover:decoration-cyan-500"
                 >
-                  <Link
-                    href="/resource-manager-db-2"
-                    className="flex items-center gap-2"
-                  >
-                    <Database className="size-5" />
-                    View RMDB
-                  </Link>
-                </Button>
+                  RMDB
+                </Link>
+                <Link
+                  href="/contact-us"
+                  className="text-lg text-slate-700  decoration-slate-300 underline-offset-4 hover:text-cyan-500 hover:decoration-cyan-500"
+                >
+                  Live Demo
+                </Link>
               </div>
             </div>
 
-            {/* Video Section */}
-            <div className="mb-6">
-              <div className="relative mx-auto max-w-7xl overflow-hidden rounded-2xl border bg-slate-100 shadow-2xl">
+            {/* Right - Video */}
+            <div>
+              <div className="relative overflow-hidden rounded-lg shadow-lg">
                 <div className="relative aspect-video">
                   <VideoPlayer
-                    videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/12/EDGEBIC%20updated%20thumbnail.mp4"
-                    title="EDGE Suite Demo"
+                    videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/12/EDGEBI%20updated%20thumbnail.mp4"
+                    title="EDGEBI Demo"
                     thumbnail="https://www.usersolutions.com/wp-content/uploads/2022/11/Premium-1.png"
                     onPlayStateChange={setIsVideoPlaying}
                   />
@@ -135,20 +129,30 @@ export default function EDGEBIPage(): React.JSX.Element {
             </div>
           </div>
         </div>
-      </GridSection>
+      </section>
 
       {/* Overview Section */}
       <section
         id="summary"
-        className="bg-slate-50 py-6"
+        className="py-6"
       >
         <div className="container mx-auto max-w-7xl px-4">
-          <div className="mb-6 text-center">
-            <h2 className="mb-4 text-3xl font-bold md:text-4xl">Overview</h2>
-            <p className="text-xl text-muted-foreground">
-              EDGEBIC is the ideal interface for managing the schedule produced
-              by Resource Manager DB
+          <div className="mb-6">
+            <h2 className="mb-4 text-3xl font-bold text-cyan-500 md:text-4xl">Overview</h2>
+            <p className="text-xl text-slate-600">
+              Welcome to EDGEBI – A graphical overlay for Resource Manager DB EDGEBI stands for Enhanced Drag-n-drop Graphical Environment with Business Intelligence
             </p>
+          </div>
+
+          {/* First Image */}
+          <div className="mb-16 flex justify-center">
+            <Image
+              src="https://www.usersolutions.com/wp-content/uploads/2022/10/f1.png"
+              alt="EDGEBI Screenshot - Resource Manager DB interface"
+              width={800}
+              height={600}
+              className="rounded-lg shadow-lg"
+            />
           </div>
 
           <div className="space-y-16">
@@ -172,7 +176,7 @@ export default function EDGEBIPage(): React.JSX.Element {
               </div>
               <div>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/f1.png"
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/f2.png"
                   alt="Screenshot of a project management software interface"
                   width={600}
                   height={400}
