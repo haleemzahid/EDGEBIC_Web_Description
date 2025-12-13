@@ -137,22 +137,23 @@ export default function EDGEBIPage(): React.JSX.Element {
         className="py-6"
       >
         <div className="container mx-auto max-w-7xl px-4">
-          <div className="mb-6">
-            <h2 className="mb-4 text-3xl font-bold text-cyan-500 md:text-4xl">Overview</h2>
-            <p className="text-xl text-slate-600">
-              Welcome to EDGEBI – A graphical overlay for Resource Manager DB EDGEBI stands for Enhanced Drag-n-drop Graphical Environment with Business Intelligence
-            </p>
-          </div>
-
-          {/* First Image */}
-          <div className="mb-16 flex justify-center">
-            <Image
-              src="https://www.usersolutions.com/wp-content/uploads/2022/10/f1.png"
-              alt="EDGEBI Screenshot - Resource Manager DB interface"
-              width={800}
-              height={600}
-              className="rounded-lg shadow-lg"
-            />
+          {/* Overview Header with Image Side by Side */}
+          <div className="mb-16 grid items-center gap-8 lg:grid-cols-2">
+            <div>
+              <h2 className="mb-4 text-3xl font-bold  md:text-4xl">Overview</h2>
+              <p className="text-md text-slate-600">
+                Welcome to EDGEBI – A graphical overlay for Resource Manager DB EDGEBI stands for Enhanced Drag-n-drop Graphical Environment with Business Intelligence
+              </p>
+            </div>
+            <div>
+              <Image
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/f1.png"
+                alt="EDGEBI Screenshot - Resource Manager DB interface"
+                width={800}
+                height={600}
+                className="rounded-lg shadow-lg"
+              />
+            </div>
           </div>
 
           <div className="space-y-16">
@@ -207,7 +208,7 @@ export default function EDGEBIPage(): React.JSX.Element {
               </div>
               <div className="lg:order-1">
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/f2.png"
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/f3.png"
                   alt="Colorful project management Gantt chart with timeline"
                   width={600}
                   height={400}
@@ -232,36 +233,8 @@ export default function EDGEBIPage(): React.JSX.Element {
               </div>
               <div>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/f3.png"
-                  alt="Color-coded project timeline chart with percentage completion"
-                  width={600}
-                  height={400}
-                  className="rounded-lg shadow-lg"
-                />
-              </div>
-            </div>
-
-            {/* Fourth Feature */}
-            <div className="grid items-center gap-8 lg:grid-cols-2">
-              <div className="space-y-6 lg:order-2">
-                <h3 className="text-2xl font-bold">
-                  Advanced Scheduling Interface
-                </h3>
-                <p className="text-lg leading-relaxed">
-                  EDGEBIC is the perfect, interactive, view for your
-                  application. Contact US to discuss your specific application
-                  and challenges and let us prove out the solution with a free
-                  Proof Of Concept using your data!
-                </p>
-                <p className="text-lg leading-relaxed">
-                  With solutions for any application and budget, from job shops
-                  on up, better production scheduling is only a click away.
-                </p>
-              </div>
-              <div className="lg:order-1">
-                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/f4.png"
-                  alt="Color-coded project scheduling Gantt chart screenshot"
+                  alt="Color-coded project timeline chart with percentage completion"
                   width={600}
                   height={400}
                   className="rounded-lg shadow-lg"
