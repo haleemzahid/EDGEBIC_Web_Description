@@ -3,33 +3,7 @@
 import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import {
-  Activity,
-  ArrowRight,
-  BarChart3,
-  Calendar,
-  CheckCircle,
-  Clock,
-  Cpu,
-  Database,
-  DollarSign,
-  ExternalLink,
-  FileText,
-  Layers,
-  Mail,
-  Network,
-  Phone,
-  PieChart,
-  Play,
-  Settings,
-  Shield,
-  Star,
-  Target,
-  TrendingUp,
-  Users,
-  Wrench,
-  Zap
-} from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 
 import { GridSection } from '@/components/marketing/fragments/grid-section';
 import { SiteHeading } from '@/components/marketing/fragments/site-heading';
@@ -83,102 +57,22 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
   const [isVideoPlaying, setIsVideoPlaying] = React.useState(false);
 
   const features = [
-    {
-      icon: Calendar,
-      title: 'Finite Capacity Planning & Scheduling',
-      description:
-        'Advanced planning with real-time capacity constraints and resource optimization'
-    },
-    {
-      icon: BarChart3,
-      title: 'Advanced Planning and Scheduling',
-      description:
-        'Sophisticated APS functionality for complex operations and multi-resource coordination'
-    },
-    {
-      icon: Settings,
-      title: 'MRP and Inventory Management',
-      description:
-        'Complete material requirements planning integration with inventory tracking'
-    },
-    {
-      icon: Zap,
-      title: 'Routings and Priority Scheduling',
-      description:
-        'Flexible routing options with priority-based scheduling and alternate workcenters'
-    },
-    {
-      icon: CheckCircle,
-      title: "Easy 'what-if' Analysis",
-      description:
-        'Quick scenario planning and impact analysis for better decision making'
-    },
-    {
-      icon: Shield,
-      title: 'Purchasing and Receiving',
-      description:
-        'Streamlined procurement and receiving processes with vendor management'
-    },
-    {
-      icon: Activity,
-      title: 'Downtime Analysis and Reporting',
-      description:
-        'Comprehensive downtime tracking, analysis and performance reporting'
-    },
-    {
-      icon: Wrench,
-      title: 'Simple Maintenance and Updating',
-      description:
-        'Easy system maintenance with minimal downtime and quick updates'
-    },
-    {
-      icon: DollarSign,
-      title: 'Costing and Estimating',
-      description:
-        'Accurate cost calculations, project estimating and financial tracking'
-    },
-    {
-      icon: Network,
-      title: 'Integrating with All Systems',
-      description:
-        'Seamless integration with existing ERP systems and third-party software'
-    },
-    {
-      icon: Database,
-      title: 'Running Stand Alone or Networked',
-      description:
-        'Flexible deployment options for single users or multi-location organizations'
-    },
-    {
-      icon: Target,
-      title: 'Production Planning',
-      description:
-        'Comprehensive production planning capabilities with capacity management'
-    },
-    {
-      icon: Layers,
-      title: 'Dragging and Dropping Adjustments',
-      description:
-        'Intuitive drag-and-drop interface for quick schedule changes and adjustments'
-    },
-    {
-      icon: Cpu,
-      title: 'Concurrent and Intuitive Scheduling',
-      description:
-        'Multi-resource scheduling of Material, Workcenter and Labor Requirements simultaneously'
-    },
-    {
-      icon: TrendingUp,
-      title: 'Optional LP Optimization Integration',
-      description:
-        'Linear programming optimization for complex scenarios and constraint solving'
-    },
-    {
-      icon: PieChart,
-      title: 'Customized Reports',
-      description:
-        'Tailored reporting to meet your specific business needs and requirements'
-    }
+    'Finite Capacity Planning & Scheduling',
+    'Advanced Planning and Scheduling',
+    'MRP and Inventory Management',
+    'Routings and Priority Scheduling',
+    "Easy 'what-if' Analysis",
+    'Purchasing and Receiving',
+    'Downtime Analysis and Reporting',
+    'Simple Maintenance and Updating',
+    'Costing and Estimating',
+    'Integrating with All Systems',
+    'Running Stand Alone or Networked',
+    'Production Planning',
+    'Dragging and Dropping Adjustments',
+    'Concurrent and Intuitive Scheduling of one/multiple Resources (Material, Workcenter and Labor Requirements)',
+    'Optional (LP Optimization) Integration',
+    'Customized Reports'
   ];
 
   const navigationItems = [
@@ -281,14 +175,26 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
               />
             </div>
 
-            {/* Video Section */}
-            <div className="mb-6">
-              <div className="relative mx-auto max-w-7xl overflow-hidden rounded-2xl border bg-slate-100 shadow-2xl">
+            {/* Video Section - Two Videos */}
+            <div className="mb-6 grid gap-6 lg:grid-cols-2">
+              {/* Video 1: RMDB Demo */}
+              <div className="relative overflow-hidden rounded-2xl border bg-slate-100 shadow-xl">
                 <div className="relative aspect-video">
                   <VideoPlayer
                     videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/12/RMDB%20updated%20thumbnail.mp4"
                     title="Resource Manager DB Demo"
                     thumbnail="https://www.usersolutions.com/wp-content/uploads/2022/11/advanced-1.png"
+                    onPlayStateChange={setIsVideoPlaying}
+                  />
+                </div>
+              </div>
+              {/* Video 2: EDGE BI User Solutions */}
+              <div className="relative overflow-hidden rounded-2xl border bg-slate-100 shadow-xl">
+                <div className="relative aspect-video">
+                  <VideoPlayer
+                    videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE%20BI%20User%20Solutions.mp4"
+                    title="EDGE BI User Solutions"
+                    thumbnail="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
                     onPlayStateChange={setIsVideoPlaying}
                   />
                 </div>
@@ -375,19 +281,11 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
             </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 md:grid-cols-2">
             {features.map((feature, index) => (
-              <div
-                key={index}
-                className="group rounded-lg border bg-white p-6 shadow-sm transition-all hover:shadow-md"
-              >
-                <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-gradient-to-r from-orange-100 to-red-100 text-orange-600">
-                  <feature.icon className="size-6" />
-                </div>
-                <h3 className="mb-2 font-semibold">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {feature.description}
-                </p>
+              <div key={index} className="flex items-start gap-2">
+                <CheckCircle className="mt-1 size-5 shrink-0 text-green-600" />
+                <span className="text-slate-700">{feature}</span>
               </div>
             ))}
           </div>
