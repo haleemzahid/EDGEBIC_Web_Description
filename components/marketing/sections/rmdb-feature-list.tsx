@@ -1,22 +1,18 @@
 import { CheckCircle } from 'lucide-react';
 
 const features = [
-  'Finite Capacity Planning & Scheduling',
-  'Advanced Planning and Scheduling',
+  'Finite Planning & Scheduling',
   'MRP and Inventory Management',
   'Routings and Priority Scheduling',
-  "Easy 'what-if' Analysis",
+  'Easy "what-if" analysis',
   'Purchasing and Receiving',
-  'Downtime Analysis and Reporting',
-  'Simple Maintenance and Updating',
+  'Forecasting',
   'Costing and Estimating',
-  'Integrating with All Systems',
-  'Running Stand Alone or Networked',
-  'Production Planning',
-  'Dragging and Dropping Adjustments',
-  'Concurrent and Intuitive Scheduling of one/multiple Resources (Material, Workcenter and Labor Requirements)',
-  'Optional (LP Optimization) Integration',
-  'Customized Reports'
+  'Integrates with ALL systems',
+  'APS and Lean Manufacturing',
+  'Ideal for Lean Manufacturing',
+  'Run stand alone or networked',
+  'Production Planning'
 ];
 
 export function RMDBFeatureList() {

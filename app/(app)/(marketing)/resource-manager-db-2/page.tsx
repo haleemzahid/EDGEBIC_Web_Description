@@ -19,8 +19,8 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
             <div className="grid gap-8 lg:grid-cols-2">
               {/* Text on Left */}
               <div className="space-y-4">
-                <h2 className="text-3xl font-bold text-cyan-500">Resource Manager DB</h2>
-                <p className="text-lg leading-relaxed">
+                <h2 className="text-3xl font-bold ">Resource Manager DB</h2>
+                <p className="text-[18px] leading-relaxed text-slate-600">
                   Resource Manager-DB (RMDB) is a flexible and affordable production
                   planning, scheduling, and tracking solution that is designed to
                   adapt to your operations. We can work with whatever data you have
@@ -52,7 +52,7 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
       {/* Navigation Tabs */}
       <section className="pt-6">
         <div className="container mx-auto max-w-7xl px-4">
-          <div className="flex flex-wrap gap-6 text-lg">
+          <div className="flex flex-wrap gap-6 text-[18px]">
             <Link href="#summary" className="text-slate-700 hover:text-cyan-500">
               Summary
             </Link>
@@ -80,10 +80,10 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
       {/* Summary Section */}
       <section id="summary" className="pt-6">
         <div className="container mx-auto max-w-7xl px-4">
-          <h2 className="mb-6 text-2xl font-bold text-cyan-500">
+          <h2 className="mb-6 text-2xl font-bold ">
             RESOURCE MANAGER DB: SUMMARY
           </h2>
-          <p className="text-lg leading-relaxed">
+          <p className="text-[18px] leading-relaxed text-slate-600">
             If you have tried to use your ERP for creating a viable Production Schedule,
             and still end up with a tangle of custom Excel Reports, messy whiteboard or
             worse yet, late shipments, we can help. If you don't even have an ERP system,

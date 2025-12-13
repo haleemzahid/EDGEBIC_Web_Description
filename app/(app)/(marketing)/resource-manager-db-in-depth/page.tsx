@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { Button } from '@/components/ui/button';
+import { RMDBFeatureList } from '@/components/marketing/sections/rmdb-feature-list';
 
 export default function ResourceManagerDBInDepthPage() {
   return (
@@ -8,18 +8,35 @@ export default function ResourceManagerDBInDepthPage() {
       {/* Hero Section */}
       <section className="py-6">
         <div className="container mx-auto max-w-7xl px-4 text-center">
-          <h1 className="mb-4 text-3xl font-bold md:text-4xl">
+          <h1 className="text-3xl font-bold">
             Resource Manager DB: In Depth
           </h1>
-          <p className="mb-6 text-lg text-muted-foreground">
-            Production Planning, Scheduling and Tracking System
-          </p>
-          <div className="flex justify-center gap-4">
-            <Link href="/product-downloads">
-              <Button variant="outline">Live Demo</Button>
+        </div>
+      </section>
+
+      {/* Navigation Tabs */}
+      <section className="pt-6">
+        <div className="container flex items-center justify-center mx-auto max-w-7xl px-4">
+          <div className="flex flex-wrap gap-6 text-lg">
+            <Link href="/resource-manager-db-2#summary" className="text-slate-700 hover:text-cyan-500">
+              Summary
             </Link>
-            <Link href="/pricing">
-              <Button>Request Free Product</Button>
+            <Link href="/resource-manager-db-in-depth" className="text-slate-700 hover:text-cyan-500">
+              In Depth
+            </Link>
+            <Link
+              href="https://www.usersolutions.com/wp-content/uploads/2022/10/rmdbquickstart23.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-700 hover:text-cyan-500"
+            >
+              Quick Start
+            </Link>
+            <Link href="/edgebi" className="text-slate-700 hover:text-cyan-500">
+              EDGEBI
+            </Link>
+            <Link href="/contact-us" className="text-slate-700 hover:text-cyan-500">
+              Live Demo
             </Link>
           </div>
         </div>
@@ -31,7 +48,7 @@ export default function ResourceManagerDBInDepthPage() {
           <div className="grid items-center gap-8 md:grid-cols-2">
             <div>
               <h2 className="mb-4 text-2xl font-bold">Overview</h2>
-              <p className="mb-4 text-muted-foreground">
+              <p className="mb-4 text-slate-600">
                 Resource Manager-DB (RMDB) is an affordable, flexible and
                 quick-to-implement approach to resolve your production planning,
                 scheduling and tracking challenges. Designed by customers just
@@ -39,7 +56,7 @@ export default function ResourceManagerDBInDepthPage() {
                 (dashboard) requiring minimal transactions to keep the system
                 accurate.
               </p>
-              <p className="text-muted-foreground">
+              <p className="text-slate-600">
                 RMDB's unique, customer driven architecture allows you to start
                 very simply, focusing on one area at a time, enabling you to
                 provide minimal information in order to recognize immediate
@@ -53,6 +70,19 @@ export default function ResourceManagerDBInDepthPage() {
                 className="w-full rounded-lg shadow-md"
               />
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Make Manufacturing Great Again Section */}
+      <section className="pt-6">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="flex justify-center">
+            <img
+              src="https://www.usersolutions.com/wp-content/uploads/2022/10/MMGAsmall_Colver.png"
+              alt="Make Manufacturing Great Again - Vintage Car"
+              className="max-w-md rounded-lg"
+            />
           </div>
         </div>
       </section>
@@ -72,7 +102,7 @@ export default function ResourceManagerDBInDepthPage() {
               <h2 className="mb-4 text-2xl font-bold">
                 Why Choose Resource Manager-DB?
               </h2>
-              <p className="mb-4 text-muted-foreground">
+              <p className="mb-4 text-slate-600">
                 If you find you are still using manual white boards and/or Excel
                 for trying to manage your production scheduling, you will find
                 RMDB a refreshing option. RMDB's intuitive and flexible
@@ -80,12 +110,12 @@ export default function ResourceManagerDBInDepthPage() {
                 pre-sales, implementation walk-through to demonstrate exactly
                 how the system can benefit your operations.
               </p>
-              <p className="mb-4 text-muted-foreground">
+              <p className="mb-4 text-slate-600">
                 Since 1991, our mission has been to help manufacturers solve
                 manufacturing and operations management problems with intuitive
                 and easy-to-implement tools.
               </p>
-              <p className="text-muted-foreground">
+              <p className="text-slate-600">
                 The unique architecture facilitates custom configuration, in
                 hours or days, vs. typical custom programming taking weeks or
                 months.
@@ -96,57 +126,7 @@ export default function ResourceManagerDBInDepthPage() {
       </section>
 
       {/* Core Features Section */}
-      <section className="pt-6">
-        <div className="container mx-auto max-w-7xl px-4">
-          <h2 className="mb-6 text-2xl font-bold">Core Features</h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <p className="font-medium  text-lg">Finite Planning & Scheduling</p>
-              <p className="text-[18px] text-muted-foreground">Realistic schedules based on actual capacity</p>
-            </div>
-            <div>
-              <p className="font-medium text-lg">MRP and Inventory Management</p>
-              <p className="text-[18px] text-muted-foreground">Complete material requirements planning</p>
-            </div>
-            <div>
-              <p className="font-medium text-lg">Routings and Priority Scheduling</p>
-              <p className="text-[18px] text-muted-foreground">Detailed production workflows with priorities</p>
-            </div>
-            <div>
-              <p className="font-medium text-lg">Easy "what-if" analysis</p>
-              <p className="text-[18px] text-muted-foreground">Test scenarios before implementation</p>
-            </div>
-            <div>
-              <p className="font-medium text-lg">Purchasing and Receiving</p>
-              <p className="text-[18px] text-muted-foreground">Integrated procurement management</p>
-            </div>
-            <div>
-              <p className="font-medium text-lg">Forecasting</p>
-              <p className="text-[18px] text-muted-foreground">Plan for future demand</p>
-            </div>
-            <div>
-              <p className="font-medium text-lg">Costing and Estimating</p>
-              <p className="text-[18px] text-muted-foreground">Accurate job cost tracking</p>
-            </div>
-            <div>
-              <p className="font-medium text-lg">Integrates with ALL systems</p>
-              <p className="text-[18px] text-muted-foreground">Works with Excel, ERP, accounting, and legacy systems</p>
-            </div>
-            <div>
-              <p className="font-medium text-lg">APS and Lean Manufacturing</p>
-              <p className="text-[18px] text-muted-foreground">Advanced planning optimized for lean operations</p>
-            </div>
-            <div>
-              <p className="font-medium text-lg">Run stand alone or networked</p>
-              <p className="text-[18px] text-muted-foreground">Flexible deployment options</p>
-            </div>
-            <div>
-              <p className="font-medium text-lg">Production Planning</p>
-              <p className="text-[18px] text-muted-foreground">Comprehensive manufacturing planning tools</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <RMDBFeatureList />
 
       {/* Works The Way You Do Section */}
       <section className="pt-6">
@@ -154,7 +134,7 @@ export default function ResourceManagerDBInDepthPage() {
           <div className="grid items-center gap-8 md:grid-cols-2">
             <div>
               <h2 className="mb-4 text-2xl font-bold">Works The Way You Do</h2>
-              <p className="mb-6 text-muted-foreground">
+              <p className="mb-6 text-slate-600">
                 Resource Manager-DB is the only system that is designed to adapt
                 to your specific operational needs and nuances. RMDB utilizes
                 your existing data resulting in rapid implementation and
@@ -193,17 +173,17 @@ export default function ResourceManagerDBInDepthPage() {
                 Cruise Control Software for your Manufacturing Enterprise
               </h2>
               <h3 className="mb-3 text-xl font-semibold">Fill'er Up</h3>
-              <p className="mb-4 text-muted-foreground">
+              <p className="mb-4 text-slate-600">
                 Resource Manager-DB lets you easily work with your current data.
                 Import directly into Resource Manager-DB and let RMDB
                 automatically fill in the details. You can even maintain this
                 data in other systems, such as ERP, then refresh on demand.
               </p>
-              <p className="mb-4 text-muted-foreground">
+              <p className="mb-4 text-slate-600">
                 <strong>IMPORTANT TAKEAWAY #1:</strong> Load, edit, reload
                 entire data sets with the click of a button.
               </p>
-              <p className="text-muted-foreground">
+              <p className="text-slate-600">
                 <strong>IMPORTANT TAKEAWAY #2:</strong> Reports run on any
                 version of Excel anywhere — Cloud, tablet, laptop, desktop,
                 on-site, off-site and enterprise wide.
@@ -213,11 +193,54 @@ export default function ResourceManagerDBInDepthPage() {
         </div>
       </section>
 
+      {/* Fine-Tuning Options Section */}
+      <section className="pt-6">
+        <div className="container mx-auto max-w-7xl px-4">
+          <h2 className="mb-4 text-2xl font-bold">Fine-Tuning Options</h2>
+          <p className="mb-6 text-slate-600">
+            Beyond basic cruise control, RMDB allows you to progressively implement
+            detailed execution plans as your needs grow:
+          </p>
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            <div className="flex items-start gap-2">
+              <span className="text-slate-600">• Prioritize job sequences</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-slate-600">• Adjust inventory levels</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-slate-600">• Track receiving activities</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-slate-600">• Generate purchase orders</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-slate-600">• Regenerate schedules with new priorities</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-slate-600">• Complete inventory management</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-slate-600">• Feedback actual manufacturing data</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-slate-600">• Run adjusted net plans</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-slate-600">• Instantly reconfigure systems</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-slate-600">• Update BOMs and Routings to reflect reality</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Reporting Section */}
       <section className="pt-6">
         <div className="container mx-auto max-w-7xl px-4">
           <h2 className="mb-4 text-2xl font-bold">Powerful Reporting</h2>
-          <p className="mb-8 text-muted-foreground">
+          <p className="mb-8 text-slate-600">
             With quick, powerful, and intuitive reporting, Resource Manager-DB
             stands above the crowd in its ability to present the important data
             in an easy and meaningful way. In addition to the robust reports
@@ -235,7 +258,7 @@ export default function ResourceManagerDBInDepthPage() {
                 className="mb-3 w-full rounded-lg"
               />
               <h3 className="mb-2 text-lg font-bold">Gantt Report</h3>
-              <p className="text-muted-foreground">
+              <p className="text-slate-600">
                 A great top-level view of all activity with details only a click
                 away. Instantly check the due dates of all jobs in schedule,
                 drill down to find bottlenecks, adjust capacity and schedule to
@@ -251,7 +274,7 @@ export default function ResourceManagerDBInDepthPage() {
                 className="mb-3 w-full rounded-lg"
               />
               <h3 className="mb-2 text-lg font-bold">Summary Report</h3>
-              <p className="text-muted-foreground">
+              <p className="text-slate-600">
                 The report will tell you what you need to buy or make, how much,
                 and when – all consolidated on a single sheet. An instant, top
                 level MRP Report for all products and workcenter loading.
@@ -266,7 +289,7 @@ export default function ResourceManagerDBInDepthPage() {
                 className="mb-3 w-full rounded-lg"
               />
               <h3 className="mb-2 text-lg font-bold">Item Report</h3>
-              <p className="text-muted-foreground">
+              <p className="text-slate-600">
                 Summarizes all requirements per part number. Ideal for
                 WorkCenter Loading, listing each job with start/completion times
                 and requirements.
@@ -281,7 +304,7 @@ export default function ResourceManagerDBInDepthPage() {
                 className="mb-3 w-full rounded-lg"
               />
               <h3 className="mb-2 text-lg font-bold">Calendar Report</h3>
-              <p className="text-muted-foreground">
+              <p className="text-slate-600">
                 View and print the schedule in familiar "wall calendar" format.
               </p>
             </div>
@@ -294,7 +317,7 @@ export default function ResourceManagerDBInDepthPage() {
                 className="mb-3 w-full rounded-lg"
               />
               <h3 className="mb-2 text-lg font-bold">Workcenter Report</h3>
-              <p className="text-muted-foreground">
+              <p className="text-slate-600">
                 Instant, real-time views of all critical workcenter activity by:
                 daily loading, backlog, % utilization, hours available and
                 bottlenecks. Allows for quick overtime scheduling and other
@@ -311,7 +334,7 @@ export default function ResourceManagerDBInDepthPage() {
                 className="mb-3 w-full rounded-lg"
               />
               <h3 className="mb-2 text-lg font-bold">Routing & Tree Report</h3>
-              <p className="text-muted-foreground">
+              <p className="text-slate-600">
                 Intuitive reports for visual bill-of-resource verification,
                 process flow and schedule feedback.
               </p>
@@ -325,7 +348,7 @@ export default function ResourceManagerDBInDepthPage() {
                 className="mb-3 w-full rounded-lg"
               />
               <h3 className="mb-2 text-lg font-bold">Production Report</h3>
-              <p className="text-muted-foreground">
+              <p className="text-slate-600">
                 Perfect for traveler or work order printout. Automatically
                 reconciles inventory and capacity for a job and lists sequence
                 of operations and products to fulfill order on time. Includes
@@ -342,7 +365,7 @@ export default function ResourceManagerDBInDepthPage() {
                 className="mb-3 w-full rounded-lg"
               />
               <h3 className="mb-2 text-lg font-bold">Purchasing & Receiving</h3>
-              <p className="text-muted-foreground">
+              <p className="text-slate-600">
                 Resource Manager-DB excels with its integrated purchasing and
                 receiving module. Designed to meet the tough requirements for
                 Lean Manufacturing. Generate purchase orders via Kanban or
@@ -361,12 +384,12 @@ export default function ResourceManagerDBInDepthPage() {
           <div className="grid items-center gap-8 md:grid-cols-2">
             <div>
               <h2 className="mb-4 text-2xl font-bold">Who Uses RMDB?</h2>
-              <ul className="space-y-2 text-muted-foreground">
+              <ul className="space-y-2 text-slate-600">
                 <li>• Job shops</li>
                 <li>• Small-medium manufacturers</li>
                 <li>• Multi-nationals</li>
               </ul>
-              <p className="mt-4 text-muted-foreground">
+              <p className="mt-4 text-slate-600">
                 Featuring easy integration with Excel, ERP, accounting, custom
                 or other legacy systems, RMDB will provide you unsurpassed
                 improvements in production planning and scheduling and
@@ -378,6 +401,38 @@ export default function ResourceManagerDBInDepthPage() {
                 src="https://www.usersolutions.com/wp-content/uploads/2022/10/usmap.gif"
                 alt="US Map showing customer locations"
                 className="w-full"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Services & Partners Section */}
+      <section className="pt-6">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <h2 className="mb-4 text-2xl font-bold">Services & Partners</h2>
+              <p className="mb-4 text-slate-600">
+                User Solutions offers direct services to help you get the most out of
+                Resource Manager-DB:
+              </p>
+              <ul className="mb-4 space-y-2 text-slate-600">
+                <li>• Automatic data integration with other systems</li>
+                <li>• Customized reports tailored to your needs</li>
+                <li>• On-site training and configuration</li>
+              </ul>
+              <p className="text-slate-600">
+                We have also partnered with complementary product and service providers
+                to deliver complete solutions that address your unique manufacturing
+                challenges.
+              </p>
+            </div>
+            <div className="flex items-center justify-center">
+              <img
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/ERP_Scheduling-300x245-1.png"
+                alt="ERP Scheduling Integration"
+                className="w-full max-w-md rounded-lg"
               />
             </div>
           </div>
