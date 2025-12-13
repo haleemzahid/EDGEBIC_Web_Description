@@ -2,9 +2,9 @@
 
 import * as React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 import { GridSection } from '@/components/marketing/fragments/grid-section';
-import { SiteHeading } from '@/components/marketing/fragments/site-heading';
 import { RMDBFeatureList } from '@/components/marketing/sections/rmdb-feature-list';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -15,18 +15,24 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
       <GridSection hideVerticalGridLines>
         <div className="container pt-6">
           <div className="mx-auto max-w-7xl">
-            {/* Hero Header */}
-            <div className="mb-6 text-center">
-              <SiteHeading
-                title="Resource Manager DB"
-                description="Resource Manager-DB (RMDB) is a flexible and affordable production planning, scheduling, and tracking solution that is designed to adapt to your operations. We can work with whatever data you have to achieve better production scheduling, just easier and quicker than you ever thought possible. Give US a chance to prove it by scheduling a Live Demo today!"
-              />
-            </div>
-
-            {/* Video Section - Single Video */}
-            <div className="mb-6">
-              <div className="relative mx-auto max-w-4xl overflow-hidden rounded-lg border shadow-lg">
-                <div className="relative aspect-video">
+            {/* Text and Video Section */}
+            <div className="grid gap-8 lg:grid-cols-2">
+              {/* Text on Left */}
+              <div className="space-y-4">
+                <h2 className="text-3xl font-bold text-cyan-500">Resource Manager DB</h2>
+                <p className="text-lg leading-relaxed">
+                  Resource Manager-DB (RMDB) is a flexible and affordable production
+                  planning, scheduling, and tracking solution that is designed to
+                  adapt to your operations. We can work with whatever data you have
+                  in to achieve better production scheduling, just easier and
+                  quicker than you ever thought possible. Give{' '}
+                  <em className="font-semibold">US</em> a chance to prove it by
+                  scheduling a Live Demo today!
+                </p>
+              </div>
+              {/* Video on Right */}
+              <div className="overflow-hidden rounded-lg border shadow-lg">
+                <div className="aspect-video">
                   <video
                     src="https://www.usersolutions.com/wp-content/uploads/2022/12/RMDB%20updated%20thumbnail.mp4"
                     title="Resource Manager DB Demo"
@@ -43,41 +49,17 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
         </div>
       </GridSection>
 
-      {/* Summary Section */}
-      <section id="summary" className="py-6">
+      {/* Screenshot Section */}
+      <section className="py-6">
         <div className="container mx-auto max-w-7xl px-4">
-          <div className="mb-6 text-center">
-            <h2 className="mb-4 text-3xl font-bold md:text-4xl">
-              RESOURCE MANAGER DB: SUMMARY
-            </h2>
-          </div>
-
-          <div className="grid gap-8 lg:grid-cols-2">
-            <div className="space-y-4">
-              <p className="text-lg leading-relaxed">
-                If you have tried to use your ERP for creating a viable
-                Production Schedule, and still end up with a tangle of custom
-                Excel Reports, messy whiteboard or worse yet, late shipments, we
-                can help. If you don't even have an ERP system, and are
-                struggling with production scheduling, we can help.
-              </p>
-              <p className="text-lg leading-relaxed">
-                Alternate workcenters, complex routings & processes, discrete
-                and/or batch, multiple constraints (labor, machines, materials,
-                etc.), advanced drag and drop graphical calendar screens,
-                downtime management, sub-assemblies, optimization, and much
-                more.
-              </p>
-            </div>
-            <div>
-              <Image
-                src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
-                alt="Screenshot of production scheduling software interface"
-                width={1024}
-                height={483}
-                className="rounded-lg shadow-lg"
-              />
-            </div>
+          <div className="flex justify-center">
+            <Image
+              src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
+              alt="Screenshot of production scheduling software interface"
+              width={1024}
+              height={483}
+              className="rounded-lg shadow-lg"
+            />
           </div>
         </div>
       </section>
