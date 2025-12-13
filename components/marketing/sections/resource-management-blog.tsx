@@ -177,7 +177,9 @@ export function ResourceManagementBlog() {
                     {post.category}
                   </Badge>
                   <CardTitle className="line-clamp-2 transition-colors group-hover:text-blue-600">
-                    {post.title}
+                    <Link href={post.href}>
+                      {post.title}
+                    </Link>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
@@ -203,8 +205,8 @@ export function ResourceManagementBlog() {
 
       {/* Awards Banner */}
       <section>
-        <div className="container">
-          <div className="mx-auto max-w-7xl">
+        <div className=" mx-auto container">
+          <div className="">
             <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
               <CardContent className="p-8 text-center">
                 <h3 className="mb-6 text-2xl font-bold text-slate-900">
