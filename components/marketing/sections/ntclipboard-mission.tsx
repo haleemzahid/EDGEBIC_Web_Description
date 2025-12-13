@@ -21,7 +21,6 @@ export function NTClipboardMission(): React.JSX.Element {
         className="container pt-6"
       >
         <SiteHeading
-          badge="Our Mission"
           title="Make Manufacturing Great Again!"
           description="Empowering manufacturers since 1991 with solutions that fit like a glove"
         />

@@ -37,7 +37,6 @@ export function NTClipboardWhyUs(): React.JSX.Element {
     <GridSection hideVerticalGridLines>
       <div className="container py-6">
         <SiteHeading
-          badge="Why User Solutions?"
           title="Proven Results Since 1991"
           description="Three decades of helping manufacturers optimize their production with solutions that actually work"
         />

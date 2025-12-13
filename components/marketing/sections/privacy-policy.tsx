@@ -66,7 +66,6 @@ export function PrivacyPolicy(): React.JSX.Element {
     <GridSection>
       <div className="container space-y-16 py-6">
         <SiteHeading
-          badge="Legal"
           title="Privacy Policy"
           description="Learn how we collect, use, and protect your data. Please read carefully to understand our practices."
         />

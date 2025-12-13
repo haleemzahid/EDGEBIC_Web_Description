@@ -39,7 +39,6 @@ export async function NTClipboardPricing(): Promise<React.JSX.Element> {
         id="NTClipboardPricing"
       >
         <SiteHeading
-          badge="Pricing"
           title="Simple, One-Time Pricing"
           description="No subscriptions, no recurring fees. Pay once, use forever."
         />

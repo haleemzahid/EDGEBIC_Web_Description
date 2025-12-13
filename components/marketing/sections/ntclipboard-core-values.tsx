@@ -83,7 +83,6 @@ export function NTClipboardCoreValues(): React.JSX.Element {
     <GridSection hideVerticalGridLines>
       <div className="container py-6">
         <SiteHeading
-          badge="Core Values"
           title="What Drives Us Forward"
           description="The principles that have guided EDGEBIC for over three decades"
         />

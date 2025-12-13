@@ -48,7 +48,6 @@ export function PricingPlans(): React.JSX.Element {
     <GridSection>
       <div className="container space-y-20 py-6">
         <SiteHeading
-          badge="Pricing"
           title="Plans for your business"
           description={`From early-stage startups to growing enterprises, ${AppInfo.APP_NAME} has you covered.`}
         />

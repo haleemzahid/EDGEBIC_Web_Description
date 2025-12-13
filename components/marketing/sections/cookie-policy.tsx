@@ -61,7 +61,6 @@ export function CookiePolicy(): React.JSX.Element {
     <GridSection>
       <div className="container space-y-16 py-6">
         <SiteHeading
-          badge="Legal"
           title="Cookie Policy"
           description="Learn how we use cookies and similar technologies to improve your experience on our platform."
         />

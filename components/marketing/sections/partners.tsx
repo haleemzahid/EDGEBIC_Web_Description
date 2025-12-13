@@ -137,7 +137,6 @@ export function PartnersSection(): React.JSX.Element {
     <GridSection hideVerticalGridLines>
       <div className="container pt-6">
         <SiteHeading
-          badge="Partners"
           title="Manufacturing Software Partners"
           description="Our global network of certified partners helping manufacturers worldwide implement advanced planning, scheduling, and tracking solutions"
         />

@@ -142,12 +142,6 @@ export default function StudentsPage(): React.JSX.Element {
             {/* Hero Header */}
             <div className=" text-center">
               <SiteHeading
-                badge={
-                  <>
-                    <GraduationCap className="size-4" />
-                    STUDENT RESOURCES
-                  </>
-                }
                 title="Resource Manager For Excel"
                 description="MRP and Shop Scheduling on a flexible and powerful platform. Ambitious Operations Management students can use RMX to gain valuable hands-on experience in mastering important skills in many areas of Manufacturing Planning, Scheduling, and Execution."
               />

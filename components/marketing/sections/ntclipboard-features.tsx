@@ -129,7 +129,6 @@ export function NTClipboardFeatures(): React.JSX.Element {
     <GridSection hideVerticalGridLines>
       <div className="container py-6">
         <SiteHeading
-          badge="Features"
           title="Why Choose EDGEBIC?"
           description="Powerful features designed to revolutionize your production planning and scheduling"
         />

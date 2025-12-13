@@ -276,7 +276,6 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
             {/* Hero Header */}
             <div className="mb-6 text-center">
               <SiteHeading
-                badge="Production Planning"
                 title="Resource Manager DB"
                 description="Resource Manager-DB (RMDB) is a flexible and affordable production planning, scheduling, and tracking solution that is designed to adapt to your operations. We can work with whatever data you have to achieve better production scheduling, just easier and quicker than you ever thought possible. Give US a chance to prove it by scheduling a Live Demo today!"
               />

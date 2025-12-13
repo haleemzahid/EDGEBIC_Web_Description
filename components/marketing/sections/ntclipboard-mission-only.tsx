@@ -12,7 +12,6 @@ export function NTClipboardMissionOnly(): React.JSX.Element {
     <GridSection hideVerticalGridLines>
       <div className="container py-6">
         <SiteHeading
-          badge="Our Mission"
           title="Make Manufacturing Great Again!"
           description="Empowering manufacturers since 1991 with solutions that fit like a glove"
         />

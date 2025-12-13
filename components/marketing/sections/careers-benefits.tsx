@@ -33,7 +33,6 @@ export function CareersBenefits(): React.JSX.Element {
       <div className="space-y-20 pt-20">
         <div className="container">
           <SiteHeading
-            badge="Careers"
             title="Join our team"
             description={`Work remotely from wherever you want and help us build the future of ${AppInfo.APP_NAME}`}
           />

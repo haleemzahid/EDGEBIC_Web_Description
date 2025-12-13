@@ -71,7 +71,6 @@ export function TermsOfUse(): React.JSX.Element {
     <GridSection>
       <div className="container space-y-16 py-6">
         <SiteHeading
-          badge="Legal"
           title="Terms of Use"
           description="By accessing our platform, you agree to the terms outlined below. Please read them carefully to ensure you understand your rights and responsibilities."
         />

@@ -181,7 +181,6 @@ export default function Product2Page(): React.JSX.Element {
           <div className="mx-auto max-w-7xl">
             <div className="mb-6 text-center">
               <SiteHeading
-                badge="Product Comparison"
                 title="Production Planning and Scheduling Solutions"
                 description="Contact US to discuss which product is the best fit for your application and budget. From a simple Excel based job shop scheduling application to Advanced Planning and Scheduling software (APS) that works either standalone or integrates with your ERP, we look forward to resolving your manufacturing scheduling challenges."
               />

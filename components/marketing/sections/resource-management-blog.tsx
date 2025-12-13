@@ -104,7 +104,6 @@ export function ResourceManagementBlog() {
         <div className="container relative">
           <div className="mx-auto max-w-7xl text-center">
             <SiteHeading
-              badge="Resource Management Insights"
               title={
                 <>
                   Resource Management

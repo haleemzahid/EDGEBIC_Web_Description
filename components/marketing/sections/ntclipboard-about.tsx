@@ -107,7 +107,6 @@ export function NTClipboardAbout(): React.JSX.Element {
     <GridSection hideVerticalGridLines>
       <div className="container pt-6">
         <SiteHeading
-          badge="About Us"
           title="Meet Our Team"
           description="The experts behind 30+ years of manufacturing software excellence"
         />

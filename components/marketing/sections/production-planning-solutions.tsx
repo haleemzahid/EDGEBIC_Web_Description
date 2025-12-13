@@ -110,7 +110,6 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
       <div className="container pt-6">
         {/* Hero Section */}
         <SiteHeading
-          badge="Production Planning & Scheduling"
           title={
             <a
               href="https://en.wikipedia.org/wiki/Production_planning"

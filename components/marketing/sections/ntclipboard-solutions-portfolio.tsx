@@ -13,7 +13,6 @@ export function NTClipboardSolutionsPortfolio(): React.JSX.Element {
     <GridSection hideVerticalGridLines>
       <div className="container pt-6">
         <SiteHeading
-          badge="Solutions Portfolio"
           title="User Driven Solutions"
           description="Custom-tailored manufacturing solutions designed around your specific needs"
         />

@@ -164,7 +164,6 @@ export default function EDGEBIPage(): React.JSX.Element {
             {/* Hero Header */}
             <div className="mb-6 text-center">
               <SiteHeading
-                badge="Advanced Scheduling"
                 title="Welcome to EDGEBIC"
                 description="EDGEBIC stands for Enhanced Drag-n-drop Graphical Environment with Business Intelligence. A graphical overlay for Resource Manager DB. Finally, you can manage your production scheduling with an intuitive graphical approach that can be easily customized."
               />

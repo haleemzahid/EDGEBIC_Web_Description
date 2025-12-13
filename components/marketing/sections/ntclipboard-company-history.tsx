@@ -231,7 +231,6 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
     <GridSection hideVerticalGridLines>
       <div className="container py-6">
         <SiteHeading
-          badge="Company History"
           title="Providing Production Planning and Scheduling Solutions since 1991"
           description="Over three decades of innovation in manufacturing resource planning and production scheduling"
         />
