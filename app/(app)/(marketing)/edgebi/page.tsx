@@ -4,19 +4,8 @@ import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
-  ArrowUpDown,
-  BarChart3,
-  Calendar,
   Database,
-  Eye,
-  LineChart,
-  MapPin,
-  Maximize2,
-  MousePointer,
-  Phone,
-  RefreshCw,
-  Settings,
-  Shield
+  Phone
 } from 'lucide-react';
 
 import { GridSection } from '@/components/marketing/fragments/grid-section';
@@ -88,72 +77,6 @@ export default function EDGEBIPage(): React.JSX.Element {
     }
   ];
 
-  const features = [
-    {
-      icon: MousePointer,
-      title: 'Enhanced Drag-n-drop Environment',
-      description: 'Intuitive graphical interface for easy schedule management'
-    },
-    {
-      icon: BarChart3,
-      title: 'Business Intelligence Integration',
-      description: 'Advanced analytics and reporting capabilities built-in'
-    },
-    {
-      icon: Eye,
-      title: 'Color-coded Schedule Visualization',
-      description: 'Up-to-the-minute status display with intuitive color coding'
-    },
-    {
-      icon: ArrowUpDown,
-      title: 'Drag & Drop Job Segments',
-      description:
-        'Move any job segment between workcenters with simple mouse clicks'
-    },
-    {
-      icon: Maximize2,
-      title: 'Real-time Segment Resizing',
-      description: 'Adjust job duration based on real-time production issues'
-    },
-    {
-      icon: Calendar,
-      title: 'Capacity Blocking',
-      description: 'Block out capacity for downtime or maintenance events'
-    },
-    {
-      icon: MapPin,
-      title: 'Heat Map Visualization',
-      description: 'View capacity loading for entire schedule at a glance'
-    },
-    {
-      icon: LineChart,
-      title: 'Schedule Key Dates Reports',
-      description: 'Export detailed activity reports to Excel for analysis'
-    },
-    {
-      icon: Settings,
-      title: 'Customized Reporting',
-      description: 'Tailored reports configured per your specific requests'
-    },
-    {
-      icon: Shield,
-      title: 'Advanced Security Options',
-      description:
-        'Configure view-only users or power users with edit permissions'
-    },
-    {
-      icon: Database,
-      title: 'Shared Database Architecture',
-      description:
-        'Installs separately from RMDB while sharing the same database'
-    },
-    {
-      icon: RefreshCw,
-      title: 'Real-time Schedule Updates',
-      description:
-        'Press update button to reschedule and reflect reality instantly'
-    }
-  ];
 
   return (
     <div className="min-h-screen">
@@ -345,91 +268,6 @@ export default function EDGEBIPage(): React.JSX.Element {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-6">
-        <div className="container mx-auto max-w-7xl px-4">
-          <div className="mb-6 text-center">
-            <h2 className="mb-4 text-3xl font-bold md:text-4xl">
-              Key Features
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              Comprehensive capabilities for enhanced production scheduling
-              management
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className="group rounded-lg border bg-white p-6 shadow-sm transition-all hover:shadow-md"
-              >
-                <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-gradient-to-r from-purple-100 to-purple-200 text-purple-600">
-                  <feature.icon className="size-6" />
-                </div>
-                <h3 className="mb-2 font-semibold">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {feature.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Capabilities Section */}
-      <section className="bg-slate-50 py-6">
-        <div className="container mx-auto max-w-7xl px-4">
-          <div className="text-center">
-            <h2 className="mb-6 text-3xl font-bold md:text-4xl">
-              EDGEBIC Capabilities
-            </h2>
-
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              <div className="rounded-lg bg-white p-6 shadow-lg">
-                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-                  <Settings className="size-8" />
-                </div>
-                <h3 className="mb-4 text-xl font-bold">User Configuration</h3>
-                <ul className="space-y-2 text-left text-sm text-muted-foreground">
-                  <li>• Change length of any job segment</li>
-                  <li>• Block out capacity for planned/unplanned events</li>
-                  <li>• Create custom reporting</li>
-                  <li>• Add notes to any job at any workcenter</li>
-                </ul>
-              </div>
-
-              <div className="rounded-lg bg-white p-6 shadow-lg">
-                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-                  <Eye className="size-8" />
-                </div>
-                <h3 className="mb-4 text-xl font-bold">Visual Management</h3>
-                <ul className="space-y-2 text-left text-sm text-muted-foreground">
-                  <li>• Color-coded schedule status</li>
-                  <li>• Heat map capacity visualization</li>
-                  <li>• Capacity utilization graphs</li>
-                  <li>• Interactive drag-and-drop interface</li>
-                </ul>
-              </div>
-
-              <div className="rounded-lg bg-white p-6 shadow-lg">
-                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-                  <BarChart3 className="size-8" />
-                </div>
-                <h3 className="mb-4 text-xl font-bold">
-                  Reporting & Analytics
-                </h3>
-                <ul className="space-y-2 text-left text-sm text-muted-foreground">
-                  <li>• Schedule Key Dates reports</li>
-                  <li>• Excel export capabilities</li>
-                  <li>• Customized reporting options</li>
-                  <li>• Business intelligence integration</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Awards Section */}
       <section className="pt-6">
