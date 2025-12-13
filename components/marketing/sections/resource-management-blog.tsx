@@ -53,7 +53,7 @@ const blogPosts = [
   {
     title: 'Li-ion Battery Production Scheduling Software',
     description:
-      'Resource Manager-DB V6 Transforms Li-ion Battery Production Scheduling. EDGEBIC, a leader in flexible production scheduling and planning software, has released Resource Manager-DB (RM-DB) V6 with enhanced capabilities for battery manufacturing.',
+      'Resource Manager-DB V6 Transforms Li-ion Battery Production Scheduling. User Solutions, a leader in flexible production scheduling and planning software, has released Resource Manager-DB (RM-DB) V6.',
     date: 'September 8, 2022',
     readTime: '4 min read',
     category: 'Software',
@@ -64,7 +64,7 @@ const blogPosts = [
   {
     title: 'Scheduling System Narrows Skills Gap for Fire-Rated Glass',
     description:
-      "EDGEBIC's Resource Manager-DB enables Technical Glass Products to strategically cross-train their way to optimization. Learn how advanced scheduling systems can help bridge critical skills gaps in specialized manufacturing.",
+      "Scheduling System Narrows Skills Gap for Fire-Rated Glass. User Solutions' Resource Manager-DB enables Technical Glass Products to strategically cross-train their way to optimization.",
     date: 'September 8, 2022',
     readTime: '5 min read',
     category: 'Case Study',
@@ -74,9 +74,9 @@ const blogPosts = [
   },
   {
     title:
-      'Small Manufacturer Success: Planning, Scheduling, and Tracking Tools',
+      'Small Manufacturer and Job Shop Uses Planning, Scheduling, and Tracking Tools from User Solutions, Inc. to Become More Efficient and Competitive',
     description:
-      'Small Manufacturer and Job Shop Uses Planning, Scheduling, and Tracking Tools from EDGEBIC to Become More Efficient and Competitive. Resource Manager for Excel transforms operations for growing businesses.',
+      'Small Manufacturer and Job Shop Uses Planning, Scheduling, and Tracking Tools from User Solutions, Inc. to Become More Efficient and Competitive. Resource Manager for Excel transforms operations for growing businesses.',
     date: 'September 8, 2022',
     readTime: '6 min read',
     category: 'Success Story',
