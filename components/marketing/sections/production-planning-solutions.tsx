@@ -132,7 +132,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               that help manufacturers boost efficiency—from Excel job shop tools
               to advanced APS software that works either standalone or
               integrates with your ERP. We look forward to resolving your
-              manufacturing scheduling challenges.
+              manufacturing scheduling challenges. Schedule a Live Demo Today!
+              Choose the product that best suits your company's needs by using
+              our product matrix.
             </p>
             <p className="mb-6 text-lg text-slate-700">
               Contact us to discuss which product is the best fit for your
