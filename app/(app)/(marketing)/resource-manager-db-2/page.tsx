@@ -50,7 +50,7 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
       </GridSection>
 
       {/* Navigation Tabs */}
-      <section className="py-6">
+      <section className="pt-6">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="flex flex-wrap gap-6 text-lg">
             <Link href="#summary" className="text-slate-700 hover:text-cyan-500">
@@ -78,7 +78,7 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
       </section>
 
       {/* Summary Section */}
-      <section id="summary" className="py-6">
+      <section id="summary" className="pt-6">
         <div className="container mx-auto max-w-7xl px-4">
           <h2 className="mb-6 text-2xl font-bold text-cyan-500">
             RESOURCE MANAGER DB: SUMMARY
@@ -107,7 +107,7 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
       </section>
 
       {/* Screenshot Section */}
-      <section className="py-6">
+      <section className="pt-6">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="flex justify-center">
             <Image
@@ -124,17 +124,34 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
       {/* Features Section */}
       <RMDBFeatureList />
 
-      {/* Secondary Screenshot */}
-      <section className="py-6">
+      {/* Video and Screenshot Section */}
+      <section className="pt-6">
         <div className="container mx-auto max-w-7xl px-4">
-          <div className="flex justify-center">
-            <Image
-              src="https://www.usersolutions.com/wp-content/uploads/2022/07/rmdb11.png"
-              alt="Color-coded production job schedule spreadsheet"
-              width={800}
-              height={400}
-              className="rounded-lg shadow-lg"
-            />
+          <div className="grid gap-8 lg:grid-cols-2">
+            {/* Video on Left */}
+            <div className="overflow-hidden rounded-lg border shadow-lg">
+              <div className="aspect-video">
+                <video
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE%20BI%20User%20Solutions.mp4"
+                  title="EDGE BI User Solutions"
+                  className="size-full"
+                  controls
+                  playsInline
+                >
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            </div>
+            {/* Screenshot on Right */}
+            <div>
+              <Image
+                src="https://www.usersolutions.com/wp-content/uploads/2022/07/rmdb11.png"
+                alt="Color-coded production job schedule spreadsheet"
+                width={800}
+                height={400}
+                className="rounded-lg shadow-lg"
+              />
+            </div>
           </div>
         </div>
       </section>
