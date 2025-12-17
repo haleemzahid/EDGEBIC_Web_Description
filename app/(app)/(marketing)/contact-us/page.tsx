@@ -8,6 +8,8 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
+import { PopupButton } from 'react-calendly';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const RECAPTCHA_SITE_KEY =
@@ -122,6 +124,16 @@ export default function ContactUsPage() {
                     </li>
                   </ul>
 
+                  {/* Calendly Popup Button */}
+                  <div className="flex justify-center py-4">
+                    <PopupButton
+                      url="https://calendly.com/mudasirnadeem7979/30min"
+                      rootElement={document.documentElement}
+                      text="Schedule a Call"
+                      className="rounded-md bg-blue-600 px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+                    />
+                  </div>
+
                   {/* Contact Form */}
                   <div className="p-6">
                     <form
@@ -195,7 +207,7 @@ export default function ContactUsPage() {
                       {/* Product Interest & Where did you hear about us */}
                       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
-                          <select
+                          <select hidden
                             id="productInterest"
                             {...register('productInterest')}
                             className="w-full border-b border-input bg-transparent px-2 py-3 text-foreground focus:border-primary focus:outline-none"
@@ -219,7 +231,7 @@ export default function ContactUsPage() {
                           )}
                         </div>
                         <div>
-                          <select
+                          <select hidden
                             id="hearAboutUs"
                             {...register('hearAboutUs')}
                             className="w-full border-b border-input bg-transparent px-2 py-3 text-foreground focus:border-primary focus:outline-none"
@@ -244,7 +256,7 @@ export default function ContactUsPage() {
 
                       {/* Message */}
                       <div>
-                        <textarea
+                        <textarea hidden
                           id="message"
                           {...register('message')}
                           rows={4}
