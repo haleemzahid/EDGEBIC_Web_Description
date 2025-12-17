@@ -15,6 +15,7 @@ import {
 
 import { GridSection } from '@/components/marketing/fragments/grid-section';
 
+import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';

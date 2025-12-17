@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { GridSection } from '@/components/marketing/fragments/grid-section';
+import { SiteHeading } from '@/components/marketing/fragments/site-heading';
 import { RMDBFeatureList } from '@/components/marketing/sections/rmdb-feature-list';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -49,12 +50,16 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
             <div className="mb-6">
               <div className="relative mx-auto max-w-7xl overflow-hidden rounded-2xl border bg-slate-100 shadow-2xl">
                 <div className="relative aspect-video">
-                  <VideoPlayer
-                    videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE%20BI%20User%20Solutions.mp4"
+                  <video
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE%20BI%20User%20Solutions.mp4"
                     title="Resource Manager DB Demo"
-                    thumbnail="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
-                    onPlayStateChange={setIsVideoPlaying}
-                  />
+                    className="size-full"
+                    controls
+                    playsInline
+                    poster="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
+                  >
+                    Your browser does not support the video tag.
+                  </video>
                 </div>
               </div>
             </div>
