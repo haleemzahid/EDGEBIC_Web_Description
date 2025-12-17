@@ -22,7 +22,7 @@ export enum Routes {
   Docs = '/docs',
   Pricing = '/pricing',
   Blog = '/blog',
-  Calendar = '/calendar',
+  Calendar = '/dashboard/calendar',
   News = '/news',
   ProductDownloads = '/product-downloads',
   Students = '/students',
