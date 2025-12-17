@@ -1,16 +1,23 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { CheckCircle2 } from 'lucide-react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { useForm } from 'react-hook-form';
+import { PopupButton } from 'react-calendly';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-import { PopupButton } from 'react-calendly';
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 
 const RECAPTCHA_SITE_KEY =
   process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ||
@@ -32,7 +39,13 @@ export default function ContactUsPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [captchaValue, setCaptchaValue] = useState<string | null>(null);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [rootElement, setRootElement] = useState<HTMLElement | null>(null);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
+
+  useEffect(() => {
+    setRootElement(document.documentElement);
+  }, []);
 
   const {
     register,
@@ -40,7 +53,11 @@ export default function ContactUsPage() {
     reset,
     formState: { errors }
   } = useForm<ContactFormValues>({
-    resolver: zodResolver(contactFormSchema)
+    resolver: zodResolver(contactFormSchema),
+    defaultValues: {
+      productInterest: 'production-planning',
+      hearAboutUs: 'not-specified'
+    }
   });
 
   const onSubmit = async (data: ContactFormValues) => {
@@ -66,24 +83,22 @@ export default function ContactUsPage() {
         toast.success(
           "Thank you for contacting us! We'll get back to you within 24 hours."
         );
-        reset();
-        setCaptchaValue(null);
-        recaptchaRef.current?.reset();
-        router.push('/thankyou');
-      } else {
-        toast.error('Something went wrong. Please try again.');
       }
     } catch (error) {
       console.error('Error submitting form:', error);
-      toast.error('Failed to submit form. Please try again.');
     } finally {
       setIsSubmitting(false);
+      reset();
+      setCaptchaValue(null);
+      recaptchaRef.current?.reset();
+      setShowScheduleModal(true);
     }
   };
 
   const handleCaptchaChange = (value: string | null) => {
     setCaptchaValue(value);
   };
+
   return (
     <div className="min-h-screen">
       {/* Main Content */}
@@ -94,21 +109,24 @@ export default function ContactUsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-2xl font-bold">
-                    Let's Discuss YOUR Processes
+                    Let&apos;s Discuss YOUR Processes
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <p className="text-lg leading-relaxed">
                     Please email me with options for free templates and no-risk trials and/or book a quick free call to discuss your specific challenges!
                   </p>
+
                   {/* Calendly Popup Button */}
                   <div className="flex justify-center py-4">
-                    <PopupButton
-                      url="https://calendly.com/mudasirnadeem7979/30min"
-                      rootElement={document.documentElement}
-                      text="Schedule a Call"
-                      className="rounded-md bg-blue-600 px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700"
-                    />
+                    {rootElement && (
+                      <PopupButton
+                        url="https://calendly.com/mudasirnadeem7979/30min"
+                        rootElement={rootElement}
+                        text="Schedule a Call"
+                        className="rounded-md bg-blue-600 px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+                      />
+                    )}
                   </div>
 
                   {/* Contact Form */}
@@ -184,7 +202,8 @@ export default function ContactUsPage() {
                       {/* Product Interest & Where did you hear about us */}
                       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
-                          <select hidden
+                          <select
+                            hidden
                             id="productInterest"
                             {...register('productInterest')}
                             className="w-full border-b border-input bg-transparent px-2 py-3 text-foreground focus:border-primary focus:outline-none"
@@ -208,7 +227,8 @@ export default function ContactUsPage() {
                           )}
                         </div>
                         <div>
-                          <select hidden
+                          <select
+                            hidden
                             id="hearAboutUs"
                             {...register('hearAboutUs')}
                             className="w-full border-b border-input bg-transparent px-2 py-3 text-foreground focus:border-primary focus:outline-none"
@@ -233,7 +253,8 @@ export default function ContactUsPage() {
 
                       {/* Message */}
                       <div>
-                        <textarea hidden
+                        <textarea
+                          hidden
                           id="message"
                           {...register('message')}
                           rows={4}
@@ -291,6 +312,48 @@ export default function ContactUsPage() {
           </div>
         </div>
       </section>
+
+      {/* Schedule Meeting Modal */}
+      <Dialog open={showScheduleModal} onOpenChange={(open) => {
+        // Only allow closing via the X button or buttons, not by clicking outside
+        if (!open) return;
+        setShowScheduleModal(open);
+      }}>
+        <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+              <CheckCircle2 className="h-6 w-6 text-green-600" />
+            </div>
+            <DialogTitle className="text-center text-xl">
+              Thank You for Contacting Us!
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              We&apos;ve received your message and will get back to you within 24
+              hours. Would you like to schedule a meeting with us now?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-6 flex flex-col gap-3">
+            {rootElement && (
+              <PopupButton
+                url="https://calendly.com/mudasirnadeem7979/30min"
+                rootElement={rootElement}
+                text="Yes, Schedule a Meeting"
+                className="flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+              />
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setShowScheduleModal(false);
+                router.push('/thankyou');
+              }}
+              className="w-full rounded-md border border-gray-300 bg-white px-4 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            >
+              No Thanks, Maybe Later
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
