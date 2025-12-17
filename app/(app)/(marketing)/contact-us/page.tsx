@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckCircle2 } from 'lucide-react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { useForm } from 'react-hook-form';
-import { PopupButton } from 'react-calendly';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -40,12 +39,7 @@ export default function ContactUsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [captchaValue, setCaptchaValue] = useState<string | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [rootElement, setRootElement] = useState<HTMLElement | null>(null);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
-
-  useEffect(() => {
-    setRootElement(document.documentElement);
-  }, []);
 
   const {
     register,
@@ -117,16 +111,17 @@ export default function ContactUsPage() {
                     Please email me with options for free templates and no-risk trials and/or book a quick free call to discuss your specific challenges!
                   </p>
 
-                  {/* Calendly Popup Button */}
+                  {/* Calendly Button */}
                   <div className="flex justify-center py-4">
-                    {rootElement && (
-                      <PopupButton
-                        url="https://calendly.com/mudasirnadeem7979/30min"
-                        rootElement={rootElement}
-                        text="Schedule a Call"
-                        className="rounded-md bg-blue-600 px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700"
-                      />
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.open('https://calendly.com/mudasirnadeem7979/30min', '_blank');
+                      }}
+                      className="rounded-md bg-blue-600 px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+                    >
+                      Schedule a Call
+                    </button>
                   </div>
 
                   {/* Contact Form */}
@@ -333,14 +328,19 @@ export default function ContactUsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="mt-6 flex flex-col gap-3">
-            {rootElement && (
-              <PopupButton
-                url="https://calendly.com/mudasirnadeem7979/30min"
-                rootElement={rootElement}
-                text="Yes, Schedule a Meeting"
-                className="flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700"
-              />
-            )}
+            <button
+              type="button"
+              onClick={() => {
+                setShowScheduleModal(false);
+                // Small delay to let modal close before opening Calendly
+                setTimeout(() => {
+                  window.open('https://calendly.com/mudasirnadeem7979/30min', '_blank');
+                }, 100);
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+            >
+              Yes, Schedule a Meeting
+            </button>
             <button
               type="button"
               onClick={() => {
