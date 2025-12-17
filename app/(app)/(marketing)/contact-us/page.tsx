@@ -101,11 +101,6 @@ export default function ContactUsPage() {
           <div className="mx-auto max-w-7xl">
             <div className="w-full">
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-2xl font-bold">
-                    Let&apos;s Discuss YOUR Processes
-                  </CardTitle>
-                </CardHeader>
                 <CardContent className="space-y-6">
                   <p className="text-lg leading-relaxed">
                     Please email me with options for free templates and no-risk trials and/or book a quick free call to discuss your specific challenges!
