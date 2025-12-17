@@ -99,31 +99,8 @@ export default function ContactUsPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <p className="text-lg leading-relaxed">
-                    Instead of a one size fits all approach, lets discuss YOUR
-                    processes and challenges and explore situations to fit YOUR
-                    WAY. We can even use your data during a live demo meeting.
-                    Contact US by filling out the form below and we will be in
-                    touch to prepare custom demo.
+                    Please email me with options for free templates and no-risk trials and/or book a quick free call to discuss your specific challenges!
                   </p>
-
-                  <ul className="space-y-3 text-lg">
-                    <li className="flex items-start">
-                      <span className="mr-2 text-blue-600">•</span>
-                      Schedule a quick call to discuss your application.
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2 text-blue-600">•</span>
-                      Schedule a live, custom demo (We will be in contact to
-                      understand your application and obtain your actual
-                      data/reports).
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2 text-blue-600">•</span>
-                      We'll be periodically sending you updates about our new
-                      products and features
-                    </li>
-                  </ul>
-
                   {/* Calendly Popup Button */}
                   <div className="flex justify-center py-4">
                     <PopupButton
