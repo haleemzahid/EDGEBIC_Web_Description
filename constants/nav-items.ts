@@ -1,5 +1,6 @@
 import {
   // BellIcon,
+  CalendarIcon,
   // CodeIcon,
   // CreditCardIcon,
   FileTextIcon,
@@ -31,6 +32,11 @@ export const mainNavItems: NavItem[] = [
     title: 'Blog',
     href: 'https://payloadcms-theta.vercel.app/',
     icon: FileTextIcon
+  },
+  {
+    title: 'Calendar',
+    href: Routes.Calendar,
+    icon: CalendarIcon
   },
   {
     title: 'Settings',
