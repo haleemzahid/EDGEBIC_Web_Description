@@ -101,13 +101,13 @@ export default function ContactUsPage() {
           <div className="mx-auto max-w-7xl">
             <div className="w-full">
               <Card>
-                <CardContent className="space-y-6">
-                  <p className="text-lg leading-relaxed">
+                <CardContent>
+                  <p className="text-lg text-center pt-6 leading-relaxed">
                     Please email me with options for free templates and no-risk trials and/or book a quick free call to discuss your specific challenges!
                   </p>
 
                   {/* Calendly Button */}
-                  <div className="flex justify-center py-4">
+                  <div className="flex pt-3 justify-center">
                     <button
                       type="button"
                       onClick={() => {
