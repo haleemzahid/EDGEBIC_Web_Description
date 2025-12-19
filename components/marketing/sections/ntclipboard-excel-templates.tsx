@@ -163,20 +163,9 @@ export function NTClipboardExcelTemplates(): React.JSX.Element {
 
                 {/* Pricing */}
                 <div className="mb-6 rounded-lg bg-gray-50 p-4">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">
-                      Single User
-                    </span>
-                    <span className="text-lg font-bold text-green-600">
-                      {app.singleUserPrice}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">
-                      Five Users
-                    </span>
-                    <span className="text-lg font-bold text-green-600">
-                      {app.fiveUserPrice}
+                  <div className="flex items-center justify-center">
+                    <span className="text-2xl font-bold text-green-600">
+                      FREE
                     </span>
                   </div>
                 </div>
