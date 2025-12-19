@@ -162,7 +162,7 @@ export default function EDGEBIPage(): React.JSX.Element {
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div>
                   <p className="text-xl text-slate-700">
-                    Check out the color-coded schedule for up to the minute status on any job. Drag and drop any job segment from one workcenter to another workcenter with a simple click of a mouse, resize any segment based on real time issues – taking longer than planned, or shorter, you can even block out capacity for any downtime or maintenance event.
+                    Check out the color-coded schedule for up to the minute status on any job. Drag and drop any job segment from one workcenter to another workcenter with a simple click of a mouse, resize any segment based on real time issues – taking longer than planned, or shorter, you can even block out capacity for any downtime or maintenance event. Check out capacity utilization graph, finally press update button and reschedule to have schedule reflect reality.
                   </p>
                 </div>
                 <div>
