@@ -94,19 +94,27 @@ export function HeroContent(): React.JSX.Element {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col gap-4 sm:flex-row">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <button
                 onClick={handleFirstVideoButtonClick}
-                className="inline-flex items-center justify-center gap-2 rounded bg-[#004a8f] px-8 py-3.5 text-base font-semibold text-white transition-colors hover:bg-[#003d75]"
+                className="inline-flex items-center justify-center gap-2 rounded bg-[#004a8f] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#003d75]"
               >
                 Next Step
               </button>
               <button
                 onClick={handleSecondVideoButtonClick}
-                className="inline-flex items-center justify-center gap-2 rounded bg-transparent px-8 py-3.5 text-base font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                className="inline-flex items-center justify-center gap-2 rounded bg-transparent px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
               >
-                <Play className="size-5 fill-current" />
+                <Play className="size-4 fill-current" />
                 See how it works
+              </button>
+              <button
+                onClick={() => {
+                  window.open('https://calendly.com/mudasirnadeem7979/30min', '_blank');
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded border-2 border-[#004a8f] bg-transparent px-6 py-2.5 text-sm font-semibold text-[#004a8f] transition-colors hover:bg-[#004a8f] hover:text-white"
+              >
+                Schedule a Meeting
               </button>
             </div>
 
