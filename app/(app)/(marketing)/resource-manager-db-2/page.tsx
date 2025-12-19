@@ -4,73 +4,28 @@ import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { GridSection } from '@/components/marketing/fragments/grid-section';
-import { SiteHeading } from '@/components/marketing/fragments/site-heading';
 import { RMDBFeatureList } from '@/components/marketing/sections/rmdb-feature-list';
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function ResourceManagerDBPage(): React.JSX.Element {
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <GridSection hideVerticalGridLines>
-        <div className="container pt-6">
-          <div className="mx-auto max-w-7xl">
-            {/* Navigation Pills */}
-            {/* <div className="mb-6 flex flex-wrap justify-center gap-3">
-                            {navigationItems.map((item, index) => (
-                                <Button
-                                    key={index}
-                                    variant={item.label === "Summary" ? "default" : "outline"}
-                                    size="sm"
-                                    className="group relative"
-                                    asChild
-                                >
-                                    <Link 
-                                        href={item.href}
-                                        {...(item.external && { target: "_blank", rel: "noopener noreferrer" })}
-                                        className="flex items-center gap-1"
-                                    >
-                                        {item.label}
-                                        {item.external && <ExternalLink className="size-3" />}
-                                    </Link>
-                                </Button>
-                            ))}
-                        </div> */}
-
-            {/* Hero Header */}
-            <div className="mb-6 text-center">
-              <SiteHeading
-                title="Resource Manager DB"
-                description="Resource Manager-DB (RMDB) is a flexible and affordable production planning, scheduling, and tracking solution that is designed to adapt to your operations. We can work with whatever data you have to achieve better production scheduling, just easier and quicker than you ever thought possible. Give US a chance to prove it by scheduling a Live Demo today!"
-              />
-            </div>
-
-            {/* Video Section */}
-            <div className="mb-6">
-              <div className="relative mx-auto max-w-7xl overflow-hidden rounded-2xl border bg-slate-100 shadow-2xl">
-                <div className="relative aspect-video">
-                  <video
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE%20BI%20User%20Solutions.mp4"
-                    title="Resource Manager DB Demo"
-                    className="size-full"
-                    controls
-                    playsInline
-                    poster="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
-                  >
-                    Your browser does not support the video tag.
-                  </video>
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* Hero Section - Title centered */}
+      <section className="pt-6">
+        <div className="container mx-auto max-w-7xl px-4">
+          <h1 className="mb-4 text-center text-3xl font-bold text-slate-900 md:text-4xl">
+            Resource Manager DB
+          </h1>
+          <p className="mx-auto max-w-4xl text-center text-lg leading-relaxed text-slate-600">
+            Resource Manager-DB (RMDB) is a flexible and affordable production planning, scheduling, and tracking solution that is designed to adapt to your operations. We can work with whatever data you have to achieve better production scheduling, just easier and quicker than you ever thought possible. Give US a chance to prove it by scheduling a Live Demo today!
+          </p>
         </div>
-      </GridSection>
+      </section>
 
       {/* Navigation Tabs */}
       <section className="pt-6">
         <div className="container mx-auto max-w-7xl px-4">
-          <div className="flex flex-wrap gap-6 text-[18px]">
+          <div className="flex flex-wrap justify-center gap-6 text-[18px]">
             <Link href="#summary" className="text-slate-700 hover:text-cyan-500">
               Summary
             </Link>
@@ -95,46 +50,35 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
         </div>
       </section>
 
-      {/* Summary Section */}
+      {/* Overview Section - Text and Image in Row */}
       <section id="summary" className="pt-6">
         <div className="container mx-auto max-w-7xl px-4">
-          <h2 className="mb-6 text-2xl font-bold ">
-            RESOURCE MANAGER DB: SUMMARY
-          </h2>
-          <p className="text-[18px] leading-relaxed text-slate-600">
-            If you have tried to use your ERP for creating a viable Production Schedule,
-            and still end up with a tangle of custom Excel Reports, messy whiteboard or
-            worse yet, late shipments, we can help. If you don't even have an ERP system,
-            and are struggling with production scheduling, we can help. Resource Manager-DB
-            (RMDB) was specifically architected to easily adapt to the way you work, using
-            your existing data. RMDB is easily configured, and/or reconfigured, on the fly
-            to address your most pressing issues, whenever and however they surface! This
-            is a truly unique advantage of RMDB and working with US: We can focus and
-            resolve your most pressing issues quickly — letting you reap immediate ROI.
-            Then, delve deeper without having to spend more! This approach is proven to
-            succeed where so many others don't. RMDB contains deep functionality to address
-            a multitude of challenges for production planning and scheduling: alternate
-            workcenters, complex routings & processes, discrete and/or batch, multiple
-            constraints (labor, machines, materials, etc.), advanced drag and drop graphical
-            calendar screens, downtime management, sub-assemblies, optimization, and much
-            more. To see first-hand how RMDB can help you with efficient and easy Production
-            Planning, Scheduling and Capacity Planning, schedule a live demo, even using
-            your data in its current form – RISK FREE!!
-          </p>
-        </div>
-      </section>
+          <div className="grid items-start gap-8 lg:grid-cols-2">
+            {/* Left - Text Content */}
+            <div>
+              <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                Overview
+              </h2>
+              <div className="space-y-4 text-base leading-relaxed text-slate-600">
+                <p>
+                  Resource Manager-DB (RMDB) is an affordable, flexible and quick-to-implement approach to resolve your production planning, scheduling and tracking challenges. Designed by customers just like you, Resource Manager-DB features a single, simple menu (dashboard) requiring minimal transactions to keep the system accurate.
+                </p>
+                <p>
+                  RMDB's unique, customer driven architecture allows you to start very simply, focusing on one area at a time, enabling you to provide minimal information in order to recognize immediate benefits.
+                </p>
+              </div>
+            </div>
 
-      {/* Screenshot Section */}
-      <section className="pt-6">
-        <div className="container mx-auto max-w-7xl px-4">
-          <div className="flex justify-center">
-            <Image
-              src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
-              alt="Screenshot of production scheduling software interface"
-              width={1024}
-              height={483}
-              className="rounded-lg shadow-lg"
-            />
+            {/* Right - Image */}
+            <div className="flex items-center justify-center">
+              <Image
+                src="https://www.usersolutions.com/wp-content/uploads/2022/07/rmdb11.png"
+                alt="Resource Manager DB Processing Menu"
+                width={600}
+                height={400}
+                className="rounded-lg shadow-lg"
+              />
+            </div>
           </div>
         </div>
       </section>
