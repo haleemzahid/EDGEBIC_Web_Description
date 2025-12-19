@@ -173,10 +173,10 @@ export function NTClipboardToolBox(): React.JSX.Element {
                         <span className="text-sm">Spreadsheet Scheduler</span>
                         <span className="font-bold text-green-600">FREE</span>
                       </div>
-                      <div className="flex items-center justify-between gap-2">
+                      {/* <div className="flex items-center justify-between gap-2">
                         <span className="text-sm">Resource Manager XL</span>
                         <span className="font-bold text-green-600">FREE</span>
-                      </div>
+                      </div> */}
                     </div>
 
                     <div className="mb-4">
