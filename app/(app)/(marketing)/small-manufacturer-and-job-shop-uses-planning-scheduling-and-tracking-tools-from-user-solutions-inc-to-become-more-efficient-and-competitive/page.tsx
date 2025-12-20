@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
-
 
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -19,16 +17,16 @@ export const metadata: Metadata = {
 
 export default function SmallManufacturerSuccessStoryPage() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen text-[18px]">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-green-50 via-white to-blue-50 py-6">
+      <section className="py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
-            <h1 className="mb-6 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-3xl font-bold text-transparent md:text-4xl lg:text-5xl">
+            <h1 className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl">
               Small Manufacturer and Job Shop Uses Planning, Scheduling, and
               Tracking Tools to Become More Efficient
             </h1>
-            <p className="mb-4 text-xl text-gray-700">
+            <p className="text-gray-700">
               Resource Manager for Excel and Resource Manager-DB improve
               scheduling for small to medium sized operations
             </p>
@@ -38,38 +36,30 @@ export default function SmallManufacturerSuccessStoryPage() {
 
       {/* Main Content */}
       <section className="pt-6">
-        <div className="mx-auto px-4">
-          <div className="mx-auto max-w-7xl">
+        <div className="container mx-auto px-4">
+          <div className="mx-auto max-w-7xl space-y-8">
             {/* Date and Location */}
-            <div className="mb-6">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-2xl font-bold text-gray-900">
-                    South Lyon, MI - October 30, 2014
-                  </h3>
-                </CardContent>
-              </Card>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">
+                South Lyon, MI - October 30, 2014
+              </h3>
             </div>
 
             {/* Company Introduction */}
-            <div className="mb-6">
-              <Card>
-                <CardContent className="p-6">
-                  <p className="text-lg leading-relaxed text-gray-700">
-                    Lue Manufacturing, based in Goshen, IN has been producing
-                    fine custom made countertops, cabinetry and case work for 40
-                    years. User Solution&apos;s affordable production planning
-                    tools have been providing immediate returns for job shops
-                    serving the construction industry.
-                  </p>
-                </CardContent>
-              </Card>
+            <div>
+              <p className="leading-relaxed text-gray-700">
+                Lue Manufacturing, based in Goshen, IN has been producing
+                fine custom made countertops, cabinetry and case work for 40
+                years. User Solution&apos;s affordable production planning
+                tools have been providing immediate returns for job shops
+                serving the construction industry.
+              </p>
             </div>
 
             {/* President Quote 1 */}
-            <Card className="mb-6 border-l-4 border-green-600">
+            <Card className="border-l-4 border-green-600">
               <CardContent className="pt-6">
-                <blockquote className="mb-4 text-lg italic leading-relaxed text-gray-700">
+                <blockquote className="mb-4 italic leading-relaxed text-gray-700">
                   &quot;In the past, with steady demand, we have been able to
                   manually manage how to staff workcenters and deliver Jobs on
                   time. However, that model has been significantly changing. We
@@ -91,9 +81,9 @@ export default function SmallManufacturerSuccessStoryPage() {
             </Card>
 
             {/* President Quote 2 */}
-            <Card className="mb-6 border-l-4 border-blue-600">
+            <Card className="border-l-4 border-blue-600">
               <CardContent className="pt-6">
-                <blockquote className="mb-4 text-lg italic leading-relaxed text-gray-700">
+                <blockquote className="mb-4 italic leading-relaxed text-gray-700">
                   &quot;It was an easy decision. We were already familiar with
                   Excel and the product had the finite capacity planning,
                   scheduling, and Gantt Charts reporting to address our
@@ -114,58 +104,59 @@ export default function SmallManufacturerSuccessStoryPage() {
             </Card>
 
             {/* Deeper Benefits Section */}
-            <div className="mb-6">
-              <h2 className="mb-6 text-3xl font-bold text-gray-900">
+            <div>
+              <h2 className="mb-4 text-2xl font-bold text-slate-900">
                 Deeper Benefits with Resource Manager-DB
               </h2>
-              <p className="mb-6 text-lg leading-relaxed text-gray-700">
+              <p className="mb-6 leading-relaxed text-gray-700">
                 Based on the quick and easy return on investment with Resource
                 Manager for Excel, and the promise of additional benefits of
                 being able to track actual production and reschedule on demand,
                 Lue Manufacturing upgraded to Resource Manager-DB.
               </p>
-              <Card className="mb-6 border-l-4 border-purple-600">
-                <CardContent className="pt-6">
-                  <blockquote className="mb-4 text-lg italic leading-relaxed text-gray-700">
-                    &quot;As soon as we started to get a handle on our
-                    bottlenecks and efficient resource allocation for planned
-                    Jobs, we wanted to dig deeper and start tracking actual
-                    production in order to have a more real-time schedule that
-                    reflects reality. For the first time, it&apos;s a snap for
-                    us to track planned schedule vs actuals progress and make
-                    adjustments (for example, working a Saturday, or working
-                    overtime, or adding manpower) before we have a crisis.&quot;
-                  </blockquote>
-                  <p className="font-semibold text-gray-900">
-                    – Mr. Gronger
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-l-4 border-green-600">
-                <CardContent className="pt-6">
-                  <blockquote className="text-lg italic leading-relaxed text-gray-700">
-                    &quot;As a small manufacturer (Job Shop serving the
-                    construction industry), these tools are a perfect fit for
-                    us. We were not looking for the fanciest graphics or
-                    complicated configurations or a long and difficult
-                    implementation process. I have been able to basically do all
-                    I was hoping for with a minimal learning and implementation
-                    curve. Furthermore, these tools will provide us a
-                    competitive edge by being able to prove we can deliver on
-                    time and accommodate changes mid-stream without disrupting
-                    our schedule.&quot;
-                  </blockquote>
-                  <p className="mt-4 font-semibold text-gray-900">
-                    – Steve Gronger
-                  </p>
-                </CardContent>
-              </Card>
             </div>
 
+            <Card className="border-l-4 border-purple-600">
+              <CardContent className="pt-6">
+                <blockquote className="mb-4 italic leading-relaxed text-gray-700">
+                  &quot;As soon as we started to get a handle on our
+                  bottlenecks and efficient resource allocation for planned
+                  Jobs, we wanted to dig deeper and start tracking actual
+                  production in order to have a more real-time schedule that
+                  reflects reality. For the first time, it&apos;s a snap for
+                  us to track planned schedule vs actuals progress and make
+                  adjustments (for example, working a Saturday, or working
+                  overtime, or adding manpower) before we have a crisis.&quot;
+                </blockquote>
+                <p className="font-semibold text-gray-900">
+                  – Mr. Gronger
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-l-4 border-green-600">
+              <CardContent className="pt-6">
+                <blockquote className="italic leading-relaxed text-gray-700">
+                  &quot;As a small manufacturer (Job Shop serving the
+                  construction industry), these tools are a perfect fit for
+                  us. We were not looking for the fanciest graphics or
+                  complicated configurations or a long and difficult
+                  implementation process. I have been able to basically do all
+                  I was hoping for with a minimal learning and implementation
+                  curve. Furthermore, these tools will provide us a
+                  competitive edge by being able to prove we can deliver on
+                  time and accommodate changes mid-stream without disrupting
+                  our schedule.&quot;
+                </blockquote>
+                <p className="mt-4 font-semibold text-gray-900">
+                  – Steve Gronger
+                </p>
+              </CardContent>
+            </Card>
+
             {/* New Features Section */}
-            <div className="mb-6">
-              <h2 className="mb-6 text-3xl font-bold text-gray-900">
+            <div>
+              <h2 className="mb-4 text-2xl font-bold text-slate-900">
                 New Features
               </h2>
               <div className="space-y-4">
@@ -200,72 +191,26 @@ export default function SmallManufacturerSuccessStoryPage() {
                   </p>
                 </div>
               </div>
-              <p className="mt-6 text-lg leading-relaxed text-gray-700">
+              <p className="mt-6 leading-relaxed text-gray-700">
                 These new features will enable operations of any size to plan,
                 schedule, and track resources more efficiently, resulting in
                 improved customer service and profitability.
               </p>
             </div>
 
-            {/* Affordable and Compatible Section */}
-            <div className="mb-6">
-              <h2 className="mb-6 text-3xl font-bold text-gray-900">
-                Affordable and Compatible
-              </h2>
-              <div className="mb-6 grid gap-6 md:grid-cols-2">
-                <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
-                  <CardContent className="p-6">
-                    <h3 className="mb-2 text-xl font-bold text-gray-900">
-                      Resource Manager for Excel
-                    </h3>
-                    <p className="text-3xl font-bold text-blue-600">
-                      $1,200 - $1,800
-                    </p>
-                    <p className="mt-2 text-sm text-gray-600">
-                      Single user version
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-green-50 to-green-100">
-                  <CardContent className="p-6">
-                    <h3 className="mb-2 text-xl font-bold text-gray-900">
-                      Resource Manager-DB
-                    </h3>
-                    <p className="text-3xl font-bold text-green-600">
-                      $5,000 - $10,000
-                    </p>
-                    <p className="mt-2 text-sm text-gray-600">
-                      Single user version
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-              <p className="mb-4 text-lg leading-relaxed text-gray-700">
-                Resource Manager is the first tool that can be scaled for SMBs
-                (Small and Medium Sized Businesses) with no formal systems in
-                place, as well as by larger companies to augment existing ERP
-                systems.
-              </p>
-              <p className="text-lg leading-relaxed text-gray-700">
-                For more information, call toll free (800) 321-8737.
-              </p>
-            </div>
-
             {/* Awards Banner */}
-            <div>
-              <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
-                <CardContent className="p-8 text-center">
-                  <h2 className="mb-6 text-2xl font-bold text-slate-900">
-                    CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
-                  </h2>
-                  <img
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
-                    alt="Collection of industry and business awards logos"
-                    className="mx-auto h-auto max-w-full"
-                  />
-                </CardContent>
-              </Card>
-            </div>
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
+              <CardContent className="p-8 text-center">
+                <h2 className="mb-6 text-2xl font-bold text-slate-900">
+                  CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
+                </h2>
+                <img
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  alt="Collection of industry and business awards logos"
+                  className="mx-auto h-auto max-w-full"
+                />
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>

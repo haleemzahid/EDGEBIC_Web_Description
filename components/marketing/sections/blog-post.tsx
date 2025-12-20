@@ -128,8 +128,8 @@ export function BlogPost({ post }: BlogPostProps): React.JSX.Element {
                     target={link.newTab ? '_blank' : undefined}
                     rel={link.newTab ? 'noopener noreferrer' : undefined}
                     className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors ${isOutline
-                        ? 'border border-input bg-background hover:bg-accent hover:text-accent-foreground'
-                        : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                      ? 'border border-input bg-background hover:bg-accent hover:text-accent-foreground'
+                      : 'bg-primary text-primary-foreground hover:bg-primary/90'
                       }`}
                   >
                     {link.label}

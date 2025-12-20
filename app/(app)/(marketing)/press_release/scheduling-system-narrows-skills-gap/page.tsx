@@ -43,7 +43,7 @@ export default function SkillsGapPressReleasePage() {
                 cross-trained, skilled resources.
               </p>
 
-              <blockquote className="my-6 border-l-4 border-blue-600 pl-6">
+              <blockquote className="mt-6 border-l-4 border-blue-600 pl-6">
                 <p className="mb-4 text-lg italic text-gray-800">
                   "RMDB, along with our cross-trained workforce gives us a
                   competitive advantage to quickly respond to new market
@@ -85,7 +85,7 @@ export default function SkillsGapPressReleasePage() {
                 customer service standard.
               </p>
 
-              <blockquote className="my-6 border-l-4 border-blue-600 pl-6">
+              <blockquote className="mt-6 border-l-4 border-blue-600 pl-6">
                 <p className="mb-4 text-lg italic text-gray-800">
                   "The Resource Manager-DB solution has once again exceeded our
                   expectations regarding its adaptability. With only a couple of
@@ -105,7 +105,7 @@ export default function SkillsGapPressReleasePage() {
                 </cite>
               </blockquote>
 
-              <blockquote className="my-6 border-l-4 border-blue-600 pl-6">
+              <blockquote className="mt-6 border-l-4 border-blue-600 pl-6">
                 <p className="mb-4 text-lg italic text-gray-800">
                   "After running their 'what-if' scenarios, we had TGP batch
                   load all the new cycle times, then run a workcenter loading
