@@ -129,44 +129,43 @@ export default function LiIonBatterySchedulingPage() {
               </p>
             </div>
 
-            {/* Manufacturing Dashboard Image */}
-            <div className="flex justify-center overflow-hidden rounded-lg bg-white">
-              <div className="relative h-96 w-full">
+            {/* Affordable, Compatible, and Scalable - Text Left, Image Right */}
+            <div className="grid items-center gap-8 md:grid-cols-2">
+              <div>
+                <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                  Affordable, Compatible, and Scalable
+                </h2>
+                <p className="mb-4 leading-relaxed text-gray-700">
+                  A single user version ranges from $5,000 – $10,000 which
+                  includes implementation assistance. Resource Manager-DB runs
+                  with Windows and uses Excel for reports.
+                </p>
+                <p className="mb-4 leading-relaxed text-gray-700">
+                  Resource Manager-DB is the first tool that can be utilized
+                  across the full manufacturing spectrum, from small shops
+                  with no formal systems in place, all the way to large
+                  multi-nationals needing to augment existing ERP systems.
+                </p>
+                <p className="leading-relaxed text-gray-700">
+                  For more information or a free trial, contact{' '}
+                  <span className="font-semibold text-amber-700">
+                    www.UserSolutions.com
+                  </span>{' '}
+                  or call{' '}
+                  <span className="font-semibold text-amber-700">
+                    1(800) 321-8737
+                  </span>
+                </p>
+              </div>
+              <div className="flex justify-center">
                 <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/09/Manufacturing_Excel_Dashboard-1024x376-1.png"
                   alt="Spreadsheet showing manufacturing process steps and status indicators"
-                  fill
-                  className="object-contain"
+                  width={1024}
+                  height={376}
+                  className="h-auto max-w-full rounded-lg shadow-lg"
                 />
               </div>
-            </div>
-
-            {/* Affordable, Compatible, and Scalable */}
-            <div>
-              <h2 className="mb-4 text-2xl font-bold text-slate-900">
-                Affordable, Compatible, and Scalable
-              </h2>
-              <p className="mb-4 leading-relaxed text-gray-700">
-                A single user version ranges from $5,000 – $10,000 which
-                includes implementation assistance. Resource Manager-DB runs
-                with Windows and uses Excel for reports.
-              </p>
-              <p className="mb-4 leading-relaxed text-gray-700">
-                Resource Manager-DB is the first tool that can be utilized
-                across the full manufacturing spectrum, from small shops
-                with no formal systems in place, all the way to large
-                multi-nationals needing to augment existing ERP systems.
-              </p>
-              <p className="leading-relaxed text-gray-700">
-                For more information or a free trial, contact{' '}
-                <span className="font-semibold text-amber-700">
-                  www.UserSolutions.com
-                </span>{' '}
-                or call{' '}
-                <span className="font-semibold text-amber-700">
-                  1(800) 321-8737
-                </span>
-              </p>
             </div>
 
             {/* About User Solutions, Inc. */}
