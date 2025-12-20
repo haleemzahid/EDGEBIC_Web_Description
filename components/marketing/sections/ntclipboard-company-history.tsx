@@ -229,13 +229,13 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
 
   return (
     <GridSection hideVerticalGridLines>
-      <div className="container py-6">
+      <div className="container pt-6">
         <SiteHeading
           title="Providing Production Planning and Scheduling Solutions since 1991"
           description="Over three decades of innovation in manufacturing resource planning and production scheduling"
         />
 
-        <div className="mx-auto mt-8 max-w-4xl">
+        <div className="mx-auto mt-6 max-w-7xl">
           {/* Timeline */}
           <div className="relative">
             {/* Timeline line */}
