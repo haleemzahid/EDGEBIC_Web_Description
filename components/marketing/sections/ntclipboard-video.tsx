@@ -200,46 +200,14 @@ export function NTClipboardVideo({
   return (
     <GridSection hideVerticalGridLines>
       <div>
-        <div className=" pt-6">
+        <div className="pt-6">
           <div className="mx-auto max-w-7xl text-center">
-            {/* Header Badge */}
-            <div className="mb-4 flex justify-center">
-              <span className="inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium">
-                📹 {productVideos.length} Videos Available
-              </span>
-            </div>
-
-            <h2 className="mb-6 text-3xl font-bold md:text-5xl">
+            <h2 className="mb-4 text-3xl font-bold md:text-4xl">
               Product Video Library
             </h2>
-            <p className="mb-6 text-xl text-muted-foreground">
-              Comprehensive video demonstrations and training for our
-              award-winning manufacturing software solutions
+            <p className="mb-6 text-[18px] text-muted-foreground">
+              Video demonstrations and training for our manufacturing software solutions
             </p>
-
-            {/* Category Stats */}
-            <div className="mb-6 flex flex-wrap justify-center gap-3">
-              {/* Overview Badge - Rounded with green accent */}
-              <div className="inline-flex items-center rounded-full border-2 border-green-200 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700">
-                🎯 Overview:{' '}
-                {productVideos.filter((v) => v.category === 'Overview').length}
-              </div>
-
-              {/* Product Demo Badge - Square with blue accent */}
-              <div className="inline-flex items-center rounded-full border-2 border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm">
-                🚀 Product Demo:{' '}
-                {
-                  productVideos.filter((v) => v.category === 'Product Demo')
-                    .length
-                }
-              </div>
-
-              {/* Training Badge - Pill with orange accent and shadow */}
-              <div className="inline-flex items-center rounded-full border-2 border-orange-200 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-700 shadow-md">
-                📚 Training:{' '}
-                {productVideos.filter((v) => v.category === 'Training').length}
-              </div>
-            </div>
 
             {/* Category Filter */}
             <div className="mb-6 flex flex-wrap justify-center gap-2">
@@ -396,64 +364,12 @@ export function NTClipboardVideo({
               </div>
 
               <div className="mt-4 text-center">
-                <p className="text-muted-foreground">
+                <p className="text-[18px] text-muted-foreground">
                   {currentVideo.description}
                 </p>
               </div>
-
-              {/* Product Features */}
-              <div className="mt-6 grid grid-cols-1 gap-6 text-left md:grid-cols-3">
-                <div className="rounded-xl bg-white p-6 shadow-lg">
-                  <h3 className="mb-2 text-lg font-semibold">
-                    Production Scheduling
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Advanced finite capacity scheduling with visual timeline
-                    management and resource optimization.
-                  </p>
-                </div>
-                <div className="rounded-xl bg-white p-6 shadow-lg">
-                  <h3 className="mb-2 text-lg font-semibold">
-                    Resource Management
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Comprehensive resource planning with constraint management
-                    and capacity optimization.
-                  </p>
-                </div>
-                <div className="rounded-xl bg-white p-6 shadow-lg">
-                  <h3 className="mb-2 text-lg font-semibold">
-                    Real-Time Tracking
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Monitor production progress and make data-driven decisions
-                    with live updates.
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Awards Section */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="mx-auto max-w-7xl">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
-            <CardContent className="p-8 text-center">
-              <h3 className="mb-6 text-2xl font-bold text-slate-900">
-                CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
-              </h3>
-              <Image
-                src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
-                alt="Collection of industry and business awards logos"
-                width={1024}
-                height={128}
-                className="mx-auto h-auto max-w-full"
-                unoptimized
-              />
-            </CardContent>
-          </Card>
         </div>
       </div>
     </GridSection>
