@@ -13,21 +13,9 @@ export default function SpreadsheetSchedulerPage() {
             <h1 className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl">
               Spreadsheet Scheduler
             </h1>
-            <p className="mb-6 text-gray-700">
+            <p className="text-gray-700">
               Gantt Charting and Project Management with Excel
             </p>
-            <div className="flex flex-col justify-center gap-4 sm:flex-row">
-              <Link href="/product-downloads">
-                <Button size="lg" variant="outline">
-                  Free Sample
-                </Button>
-              </Link>
-              <Link href="/contact-us">
-                <Button size="lg">
-                  Request Free Product
-                </Button>
-              </Link>
-            </div>
           </div>
         </div>
       </section>
@@ -35,46 +23,111 @@ export default function SpreadsheetSchedulerPage() {
       {/* Main Content */}
       <section className="pt-6">
         <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-7xl space-y-8">
-            {/* Overview Section */}
-            <div>
-              <h2 className="mb-4 text-2xl font-bold text-slate-900">Overview</h2>
-              <p className="mb-6 leading-relaxed text-gray-700">
-                Gantt Charting and Project Management Customizable Templates
-                for all versions of Excel (including the expansive 2007+ and
-                tablet supporting Office 365). Low cost and easy-to-use
-                spreadsheet templates for Project Management, Simple
-                Production Planning and Scheduling, Critical Path Method
-                (CPM), Critical Path Analysis, Customer Job Scheduling,
-                Generating Calendars and Gantt Charts with hourly, daily or
-                weekly time buckets. Excel 2007+ expanded rows and columns
-                enable the user to manage larger projects for any duration as
-                well as Cloud based Office 365 for easy sharing.
-              </p>
-
-              <div className="my-6 flex justify-center">
+          <div className="mx-auto max-w-7xl space-y-12">
+            {/* Overview Section - Text Left, Menu Image Right */}
+            <div className="grid items-center gap-8 md:grid-cols-2">
+              <div>
+                <h2 className="mb-4 text-2xl font-bold text-slate-900">Overview</h2>
+                <p className="mb-4 leading-relaxed text-gray-700">
+                  Gantt Charting and Project Management Customizable Templates
+                  for all versions of Excel (including the expansive 2007+ and
+                  tablet supporting Office 365). Low cost and easy-to-use
+                  spreadsheet templates for Project Management, Simple
+                  Production Planning and Scheduling, Critical Path Method
+                  (CPM), Critical Path Analysis, Customer Job Scheduling,
+                  Generating Calendars and Gantt Charts with hourly, daily or
+                  weekly time buckets.
+                </p>
+                <p className="leading-relaxed text-gray-700">
+                  This collection can be used as a set of building blocks to
+                  develop custom applications because it uses simple formulas
+                  (source code provided), easily understood by the casual Excel
+                  user.
+                </p>
+              </div>
+              <div className="flex justify-center">
                 <img
                   src="https://www.usersolutions.com/wp-content/uploads/2022/09/SS-Menu.png"
                   alt="Spreadsheet software interface for project scheduling and management"
                   className="h-auto max-w-full rounded-lg shadow-lg"
                 />
               </div>
+            </div>
 
-              <p className="mb-6 leading-relaxed text-gray-700">
-                This collection can be used as a set of building blocks to
-                develop custom applications because it uses simple formulas
-                (source code provided), easily understood by the casual Excel
-                user. The spreadsheet environment is particularly suited for
-                this since you can link, customize, expand, consolidate, copy
-                and graph the data however you wish.
-              </p>
-
-              <div className="my-6 flex justify-center">
+            {/* Gantt Chart Section - Image Left, Text Right */}
+            <div className="grid items-center gap-8 md:grid-cols-2">
+              <div className="order-2 flex justify-center md:order-1">
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/09/box_4730_1_200-1.gif"
-                  alt="Spreadsheet Scheduler software box cover"
-                  className="h-auto max-w-full"
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/09/SS-GanttDay-300x90-1.png"
+                  alt="Color-coded Gantt chart spreadsheet"
+                  className="h-auto max-w-full rounded-lg shadow-lg"
                 />
+              </div>
+              <div className="order-1 md:order-2">
+                <h2 className="mb-4 text-2xl font-bold text-slate-900">Gantt Charts & Scheduling</h2>
+                <p className="mb-4 leading-relaxed text-gray-700">
+                  The Spreadsheet Scheduler includes simple Gantt Charting and
+                  CPM (Critical Path Management) models for hourly, daily, or
+                  weekly time units. By determining early and late starting
+                  points for each task, as well as task duration and precedence
+                  relationships, the template generates a Gantt Chart showing
+                  which tasks are critical.
+                </p>
+                <p className="leading-relaxed text-gray-700">
+                  Tasks that are critical must be done on time, otherwise the
+                  entire schedule will slip.
+                </p>
+              </div>
+            </div>
+
+            {/* Critical Path Section - Text Left, Image Right */}
+            <div className="grid items-center gap-8 md:grid-cols-2">
+              <div>
+                <h2 className="mb-4 text-2xl font-bold text-slate-900">Critical Path Analysis</h2>
+                <p className="mb-4 leading-relaxed text-gray-700">
+                  Work flow and work-in-process models provide techniques for
+                  scheduling customer jobs through single workstations,
+                  workstations in series, or workstations in parallel. These
+                  models enable more efficient planning and accurate customer
+                  deliveries.
+                </p>
+                <p className="leading-relaxed text-gray-700">
+                  Minimize average flow time, reduce the number of days late
+                  for jobs, and decrease the total number of late jobs with
+                  proper critical path planning.
+                </p>
+              </div>
+              <div className="flex justify-center">
+                <img
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/09/SS-CPathDay-300x204-1.png"
+                  alt="Project schedule spreadsheet with early and late start times"
+                  className="h-auto max-w-full rounded-lg shadow-lg"
+                />
+              </div>
+            </div>
+
+            {/* What-If Analysis Section - Image Left, Text Right */}
+            <div className="grid items-center gap-8 md:grid-cols-2">
+              <div className="order-2 flex justify-center md:order-1">
+                <img
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/09/SS-4WC-296x300-1.png"
+                  alt="Spreadsheet with production schedule and Gantt chart"
+                  className="h-auto max-w-full rounded-lg shadow-lg"
+                />
+              </div>
+              <div className="order-1 md:order-2">
+                <h2 className="mb-4 text-2xl font-bold text-slate-900">What-If Analysis</h2>
+                <p className="mb-4 leading-relaxed text-gray-700">
+                  Functionality includes the ability to do "what-if" analysis
+                  to accommodate changes without missing deadlines. Perfect for
+                  those looking to learn or teach project management concepts
+                  or be introduced to formal project management systems.
+                </p>
+                <p className="leading-relaxed text-gray-700">
+                  The 14 spreadsheet-based programs provide an easy-to-use set
+                  of tools to help any organization manage projects more
+                  efficiently and improve customer deliveries.
+                </p>
               </div>
             </div>
 
@@ -94,64 +147,6 @@ export default function SpreadsheetSchedulerPage() {
                   <li>Computation of lateness and other performance measures</li>
                   <li>Scheduling of work according to precedence relationships</li>
                 </ul>
-              </div>
-
-              <p className="mb-4 leading-relaxed text-gray-700">
-                The 14 spreadsheet-based programs provide an easy-to-use set
-                of tools to help any organization manage projects more
-                efficiently, improve customer deliveries, and minimize
-                work-in-process times.
-              </p>
-
-              <p className="mb-6 leading-relaxed text-gray-700">
-                The Spreadsheet Scheduler includes simple Gantt Charting and
-                CPM (Critical Path Management) models for hourly, daily, or
-                weekly time units. By determining early and late starting
-                points for each task, as well as task duration and precedence
-                relationships, the template generates a Gantt Chart showing
-                which tasks are critical; that is, must be done on time,
-                otherwise the entire schedule will slip.
-              </p>
-
-              <div className="my-6 flex justify-center">
-                <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/09/SS-GanttDay-300x90-1.png"
-                  alt="Color-coded spreadsheet with data analysis"
-                  className="h-auto max-w-full rounded-lg shadow-lg"
-                />
-              </div>
-
-              <p className="mb-6 leading-relaxed text-gray-700">
-                Work flow and work-in-process models provide techniques for
-                scheduling customer jobs through single workstations,
-                workstations in series, or workstations in parallel. These
-                models enable more efficient planning and accurate customer
-                deliveries through minimizing average flow time, number of
-                days late for jobs, and number of late jobs.
-              </p>
-
-              <div className="my-6 flex justify-center">
-                <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/09/SS-CPathDay-300x204-1.png"
-                  alt="Project schedule spreadsheet with early and late start times"
-                  className="h-auto max-w-full rounded-lg shadow-lg"
-                />
-              </div>
-
-              <p className="mb-6 leading-relaxed text-gray-700">
-                Functionality also includes ability to do "what-if" analysis
-                to accommodate changes without missing deadlines. For those
-                looking to learn or teach project management concepts or be
-                introduced to formal project management systems, Spreadsheet
-                Scheduler is the perfect entry point.
-              </p>
-
-              <div className="my-6 flex justify-center">
-                <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/09/SS-4WC-296x300-1.png"
-                  alt="Spreadsheet with production schedule and Gantt chart"
-                  className="h-auto max-w-full rounded-lg shadow-lg"
-                />
               </div>
             </div>
 
@@ -217,52 +212,9 @@ export default function SpreadsheetSchedulerPage() {
                   <strong className="text-slate-900">CPM:</strong>{' '}
                   The critical path method is a network based technique of
                   determining project makespan (or duration) and critical
-                  activities, as well as project slack. Used to manage
-                  projects by understanding, (1) the shortest possible
-                  completion time, (2) which activities are critical to
-                  completion time, (3) how long activities can be delayed
-                  without delaying the project.
+                  activities, as well as project slack.
                 </li>
               </ul>
-            </div>
-
-            {/* Features Section */}
-            <div>
-              <h2 className="mb-4 text-2xl font-bold text-slate-900">Features</h2>
-              <div className="grid gap-6 md:grid-cols-2">
-                <div>
-                  <h3 className="mb-2 font-semibold text-blue-600">14 Excel Templates</h3>
-                  <p className="text-gray-700">Comprehensive toolkit for various scheduling scenarios</p>
-                </div>
-                <div>
-                  <h3 className="mb-2 font-semibold text-blue-600">Gantt Charts</h3>
-                  <p className="text-gray-700">Visual project timelines and task dependencies</p>
-                </div>
-                <div>
-                  <h3 className="mb-2 font-semibold text-blue-600">Critical Path Method (CPM)</h3>
-                  <p className="text-gray-700">Identify critical activities and project completion time</p>
-                </div>
-                <div>
-                  <h3 className="mb-2 font-semibold text-blue-600">Job Sequencing</h3>
-                  <p className="text-gray-700">Optimize job order using priority rules</p>
-                </div>
-                <div>
-                  <h3 className="mb-2 font-semibold text-blue-600">Due Date Assignment</h3>
-                  <p className="text-gray-700">Calculate realistic completion dates</p>
-                </div>
-                <div>
-                  <h3 className="mb-2 font-semibold text-blue-600">Precedence Relationships</h3>
-                  <p className="text-gray-700">Model task dependencies and constraints</p>
-                </div>
-                <div>
-                  <h3 className="mb-2 font-semibold text-blue-600">Runs with Excel</h3>
-                  <p className="text-gray-700">No additional software required</p>
-                </div>
-                <div>
-                  <h3 className="mb-2 font-semibold text-blue-600">Source Code Included</h3>
-                  <p className="text-gray-700">Customize for your specific requirements</p>
-                </div>
-              </div>
             </div>
 
             {/* Awards Banner */}
