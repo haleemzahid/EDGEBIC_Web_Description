@@ -162,9 +162,7 @@ export const FOOTER_LINKS: Array<{
       { name: 'Mission Statement', href: Routes.Mission, external: false },
       { name: 'Values', href: Routes.Values, external: false },
       { name: 'Company History', href: Routes.History, external: false },
-      { name: 'Partners', href: Routes.Partners, external: false },
-      { name: 'Team', href: Routes.Team, external: false },
-      { name: 'Careers', href: Routes.Careers, external: false }
+      { name: 'Partners', href: Routes.Partners, external: false }
     ]
   }
 ];
