@@ -1,33 +1,21 @@
 import * as React from 'react';
 import Image from 'next/image';
 
-
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function MultimonPage(): React.JSX.Element {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen text-[18px]">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800 py-6 text-white">
+      <section className="py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
-            <div className="mb-6">
-            </div>
-            <h1 className="mb-6 text-4xl font-bold md:text-6xl">
+            <h1 className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl">
               Operations Manager: MULTIMON
             </h1>
-            <p className="mb-6 text-xl md:text-2xl">
+            <p className="text-gray-700">
               Seasonal Adjustment for Monthly Data
             </p>
-            <div className="flex flex-col justify-center gap-4 sm:flex-row">
-              <Button
-                size="lg"
-                className="bg-white text-blue-600 hover:bg-gray-100"
-              >
-                Request Free Product
-              </Button>
-            </div>
           </div>
         </div>
       </section>
@@ -35,84 +23,72 @@ export default function MultimonPage(): React.JSX.Element {
       {/* Main Content */}
       <section className="pt-6">
         <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-7xl">
-            <h2 className="mb-6 text-center text-3xl font-bold">
-              Seasonal Adjustment
-            </h2>
+          <div className="mx-auto max-w-7xl space-y-8">
+            <div>
+              <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                Seasonal Adjustment
+              </h2>
+              <p className="mb-4 leading-relaxed text-gray-700">
+                Regular seasonal patterns appear in most business data. The
+                weather affects the sales of everything from bikinis to
+                snowmobiles. Around holiday periods, we see increases in the
+                number of retail sales, long-distance telephone calls, and
+                gasoline consumption. Business policy can cause seasonal
+                patterns in sales. Many companies run annual dealer
+                promotions which cause peaks in sales. Other companies
+                depress sales temporarily by shutting down plants for annual
+                vacation periods.
+              </p>
+              <p className="leading-relaxed text-gray-700">
+                Usually seasonality is obvious but there are times when it
+                is not. Two questions should be asked when there is doubt
+                about seasonality. First, are the peaks and troughs
+                consistent? That is, do the high and low points of the
+                pattern occur in about the same periods (week, month, or
+                quarter) each year? Second, is there an explanation for the
+                seasonal pattern? The most common reasons for seasonality
+                are weather and holidays, although company policy such as
+                annual sales promotions may be a factor.
+              </p>
+            </div>
 
-            <Card>
-              <CardContent className="p-8">
-                <div className="space-y-4">
-                  <p className="text-lg leading-relaxed">
-                    Regular seasonal patterns appear in most business data. The
-                    weather affects the sales of everything from bikinis to
-                    snowmobiles. Around holiday periods, we see increases in the
-                    number of retail sales, long-distance telephone calls, and
-                    gasoline consumption. Business policy can cause seasonal
-                    patterns in sales. Many companies run annual dealer
-                    promotions which cause peaks in sales. Other companies
-                    depress sales temporarily by shutting down plants for annual
-                    vacation periods.
-                  </p>
+            <div>
+              <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                Classical Decomposition Method
+              </h2>
+              <p className="mb-4 leading-relaxed text-gray-700">
+                Our approach to forecasting seasonal data is based on the
+                classical decomposition method developed by economists in
+                the nineteenth century. Decomposition means separation of
+                the time series into its component parts. A complete
+                decomposition separates the time series into four
+                components: seasonality, trend, cycle, and randomness. The
+                cycle is a long-range pattern related to the growth and
+                decline of industries or the economy as a whole.
+              </p>
+              <p className="leading-relaxed text-gray-700">
+                Two worksheets are available for seasonal adjustment.
+                MULTIMON uses the ratio-to-moving average method to adjust
+                monthly data. ADDITMON uses a similar method called the
+                difference-to-moving average method to adjust monthly data.
+                It may be necessary to test both of these worksheets before
+                choosing a seasonal pattern.
+              </p>
+            </div>
 
-                  <p className="text-lg leading-relaxed">
-                    Usually seasonality is obvious but there are times when it
-                    is not. Two questions should be asked when there is doubt
-                    about seasonality. First, are the peaks and troughs
-                    consistent? That is, do the high and low points of the
-                    pattern occur in about the same periods (week, month, or
-                    quarter) each year? Second, is there an explanation for the
-                    seasonal pattern? The most common reasons for seasonality
-                    are weather and holidays, although company policy such as
-                    annual sales promotions may be a factor. If the answer to
-                    either of these questions is no, seasonality should not be
-                    used in the forecasts.
-                  </p>
-
-                  <p className="text-lg leading-relaxed">
-                    Our approach to forecasting seasonal data is based on the
-                    classical decomposition method developed by economists in
-                    the nineteenth century. Decomposition means separation of
-                    the time series into its component parts. A complete
-                    decomposition separates the time series into four
-                    components: seasonality, trend, cycle, and randomness. The
-                    cycle is a long-range pattern related to the growth and
-                    decline of industries or the economy as a whole.
-                  </p>
-
-                  <p className="text-lg leading-relaxed">
-                    Two worksheets are available for seasonal adjustment.
-                    MULTIMON uses the ratio-to-moving average method to adjust
-                    monthly data. ADDITMON uses a similar method called the
-                    difference-to-moving average method to adjust monthly data.
-                    It may be necessary to test both of these worksheets before
-                    choosing a seasonal pattern.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Awards Section */}
-      <section className="pt-6">
-        <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-7xl">
+            {/* Awards Banner */}
             <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
               <CardContent className="p-8 text-center">
-                <h2 className="mb-6 text-2xl font-bold text-foreground">
+                <h2 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
-                <div className="flex justify-center">
-                  <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
-                    alt="Collection of industry and business awards logos"
-                    width={1024}
-                    height={128}
-                    className="h-auto max-w-full rounded-lg shadow-md"
-                  />
-                </div>
+                <Image
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  alt="Collection of industry and business awards logos"
+                  width={1024}
+                  height={128}
+                  className="mx-auto h-auto max-w-full"
+                />
               </CardContent>
             </Card>
           </div>
