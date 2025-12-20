@@ -1,34 +1,22 @@
 import * as React from 'react';
 import Image from 'next/image';
 
-
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function OperationsManagerSimplePage(): React.JSX.Element {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen text-[18px]">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800 py-6 text-white">
+      <section className="py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
-            <div className="mb-6">
-            </div>
-            <h1 className="mb-6 text-4xl font-bold md:text-6xl">
+            <h1 className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl">
               Operations Manager: Simple Analysis
             </h1>
-            <p className="mb-6 text-xl md:text-2xl">
+            <p className="text-gray-700">
               Streamlined analysis tools for quick operational insights and
               decision making
             </p>
-            <div className="flex flex-col justify-center gap-4 sm:flex-row">
-              <Button
-                size="lg"
-                className="bg-white text-blue-600 hover:bg-gray-100"
-              >
-                Request Free Product
-              </Button>
-            </div>
           </div>
         </div>
       </section>
