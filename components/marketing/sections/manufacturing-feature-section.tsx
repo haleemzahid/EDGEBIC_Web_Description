@@ -524,7 +524,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             </div>
           </div>
 
-          <div className="mt-6 flex justify-center">
+          <div className="my-6  flex justify-center">
             <Link
               href="/features"
               className="inline-flex items-center justify-center rounded-md bg-[#003d5c] px-8 py-3 text-base font-semibold text-white transition-colors hover:bg-[#002d44] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
