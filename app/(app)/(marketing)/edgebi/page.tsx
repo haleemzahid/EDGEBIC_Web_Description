@@ -84,11 +84,10 @@ export default function EDGEBIPage(): React.JSX.Element {
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
-                    className={`text-md transition-colors ${
-                      activeTab === tab.id
-                        ? 'font-semibold text-cyan-500'
-                        : 'text-slate-700 hover:text-cyan-500'
-                    }`}
+                    className={`text-md transition-colors ${activeTab === tab.id
+                      ? 'font-semibold text-cyan-500'
+                      : 'text-slate-700 hover:text-cyan-500'
+                      }`}
                   >
                     {tab.label}
                   </button>
@@ -149,10 +148,10 @@ export default function EDGEBIPage(): React.JSX.Element {
                   />
                 </div>
                 <div>
-                  <p className="mb-4 text-xl text-slate-700">
+                  <p className="mb-4 text-[18px] text-slate-700">
                     Finally, you can manage your production scheduling with an intuitive graphical approach that can be easily customized.
                   </p>
-                  <p className="text-xl text-slate-700">
+                  <p className="text-[18px] text-slate-700">
                     EDGEBI is the ideal interface for managing the schedule produced by Resource Manager DB.
                   </p>
                 </div>
@@ -161,7 +160,7 @@ export default function EDGEBIPage(): React.JSX.Element {
               {/* 3rd Section - Text (left) - Image (right) */}
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div>
-                  <p className="text-xl text-slate-700">
+                  <p className="text-[18px] text-slate-700">
                     Check out the color-coded schedule for up to the minute status on any job. Drag and drop any job segment from one workcenter to another workcenter with a simple click of a mouse, resize any segment based on real time issues – taking longer than planned, or shorter, you can even block out capacity for any downtime or maintenance event. Check out capacity utilization graph, finally press update button and reschedule to have schedule reflect reality.
                   </p>
                 </div>
@@ -188,10 +187,10 @@ export default function EDGEBIPage(): React.JSX.Element {
                   />
                 </div>
                 <div>
-                  <p className="mb-4 text-xl text-slate-700">
+                  <p className="mb-4 text-[18px] text-slate-700">
                     View the Heat Map to see your capacity loading, for entire schedule, at a glance.
                   </p>
-                  <p className="text-xl text-slate-700">
+                  <p className="text-[18px] text-slate-700">
                     Run the Schedule Key Dates reports, with an export to Excel to view all activity the way you want.
                   </p>
                 </div>
@@ -199,10 +198,10 @@ export default function EDGEBIPage(): React.JSX.Element {
 
               {/* CTA Section */}
               <div className="text-center">
-                <p className="mb-4 text-xl text-slate-700">
-                  Now: Contact <button type="button" onClick={() => setActiveTab('live-demo')} className="font-semibold text-cyan-600 hover:text-cyan-700">US</button> to discuss your specific application and challenges and let us prove out the solution with a free Proof Of Concept using your data!
+                <p className="mb-4 text-[18px] text-slate-700">
+                  Now:  <button type="button" onClick={() => setActiveTab('live-demo')} className="font-semibold text-cyan-600 hover:text-cyan-700"> Contact US</button> to discuss your specific application and challenges and let us prove out the solution with a free Proof Of Concept using your data!
                 </p>
-                <p className="text-xl text-slate-700">
+                <p className="text-[18px] text-slate-700">
                   With solutions for any application and budget, from job shops on up, better production scheduling is only a click away.
                 </p>
               </div>
