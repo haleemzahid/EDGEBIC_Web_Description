@@ -38,8 +38,7 @@ const mediaCoverage = [
     link: 'https://www.woodworkingnetwork.com/',
     sources: [
       { name: 'Woodworking Network', url: 'https://www.woodworkingnetwork.com/' }
-    ],
-    disable: true,
+    ]
   },
   {
     title: 'User Solutions Named Top ERP Solutions Transforming Business 2016',
@@ -63,8 +62,7 @@ const mediaCoverage = [
     link: 'https://www.ascm.org/',
     sources: [
       { name: 'APICS', url: 'https://www.ascm.org/' }
-    ],
-    disable: true
+    ]
   },
   {
     title: 'Software Schedules Maintenance With Military Precision',
