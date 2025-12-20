@@ -143,7 +143,7 @@ export default function OperationsManagerPage(): React.JSX.Element {
         {
           title: 'Center-of-Gravity method for locating dist. cntrs',
           price: 'FREE',
-          infoLink: '/operations-manager-location'
+          infoLink: '/#'
         },
         {
           title: 'Complete Facility Location Package',
