@@ -87,7 +87,7 @@ export default function PressReleasePage() {
           </div>
 
           {/* Contact for Media */}
-          <div className="mt-16 rounded-lg bg-blue-50 p-8 text-center">
+          <div className="mt-6 rounded-lg bg-blue-50 p-8 text-center">
             <h3 className="mb-4 text-2xl font-bold text-gray-800">
               Media Inquiries
             </h3>

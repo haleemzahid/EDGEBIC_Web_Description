@@ -4,7 +4,7 @@ import * as React from 'react';
 
 export function IntegratedFeaturesSection(): React.JSX.Element {
   return (
-    <section className="bg-slate-50 py-16 md:py-24">
+    <section className="bg-slate-50 py-6 md:py-24">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mb-6 text-center">
           <h2 className="text-3xl font-bold text-[#003d5c] md:text-4xl lg:text-5xl">

@@ -58,7 +58,7 @@ export default function CartPage() {
           </div>
 
           {/* Featured Products */}
-          <div className="mt-16">
+          <div className="mt-6">
             <h3 className="mb-6 text-center text-2xl font-bold text-gray-800">
               Featured Products
             </h3>

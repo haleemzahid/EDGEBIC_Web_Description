@@ -42,7 +42,7 @@ export async function NTClipboardPricing(): Promise<React.JSX.Element> {
           title="Simple, One-Time Pricing"
           description="No subscriptions, no recurring fees. Pay once, use forever."
         />
-        <div className="mt-16 flex justify-center">
+        <div className="mt-6 flex justify-center">
           <div className="relative w-full max-w-lg">
             <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-orange-500 to-red-500 opacity-20 blur-xl" />
             <div className="relative rounded-3xl border-2 border-orange-200 bg-white p-8 shadow-2xl">

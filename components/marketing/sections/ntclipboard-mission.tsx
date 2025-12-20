@@ -26,7 +26,7 @@ export function NTClipboardMission(): React.JSX.Element {
         />
 
         {/* Content Sections */}
-        <div className="mx-auto mt-16 max-w-4xl space-y-12">
+        <div className="mx-auto mt-6 max-w-7xl space-y-12">
           {/* Mission Section */}
           <div
             id="mission-statement"

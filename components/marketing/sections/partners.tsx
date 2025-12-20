@@ -163,7 +163,7 @@ export function PartnersSection(): React.JSX.Element {
         </div>
 
         {/* Partnership Benefits */}
-        <div className="mx-auto mt-16 max-w-4xl">
+        <div className="mx-auto mt-6 max-w-7xl">
           <h2 className="mb-6 text-center text-2xl font-bold">
             Why Partner With Us?
           </h2>
@@ -190,7 +190,7 @@ export function PartnersSection(): React.JSX.Element {
         </div>
 
         {/* Partners Grid */}
-        <div className="mx-auto mt-16 max-w-7xl">
+        <div className="mx-auto mt-6 max-w-7xl">
           <h2 className="mb-6 text-center text-2xl font-bold">Our Partners</h2>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {partners.map((partner, index) => (
@@ -266,40 +266,8 @@ export function PartnersSection(): React.JSX.Element {
             ))}
           </div>
         </div>
-
-        {/* Contact Section */}
-        <div className="mx-auto mt-16 max-w-2xl text-center">
-          <h2 className="mb-4 text-2xl font-bold">Become a Partner</h2>
-          <p className="mb-6 text-muted-foreground">
-            Interested in partnering with User Solutions? We're always looking
-            for qualified partners to help expand our reach and better serve
-            manufacturers worldwide.
-          </p>
-          <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-            <Button
-              asChild
-              size="lg"
-            >
-              <a href="mailto:us@usersolutions.com">
-                <Mail className="mr-2 size-4" />
-                Contact Partnership Team
-              </a>
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              asChild
-            >
-              <a href="tel:248.486.6365">
-                <Phone className="mr-2 size-4" />
-                248.486.6365
-              </a>
-            </Button>
-          </div>
-        </div>
-
         {/* Awards Section - Moved to end */}
-        <div className="mx-auto mt-16 max-w-7xl">
+        <div className="mx-auto mt-6 max-w-7xl">
           <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
             <CardContent className="p-8 text-center">
               <h3 className="mb-6 text-2xl font-bold text-slate-900">

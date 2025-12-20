@@ -313,7 +313,7 @@ export function Hero(): React.JSX.Element {
   return (
     <GridSection className="overflow-x-hidden">
       <MainDashedGridLines />
-      <div className="mx-auto mt-16 flex flex-col gap-6 px-2 sm:mt-6 sm:px-1 md:mt-24 lg:mt-32">
+      <div className="mx-auto mt-6 flex flex-col gap-6 px-2 sm:mt-6 sm:px-1 md:mt-24 lg:mt-32">
         <div className="gap-2">
           <HeroPill />
           <HeroTitle />
@@ -323,7 +323,7 @@ export function Hero(): React.JSX.Element {
         <HeroIllustration />
 
         {/* Awards Section */}
-        <Card className="mt-16 bg-gradient-to-br from-blue-50 to-blue-100">
+        <Card className="mt-6 bg-gradient-to-br from-blue-50 to-blue-100">
           <CardContent className="p-8 text-center">
             <h3 className="mb-6 text-2xl font-bold text-slate-900">
               CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!

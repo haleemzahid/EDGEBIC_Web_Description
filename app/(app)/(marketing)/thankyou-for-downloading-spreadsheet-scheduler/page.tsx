@@ -98,7 +98,7 @@ export default function ThankYouSpreadsheetSchedulerPage() {
             </Card>
 
             {/* Related Products */}
-            <div className="mt-16">
+            <div className="mt-6">
               <h3 className="mb-6 text-center text-2xl font-bold">
                 You might also be interested in:
               </h3>

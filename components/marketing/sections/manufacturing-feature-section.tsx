@@ -167,7 +167,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             Integrated Manufacturing Software for Business Growth
           </h2>
 
-          <div className="mt-16 grid gap-12 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-6 grid gap-12 md:grid-cols-2 lg:grid-cols-3">
             {/* Production Planning */}
             <div className="flex flex-col items-center text-center">
               <div className="mb-6 flex size-20 items-center justify-center">
