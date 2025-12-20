@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 
- 
+
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
@@ -229,7 +229,7 @@ export default function SuccessStoriesPage() {
       </section>
 
       {/* Success Stories Grid */}
-      <section className="pt-6">
+      <section>
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-2">
