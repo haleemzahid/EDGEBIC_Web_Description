@@ -16,9 +16,9 @@ const mediaCoverage = [
   {
     title: 'Top 10 Manufacturing KPIs in 2024',
     image: 'https://www.usersolutions.com/wp-content/uploads/2024/02/sdf.jpg',
-    link: 'https://www.usersolutions.com/top-10-manufacturing-kpis-in-2024/',
+    link: '/top-10-manufacturing-kpis-in-2024',
     sources: [
-      { name: 'What is a manufacturing KPI?', url: 'https://www.usersolutions.com/top-10-manufacturing-kpis-in-2024/' }
+      { name: 'What is a manufacturing KPI?', url: '/top-10-manufacturing-kpis-in-2024' }
     ]
   },
   {
