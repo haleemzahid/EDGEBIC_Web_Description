@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
-
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,16 +19,16 @@ export const metadata: Metadata = {
 
 export default function TopERPSolutions2016Page() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen text-[18px]">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-purple-50 via-white to-blue-50 py-6">
+      <section className="py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
-            <h1 className="mb-6 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-3xl font-bold text-transparent md:text-4xl lg:text-5xl">
+            <h1 className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl">
               User Solutions, Inc. Named as One of Top ERP Solutions
               Transforming Business 2016
             </h1>
-            <p className="mb-4 text-xl text-gray-700">
+            <p className="text-gray-700">
               Celebrating 25 Years in Business
             </p>
           </div>
@@ -39,36 +37,28 @@ export default function TopERPSolutions2016Page() {
 
       {/* Main Content */}
       <section className="pt-6">
-        <div className="mx-auto px-4">
-          <div className="mx-auto max-w-7xl">
+        <div className="container mx-auto px-4">
+          <div className="mx-auto max-w-7xl space-y-8">
             {/* Subtitle */}
-            <div className="mb-6 text-center">
-              <Card>
-                <CardContent className="p-6">
-                  <h2 className="mb-6 text-3xl font-bold text-gray-900">
-                    User Solutions receives recognition by CIO Applications for
-                    the company&apos;s success as ERP Add-On for Production
-                    Scheduling
-                  </h2>
-                </CardContent>
-              </Card>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                User Solutions receives recognition by CIO Applications for
+                the company&apos;s success as ERP Add-On for Production
+                Scheduling
+              </h2>
             </div>
 
             {/* Date and Location */}
-            <div className="mb-6">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-2xl font-bold text-gray-900">
-                    South Lyon, MI - May 10, 2016
-                  </h3>
-                </CardContent>
-              </Card>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">
+                South Lyon, MI - May 10, 2016
+              </h3>
             </div>
 
             {/* CIO Applications Quote */}
-            <Card className="mb-6 border-l-4 border-purple-600">
+            <Card className="border-l-4 border-purple-600">
               <CardContent className="pt-6">
-                <blockquote className="mb-4 text-lg italic leading-relaxed text-gray-700">
+                <blockquote className="mb-4 italic leading-relaxed text-gray-700">
                   &quot;We are pleased to recognize User Solutions as one among
                   the 25 ERP Solutions Transforming Business of 2016. After
                   evaluation from many quantitative and qualitative elements,
@@ -83,9 +73,9 @@ export default function TopERPSolutions2016Page() {
             </Card>
 
             {/* Managing Editor Quote */}
-            <Card className="mb-6 border-l-4 border-blue-600">
+            <Card className="border-l-4 border-blue-600">
               <CardContent className="pt-6">
-                <blockquote className="mb-4 text-lg italic leading-relaxed text-gray-700">
+                <blockquote className="mb-4 italic leading-relaxed text-gray-700">
                   &quot;User Solutions&apos; proven track record of successful
                   client deployments in the ERP arena demonstrates its prowess
                   in helping customers attain unprecedented efficiency.&quot;
@@ -97,55 +87,46 @@ export default function TopERPSolutions2016Page() {
             </Card>
 
             {/* Read Full Article CTA */}
-            <div className="mb-6 text-center">
+            <div className="text-center">
               <a
                 href="http://www.cioapplications.com/vendor/article12/user_solutions"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <Button
-                  size="lg"
-                  className="text-lg"
-                >
+                <Button size="lg">
                   Read Full Article Here
                 </Button>
               </a>
             </div>
 
             {/* About User Solutions */}
-            <div className="mb-6">
-              <Card>
-                <CardContent className="p-6">
-                  <h2 className="mb-6 text-3xl font-bold text-gray-900">
-                    About User Solutions, Inc.
-                  </h2>
-                  <p className="text-lg leading-relaxed text-gray-700">
-                    User Solutions, Inc. was founded in 1991 to fulfill the
-                    genuine need for lower cost, easy to learn and use software
-                    solutions for the manufacturing and operations management
-                    markets. As an add-on solution to existing ERP Solutions, or
-                    running stand alone, their affordable products feature great
-                    flexibility and speed to implement.
-                  </p>
-                </CardContent>
-              </Card>
+            <div>
+              <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                About User Solutions, Inc.
+              </h2>
+              <p className="leading-relaxed text-gray-700">
+                User Solutions, Inc. was founded in 1991 to fulfill the
+                genuine need for lower cost, easy to learn and use software
+                solutions for the manufacturing and operations management
+                markets. As an add-on solution to existing ERP Solutions, or
+                running stand alone, their affordable products feature great
+                flexibility and speed to implement.
+              </p>
             </div>
 
             {/* Awards Banner */}
-            <div>
-              <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
-                <CardContent className="p-8 text-center">
-                  <h2 className="mb-6 text-2xl font-bold text-slate-900">
-                    CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
-                  </h2>
-                  <img
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
-                    alt="Collection of industry and business awards logos"
-                    className="mx-auto h-auto max-w-full"
-                  />
-                </CardContent>
-              </Card>
-            </div>
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
+              <CardContent className="p-8 text-center">
+                <h2 className="mb-6 text-2xl font-bold text-slate-900">
+                  CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
+                </h2>
+                <img
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  alt="Collection of industry and business awards logos"
+                  className="mx-auto h-auto max-w-full"
+                />
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
