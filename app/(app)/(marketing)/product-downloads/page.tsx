@@ -126,18 +126,6 @@ export default function ProductDownloadsPage(): React.JSX.Element {
                     </div>
                   </td>
                 </tr>
-                <tr>
-                  <td className="px-6 py-3">
-                    <span className="font-medium text-gray-900">Resource Manager for Excel</span>
-                    <span className="ml-2 font-bold text-green-600">Free</span>
-                  </td>
-                  <td className="px-6 py-3 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <Link href="/resource-manager-for-excel-2" className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700">Info</Link>
-                      <Link href={Routes.Contact} className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">Request Free</Link>
-                    </div>
-                  </td>
-                </tr>
               </tbody>
             </table>
           </div>
