@@ -31,14 +31,6 @@ export default function ProductDownloadsPage(): React.JSX.Element {
           <h1 className="mb-6 text-4xl font-bold">
             Production Scheduling Products
           </h1>
-          <div className="mt-6">
-            <Link
-              href={Routes.ExcelTemplates}
-              className="font-medium text-blue-600 hover:text-blue-800"
-            >
-              Excel Products →
-            </Link>
-          </div>
         </div>
 
         {/* Download Instructions */}
