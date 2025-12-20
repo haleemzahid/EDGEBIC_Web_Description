@@ -194,14 +194,31 @@ export default function NewsPage(): React.JSX.Element {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {mediaCoverage.map((item, index) => (
               <div key={index} className="overflow-hidden rounded-lg border">
-                <Image
-                  src={item.image}
-                  alt={item.title}
-                  width={300}
-                  height={200}
-                  className="h-40 w-full object-cover"
-                  unoptimized
-                />
+                {item.disable ? (
+                  <Image
+                    src={item.image}
+                    alt={item.title}
+                    width={300}
+                    height={200}
+                    className="h-40 w-full object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <Link
+                    href={item.link}
+                    target={item.link.startsWith('http') ? '_blank' : undefined}
+                    rel={item.link.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  >
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      width={300}
+                      height={200}
+                      className="h-40 w-full object-cover transition-opacity hover:opacity-80"
+                      unoptimized
+                    />
+                  </Link>
+                )}
                 <div className="p-3">
                   {item.disable ? (
                     <span className="font-medium">
@@ -251,14 +268,20 @@ export default function NewsPage(): React.JSX.Element {
           <div className="grid gap-4 md:grid-cols-2">
             {pressReleases.map((item, index) => (
               <div key={index} className={`overflow-hidden rounded-lg border ${index === 0 ? 'md:col-span-2' : ''}`}>
-                <Image
-                  src={item.image}
-                  alt={item.title}
-                  width={index === 0 ? 1024 : 400}
-                  height={index === 0 ? 300 : 200}
-                  className={`w-full object-contain ${index === 0 ? 'h-auto max-h-96' : 'h-70 object-cover'}`}
-                  unoptimized
-                />
+                <Link
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Image
+                    src={item.image}
+                    alt={item.title}
+                    width={index === 0 ? 1024 : 400}
+                    height={index === 0 ? 300 : 200}
+                    className={`w-full object-contain transition-opacity hover:opacity-80 ${index === 0 ? 'h-auto max-h-96' : 'h-70 object-cover'}`}
+                    unoptimized
+                  />
+                </Link>
                 <div className="p-3">
                   <Link
                     href={item.link}
@@ -281,19 +304,25 @@ export default function NewsPage(): React.JSX.Element {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {blogArticles.map((article, index) => (
               <div key={index} className="overflow-hidden rounded-lg border">
-                <Image
-                  src={article.image}
-                  alt={article.title}
-                  width={300}
-                  height={163}
-                  className="h-32 w-full object-cover"
-                  unoptimized
-                />
+                <Link
+                  href={article.link}
+                  target={article.link.startsWith('http') ? '_blank' : undefined}
+                  rel={article.link.startsWith('http') ? 'noopener noreferrer' : undefined}
+                >
+                  <Image
+                    src={article.image}
+                    alt={article.title}
+                    width={300}
+                    height={163}
+                    className="h-32 w-full object-cover transition-opacity hover:opacity-80"
+                    unoptimized
+                  />
+                </Link>
                 <div className="p-3">
                   <Link
                     href={article.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    target={article.link.startsWith('http') ? '_blank' : undefined}
+                    rel={article.link.startsWith('http') ? 'noopener noreferrer' : undefined}
                     className="text-sm font-medium hover:text-blue-600"
                   >
                     {article.title}
