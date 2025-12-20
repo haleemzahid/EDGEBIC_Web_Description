@@ -75,7 +75,7 @@ export default function ProductionSchedulingProductsPage() {
                     "Easy ERP add-on for manufacturing resource planning"
                   </p>
                   <p className="mb-4 text-gray-600">– Incon Incorporated</p>
-                  <Link href="/incon-incorporate">
+                  <Link href="/incon-incorporated">
                     <Button variant="outline">Read More</Button>
                   </Link>
                 </CardContent>
