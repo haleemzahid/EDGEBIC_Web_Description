@@ -86,8 +86,7 @@ const mediaCoverage = [
     link: 'https://www.ascm.org/',
     sources: [
       { name: 'APICS', url: 'https://www.ascm.org/' }
-    ],
-    disable: true
+    ]
   }
 ];
 
@@ -192,66 +191,40 @@ export default function NewsPage(): React.JSX.Element {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {mediaCoverage.map((item, index) => (
               <div key={index} className="overflow-hidden rounded-lg border">
-                {item.disable ? (
+                <Link
+                  href={item.link}
+                  target={item.link.startsWith('http') ? '_blank' : undefined}
+                  rel={item.link.startsWith('http') ? 'noopener noreferrer' : undefined}
+                >
                   <Image
                     src={item.image}
                     alt={item.title}
                     width={300}
                     height={200}
-                    className="h-40 w-full object-cover"
+                    className="h-40 w-full object-cover transition-opacity hover:opacity-80"
                     unoptimized
                   />
-                ) : (
+                </Link>
+                <div className="p-3">
                   <Link
                     href={item.link}
                     target={item.link.startsWith('http') ? '_blank' : undefined}
                     rel={item.link.startsWith('http') ? 'noopener noreferrer' : undefined}
+                    className="font-medium hover:text-blue-600"
                   >
-                    <Image
-                      src={item.image}
-                      alt={item.title}
-                      width={300}
-                      height={200}
-                      className="h-40 w-full object-cover transition-opacity hover:opacity-80"
-                      unoptimized
-                    />
+                    {item.title}
                   </Link>
-                )}
-                <div className="p-3">
-                  {item.disable ? (
-                    <span className="font-medium">
-                      {item.title}
-                    </span>
-                  ) : (
-                    <Link
-                      href={item.link}
-                      target={item.link.startsWith('http') ? '_blank' : undefined}
-                      rel={item.link.startsWith('http') ? 'noopener noreferrer' : undefined}
-                      className="font-medium hover:text-blue-600"
-                    >
-                      {item.title}
-                    </Link>
-                  )}
                   <div className="mt-2 flex flex-wrap gap-2">
                     {item.sources.map((source, sourceIndex) => (
-                      item.disable ? (
-                        <span
-                          key={sourceIndex}
-                          className="inline-block cursor-not-allowed rounded bg-gray-400 px-3 py-1 text-xs font-medium text-white opacity-70"
-                        >
-                          {source.name}
-                        </span>
-                      ) : (
-                        <Link
-                          key={sourceIndex}
-                          href={source.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block rounded bg-gray-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-gray-700"
-                        >
-                          {source.name}
-                        </Link>
-                      )
+                      <Link
+                        key={sourceIndex}
+                        href={source.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block rounded bg-gray-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-gray-700"
+                      >
+                        {source.name}
+                      </Link>
                     ))}
                   </div>
                 </div>
