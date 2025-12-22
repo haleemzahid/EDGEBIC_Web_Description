@@ -252,12 +252,7 @@ export default function OperationsManagerPage(): React.JSX.Element {
       <div className="container mx-auto px-4 pt-6">
         <div className="mx-auto max-w-7xl text-center">
           {/* Hero Section */}
-          <div className="mb-6">
-            <span className="inline-flex h-8 items-center rounded-full border px-3 py-0.5 text-sm font-medium text-foreground shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-              EXCEL TEMPLATES
-            </span>
-          </div>
-          <h1 className="mb-6 bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-5xl font-bold text-transparent md:text-6xl">
+          <h1 className="mb-6 text-3xl font-bold text-slate-900 md:text-4xl">
             Operations Manager
           </h1>
           <p className="mb-6 text-xl text-muted-foreground md:text-2xl">
@@ -278,7 +273,7 @@ export default function OperationsManagerPage(): React.JSX.Element {
           {categories.map((category, index) => (
             <Card key={index}>
               <CardHeader>
-                <CardTitle className="text-3xl text-blue-600">
+                <CardTitle className="text-3xl ">
                   {category.title}
                 </CardTitle>
                 <p className="text-lg text-muted-foreground">
@@ -308,7 +303,7 @@ export default function OperationsManagerPage(): React.JSX.Element {
                             )}
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-2xl font-bold text-blue-600">
+                            <span className="text-2xl font-bold  ">
                               {item.price}
                             </span>
                             <div className="flex space-x-2">
