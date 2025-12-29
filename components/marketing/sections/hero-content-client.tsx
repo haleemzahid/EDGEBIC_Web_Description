@@ -91,22 +91,37 @@ export function HeroContent(): React.JSX.Element {
             <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
               <button
                 onClick={handleFirstVideoButtonClick}
-                className="inline-flex items-center justify-center gap-1 rounded bg-white px-6 py-3 text-sm font-semibold text-[#004a8f] transition-colors hover:bg-gray-100"
+                className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-yellow-400 px-6 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
               >
-                Intro <i>Us</i>
+                <img
+                  src="https://www.usersolutions.com/wp-content/uploads/2023/01/onefootprint-1.png"
+                  alt="footprint"
+                  className="size-5"
+                />
+                NEXT STEPS - PLAY 30 SEC VIDEO
               </button>
               <button
                 onClick={handleSecondVideoButtonClick}
-                className="inline-flex items-center justify-center gap-2 rounded bg-transparent px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-yellow-400 px-6 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
               >
-                <Play className="size-4 fill-current" />
-                See how it works
+                <img
+                  src="https://www.usersolutions.com/wp-content/uploads/2023/01/onefootprint-1.png"
+                  alt="footprint"
+                  className="size-5"
+                />
+                <img
+                  src="https://www.usersolutions.com/wp-content/uploads/2023/01/onefootprint-1.png"
+                  alt="footprint"
+                  className="size-5"
+                />
+                90 SEC COMPANY OVERVIEW
               </button>
               <button
+                type="button"
                 onClick={() => {
                   window.open('https://calendly.com/mudasirnadeem7979/30min', '_blank');
                 }}
-                className="inline-flex items-center justify-center gap-2 rounded border-2 border-white bg-transparent px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white hover:text-[#004a8f]"
+                className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-yellow-400 px-6 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
               >
                 Fix My Schedule!
               </button>
