@@ -59,11 +59,11 @@ export function HeroContent(): React.JSX.Element {
   }, []);
 
   return (
-    <div className="relative w-full bg-white">
+    <div className="relative w-full bg-hero-manufacturing bg-cover bg-center bg-no-repeat">
       {/* Main Hero Content */}
-      <div className="mx-auto max-w-7xl p-6">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          {/* Left Column - Text Content */}
+      <div className="relative z-10 mx-auto max-w-7xl p-6 py-16 lg:py-24">
+        <div className="mx-auto max-w-4xl text-center">
+          {/* Text Content */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -71,17 +71,11 @@ export function HeroContent(): React.JSX.Element {
             className="space-y-8"
           >
             {/* Main Title */}
-            <h1 className="text-2xl  leading-tight text-slate-900 md:text-4xl lg:text-5xl">
+            <h1 className="text-2xl leading-tight text-white md:text-4xl lg:text-5xl">
               Production Planning and Scheduling Software
             </h1>
-
-            {/* Subtitle */}
-            <p className="text-base leading-relaxed text-slate-600 md:text-lg">
-              Ideal for companies with 10 - 200 employees
-            </p>
-
             {/* Description */}
-            <div className="space-y-4 text-base leading-relaxed text-slate-600">
+            <div className="mx-auto max-w-3xl space-y-4 text-base leading-relaxed text-white/90">
               <p>
                 What makes <span className="font-semibold italic">US</span>{' '}
                 (User Solution) unique: we work{' '}
@@ -94,16 +88,16 @@ export function HeroContent(): React.JSX.Element {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
               <button
                 onClick={handleFirstVideoButtonClick}
-                className="inline-flex items-center justify-center gap-2 rounded bg-[#004a8f] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#003d75]"
+                className="inline-flex items-center justify-center gap-1 rounded bg-white px-6 py-3 text-sm font-semibold text-[#004a8f] transition-colors hover:bg-gray-100"
               >
-                Next Step
+                Intro <i>Us</i>
               </button>
               <button
                 onClick={handleSecondVideoButtonClick}
-                className="inline-flex items-center justify-center gap-2 rounded bg-transparent px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                className="inline-flex items-center justify-center gap-2 rounded bg-transparent px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
               >
                 <Play className="size-4 fill-current" />
                 See how it works
@@ -112,15 +106,15 @@ export function HeroContent(): React.JSX.Element {
                 onClick={() => {
                   window.open('https://calendly.com/mudasirnadeem7979/30min', '_blank');
                 }}
-                className="inline-flex items-center justify-center gap-2 rounded border-2 border-[#004a8f] bg-transparent px-6 py-2.5 text-sm font-semibold text-[#004a8f] transition-colors hover:bg-[#004a8f] hover:text-white"
+                className="inline-flex items-center justify-center gap-2 rounded border-2 border-white bg-transparent px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white hover:text-[#004a8f]"
               >
                 Schedule a Meeting
               </button>
             </div>
 
             {/* Ratings/Reviews Section */}
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-1">
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex items-center justify-center gap-1">
                 {[...Array(4)].map((_, i) => (
                   <svg
                     key={i}
@@ -152,11 +146,11 @@ export function HeroContent(): React.JSX.Element {
                     d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
                   />
                 </svg>
-                <span className="ml-2 text-sm text-slate-600">
+                <span className="ml-2 text-sm text-white">
                   Top-Rated Manufacturing Software
                 </span>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center gap-4">
                 {/* G2 Logo */}
                 <a
                   href="https://www.g2.com/products/resource-manager-db-rmdb/competitors/alternativesproducts/resource-manager-db-rmdb/competitors/alternatives"
@@ -341,22 +335,6 @@ export function HeroContent(): React.JSX.Element {
                   </svg>
                 </a>
               </div>
-            </div>
-          </motion.div>
-
-          {/* Right Column - Image/Illustration */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative hidden h-full lg:block"
-          >
-            <div className="relative size-full">
-              <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/12/slide4.jpg"
-                alt="Production Planning Software"
-                className="size-full rounded-lg object-cover shadow-2xl"
-              />
             </div>
           </motion.div>
         </div>

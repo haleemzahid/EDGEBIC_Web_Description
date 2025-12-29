@@ -63,7 +63,9 @@ module.exports = {
       },
       backgroundImage: {
         'diagonal-lines':
-          'repeating-linear-gradient(-45deg, hsl(var(--background)), hsl(var(--border)) 1px, hsl(var(--background)) 1px, hsl(var(--background)) 8px)'
+          'repeating-linear-gradient(-45deg, hsl(var(--background)), hsl(var(--border)) 1px, hsl(var(--background)) 1px, hsl(var(--background)) 8px)',
+        'hero-manufacturing':
+          'url("https://www.usersolutions.com/wp-content/uploads/2022/12/slide4.jpg")'
       },
       borderRadius: {
         lg: 'var(--radius)',
