@@ -62,7 +62,7 @@ export function HeroContent(): React.JSX.Element {
     <div className="relative w-full bg-hero-manufacturing bg-cover bg-center bg-no-repeat">
       {/* Main Hero Content */}
       <div className="relative z-10 mx-auto max-w-7xl p-6">
-        <div className="mx-auto max-w-7xl text-center">
+        <div className="mx-auto py-10 my-5 max-w-7xl text-center">
           {/* Text Content */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
