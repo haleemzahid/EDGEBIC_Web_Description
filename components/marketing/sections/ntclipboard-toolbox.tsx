@@ -283,7 +283,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 className={`animate-gentle-glow absolute right-4 top-4 z-10 rounded-full bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 px-4 py-2 text-sm font-bold text-white shadow-lg ring-2 ring-white/20 transition-opacity duration-1000 ${isVideoPlaying.advanced ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
               >
                 <span className="relative flex items-center gap-1">
-                  POPULAR
+                  ADVANCED
                 </span>
               </div>{' '}
               <div className="">
