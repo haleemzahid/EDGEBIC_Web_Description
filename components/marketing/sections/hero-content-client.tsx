@@ -61,8 +61,8 @@ export function HeroContent(): React.JSX.Element {
   return (
     <div className="relative w-full bg-hero-manufacturing bg-cover bg-center bg-no-repeat">
       {/* Main Hero Content */}
-      <div className="relative z-10 mx-auto max-w-7xl p-6 py-16 lg:py-24">
-        <div className="mx-auto max-w-4xl text-center">
+      <div className="relative z-10 mx-auto max-w-7xl p-6">
+        <div className="mx-auto max-w-7xl text-center">
           {/* Text Content */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -75,7 +75,7 @@ export function HeroContent(): React.JSX.Element {
               Production Planning and Scheduling Software
             </h1>
             {/* Description */}
-            <div className="mx-auto max-w-3xl space-y-4 text-base leading-relaxed text-white/90">
+            <div className="mx-auto  text-base leading-relaxed text-white/90">
               <p>
                 What makes <span className="font-semibold italic">US</span>{' '}
                 (User Solution) unique: we work{' '}
@@ -108,7 +108,7 @@ export function HeroContent(): React.JSX.Element {
                 }}
                 className="inline-flex items-center justify-center gap-2 rounded border-2 border-white bg-transparent px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white hover:text-[#004a8f]"
               >
-                Schedule a Meeting
+                Fix My Schedule!
               </button>
             </div>
 
