@@ -192,90 +192,6 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 </div>
               </div>
             </div>
-
-            <div className="group relative overflow-hidden rounded-3xl border bg-white shadow-lg transition-all hover:shadow-xl">
-              {/* Price Badge */}
-              <div
-                className={`animate-gentle-glow absolute right-4 top-4 z-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2 text-sm font-bold text-white shadow-lg ring-2 ring-white/20 transition-opacity duration-300 ${isVideoPlaying.starter ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
-              >
-                START
-              </div>
-
-              <div className="">
-                {/* Video Section */}
-                <div className="relative mb-6 overflow-hidden rounded-lg">
-                  <div className="relative aspect-video bg-slate-100">
-                    <VideoPlayer
-                      videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/10/Welcome-to-Job-Scheduler-Lite-JSL.mp4"
-                      title="EDGEBIC Demo"
-                      thumbnail="https://www.usersolutions.com/wp-content/uploads/2022/10/insight-1.png"
-                      onPlayStateChange={(isPlaying) =>
-                        handleVideoPlayState('starter', isPlaying)
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="p-6">
-                  <div className="mb-6">
-                    <div className="mb-4 flex items-center gap-3">
-                      <h3 className="text-2xl font-bold text-blue-700">
-                        EDGEBIC
-                      </h3>
-                    </div>
-                    <p className="mb-4 text-blue-600">
-                      Perfect for Job Shops & Small Manufacturers
-                    </p>
-                  </div>
-
-                  <div className="mb-6 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-blue-500" />
-                      <span className="text-sm">
-                        Shop Scheduling Made Easy
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-blue-500" />
-                      <span className="text-sm">Forward Scheduling</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-blue-500" />
-                      <span className="text-sm">Finite Capacity</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-blue-500" />
-                      <span className="text-sm">Free Trials Available</span>
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <Button
-                      variant="outline"
-                      className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
-                      asChild
-                    >
-                      <Link
-                        href="/jsl-job-scheduler-lite"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        View Details
-                      </Link>
-                    </Button>
-                  </div>
-
-                  <div className="text-center">
-                    <div className="mb-2 text-3xl font-bold text-blue-700">
-                      $1,000+
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Starting investment
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* Professional & Enterprise - Combined */}
             <div className="group relative overflow-hidden rounded-3xl border border-orange-200 bg-white shadow-lg transition-all hover:shadow-xl">
               {/* Popular Badge - Enhanced */}
@@ -383,6 +299,91 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 </div>
               </div>
             </div>
+
+            <div className="group relative overflow-hidden rounded-3xl border bg-white shadow-lg transition-all hover:shadow-xl">
+              {/* Price Badge */}
+              <div
+                className={`animate-gentle-glow absolute right-4 top-4 z-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2 text-sm font-bold text-white shadow-lg ring-2 ring-white/20 transition-opacity duration-300 ${isVideoPlaying.starter ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
+              >
+                ADVANCED
+              </div>
+
+              <div className="">
+                {/* Video Section */}
+                <div className="relative mb-6 overflow-hidden rounded-lg">
+                  <div className="relative aspect-video bg-slate-100">
+                    <VideoPlayer
+                      videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/10/Welcome-to-Job-Scheduler-Lite-JSL.mp4"
+                      title="EDGEBIC Demo"
+                      thumbnail="https://www.usersolutions.com/wp-content/uploads/2022/10/insight-1.png"
+                      onPlayStateChange={(isPlaying) =>
+                        handleVideoPlayState('starter', isPlaying)
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="p-6">
+                  <div className="mb-6">
+                    <div className="mb-4 flex items-center gap-3">
+                      <h3 className="text-2xl font-bold text-blue-700">
+                        EDGEBIC
+                      </h3>
+                    </div>
+                    <p className="mb-4 text-blue-600">
+                      Perfect for Job Shops & Small Manufacturers
+                    </p>
+                  </div>
+
+                  <div className="mb-6 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="size-2 rounded-full bg-blue-500" />
+                      <span className="text-sm">
+                        Shop Scheduling Made Easy
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="size-2 rounded-full bg-blue-500" />
+                      <span className="text-sm">Forward Scheduling</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="size-2 rounded-full bg-blue-500" />
+                      <span className="text-sm">Finite Capacity</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="size-2 rounded-full bg-blue-500" />
+                      <span className="text-sm">Free Trials Available</span>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <Button
+                      variant="outline"
+                      className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
+                      asChild
+                    >
+                      <Link
+                        href="/jsl-job-scheduler-lite"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        View Details
+                      </Link>
+                    </Button>
+                  </div>
+
+                  <div className="text-center">
+                    <div className="mb-2 text-3xl font-bold text-blue-700">
+                      $1,000+
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Starting investment
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
           </div>
 
           {/* Call to Action */}
