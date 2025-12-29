@@ -21,9 +21,9 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
   return (
     <section className="pt-6">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="grid gap-8 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
           {/* Left Column - Challenges */}
-          <div>
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <h3 className="mb-4 text-lg font-semibold text-gray-900">
               Solving Challenges and Reaping Benefits
             </h3>
@@ -37,7 +37,7 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
           </div>
 
           {/* Right Column - Solutions */}
-          <div>
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <h3 className="mb-4 text-lg font-semibold text-gray-900">
               Solution Approach
             </h3>
