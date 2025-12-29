@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Play } from 'lucide-react';
+import { Play, Check } from 'lucide-react';
 
 import { GridSection } from '@/components/marketing/fragments/grid-section';
 import { Button } from '@/components/ui/button';
@@ -124,7 +124,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
               <div
                 className={`animate-gentle-glow absolute right-4 top-4 z-10 rounded-full bg-gradient-to-r from-green-500 to-green-600 px-4 py-2 text-sm font-bold text-white shadow-lg ring-2 ring-white/20 transition-opacity duration-300 ${isVideoPlaying.end ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
               >
-                EXCEL TOOLS
+                START
               </div>
 
               <div className="">
@@ -132,9 +132,9 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 <div className="relative mb-6 overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
                     <VideoPlayer
-                      videoUrl="https://www.youtube.com/watch?v=IduVVYgeXZg"
+                      videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/07/Resource-Manager-for-Excel.mp4"
                       title="Operations Manager Excel Templates"
-                      thumbnail="https://www.youtube.com/watch?v=IduVVYgeXZg"
+                      thumbnail="https://www.usersolutions.com/wp-content/uploads/2022/07/Resource-Manager-for-Excel.mp4"
                       onPlayStateChange={(isPlaying) =>
                         handleVideoPlayState('end', isPlaying)
                       }
@@ -142,40 +142,27 @@ export function NTClipboardToolBox(): React.JSX.Element {
                   </div>
                 </div>
                 <div className="p-6">
-                  <div className="mb-6">
-                    <div className="mb-4 flex items-center gap-3">
-                      <h3 className="text-2xl font-bold text-green-700">
-                        Excel Templates
-                      </h3>
-                    </div>
-                    <p className="mb-4 text-green-600">
-                      Excel-Based Templates for Operations
-                    </p>
-                  </div>
 
                   <div className="mb-6 space-y-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm">
-                        Spreadsheet Operations Manager
-                      </span>
-                      <span className="font-bold text-green-600">FREE</span>
+                    <div className="flex items-center gap-2">
+                      <Check className="size-4 text-green-500" />
+                      <span className="text-sm">Shop Scheduling Made easy</span>
                     </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm">Spreadsheet QC</span>
-                      <span className="font-bold text-green-600">FREE</span>
+                    <div className="flex items-center gap-2">
+                      <Check className="size-4 text-green-500" />
+                      <span className="text-sm">Forward Scheduling</span>
                     </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm">Workcell Planner</span>
-                      <span className="font-bold text-green-600">FREE</span>
+                    <div className="flex items-center gap-2">
+                      <Check className="size-4 text-green-500" />
+                      <span className="text-sm">Finite Capacity</span>
                     </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm">Spreadsheet Scheduler</span>
-                      <span className="font-bold text-green-600">FREE</span>
+                    <div className="flex items-center gap-2">
+                      <Check className="size-4 text-green-500" />
+                      <span className="text-sm">No Risk Trials</span>
                     </div>
-                    {/* <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm">Resource Manager XL</span>
-                        <span className="font-bold text-green-600">FREE</span>
-                      </div> */}
+                    <div className="ml-6 text-sm text-gray-500">
+                      Implementation support included!
+                    </div>
                   </div>
 
                   <div className="mb-4">
@@ -211,7 +198,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
               <div
                 className={`animate-gentle-glow absolute right-4 top-4 z-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2 text-sm font-bold text-white shadow-lg ring-2 ring-white/20 transition-opacity duration-300 ${isVideoPlaying.starter ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
               >
-                STARTER
+                START
               </div>
 
               <div className="">
