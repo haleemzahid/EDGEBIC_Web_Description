@@ -538,8 +538,8 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
 
         {/* Testimonials Section */}
         <div className="mt-6">
-          {/* Star Rating */}
-          <div className="mb-6 flex justify-center">
+          {/* Star Rating - Commented out */}
+          {/* <div className="mb-6 flex justify-center">
             <div className="flex gap-2">
               {[...Array(5)].map((_, i) => (
                 <svg
@@ -551,7 +551,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </svg>
               ))}
             </div>
-          </div>
+          </div> */}
 
           <h2 className="text-center text-3xl font-bold text-[#003d5c] md:text-4xl">
             Trusted by Manufacturers Worldwide for Over 25 Years
