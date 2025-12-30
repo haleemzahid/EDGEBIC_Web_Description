@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 
+import { EDGEBIContent } from '@/components/marketing/sections/edgebi-content';
 import { RMDBFeatureList } from '@/components/marketing/sections/rmdb-feature-list';
 import { RMDBInDepthContent } from '@/components/marketing/sections/rmdb-in-depth-content';
 import { Card, CardContent } from '@/components/ui/card';
@@ -147,38 +148,7 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
           )}
 
           {/* EDGEBI Tab */}
-          {activeTab === 'edgebi' && (
-            <div className="grid items-start gap-8 lg:grid-cols-2">
-              <div>
-                <h2 className="mb-4 text-2xl font-bold text-slate-900">EDGEBI</h2>
-                <div className="space-y-4 text-base leading-relaxed text-slate-600">
-                  <p>
-                    EDGE (Enhanced Drag & drop Graphical Environment) is our advanced visual scheduling interface that makes production planning intuitive and efficient.
-                  </p>
-                  <p>
-                    With EDGE, you can easily drag and drop jobs, visualize capacity constraints, and make real-time adjustments to your production schedule with immediate feedback.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center justify-center">
-                <div className="aspect-video w-full max-w-[600px] overflow-hidden rounded-lg shadow-lg">
-                  <video
-                    className="h-full w-full object-cover"
-                    controls
-                    playsInline
-                    preload="auto"
-                    poster="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
-                  >
-                    <source
-                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE BI User Solutions.mp4"
-                      type="video/mp4"
-                    />
-                    Your browser does not support the video tag.
-                  </video>
-                </div>
-              </div>
-            </div>
-          )}
+          {activeTab === 'edgebi' && <EDGEBIContent />}
 
           {/* Live Demo Tab */}
           {activeTab === 'live-demo' && (
