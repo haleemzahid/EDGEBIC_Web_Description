@@ -63,7 +63,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               <div className="overflow-hidden rounded-lg">
                 <div className="relative aspect-video w-full">
                   <iframe
-                    src="/videos/welcome-to-job-scheduler-lite.mp4"
+                    src="https://www.youtube.com/embed/r6_gyu3RPOE"
                     title="EDGEBIC Demo Video"
                     className="absolute inset-0 size-full rounded-lg"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

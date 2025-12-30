@@ -9,7 +9,7 @@ export function EDGEBIContent() {
       <div className="flex justify-center">
         <div className="aspect-video w-full max-w-[800px] overflow-hidden rounded-lg shadow-lg">
           <LazyVideo
-            src="/videos/edgebi-updated-thumbnail.mp4"
+            src="https://www.youtube.com/watch?v=-Rb6_Rop2JA"
             poster="/images/Edgebic/2022-07/RMDB-EDGE2-1024x483.png"
             className="h-full w-full object-cover"
             title="EDGEBI Enhanced Drag-n-drop Graphical Environment demonstration"

@@ -10,8 +10,17 @@ interface LazyVideoProps {
 }
 
 export function LazyVideo({ src, poster, className = '', title = 'Video content' }: LazyVideoProps) {
-  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const [isInView, setIsInView] = React.useState(false);
+
+  // Check if it's a YouTube URL
+  const isYouTube = src.includes('youtube.com') || src.includes('youtu.be');
+
+  // Extract video ID from YouTube URL
+  const getVideoId = (url: string) => {
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
+    return match ? match[1] : '';
+  };
 
   React.useEffect(() => {
     const observer = new IntersectionObserver(
@@ -24,16 +33,35 @@ export function LazyVideo({ src, poster, className = '', title = 'Video content'
       { rootMargin: '100px' }
     );
 
-    if (videoRef.current) {
-      observer.observe(videoRef.current);
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
     }
 
     return () => observer.disconnect();
   }, []);
 
+  if (isYouTube) {
+    const videoId = getVideoId(src);
+    return (
+      <div ref={containerRef} className={className}>
+        {isInView && (
+          <iframe
+            src={`https://www.youtube.com/embed/${videoId}`}
+            title={title}
+            className="size-full"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allowFullScreen
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
     <video
-      ref={videoRef}
+      ref={containerRef as React.RefObject<HTMLVideoElement>}
       className={className}
       controls
       playsInline

@@ -51,13 +51,11 @@ function VideoPlayer({
 
   if (isYouTube) {
     const videoId = getVideoId(videoUrl);
-    // Use specific embed URL with si parameter for the Excel template video
-    const embedUrl = '';
 
     return (
       <iframe
-        src="https://www.youtube.com/embed/IduVVYgeXZg?si=HV7y45YVfX1Jk_sK"
-        title="YouTube video player"
+        src={`https://www.youtube.com/embed/${videoId}`}
+        title={title}
         className="absolute inset-0 size-full rounded-lg"
         frameBorder="0"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -132,9 +130,9 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 <div className="relative mb-6 overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
                     <VideoPlayer
-                      videoUrl="/videos/resource-manager-for-excel.mp4"
+                      videoUrl="https://www.youtube.com/watch?v=G6sbrbp9AVc"
                       title="Operations Manager Excel Templates"
-                      thumbnail="/videos/resource-manager-for-excel.mp4"
+                      thumbnail="/images/Edgebic/2022-07/RMX.png"
                       onPlayStateChange={(isPlaying) =>
                         handleVideoPlayState('end', isPlaying)
                       }
@@ -204,7 +202,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 <div className="relative  overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
                     <VideoPlayer
-                      videoUrl="/videos/rmdb-updated-thumbnail.mp4"
+                      videoUrl="https://www.youtube.com/watch?v=I8fOWJkTv-k"
                       title="Resource Manager DB"
                       thumbnail="/images/toolbox/advanced.png"
                       onPlayStateChange={(isPlaying) =>
@@ -277,7 +275,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 <div className="relative  overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
                     <VideoPlayer
-                      videoUrl="/videos/edgebi-updated-thumbnail.mp4"
+                      videoUrl="https://www.youtube.com/watch?v=-Rb6_Rop2JA"
                       title="EDGEBIC Demo"
                       thumbnail="/images/toolbox/insight.png"
                       onPlayStateChange={(isPlaying) =>

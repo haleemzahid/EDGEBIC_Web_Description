@@ -100,7 +100,7 @@ export default function EDGEBIPage(): React.JSX.Element {
               <div className="relative overflow-hidden rounded-lg shadow-lg">
                 <div className="relative aspect-video">
                   <VideoPlayer
-                    videoUrl="/videos/edgebi-updated-thumbnail.mp4"
+                    videoUrl="https://www.youtube.com/watch?v=-Rb6_Rop2JA"
                     title="EDGEBI Demo"
                     onPlayStateChange={setIsVideoPlaying}
                   />

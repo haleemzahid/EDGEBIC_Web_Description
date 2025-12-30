@@ -18,7 +18,7 @@ const IMAGES = {
   dataImportImage: '/images/rmdb/rmdb-data-import.png',
   awardsBanner: '/images/rmdb/awards-banner.jpg',
   // Local video paths
-  heroVideo: '/videos/rmdb-updated-thumbnail.mp4',
+  heroVideo: 'https://www.youtube.com/watch?v=I8fOWJkTv-k',
   summaryVideo: '/videos/edge-bi-user-solutions.mp4',
 };
 
