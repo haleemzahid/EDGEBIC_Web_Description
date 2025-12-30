@@ -17,7 +17,6 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
     { id: 'in-depth' as TabType, label: 'In Depth' },
     { id: 'quick-start' as TabType, label: 'Quick Start' },
     { id: 'edgebi' as TabType, label: 'EDGEBI' },
-    { id: 'live-demo' as TabType, label: 'Live Demo' }
   ];
 
   return (
