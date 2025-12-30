@@ -185,9 +185,6 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     <div className="mb-2 text-3xl font-bold text-green-700">
                       FREE
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Excel-based solutions
-                    </p>
                   </div>
                 </div>
               </div>
@@ -216,12 +213,10 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     />
                   </div>
                 </div>
-                <div className="">
-                  <div className="mb-4">
-                    <h3 className="text-xl font-bold text-gray-900">
-                      Resource Manager DB
-                    </h3>
-                  </div>
+                <div className="p-6">
+                  <h3 className="mb-4 text-xl font-bold text-gray-900">
+                    Resource Manager DB
+                  </h3>
 
                   <div className="mb-6 space-y-3">
                     <div className="flex items-center gap-2">
@@ -236,11 +231,13 @@ export function NTClipboardToolBox(): React.JSX.Element {
                       <Check className="size-4 text-green-500" />
                       <span className="text-sm">Easy to implement APS & MRP</span>
                     </div>
-                  </div>
-
-                  <div className="mb-4 border-t pt-4">
-                    <p className="text-sm text-gray-700">No Risk Trials</p>
-                    <p className="text-sm text-gray-500">Implementation support included!</p>
+                    <div className="flex items-center gap-2">
+                      <Check className="size-4 text-green-500" />
+                      <span className="text-sm">No Risk Trials</span>
+                    </div>
+                    <div className="ml-6 text-sm text-gray-500">
+                      Implementation support included!
+                    </div>
                   </div>
 
                   <div className="mb-6">
