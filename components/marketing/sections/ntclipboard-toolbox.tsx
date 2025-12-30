@@ -201,7 +201,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
               </div>{' '}
               <div className="">
                 {/* Video Section */}
-                <div className="relative mb-6 overflow-hidden rounded-lg">
+                <div className="relative  overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
                     <VideoPlayer
                       videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/12/RMDB%20updated%20thumbnail.mp4"
@@ -273,7 +273,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
 
               <div className="">
                 {/* Video Section */}
-                <div className="relative mb-6 overflow-hidden rounded-lg">
+                <div className="relative  overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
                     <VideoPlayer
                       videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/12/EDGEBI%20updated%20thumbnail.mp4"
@@ -286,35 +286,34 @@ export function NTClipboardToolBox(): React.JSX.Element {
                   </div>
                 </div>
                 <div className="p-6">
-                  <div className="mb-6">
-                    <div className="mb-4 flex items-center gap-3">
-                      <h3 className="text-2xl font-bold text-blue-700">
-                        EDGEBIC
-                      </h3>
-                    </div>
-                    <p className="mb-4 text-blue-600">
-                      Perfect for Job Shops & Small Manufacturers
-                    </p>
-                  </div>
+                  <h3 className="mb-1 text-xl font-bold text-gray-900">
+                    EDGEBI
+                  </h3>
+                  <p className="mb-4 text-sm text-gray-500">(Bundled w/ RMDB)</p>
 
                   <div className="mb-6 space-y-3">
                     <div className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-blue-500" />
-                      <span className="text-sm">
-                        Shop Scheduling Made Easy
-                      </span>
+                      <Check className="size-4 text-green-500" />
+                      <span className="text-sm">Heat Map Report</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-blue-500" />
-                      <span className="text-sm">Forward Scheduling</span>
+                      <Check className="size-4 text-green-500" />
+                      <span className="text-sm">Schedule Key Dates</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-blue-500" />
-                      <span className="text-sm">Finite Capacity</span>
+                      <Check className="size-4 text-green-500" />
+                      <span className="text-sm">Live Embedded Excel</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-blue-500" />
-                      <span className="text-sm">Free Trials Available</span>
+                      <Check className="size-4 text-green-500" />
+                      <span className="text-sm">Advanced Drag and Drop</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="size-4 text-green-500" />
+                      <span className="text-sm">No Risk Trials</span>
+                    </div>
+                    <div className="ml-6 text-sm text-gray-500">
+                      Implementation support included!
                     </div>
                   </div>
 
