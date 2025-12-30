@@ -3,6 +3,25 @@ import * as React from 'react';
 export function EDGEBIContent(): React.JSX.Element {
   return (
     <div className="space-y-16">
+      {/* Video Section - First */}
+      <div className="flex justify-center">
+        <div className="aspect-video w-full max-w-[800px] overflow-hidden rounded-lg shadow-lg">
+          <video
+            className="h-full w-full object-cover"
+            controls
+            playsInline
+            preload="auto"
+            poster="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
+          >
+            <source
+              src="https://www.usersolutions.com/wp-content/uploads/2022/12/EDGEBI updated thumbnail.mp4"
+              type="video/mp4"
+            />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      </div>
+
       {/* Overview Header with Image Side by Side */}
       <div className="grid items-center gap-8 lg:grid-cols-2">
         <div>
@@ -71,25 +90,6 @@ export function EDGEBIContent(): React.JSX.Element {
           <p className="text-[18px] text-slate-700">
             Run the Schedule Key Dates reports, with an export to Excel to view all activity the way you want.
           </p>
-        </div>
-      </div>
-
-      {/* Video Section */}
-      <div className="flex justify-center">
-        <div className="aspect-video w-full max-w-[800px] overflow-hidden rounded-lg shadow-lg">
-          <video
-            className="h-full w-full object-cover"
-            controls
-            playsInline
-            preload="auto"
-            poster="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
-          >
-            <source
-              src="https://www.usersolutions.com/wp-content/uploads/2022/12/EDGEBI updated thumbnail.mp4"
-              type="video/mp4"
-            />
-            Your browser does not support the video tag.
-          </video>
         </div>
       </div>
 
