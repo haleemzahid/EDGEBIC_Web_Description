@@ -4,7 +4,7 @@ import { Check, X } from 'lucide-react';
 export function WhatWeDoSection(): React.JSX.Element {
   return (
     <section className="pt-6">
-      <div className="mx-auto max-w-7xl px-6">
+      <div className="mx-auto max-w-7xl">
         <div className="grid gap-6 md:grid-cols-2">
           {/* What we WILL do Card */}
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -39,27 +39,35 @@ export function WhatWeDoSection(): React.JSX.Element {
           </div>
 
           {/* What we WON'T do Card */}
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-full bg-red-100">
-                <X className="size-5 text-red-600" />
+          <div className="flex flex-col gap-6">
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex size-10 items-center justify-center rounded-full bg-red-100">
+                  <X className="size-5 text-red-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">What we WON&apos;T do</h3>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">What we WON&apos;T do</h3>
+              <ul className="space-y-3 text-md text-gray-600">
+                <li className="flex gap-3">
+                  <X className="mt-0.5 size-4 shrink-0 text-red-500" />
+                  <span>Pound you with emails and phone calls to buy our software.</span>
+                </li>
+                <li className="flex gap-3">
+                  <X className="mt-0.5 size-4 shrink-0 text-red-500" />
+                  <span>Share ANY of your information or data with anyone, at anytime, for any reason.</span>
+                </li>
+                <li className="flex gap-3">
+                  <X className="mt-0.5 size-4 shrink-0 text-red-500" />
+                  <span>Expect compensation before we prove out solution.</span>
+                </li>
+              </ul>
             </div>
-            <ul className="space-y-3 text-md text-gray-600">
-              <li className="flex gap-3">
-                <X className="mt-0.5 size-4 shrink-0 text-red-500" />
-                <span>Pound you with emails and phone calls to buy our software.</span>
-              </li>
-              <li className="flex gap-3">
-                <X className="mt-0.5 size-4 shrink-0 text-red-500" />
-                <span>Share ANY of your information or data with anyone, at anytime, for any reason.</span>
-              </li>
-              <li className="flex gap-3">
-                <X className="mt-0.5 size-4 shrink-0 text-red-500" />
-                <span>Expect compensation before we prove out solution.</span>
-              </li>
-            </ul>
+
+            {/* Solution Approach Card */}
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+              <h3 className="mb-2 text-lg font-semibold text-gray-900">Solution Approach</h3>
+              <p className="text-md text-gray-700">Preventive Maintenance</p>
+            </div>
           </div>
         </div>
       </div>

@@ -20,29 +20,19 @@ const challenges = [
 export function ChallengesBenefitsSection(): React.JSX.Element {
   return (
     <section className="pt-6">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Left Column - Challenges */}
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h3 className="mb-4 text-lg font-semibold text-gray-900">
-              Solving Challenges and Reaping Benefits
-            </h3>
-            <ul className="space-y-2">
-              {challenges.map((item, index) => (
-                <li key={index} className="text-md text-gray-700">
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Right Column - Solutions */}
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h3 className="mb-4 text-lg font-semibold text-gray-900">
-              Solution Approach
-            </h3>
-            <p className="text-md text-gray-700">Prentitave Maintainence</p>
-          </div>
+      <div className="mx-auto max-w-7xl">
+        {/* Challenges */}
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <h3 className="mb-4 text-lg font-semibold text-gray-900">
+            Solving Challenges and Reaping Benefits
+          </h3>
+          <ul className="grid gap-2 md:grid-cols-2">
+            {challenges.map((item, index) => (
+              <li key={index} className="text-md text-gray-700">
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>

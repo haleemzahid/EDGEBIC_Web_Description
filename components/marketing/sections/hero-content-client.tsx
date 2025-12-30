@@ -62,7 +62,7 @@ export function HeroContent(): React.JSX.Element {
     <div className="relative w-full bg-hero-manufacturing bg-cover bg-center bg-no-repeat">
       {/* Main Hero Content */}
       <div className="relative z-10 mx-auto max-w-7xl p-6">
-        <div className="mx-auto py-10 my-5 max-w-7xl text-center">
+        <div className="mx-auto py-6 my-5 max-w-7xl text-center">
           {/* Text Content */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -88,7 +88,7 @@ export function HeroContent(): React.JSX.Element {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <div className="flex flex-col items-center justify-center gap-3 pb-6 sm:flex-row">
               <button
                 onClick={handleFirstVideoButtonClick}
                 className="inline-flex min-w-[200px] items-center justify-center gap-1 rounded-[10px] bg-yellow-400 px-6 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
