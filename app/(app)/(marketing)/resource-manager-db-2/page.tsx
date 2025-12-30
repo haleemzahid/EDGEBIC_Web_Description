@@ -80,14 +80,9 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
           {/* Summary Tab */}
           {activeTab === 'summary' && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-cyan-500">RESOURCE MANAGER DB: SUMMARY</h2>
               <div className="grid items-start gap-8 lg:grid-cols-2">
                 <div>
-                  <h3 className="mb-4 text-xl font-bold text-slate-900">Overview</h3>
                   <div className="space-y-4 text-base leading-relaxed text-slate-700">
-                    <p>
-                      Resource Manager-DB (RMDB) is a flexible and affordable production planning, scheduling, and tracking solution that is designed to adapt to your operations.
-                    </p>
                     <p>
                       If you have tried to use your ERP for creating a viable Production Schedule, and still end up with a tangle of custom Excel Reports, messy whiteboard or worse yet, late shipments, we can help.
                     </p>
@@ -100,6 +95,37 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
                     <p>
                       Schedule a live demo, even using your data in its current form – RISK FREE!!
                     </p>
+                    <p>
+                      RMDB contains deep functionality to address a multitude of challenges for production planning and scheduling: alternate workcenters, complex routings & processes, discrete and/or batch, multiple constraints (labor, machines, materials, etc.), advanced drag and drop graphical calendar screens, downtime management, sub-assemblies, optimization, and much more.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-center">
+                  <img
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
+                    alt="Resource Manager-DB with EDGE (Enhanced Drag & drop Graphical Environment)"
+                    className="h-auto max-w-full rounded-lg shadow-lg"
+                  />
+                </div>
+              </div>
+
+              {/* Video and Image Section */}
+              <div className="grid items-center gap-8 lg:grid-cols-2">
+                <div className="flex justify-center">
+                  <div className="aspect-video w-full overflow-hidden rounded-lg shadow-lg">
+                    <video
+                      className="h-full w-full object-cover"
+                      controls
+                      playsInline
+                      preload="auto"
+                      poster="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
+                    >
+                      <source
+                        src="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE BI User Solutions.mp4"
+                        type="video/mp4"
+                      />
+                      Your browser does not support the video tag.
+                    </video>
                   </div>
                 </div>
                 <div className="flex items-center justify-center">
@@ -108,25 +134,6 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
                     alt="Resource Manager DB Processing Menu"
                     className="h-auto max-w-full rounded-lg shadow-lg"
                   />
-                </div>
-              </div>
-
-              {/* Video Section */}
-              <div className="flex justify-center">
-                <div className="aspect-video w-full max-w-[800px] overflow-hidden rounded-lg shadow-lg">
-                  <video
-                    className="h-full w-full object-cover"
-                    controls
-                    playsInline
-                    preload="auto"
-                    poster="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
-                  >
-                    <source
-                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE BI User Solutions.mp4"
-                      type="video/mp4"
-                    />
-                    Your browser does not support the video tag.
-                  </video>
                 </div>
               </div>
             </div>
