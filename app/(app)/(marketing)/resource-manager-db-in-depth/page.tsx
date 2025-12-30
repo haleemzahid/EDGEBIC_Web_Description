@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 
+import { EDGEBIContent } from '@/components/marketing/sections/edgebi-content';
 import { RMDBFeatureList } from '@/components/marketing/sections/rmdb-feature-list';
 
 type TabType = 'summary' | 'in-depth' | 'quick-start' | 'edgebi' | 'live-demo';
@@ -55,30 +56,62 @@ export default function ResourceManagerDBInDepthPage() {
         <div className="container mx-auto max-w-7xl px-4">
           {/* Summary Tab */}
           {activeTab === 'summary' && (
-            <div className="grid items-center gap-8 md:grid-cols-2">
-              <div>
-                <h2 className="mb-4 text-2xl font-bold">Overview</h2>
-                <p className="mb-4 text-slate-600">
-                  Resource Manager-DB (RMDB) is an affordable, flexible and
-                  quick-to-implement approach to resolve your production planning,
-                  scheduling and tracking challenges. Designed by customers just
-                  like you, Resource Manager-DB features a single, simple menu
-                  (dashboard) requiring minimal transactions to keep the system
-                  accurate.
-                </p>
-                <p className="text-slate-600">
-                  RMDB's unique, customer driven architecture allows you to start
-                  very simply, focusing on one area at a time, enabling you to
-                  provide minimal information in order to recognize immediate
-                  benefits.
-                </p>
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-cyan-500">RESOURCE MANAGER DB: SUMMARY</h2>
+              <div className="grid items-start gap-8 lg:grid-cols-2">
+                <div>
+                  <div className="space-y-4 text-base leading-relaxed text-slate-700">
+                    <p>
+                      If you have tried to use your ERP for creating a viable Production Schedule, and still end up with a tangle of custom Excel Reports, messy whiteboard or worse yet, late shipments, we can help.
+                    </p>
+                    <p>
+                      RMDB was specifically architected to easily adapt to the way you work, using your existing data. It can be easily configured, and/or reconfigured, on the fly to address your most pressing issues.
+                    </p>
+                    <p>
+                      We can focus and resolve your most pressing issues quickly — letting you reap immediate ROI. Then, delve deeper without having to spend more!
+                    </p>
+                    <p>
+                      Schedule a live demo, even using your data in its current form – RISK FREE!!
+                    </p>
+                    <p>
+                      RMDB contains deep functionality to address a multitude of challenges for production planning and scheduling: alternate workcenters, complex routings & processes, discrete and/or batch, multiple constraints (labor, machines, materials, etc.), advanced drag and drop graphical calendar screens, downtime management, sub-assemblies, optimization, and much more.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-center">
+                  <img
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
+                    alt="Resource Manager-DB with EDGE (Enhanced Drag & drop Graphical Environment)"
+                    className="h-auto max-w-full rounded-lg shadow-lg"
+                  />
+                </div>
               </div>
-              <div>
-                <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-MainMenu.png"
-                  alt="RMDB Main Menu Dashboard"
-                  className="w-full rounded-lg shadow-md"
-                />
+
+              {/* Video and Image Section */}
+              <div className="grid items-center gap-8 lg:grid-cols-2">
+                <div className="flex justify-center">
+                  <div className="aspect-video w-full overflow-hidden rounded-lg shadow-lg">
+                    <video
+                      className="h-full w-full object-cover"
+                      controls
+                      playsInline
+                      preload="auto"
+                    >
+                      <source
+                        src="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE BI User Solutions.mp4"
+                        type="video/mp4"
+                      />
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
+                </div>
+                <div className="flex items-center justify-center">
+                  <img
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/rmdb11.png"
+                    alt="Resource Manager DB Processing Menu"
+                    className="h-auto max-w-full rounded-lg shadow-lg"
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -512,34 +545,7 @@ export default function ResourceManagerDBInDepthPage() {
           )}
 
           {/* EDGEBI Tab */}
-          {activeTab === 'edgebi' && (
-            <div className="grid items-start gap-8 lg:grid-cols-2">
-              <div>
-                <h2 className="mb-4 text-2xl font-bold">EDGEBI</h2>
-                <div className="space-y-4 text-base leading-relaxed text-slate-600">
-                  <p>
-                    EDGE (Enhanced Drag & drop Graphical Environment) is our advanced visual scheduling interface that makes production planning intuitive and efficient.
-                  </p>
-                  <p>
-                    With EDGE, you can easily drag and drop jobs, visualize capacity constraints, and make real-time adjustments to your production schedule with immediate feedback.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center justify-center">
-                <div className="overflow-hidden rounded-lg shadow-lg">
-                  <video
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE%20BI%20User%20Solutions.mp4"
-                    title="EDGE BI User Solutions"
-                    className="w-full"
-                    controls
-                    playsInline
-                  >
-                    Your browser does not support the video tag.
-                  </video>
-                </div>
-              </div>
-            </div>
-          )}
+          {activeTab === 'edgebi' && <EDGEBIContent />}
 
           {/* Live Demo Tab */}
           {activeTab === 'live-demo' && (
