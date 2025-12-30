@@ -6,6 +6,7 @@ import { Suspense } from 'react';
 import { RMDBFeatureList } from '@/components/marketing/sections/rmdb-feature-list';
 import { RMDBTabsClient } from '@/components/marketing/sections/rmdb-tabs-client';
 import { Card, CardContent } from '@/components/ui/card';
+import { HeroVideo } from '@/components/ui/hero-video';
 import { LazyVideo } from '@/components/ui/lazy-video';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://edgebic.com';
@@ -267,6 +268,14 @@ function LiveDemoContent() {
 export default function ResourceManagerDBPage() {
   return (
     <>
+      {/* Preload LCP image for better performance */}
+      <link
+        rel="preload"
+        as="image"
+        href="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
+        fetchPriority="high"
+      />
+
       {/* JSON-LD Structured Data */}
       <Script
         id="json-ld-rmdb"
@@ -295,11 +304,12 @@ export default function ResourceManagerDBPage() {
             </div>
             <div className="flex justify-center">
               <div className="aspect-video w-full max-w-[700px] overflow-hidden rounded-lg shadow-lg">
-                <LazyVideo
+                <HeroVideo
                   src="https://www.usersolutions.com/wp-content/uploads/2022/12/RMDB updated thumbnail.mp4"
                   poster="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
-                  className="h-full w-full object-cover"
+                  className="h-full w-full"
                   title="Resource Manager DB product overview video"
+                  priority
                 />
               </div>
             </div>
