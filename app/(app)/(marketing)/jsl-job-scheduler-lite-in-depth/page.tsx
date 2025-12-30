@@ -4,9 +4,9 @@ export default function JSLJobSchedulerLiteInDepthPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800 py-12 text-white">
+      <section className="py-6">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl font-bold md:text-5xl">EDGEBIC : In Depth</h1>
+          <h1 className="text-4xl font-bold text-gray-900 md:text-5xl">EDGEBIC : In Depth</h1>
         </div>
       </section>
 
