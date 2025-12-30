@@ -192,7 +192,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 </div>
               </div>
             </div>
-            {/* Professional & Enterprise - Combined */}
+            {/* Resource Manager DB */}
             <div className="group relative overflow-hidden rounded-3xl border border-orange-200 bg-white shadow-lg transition-all hover:shadow-xl">
               {/* Popular Badge - Enhanced */}
               <div
@@ -208,7 +208,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                   <div className="relative aspect-video bg-slate-100">
                     <VideoPlayer
                       videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/12/RMDB%20updated%20thumbnail.mp4"
-                      title="Resource Manager DB & EDGE Suite"
+                      title="Resource Manager DB"
                       thumbnail="https://www.usersolutions.com/wp-content/uploads/2022/11/advanced-1.png"
                       onPlayStateChange={(isPlaying) =>
                         handleVideoPlayState('advanced', isPlaying)
@@ -216,85 +216,51 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     />
                   </div>
                 </div>
-                <div className="px-6 pb-3">
-                  <div className="mb-6">
-                    <div className="mb-4 flex items-center gap-3">
-                      <h3 className="text-2xl font-bold text-orange-700">
-                        Resource Manager DB & EDGE Suite
-                      </h3>
-                    </div>
-                    <p className="mb-4 text-orange-600">
-                      Professional to Enterprise-Grade Solutions
-                    </p>
+                <div className="">
+                  <div className="mb-4">
+                    <h3 className="text-xl font-bold text-gray-900">
+                      Resource Manager DB
+                    </h3>
                   </div>
 
                   <div className="mb-6 space-y-3">
                     <div className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-orange-500" />
-                      <span className="text-sm">
-                        Production Scheduling Your Way!
-                      </span>
+                      <Check className="size-4 text-green-500" />
+                      <span className="text-sm">Product Scheduling your Way!</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-orange-500" />
-                      <span className="text-sm">Flexible & Adaptable</span>
+                      <Check className="size-4 text-green-500" />
+                      <span className="text-sm">Flexible and Adaptable</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-orange-500" />
-                      <span className="text-sm">
-                        Easy APS & MRP Implementation
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-orange-500" />
-                      <span className="text-sm">
-                        Heat Map Reports & Analytics
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-orange-500" />
-                      <span className="text-sm">Live Embedded Excel</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-orange-500" />
-                      <span className="text-sm">Advanced Drag & Drop</span>
+                      <Check className="size-4 text-green-500" />
+                      <span className="text-sm">Easy to implement APS & MRP</span>
                     </div>
                   </div>
 
-                  <div className="mb-4 space-y-2">
+                  <div className="mb-4 border-t pt-4">
+                    <p className="text-sm text-gray-700">No Risk Trials</p>
+                    <p className="text-sm text-gray-500">Implementation support included!</p>
+                  </div>
+
+                  <div className="mb-6">
                     <Button
-                      variant="outline"
-                      className="w-full border-orange-200 text-orange-700 hover:bg-orange-50"
+                      className="w-full bg-blue-600 text-white hover:bg-blue-700"
                       asChild
                     >
                       <Link
                         href="/resource-manager-db-2"
                         target="_blank"
                       >
-                        View RMDB Details
-                      </Link>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="w-full border-purple-200 text-purple-700 hover:bg-purple-50"
-                      asChild
-                    >
-                      <Link
-                        href="/edgebi"
-                        target="_blank"
-                      >
-                        View EDGE Details
+                        Details
                       </Link>
                     </Button>
                   </div>
 
-                  <div className="text-center">
-                    <div className="mb-2 text-3xl font-bold text-orange-700">
-                      $5,000 - $25,000+
+                  <div className="mt-6 text-center">
+                    <div className="mb-2 text-3xl font-bold text-green-700">
+                      $3K+
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Professional to Enterprise solutions
-                    </p>
                   </div>
                 </div>
               </div>
