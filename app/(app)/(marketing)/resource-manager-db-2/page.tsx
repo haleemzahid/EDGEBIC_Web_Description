@@ -11,6 +11,17 @@ import { LazyVideo } from '@/components/ui/lazy-video';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://edgebic.com';
 
+// Local image paths for faster loading
+const IMAGES = {
+  heroImage: '/images/rmdb/rmdb-edge-hero.png',
+  menuImage: '/images/rmdb/rmdb-menu.png',
+  dataImportImage: '/images/rmdb/rmdb-data-import.png',
+  awardsBanner: '/images/rmdb/awards-banner.jpg',
+  // External video URLs (can't be self-hosted easily)
+  heroVideo: 'https://www.usersolutions.com/wp-content/uploads/2022/12/RMDB updated thumbnail.mp4',
+  summaryVideo: 'https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE BI User Solutions.mp4',
+};
+
 export const metadata: Metadata = {
   title: 'Resource Manager DB - Production Planning & Scheduling Software',
   description:
@@ -39,7 +50,7 @@ export const metadata: Metadata = {
     siteName: 'EDGEBIC',
     images: [
       {
-        url: 'https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png',
+        url: `${BASE_URL}/images/rmdb/rmdb-edge-hero.png`,
         width: 1024,
         height: 483,
         alt: 'Resource Manager DB - EDGE Interface',
@@ -53,7 +64,7 @@ export const metadata: Metadata = {
     title: 'Resource Manager DB - Production Planning & Scheduling Software',
     description:
       'Flexible and affordable production planning, scheduling, and tracking solution designed to adapt to your operations.',
-    images: ['https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png'],
+    images: [`${BASE_URL}/images/rmdb/rmdb-edge-hero.png`],
   },
   robots: {
     index: true,
@@ -97,7 +108,7 @@ const jsonLd = {
     'Production Planning',
     'Customized Reports',
   ],
-  screenshot: 'https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png',
+  screenshot: `${BASE_URL}/images/rmdb/rmdb-edge-hero.png`,
   softwareVersion: '2023',
   publisher: {
     '@type': 'Organization',
@@ -144,13 +155,13 @@ function SummaryContent() {
         </div>
         <div className="flex items-center justify-center">
           <Image
-            src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
+            src={IMAGES.heroImage}
             alt="Resource Manager-DB with EDGE (Enhanced Drag & drop Graphical Environment)"
             width={1024}
             height={483}
             className="h-auto max-w-full rounded-lg shadow-lg"
             loading="lazy"
-            quality={80}
+            quality={85}
           />
         </div>
       </div>
@@ -160,8 +171,8 @@ function SummaryContent() {
         <div className="flex justify-center">
           <div className="aspect-video w-full overflow-hidden rounded-lg shadow-lg">
             <LazyVideo
-              src="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE BI User Solutions.mp4"
-              poster="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
+              src={IMAGES.summaryVideo}
+              poster={IMAGES.heroImage}
               className="h-full w-full object-cover"
               title="EDGE BI User Solutions demonstration video"
             />
@@ -169,13 +180,13 @@ function SummaryContent() {
         </div>
         <div className="flex items-center justify-center">
           <Image
-            src="https://www.usersolutions.com/wp-content/uploads/2022/07/rmdb11.png"
+            src={IMAGES.menuImage}
             alt="Resource Manager DB Processing Menu"
             width={600}
             height={450}
             className="h-auto max-w-full rounded-lg shadow-lg"
             loading="lazy"
-            quality={80}
+            quality={85}
           />
         </div>
       </div>
@@ -203,7 +214,7 @@ function QuickStartContent() {
             href="https://www.usersolutions.com/wp-content/uploads/2022/10/rmdbquickstart23.pdf"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600"
+            className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
           >
             Download Quick Start Guide (PDF)
           </a>
@@ -211,13 +222,13 @@ function QuickStartContent() {
       </div>
       <div className="flex items-center justify-center">
         <Image
-          src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-Data-Import.png"
-          alt="RMDB Data Import"
+          src={IMAGES.dataImportImage}
+          alt="RMDB Data Import dialog showing Excel integration"
           width={600}
           height={400}
           className="h-auto max-w-full rounded-lg shadow-lg"
           loading="lazy"
-          quality={80}
+          quality={85}
         />
       </div>
     </div>
@@ -229,7 +240,7 @@ function LiveDemoContent() {
   return (
     <div className="grid items-start gap-8 lg:grid-cols-2">
       <div>
-        <h2 className="mb-4 text-2xl font-bold">Live Demo</h2>
+        <h2 className="mb-4 text-2xl font-bold text-slate-900">Live Demo</h2>
         <div className="space-y-4 text-base leading-relaxed text-slate-600">
           <p>
             See Resource Manager-DB in action! Schedule a live demo with our team
@@ -244,7 +255,7 @@ function LiveDemoContent() {
             href="https://calendly.com/mudasirnadeem7979/30min"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600"
+            className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
           >
             Schedule a Live Demo
           </a>
@@ -252,13 +263,13 @@ function LiveDemoContent() {
       </div>
       <div className="flex items-center justify-center">
         <Image
-          src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
-          alt="RMDB Live Demo"
+          src={IMAGES.heroImage}
+          alt="Resource Manager DB EDGE interface preview for live demo"
           width={1024}
           height={483}
           className="h-auto max-w-full rounded-lg shadow-lg"
           loading="lazy"
-          quality={80}
+          quality={85}
         />
       </div>
     </div>
@@ -268,92 +279,84 @@ function LiveDemoContent() {
 export default function ResourceManagerDBPage() {
   return (
     <>
-      {/* Preload LCP image for better performance */}
-      <link
-        rel="preload"
-        as="image"
-        href="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
-        fetchPriority="high"
-      />
-
-      {/* JSON-LD Structured Data */}
+      {/* JSON-LD Structured Data - load early for SEO */}
       <Script
         id="json-ld-rmdb"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        strategy="afterInteractive"
+        strategy="beforeInteractive"
       />
 
       <main className="min-h-screen">
         {/* Hero Section */}
         <section className="pt-6" aria-labelledby="hero-heading">
-        <div className="container mx-auto max-w-7xl px-4">
-          <div className="grid items-center gap-8 lg:grid-cols-2">
-            <div>
-              <h1 id="hero-heading" className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl">
-                Resource Manager DB
-              </h1>
-              <p className="text-lg leading-relaxed text-slate-600">
-                Resource Manager-DB (RMDB) is a flexible and affordable production
-                planning, scheduling, and tracking solution that is designed to
-                adapt to your operations. We can work with whatever data you have
-                to achieve better production scheduling, just easier and quicker
-                than you ever thought possible. Give US a chance to prove it by
-                scheduling a Live Demo today!
-              </p>
-            </div>
-            <div className="flex justify-center">
-              <div className="aspect-video w-full max-w-[700px] overflow-hidden rounded-lg shadow-lg">
-                <HeroVideo
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/12/RMDB updated thumbnail.mp4"
-                  poster="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
-                  className="h-full w-full"
-                  title="Resource Manager DB product overview video"
-                  priority
-                />
+          <div className="container mx-auto max-w-7xl px-4">
+            <div className="grid items-center gap-8 lg:grid-cols-2">
+              <div>
+                <h1 id="hero-heading" className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl">
+                  Resource Manager DB
+                </h1>
+                <p className="text-lg leading-relaxed text-slate-600">
+                  Resource Manager-DB (RMDB) is a flexible and affordable production
+                  planning, scheduling, and tracking solution that is designed to
+                  adapt to your operations. We can work with whatever data you have
+                  to achieve better production scheduling, just easier and quicker
+                  than you ever thought possible. Give US a chance to prove it by
+                  scheduling a Live Demo today!
+                </p>
+              </div>
+              <div className="flex justify-center">
+                <div className="aspect-video w-full max-w-[700px] overflow-hidden rounded-lg shadow-lg">
+                  <HeroVideo
+                    src={IMAGES.heroVideo}
+                    poster={IMAGES.heroImage}
+                    className="h-full w-full"
+                    title="Resource Manager DB product overview video"
+                    priority
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Tabs Section - Client Component */}
-      <Suspense
-        fallback={
-          <div className="min-h-[200px] animate-pulse bg-slate-100 rounded-lg mx-4" />
-        }
-      >
-        <RMDBTabsClient
-          summaryContent={<SummaryContent />}
-          quickStartContent={<QuickStartContent />}
-          liveDemoContent={<LiveDemoContent />}
-        />
-      </Suspense>
+        {/* Tabs Section - Client Component */}
+        <Suspense
+          fallback={
+            <div className="min-h-[200px] animate-pulse bg-slate-100 rounded-lg mx-4" aria-busy="true" aria-label="Loading tabs" />
+          }
+        >
+          <RMDBTabsClient
+            summaryContent={<SummaryContent />}
+            quickStartContent={<QuickStartContent />}
+            liveDemoContent={<LiveDemoContent />}
+          />
+        </Suspense>
 
-      {/* Features Section */}
-      <RMDBFeatureList />
+        {/* Features Section */}
+        <RMDBFeatureList />
 
-      {/* Awards Section */}
-      <section aria-labelledby="awards-heading">
-        <div className="container mx-auto">
-          <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
-            <CardContent className="p-8 text-center">
-              <h2 id="awards-heading" className="mb-6 text-2xl font-bold text-slate-900">
-                CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
-              </h2>
-              <Image
-                src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
-                alt="Collection of industry and business awards logos"
-                width={1024}
-                height={128}
-                className="mx-auto h-auto max-w-full"
-                loading="lazy"
-                quality={80}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      </section>
+        {/* Awards Section */}
+        <section aria-labelledby="awards-heading">
+          <div className="container mx-auto">
+            <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
+              <CardContent className="p-8 text-center">
+                <h2 id="awards-heading" className="mb-6 text-2xl font-bold text-slate-900">
+                  CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
+                </h2>
+                <Image
+                  src={IMAGES.awardsBanner}
+                  alt="Collection of industry and business awards logos including multiple year achievements"
+                  width={1024}
+                  height={128}
+                  className="mx-auto h-auto max-w-full"
+                  loading="lazy"
+                  quality={85}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        </section>
       </main>
     </>
   );
