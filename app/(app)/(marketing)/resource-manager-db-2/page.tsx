@@ -28,9 +28,28 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
           <h1 className="mb-4 text-center text-3xl font-bold text-slate-900 md:text-4xl">
             Resource Manager DB
           </h1>
-          <p className="mx-auto max-w-4xl text-center text-lg leading-relaxed text-slate-600">
-            Resource Manager-DB (RMDB) is a flexible and affordable production planning, scheduling, and tracking solution that is designed to adapt to your operations. We can work with whatever data you have to achieve better production scheduling, just easier and quicker than you ever thought possible. Give US a chance to prove it by scheduling a Live Demo today!
-          </p>
+          <div className="grid items-center gap-8 lg:grid-cols-2">
+            <p className="text-lg leading-relaxed text-slate-600">
+              Resource Manager-DB (RMDB) is a flexible and affordable production planning, scheduling, and tracking solution that is designed to adapt to your operations. We can work with whatever data you have to achieve better production scheduling, just easier and quicker than you ever thought possible. Give US a chance to prove it by scheduling a Live Demo today!
+            </p>
+            <div className="flex justify-center">
+              <div className="aspect-video w-full max-w-[500px] overflow-hidden rounded-lg shadow-lg">
+                <video
+                  className="h-full w-full object-cover"
+                  controls
+                  playsInline
+                  preload="auto"
+                  poster="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
+                >
+                  <source
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/12/RMDB updated thumbnail.mp4"
+                    type="video/mp4"
+                  />
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
