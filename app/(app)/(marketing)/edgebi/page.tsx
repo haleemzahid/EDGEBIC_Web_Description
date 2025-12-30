@@ -17,6 +17,15 @@ function VideoPlayer({
 }) {
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
+  // Check if it's a YouTube URL
+  const isYouTube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
+
+  // Extract video ID from YouTube URL
+  const getVideoId = (url: string) => {
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
+    return match ? match[1] : '';
+  };
+
   const handlePlay = () => {
     onPlayStateChange?.(true);
   };
@@ -28,6 +37,21 @@ function VideoPlayer({
   const handleEnded = () => {
     onPlayStateChange?.(false);
   };
+
+  if (isYouTube) {
+    const videoId = getVideoId(videoUrl);
+    return (
+      <iframe
+        src={`https://www.youtube.com/embed/${videoId}`}
+        title={title}
+        className="absolute inset-0 size-full rounded-lg"
+        frameBorder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        referrerPolicy="strict-origin-when-cross-origin"
+        allowFullScreen
+      />
+    );
+  }
 
   return (
     <video
@@ -245,18 +269,15 @@ export default function EDGEBIPage(): React.JSX.Element {
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div className="flex justify-center">
                   <div className="aspect-video w-full overflow-hidden rounded-lg shadow-lg">
-                    <video
-                      className="h-full w-full object-cover"
-                      controls
-                      playsInline
-                      preload="auto"
-                    >
-                      <source
-                        src="/videos/edge-bi-user-solutions.mp4"
-                        type="video/mp4"
-                      />
-                      Your browser does not support the video tag.
-                    </video>
+                    <iframe
+                      src="https://www.youtube.com/embed/6B4A-acolGk"
+                      title="Edge BI User Solutions"
+                      className="h-full w-full"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allowFullScreen
+                    />
                   </div>
                 </div>
                 <div className="flex items-center justify-center">

@@ -91,18 +91,15 @@ export default function ResourceManagerDBInDepthPage() {
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div className="flex justify-center">
                   <div className="aspect-video w-full overflow-hidden rounded-lg shadow-lg">
-                    <video
-                      className="h-full w-full object-cover"
-                      controls
-                      playsInline
-                      preload="auto"
-                    >
-                      <source
-                        src="/videos/edge-bi-user-solutions.mp4"
-                        type="video/mp4"
-                      />
-                      Your browser does not support the video tag.
-                    </video>
+                    <iframe
+                      src="https://www.youtube.com/embed/6B4A-acolGk"
+                      title="Edge BI User Solutions"
+                      className="h-full w-full"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allowFullScreen
+                    />
                   </div>
                 </div>
                 <div className="flex items-center justify-center">

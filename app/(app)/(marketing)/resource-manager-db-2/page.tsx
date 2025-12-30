@@ -19,7 +19,7 @@ const IMAGES = {
   awardsBanner: '/images/rmdb/awards-banner.jpg',
   // Local video paths
   heroVideo: 'https://www.youtube.com/watch?v=I8fOWJkTv-k',
-  summaryVideo: '/videos/edge-bi-user-solutions.mp4',
+  summaryVideo: 'https://www.youtube.com/watch?v=6B4A-acolGk',
 };
 
 export const metadata: Metadata = {
