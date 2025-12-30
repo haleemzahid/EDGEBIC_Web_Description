@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import Image from 'next/image';
 
 import { RMDBFeatureList } from '@/components/marketing/sections/rmdb-feature-list';
 import { Card, CardContent } from '@/components/ui/card';
@@ -41,11 +40,10 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`transition-colors ${
-                  activeTab === tab.id
+                className={`transition-colors ${activeTab === tab.id
                     ? 'font-semibold text-cyan-500'
                     : 'text-slate-700 hover:text-cyan-500'
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -59,26 +57,55 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
         <div className="container mx-auto max-w-7xl px-4">
           {/* Summary Tab */}
           {activeTab === 'summary' && (
-            <div className="grid items-start gap-8 lg:grid-cols-2">
-              <div>
-                <h2 className="mb-4 text-2xl font-bold text-slate-900">Overview</h2>
-                <div className="space-y-4 text-base leading-relaxed text-slate-600">
-                  <p>
-                    Resource Manager-DB (RMDB) is an affordable, flexible and quick-to-implement approach to resolve your production planning, scheduling and tracking challenges. Designed by customers just like you, Resource Manager-DB features a single, simple menu (dashboard) requiring minimal transactions to keep the system accurate.
-                  </p>
-                  <p>
-                    RMDB's unique, customer driven architecture allows you to start very simply, focusing on one area at a time, enabling you to provide minimal information in order to recognize immediate benefits.
-                  </p>
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-cyan-500">RESOURCE MANAGER DB: SUMMARY</h2>
+              <div className="grid items-start gap-8 lg:grid-cols-2">
+                <div>
+                  <h3 className="mb-4 text-xl font-bold text-slate-900">Overview</h3>
+                  <div className="space-y-4 text-base leading-relaxed text-slate-700">
+                    <p>
+                      Resource Manager-DB (RMDB) is a flexible and affordable production planning, scheduling, and tracking solution that is designed to adapt to your operations.
+                    </p>
+                    <p>
+                      If you have tried to use your ERP for creating a viable Production Schedule, and still end up with a tangle of custom Excel Reports, messy whiteboard or worse yet, late shipments, we can help.
+                    </p>
+                    <p>
+                      RMDB was specifically architected to easily adapt to the way you work, using your existing data. It can be easily configured, and/or reconfigured, on the fly to address your most pressing issues.
+                    </p>
+                    <p>
+                      We can focus and resolve your most pressing issues quickly — letting you reap immediate ROI. Then, delve deeper without having to spend more!
+                    </p>
+                    <p>
+                      Schedule a live demo, even using your data in its current form – RISK FREE!!
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-center">
+                  <img
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/rmdb11.png"
+                    alt="Resource Manager DB Processing Menu"
+                    className="h-auto max-w-full rounded-lg shadow-lg"
+                  />
                 </div>
               </div>
-              <div className="flex items-center justify-center">
-                <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/rmdb11.png"
-                  alt="Resource Manager DB Processing Menu"
-                  width={600}
-                  height={400}
-                  className="rounded-lg shadow-lg"
-                />
+
+              {/* Video Section */}
+              <div className="flex justify-center">
+                <div className="aspect-video w-full max-w-[800px] overflow-hidden rounded-lg shadow-lg">
+                  <video
+                    className="h-full w-full object-cover"
+                    controls
+                    playsInline
+                    preload="auto"
+                    poster="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
+                  >
+                    <source
+                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE BI User Solutions.mp4"
+                      type="video/mp4"
+                    />
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
               </div>
             </div>
           )}
@@ -98,12 +125,10 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
                 </div>
               </div>
               <div className="flex items-center justify-center">
-                <Image
+                <img
                   src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
                   alt="RMDB EDGE Interface"
-                  width={600}
-                  height={400}
-                  className="rounded-lg shadow-lg"
+                  className="h-auto max-w-full rounded-lg shadow-lg"
                 />
               </div>
             </div>
@@ -132,12 +157,10 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
                 </div>
               </div>
               <div className="flex items-center justify-center">
-                <Image
+                <img
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-Data-Import.png"
                   alt="RMDB Data Import"
-                  width={600}
-                  height={400}
-                  className="rounded-lg shadow-lg"
+                  className="h-auto max-w-full rounded-lg shadow-lg"
                 />
               </div>
             </div>
@@ -158,14 +181,18 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
                 </div>
               </div>
               <div className="flex items-center justify-center">
-                <div className="overflow-hidden rounded-lg shadow-lg">
+                <div className="aspect-video w-full max-w-[600px] overflow-hidden rounded-lg shadow-lg">
                   <video
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE%20BI%20User%20Solutions.mp4"
-                    title="EDGE BI User Solutions"
-                    className="w-full"
+                    className="h-full w-full object-cover"
                     controls
                     playsInline
+                    preload="auto"
+                    poster="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
                   >
+                    <source
+                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE BI User Solutions.mp4"
+                      type="video/mp4"
+                    />
                     Your browser does not support the video tag.
                   </video>
                 </div>
@@ -196,12 +223,10 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
                 </div>
               </div>
               <div className="flex items-center justify-center">
-                <Image
+                <img
                   src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
                   alt="RMDB Live Demo"
-                  width={600}
-                  height={400}
-                  className="rounded-lg shadow-lg"
+                  className="h-auto max-w-full rounded-lg shadow-lg"
                 />
               </div>
             </div>
