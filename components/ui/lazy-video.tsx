@@ -11,6 +11,7 @@ interface LazyVideoProps {
 
 export function LazyVideo({ src, poster, className = '', title = 'Video content' }: LazyVideoProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
   const [isInView, setIsInView] = React.useState(false);
 
   // Check if it's a YouTube URL
@@ -33,12 +34,13 @@ export function LazyVideo({ src, poster, className = '', title = 'Video content'
       { rootMargin: '100px' }
     );
 
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
+    const element = isYouTube ? containerRef.current : videoRef.current;
+    if (element) {
+      observer.observe(element);
     }
 
     return () => observer.disconnect();
-  }, []);
+  }, [isYouTube]);
 
   if (isYouTube) {
     const videoId = getVideoId(src);
@@ -61,7 +63,7 @@ export function LazyVideo({ src, poster, className = '', title = 'Video content'
 
   return (
     <video
-      ref={containerRef as React.RefObject<HTMLVideoElement>}
+      ref={videoRef}
       className={className}
       controls
       playsInline
