@@ -183,7 +183,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
 
                   <div className="text-center">
                     <div className="mb-2 text-3xl font-bold text-green-700">
-                      FREE
+                      $1K+
                     </div>
                   </div>
                 </div>
