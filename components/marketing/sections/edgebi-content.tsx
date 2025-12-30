@@ -1,22 +1,8 @@
 import Image from 'next/image';
 
-import { LazyVideo } from '@/components/ui/lazy-video';
-
 export function EDGEBIContent() {
   return (
     <div className="space-y-16">
-      {/* Video Section - First */}
-      <div className="flex justify-center">
-        <div className="aspect-video w-full max-w-[800px] overflow-hidden rounded-lg shadow-lg">
-          <LazyVideo
-            src="https://www.youtube.com/watch?v=-Rb6_Rop2JA"
-            poster="/images/Edgebic/2022-07/RMDB-EDGE2-1024x483.png"
-            className="h-full w-full object-cover"
-            title="EDGEBI Enhanced Drag-n-drop Graphical Environment demonstration"
-          />
-        </div>
-      </div>
-
       {/* Overview Header with Image Side by Side */}
       <div className="grid items-center gap-8 lg:grid-cols-2">
         <div>
