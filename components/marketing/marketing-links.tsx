@@ -85,20 +85,20 @@ export const MENU_LINKS = [
     href: Routes.News,
     external: false
   },
-  {
-    title: 'Excel Templates',
-    description: 'Excel applications for manufacturing scheduling',
-    icon: <FileTextIcon className="size-5 shrink-0" />,
-    href: Routes.ExcelTemplates,
-    external: false
-  },
-  {
-    title: 'Free Trial and Samples',
-    description: 'Download free trials and samples of our software',
-    icon: <DownloadIcon className="size-5 shrink-0" />,
-    href: Routes.ProductDownloads,
-    external: false
-  },
+  // {
+  //   title: 'Excel Templates',
+  //   description: 'Excel applications for manufacturing scheduling',
+  //   icon: <FileTextIcon className="size-5 shrink-0" />,
+  //   href: Routes.ExcelTemplates,
+  //   external: false
+  // },
+  // {
+  //   title: 'Free Trial and Samples',
+  //   description: 'Download free trials and samples of our software',
+  //   icon: <DownloadIcon className="size-5 shrink-0" />,
+  //   href: Routes.ProductDownloads,
+  //   external: false
+  // },
   {
     title: 'Contact US',
     description: 'Reach out for assistance',
