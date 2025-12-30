@@ -36,7 +36,7 @@ export default function InconIncorporatedPage() {
             {/* Logo */}
             <div className="mb-8 flex justify-center">
               <Image
-                src="https://www.usersolutions.com/wp-content/uploads/2022/10/logo003-58c6bad38b32e.jpg"
+                src="/images/Edgebic/2022-10/logo003-58c6bad38b32e.jpg"
                 alt="INCON"
                 width={230}
                 height={153}
@@ -79,7 +79,7 @@ export default function InconIncorporatedPage() {
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
                   width={1024}
                   height={128}

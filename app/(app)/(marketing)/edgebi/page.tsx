@@ -100,7 +100,7 @@ export default function EDGEBIPage(): React.JSX.Element {
               <div className="relative overflow-hidden rounded-lg shadow-lg">
                 <div className="relative aspect-video">
                   <VideoPlayer
-                    videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/12/EDGEBI%20updated%20thumbnail.mp4"
+                    videoUrl="/videos/edgebi-updated-thumbnail.mp4"
                     title="EDGEBI Demo"
                     onPlayStateChange={setIsVideoPlaying}
                   />
@@ -127,7 +127,7 @@ export default function EDGEBIPage(): React.JSX.Element {
                 </div>
                 <div>
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/f1.png"
+                    src="/images/Edgebic/2022-10/f1.png"
                     alt="EDGEBI Screenshot - Resource Manager DB interface"
                     width={800}
                     height={600}
@@ -140,7 +140,7 @@ export default function EDGEBIPage(): React.JSX.Element {
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div>
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/f2.png"
+                    src="/images/Edgebic/2022-10/f2.png"
                     alt="EDGEBI Schedule Management Interface"
                     width={800}
                     height={600}
@@ -166,7 +166,7 @@ export default function EDGEBIPage(): React.JSX.Element {
                 </div>
                 <div>
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/f3.png"
+                    src="/images/Edgebic/2022-10/f3.png"
                     alt="Heat Map - Color-coded capacity utilization"
                     width={800}
                     height={400}
@@ -179,7 +179,7 @@ export default function EDGEBIPage(): React.JSX.Element {
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div>
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/f4.png"
+                    src="/images/Edgebic/2022-10/f4.png"
                     alt="Schedule Key Dates Reports"
                     width={800}
                     height={400}
@@ -234,7 +234,7 @@ export default function EDGEBIPage(): React.JSX.Element {
                 </div>
                 <div className="flex items-center justify-center">
                   <img
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
+                    src="/images/Edgebic/2022-07/RMDB-EDGE2-1024x483.png"
                     alt="Resource Manager-DB with EDGE (Enhanced Drag & drop Graphical Environment)"
                     className="h-auto max-w-full rounded-lg shadow-lg"
                   />
@@ -252,7 +252,7 @@ export default function EDGEBIPage(): React.JSX.Element {
                       preload="auto"
                     >
                       <source
-                        src="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE BI User Solutions.mp4"
+                        src="/videos/edge-bi-user-solutions.mp4"
                         type="video/mp4"
                       />
                       Your browser does not support the video tag.
@@ -261,7 +261,7 @@ export default function EDGEBIPage(): React.JSX.Element {
                 </div>
                 <div className="flex items-center justify-center">
                   <img
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/rmdb11.png"
+                    src="/images/Edgebic/2022-07/rmdb11.png"
                     alt="Resource Manager DB Processing Menu"
                     className="h-auto max-w-full rounded-lg shadow-lg"
                   />
@@ -295,7 +295,7 @@ export default function EDGEBIPage(): React.JSX.Element {
               </div>
               <div className="flex items-center justify-center">
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
+                  src="/images/Edgebic/2022-07/RMDB-EDGE2-1024x483.png"
                   alt="EDGEBI Live Demo"
                   width={600}
                   height={400}
@@ -316,7 +316,7 @@ export default function EDGEBIPage(): React.JSX.Element {
                 CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
               </h3>
               <Image
-                src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                 alt="Collection of industry and business awards logos"
                 width={1024}
                 height={128}

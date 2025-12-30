@@ -346,7 +346,7 @@ export default function OperationsManagerPage(): React.JSX.Element {
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
                   width={1024}
                   height={128}

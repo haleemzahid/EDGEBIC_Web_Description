@@ -123,7 +123,7 @@ export default function StudentsPage(): React.JSX.Element {
       title: 'Quick Start Tutorial',
       description: 'Get started quickly with step-by-step guidance',
       icon: Play,
-      link: 'https://www.usersolutions.com/wp-content/uploads/2022/10/RMXQuickStart.pdf'
+      link: '/images/Edgebic/2022-10/RMXQuickStart.pdf'
     },
     {
       title: 'Training Videos',
@@ -174,7 +174,7 @@ export default function StudentsPage(): React.JSX.Element {
             <div className="mt-6">
               <div className="relative mx-auto max-w-7xl overflow-hidden rounded-2xl border bg-slate-100 shadow-2xl">
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/ops-1024x768.png"
+                  src="/images/Edgebic/2022-07/ops-1024x768.png"
                   alt="Operations Management textbook with cruise ship photo"
                   width={1024}
                   height={768}
@@ -474,7 +474,7 @@ export default function StudentsPage(): React.JSX.Element {
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
                   width={1024}
                   height={128}

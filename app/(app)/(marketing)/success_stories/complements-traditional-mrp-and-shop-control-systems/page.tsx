@@ -73,7 +73,7 @@ export default function ComplementsTraditionalMrpPage() {
               {/* Image Column */}
               <div className="lg:sticky lg:top-6">
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMX.png"
+                  src="/images/Edgebic/2022-07/RMX.png"
                   alt="Resource Manager RMX"
                   width={600}
                   height={400}
@@ -96,7 +96,7 @@ export default function ComplementsTraditionalMrpPage() {
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
                   width={1024}
                   height={128}

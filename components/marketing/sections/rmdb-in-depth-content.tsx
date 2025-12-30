@@ -24,7 +24,7 @@ export function RMDBInDepthContent() {
         </div>
         <div>
           <Image
-            src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-MainMenu.png"
+            src="/images/Edgebic/2022-10/RMDB-MainMenu.png"
             alt="RMDB Main Menu Dashboard"
             width={600}
             height={400}
@@ -38,7 +38,7 @@ export function RMDBInDepthContent() {
       {/* Make Manufacturing Great Again Section */}
       <div className="flex justify-center">
         <Image
-          src="https://www.usersolutions.com/wp-content/uploads/2022/10/MMGAsmall_Colver.png"
+          src="/images/Edgebic/2022-10/MMGAsmall_Colver.png"
           alt="Make Manufacturing Great Again - Vintage Car"
           width={400}
           height={300}
@@ -52,7 +52,7 @@ export function RMDBInDepthContent() {
       <div className="grid items-center gap-8 md:grid-cols-2">
         <div>
           <Image
-            src="https://www.usersolutions.com/wp-content/uploads/2022/10/ERP_Scheduling-300x245-1.png"
+            src="/images/Edgebic/2022-10/ERP_Scheduling-300x245-1.png"
             alt="ERP Scheduling Integration"
             width={300}
             height={245}
@@ -102,7 +102,7 @@ export function RMDBInDepthContent() {
         </div>
         <div>
           <Image
-            src="https://www.usersolutions.com/wp-content/uploads/2022/10/Manufacturing_Excel_Dashboard-1024x376.png"
+            src="/images/Edgebic/2022-10/Manufacturing_Excel_Dashboard-1024x376.png"
             alt="Manufacturing Excel Dashboard"
             width={1024}
             height={376}
@@ -144,7 +144,7 @@ export function RMDBInDepthContent() {
         </div>
         <div>
           <Image
-            src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-Data-Import.png"
+            src="/images/Edgebic/2022-10/RMDB-Data-Import.png"
             alt="RMDB Import Data Dialog"
             width={600}
             height={400}
@@ -161,7 +161,7 @@ export function RMDBInDepthContent() {
         <div className="grid items-center gap-8 md:grid-cols-2">
           <div className="flex justify-center">
             <Image
-              src="https://www.usersolutions.com/wp-content/uploads/2022/10/usmap.gif"
+              src="/images/Edgebic/2022-10/usmap.gif"
               alt="Treasure Map illustration"
               width={300}
               height={200}
@@ -210,7 +210,7 @@ export function RMDBInDepthContent() {
           </div>
           <div>
             <Image
-              src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-MainMenu.png"
+              src="/images/Edgebic/2022-10/RMDB-MainMenu.png"
               alt="RMDB Main Menu Interface"
               width={600}
               height={400}
@@ -282,7 +282,7 @@ export function RMDBInDepthContent() {
           {/* Gantt Report */}
           <div>
             <Image
-              src="https://www.usersolutions.com/wp-content/uploads/2022/10/07b.jpg"
+              src="/images/Edgebic/2022-10/07b.jpg"
               alt="Gantt Report"
               width={400}
               height={300}
@@ -302,7 +302,7 @@ export function RMDBInDepthContent() {
           {/* Summary Report */}
           <div>
             <Image
-              src="https://www.usersolutions.com/wp-content/uploads/2022/10/sumrpt.jpg"
+              src="/images/Edgebic/2022-10/sumrpt.jpg"
               alt="Summary Report"
               width={400}
               height={300}
@@ -322,7 +322,7 @@ export function RMDBInDepthContent() {
           {/* Item Report */}
           <div>
             <Image
-              src="https://www.usersolutions.com/wp-content/uploads/2022/10/item.jpg"
+              src="/images/Edgebic/2022-10/item.jpg"
               alt="Item Report"
               width={400}
               height={300}
@@ -341,7 +341,7 @@ export function RMDBInDepthContent() {
           {/* Calendar Report */}
           <div>
             <Image
-              src="https://www.usersolutions.com/wp-content/uploads/2022/10/07b.jpg"
+              src="/images/Edgebic/2022-10/07b.jpg"
               alt="Calendar Report"
               width={400}
               height={300}
@@ -358,7 +358,7 @@ export function RMDBInDepthContent() {
           {/* Workcenter Report */}
           <div>
             <Image
-              src="https://www.usersolutions.com/wp-content/uploads/2022/10/RPT-DD1-300x241-1.png"
+              src="/images/Edgebic/2022-10/RPT-DD1-300x241-1.png"
               alt="Workcenter Report"
               width={300}
               height={241}
@@ -379,7 +379,7 @@ export function RMDBInDepthContent() {
           {/* Routing & Tree Report */}
           <div>
             <Image
-              src="https://www.usersolutions.com/wp-content/uploads/2022/10/tree.jpg"
+              src="/images/Edgebic/2022-10/tree.jpg"
               alt="Routing & Tree Report"
               width={400}
               height={300}
@@ -397,7 +397,7 @@ export function RMDBInDepthContent() {
           {/* Production Report */}
           <div>
             <Image
-              src="https://www.usersolutions.com/wp-content/uploads/2022/10/prodrpt.jpg"
+              src="/images/Edgebic/2022-10/prodrpt.jpg"
               alt="Production Report"
               width={400}
               height={300}
@@ -418,7 +418,7 @@ export function RMDBInDepthContent() {
           {/* Purchasing & Receiving */}
           <div>
             <Image
-              src="https://www.usersolutions.com/wp-content/uploads/2022/10/porpt.jpg"
+              src="/images/Edgebic/2022-10/porpt.jpg"
               alt="Purchasing & Receiving Report"
               width={400}
               height={300}

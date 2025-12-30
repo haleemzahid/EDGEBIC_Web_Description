@@ -43,7 +43,7 @@ export default function NistMepIndustrialDampingPage() {
             {/* Featured Image */}
             <div className="mb-6 flex justify-center">
               <Image
-                src="https://www.usersolutions.com/wp-content/uploads/2022/07/PowerTower-119x300-1.jpg"
+                src="/images/Edgebic/2022-07/PowerTower-119x300-1.jpg"
                 alt="ACE Controls Inc. company logo"
                 width={119}
                 height={300}
@@ -89,7 +89,7 @@ export default function NistMepIndustrialDampingPage() {
                 </h2>
                 <div className="relative mx-auto h-auto w-full max-w-4xl">
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                     alt="Collection of industry and business awards logos"
                     width={1024}
                     height={128}

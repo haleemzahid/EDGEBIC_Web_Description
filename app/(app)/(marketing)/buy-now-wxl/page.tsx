@@ -11,7 +11,7 @@ export default function BuyNowWXLPage() {
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <div className="mb-6">
-              </div>
+            </div>
             <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
               - Request Free Product
             </h1>
@@ -130,7 +130,7 @@ export default function BuyNowWXLPage() {
                     alt="Collection of industry and business awards logos"
                     className="h-auto w-full"
                     height={128}
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                     width={1024}
                   />
                 </div>

@@ -34,7 +34,7 @@ export default function CompareProductsPage(): React.JSX.Element {
       price: '$1,000+',
       description: 'Perfect for Job Shops & Small Manufacturers',
       image:
-        'https://www.usersolutions.com/wp-content/uploads/2022/10/starter.png',
+        '/images/Edgebic/2022-10/starter.png',
       link: '/jsl-job-scheduler-lite',
       features: {
         'Shop Scheduling': false,
@@ -60,7 +60,7 @@ export default function CompareProductsPage(): React.JSX.Element {
       price: '$5,000+',
       description: 'Ideal for Growing SMBs & Mid-Size Companies',
       image:
-        'https://www.usersolutions.com/wp-content/uploads/2022/11/advanced-1.png',
+        '/images/Edgebic/2022-11/advanced-1.png',
       link: '/resource-manager-db-2',
       features: {
         'Shop Scheduling': true,
@@ -86,7 +86,7 @@ export default function CompareProductsPage(): React.JSX.Element {
       price: '$25,000+',
       description: 'Enterprise-Grade for Multi-Nationals',
       image:
-        'https://www.usersolutions.com/wp-content/uploads/2022/11/Premium-1.png',
+        '/images/Edgebic/2022-11/Premium-1.png',
       link: '/edgebi',
       features: {
         'Shop Scheduling': true,
@@ -331,7 +331,7 @@ export default function CompareProductsPage(): React.JSX.Element {
               CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
             </h3>
             <Image
-              src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+              src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
               alt="Collection of industry and business awards logos"
               width={1024}
               height={128}

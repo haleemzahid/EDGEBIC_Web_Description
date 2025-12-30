@@ -128,7 +128,7 @@ export default function SleepmasterLtdPage() {
               {/* Image Column */}
               <div className="space-y-6 lg:sticky lg:top-6">
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/sleep66-161208-5849e9fe80645.jpg"
+                  src="/images/Edgebic/2022-10/sleep66-161208-5849e9fe80645.jpg"
                   alt="SleepMaster Ltd Logo"
                   width={400}
                   height={300}
@@ -136,7 +136,7 @@ export default function SleepmasterLtdPage() {
                   unoptimized
                 />
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/MRP-XLS-RPT.png"
+                  src="/images/Edgebic/2022-10/MRP-XLS-RPT.png"
                   alt="MRP Excel Report - Spreadsheet with product numbers and weekly quantities"
                   width={600}
                   height={400}
@@ -159,7 +159,7 @@ export default function SleepmasterLtdPage() {
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
                   width={1024}
                   height={128}

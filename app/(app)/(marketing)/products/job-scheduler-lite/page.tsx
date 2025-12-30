@@ -47,7 +47,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               </div>
               <div className="overflow-hidden rounded-lg shadow-lg">
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/insight-1.png"
+                  src="/images/Edgebic/2022-10/insight-1.png"
                   alt="EDGEBIC production scheduling software interface"
                   className="h-auto w-full"
                 />
@@ -65,7 +65,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
             <div className="grid gap-8 md:grid-cols-2">
               <div className="overflow-hidden rounded-lg shadow-lg">
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/mnn.jpeg"
+                  src="/images/Edgebic/2022-10/mnn.jpeg"
                   alt="JSL software menu options and interface"
                   className="h-[400px] w-full"
                 />
@@ -142,7 +142,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                   </p>
                   <div className="overflow-hidden rounded-lg">
                     <img
-                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/import.png"
+                      src="/images/Edgebic/2022-10/import.png"
                       alt="Data import software window with options and required columns"
                       className="h-auto w-full"
                     />
@@ -158,7 +158,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                   </p>
                   <div className="overflow-hidden rounded-lg">
                     <img
-                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/dailyhours.png"
+                      src="/images/Edgebic/2022-10/dailyhours.png"
                       alt="Daily Work Hours tracking software interface"
                       className="h-auto w-full"
                     />
@@ -175,7 +175,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                   </p>
                   <div className="overflow-hidden rounded-lg">
                     <img
-                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/holidays.png"
+                      src="/images/Edgebic/2022-10/holidays.png"
                       alt="Holiday management software interface with dates and times"
                       className="h-auto w-full"
                     />
@@ -190,7 +190,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                 </p>
                 <div className="overflow-hidden rounded-lg">
                   <img
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/resoursces.png"
+                    src="/images/Edgebic/2022-10/resoursces.png"
                     alt="Software resource management interface"
                     className="h-auto w-full"
                   />
@@ -206,7 +206,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                 </p>
                 <div className="overflow-hidden rounded-lg">
                   <img
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/orders-1024x459.png"
+                    src="/images/Edgebic/2022-10/orders-1024x459.png"
                     alt="Software order management system"
                     className="h-auto w-full"
                   />
@@ -222,7 +222,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                 </p>
                 <div className="overflow-hidden rounded-lg">
                   <img
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/FG.png"
+                    src="/images/Edgebic/2022-10/FG.png"
                     alt="Inventory management application interface with lists and buttons"
                     className="h-auto w-full"
                   />
@@ -237,7 +237,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                 </p>
                 <div className="overflow-hidden rounded-lg">
                   <img
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/schdle.png"
+                    src="/images/Edgebic/2022-10/schdle.png"
                     alt="Job scheduling software interface"
                     className="h-auto w-full"
                   />
@@ -252,7 +252,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                 </p>
                 <div className="overflow-hidden rounded-lg">
                   <img
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/insight.png"
+                    src="/images/Edgebic/2022-10/insight.png"
                     alt="Scheduling software with calendar and utilization graph"
                     className="h-auto w-full"
                   />
@@ -313,7 +313,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
             </h2>
             <div className="mx-auto max-w-7xl overflow-hidden rounded-lg">
               <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                 alt="Collection of industry and business awards logos"
                 className="h-auto w-full"
               />

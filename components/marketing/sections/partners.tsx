@@ -45,49 +45,49 @@ export function PartnersSection(): React.JSX.Element {
       region: 'Europe (Eastern)',
       description:
         'Europe (UK): Lodge Consultancy, Contact: Bob Russell br@usersolutions.mystagingwebsite.com Asia: Intelligent Information, Contact: Jeff Nagle, jn@usersolutions.mystagingwebsite.com',
-      logo: 'https://www.usersolutions.com/wp-content/uploads/2023/02/sistemosstabilios-596684c7ec506.png'
+      logo: '/images/Edgebic/2023-02/sistemosstabilios-596684c7ec506.png'
     },
     {
       name: 'Europe (Poland): Mashik',
       region: 'Europe (UK)',
       description:
         'Contact: Dariusz Siwek ul. W. Bartniaka 25C, 05-825 Grodzisk Mazowiecki Warsaw M: +48 502 416 387 dariusz.siwek@siweklogistics.com Europe (Eastern): UAB Stabilios sistemos, Contact: Aldevinas Katkus',
-      logo: 'https://www.usersolutions.com/wp-content/uploads/2023/02/MashikLogo-59668408d9aaf.png'
+      logo: '/images/Edgebic/2023-02/MashikLogo-59668408d9aaf.png'
     },
     {
       name: 'Mideast (Israel): Mashik',
       region: 'Asia',
       description:
         'Mashik aims to improve supply chain organizations and acquisitions through technologies And innovative and groundbreaking methodologies. Mashik operates through four divisions: the Supply Chain Division,',
-      logo: 'https://www.usersolutions.com/wp-content/uploads/2023/02/MashikLogo-59668408d9aaf.png'
+      logo: '/images/Edgebic/2023-02/MashikLogo-59668408d9aaf.png'
     },
     {
       name: 'Resource Manager Virtual Solutions Group',
       region: 'Europe (Poland)',
       description:
         'Many of our Business Partners were in the same situation you are in today. Responsible for managing a strategic area for planning, scheduling , tracking',
-      logo: 'https://www.usersolutions.com/wp-content/uploads/2023/02/Exact.png'
+      logo: '/images/Edgebic/2023-02/Exact.png'
     },
     {
       name: 'Exact Software',
       region: 'Mideast (Israel)',
       description:
         'User Solutions, Inc., an authorized Exact Solution Partner since 2001, has announced Resource Manager-DB with Exact / MacolaTM Link. For the first time, Macola Customers',
-      logo: 'https://www.usersolutions.com/wp-content/uploads/2023/02/Sage.png'
+      logo: '/images/Edgebic/2023-02/Sage.png'
     },
     {
       name: 'Sage Software',
       region: 'Global',
       description:
         'Enhancements for the Manufacturing Market Are your manufacturing clients looking for additional planning, scheduling, and tracking solutions? Would you like to have a more competitive',
-      logo: 'https://www.usersolutions.com/wp-content/uploads/2023/02/NistMepLogo-300x109.jpg'
+      logo: '/images/Edgebic/2023-02/NistMepLogo-300x109.jpg'
     },
     {
       name: 'NIST MEP Consortium',
       region: 'Global',
       description:
         'Since 1988, the Hollings Manufacturing Extension Partnership (MEP) has worked to strengthen U.S. manufacturing. Their mission is to enhance the productivity and technological performance of',
-      logo: 'https://www.usersolutions.com/wp-content/uploads/2023/02/Microsoft.png'
+      logo: '/images/Edgebic/2023-02/Microsoft.png'
     }
   ];
 
@@ -274,7 +274,7 @@ export function PartnersSection(): React.JSX.Element {
                 CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
               </h3>
               <Image
-                src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                 alt="Collection of industry and business awards logos"
                 width={1024}
                 height={128}

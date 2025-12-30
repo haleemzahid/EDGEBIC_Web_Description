@@ -20,7 +20,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
             <div className="flex flex-wrap justify-center gap-4">
               <Button size="lg" className="cursor-pointer" asChild>
                 <a
-                  href="https://www.usersolutions.com/wp-content/uploads/2022/10/JSLsetup.zip"
+                  href="/images/Edgebic/2022-10/JSLsetup.zip"
                   download="JSLsetup.zip"
                 >
                   Download Free Trial
@@ -49,7 +49,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
             </div>
             <div className="overflow-hidden rounded-lg">
               <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/10/insight-1.png"
+                src="/images/Edgebic/2022-10/insight-1.png"
                 alt="EDGEBIC production scheduling software interface"
                 className="h-auto w-full"
               />
@@ -63,7 +63,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               <div className="overflow-hidden rounded-lg">
                 <div className="relative aspect-video w-full">
                   <iframe
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/Welcome-to-Job-Scheduler-Lite-JSL.mp4"
+                    src="/videos/welcome-to-job-scheduler-lite.mp4"
                     title="EDGEBIC Demo Video"
                     className="absolute inset-0 size-full rounded-lg"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -119,7 +119,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               <div>
                 <h3 className="mb-2 font-semibold">Import Data</h3>
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/import.png"
+                  src="/images/Edgebic/2022-10/import.png"
                   alt="Data import"
                   className="mb-2 h-auto w-full rounded"
                 />
@@ -128,7 +128,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               <div>
                 <h3 className="mb-2 font-semibold">Daily Hours</h3>
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/dailyhours.png"
+                  src="/images/Edgebic/2022-10/dailyhours.png"
                   alt="Daily hours"
                   className="mb-2 h-auto w-full rounded"
                 />
@@ -137,7 +137,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               <div>
                 <h3 className="mb-2 font-semibold">Holidays</h3>
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/holidays.png"
+                  src="/images/Edgebic/2022-10/holidays.png"
                   alt="Holidays"
                   className="mb-2 h-auto w-full rounded"
                 />
@@ -146,7 +146,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               <div>
                 <h3 className="mb-2 font-semibold">Resources</h3>
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/resoursces.png"
+                  src="/images/Edgebic/2022-10/resoursces.png"
                   alt="Resources"
                   className="mb-2 h-auto w-full rounded"
                 />
@@ -155,7 +155,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               <div>
                 <h3 className="mb-2 font-semibold">Orders</h3>
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/orders-1024x459.png"
+                  src="/images/Edgebic/2022-10/orders-1024x459.png"
                   alt="Orders"
                   className="mb-2 h-auto w-full rounded"
                 />
@@ -164,7 +164,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               <div>
                 <h3 className="mb-2 font-semibold">Finished Goods/Routing</h3>
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/FG.png"
+                  src="/images/Edgebic/2022-10/FG.png"
                   alt="Finished goods"
                   className="mb-2 h-auto w-full rounded"
                 />
@@ -173,7 +173,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               <div>
                 <h3 className="mb-2 font-semibold">Schedule</h3>
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/schdle.png"
+                  src="/images/Edgebic/2022-10/schdle.png"
                   alt="Schedule"
                   className="mb-2 h-auto w-full rounded"
                 />
@@ -182,7 +182,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               <div>
                 <h3 className="mb-2 font-semibold">InSights</h3>
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/insight.png"
+                  src="/images/Edgebic/2022-10/insight.png"
                   alt="InSights"
                   className="mb-2 h-auto w-full rounded"
                 />
@@ -198,7 +198,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                 CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
               </h2>
               <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                 alt="Collection of industry and business awards logos"
                 className="mx-auto h-auto max-w-full"
               />

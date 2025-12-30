@@ -227,7 +227,7 @@ export default function StudentsFreeTrialPage() {
                     alt="Collection of industry and business awards logos"
                     className="h-auto w-full"
                     height={128}
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                     width={1024}
                   />
                 </div>

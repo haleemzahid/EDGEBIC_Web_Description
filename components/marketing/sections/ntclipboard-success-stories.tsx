@@ -25,7 +25,7 @@ const successStories = [
     quote:
       'Resource Manager-DB product provided a unique combination of planning, scheduling, and tracking functionality within a single, yet flexible system.',
     author: 'Scott Bennett, Enevate',
-    logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/01-300x300.png',
+    logo: '/images/Edgebic/2022-07/01-300x300.png',
     href: '/success_stories/resource-manager-db-innovates-li-ion-battery-production-scheduling-for-enevate'
   },
   {
@@ -37,7 +37,7 @@ const successStories = [
     quote:
       'The system was incredibly easy to adopt and we saw immediate returns on our investment.',
     author: 'Ohio Furniture Manufacturer',
-    logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/02-300x300.png',
+    logo: '/images/Edgebic/2022-07/02-300x300.png',
     href: '/success_stories/amish-easily-adopt-rapidly-amortize-new-production-scheduling-system'
   },
   {
@@ -48,7 +48,7 @@ const successStories = [
     quote:
       'This solution enabled us to systematically identify and resolve bottlenecks in our production process.',
     author: 'BAE Systems/Ordinance Systems Inc.',
-    logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/03-300x300.png',
+    logo: '/images/Edgebic/2022-07/03-300x300.png',
     href: '/success_stories/capacity-and-production-planning-add-on-for-erp'
   },
   {
@@ -60,7 +60,7 @@ const successStories = [
     quote:
       'Perfect solution for smaller manufacturers looking for affordable, flexible MRP systems.',
     author: 'Sleepmasters',
-    logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/04-300x300.png',
+    logo: '/images/Edgebic/2022-07/04-300x300.png',
     href: '/success_stories/affordable-easy-to-implement-mrp-for-smaller-manufacturer'
   },
   {
@@ -71,7 +71,7 @@ const successStories = [
     quote:
       'We have found these products complement traditional MRP and Shop Control systems perfectly.',
     author: 'A.G. Raymond & Company',
-    logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/AGRaymond33f-161208-5849d765f1422.jpg',
+    logo: '/images/Edgebic/2022-07/AGRaymond33f-161208-5849d765f1422.jpg',
     href: '/success_stories/complements-traditional-mrp-and-shop-control-systems'
   },
   {
@@ -82,7 +82,7 @@ const successStories = [
     quote:
       'Integrated scheduling solutions have transformed our consulting project delivery capabilities.',
     author: 'GEMS Healthcare Solutions',
-    logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/07-300x300.png',
+    logo: '/images/Edgebic/2022-07/07-300x300.png',
     href: '/success_stories/finite-capacity-resource-scheduling-for-consulting-projects'
   },
   {
@@ -94,7 +94,7 @@ const successStories = [
     quote:
       'The new scheduling system replaced our complex Excel program with an intuitive, coordinated solution.',
     author: 'Kyocera Corporation',
-    logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/06-300x300.png',
+    logo: '/images/Edgebic/2022-07/06-300x300.png',
     href: '/success_stories/quick-and-easy-production-scheduling-replaces-complex-custom-excel-program'
   },
   {
@@ -104,7 +104,7 @@ const successStories = [
       'GE Railcar Services Corporation, a unit of General Electric Corporation manages a fleet of over 180,000 railcars throughout North America and has successfully deployed Workcenter solutions.',
     quote: 'We tripled our on-time shipping percentage from 30% to over 90%.',
     author: 'GE Railcar Services Corporation',
-    logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/GE-Rail-Services-Logoghj-161208-5849e6633a5d5-58e6958736b16.jpg',
+    logo: '/images/Edgebic/2022-07/GE-Rail-Services-Logoghj-161208-5849e6633a5d5-58e6958736b16.jpg',
     href: '/success_stories/repair-shops-triple-on-time-shipping-percentage-from-30-to-90'
   },
   {
@@ -115,7 +115,7 @@ const successStories = [
     quote:
       'We significantly increased throughput while improving our on-time shipping performance.',
     author: 'Technical Glass Products',
-    logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/logo-tgpa-blue0-161208-5849d3ed255df.jpg',
+    logo: '/images/Edgebic/2022-07/logo-tgpa-blue0-161208-5849d3ed255df.jpg',
     href: '/success_stories/job-shop-increases-throughput-while-improving-shipping-on-time'
   },
   {
@@ -127,7 +127,7 @@ const successStories = [
     quote:
       "Successfully implemented finite capacity scheduling for one of the world's most complex manufacturing environments.",
     author: 'US Navy',
-    logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/GrayAmNavy-Taglogo00-1634-58c6b882c5bd7.jpg',
+    logo: '/images/Edgebic/2022-07/GrayAmNavy-Taglogo00-1634-58c6b882c5bd7.jpg',
     href: '/success_stories/finite-capacity-scheduling-of-worlds-largest-aircraft-carrier-nimitz'
   },
   {
@@ -139,7 +139,7 @@ const successStories = [
     quote:
       'RM-DB provides the flexible scheduling solution we needed for our complex manufacturing processes.',
     author: 'Plastilite Corporation',
-    logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/Plastilite-161208-5849e7913fd3c.jpg',
+    logo: '/images/Edgebic/2022-07/Plastilite-161208-5849e7913fd3c.jpg',
     href: '/success_stories/erp-vendor-and-manufacturer-both-turn-to-rm-db-for-flexible-scheduling'
   },
   {
@@ -151,7 +151,7 @@ const successStories = [
     quote:
       'We are now able to schedule labor resources several months in advance, greatly increasing customer satisfaction.',
     author: 'Joe Van Wagner, Cummins Engine',
-    logo: 'https://www.usersolutions.com/wp-content/uploads/2022/07/cumminslogo-59492683dd7a2.png',
+    logo: '/images/Edgebic/2022-07/cumminslogo-59492683dd7a2.png',
     href: '/success_stories/scheduling-labor-out-several-months-increases-customer-satisfaction'
   }
 ];
@@ -250,7 +250,7 @@ export function NTClipboardSuccessStories(): React.JSX.Element {
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
                   width={1024}
                   height={128}

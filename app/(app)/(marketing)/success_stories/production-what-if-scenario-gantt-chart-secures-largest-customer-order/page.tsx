@@ -44,7 +44,7 @@ export default function ProductionWhatIfScenarioPage() {
             {/* Featured Image */}
             <div className="mb-6 flex justify-center">
               <Image
-                src="https://www.usersolutions.com/wp-content/uploads/2022/07/turnerlogo22a-161208-5849d56942669.jpg"
+                src="/images/Edgebic/2022-07/turnerlogo22a-161208-5849d56942669.jpg"
                 alt="Turner Bicycles logo since 1994"
                 width={300}
                 height={66}
@@ -68,7 +68,7 @@ export default function ProductionWhatIfScenarioPage() {
 
               <div className="my-6 flex justify-center">
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/2016_czar_xx1_blue_4500-300x188-161208-5849eb9c81e6d.jpg"
+                  src="/images/Edgebic/2022-07/2016_czar_xx1_blue_4500-300x188-161208-5849eb9c81e6d.jpg"
                   alt="Turner mountain bike"
                   width={300}
                   height={188}
@@ -148,7 +148,7 @@ export default function ProductionWhatIfScenarioPage() {
 
               <div className="my-6 flex justify-center">
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/Exceeding-Expections-161208-5849ebfe1962c.jpg"
+                  src="/images/Edgebic/2022-07/Exceeding-Expections-161208-5849ebfe1962c.jpg"
                   alt="Exceeding Expectations"
                   width={600}
                   height={400}
@@ -184,7 +184,7 @@ export default function ProductionWhatIfScenarioPage() {
 
               <div className="my-6 flex justify-center">
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/thankyougirl-161208-5849ec3536e21.png"
+                  src="/images/Edgebic/2022-07/thankyougirl-161208-5849ec3536e21.png"
                   alt="Thank you for your business"
                   width={400}
                   height={300}
@@ -221,7 +221,7 @@ export default function ProductionWhatIfScenarioPage() {
                 </h2>
                 <div className="relative mx-auto h-auto w-full max-w-4xl">
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                     alt="Collection of industry and business awards logos"
                     width={1024}
                     height={128}

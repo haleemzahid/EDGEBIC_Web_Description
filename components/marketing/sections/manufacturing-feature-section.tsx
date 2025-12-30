@@ -26,7 +26,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
           <div className="mt-6 lg:mt-0">
             <div className="relative h-[300px] w-full lg:h-[350px]">
               <img
-                src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
+                src="/images/features/rmdb-edge.png"
                 alt="Accurate production scheduling with real-time visibility"
                 className=" size-full object-contain"
               />
@@ -74,7 +74,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
           </div>
           <div className="flex items-center justify-center lg:col-start-2">
             <img
-              src="https://www.usersolutions.com/wp-content/uploads/2022/07/rmdb11.png"
+              src="/images/features/rmdb-menu.png"
               alt="Accurate production scheduling with real-time visibility"
               className=" size-full object-contain"
             />
@@ -85,7 +85,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
         <div className="mt-6 lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
           <div className="relative flex items-center justify-center lg:col-start-2">
             <img
-              src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-Data-Import.png"
+              src="/images/features/rmdb-data-import.png"
               alt="Swing Control Software features"
               className=" size-full object-contain"
             />
@@ -154,7 +154,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
 
           <div className="flex items-center justify-center lg:col-start-2">
             <img
-              src="https://www.usersolutions.com/wp-content/uploads/2022/09/SQC-Pareto.png"
+              src="/images/features/sqc-pareto.png"
               alt="Real-time inventory overview"
               className=" size-full object-contain"
             />

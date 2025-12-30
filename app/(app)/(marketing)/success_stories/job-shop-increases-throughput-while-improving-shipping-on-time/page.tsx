@@ -126,7 +126,7 @@ export default function JobShopThroughputPage() {
               {/* Image Column */}
               <div className="space-y-6 lg:sticky lg:top-6">
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/TGP-1024x489.png"
+                  src="/images/Edgebic/2022-07/TGP-1024x489.png"
                   alt="Technical Glass Products production scheduling"
                   width={1024}
                   height={489}
@@ -134,7 +134,7 @@ export default function JobShopThroughputPage() {
                   unoptimized
                 />
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/TGPPie.jpg"
+                  src="/images/Edgebic/2022-07/TGPPie.jpg"
                   alt="Technical Glass Products efficiency pie chart"
                   width={600}
                   height={400}
@@ -157,7 +157,7 @@ export default function JobShopThroughputPage() {
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
                   width={1024}
                   height={128}

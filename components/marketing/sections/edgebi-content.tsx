@@ -9,8 +9,8 @@ export function EDGEBIContent() {
       <div className="flex justify-center">
         <div className="aspect-video w-full max-w-[800px] overflow-hidden rounded-lg shadow-lg">
           <LazyVideo
-            src="https://www.usersolutions.com/wp-content/uploads/2022/12/EDGEBI updated thumbnail.mp4"
-            poster="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
+            src="/videos/edgebi-updated-thumbnail.mp4"
+            poster="/images/Edgebic/2022-07/RMDB-EDGE2-1024x483.png"
             className="h-full w-full object-cover"
             title="EDGEBI Enhanced Drag-n-drop Graphical Environment demonstration"
           />
@@ -27,7 +27,7 @@ export function EDGEBIContent() {
         </div>
         <div>
           <Image
-            src="https://www.usersolutions.com/wp-content/uploads/2022/10/f1.png"
+            src="/images/Edgebic/2022-10/f1.png"
             alt="EDGEBI Screenshot - Resource Manager DB interface"
             width={600}
             height={400}
@@ -42,7 +42,7 @@ export function EDGEBIContent() {
       <div className="grid items-center gap-8 lg:grid-cols-2">
         <div>
           <Image
-            src="https://www.usersolutions.com/wp-content/uploads/2022/10/f2.png"
+            src="/images/Edgebic/2022-10/f2.png"
             alt="EDGEBI Schedule Management Interface"
             width={600}
             height={400}
@@ -70,7 +70,7 @@ export function EDGEBIContent() {
         </div>
         <div>
           <Image
-            src="https://www.usersolutions.com/wp-content/uploads/2022/10/f3.png"
+            src="/images/Edgebic/2022-10/f3.png"
             alt="Heat Map - Color-coded capacity utilization"
             width={600}
             height={400}
@@ -85,7 +85,7 @@ export function EDGEBIContent() {
       <div className="grid items-center gap-8 lg:grid-cols-2">
         <div>
           <Image
-            src="https://www.usersolutions.com/wp-content/uploads/2022/10/f4.png"
+            src="/images/Edgebic/2022-10/f4.png"
             alt="Schedule Key Dates Reports"
             width={600}
             height={400}

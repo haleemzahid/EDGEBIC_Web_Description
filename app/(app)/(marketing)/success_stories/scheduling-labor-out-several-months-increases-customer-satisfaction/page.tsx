@@ -95,7 +95,7 @@ export default function SchedulingLaborPage() {
               {/* Image Column */}
               <div className="space-y-6 lg:sticky lg:top-6">
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/main-banner-300x193-1.jpg"
+                  src="/images/Edgebic/2022-07/main-banner-300x193-1.jpg"
                   alt="Cummins Engine facility"
                   width={300}
                   height={193}
@@ -103,7 +103,7 @@ export default function SchedulingLaborPage() {
                   unoptimized
                 />
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/SkillsBarWeek-300x169-2.png"
+                  src="/images/Edgebic/2022-07/SkillsBarWeek-300x169-2.png"
                   alt="Skills Bar Week scheduling chart"
                   width={300}
                   height={169}
@@ -126,7 +126,7 @@ export default function SchedulingLaborPage() {
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
                   width={1024}
                   height={128}

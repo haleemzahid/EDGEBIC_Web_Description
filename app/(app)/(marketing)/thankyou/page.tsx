@@ -8,7 +8,7 @@ export default function ThankYouPage() {
           {/* Image on left */}
           <div className="w-full md:w-1/2">
             <img
-              src="https://www.usersolutions.com/wp-content/uploads/2022/10/thankyou.jpg"
+              src="/images/Edgebic/2022-10/thankyou.jpg"
               alt="Thank You"
               className="h-auto w-full"
             />

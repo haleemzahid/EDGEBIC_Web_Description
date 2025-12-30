@@ -44,7 +44,7 @@ export default function JobShopGainsControlPage() {
             {/* Featured Image */}
             <div className="mb-6 flex justify-center">
               <Image
-                src="https://www.usersolutions.com/wp-content/uploads/2022/07/image003-150x112-2.jpg"
+                src="/images/Edgebic/2022-07/image003-150x112-2.jpg"
                 alt="Corporate building with trees and address sign"
                 width={300}
                 height={250}
@@ -83,7 +83,7 @@ export default function JobShopGainsControlPage() {
                 </h2>
                 <div className="relative mx-auto h-auto w-full max-w-4xl">
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                     alt="Collection of industry and business awards logos"
                     width={1024}
                     height={128}

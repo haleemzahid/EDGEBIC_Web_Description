@@ -64,42 +64,42 @@ export default function ShopPage() {
       name: 'Spreadsheet Scheduler',
       singleUserPrice: '$39',
       fiveUserPrice: '$78',
-      icon: 'https://www.usersolutions.com/wp-content/uploads/2022/09/excelicon.png',
+      icon: '/images/Edgebic/2022-09/excelicon.png',
       link: '/spreadsheet-scheduler'
     },
     {
       name: 'Spreadsheet QC',
       singleUserPrice: '$39',
       fiveUserPrice: '$78',
-      icon: 'https://www.usersolutions.com/wp-content/uploads/2022/09/excelicon.png',
+      icon: '/images/Edgebic/2022-09/excelicon.png',
       link: '/spreadsheet-qc'
     },
     {
       name: 'Workcell Planner',
       singleUserPrice: '$39',
       fiveUserPrice: '$78',
-      icon: 'https://www.usersolutions.com/wp-content/uploads/2022/09/excelicon.png',
+      icon: '/images/Edgebic/2022-09/excelicon.png',
       link: '/workcell-planner'
     },
     {
       name: 'Operations Manager',
       singleUserPrice: '$5-$39',
       fiveUserPrice: '$10-$78',
-      icon: 'https://www.usersolutions.com/wp-content/uploads/2022/09/excelicon.png',
+      icon: '/images/Edgebic/2022-09/excelicon.png',
       link: '/operations-manager'
     },
     {
       name: 'Workcenter for XL',
       singleUserPrice: '$5-$39',
       fiveUserPrice: '$10-$78',
-      icon: 'https://www.usersolutions.com/wp-content/uploads/2022/09/excelicon.png',
+      icon: '/images/Edgebic/2022-09/excelicon.png',
       link: '/workcenter-schedulerxl'
     },
     {
       name: 'Resource Manager for Excel',
       singleUserPrice: '$5-$39',
       fiveUserPrice: '$10-$78',
-      icon: 'https://www.usersolutions.com/wp-content/uploads/2022/09/excelicon.png',
+      icon: '/images/Edgebic/2022-09/excelicon.png',
       link: '/resource-manager-for-excel-2'
     }
   ];
@@ -216,7 +216,7 @@ export default function ShopPage() {
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
                   width={1024}
                   height={128}

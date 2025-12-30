@@ -179,7 +179,7 @@ export default function AircraftCarrierNimitzPage() {
               {/* Image Column */}
               <div className="space-y-6 lg:sticky lg:top-6">
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/USS-nimitz-main-image.jpg"
+                  src="/images/Edgebic/2022-07/USS-nimitz-main-image.jpg"
                   alt="USS Nimitz aircraft carrier"
                   width={800}
                   height={400}
@@ -187,7 +187,7 @@ export default function AircraftCarrierNimitzPage() {
                   unoptimized
                 />
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/AirCraftMaint.jpg"
+                  src="/images/Edgebic/2022-07/AirCraftMaint.jpg"
                   alt="Aircraft carrier maintenance operations"
                   width={600}
                   height={400}
@@ -210,7 +210,7 @@ export default function AircraftCarrierNimitzPage() {
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
                   width={1024}
                   height={128}

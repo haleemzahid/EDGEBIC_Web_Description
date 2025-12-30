@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 const mediaCoverage = [
   {
     title: 'Top 10 Manufacturing KPIs in 2024',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2024/02/sdf.jpg',
+    image: '/images/Edgebic/2024-02/sdf.jpg',
     link: '/top-10-manufacturing-kpis-in-2024',
     sources: [
       { name: 'What is a manufacturing KPI?', url: '/top-10-manufacturing-kpis-in-2024' }
@@ -23,7 +23,7 @@ const mediaCoverage = [
   },
   {
     title: 'User Solutions Joins COVID Fight with Production Scheduling Software',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/2020.png',
+    image: '/images/Edgebic/2022-09/2020.png',
     link: 'https://www.todaysmedicaldevelopments.com/product/user-solutions-covid-free-rmx-software-quoting/',
     sources: [
       { name: "Today's Medical Developments", url: 'https://www.todaysmedicaldevelopments.com/product/user-solutions-covid-free-rmx-software-quoting/' },
@@ -34,7 +34,7 @@ const mediaCoverage = [
   },
   {
     title: 'Production Scheduling System for Amish Woodshop Cuts Lead Time, Inefficiency',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2023/01/amish.png',
+    image: '/images/Edgebic/2023-01/amish.png',
     link: 'https://www.woodworkingnetwork.com/',
     sources: [
       { name: 'Woodworking Network', url: 'https://www.woodworkingnetwork.com/' }
@@ -42,7 +42,7 @@ const mediaCoverage = [
   },
   {
     title: 'User Solutions Named Top ERP Solutions Transforming Business 2016',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/2016.png',
+    image: '/images/Edgebic/2022-09/2016.png',
     link: 'https://www.cioapplications.com/magazines/May/ERP2016/',
     sources: [
       { name: 'CIO Applications', url: 'https://www.cioapplications.com/magazines/May/ERP2016/' }
@@ -50,7 +50,7 @@ const mediaCoverage = [
   },
   {
     title: 'Quick and Easy Excel-Based MRP Software for Small and Large Manufacturing',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/2018.png',
+    image: '/images/Edgebic/2022-09/2018.png',
     link: 'http://www.orms-today.org/',
     sources: [
       { name: 'OR/MS Today', url: 'http://www.orms-today.org/' }
@@ -58,7 +58,7 @@ const mediaCoverage = [
   },
   {
     title: 'APICS Profiles in Manufacturing',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/2015.png',
+    image: '/images/Edgebic/2022-09/2015.png',
     link: 'https://www.ascm.org/',
     sources: [
       { name: 'APICS', url: 'https://www.ascm.org/' }
@@ -66,7 +66,7 @@ const mediaCoverage = [
   },
   {
     title: 'Software Schedules Maintenance With Military Precision',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/2014.png',
+    image: '/images/Edgebic/2022-09/2014.png',
     link: 'http://www.impomag.com/',
     sources: [
       { name: 'IMPO', url: 'http://www.impomag.com/' }
@@ -74,7 +74,7 @@ const mediaCoverage = [
   },
   {
     title: 'Small Manufacturers Seek Best ERP Fit',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/image06.png',
+    image: '/images/Edgebic/2022-09/image06.png',
     link: 'https://www.sme.org/',
     sources: [
       { name: 'SME-Manufacturing Engineering', url: 'https://www.sme.org/' }
@@ -82,7 +82,7 @@ const mediaCoverage = [
   },
   {
     title: 'Fireproof Planning – Cool Scheduling Solution',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/2011.png',
+    image: '/images/Edgebic/2022-09/2011.png',
     link: 'https://www.ascm.org/',
     sources: [
       { name: 'APICS', url: 'https://www.ascm.org/' }
@@ -93,31 +93,31 @@ const mediaCoverage = [
 const pressReleases = [
   {
     title: 'FREE Webinar Hosted by Purdue MEP to Improve Production Scheduling',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2023/07/MEP_H-Full-CMYK_1-crop-1-1024x164.jpg',
+    image: '/images/Edgebic/2023-07/MEP_H-Full-CMYK_1-crop-1-1024x164.jpg',
     link: 'https://www.prnewswire.com/news-releases/free-webinar-hosted-by-purdue-mep-and-user-solutions-to-improve-production-scheduling-301874765.html'
   },
   {
     title: 'User Solutions, Inc. Announces Revolutionary Method for Production Planning and Scheduling Evaluations',
     date: 'October 29, 2023',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2023/12/simple_image.jpg',
+    image: '/images/Edgebic/2023-12/simple_image.jpg',
     link: 'https://www.prnewswire.com/news-releases/user-solutions-inc-announces-revolutionary-method-for-production-planning-and-scheduling-evaluations-301970812.html'
   },
   {
     title: 'Forging Ahead Leveraging ERP Data for Enhanced Planning and Scheduling',
     date: 'October 28, 2023',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2023/12/VFEDGE.jpg',
+    image: '/images/Edgebic/2023-12/VFEDGE.jpg',
     link: 'https://www.prnewswire.com/news-releases/forging-ahead-leveraging-erp-data-for-enhanced-planning-and-scheduling-301970725.html'
   },
   {
     title: "User Solutions Continues Partnerships with Multiple University's for Real-Life Experience on Launching a Production Scheduling Offering",
     date: 'October 28, 2023',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2023/12/2023-12-24-1-1024x537.png',
+    image: '/images/Edgebic/2023-12/2023-12-24-1-1024x537.png',
     link: 'https://www.prnewswire.com/news-releases/user-solutions-continues-partnerships-with-multiple-universitys-for-real-life-experience-on-launching-a-production-scheduling-offering-301970708.html'
   },
   {
     title: 'User Solution Unveils Revolutionary Manufacturing Software: Customized Solutions for Enhanced Scheduling and Planning',
     date: 'October 4, 2023',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2023/12/Screenshot-12-1024x561.png',
+    image: '/images/Edgebic/2023-12/Screenshot-12-1024x561.png',
     link: 'https://www.prnewswire.com/news-releases/user-solution-unveils-revolutionary-manufacturing-software-customized-solutions-for-enhanced-scheduling-and-planning-301946707.html'
   }
 ];
@@ -126,49 +126,49 @@ const blogArticles = [
   {
     title: 'Enhancing Supply Chain Visibility through Advanced Scheduling Solutions',
     date: 'May 26, 2024',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/usersolutionsimage-300x211.png',
+    image: '/images/Edgebic/2022-09/usersolutionsimage-300x211.png',
     link: '/enhancing-supply-chain-visibility-through-advanced-scheduling-solutions/'
   },
   {
     title: 'The Role of Technology in Modern Production Planning and Scheduling',
     date: 'May 16, 2024',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2022/07/AirCraftMaint.jpg',
+    image: '/images/Edgebic/2022-07/AirCraftMaint.jpg',
     link: '/erp-solutions-for-production-planning/'
   },
   {
     title: 'Implementing Lean Manufacturing Principles for Improved Production Efficiency',
     date: 'May 6, 2024',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2024/02/sdf.jpg',
+    image: '/images/Edgebic/2024-02/sdf.jpg',
     link: '/lean-manufacturing-solutions/'
   },
   {
     title: 'Li-ion Battery Production Scheduling Software',
     date: 'September 8, 2022',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/image04-300x163.png',
+    image: '/images/Edgebic/2022-09/image04-300x163.png',
     link: '/li-ion-battery-production-scheduling-software/'
   },
   {
     title: 'Scheduling System Narrows Skills Gap for Fire-Rated Glass',
     date: 'September 8, 2022',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/image3-300x163.png',
+    image: '/images/Edgebic/2022-09/image3-300x163.png',
     link: '/scheduling-system-narrows-skills-gap-for-fire-rated-glass/'
   },
   {
     title: 'Small Manufacturer and Job Shop Uses Planning, Scheduling, and Tracking Tools',
     date: 'September 8, 2022',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/image06-1-300x163.png',
+    image: '/images/Edgebic/2022-09/image06-1-300x163.png',
     link: '/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive/'
   },
   {
     title: 'User Solutions, Inc. Named as One of Top ERP Solutions Transforming Business 2016',
     date: 'September 8, 2022',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2022/09/image05-300x163.png',
+    image: '/images/Edgebic/2022-09/image05-300x163.png',
     link: '/user-solutions-inc-named-as-one-of-top-erp-solutions-transforming-business-2016-by-cio-applications-as-they-celebrate-25-years-in-business/'
   },
   {
     title: 'Celebrating National Manufacturing Day',
     date: 'July 18, 2022',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2022/07/celebrating-300x163.png',
+    image: '/images/Edgebic/2022-07/celebrating-300x163.png',
     link: '/random-events-and-covariance/'
   }
 ];
@@ -312,7 +312,7 @@ export default function NewsPage(): React.JSX.Element {
               CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
             </h2>
             <Image
-              src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+              src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
               alt="Collection of industry and business awards logos"
               width={1024}
               height={128}

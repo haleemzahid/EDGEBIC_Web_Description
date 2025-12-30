@@ -132,9 +132,9 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 <div className="relative mb-6 overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
                     <VideoPlayer
-                      videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/07/Resource-Manager-for-Excel.mp4"
+                      videoUrl="/videos/resource-manager-for-excel.mp4"
                       title="Operations Manager Excel Templates"
-                      thumbnail="https://www.usersolutions.com/wp-content/uploads/2022/07/Resource-Manager-for-Excel.mp4"
+                      thumbnail="/videos/resource-manager-for-excel.mp4"
                       onPlayStateChange={(isPlaying) =>
                         handleVideoPlayState('end', isPlaying)
                       }
@@ -204,9 +204,9 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 <div className="relative  overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
                     <VideoPlayer
-                      videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/12/RMDB%20updated%20thumbnail.mp4"
+                      videoUrl="/videos/rmdb-updated-thumbnail.mp4"
                       title="Resource Manager DB"
-                      thumbnail="https://www.usersolutions.com/wp-content/uploads/2022/11/advanced-1.png"
+                      thumbnail="/images/toolbox/advanced.png"
                       onPlayStateChange={(isPlaying) =>
                         handleVideoPlayState('advanced', isPlaying)
                       }
@@ -277,9 +277,9 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 <div className="relative  overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
                     <VideoPlayer
-                      videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/12/EDGEBI%20updated%20thumbnail.mp4"
+                      videoUrl="/videos/edgebi-updated-thumbnail.mp4"
                       title="EDGEBIC Demo"
-                      thumbnail="https://www.usersolutions.com/wp-content/uploads/2022/10/insight-1.png"
+                      thumbnail="/images/toolbox/insight.png"
                       onPlayStateChange={(isPlaying) =>
                         handleVideoPlayState('starter', isPlaying)
                       }

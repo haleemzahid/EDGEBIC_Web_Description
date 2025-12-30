@@ -314,7 +314,7 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
               </h3>
               <div className="flex justify-center">
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
                   className="h-auto max-w-full rounded-lg shadow-md"
                 />

@@ -61,7 +61,7 @@ export default function SecurityGuidePage(): React.JSX.Element {
                 </div>
                 <div className="overflow-hidden rounded-lg shadow-lg">
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2023/01/s1.png"
+                    src="/images/Edgebic/2023-01/s1.png"
                     alt="Screenshot of Excel file properties with unlock option highlighted."
                     className="h-auto w-full"
                     width={485}
@@ -90,7 +90,7 @@ export default function SecurityGuidePage(): React.JSX.Element {
                 <div className="grid gap-8 md:grid-cols-2">
                   <div className="overflow-hidden rounded-lg shadow-lg">
                     <Image
-                      src="https://www.usersolutions.com/wp-content/uploads/2023/01/s2.png"
+                      src="/images/Edgebic/2023-01/s2.png"
                       alt="Screenshot of Excel Macro Security options menu."
                       className="h-auto w-full"
                       width={591}
@@ -99,7 +99,7 @@ export default function SecurityGuidePage(): React.JSX.Element {
                   </div>
                   <div className="overflow-hidden rounded-lg shadow-lg">
                     <Image
-                      src="https://www.usersolutions.com/wp-content/uploads/2023/01/s3.png"
+                      src="/images/Edgebic/2023-01/s3.png"
                       alt="Excel options menu showing Customize Ribbon interface."
                       className="h-auto w-full"
                       width={624}
@@ -128,7 +128,7 @@ export default function SecurityGuidePage(): React.JSX.Element {
                 <div className="grid gap-8 md:grid-cols-2">
                   <div className="overflow-hidden rounded-lg shadow-lg">
                     <Image
-                      src="https://www.usersolutions.com/wp-content/uploads/2023/01/s4.png"
+                      src="/images/Edgebic/2023-01/s4.png"
                       alt="Excel Developer tab with Macro Security settings highlighted."
                       className="h-auto w-full"
                       width={624}
@@ -137,7 +137,7 @@ export default function SecurityGuidePage(): React.JSX.Element {
                   </div>
                   <div className="overflow-hidden rounded-lg shadow-lg">
                     <Image
-                      src="https://www.usersolutions.com/wp-content/uploads/2023/01/s5.png"
+                      src="/images/Edgebic/2023-01/s5.png"
                       alt="Screenshot of Excel Trust Center Macro Settings window."
                       className="h-auto w-full"
                       width={624}
@@ -158,7 +158,7 @@ export default function SecurityGuidePage(): React.JSX.Element {
                 </h2>
                 <div className="flex justify-center">
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                     alt="Collection of industry and business awards logos."
                     className="mx-auto h-auto max-w-full"
                     width={1024}

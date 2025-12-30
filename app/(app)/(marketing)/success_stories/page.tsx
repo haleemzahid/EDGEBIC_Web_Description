@@ -22,7 +22,7 @@ const successStories = [
   {
     title: 'Cook Compression',
     slug: 'cook-compression-scheduling-software-review',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2022/07/cook.jpg',
+    image: '/images/Edgebic/2022-07/cook.jpg',
     alt: 'Cook Compression company logo with emblem',
     excerpt:
       'I feel thankful. For cause, I am dubious when dealing with enterprises and guarantees by long distance; more so when considering the promises made by others for software solutions, sight unseen. My experience with User Solutions, Inc. has set a higher standard for my internet business dealings and software vendor expertise. Your premier […]'
@@ -32,7 +32,7 @@ const successStories = [
       'Production What-If Scenario Gantt Chart Secures Largest Customer Order',
     slug: 'production-what-if-scenario-gantt-chart-secures-largest-customer-order',
     image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/07/turnerlogo22a-161208-5849d56942669.jpg',
+      '/images/Edgebic/2022-07/turnerlogo22a-161208-5849d56942669.jpg',
     alt: 'Turner Bicycles logo since 1994.',
     excerpt:
       'Turner Suspension Bicycles, Inc. of Murrieta, CA manufactures top-of-the-line, world-class mountain bikes. From the birth of the first BURNER All Terrain Bikes (ATB) in 1992, to the current offerings, Turner has strove to make the suspension frame as simple, rigid, and low-maintenance as possible. The results are refined geometries and machines built using only the […]'
@@ -42,7 +42,7 @@ const successStories = [
       'Job Shop Gains Control of Highly Volatile Schedule and Inventory Needs',
     slug: 'job-shop-gains-control-of-highly-volatile-schedule-and-inventory-needs',
     image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/07/AssembledProductsGroup-5949393aec366.png',
+      '/images/Edgebic/2022-07/AssembledProductsGroup-5949393aec366.png',
     alt: 'Corporate building with trees and address sign.',
     excerpt:
       '"Our products are constantly changing and, for only a few hours per month, the Resource Manager provides the ideal format to configure new Bills-Of-Material, prepare production schedules, and manage our inventory. Since we are already familiar with Excel, there wasn\'t even a learning curve." -Jim Muraski Production Control Manager of Assembled Products Group'
@@ -51,7 +51,7 @@ const successStories = [
     title: 'NIST MEP and Industrial Damping Leader Improve On-Time Delivery',
     slug: 'nist-mep-and-industrial-damping-leader-improve-on-time-delivery',
     image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/07/Ace-Controls-59492d232fa7c.png',
+      '/images/Edgebic/2022-07/Ace-Controls-59492d232fa7c.png',
     alt: 'ACE Controls Inc. company logo.',
     excerpt:
       "ACE Controls, Inc., located in Farmington MI, had a requirement to improve their current system, to immediately implement a solution for the day-to-day scheduling challenges of the machine shop. Supported by the NIST/Michigan Manufacturing Technology Center, Resource Manager was selected both for its benefit/cost ratio and for compatibility on the company's existing Excel platform, already […]"
@@ -60,7 +60,7 @@ const successStories = [
     title: 'Lean Manufacturing Realized by Hi-Tech Amplifier Manufacturer',
     slug: 'lean-manufacturing-realized-by-hi-tech-amplifier-manufacturer',
     image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/07/IFI999-161208-5849ea6336e64.jpg',
+      '/images/Edgebic/2022-07/IFI999-161208-5849ea6336e64.jpg',
     alt: 'IFI company logo with red initials.',
     excerpt:
       'Instruments For Industry, Inc (IFI), is a leader in the design and manufacture of Solid State and Traveling Wave Tube Amplifiers (both pulsed and CW). IFI equipment is used successfully in applications all over the world and is the leading supplier of high power transmitters. IFI has implemented Resource Manager-DB to support a transition to […]'
@@ -69,7 +69,7 @@ const successStories = [
     title: 'Hi-tech Connector Mfr Accurately Schedules Labor with MRP Add-On',
     slug: 'hi-tech-connector-mfr-accurately-schedules-labor-with-mrp-add-on',
     image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/07/logo003-58c6bad38b32e.jpg',
+      '/images/Edgebic/2022-07/logo003-58c6bad38b32e.jpg',
     alt: 'Blue text logo reading "INCON".',
     excerpt:
       'For awhile, we had been seeking better scheduling information out of our system. Exact Software recommended Resource Manager-DB from User Solutions. We found that not only was the product quick to integrate with our Macola system, it also integrated easily with our current custom labor tracking system and provides the needed visibility for us to […]'
@@ -79,7 +79,7 @@ const successStories = [
       'Simplifying Complexities Increased On-Time Deliveries, User Adoption for large Sawmills',
     slug: 'simplifying-complexities-increased-on-time-deliveries-user-adoption-for-large-sawmills',
     image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/07/GrayAmNavy-Taglogo3634-58c6ba9ccf1af.jpg',
+      '/images/Edgebic/2022-07/GrayAmNavy-Taglogo3634-58c6ba9ccf1af.jpg',
     alt: 'Swanson Group logo with pine tree icon',
     excerpt:
       'We have been using the RMDB scheduling software, increasingly, for the last year. I say increasingly because there was a lot of reluctance to using it first. The reluctance came because there was the idea that even though plywood production is "Old Technology" manufacturing, the intricacies of the different species and manners to deconstruct a […]'
@@ -88,7 +88,7 @@ const successStories = [
     title: 'Smart Coffee Machines Get Smarter Purchasing with ERP Add-On',
     slug: 'smart-coffee-machines-get-smarter-purchasing-with-erp-add-on',
     image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/07/GrayAmNavy-Taglog34-58c6ba204feb9.jpg',
+      '/images/Edgebic/2022-07/GrayAmNavy-Taglog34-58c6ba204feb9.jpg',
     alt: 'Cafection Enterprises logo with steaming coffee cup icon.',
     excerpt:
       'The big problem we have is knowing exactly which raw material was needed to be purchased (qty & date) based on BOM, minimum quantity to order and basic costing. The biggest benefit with using Resource Manager-DB is the increased efficiency in purchasing department. We chose Resource Manager -DB because it was the only affordable program […]'
@@ -98,7 +98,7 @@ const successStories = [
       'Scheduling Labor out Several Months Increases Customer Satisfaction',
     slug: 'scheduling-labor-out-several-months-increases-customer-satisfaction',
     image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/07/cumminslogo-59492683dd7a2.png',
+      '/images/Edgebic/2022-07/cumminslogo-59492683dd7a2.png',
     alt: 'Cummins logo with red background',
     excerpt:
       'Joe Van Wagner, Production Manager for Cummins Engine, selected a Resource Manager to assist in scheduling labor and machine resources. "We are in the midst of changing our corporate system and neither (old or new) system will handle job shop management the way we run our shops." We need a flexible tool for planning and […]'
@@ -108,7 +108,7 @@ const successStories = [
       'ERP Vendor and Manufacturer Both Turn to RM-DB for Flexible Scheduling',
     slug: 'erp-vendor-and-manufacturer-both-turn-to-rm-db-for-flexible-scheduling',
     image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/07/Plastilite-161208-5849e7913fd3c.jpg',
+      '/images/Edgebic/2022-07/Plastilite-161208-5849e7913fd3c.jpg',
     alt: 'Plastilite Corporation logo with tagline insulative and protective packaging.',
     excerpt:
       'User Solutions has announced another successful manufacturing scheduling application for Plastilite. Plastilite Corporation, located in Omaha Nebraska, provides insulated and protective packing solutions to companies shipping perishable and fragile products across the United States. Their containers are now routinely used in transporting everything from Omaha Steaks to pies to vaccines and even biological materials, and […]'
@@ -117,7 +117,7 @@ const successStories = [
     title: 'Repair Shops Triple On-Time Shipping Percentage from 30% to 90%',
     slug: 'repair-shops-triple-on-time-shipping-percentage-from-30-to-90',
     image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/07/logo1-161026-5810e0bfe3bef.png',
+      '/images/Edgebic/2022-07/logo1-161026-5810e0bfe3bef.png',
     alt: 'User Solutions Logo',
     excerpt:
       'GE Railcar Services Corporation, a unit of General Electric Corporation manages a fleet of over 180,000 railcars throughout North America. "Over the past several years, Workcenter SchedulerXL has successfully helped our repair network to improve the Shipping On-Time accuracy from 30% to over 90%. Additionally, since installing Workcenter SchedulerXL, we have improved our overall shop cycle time by […]'
@@ -126,7 +126,7 @@ const successStories = [
     title: 'Job Shop Increases Throughput While Improving Shipping on Time',
     slug: 'job-shop-increases-throughput-while-improving-shipping-on-time',
     image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/07/logo1-161026-5810e0bfe3bef.png',
+      '/images/Edgebic/2022-07/logo1-161026-5810e0bfe3bef.png',
     alt: 'User Solutions Logo',
     excerpt:
       'Technical Glass Products in Snoqualmie, WA quickly settled on Resource Manager-DB for multi-user support, advanced production scheduling options, and easy integration with corporate ERP systems. According to Scott McNeil, Master Production Scheduler for Technical Glass, "Resource Manager DB and User Solutions are great assets in empowering Technical Glass to deliver world class products, on time and under […]'
@@ -136,7 +136,7 @@ const successStories = [
       'Quick and Easy Production Scheduling Replaces Complex Custom Excel Program',
     slug: 'quick-and-easy-production-scheduling-replaces-complex-custom-excel-program',
     image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/07/logo1-161026-5810e0bfe3bef.png',
+      '/images/Edgebic/2022-07/logo1-161026-5810e0bfe3bef.png',
     alt: 'User Solutions Logo',
     excerpt:
       'Kyocera Industrial Ceramics used Resource Manager to replace a complex employee written Excel program that was becoming very time consuming and difficult to maintain. "We found immediate improvement in both predicting output and tracking raw material usage in process" - Brian Kendall, Industrial Engineer for Kyocera Industrial Ceramics. We were looking for a way to schedule three […]'
@@ -146,7 +146,7 @@ const successStories = [
       'Resource Manager DB Innovates Li-ion Battery Production Scheduling for Enevate',
     slug: 'resource-manager-db-innovates-li-ion-battery-production-scheduling-for-enevate',
     image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/07/logo1-161026-5810e0bfe3bef.png',
+      '/images/Edgebic/2022-07/logo1-161026-5810e0bfe3bef.png',
     alt: 'User Solutions Logo',
     excerpt:
       '"Resource Manager-DB product provided a unique combination of planning, scheduling, and tracking functionality within a single, yet flexible system." - Scott Bennett, Enevate Corp. In 2015 Enevate Corporation, creator of the next generation of Li-ion batteries was building out a greenfield manufacturing facility which demanded a unique combination of planning, scheduling, and tracking functionality within […]'
@@ -156,7 +156,7 @@ const successStories = [
       "Finite Capacity Scheduling of World's Largest Aircraft Carrier Nimitz",
     slug: 'finite-capacity-scheduling-of-worlds-largest-aircraft-carrier-nimitz',
     image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/07/logo1-161026-5810e0bfe3bef.png',
+      '/images/Edgebic/2022-07/logo1-161026-5810e0bfe3bef.png',
     alt: 'User Solutions Logo',
     excerpt:
       "The USS Nimitz is one of the Navy's nuclear-powered aircraft carriers, classified as a 'super carrier' and the lead ship of its class. With a displacement of 100K+ tons, a length of 1K+ feet, a 4 acre deck, a crew of 5K strong and only two locations in the world that can handle its dry dock maintenance needs, it needs to be scheduled […]"
@@ -165,7 +165,7 @@ const successStories = [
     title: 'Finite Capacity Resource Scheduling for Consulting Projects',
     slug: 'finite-capacity-resource-scheduling-for-consulting-projects',
     image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/07/logo1-161026-5810e0bfe3bef.png',
+      '/images/Edgebic/2022-07/logo1-161026-5810e0bfe3bef.png',
     alt: 'User Solutions Logo',
     excerpt:
       'GEMS Healthcare Solutions a wholly-owned subsidiary of GE Medical Systems headquartered in San Ramon, California, provides integrated data mining, Internet-based benchmarking and consulting solutions to healthcare providers. According to Shavonna Portue, Director, Product Operations "Delivering accurate information to our customers in a timely manner is the core of our business. Each financial analyst on our staff handles […]'
@@ -174,7 +174,7 @@ const successStories = [
     title: 'Complements Traditional MRP and Shop Control Systems',
     slug: 'complements-traditional-mrp-and-shop-control-systems',
     image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/07/logo1-161026-5810e0bfe3bef.png',
+      '/images/Edgebic/2022-07/logo1-161026-5810e0bfe3bef.png',
     alt: 'User Solutions Logo',
     excerpt:
       "Arnold Quesenberry, Senior Consultant for A.G. Raymond & Co. Inc. has been using Resource Manager in conjunction with consulting projects. \"We have found these products are a perfect complement to traditional MRP and Shop Control systems. They enable the user to quickly generate various 'what-if' plans for feasible and efficient master scheduling, all without disrupting the current […]"
@@ -184,7 +184,7 @@ const successStories = [
       'Amish Easily Adopt, Rapidly Amortize New Production Scheduling System',
     slug: 'amish-easily-adopt-rapidly-amortize-new-production-scheduling-system',
     image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/07/logo1-161026-5810e0bfe3bef.png',
+      '/images/Edgebic/2022-07/logo1-161026-5810e0bfe3bef.png',
     alt: 'User Solutions Logo',
     excerpt:
       "Nestled quietly in the heart of Ohio's Amish countryside is a furniture destination, Homestead Furniture. With all these advanced techniques and methodologies in place, the antiquated production scheduling system surfaced as a bottleneck holding them back. The article describes how a 40 hr/week production scheduling task, requiring an experienced production scheduler, was reduced to a mere 2 hour task by […]"
@@ -193,7 +193,7 @@ const successStories = [
     title: 'Affordable, Easy to Implement MRP for Smaller Manufacturer',
     slug: 'affordable-easy-to-implement-mrp-for-smaller-manufacturer',
     image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/07/logo1-161026-5810e0bfe3bef.png',
+      '/images/Edgebic/2022-07/logo1-161026-5810e0bfe3bef.png',
     alt: 'User Solutions Logo',
     excerpt:
       'Sleepmaster, LTD in Australia is a relatively small organization (AUD$50M of sales) with an outdated MRP system. Resource Manager was chosen because it is very easy and intuitive to use, can be used in sections within days, is low cost, easily configurable/flexible, and good support is offered via Skype, phone and GoToMeeting. "The biggest benefit relative to other […]'
@@ -202,7 +202,7 @@ const successStories = [
     title: 'Capacity and Production Planning Add-On for ERP',
     slug: 'capacity-and-production-planning-add-on-for-erp',
     image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/07/logo1-161026-5810e0bfe3bef.png',
+      '/images/Edgebic/2022-07/logo1-161026-5810e0bfe3bef.png',
     alt: 'User Solutions Logo',
     excerpt:
       "BAE Systems/Ordinance Systems Inc. set out to design and implement a process that would enable our manufacturing personnel to systematically identify process, equipment, labor, and material limitations. We had already purchased and implemented an ERP system but we weren't satisfied with its ability to recognize our capacity constraints or meet our finite scheduling needs. Now, we have a solution that […]"
@@ -293,7 +293,7 @@ export default function SuccessStoriesPage() {
                 </h3>
                 <div className="relative mx-auto h-auto w-full max-w-4xl">
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                     alt="Collection of industry and business awards logos"
                     width={1024}
                     height={128}

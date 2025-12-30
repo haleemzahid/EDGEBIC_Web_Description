@@ -75,7 +75,7 @@ export default function RepairShopsTriplePage() {
               {/* Image Column */}
               <div className="space-y-6 lg:sticky lg:top-6">
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/railcar.png"
+                  src="/images/Edgebic/2022-07/railcar.png"
                   alt="GE Railcar Services repair operations"
                   width={600}
                   height={400}
@@ -83,7 +83,7 @@ export default function RepairShopsTriplePage() {
                   unoptimized
                 />
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/WCXL-GUY.png"
+                  src="/images/Edgebic/2022-07/WCXL-GUY.png"
                   alt="Workcenter SchedulerXL software interface"
                   width={600}
                   height={400}
@@ -106,7 +106,7 @@ export default function RepairShopsTriplePage() {
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
                   width={1024}
                   height={128}

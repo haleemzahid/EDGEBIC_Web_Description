@@ -23,7 +23,7 @@ export default function JSLDownloadPage(): React.JSX.Element {
       <div className="mb-6 text-center">
         <h1 className="mb-6 text-4xl font-bold">
           <a
-            href="https://www.usersolutions.com/wp-content/uploads/2022/10/JSLsetup.zip"
+            href="/images/Edgebic/2022-10/JSLsetup.zip"
             download="JSLsetup.zip"
             className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline"
           >
@@ -85,7 +85,7 @@ export default function JSLDownloadPage(): React.JSX.Element {
         {/* Folder Structure Image */}
         <div className="mt-8 text-center">
           <Image
-            src="https://www.usersolutions.com/wp-content/uploads/2022/10/blck.png"
+            src="/images/Edgebic/2022-10/blck.png"
             alt="Screenshot of EDGEBIC folder with files"
             width={600}
             height={400}
@@ -119,7 +119,7 @@ export default function JSLDownloadPage(): React.JSX.Element {
             </h2>
             <div className="flex justify-center">
               <Image
-                src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                 alt="Collection of industry and business awards logos"
                 width={1024}
                 height={128}

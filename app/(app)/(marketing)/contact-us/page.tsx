@@ -293,7 +293,7 @@ export default function ContactUsPage() {
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
                   className="mx-auto h-auto max-h-32 max-w-full object-contain"
                 />

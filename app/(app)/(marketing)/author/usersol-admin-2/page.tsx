@@ -17,7 +17,7 @@ export default function UsersolAdmin2AuthorPage() {
         'Enhancing Supply Chain Visibility through Advanced Scheduling Solutions',
       href: '/enhancing-supply-chain-visibility-through-advanced-scheduling-solutions',
       image:
-        'https://www.usersolutions.com/wp-content/uploads/2022/09/usersolutionsimage-300x211.png',
+        '/images/Edgebic/2022-09/usersolutionsimage-300x211.png',
       alt: 'Businessman working on computer in office setting',
       description:
         "Supply Chain Visibility Solutions for Modern Manufacturers Are your supply chain operations as transparent and efficient as they should be? In today's fast-paced market, full visibility is essential. Manufacturers must optimize operations and respond quickly to changes. At User Solutions, Inc., we deliver advanced scheduling solutions and ERP software that improve visibility across your supply […]"
@@ -27,7 +27,7 @@ export default function UsersolAdmin2AuthorPage() {
         'The Role of Technology in Modern Production Planning and Scheduling',
       href: '/erp-solutions-for-production-planning',
       image:
-        'https://www.usersolutions.com/wp-content/uploads/2022/07/AirCraftMaint.jpg',
+        '/images/Edgebic/2022-07/AirCraftMaint.jpg',
       alt: 'Submarine crew in control room',
       description:
         'Have you ever wondered how technology can transform the traditional landscape of production planning and scheduling? In an era where efficiency dictates market leaders, the adoption of advanced technological tools has become indispensable. User Solutions, Inc. specializes in providing cutting-edge ERP solutions for manufacturers, which are pivotal in revolutionizing how production planning and scheduling tasks […]'
@@ -36,7 +36,7 @@ export default function UsersolAdmin2AuthorPage() {
       title:
         'Implementing Lean Manufacturing Principles for Improved Production Efficiency',
       href: '/lean-manufacturing-solutions',
-      image: 'https://www.usersolutions.com/wp-content/uploads/2024/02/sdf.jpg',
+      image: '/images/Edgebic/2024-02/sdf.jpg',
       alt: 'Illustration of a worker with construction tools icons.',
       description:
         "Is your manufacturing process as streamlined and cost-effective as it could be? In today's competitive landscape, companies are constantly seeking methods to enhance efficiency and reduce waste. Lean manufacturing principles have emerged as a cornerstone in achieving these goals. At User Solutions, Inc., we specialize in integrating these principles with advanced resource management solutions to […]"
@@ -45,7 +45,7 @@ export default function UsersolAdmin2AuthorPage() {
       title: 'Li-ion Battery Production Scheduling Software',
       href: '/li-ion-battery-production-scheduling-software',
       image:
-        'https://www.usersolutions.com/wp-content/uploads/2022/09/image04.png',
+        '/images/Edgebic/2022-09/image04.png',
       alt: 'Person reading a magazine with business diagrams.',
       description:
         'Resource Manager-DB V6 Transforms Li-ion Battery Production Scheduling User Solutions, a leader in flexible production scheduling and planning software, has released Resource Manager-DB (RM-DB) V6. This upgrade was driven by customer demand for more power and flexibility in manufacturing scheduling. South Lyon, MI 6/9/2016 RM-DB V6 introduces Bills-of-Resources that blend materials and workcenters in any […]'
@@ -54,7 +54,7 @@ export default function UsersolAdmin2AuthorPage() {
       title: 'Scheduling System Narrows Skills Gap for Fire-Rated Glass',
       href: '/scheduling-system-narrows-skills-gap-for-fire-rated-glass',
       image:
-        'https://www.usersolutions.com/wp-content/uploads/2022/09/image3.png',
+        '/images/Edgebic/2022-09/image3.png',
       alt: 'Laptop screen displaying code in development environment.',
       description:
         "Scheduling System Narrows Skills Gap for Fire-Rated Glass User Solutions' Resource Manager-DB enables Technical Glass Products to strategically cross-train their way to optimization South Lyon, MI 8/31/2016 User Solutions, a provider of production scheduling software solutions for manufacturers and job shops, today announces that Technical Glass Products, the recognized leader in the fire-rated glass and […]"
@@ -64,7 +64,7 @@ export default function UsersolAdmin2AuthorPage() {
         'Small Manufacturer and Job Shop Uses Planning, Scheduling, and Tracking Tools from User Solutions, Inc. to Become More Efficient and Competitive',
       href: '/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive',
       image:
-        'https://www.usersolutions.com/wp-content/uploads/2022/09/image06-1.png',
+        '/images/Edgebic/2022-09/image06-1.png',
       alt: 'Business professionals analyzing financial charts and data.',
       description:
         "Small Manufacturer and Job Shop Uses Planning, Scheduling, and Tracking Tools from User Solutions, Inc. to Become More Efficient and Competitive Resource Manager for Excel and Resource Manager-DB's new features improve scheduling for small to medium sized operations to optimally manage resources (Workcenters, Labor, Materials, Machines) to deliver on time and on budget. South Lyon, […]"
@@ -74,7 +74,7 @@ export default function UsersolAdmin2AuthorPage() {
         'User Solutions, Inc. named as one of top ERP Solutions Transforming Business 2016 by CIO Applications, as they celebrate 25 years in business.',
       href: '/user-solutions-inc-named-as-one-of-top-erp-solutions-transforming-business-2016-by-cio-applications-as-they-celebrate-25-years-in-business',
       image:
-        'https://www.usersolutions.com/wp-content/uploads/2022/09/image05.png',
+        '/images/Edgebic/2022-09/image05.png',
       alt: 'Team meeting with laptops in modern office.',
       description:
         'User Solutions, Inc. named as one of top ERP Solutions Transforming Business 2016 by CIO Applications, as they celebrate 25 years in business. User Solutions receives recognition by CIO Applications for the company\'s success as ERP Add-On for Production Scheduling South Lyon, MI 5/10/2016 "We are pleased to recognize User Solutions as one among the […]'
@@ -83,7 +83,7 @@ export default function UsersolAdmin2AuthorPage() {
       title: 'Celebrating National Manufacturing Day',
       href: '/random-events-and-covariance',
       image:
-        'https://www.usersolutions.com/wp-content/uploads/2022/07/celebrating.png',
+        '/images/Edgebic/2022-07/celebrating.png',
       alt: 'Team celebrating with holiday hats in office.',
       description:
         "Blame Random Events and Covariance Ever wonder why, after picking what you thought was the shortest line, you're the last to get through? Or, why traffic can come to an absolute stand-still on the freeway with no apparent reason? There are two mathematical principles at work here (and sad to say, influencing your Plant, Shop, […]"
@@ -93,7 +93,7 @@ export default function UsersolAdmin2AuthorPage() {
         'User Solutions Joins Fight Against Covid – Free Production Scheduling Software',
       href: '/lets-make-manufacturing-great-again',
       image:
-        'https://www.usersolutions.com/wp-content/uploads/2022/07/image02.png',
+        '/images/Edgebic/2022-07/image02.png',
       alt: 'Person budgeting with calculator and documents on table.',
       description:
         "Let's Make Manufacturing Great Again© this National Manufacturing Day 2017 This year's National Manufacturing Day arrives at a most dynamic time with much attention focused on:   Initiatives for manufacturers to achieve and sustain both local and global competitiveness through operational efficiencies A lack of new students entering manufacturing careers contributing to expanding 'skills-gap' challenge […]"
@@ -164,7 +164,7 @@ export default function UsersolAdmin2AuthorPage() {
                 </h2>
                 <div className="relative mx-auto h-auto w-full max-w-4xl">
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                     alt="Collection of industry and business awards logos"
                     width={1024}
                     height={128}

@@ -50,7 +50,7 @@ export default function JobSchedulerLiteDownloadPage() {
             <CardHeader>
               <CardTitle className="text-center text-3xl font-bold">
                 <a
-                  href="https://www.usersolutions.com/wp-content/uploads/2022/10/JSLsetup.zip"
+                  href="/images/Edgebic/2022-10/JSLsetup.zip"
                   className="text-blue-600 hover:underline"
                 >
                   EDGEBIC Download
@@ -69,7 +69,7 @@ export default function JobSchedulerLiteDownloadPage() {
                   className="mb-6"
                 >
                   <a
-                    href="https://www.usersolutions.com/wp-content/uploads/2022/10/JSLsetup.zip"
+                    href="/images/Edgebic/2022-10/JSLsetup.zip"
                     download
                   >
                     <Download className="mr-2 size-5" />
@@ -194,7 +194,7 @@ export default function JobSchedulerLiteDownloadPage() {
                 </p>
 
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/blck.png"
+                  src="/images/Edgebic/2022-10/blck.png"
                   alt="Screenshot of EDGEBIC folder with files"
                   className="my-6 h-auto w-full rounded-lg shadow-md"
                 />
@@ -221,7 +221,7 @@ export default function JobSchedulerLiteDownloadPage() {
               CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
             </h2>
             <img
-              src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+              src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
               alt="Collection of industry and business awards logos"
               className="h-auto w-full"
             />

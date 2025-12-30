@@ -113,7 +113,7 @@ export default function ResourceManagerExcelInDepthPage() {
 
               <div className="my-6 flex justify-center">
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/rmusman.gif"
+                  src="/images/Edgebic/2022-10/rmusman.gif"
                   alt="Delivery worker pushing a hand truck with boxes"
                   className="rounded-lg shadow-md"
                 />
@@ -300,7 +300,7 @@ export default function ResourceManagerExcelInDepthPage() {
             <CardContent className="space-y-6">
               <div className="mb-6 flex justify-center">
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/usmap.gif"
+                  src="/images/Edgebic/2022-10/usmap.gif"
                   alt="Drawn treasure map with red X mark"
                   className="rounded-lg shadow-md"
                 />
@@ -359,7 +359,7 @@ export default function ResourceManagerExcelInDepthPage() {
 
               <div className="my-6 flex justify-center">
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/rmscreen2.jpg"
+                  src="/images/Edgebic/2022-10/rmscreen2.jpg"
                   alt="Screenshot of a resource management software interface"
                   className="h-auto w-full rounded-lg shadow-md"
                 />
@@ -487,7 +487,7 @@ export default function ResourceManagerExcelInDepthPage() {
 
               <div className="flex justify-center">
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/07b.jpg"
+                  src="/images/Edgebic/2022-10/07b.jpg"
                   alt="Screenshot of a spreadsheet software interface"
                   className="h-auto w-full rounded-lg shadow-md"
                 />
@@ -516,7 +516,7 @@ export default function ResourceManagerExcelInDepthPage() {
 
               <div className="flex justify-center">
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/sumrpt.jpg"
+                  src="/images/Edgebic/2022-10/sumrpt.jpg"
                   alt="Spreadsheet and graph showing production schedule data"
                   className="h-auto w-full rounded-lg shadow-md"
                 />
@@ -542,7 +542,7 @@ export default function ResourceManagerExcelInDepthPage() {
 
               <div className="flex justify-center">
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/item.jpg"
+                  src="/images/Edgebic/2022-10/item.jpg"
                   alt="Blurry image of a workcenter production report"
                   className="h-auto w-full rounded-lg shadow-md"
                 />
@@ -609,7 +609,7 @@ export default function ResourceManagerExcelInDepthPage() {
 
               <div className="flex justify-center">
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/tree.jpg"
+                  src="/images/Edgebic/2022-10/tree.jpg"
                   alt="Flow chart diagram in spreadsheet software"
                   className="h-auto w-full rounded-lg shadow-md"
                 />
@@ -639,7 +639,7 @@ export default function ResourceManagerExcelInDepthPage() {
 
               <div className="flex justify-center">
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/prodrpt.jpg"
+                  src="/images/Edgebic/2022-10/prodrpt.jpg"
                   alt="Job cost analysis chart with data and graph"
                   className="h-auto w-full rounded-lg shadow-md"
                 />
@@ -671,7 +671,7 @@ export default function ResourceManagerExcelInDepthPage() {
 
               <div className="flex justify-center">
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/porpt.jpg"
+                  src="/images/Edgebic/2022-10/porpt.jpg"
                   alt="Table of purchase orders with status details"
                   className="h-auto w-full rounded-lg shadow-md"
                 />
@@ -714,7 +714,7 @@ export default function ResourceManagerExcelInDepthPage() {
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
                 <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
                   className="mx-auto h-auto max-w-full"
                 />

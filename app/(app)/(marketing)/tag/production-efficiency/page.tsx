@@ -47,7 +47,7 @@ export default function ProductionEfficiencyTagPage() {
               >
                 <div className="relative h-96 w-full overflow-hidden">
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2024/02/sdf.jpg"
+                    src="/images/Edgebic/2024-02/sdf.jpg"
                     alt="Illustration of a worker with construction tools icons"
                     fill
                     className="object-cover transition-transform duration-300 hover:scale-110"
@@ -84,7 +84,7 @@ export default function ProductionEfficiencyTagPage() {
                 </h2>
                 <div className="relative mx-auto h-auto w-full max-w-4xl">
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                     alt="Collection of industry and business awards logos"
                     width={1024}
                     height={128}

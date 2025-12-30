@@ -17,9 +17,9 @@ const IMAGES = {
   menuImage: '/images/rmdb/rmdb-menu.png',
   dataImportImage: '/images/rmdb/rmdb-data-import.png',
   awardsBanner: '/images/rmdb/awards-banner.jpg',
-  // External video URLs (can't be self-hosted easily)
-  heroVideo: 'https://www.usersolutions.com/wp-content/uploads/2022/12/RMDB updated thumbnail.mp4',
-  summaryVideo: 'https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE BI User Solutions.mp4',
+  // Local video paths
+  heroVideo: '/videos/rmdb-updated-thumbnail.mp4',
+  summaryVideo: '/videos/edge-bi-user-solutions.mp4',
 };
 
 export const metadata: Metadata = {
@@ -211,7 +211,7 @@ function QuickStartContent() {
             with RMDB.
           </p>
           <a
-            href="https://www.usersolutions.com/wp-content/uploads/2022/10/rmdbquickstart23.pdf"
+            href="/images/Edgebic/2022-10/rmdbquickstart23.pdf"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"

@@ -36,7 +36,7 @@ export default function CookCompressionPage() {
             {/* Logo */}
             <div className="mb-8 flex justify-center">
               <Image
-                src="https://www.usersolutions.com/wp-content/uploads/2022/07/cook.jpg"
+                src="/images/Edgebic/2022-07/cook.jpg"
                 alt="Cook Compression"
                 width={300}
                 height={200}
@@ -77,7 +77,7 @@ export default function CookCompressionPage() {
                 </h2>
                 <div className="relative mx-auto h-auto w-full max-w-4xl">
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                     alt="Collection of industry and business awards logos"
                     width={1024}
                     height={128}

@@ -65,7 +65,7 @@ export default function CartPage() {
             <div className="grid gap-6 md:grid-cols-3">
               <div className="rounded-lg border bg-white p-6 shadow-sm">
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/09/excelicon.png"
+                  src="/images/Edgebic/2022-09/excelicon.png"
                   alt="Excel icon"
                   width={48}
                   height={48}
@@ -90,7 +90,7 @@ export default function CartPage() {
 
               <div className="rounded-lg border bg-white p-6 shadow-sm">
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/09/excelicon.png"
+                  src="/images/Edgebic/2022-09/excelicon.png"
                   alt="Excel icon"
                   width={48}
                   height={48}
@@ -117,7 +117,7 @@ export default function CartPage() {
 
               <div className="rounded-lg border bg-white p-6 shadow-sm">
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/09/excelicon.png"
+                  src="/images/Edgebic/2022-09/excelicon.png"
                   alt="Excel icon"
                   width={48}
                   height={48}
@@ -156,7 +156,7 @@ export default function CartPage() {
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
                   width={1024}
                   height={128}
