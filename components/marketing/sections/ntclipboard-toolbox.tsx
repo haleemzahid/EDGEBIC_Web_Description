@@ -104,7 +104,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
   };
   return (
     <GridSection hideVerticalGridLines>
-      <div className="mx-auto max-w-7xl">
+      <div>
         {/* Solutions for Every Business Size */}
         <div className="">
           {/* <div className="mb-6 text-center">
