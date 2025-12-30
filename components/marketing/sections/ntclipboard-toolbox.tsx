@@ -240,16 +240,17 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     </div>
                   </div>
 
-                  <div className="mb-6">
+                  <div className="mb-4">
                     <Button
-                      className="w-full bg-blue-600 text-white hover:bg-blue-700"
+                      variant="outline"
+                      className="w-full border-green-200 text-green-700 hover:bg-green-50"
                       asChild
                     >
                       <Link
                         href="/resource-manager-db-2"
                         target="_blank"
                       >
-                        Details
+                        View Details
                       </Link>
                     </Button>
                   </div>
@@ -319,7 +320,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                   <div className="mb-4">
                     <Button
                       variant="outline"
-                      className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
+                      className="w-full border-green-200 text-green-700 hover:bg-green-50"
                       asChild
                     >
                       <Link
@@ -333,7 +334,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                   </div>
 
                   <div className="text-center">
-                    <div className="mb-2 text-3xl font-bold text-blue-700">
+                    <div className="mb-2 text-3xl font-bold text-green-700">
                       $10K+
                     </div>
 
