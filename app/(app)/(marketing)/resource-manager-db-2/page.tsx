@@ -40,7 +40,6 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
                   controls
                   playsInline
                   preload="auto"
-                  poster="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
                 >
                   <source
                     src="https://www.usersolutions.com/wp-content/uploads/2022/12/RMDB updated thumbnail.mp4"
