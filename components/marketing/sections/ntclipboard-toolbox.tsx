@@ -268,7 +268,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
               <div
                 className={`animate-gentle-glow absolute right-4 top-4 z-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2 text-sm font-bold text-white shadow-lg ring-2 ring-white/20 transition-opacity duration-300 ${isVideoPlaying.starter ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
               >
-                ADVANCED
+                Premium
               </div>
 
               <div className="">
@@ -287,7 +287,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 </div>
                 <div className="p-6">
                   <h3 className="mb-4 text-xl font-bold text-gray-900">
-                    EDGEBI <span className="font-normal text-gray-500">(Bundled w/ RMDB)</span>
+                    EDGEBI <span className="text-sm font-normal text-gray-500">(Bundled w/ RMDB)</span>
                   </h3>
 
                   <div className="mb-6 space-y-3">
@@ -334,11 +334,9 @@ export function NTClipboardToolBox(): React.JSX.Element {
 
                   <div className="text-center">
                     <div className="mb-2 text-3xl font-bold text-blue-700">
-                      $1,000+
+                      $10K+
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Starting investment
-                    </p>
+
                   </div>
                 </div>
               </div>
