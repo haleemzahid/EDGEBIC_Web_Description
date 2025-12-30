@@ -286,10 +286,9 @@ export function NTClipboardToolBox(): React.JSX.Element {
                   </div>
                 </div>
                 <div className="p-6">
-                  <h3 className="mb-1 text-xl font-bold text-gray-900">
-                    EDGEBI
+                  <h3 className="mb-4 text-xl font-bold text-gray-900">
+                    EDGEBI <span className="font-normal text-gray-500">(Bundled w/ RMDB)</span>
                   </h3>
-                  <p className="mb-4 text-sm text-gray-500">(Bundled w/ RMDB)</p>
 
                   <div className="mb-6 space-y-3">
                     <div className="flex items-center gap-2">
