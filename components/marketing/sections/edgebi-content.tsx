@@ -1,24 +1,18 @@
-import * as React from 'react';
+import Image from 'next/image';
 
-export function EDGEBIContent(): React.JSX.Element {
+import { LazyVideo } from '@/components/ui/lazy-video';
+
+export function EDGEBIContent() {
   return (
     <div className="space-y-16">
       {/* Video Section - First */}
       <div className="flex justify-center">
         <div className="aspect-video w-full max-w-[800px] overflow-hidden rounded-lg shadow-lg">
-          <video
-            className="h-full w-full object-cover"
-            controls
-            playsInline
-            preload="auto"
+          <LazyVideo
+            src="https://www.usersolutions.com/wp-content/uploads/2022/12/EDGEBI updated thumbnail.mp4"
             poster="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
-          >
-            <source
-              src="https://www.usersolutions.com/wp-content/uploads/2022/12/EDGEBI updated thumbnail.mp4"
-              type="video/mp4"
-            />
-            Your browser does not support the video tag.
-          </video>
+            className="h-full w-full object-cover"
+          />
         </div>
       </div>
 
@@ -31,10 +25,14 @@ export function EDGEBIContent(): React.JSX.Element {
           </p>
         </div>
         <div>
-          <img
+          <Image
             src="https://www.usersolutions.com/wp-content/uploads/2022/10/f1.png"
             alt="EDGEBI Screenshot - Resource Manager DB interface"
+            width={600}
+            height={400}
             className="rounded-lg shadow-lg"
+            loading="lazy"
+            quality={80}
           />
         </div>
       </div>
@@ -42,10 +40,14 @@ export function EDGEBIContent(): React.JSX.Element {
       {/* 2nd Section - Image (left) - Text (right) */}
       <div className="grid items-center gap-8 lg:grid-cols-2">
         <div>
-          <img
+          <Image
             src="https://www.usersolutions.com/wp-content/uploads/2022/10/f2.png"
             alt="EDGEBI Schedule Management Interface"
+            width={600}
+            height={400}
             className="rounded-lg shadow-lg"
+            loading="lazy"
+            quality={80}
           />
         </div>
         <div>
@@ -66,10 +68,14 @@ export function EDGEBIContent(): React.JSX.Element {
           </p>
         </div>
         <div>
-          <img
+          <Image
             src="https://www.usersolutions.com/wp-content/uploads/2022/10/f3.png"
             alt="Heat Map - Color-coded capacity utilization"
+            width={600}
+            height={400}
             className="rounded-lg shadow-lg"
+            loading="lazy"
+            quality={80}
           />
         </div>
       </div>
@@ -77,10 +83,14 @@ export function EDGEBIContent(): React.JSX.Element {
       {/* 4th Section - Image (left) - Text (right) */}
       <div className="grid items-center gap-8 lg:grid-cols-2">
         <div>
-          <img
+          <Image
             src="https://www.usersolutions.com/wp-content/uploads/2022/10/f4.png"
             alt="Schedule Key Dates Reports"
+            width={600}
+            height={400}
             className="rounded-lg shadow-lg"
+            loading="lazy"
+            quality={80}
           />
         </div>
         <div>

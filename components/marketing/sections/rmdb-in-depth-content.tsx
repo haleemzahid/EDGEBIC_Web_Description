@@ -1,6 +1,6 @@
-import * as React from 'react';
+import Image from 'next/image';
 
-export function RMDBInDepthContent(): React.JSX.Element {
+export function RMDBInDepthContent() {
   return (
     <div className="space-y-12">
       {/* Overview Section */}
@@ -16,37 +16,49 @@ export function RMDBInDepthContent(): React.JSX.Element {
             accurate.
           </p>
           <p className="text-slate-600">
-            RMDB's unique, customer driven architecture allows you to start
+            RMDB&apos;s unique, customer driven architecture allows you to start
             very simply, focusing on one area at a time, enabling you to
             provide minimal information in order to recognize immediate
             benefits.
           </p>
         </div>
         <div>
-          <img
+          <Image
             src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-MainMenu.png"
             alt="RMDB Main Menu Dashboard"
+            width={600}
+            height={400}
             className="w-full rounded-lg shadow-md"
+            loading="lazy"
+            quality={80}
           />
         </div>
       </div>
 
       {/* Make Manufacturing Great Again Section */}
       <div className="flex justify-center">
-        <img
+        <Image
           src="https://www.usersolutions.com/wp-content/uploads/2022/10/MMGAsmall_Colver.png"
           alt="Make Manufacturing Great Again - Vintage Car"
+          width={400}
+          height={300}
           className="max-w-md rounded-lg"
+          loading="lazy"
+          quality={80}
         />
       </div>
 
       {/* Key Benefits Section */}
       <div className="grid items-center gap-8 md:grid-cols-2">
         <div>
-          <img
+          <Image
             src="https://www.usersolutions.com/wp-content/uploads/2022/10/ERP_Scheduling-300x245-1.png"
             alt="ERP Scheduling Integration"
+            width={300}
+            height={245}
             className="w-full rounded-lg"
+            loading="lazy"
+            quality={80}
           />
         </div>
         <div>
@@ -56,7 +68,7 @@ export function RMDBInDepthContent(): React.JSX.Element {
           <p className="mb-4 text-slate-600">
             If you find you are still using manual white boards and/or Excel
             for trying to manage your production scheduling, you will find
-            RMDB a refreshing option. RMDB's intuitive and flexible
+            RMDB a refreshing option. RMDB&apos;s intuitive and flexible
             structure and data integration, enables us to offer a no-risk,
             pre-sales, implementation walk-through to demonstrate exactly
             how the system can benefit your operations.
@@ -89,10 +101,14 @@ export function RMDBInDepthContent(): React.JSX.Element {
           </ul>
         </div>
         <div>
-          <img
+          <Image
             src="https://www.usersolutions.com/wp-content/uploads/2022/10/Manufacturing_Excel_Dashboard-1024x376.png"
             alt="Manufacturing Excel Dashboard"
+            width={1024}
+            height={376}
             className="w-full rounded-lg shadow-md"
+            loading="lazy"
+            quality={80}
           />
         </div>
       </div>
@@ -101,7 +117,7 @@ export function RMDBInDepthContent(): React.JSX.Element {
       <div className="grid items-center gap-8 md:grid-cols-2">
         <div>
           <h2 className="mb-4 text-2xl font-bold">
-            Cruise Control Software for your Manufacturing Enterprise Fill'er Up
+            Cruise Control Software for your Manufacturing Enterprise Fill&apos;er Up
           </h2>
           <p className="mb-4 text-slate-600">
             Resource Manager-DB lets you easily work with your current data. Do you have
@@ -127,23 +143,31 @@ export function RMDBInDepthContent(): React.JSX.Element {
           </p>
         </div>
         <div>
-          <img
+          <Image
             src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-Data-Import.png"
             alt="RMDB Import Data Dialog"
+            width={600}
+            height={400}
             className="w-full rounded-lg shadow-md"
+            loading="lazy"
+            quality={80}
           />
         </div>
       </div>
 
       {/* Check the MAP Section */}
       <div>
-        <h2 className="mb-6 text-2xl font-bold">Check the "MAP"</h2>
+        <h2 className="mb-6 text-2xl font-bold">Check the &quot;MAP&quot;</h2>
         <div className="grid items-center gap-8 md:grid-cols-2">
           <div className="flex justify-center">
-            <img
+            <Image
               src="https://www.usersolutions.com/wp-content/uploads/2022/10/usmap.gif"
               alt="Treasure Map illustration"
+              width={300}
+              height={200}
               className="max-w-xs"
+              loading="lazy"
+              unoptimized
             />
           </div>
           <div>
@@ -170,7 +194,7 @@ export function RMDBInDepthContent(): React.JSX.Element {
         <div className="grid items-center gap-8 md:grid-cols-2">
           <div>
             <p className="mb-4 text-slate-600">
-              That's it! You are in the driver's seat and cruise control is on. Enjoy the
+              That&apos;s it! You are in the driver&apos;s seat and cruise control is on. Enjoy the
               view. Check the production calendar for a quick view of finite-capacity loading
               on work centers and time-phased inventory levels. Bottlenecks are easy to spot
               by the red flags. Run your favorite report to view schedule data the way you like it.
@@ -185,10 +209,14 @@ export function RMDBInDepthContent(): React.JSX.Element {
             </p>
           </div>
           <div>
-            <img
+            <Image
               src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-MainMenu.png"
               alt="RMDB Main Menu Interface"
+              width={600}
+              height={400}
               className="w-full rounded-lg shadow-md"
+              loading="lazy"
+              quality={80}
             />
           </div>
         </div>
@@ -253,10 +281,14 @@ export function RMDBInDepthContent(): React.JSX.Element {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {/* Gantt Report */}
           <div>
-            <img
+            <Image
               src="https://www.usersolutions.com/wp-content/uploads/2022/10/07b.jpg"
               alt="Gantt Report"
+              width={400}
+              height={300}
               className="mb-3 w-full rounded-lg"
+              loading="lazy"
+              quality={80}
             />
             <h3 className="mb-2 text-lg font-bold">Gantt Report</h3>
             <p className="text-slate-600">
@@ -269,10 +301,14 @@ export function RMDBInDepthContent(): React.JSX.Element {
 
           {/* Summary Report */}
           <div>
-            <img
+            <Image
               src="https://www.usersolutions.com/wp-content/uploads/2022/10/sumrpt.jpg"
               alt="Summary Report"
+              width={400}
+              height={300}
               className="mb-3 w-full rounded-lg"
+              loading="lazy"
+              quality={80}
             />
             <h3 className="mb-2 text-lg font-bold">Summary Report</h3>
             <p className="text-slate-600">
@@ -285,10 +321,14 @@ export function RMDBInDepthContent(): React.JSX.Element {
 
           {/* Item Report */}
           <div>
-            <img
+            <Image
               src="https://www.usersolutions.com/wp-content/uploads/2022/10/item.jpg"
               alt="Item Report"
+              width={400}
+              height={300}
               className="mb-3 w-full rounded-lg"
+              loading="lazy"
+              quality={80}
             />
             <h3 className="mb-2 text-lg font-bold">Item Report</h3>
             <p className="text-slate-600">
@@ -300,23 +340,31 @@ export function RMDBInDepthContent(): React.JSX.Element {
 
           {/* Calendar Report */}
           <div>
-            <img
+            <Image
               src="https://www.usersolutions.com/wp-content/uploads/2022/10/07b.jpg"
               alt="Calendar Report"
+              width={400}
+              height={300}
               className="mb-3 w-full rounded-lg"
+              loading="lazy"
+              quality={80}
             />
             <h3 className="mb-2 text-lg font-bold">Calendar Report</h3>
             <p className="text-slate-600">
-              View and print the schedule in familiar "wall calendar" format.
+              View and print the schedule in familiar &quot;wall calendar&quot; format.
             </p>
           </div>
 
           {/* Workcenter Report */}
           <div>
-            <img
+            <Image
               src="https://www.usersolutions.com/wp-content/uploads/2022/10/RPT-DD1-300x241-1.png"
               alt="Workcenter Report"
+              width={300}
+              height={241}
               className="mb-3 w-full rounded-lg"
+              loading="lazy"
+              quality={80}
             />
             <h3 className="mb-2 text-lg font-bold">Workcenter Report</h3>
             <p className="text-slate-600">
@@ -324,16 +372,20 @@ export function RMDBInDepthContent(): React.JSX.Element {
               daily loading, backlog, % utilization, hours available and
               bottlenecks. Allows for quick overtime scheduling and other
               detailed adjustments for any workcenter on any day. Also
-              features a daily workcenter "to-do" list.
+              features a daily workcenter &quot;to-do&quot; list.
             </p>
           </div>
 
           {/* Routing & Tree Report */}
           <div>
-            <img
+            <Image
               src="https://www.usersolutions.com/wp-content/uploads/2022/10/tree.jpg"
               alt="Routing & Tree Report"
+              width={400}
+              height={300}
               className="mb-3 w-full rounded-lg"
+              loading="lazy"
+              quality={80}
             />
             <h3 className="mb-2 text-lg font-bold">Routing & Tree Report</h3>
             <p className="text-slate-600">
@@ -344,10 +396,14 @@ export function RMDBInDepthContent(): React.JSX.Element {
 
           {/* Production Report */}
           <div>
-            <img
+            <Image
               src="https://www.usersolutions.com/wp-content/uploads/2022/10/prodrpt.jpg"
               alt="Production Report"
+              width={400}
+              height={300}
               className="mb-3 w-full rounded-lg"
+              loading="lazy"
+              quality={80}
             />
             <h3 className="mb-2 text-lg font-bold">Production Report</h3>
             <p className="text-slate-600">
@@ -361,10 +417,14 @@ export function RMDBInDepthContent(): React.JSX.Element {
 
           {/* Purchasing & Receiving */}
           <div>
-            <img
+            <Image
               src="https://www.usersolutions.com/wp-content/uploads/2022/10/porpt.jpg"
               alt="Purchasing & Receiving Report"
+              width={400}
+              height={300}
               className="mb-3 w-full rounded-lg"
+              loading="lazy"
+              quality={80}
             />
             <h3 className="mb-2 text-lg font-bold">Purchasing & Receiving</h3>
             <p className="text-slate-600">
