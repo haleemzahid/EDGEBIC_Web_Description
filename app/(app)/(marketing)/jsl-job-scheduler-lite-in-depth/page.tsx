@@ -131,7 +131,15 @@ export default function JSLJobSchedulerLiteInDepthPage() {
         <div className="mb-12 grid items-center gap-8 md:grid-cols-2">
           <div>
             <h2 className="mb-4 text-2xl font-bold text-gray-900">Schedule</h2>
-            <p className="text-gray-700">See call out details below.</p>
+            <p className="mb-4 text-gray-700">
+              The Schedule module is the primary scheduling interface where you can run and manage your production schedules. Configure scheduling direction (Forward or Reverse), set priorities, and apply capacity constraints to generate optimal schedules.
+            </p>
+            <ul className="list-inside list-disc space-y-2 text-gray-700">
+              <li>Forward and Reverse scheduling options</li>
+              <li>Priority-based job sequencing</li>
+              <li>Capacity constraint application</li>
+              <li>Instant schedule generation</li>
+            </ul>
           </div>
           <img src="https://www.usersolutions.com/wp-content/uploads/2022/10/schdle.png" alt="Job scheduling interface" className="rounded-lg shadow-md" />
         </div>
@@ -140,10 +148,29 @@ export default function JSLJobSchedulerLiteInDepthPage() {
         <div className="mb-12 grid items-center gap-8 md:grid-cols-2">
           <img src="https://www.usersolutions.com/wp-content/uploads/2022/10/insight.png" alt="Scheduling software with calendar" className="rounded-lg shadow-md md:order-1" />
           <div className="md:order-2">
-            <h2 className="mb-4 text-2xl font-bold text-gray-900">InSights</h2>
-            <p className="text-gray-700">
-              Insight is the most comprehensive and feature rich module in JSL. Check out the schedule calendar Legend to see at a glance how selected month is scheduled. The time scale can be 15 minutes to a week. Right click on Workcenter ID to display color coded efficiency.
+            <h2 className="mb-4 text-2xl font-bold text-gray-900">InSight</h2>
+            <p className="mb-4 text-gray-700">
+              InSight is the most comprehensive and feature rich module in JSL. Check out the schedule calendar Legend to see at a glance how selected month is scheduled. The time scale can be 15 minutes to a week. Right click on Workcenter ID to display color coded efficiency.
             </p>
+            <div className="mb-4">
+              <h4 className="mb-2 font-semibold text-gray-900">Calendar Legend:</h4>
+              <ul className="list-inside list-disc space-y-1 text-sm text-gray-700">
+                <li>Work days with no late jobs</li>
+                <li>Days with at least one late job</li>
+                <li>Days with no scheduled work</li>
+                <li>Non-working days (weekends/holidays)</li>
+                <li>Buffer days</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="mb-2 font-semibold text-gray-900">Key Features:</h4>
+              <ul className="list-inside list-disc space-y-1 text-sm text-gray-700">
+                <li>Cross-hatched bar segments in Gantt Chart indicate Late Jobs (scheduled end date &gt; due date)</li>
+                <li>Click any job segment to reposition it on the display</li>
+                <li>Adjustable time scale from 15 minutes to one week</li>
+                <li>Color-coded efficiency visualization</li>
+              </ul>
+            </div>
           </div>
         </div>
 
