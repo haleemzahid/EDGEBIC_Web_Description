@@ -91,14 +91,14 @@ export function HeroContent(): React.JSX.Element {
             <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
               <button
                 onClick={handleFirstVideoButtonClick}
-                className="inline-flex items-center justify-center gap-1 rounded-[10px] bg-yellow-400 px-10 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
+                className="inline-flex min-w-[200px] items-center justify-center gap-1 rounded-[10px] bg-yellow-400 px-6 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
               >
                 <Image
                   src="/images/footprint.png"
                   alt="Step one indicator"
-                  width={20}
-                  height={20}
-                  className="size-5"
+                  width={32}
+                  height={32}
+                  className="size-7"
                   style={{ objectFit: 'contain' }}
                 />
                 Intro <span className="italic">US</span>
@@ -110,17 +110,17 @@ export function HeroContent(): React.JSX.Element {
                 <Image
                   src="/images/footprint.png"
                   alt="Step one indicator"
-                  width={20}
-                  height={20}
-                  className="size-5"
+                  width={28}
+                  height={28}
+                  className="size-7"
                   style={{ objectFit: 'contain' }}
                 />
                 <Image
                   src="/images/footprint.png"
                   alt="Step two indicator"
-                  width={20}
-                  height={20}
-                  className="size-5 mr-1"
+                  width={32}
+                  height={32}
+                  className="size-7 mr-1"
                   style={{ objectFit: 'contain' }}
                 />
                 90 SEC COMPANY OVERVIEW
@@ -130,7 +130,7 @@ export function HeroContent(): React.JSX.Element {
                 onClick={() => {
                   window.open('https://calendly.com/mudasirnadeem7979/30min', '_blank');
                 }}
-                className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-yellow-400 px-6 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
+                className="inline-flex min-w-[200px] items-center justify-center gap-2 rounded-[10px] bg-yellow-400 px-6 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
