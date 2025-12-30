@@ -22,18 +22,20 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section - Title centered */}
+      {/* Hero Section */}
       <section className="pt-6">
         <div className="container mx-auto max-w-7xl px-4">
-          <h1 className="mb-4 text-center text-3xl font-bold text-slate-900 md:text-4xl">
-            Resource Manager DB
-          </h1>
           <div className="grid items-center gap-8 lg:grid-cols-2">
-            <p className="text-lg leading-relaxed text-slate-600">
-              Resource Manager-DB (RMDB) is a flexible and affordable production planning, scheduling, and tracking solution that is designed to adapt to your operations. We can work with whatever data you have to achieve better production scheduling, just easier and quicker than you ever thought possible. Give US a chance to prove it by scheduling a Live Demo today!
-            </p>
+            <div>
+              <h1 className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl">
+                Resource Manager DB
+              </h1>
+              <p className="text-lg leading-relaxed text-slate-600">
+                Resource Manager-DB (RMDB) is a flexible and affordable production planning, scheduling, and tracking solution that is designed to adapt to your operations. We can work with whatever data you have to achieve better production scheduling, just easier and quicker than you ever thought possible. Give US a chance to prove it by scheduling a Live Demo today!
+              </p>
+            </div>
             <div className="flex justify-center">
-              <div className="aspect-video w-full max-w-[500px] overflow-hidden rounded-lg shadow-lg">
+              <div className="aspect-video w-full max-w-[700px] overflow-hidden rounded-lg shadow-lg">
                 <video
                   className="h-full w-full object-cover"
                   controls
@@ -62,8 +64,8 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`transition-colors ${activeTab === tab.id
-                    ? 'font-semibold text-cyan-500'
-                    : 'text-slate-700 hover:text-cyan-500'
+                  ? 'font-semibold text-cyan-500'
+                  : 'text-slate-700 hover:text-cyan-500'
                   }`}
               >
                 {tab.label}
@@ -168,38 +170,6 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
 
           {/* EDGEBI Tab */}
           {activeTab === 'edgebi' && <EDGEBIContent />}
-
-          {/* Live Demo Tab */}
-          {activeTab === 'live-demo' && (
-            <div className="grid items-start gap-8 lg:grid-cols-2">
-              <div>
-                <h2 className="mb-4 text-2xl font-bold text-slate-900">Live Demo</h2>
-                <div className="space-y-4 text-base leading-relaxed text-slate-600">
-                  <p>
-                    See Resource Manager-DB in action! Schedule a live demo with our team to experience how RMDB can transform your production planning and scheduling processes.
-                  </p>
-                  <p>
-                    We can even use your data in its current form to show you exactly how RMDB will work for your specific operations – RISK FREE!
-                  </p>
-                  <button
-                    onClick={() => {
-                      window.open('https://calendly.com/mudasirnadeem7979/30min', '_blank');
-                    }}
-                    className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600"
-                  >
-                    Schedule a Live Demo
-                  </button>
-                </div>
-              </div>
-              <div className="flex items-center justify-center">
-                <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
-                  alt="RMDB Live Demo"
-                  className="h-auto max-w-full rounded-lg shadow-lg"
-                />
-              </div>
-            </div>
-          )}
         </div>
       </section>
 
