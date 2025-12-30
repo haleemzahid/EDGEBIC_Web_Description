@@ -153,7 +153,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
 
           <div className="grid gap-8 md:grid-cols-3">
             {/* Excel Templates - Operations Manager */}
-            <div className="group relative overflow-hidden rounded-3xl border bg-white shadow-lg transition-all hover:shadow-xl">
+            <div className="group relative flex flex-col overflow-hidden rounded-3xl border bg-white shadow-lg transition-all hover:shadow-xl">
               {/* Price Badge */}
               <div
                 className={`animate-gentle-glow absolute right-4 top-4 z-10 rounded-full bg-gradient-to-r from-green-500 to-green-600 px-4 py-2 text-sm font-bold text-white shadow-lg ring-2 ring-white/20 transition-opacity duration-300 ${isVideoPlaying.end ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
@@ -161,7 +161,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 START
               </div>
 
-              <div className="">
+              <div className="flex flex-1 flex-col">
                 {/* Video Section */}
                 <div className="relative mb-6 overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
@@ -175,7 +175,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     />
                   </div>
                 </div>
-                <div className="p-6">
+                <div className="flex flex-1 flex-col p-6">
 
                   <div className="mb-6 space-y-3">
                     <div className="flex items-center gap-2">
@@ -199,32 +199,34 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     </div>
                   </div>
 
-                  <div className="mb-4">
-                    <Button
-                      variant="outline"
-                      className="w-full border-green-200 text-green-700 hover:bg-green-50"
-                      asChild
-                    >
-                      <Link
-                        href="/excel-templates"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                  <div className="mt-auto">
+                    <div className="mb-4">
+                      <Button
+                        variant="outline"
+                        className="w-full border-green-200 text-green-700 hover:bg-green-50"
+                        asChild
                       >
-                        View Details
-                      </Link>
-                    </Button>
-                  </div>
+                        <Link
+                          href="/excel-templates"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          View Details
+                        </Link>
+                      </Button>
+                    </div>
 
-                  <div className="text-center">
-                    <div className="mb-2 text-3xl font-bold text-green-700">
-                      $1K+
+                    <div className="text-center">
+                      <div className="mb-2 text-3xl font-bold text-green-700">
+                        $1K+
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
             {/* Resource Manager DB */}
-            <div className="group relative overflow-hidden rounded-3xl border border-orange-200 bg-white shadow-lg transition-all hover:shadow-xl">
+            <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-orange-200 bg-white shadow-lg transition-all hover:shadow-xl">
               {/* Popular Badge - Enhanced */}
               <div
                 className={`animate-gentle-glow absolute right-4 top-4 z-10 rounded-full bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 px-4 py-2 text-sm font-bold text-white shadow-lg ring-2 ring-white/20 transition-opacity duration-1000 ${isVideoPlaying.advanced ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
@@ -233,7 +235,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                   ADVANCED
                 </span>
               </div>{' '}
-              <div className="">
+              <div className="flex flex-1 flex-col">
                 {/* Video Section */}
                 <div className="relative  overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
@@ -247,7 +249,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     />
                   </div>
                 </div>
-                <div className="p-6">
+                <div className="flex flex-1 flex-col p-6">
                   <h3 className="mb-4 text-xl font-bold text-gray-900">
                     Resource Manager DB
                   </h3>
@@ -274,31 +276,33 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     </div>
                   </div>
 
-                  <div className="mb-4">
-                    <Button
-                      variant="outline"
-                      className="w-full border-green-200 text-green-700 hover:bg-green-50"
-                      asChild
-                    >
-                      <Link
-                        href="/resource-manager-db-2"
-                        target="_blank"
+                  <div className="mt-auto">
+                    <div className="mb-4">
+                      <Button
+                        variant="outline"
+                        className="w-full border-green-200 text-green-700 hover:bg-green-50"
+                        asChild
                       >
-                        View Details
-                      </Link>
-                    </Button>
-                  </div>
+                        <Link
+                          href="/resource-manager-db-2"
+                          target="_blank"
+                        >
+                          View Details
+                        </Link>
+                      </Button>
+                    </div>
 
-                  <div className="mt-6 text-center">
-                    <div className="mb-2 text-3xl font-bold text-green-700">
-                      $3K+
+                    <div className="text-center">
+                      <div className="mb-2 text-3xl font-bold text-green-700">
+                        $3K+
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="group relative overflow-hidden rounded-3xl border bg-white shadow-lg transition-all hover:shadow-xl">
+            <div className="group relative flex flex-col overflow-hidden rounded-3xl border bg-white shadow-lg transition-all hover:shadow-xl">
               {/* Price Badge */}
               <div
                 className={`animate-gentle-glow absolute right-4 top-4 z-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2 text-sm font-bold text-white shadow-lg ring-2 ring-white/20 transition-opacity duration-300 ${isVideoPlaying.starter ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
@@ -306,7 +310,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 Premium
               </div>
 
-              <div className="">
+              <div className="flex flex-1 flex-col">
                 {/* Video Section */}
                 <div className="relative  overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
@@ -320,7 +324,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     />
                   </div>
                 </div>
-                <div className="p-6">
+                <div className="flex flex-1 flex-col p-6">
                   <h3 className="mb-4 text-xl font-bold text-gray-900">
                     EDGEBI <span className="text-sm font-normal text-gray-500">(Bundled w/ RMDB)</span>
                   </h3>
@@ -351,27 +355,28 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     </div>
                   </div>
 
-                  <div className="mb-4">
-                    <Button
-                      variant="outline"
-                      className="w-full border-green-200 text-green-700 hover:bg-green-50"
-                      asChild
-                    >
-                      <Link
-                        href="/jsl-job-scheduler-lite"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                  <div className="mt-auto">
+                    <div className="mb-4">
+                      <Button
+                        variant="outline"
+                        className="w-full border-green-200 text-green-700 hover:bg-green-50"
+                        asChild
                       >
-                        View Details
-                      </Link>
-                    </Button>
-                  </div>
-
-                  <div className="text-center">
-                    <div className="mb-2 text-3xl font-bold text-green-700">
-                      $10K+
+                        <Link
+                          href="/jsl-job-scheduler-lite"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          View Details
+                        </Link>
+                      </Button>
                     </div>
 
+                    <div className="text-center">
+                      <div className="mb-2 text-3xl font-bold text-green-700">
+                        $10K+
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
