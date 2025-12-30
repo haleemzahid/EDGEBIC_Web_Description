@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 type TabType = 'summary' | 'rmdb' | 'live-demo';
 
-// Video Player Component
+// Video Player Component - Lite YouTube for better performance
 function VideoPlayer({
   videoUrl,
   title,
@@ -16,6 +16,7 @@ function VideoPlayer({
   onPlayStateChange?: (isPlaying: boolean) => void;
 }) {
   const videoRef = React.useRef<HTMLVideoElement>(null);
+  const [isActivated, setIsActivated] = React.useState(false);
 
   // Check if it's a YouTube URL
   const isYouTube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
@@ -40,9 +41,45 @@ function VideoPlayer({
 
   if (isYouTube) {
     const videoId = getVideoId(videoUrl);
+    const thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+    // Lite YouTube - show thumbnail until user clicks
+    if (!isActivated) {
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            setIsActivated(true);
+            onPlayStateChange?.(true);
+          }}
+          className="absolute inset-0 size-full cursor-pointer"
+          aria-label={`Play ${title}`}
+        >
+          <img
+            src={thumbnailUrl}
+            alt={title}
+            className="size-full rounded-lg object-cover"
+            loading="lazy"
+          />
+          {/* Play button overlay */}
+          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20 transition-colors hover:bg-black/30">
+            <div className="flex size-16 items-center justify-center rounded-full bg-red-600 shadow-lg transition-transform hover:scale-110">
+              <svg
+                className="ml-1 size-8 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </div>
+          </div>
+        </button>
+      );
+    }
+
     return (
       <iframe
-        src={`https://www.youtube.com/embed/${videoId}`}
+        src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
         title={title}
         className="absolute inset-0 size-full rounded-lg"
         frameBorder="0"
