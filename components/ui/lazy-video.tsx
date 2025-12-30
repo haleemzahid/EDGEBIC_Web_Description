@@ -6,9 +6,10 @@ interface LazyVideoProps {
   src: string;
   poster?: string;
   className?: string;
+  title?: string;
 }
 
-export function LazyVideo({ src, poster, className = '' }: LazyVideoProps) {
+export function LazyVideo({ src, poster, className = '', title = 'Video content' }: LazyVideoProps) {
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const [isInView, setIsInView] = React.useState(false);
 
@@ -38,6 +39,8 @@ export function LazyVideo({ src, poster, className = '' }: LazyVideoProps) {
       playsInline
       preload="none"
       poster={poster}
+      title={title}
+      aria-label={title}
     >
       {isInView && <source src={src} type="video/mp4" />}
       Your browser does not support the video tag.

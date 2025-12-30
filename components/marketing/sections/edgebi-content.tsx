@@ -12,6 +12,7 @@ export function EDGEBIContent() {
             src="https://www.usersolutions.com/wp-content/uploads/2022/12/EDGEBI updated thumbnail.mp4"
             poster="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
             className="h-full w-full object-cover"
+            title="EDGEBI Enhanced Drag-n-drop Graphical Environment demonstration"
           />
         </div>
       </div>

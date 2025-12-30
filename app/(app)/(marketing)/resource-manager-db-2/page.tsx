@@ -162,6 +162,7 @@ function SummaryContent() {
               src="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE BI User Solutions.mp4"
               poster="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
               className="h-full w-full object-cover"
+              title="EDGE BI User Solutions demonstration video"
             />
           </div>
         </div>
@@ -274,13 +275,13 @@ export default function ResourceManagerDBPage() {
         strategy="afterInteractive"
       />
 
-      <div className="min-h-screen">
+      <main className="min-h-screen">
         {/* Hero Section */}
-      <section className="pt-6">
+        <section className="pt-6" aria-labelledby="hero-heading">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="grid items-center gap-8 lg:grid-cols-2">
             <div>
-              <h1 className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl">
+              <h1 id="hero-heading" className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl">
                 Resource Manager DB
               </h1>
               <p className="text-lg leading-relaxed text-slate-600">
@@ -298,6 +299,7 @@ export default function ResourceManagerDBPage() {
                   src="https://www.usersolutions.com/wp-content/uploads/2022/12/RMDB updated thumbnail.mp4"
                   poster="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
                   className="h-full w-full object-cover"
+                  title="Resource Manager DB product overview video"
                 />
               </div>
             </div>
@@ -322,13 +324,13 @@ export default function ResourceManagerDBPage() {
       <RMDBFeatureList />
 
       {/* Awards Section */}
-      <section>
+      <section aria-labelledby="awards-heading">
         <div className="container mx-auto">
           <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
             <CardContent className="p-8 text-center">
-              <h3 className="mb-6 text-2xl font-bold text-slate-900">
+              <h2 id="awards-heading" className="mb-6 text-2xl font-bold text-slate-900">
                 CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
-              </h3>
+              </h2>
               <Image
                 src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                 alt="Collection of industry and business awards logos"
@@ -342,7 +344,7 @@ export default function ResourceManagerDBPage() {
           </Card>
         </div>
       </section>
-      </div>
+      </main>
     </>
   );
 }
