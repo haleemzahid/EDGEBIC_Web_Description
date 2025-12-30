@@ -3,6 +3,7 @@
 import * as React from 'react';
 
 import { RMDBFeatureList } from '@/components/marketing/sections/rmdb-feature-list';
+import { RMDBInDepthContent } from '@/components/marketing/sections/rmdb-in-depth-content';
 import { Card, CardContent } from '@/components/ui/card';
 
 type TabType = 'summary' | 'in-depth' | 'quick-start' | 'edgebi' | 'live-demo';
@@ -111,28 +112,7 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
           )}
 
           {/* In Depth Tab */}
-          {activeTab === 'in-depth' && (
-            <div className="grid items-start gap-8 lg:grid-cols-2">
-              <div>
-                <h2 className="mb-4 text-2xl font-bold text-slate-900">In Depth</h2>
-                <div className="space-y-4 text-base leading-relaxed text-slate-600">
-                  <p>
-                    RMDB contains deep functionality to address a multitude of challenges for production planning and scheduling: alternate workcenters, complex routings & processes, discrete and/or batch, multiple constraints (labor, machines, materials, etc.), advanced drag and drop graphical calendar screens, downtime management, sub-assemblies, optimization, and much more.
-                  </p>
-                  <p>
-                    If you have tried to use your ERP for creating a viable Production Schedule, and still end up with a tangle of custom Excel Reports, messy whiteboard or worse yet, late shipments, we can help. RMDB was specifically architected to easily adapt to the way you work, using your existing data.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center justify-center">
-                <img
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
-                  alt="RMDB EDGE Interface"
-                  className="h-auto max-w-full rounded-lg shadow-lg"
-                />
-              </div>
-            </div>
-          )}
+          {activeTab === 'in-depth' && <RMDBInDepthContent />}
 
           {/* Quick Start Tab */}
           {activeTab === 'quick-start' && (
