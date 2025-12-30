@@ -78,17 +78,53 @@ const nextConfig = {
       {
         locale: false,
         source: '/(.*)',
-        headers: createSecureHeaders({
-          frameGuard: 'deny',
-          noopen: 'noopen',
-          nosniff: 'nosniff',
-          xssProtection: 'sanitize',
-          forceHTTPSRedirect: [
-            true,
-            { maxAge: 60 * 60 * 24 * 360, includeSubDomains: true }
-          ],
-          referrerPolicy: 'same-origin'
-        })
+        headers: [
+          ...createSecureHeaders({
+            frameGuard: 'deny',
+            noopen: 'noopen',
+            nosniff: 'nosniff',
+            xssProtection: 'sanitize',
+            forceHTTPSRedirect: [
+              true,
+              { maxAge: 60 * 60 * 24 * 360, includeSubDomains: true }
+            ],
+            referrerPolicy: 'strict-origin-when-cross-origin'
+          }),
+          // Cross-Origin-Opener-Policy for better security
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin-allow-popups'
+          },
+          // Cross-Origin-Embedder-Policy
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'unsafe-none'
+          },
+          // Content Security Policy
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://calendly.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "img-src 'self' data: blob: https: http:",
+              "font-src 'self' https://fonts.gstatic.com",
+              "connect-src 'self' https://www.google-analytics.com https://vitals.vercel-insights.com https://*.vercel.app",
+              "media-src 'self' https://www.usersolutions.com",
+              "frame-src 'self' https://calendly.com https://www.youtube.com https://youtube.com",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'none'",
+              "upgrade-insecure-requests"
+            ].join('; ')
+          },
+          // Permissions Policy
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()'
+          }
+        ]
       }
     ];
   },

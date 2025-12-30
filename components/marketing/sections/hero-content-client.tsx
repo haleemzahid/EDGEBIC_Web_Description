@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { motion } from 'framer-motion';
-import { Play } from 'lucide-react';
+import Image from 'next/image';
 
 import { VideoModal } from '@/components/marketing/video-modal';
 
@@ -93,26 +93,35 @@ export function HeroContent(): React.JSX.Element {
                 onClick={handleFirstVideoButtonClick}
                 className="inline-flex items-center justify-center gap-1 rounded-[10px] bg-yellow-400 px-10 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
               >
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2023/01/onefootprint-1.png"
-                  alt="footprint"
+                  alt="Step one indicator"
+                  width={20}
+                  height={20}
                   className="size-5"
+                  style={{ objectFit: 'contain' }}
                 />
                 Intro <span className="italic">US</span>
               </button>
               <button
                 onClick={handleSecondVideoButtonClick}
-                className="inline-flex items-center justify-center  rounded-[10px] bg-yellow-400 px-6 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
+                className="inline-flex items-center justify-center rounded-[10px] bg-yellow-400 px-6 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
               >
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2023/01/onefootprint-1.png"
-                  alt="footprint"
+                  alt="Step one indicator"
+                  width={20}
+                  height={20}
                   className="size-5"
+                  style={{ objectFit: 'contain' }}
                 />
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2023/01/onefootprint-1.png"
-                  alt="footprint"
+                  alt="Step two indicator"
+                  width={20}
+                  height={20}
                   className="size-5 mr-1"
+                  style={{ objectFit: 'contain' }}
                 />
                 90 SEC COMPANY OVERVIEW
               </button>
