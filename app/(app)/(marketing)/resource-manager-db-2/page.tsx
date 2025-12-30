@@ -17,6 +17,7 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
     { id: 'in-depth' as TabType, label: 'In Depth' },
     { id: 'quick-start' as TabType, label: 'Quick Start' },
     { id: 'edgebi' as TabType, label: 'EDGEBI' },
+    { id: 'live-demo' as TabType, label: 'Live Demo' },
   ];
 
   return (
@@ -175,6 +176,39 @@ export default function ResourceManagerDBPage(): React.JSX.Element {
 
           {/* EDGEBI Tab */}
           {activeTab === 'edgebi' && <EDGEBIContent />}
+
+          {/* Live Demo Tab */}
+          {activeTab === 'live-demo' && (
+            <div className="grid items-start gap-8 lg:grid-cols-2">
+              <div>
+                <h2 className="mb-4 text-2xl font-bold">Live Demo</h2>
+                <div className="space-y-4 text-base leading-relaxed text-slate-600">
+                  <p>
+                    See Resource Manager-DB in action! Schedule a live demo with our team to experience how RMDB can transform your production planning and scheduling processes.
+                  </p>
+                  <p>
+                    We can even use your data in its current form to show you exactly how RMDB will work for your specific operations – RISK FREE!
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.open('https://calendly.com/mudasirnadeem7979/30min', '_blank');
+                    }}
+                    className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600"
+                  >
+                    Schedule a Live Demo
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center justify-center">
+                <img
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
+                  alt="RMDB Live Demo"
+                  className="h-auto max-w-full rounded-lg shadow-lg"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
