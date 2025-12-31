@@ -1,68 +1,24 @@
 'use client';
 
-import * as React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { Play, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 import { GridSection } from '@/components/marketing/fragments/grid-section';
 import { Button } from '@/components/ui/button';
 
-// YouTube Video Player Component - Shows thumbnail until clicked for better performance
+// YouTube Video Player Component - Embeds YouTube iframe directly
 function YouTubePlayer({
   videoId,
-  title,
-  thumbnail,
-  onPlayStateChange
+  title
 }: {
   videoId: string;
   title: string;
-  thumbnail: string;
-  onPlayStateChange?: (isPlaying: boolean) => void;
 }) {
-  const [isActivated, setIsActivated] = React.useState(false);
-
-  const handleActivate = () => {
-    setIsActivated(true);
-    onPlayStateChange?.(true);
-  };
-
-  // Show thumbnail with play button until clicked (lazy loading)
-  if (!isActivated) {
-    return (
-      <button
-        type="button"
-        onClick={handleActivate}
-        className="absolute inset-0 size-full cursor-pointer"
-        aria-label={`Play ${title}`}
-      >
-        {/* Thumbnail image */}
-        <Image
-          src={thumbnail}
-          alt={title}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, 33vw"
-        />
-        {/* Play button overlay */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition-colors hover:bg-black/30">
-          <div className="flex size-16 items-center justify-center rounded-full bg-red-600 shadow-lg transition-transform hover:scale-110">
-            <Play className="ml-1 size-8 text-white" fill="currentColor" />
-          </div>
-        </div>
-        <span className="absolute bottom-2 left-2 rounded bg-black/60 px-2 py-1 text-xs text-white">
-          {title}
-        </span>
-      </button>
-    );
-  }
-
   return (
     <iframe
       className="absolute inset-0 size-full"
-      src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
+      src={`https://www.youtube.com/embed/${videoId}?rel=0`}
       title={title}
-      frameBorder="0"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
       allowFullScreen
     />
@@ -70,23 +26,6 @@ function YouTubePlayer({
 }
 
 export function NTClipboardToolBox(): React.JSX.Element {
-  // State to control badge visibility for each card
-  const [isVideoPlaying, setIsVideoPlaying] = React.useState({
-    end: false,
-    starter: false,
-    advanced: false,
-    premium: false
-  });
-
-  const handleVideoPlayState = (
-    cardType: 'end' | 'starter' | 'advanced' | 'premium',
-    isPlaying: boolean
-  ) => {
-    setIsVideoPlaying((prev) => ({
-      ...prev,
-      [cardType]: isPlaying
-    }));
-  };
   return (
     <GridSection hideVerticalGridLines>
       <div>
@@ -104,228 +43,199 @@ export function NTClipboardToolBox(): React.JSX.Element {
 
           <div className="grid gap-8 md:grid-cols-3">
             {/* Excel Templates - Operations Manager */}
-            <div className="group relative overflow-hidden rounded-3xl border bg-white shadow-lg transition-all hover:shadow-xl">
+            <div className="group relative flex flex-col overflow-hidden rounded-3xl border bg-white shadow-lg transition-all hover:shadow-xl">
               {/* Price Badge */}
-              <div
-                className={`animate-gentle-glow absolute right-4 top-4 z-10 rounded-full bg-gradient-to-r from-green-500 to-green-600 px-4 py-2 text-sm font-bold text-white shadow-lg ring-2 ring-white/20 transition-opacity duration-300 ${isVideoPlaying.end ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
-              >
+              <div className="animate-gentle-glow absolute right-4 top-4 z-10 rounded-full bg-gradient-to-r from-green-500 to-green-600 px-4 py-2 text-sm font-bold text-white shadow-lg ring-2 ring-white/20">
                 START
               </div>
 
-              <div className="">
-                {/* Video Section */}
-                <div className="relative overflow-hidden rounded-lg">
-                  <div className="relative aspect-video bg-slate-100">
-                    <YouTubePlayer
-                      videoId="DRWDNVq31l4"
-                      title="Operations Manager Excel Templates"
-                      thumbnail="/images/Edgebic/2022-11/advanced-1.png"
-                      onPlayStateChange={(isPlaying) =>
-                        handleVideoPlayState('end', isPlaying)
-                      }
-                    />
+              {/* Video Section */}
+              <div className="relative overflow-hidden rounded-lg">
+                <div className="relative aspect-video bg-slate-100">
+                  <YouTubePlayer
+                    videoId="DRWDNVq31l4"
+                    title="Operations Manager Excel Templates"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-1 flex-col p-6">
+                <h3 className="mb-4 text-xl font-bold text-gray-900">
+                  Operations Manager Ex
+                </h3>
+
+                <div className="mb-6 flex-1 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Check className="size-4 text-green-500" />
+                    <span className="text-sm">Shop Scheduling Made easy</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="size-4 text-green-500" />
+                    <span className="text-sm">Forward Scheduling</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="size-4 text-green-500" />
+                    <span className="text-sm">Finite Capacity</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="size-4 text-green-500" />
+                    <span className="text-sm">No Risk Trials</span>
+                  </div>
+                  <div className="ml-6 text-sm text-gray-500">
+                    Implementation support included!
                   </div>
                 </div>
-                <div className="p-6">
-                  <h3 className="mb-4 text-xl font-bold text-gray-900">
-                    Operations Manager Ex
-                  </h3>
 
-                  <div className="mb-6 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Shop Scheduling Made easy</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Forward Scheduling</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Finite Capacity</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">No Risk Trials</span>
-                    </div>
-                    <div className="ml-6 text-sm text-gray-500">
-                      Implementation support included!
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <Button
-                      variant="outline"
-                      className="w-full border-green-200 text-green-700 hover:bg-green-50"
-                      asChild
+                <div className="mt-auto">
+                  <Button
+                    variant="outline"
+                    className="mb-4 w-full border-green-200 text-green-700 hover:bg-green-50"
+                    asChild
+                  >
+                    <Link
+                      href="/excel-templates"
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
-                      <Link
-                        href="/excel-templates"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        View Details
-                      </Link>
-                    </Button>
-                  </div>
-
-                  <div className="text-center">
-                    <div className="mb-2 text-3xl font-bold text-green-700">
-                      $1K+
-                    </div>
+                      View Details
+                    </Link>
+                  </Button>
+                  <div className="text-center text-3xl font-bold text-green-700">
+                    $1K+
                   </div>
                 </div>
               </div>
             </div>
             {/* Resource Manager DB */}
-            <div className="group relative overflow-hidden rounded-3xl border border-orange-200 bg-white shadow-lg transition-all hover:shadow-xl">
+            <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-orange-200 bg-white shadow-lg transition-all hover:shadow-xl">
               {/* Popular Badge - Enhanced */}
-              <div
-                className={`animate-gentle-glow absolute right-4 top-4 z-10 rounded-full bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 px-4 py-2 text-sm font-bold text-white shadow-lg ring-2 ring-white/20 transition-opacity duration-1000 ${isVideoPlaying.advanced ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
-              >
+              <div className="animate-gentle-glow absolute right-4 top-4 z-10 rounded-full bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 px-4 py-2 text-sm font-bold text-white shadow-lg ring-2 ring-white/20">
                 <span className="relative flex items-center gap-1">
                   ADVANCED
                 </span>
-              </div>{' '}
-              <div className="">
-                {/* Video Section */}
-                <div className="relative overflow-hidden rounded-lg">
-                  <div className="relative aspect-video bg-slate-100">
-                    <YouTubePlayer
-                      videoId="kn92TIHhbm8"
-                      title="Resource Manager DB"
-                      thumbnail="/images/Edgebic/2022-11/advanced-1.png"
-                      onPlayStateChange={(isPlaying) =>
-                        handleVideoPlayState('advanced', isPlaying)
-                      }
-                    />
+              </div>
+
+              {/* Video Section */}
+              <div className="relative overflow-hidden rounded-lg">
+                <div className="relative aspect-video bg-slate-100">
+                  <YouTubePlayer
+                    videoId="kn92TIHhbm8"
+                    title="Resource Manager DB"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-1 flex-col p-6">
+                <h3 className="mb-4 text-xl font-bold text-gray-900">
+                  Resource Manager DB
+                </h3>
+
+                <div className="mb-6 flex-1 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Check className="size-4 text-green-500" />
+                    <span className="text-sm">Product Scheduling your Way!</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="size-4 text-green-500" />
+                    <span className="text-sm">Flexible and Adaptable</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="size-4 text-green-500" />
+                    <span className="text-sm">Easy to implement APS & MRP</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="size-4 text-green-500" />
+                    <span className="text-sm">No Risk Trials</span>
+                  </div>
+                  <div className="ml-6 text-sm text-gray-500">
+                    Implementation support included!
                   </div>
                 </div>
-                <div className="p-6">
-                  <h3 className="mb-4 text-xl font-bold text-gray-900">
-                    Resource Manager DB
-                  </h3>
 
-                  <div className="mb-6 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Product Scheduling your Way!</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Flexible and Adaptable</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Easy to implement APS & MRP</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">No Risk Trials</span>
-                    </div>
-                    <div className="ml-6 text-sm text-gray-500">
-                      Implementation support included!
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <Button
-                      variant="outline"
-                      className="w-full border-green-200 text-green-700 hover:bg-green-50"
-                      asChild
+                <div className="mt-auto">
+                  <Button
+                    variant="outline"
+                    className="mb-4 w-full border-green-200 text-green-700 hover:bg-green-50"
+                    asChild
+                  >
+                    <Link
+                      href="/resource-manager-db-2"
+                      target="_blank"
                     >
-                      <Link
-                        href="/resource-manager-db-2"
-                        target="_blank"
-                      >
-                        View Details
-                      </Link>
-                    </Button>
-                  </div>
-
-                  <div className="mt-6 text-center">
-                    <div className="mb-2 text-3xl font-bold text-green-700">
-                      $3K+
-                    </div>
+                      View Details
+                    </Link>
+                  </Button>
+                  <div className="text-center text-3xl font-bold text-green-700">
+                    $3K+
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="group relative overflow-hidden rounded-3xl border bg-white shadow-lg transition-all hover:shadow-xl">
+            {/* Premium - EDGEBI */}
+            <div className="group relative flex flex-col overflow-hidden rounded-3xl border bg-white shadow-lg transition-all hover:shadow-xl">
               {/* Price Badge */}
-              <div
-                className={`animate-gentle-glow absolute right-4 top-4 z-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2 text-sm font-bold text-white shadow-lg ring-2 ring-white/20 transition-opacity duration-300 ${isVideoPlaying.starter ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
-              >
+              <div className="animate-gentle-glow absolute right-4 top-4 z-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2 text-sm font-bold text-white shadow-lg ring-2 ring-white/20">
                 Premium
               </div>
 
-              <div className="">
-                {/* Video Section */}
-                <div className="relative overflow-hidden rounded-lg">
-                  <div className="relative aspect-video bg-slate-100">
-                    <YouTubePlayer
-                      videoId="snltXMHeojU"
-                      title="EDGEBIC Demo"
-                      thumbnail="/images/Edgebic/2022-10/insight-1.png"
-                      onPlayStateChange={(isPlaying) =>
-                        handleVideoPlayState('starter', isPlaying)
-                      }
-                    />
+              {/* Video Section */}
+              <div className="relative overflow-hidden rounded-lg">
+                <div className="relative aspect-video bg-slate-100">
+                  <YouTubePlayer
+                    videoId="snltXMHeojU"
+                    title="EDGEBIC Demo"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-1 flex-col p-6">
+                <h3 className="mb-4 text-xl font-bold text-gray-900">
+                  EDGEBI <span className="text-sm font-normal text-gray-500">(Bundled w/ RMDB)</span>
+                </h3>
+
+                <div className="mb-6 flex-1 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Check className="size-4 text-green-500" />
+                    <span className="text-sm">Heat Map Report</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="size-4 text-green-500" />
+                    <span className="text-sm">Schedule Key Dates</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="size-4 text-green-500" />
+                    <span className="text-sm">Live Embedded Excel</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="size-4 text-green-500" />
+                    <span className="text-sm">Advanced Drag and Drop</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="size-4 text-green-500" />
+                    <span className="text-sm">No Risk Trials</span>
+                  </div>
+                  <div className="ml-6 text-sm text-gray-500">
+                    Implementation support included!
                   </div>
                 </div>
-                <div className="p-6">
-                  <h3 className="mb-4 text-xl font-bold text-gray-900">
-                    EDGEBI <span className="text-sm font-normal text-gray-500">(Bundled w/ RMDB)</span>
-                  </h3>
 
-                  <div className="mb-6 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Heat Map Report</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Schedule Key Dates</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Live Embedded Excel</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Advanced Drag and Drop</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="size-4 text-green-500" />
-                      <span className="text-sm">No Risk Trials</span>
-                    </div>
-                    <div className="ml-6 text-sm text-gray-500">
-                      Implementation support included!
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <Button
-                      variant="outline"
-                      className="w-full border-green-200 text-green-700 hover:bg-green-50"
-                      asChild
+                <div className="mt-auto">
+                  <Button
+                    variant="outline"
+                    className="mb-4 w-full border-green-200 text-green-700 hover:bg-green-50"
+                    asChild
+                  >
+                    <Link
+                      href="/jsl-job-scheduler-lite"
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
-                      <Link
-                        href="/jsl-job-scheduler-lite"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        View Details
-                      </Link>
-                    </Button>
-                  </div>
-
-                  <div className="text-center">
-                    <div className="mb-2 text-3xl font-bold text-green-700">
-                      $10K+
-                    </div>
-
+                      View Details
+                    </Link>
+                  </Button>
+                  <div className="text-center text-3xl font-bold text-green-700">
+                    $10K+
                   </div>
                 </div>
               </div>
