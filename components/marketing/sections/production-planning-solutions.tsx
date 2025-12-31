@@ -277,12 +277,12 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
 
             {/* Features Grid */}
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {/* EDGEBIC Features */}
+              {/* Operations Manager Excel Features */}
               <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-blue-700">
                     <Target className="size-5" />
-                    EDGEBIC
+                    Operations Manager Excel
                   </CardTitle>
                   <CardDescription>
                     Entry-level production scheduling solution for creating
@@ -511,7 +511,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       Features
                     </th>
                     <th className="p-4 text-center font-semibold text-blue-600">
-                      EDGEBIC
+                      Operations Manager Excel
                     </th>
                     <th className="p-4 text-center font-semibold text-orange-600">
                       Resource Manager DB
