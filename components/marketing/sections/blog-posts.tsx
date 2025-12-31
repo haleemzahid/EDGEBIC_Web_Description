@@ -45,7 +45,7 @@ export async function BlogPosts(): Promise<React.JSX.Element> {
               .sort((a, b) => (isBefore(a.published, b.published) ? 1 : -1))
               .map((post, index) => (
                 <Link
-                  key={post.id || index}
+                  key={post.slug || `post-${index}`}
                   href={post.slug}
                   className="md:duration-2000 flex h-full flex-col overflow-hidden text-clip border-dashed md:rounded-2xl md:shadow md:transition-shadow md:hover:shadow-xl"
                 >

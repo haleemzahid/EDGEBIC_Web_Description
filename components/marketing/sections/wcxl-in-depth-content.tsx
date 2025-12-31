@@ -337,13 +337,25 @@ export function WCXLInDepthContent() {
         <h2 className="mb-6 text-2xl font-bold">Advanced Features</h2>
 
         <div className="space-y-8">
-          <div>
-            <h3 className="mb-2 text-xl font-bold">Job Interruption Tracking</h3>
-            <p className="text-slate-600">
-              The Job Interruption sheet includes columns for Job ID, Workcenter, Interrupt Date,
-              Resume Date, and Comments. This documents any jobs interrupted by higher-priority
-              scheduling.
-            </p>
+          <div className="grid items-start gap-8 md:grid-cols-2">
+            <div>
+              <h3 className="mb-2 text-xl font-bold">Job Interruption Tracking</h3>
+              <p className="text-slate-600">
+                The Job Interruption sheet includes columns for Job ID, Workcenter, Interrupt Date,
+                Resume Date, and Comments. This documents any jobs interrupted by higher-priority
+                scheduling.
+              </p>
+            </div>
+            <div className="flex justify-center">
+              <Image
+                src="/images/Edgebic/2022-07/wCXL-1024x342.png"
+                alt="WCXL Job Interruption Tracking"
+                width={400}
+                height={135}
+                className="rounded-lg shadow-md"
+                loading="lazy"
+              />
+            </div>
           </div>
 
           <div>
