@@ -282,7 +282,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-blue-700">
                     <Target className="size-5" />
-                    Operations Manager Excel
+                    Resource Manager For Excel
                   </CardTitle>
                   <CardDescription>
                     Entry-level production scheduling solution for creating
@@ -511,7 +511,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       Features
                     </th>
                     <th className="p-4 text-center font-semibold text-blue-600">
-                      Operations Manager Excel
+                      Resource Manager For Excel
                     </th>
                     <th className="p-4 text-center font-semibold text-orange-600">
                       Resource Manager DB
