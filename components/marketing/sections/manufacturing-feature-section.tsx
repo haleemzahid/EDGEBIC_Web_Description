@@ -27,7 +27,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
           <div className="mt-6 lg:mt-0">
             <div className="relative h-[300px] w-full lg:h-[350px]">
               <Image
-                src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
+                src="/images/Edgebic/2022-07/RMDB-EDGE2-1024x483.png"
                 alt="Accurate production scheduling with real-time visibility"
                 fill
                 sizes="(max-width: 768px) 100vw, 33vw"
@@ -78,7 +78,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
           </div>
           <div className="relative flex h-[300px] items-center justify-center lg:col-start-2">
             <Image
-              src="https://www.usersolutions.com/wp-content/uploads/2022/07/rmdb11.png"
+              src="/images/Edgebic/2022-07/rmdb11.png"
               alt="Integrated MRP and capacity planning dashboard"
               fill
               sizes="(max-width: 768px) 100vw, 33vw"
@@ -92,7 +92,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
         <div className="mt-6 lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
           <div className="relative flex h-[300px] items-center justify-center lg:col-start-2">
             <Image
-              src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-Data-Import.png"
+              src="/images/Edgebic/2022-10/RMDB-Data-Import.png"
               alt="Data import features for production scheduling"
               fill
               sizes="(max-width: 768px) 100vw, 33vw"
@@ -164,7 +164,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
 
           <div className="relative flex h-[300px] items-center justify-center lg:col-start-2">
             <Image
-              src="https://www.usersolutions.com/wp-content/uploads/2022/09/SQC-Pareto.png"
+              src="/images/Edgebic/2022-09/SQC-Pareto.png"
               alt="Real-time inventory overview"
               fill
               sizes="(max-width: 768px) 100vw, 33vw"

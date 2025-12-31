@@ -40,7 +40,7 @@ export default function ModernProductionPlanningTagPage() {
             <Card className="mb-6 overflow-hidden transition-shadow hover:shadow-lg">
               <div className="relative h-96 w-full overflow-hidden">
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/AirCraftMaint.jpg"
+                  src="/images/Edgebic/2022-07/AirCraftMaint.jpg"
                   alt="Submarine crew in control room"
                   width={800}
                   height={600}
@@ -82,7 +82,7 @@ export default function ModernProductionPlanningTagPage() {
                     CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                   </h2>
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                     alt="Collection of industry and business awards logos"
                     width={1024}
                     height={128}

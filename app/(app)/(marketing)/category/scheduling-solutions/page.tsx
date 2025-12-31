@@ -41,7 +41,7 @@ export default function SchedulingSolutionsCategoryPage() {
             <Card className="mb-6 overflow-hidden transition-shadow hover:shadow-lg">
               <div className="relative h-96 w-full overflow-hidden">
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/09/usersolutionsimage-1024x719.png"
+                  src="/images/Edgebic/2022-09/usersolutionsimage-1024x719.png"
                   alt="Businessman working on computer in office setting"
                   fill
                   className="object-cover transition-transform hover:scale-105"
@@ -81,7 +81,7 @@ export default function SchedulingSolutionsCategoryPage() {
                     CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                   </h2>
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                     alt="Collection of industry and business awards logos"
                     width={1024}
                     height={128}

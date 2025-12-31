@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { Check } from 'lucide-react';
 
 const challenges = [
   'Generate accurate, dynamic customer lead times and meet them.',
@@ -28,8 +29,9 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
           </h3>
           <ul className="grid gap-2 md:grid-cols-2">
             {challenges.map((item, index) => (
-              <li key={index} className="text-md text-gray-700">
-                {item}
+              <li key={index} className="flex items-start gap-2 text-md text-gray-700">
+                <Check className="mt-1 h-4 w-4 flex-shrink-0 text-green-600" />
+                <span>{item}</span>
               </li>
             ))}
           </ul>

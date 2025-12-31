@@ -5,50 +5,8 @@ import Image from 'next/image';
 
 type TabType = 'summary' | 'rmdb' | 'live-demo';
 
-// Video Player Component
-function VideoPlayer({
-  videoUrl,
-  title,
-  onPlayStateChange
-}: {
-  videoUrl: string;
-  title: string;
-  onPlayStateChange?: (isPlaying: boolean) => void;
-}) {
-  const videoRef = React.useRef<HTMLVideoElement>(null);
-
-  const handlePlay = () => {
-    onPlayStateChange?.(true);
-  };
-
-  const handlePause = () => {
-    onPlayStateChange?.(false);
-  };
-
-  const handleEnded = () => {
-    onPlayStateChange?.(false);
-  };
-
-  return (
-    <video
-      ref={videoRef}
-      src={videoUrl}
-      title={title}
-      className="absolute inset-0 size-full rounded-lg object-cover"
-      controls
-      playsInline
-      onPlay={handlePlay}
-      onPause={handlePause}
-      onEnded={handleEnded}
-    >
-      Your browser does not support the video tag.
-    </video>
-  );
-}
-
 export default function EDGEBIPage(): React.JSX.Element {
   const [activeTab, setActiveTab] = React.useState<TabType>('summary');
-  const [isVideoPlaying, setIsVideoPlaying] = React.useState(false);
 
   const tabs = [
     { id: 'summary' as TabType, label: 'Summary' },
@@ -97,14 +55,15 @@ export default function EDGEBIPage(): React.JSX.Element {
 
             {/* Right - Video */}
             <div>
-              <div className="relative overflow-hidden rounded-lg shadow-lg">
-                <div className="relative aspect-video">
-                  <VideoPlayer
-                    videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/12/EDGEBI%20updated%20thumbnail.mp4"
-                    title="EDGEBI Demo"
-                    onPlayStateChange={setIsVideoPlaying}
-                  />
-                </div>
+              <div className="overflow-hidden rounded-lg bg-black shadow-lg">
+                <iframe
+                  className="aspect-video w-full"
+                  src="https://www.youtube.com/embed/snltXMHeojU?rel=0"
+                  title="EDGEBI Demo"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
               </div>
             </div>
           </div>
@@ -127,7 +86,7 @@ export default function EDGEBIPage(): React.JSX.Element {
                 </div>
                 <div>
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/f1.png"
+                    src="/images/Edgebic/2022-10/f1.png"
                     alt="EDGEBI Screenshot - Resource Manager DB interface"
                     width={800}
                     height={600}
@@ -140,7 +99,7 @@ export default function EDGEBIPage(): React.JSX.Element {
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div>
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/f2.png"
+                    src="/images/Edgebic/2022-10/f2.png"
                     alt="EDGEBI Schedule Management Interface"
                     width={800}
                     height={600}
@@ -166,7 +125,7 @@ export default function EDGEBIPage(): React.JSX.Element {
                 </div>
                 <div>
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/f3.png"
+                    src="/images/Edgebic/2022-10/f3.png"
                     alt="Heat Map - Color-coded capacity utilization"
                     width={800}
                     height={400}
@@ -179,7 +138,7 @@ export default function EDGEBIPage(): React.JSX.Element {
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div>
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/f4.png"
+                    src="/images/Edgebic/2022-10/f4.png"
                     alt="Schedule Key Dates Reports"
                     width={800}
                     height={400}
@@ -234,7 +193,7 @@ export default function EDGEBIPage(): React.JSX.Element {
                 </div>
                 <div className="flex items-center justify-center">
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
+                    src="/images/Edgebic/2022-07/RMDB-EDGE2-1024x483.png"
                     alt="Resource Manager-DB with EDGE (Enhanced Drag & drop Graphical Environment)"
                     width={1024}
                     height={483}
@@ -247,24 +206,20 @@ export default function EDGEBIPage(): React.JSX.Element {
               {/* Video and Image Section */}
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div className="flex justify-center">
-                  <div className="aspect-video w-full overflow-hidden rounded-lg shadow-lg">
-                    <video
-                      className="h-full w-full object-cover"
-                      controls
-                      playsInline
-                      preload="auto"
-                    >
-                      <source
-                        src="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE BI User Solutions.mp4"
-                        type="video/mp4"
-                      />
-                      Your browser does not support the video tag.
-                    </video>
+                  <div className="w-full overflow-hidden rounded-lg bg-black shadow-lg">
+                    <iframe
+                      className="aspect-video w-full"
+                      src="https://www.youtube.com/embed/kn92TIHhbm8?rel=0"
+                      title="Resource Manager DB Summary"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
                   </div>
                 </div>
                 <div className="flex items-center justify-center">
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/rmdb11.png"
+                    src="/images/Edgebic/2022-07/rmdb11.png"
                     alt="Resource Manager DB Processing Menu"
                     width={800}
                     height={600}
@@ -301,7 +256,7 @@ export default function EDGEBIPage(): React.JSX.Element {
               </div>
               <div className="flex items-center justify-center">
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
+                  src="/images/Edgebic/2022-07/RMDB-EDGE2-1024x483.png"
                   alt="EDGEBI Live Demo"
                   width={600}
                   height={400}
@@ -322,7 +277,7 @@ export default function EDGEBIPage(): React.JSX.Element {
                 CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
               </h3>
               <Image
-                src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                 alt="Collection of industry and business awards logos"
                 width={1024}
                 height={128}

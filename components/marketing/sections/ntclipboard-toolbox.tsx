@@ -8,60 +8,46 @@ import { Play, Check } from 'lucide-react';
 import { GridSection } from '@/components/marketing/fragments/grid-section';
 import { Button } from '@/components/ui/button';
 
-// Lazy Video Player Component - Shows thumbnail until clicked for better performance
-function VideoPlayer({
-  videoUrl,
+// YouTube Video Player Component - Shows thumbnail until clicked for better performance
+function YouTubePlayer({
+  videoId,
   title,
   thumbnail,
   onPlayStateChange
 }: {
-  videoUrl: string;
+  videoId: string;
   title: string;
   thumbnail: string;
   onPlayStateChange?: (isPlaying: boolean) => void;
 }) {
-  const videoRef = React.useRef<HTMLVideoElement>(null);
   const [isActivated, setIsActivated] = React.useState(false);
-  const [isPlaying, setIsPlaying] = React.useState(false);
 
   const handleActivate = () => {
     setIsActivated(true);
     onPlayStateChange?.(true);
   };
 
-  const handlePlay = () => {
-    setIsPlaying(true);
-    onPlayStateChange?.(true);
-  };
-
-  const handlePause = () => {
-    setIsPlaying(false);
-    onPlayStateChange?.(false);
-  };
-
-  const handleEnded = () => {
-    setIsPlaying(false);
-    onPlayStateChange?.(false);
-  };
-
   // Show thumbnail with play button until clicked (lazy loading)
   if (!isActivated) {
-    // Generate poster image URL from video URL or use provided thumbnail
-    const posterUrl = thumbnail || videoUrl.replace('.mp4', '.jpg');
-
     return (
       <button
         type="button"
         onClick={handleActivate}
-        className="absolute inset-0 size-full cursor-pointer bg-slate-200"
+        className="absolute inset-0 size-full cursor-pointer"
         aria-label={`Play ${title}`}
       >
-        {/* Placeholder background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200" />
+        {/* Thumbnail image */}
+        <Image
+          src={thumbnail}
+          alt={title}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, 33vw"
+        />
         {/* Play button overlay */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex size-16 items-center justify-center rounded-full bg-white/90 shadow-lg transition-transform hover:scale-110">
-            <Play className="ml-1 size-8 text-gray-800" fill="currentColor" />
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition-colors hover:bg-black/30">
+          <div className="flex size-16 items-center justify-center rounded-full bg-red-600 shadow-lg transition-transform hover:scale-110">
+            <Play className="ml-1 size-8 text-white" fill="currentColor" />
           </div>
         </div>
         <span className="absolute bottom-2 left-2 rounded bg-black/60 px-2 py-1 text-xs text-white">
@@ -72,20 +58,14 @@ function VideoPlayer({
   }
 
   return (
-    <video
-      ref={videoRef}
-      src={videoUrl}
+    <iframe
+      className="absolute inset-0 size-full"
+      src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
       title={title}
-      className="absolute inset-0 size-full rounded-lg object-cover"
-      controls
-      playsInline
-      autoPlay
-      onPlay={handlePlay}
-      onPause={handlePause}
-      onEnded={handleEnded}
-    >
-      Your browser does not support the video tag.
-    </video>
+      frameBorder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      allowFullScreen
+    />
   );
 }
 
@@ -134,12 +114,12 @@ export function NTClipboardToolBox(): React.JSX.Element {
 
               <div className="">
                 {/* Video Section */}
-                <div className="relative mb-6 overflow-hidden rounded-lg">
+                <div className="relative overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
                     <VideoPlayer
-                      videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/07/Resource-Manager-for-Excel.mp4"
+                      videoUrl="/images/Edgebic/2022-07/Resource-Manager-for-Excel.mp4"
                       title="Operations Manager Excel Templates"
-                      thumbnail="https://www.usersolutions.com/wp-content/uploads/2022/07/Resource-Manager-for-Excel.mp4"
+                      thumbnail="/images/Edgebic/2022-07/Resource-Manager-for-Excel.mp4"
                       onPlayStateChange={(isPlaying) =>
                         handleVideoPlayState('end', isPlaying)
                       }
@@ -147,6 +127,9 @@ export function NTClipboardToolBox(): React.JSX.Element {
                   </div>
                 </div>
                 <div className="p-6">
+                  <h3 className="mb-4 text-xl font-bold text-gray-900">
+                    Operations Manager Ex
+                  </h3>
 
                   <div className="mb-6 space-y-3">
                     <div className="flex items-center gap-2">
@@ -209,9 +192,9 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 <div className="relative  overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
                     <VideoPlayer
-                      videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/12/RMDB%20updated%20thumbnail.mp4"
+                      videoUrl="/images/Edgebic/2022-12/RMDB%20updated%20thumbnail.mp4"
                       title="Resource Manager DB"
-                      thumbnail="https://www.usersolutions.com/wp-content/uploads/2022/11/advanced-1.png"
+                      thumbnail="/images/Edgebic/2022-11/advanced-1.png"
                       onPlayStateChange={(isPlaying) =>
                         handleVideoPlayState('advanced', isPlaying)
                       }
@@ -282,9 +265,9 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 <div className="relative  overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
                     <VideoPlayer
-                      videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/12/EDGEBI%20updated%20thumbnail.mp4"
+                      videoUrl="/images/Edgebic/2022-12/EDGEBI%20updated%20thumbnail.mp4"
                       title="EDGEBIC Demo"
-                      thumbnail="https://www.usersolutions.com/wp-content/uploads/2022/10/insight-1.png"
+                      thumbnail="/images/Edgebic/2022-10/insight-1.png"
                       onPlayStateChange={(isPlaying) =>
                         handleVideoPlayState('starter', isPlaying)
                       }

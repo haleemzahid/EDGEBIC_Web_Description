@@ -24,8 +24,7 @@ const blogPosts = [
     date: 'May 26, 2024',
     readTime: '5 min read',
     category: 'Supply Chain',
-    image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/09/usersolutionsimage-300x211.png',
+    image: '/images/Edgebic/2022-09/usersolutionsimage-300x211.png',
     href: '/enhancing-supply-chain-visibility-through-advanced-scheduling-solutions'
   },
   {
@@ -36,8 +35,7 @@ const blogPosts = [
     date: 'May 16, 2024',
     readTime: '6 min read',
     category: 'Technology',
-    image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/07/AirCraftMaint.jpg',
+    image: '/images/Edgebic/2022-07/AirCraftMaint.jpg',
     href: '/erp-solutions-for-production-planning'
   },
   {
@@ -48,7 +46,7 @@ const blogPosts = [
     date: 'May 6, 2024',
     readTime: '7 min read',
     category: 'Manufacturing',
-    image: 'https://www.usersolutions.com/wp-content/uploads/2024/02/sdf.jpg',
+    image: '/images/Edgebic/2024-02/sdf.jpg',
     href: '/lean-manufacturing-solutions'
   },
   {
@@ -58,8 +56,7 @@ const blogPosts = [
     date: 'September 8, 2022',
     readTime: '4 min read',
     category: 'Software',
-    image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/09/image04-300x163.png',
+    image: '/images/Edgebic/2022-09/image04-300x163.png',
     href: '/li-ion-battery-production-scheduling-software'
   },
   {
@@ -69,8 +66,7 @@ const blogPosts = [
     date: 'September 8, 2022',
     readTime: '5 min read',
     category: 'Case Study',
-    image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/09/image3-300x163.png',
+    image: '/images/Edgebic/2022-09/image3-300x163.png',
     href: '/scheduling-system-narrows-skills-gap-for-fire-rated-glass'
   },
   {
@@ -81,8 +77,7 @@ const blogPosts = [
     date: 'September 8, 2022',
     readTime: '6 min read',
     category: 'Success Story',
-    image:
-      'https://www.usersolutions.com/wp-content/uploads/2022/09/image06-1-300x163.png',
+    image: '/images/Edgebic/2022-09/image06-1-300x163.png',
     href: '/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive'
   }
 ];
@@ -205,7 +200,7 @@ export function ResourceManagementBlog() {
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
                   width={1024}
                   height={128}

@@ -43,7 +43,7 @@ export default function UncategorizedCategoryPage() {
               <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
                 <div className="relative h-48 w-full overflow-hidden">
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/09/image04.png"
+                    src="/images/Edgebic/2022-09/image04.png"
                     alt="Person reading a magazine with business diagrams"
                     fill
                     className="object-cover transition-transform hover:scale-105"
@@ -79,7 +79,7 @@ export default function UncategorizedCategoryPage() {
               <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
                 <div className="relative h-48 w-full overflow-hidden">
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/09/image3.png"
+                    src="/images/Edgebic/2022-09/image3.png"
                     alt="Laptop screen displaying code in development environment"
                     fill
                     className="object-cover transition-transform hover:scale-105"
@@ -115,7 +115,7 @@ export default function UncategorizedCategoryPage() {
               <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
                 <div className="relative h-48 w-full overflow-hidden">
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/09/image06-1.png"
+                    src="/images/Edgebic/2022-09/image06-1.png"
                     alt="Business professionals analyzing financial charts and data"
                     fill
                     className="object-cover transition-transform hover:scale-105"
@@ -151,7 +151,7 @@ export default function UncategorizedCategoryPage() {
               <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
                 <div className="relative h-48 w-full overflow-hidden">
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/09/image05.png"
+                    src="/images/Edgebic/2022-09/image05.png"
                     alt="Team meeting with laptops in modern office"
                     fill
                     className="object-cover transition-transform hover:scale-105"
@@ -186,7 +186,7 @@ export default function UncategorizedCategoryPage() {
               <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
                 <div className="relative h-48 w-full overflow-hidden">
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/celebrating.png"
+                    src="/images/Edgebic/2022-07/celebrating.png"
                     alt="Team celebrating with holiday hats in office"
                     fill
                     className="object-cover transition-transform hover:scale-105"
@@ -220,7 +220,7 @@ export default function UncategorizedCategoryPage() {
               <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
                 <div className="relative h-48 w-full overflow-hidden">
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/image02.png"
+                    src="/images/Edgebic/2022-07/image02.png"
                     alt="Person budgeting with calculator and documents on table"
                     fill
                     className="object-cover transition-transform hover:scale-105"
@@ -261,7 +261,7 @@ export default function UncategorizedCategoryPage() {
                     CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                   </h2>
                   <Image
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                     alt="Collection of industry and business awards logos"
                     width={1024}
                     height={128}

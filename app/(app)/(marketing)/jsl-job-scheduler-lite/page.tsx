@@ -50,7 +50,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
             </div>
             <div className="overflow-hidden rounded-lg">
               <Image
-                src="https://www.usersolutions.com/wp-content/uploads/2022/10/insight-1.png"
+                src="/images/Edgebic/2022-10/insight-1.png"
                 alt="EDGEBIC production scheduling software interface"
                 width={800}
                 height={600}
@@ -64,16 +64,15 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
           <div className="mb-8">
             <h2 className="mb-4 text-3xl font-bold text-foreground">See JSL in Action</h2>
             <div className="grid gap-8 md:grid-cols-2">
-              <div className="overflow-hidden rounded-lg">
-                <div className="relative aspect-video w-full">
-                  <iframe
-                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/Welcome-to-Job-Scheduler-Lite-JSL.mp4"
-                    title="EDGEBIC Demo Video"
-                    className="absolute inset-0 size-full rounded-lg"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
+              <div className="overflow-hidden rounded-lg bg-black shadow-lg">
+                <iframe
+                  className="aspect-video w-full"
+                  src="https://www.youtube.com/embed/snltXMHeojU?rel=0"
+                  title="EDGEBIC Demo Video"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
               </div>
               <div>
                 <h3 className="mb-3 text-xl font-semibold">Complete JSL Walkthrough</h3>
@@ -123,7 +122,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               <div>
                 <h3 className="mb-2 font-semibold">Import Data</h3>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/import.png"
+                  src="/images/Edgebic/2022-10/import.png"
                   alt="Data import"
                   width={400}
                   height={300}
@@ -135,7 +134,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               <div>
                 <h3 className="mb-2 font-semibold">Daily Hours</h3>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/dailyhours.png"
+                  src="/images/Edgebic/2022-10/dailyhours.png"
                   alt="Daily hours"
                   width={400}
                   height={300}
@@ -147,7 +146,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               <div>
                 <h3 className="mb-2 font-semibold">Holidays</h3>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/holidays.png"
+                  src="/images/Edgebic/2022-10/holidays.png"
                   alt="Holidays"
                   width={400}
                   height={300}
@@ -159,7 +158,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               <div>
                 <h3 className="mb-2 font-semibold">Resources</h3>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/resoursces.png"
+                  src="/images/Edgebic/2022-10/resoursces.png"
                   alt="Resources"
                   width={400}
                   height={300}
@@ -171,7 +170,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               <div>
                 <h3 className="mb-2 font-semibold">Orders</h3>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/orders-1024x459.png"
+                  src="/images/Edgebic/2022-10/orders-1024x459.png"
                   alt="Orders"
                   width={1024}
                   height={459}
@@ -183,7 +182,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               <div>
                 <h3 className="mb-2 font-semibold">Finished Goods/Routing</h3>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/FG.png"
+                  src="/images/Edgebic/2022-10/FG.png"
                   alt="Finished goods"
                   width={400}
                   height={300}
@@ -195,7 +194,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               <div>
                 <h3 className="mb-2 font-semibold">Schedule</h3>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/schdle.png"
+                  src="/images/Edgebic/2022-10/schdle.png"
                   alt="Schedule"
                   width={400}
                   height={300}
@@ -207,7 +206,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               <div>
                 <h3 className="mb-2 font-semibold">InSights</h3>
                 <Image
-                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/insight.png"
+                  src="/images/Edgebic/2022-10/insight.png"
                   alt="InSights"
                   width={400}
                   height={300}
@@ -226,7 +225,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                 CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
               </h2>
               <Image
-                src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                 alt="Collection of industry and business awards logos"
                 width={1024}
                 height={128}
