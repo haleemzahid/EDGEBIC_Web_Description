@@ -7,7 +7,6 @@ import { NTClipboardHero } from '@/components/marketing/sections/ntclipboard-her
 import { NTClipboardSummary } from '@/components/marketing/sections/ntclipboard-summary';
 import { NTClipboardTestimonials } from '@/components/marketing/sections/ntclipboard-testimonials';
 import { NTClipboardToolBox } from '@/components/marketing/sections/ntclipboard-toolbox';
-import { WhatWeDoSection } from '@/components/marketing/sections/what-we-do-section';
 import { ChallengesBenefitsSection } from '@/components/marketing/sections/challenges-benefits-section';
 
 export const metadata: Metadata = {
@@ -20,7 +19,6 @@ export default function IndexPage(): React.JSX.Element {
   return (
     <>
       <NTClipboardHero />
-      <WhatWeDoSection />
       <ChallengesBenefitsSection />
       <AwardsSection />
       {/* <NTClipboardSummary /> */}
