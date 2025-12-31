@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Download } from 'lucide-react';
 
@@ -193,10 +194,13 @@ export default function JobSchedulerLiteDownloadPage() {
                   and importing content quickly.
                 </p>
 
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/blck.png"
                   alt="Screenshot of EDGEBIC folder with files"
+                  width={800}
+                  height={600}
                   className="my-6 h-auto w-full rounded-lg shadow-md"
+                  loading="lazy"
                 />
 
                 <p>The database will default to C:\ProgramData\EDGEBIC</p>
@@ -220,10 +224,13 @@ export default function JobSchedulerLiteDownloadPage() {
             <h2 className="mb-6 text-3xl font-bold">
               CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
             </h2>
-            <img
+            <Image
               src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
               alt="Collection of industry and business awards logos"
+              width={1024}
+              height={128}
               className="h-auto w-full"
+              loading="lazy"
             />
           </div>
         </div>

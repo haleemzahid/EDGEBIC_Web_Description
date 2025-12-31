@@ -1,4 +1,5 @@
 import * as React from 'react';
+import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -48,10 +49,13 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               </p>
             </div>
             <div className="overflow-hidden rounded-lg">
-              <img
+              <Image
                 src="https://www.usersolutions.com/wp-content/uploads/2022/10/insight-1.png"
                 alt="EDGEBIC production scheduling software interface"
+                width={800}
+                height={600}
                 className="h-auto w-full"
+                loading="lazy"
               />
             </div>
           </div>
@@ -118,73 +122,97 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
               <div>
                 <h3 className="mb-2 font-semibold">Import Data</h3>
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/import.png"
                   alt="Data import"
+                  width={400}
+                  height={300}
                   className="mb-2 h-auto w-full rounded"
+                  loading="lazy"
                 />
                 <p className="text-sm text-muted-foreground">Load data directly or import from Excel.</p>
               </div>
               <div>
                 <h3 className="mb-2 font-semibold">Daily Hours</h3>
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/dailyhours.png"
                   alt="Daily hours"
+                  width={400}
+                  height={300}
                   className="mb-2 h-auto w-full rounded"
+                  loading="lazy"
                 />
                 <p className="text-sm text-muted-foreground">Set normal operating hours.</p>
               </div>
               <div>
                 <h3 className="mb-2 font-semibold">Holidays</h3>
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/holidays.png"
                   alt="Holidays"
+                  width={400}
+                  height={300}
                   className="mb-2 h-auto w-full rounded"
+                  loading="lazy"
                 />
                 <p className="text-sm text-muted-foreground">Manage shutdowns and holidays.</p>
               </div>
               <div>
                 <h3 className="mb-2 font-semibold">Resources</h3>
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/resoursces.png"
                   alt="Resources"
+                  width={400}
+                  height={300}
                   className="mb-2 h-auto w-full rounded"
+                  loading="lazy"
                 />
                 <p className="text-sm text-muted-foreground">Add workcenters with capacity.</p>
               </div>
               <div>
                 <h3 className="mb-2 font-semibold">Orders</h3>
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/orders-1024x459.png"
                   alt="Orders"
+                  width={1024}
+                  height={459}
                   className="mb-2 h-auto w-full rounded"
+                  loading="lazy"
                 />
                 <p className="text-sm text-muted-foreground">Enter orders with timing.</p>
               </div>
               <div>
                 <h3 className="mb-2 font-semibold">Finished Goods/Routing</h3>
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/FG.png"
                   alt="Finished goods"
+                  width={400}
+                  height={300}
                   className="mb-2 h-auto w-full rounded"
+                  loading="lazy"
                 />
                 <p className="text-sm text-muted-foreground">Define scheduling with workcenters.</p>
               </div>
               <div>
                 <h3 className="mb-2 font-semibold">Schedule</h3>
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/schdle.png"
                   alt="Schedule"
+                  width={400}
+                  height={300}
                   className="mb-2 h-auto w-full rounded"
+                  loading="lazy"
                 />
                 <p className="text-sm text-muted-foreground">Advanced scheduling engine.</p>
               </div>
               <div>
                 <h3 className="mb-2 font-semibold">InSights</h3>
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/insight.png"
                   alt="InSights"
+                  width={400}
+                  height={300}
                   className="mb-2 h-auto w-full rounded"
+                  loading="lazy"
                 />
                 <p className="text-sm text-muted-foreground">Gantt charts and calendar views.</p>
               </div>
@@ -197,10 +225,13 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               <h2 className="mb-6 text-2xl font-bold text-slate-900">
                 CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
               </h2>
-              <img
+              <Image
                 src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                 alt="Collection of industry and business awards logos"
+                width={1024}
+                height={128}
                 className="mx-auto h-auto max-w-full"
+                loading="lazy"
               />
             </CardContent>
           </Card>

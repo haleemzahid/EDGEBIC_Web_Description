@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -271,10 +272,13 @@ export default function ProductionSchedulingProductsOldPage() {
                 <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Industry Awards and Recognition Logos"
+                  width={1024}
+                  height={128}
                   className="mx-auto h-auto max-w-full"
+                  loading="lazy"
                 />
               </CardContent>
             </Card>

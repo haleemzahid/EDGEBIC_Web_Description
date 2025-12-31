@@ -233,10 +233,13 @@ export default function EDGEBIPage(): React.JSX.Element {
                   </div>
                 </div>
                 <div className="flex items-center justify-center">
-                  <img
+                  <Image
                     src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
                     alt="Resource Manager-DB with EDGE (Enhanced Drag & drop Graphical Environment)"
+                    width={1024}
+                    height={483}
                     className="h-auto max-w-full rounded-lg shadow-lg"
+                    loading="lazy"
                   />
                 </div>
               </div>
@@ -260,10 +263,13 @@ export default function EDGEBIPage(): React.JSX.Element {
                   </div>
                 </div>
                 <div className="flex items-center justify-center">
-                  <img
+                  <Image
                     src="https://www.usersolutions.com/wp-content/uploads/2022/07/rmdb11.png"
                     alt="Resource Manager DB Processing Menu"
+                    width={800}
+                    height={600}
                     className="h-auto max-w-full rounded-lg shadow-lg"
+                    loading="lazy"
                   />
                 </div>
               </div>

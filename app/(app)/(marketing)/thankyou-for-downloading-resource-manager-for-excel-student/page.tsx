@@ -1,9 +1,9 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { AlertCircle, ArrowLeft, Download } from 'lucide-react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -30,10 +30,13 @@ export default function ThankYouResourceManagerStudentPage() {
           <Card className="mx-auto max-w-7xl">
             <CardContent className="p-8">
               <div className="mb-6 text-center">
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/thankyou.jpg"
                   alt="Customer service representative smiling with headset at computer"
+                  width={800}
+                  height={600}
                   className="mx-auto mb-6 h-auto w-full rounded-lg shadow-lg"
+                  loading="lazy"
                 />
               </div>
 
@@ -137,10 +140,13 @@ export default function ThankYouResourceManagerStudentPage() {
                 <h3 className="mb-6 text-2xl font-bold text-slate-900 sm:text-3xl">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
+                  width={1024}
+                  height={128}
                   className="mx-auto h-auto w-full"
+                  loading="lazy"
                 />
               </CardContent>
             </Card>

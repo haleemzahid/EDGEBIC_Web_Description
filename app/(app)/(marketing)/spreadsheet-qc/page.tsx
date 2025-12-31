@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function SpreadsheetQCPage() {
@@ -38,10 +40,13 @@ export default function SpreadsheetQCPage() {
                 </p>
               </div>
               <div className="flex justify-center">
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/09/SQC-Menu.png"
                   alt="Spreadsheet quality control software with various graph templates"
+                  width={800}
+                  height={600}
                   className="h-auto max-w-full rounded-lg shadow-lg"
+                  loading="lazy"
                 />
               </div>
             </div>
@@ -49,10 +54,13 @@ export default function SpreadsheetQCPage() {
             {/* How It Works Section - Image Left, Text Right */}
             <div className="grid items-center gap-8 md:grid-cols-2">
               <div className="order-2 flex justify-center md:order-1">
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/09/SQC-MR-1024x713-1.png"
                   alt="Control chart and process capability analysis spreadsheet"
+                  width={1024}
+                  height={713}
                   className="h-auto max-w-full rounded-lg shadow-lg"
+                  loading="lazy"
                 />
               </div>
               <div className="order-1 md:order-2">
@@ -108,10 +116,13 @@ export default function SpreadsheetQCPage() {
                 </ul>
               </div>
               <div className="flex justify-center">
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/09/SQC-Pareto.png"
                   alt="Excel spreadsheet displaying a Pareto diagram with defect types"
+                  width={800}
+                  height={600}
                   className="h-auto max-w-full rounded-lg shadow-lg"
+                  loading="lazy"
                 />
               </div>
             </div>
@@ -122,10 +133,13 @@ export default function SpreadsheetQCPage() {
                 <h2 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
+                  width={1024}
+                  height={128}
                   className="mx-auto h-auto max-w-full"
+                  loading="lazy"
                 />
               </CardContent>
             </Card>

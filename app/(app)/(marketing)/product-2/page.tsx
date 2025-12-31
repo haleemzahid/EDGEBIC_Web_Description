@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { CheckCircle, ExternalLink, Quote } from 'lucide-react';
 
@@ -408,10 +409,13 @@ export default function Product2Page(): React.JSX.Element {
                 <h2 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
+                  width={1024}
+                  height={128}
                   className="mx-auto h-auto max-w-full"
+                  loading="lazy"
                 />
               </CardContent>
             </Card>

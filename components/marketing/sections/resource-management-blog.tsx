@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowUpRightIcon, CalendarIcon, UserIcon } from 'lucide-react';
 
 import { SiteHeading } from '@/components/marketing/fragments/site-heading';
@@ -86,16 +87,6 @@ const blogPosts = [
   }
 ];
 
-const categories = [
-  'All',
-  'Supply Chain',
-  'Technology',
-  'Manufacturing',
-  'Software',
-  'Case Study',
-  'Success Story'
-];
-
 export function ResourceManagementBlog() {
   return (
     <div className="relative min-h-screen">
@@ -149,11 +140,14 @@ export function ResourceManagementBlog() {
             {blogPosts.map((post, index) => (
               <Link key={index} href={post.href} className="block">
                 <Card className="group h-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer">
-                <div className="aspect-video overflow-hidden bg-muted">
-                  <img
+                <div className="relative aspect-video overflow-hidden bg-muted">
+                  <Image
                     src={post.image}
                     alt={post.title}
-                    className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
                   />
                 </div>
                 <CardHeader className="pb-4">
@@ -210,10 +204,13 @@ export function ResourceManagementBlog() {
                 <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
+                  width={1024}
+                  height={128}
                   className="mx-auto h-auto max-w-full"
+                  loading="lazy"
                 />
               </CardContent>
             </Card>

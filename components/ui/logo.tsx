@@ -1,4 +1,5 @@
 import * as React from 'react';
+import Image from 'next/image';
 
 import { AppInfo } from '@/constants/app-info';
 import { cn } from '@/lib/utils';
@@ -27,13 +28,13 @@ export function Logo({
         <div className="flex size-24 items-center justify-center p-1">
           <div className="flex size-24 items-center justify-center">
             {/* EDGEBIC Logo */}
-            <img
-              style={{ maxWidth: 'fit-content', height: 'auto' }}
+            <Image
               src="/logos/edgebic-logo.png"
               alt="EDGEBIC Logo"
-              width="100"
-              height="100"
+              width={100}
+              height={100}
               className="object-contain"
+              priority
             />
           </div>
         </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { CheckCircle2 } from 'lucide-react';
 
@@ -112,10 +113,13 @@ export default function ResourceManagerExcelInDepthPage() {
               </div>
 
               <div className="my-6 flex justify-center">
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/rmusman.gif"
                   alt="Delivery worker pushing a hand truck with boxes"
+                  width={400}
+                  height={300}
                   className="rounded-lg shadow-md"
+                  loading="lazy"
                 />
               </div>
             </CardContent>
@@ -299,10 +303,13 @@ export default function ResourceManagerExcelInDepthPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="mb-6 flex justify-center">
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/usmap.gif"
                   alt="Drawn treasure map with red X mark"
+                  width={400}
+                  height={300}
                   className="rounded-lg shadow-md"
+                  loading="lazy"
                 />
               </div>
 
@@ -358,10 +365,13 @@ export default function ResourceManagerExcelInDepthPage() {
               </p>
 
               <div className="my-6 flex justify-center">
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/rmscreen2.jpg"
                   alt="Screenshot of a resource management software interface"
+                  width={800}
+                  height={600}
                   className="h-auto w-full rounded-lg shadow-md"
+                  loading="lazy"
                 />
               </div>
             </CardContent>
@@ -486,10 +496,13 @@ export default function ResourceManagerExcelInDepthPage() {
               </p>
 
               <div className="flex justify-center">
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/07b.jpg"
                   alt="Screenshot of a spreadsheet software interface"
+                  width={800}
+                  height={600}
                   className="h-auto w-full rounded-lg shadow-md"
+                  loading="lazy"
                 />
               </div>
             </CardContent>
@@ -515,10 +528,13 @@ export default function ResourceManagerExcelInDepthPage() {
               </p>
 
               <div className="flex justify-center">
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/sumrpt.jpg"
                   alt="Spreadsheet and graph showing production schedule data"
+                  width={800}
+                  height={600}
                   className="h-auto w-full rounded-lg shadow-md"
+                  loading="lazy"
                 />
               </div>
             </CardContent>
@@ -541,10 +557,13 @@ export default function ResourceManagerExcelInDepthPage() {
               </p>
 
               <div className="flex justify-center">
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/item.jpg"
                   alt="Blurry image of a workcenter production report"
+                  width={800}
+                  height={600}
                   className="h-auto w-full rounded-lg shadow-md"
+                  loading="lazy"
                 />
               </div>
             </CardContent>
@@ -608,10 +627,13 @@ export default function ResourceManagerExcelInDepthPage() {
               </p>
 
               <div className="flex justify-center">
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/tree.jpg"
                   alt="Flow chart diagram in spreadsheet software"
+                  width={800}
+                  height={600}
                   className="h-auto w-full rounded-lg shadow-md"
+                  loading="lazy"
                 />
               </div>
             </CardContent>
@@ -638,10 +660,13 @@ export default function ResourceManagerExcelInDepthPage() {
               </p>
 
               <div className="flex justify-center">
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/prodrpt.jpg"
                   alt="Job cost analysis chart with data and graph"
+                  width={800}
+                  height={600}
                   className="h-auto w-full rounded-lg shadow-md"
+                  loading="lazy"
                 />
               </div>
             </CardContent>
@@ -670,10 +695,13 @@ export default function ResourceManagerExcelInDepthPage() {
               </p>
 
               <div className="flex justify-center">
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/10/porpt.jpg"
                   alt="Table of purchase orders with status details"
+                  width={800}
+                  height={600}
                   className="h-auto w-full rounded-lg shadow-md"
+                  loading="lazy"
                 />
               </div>
             </CardContent>
@@ -713,10 +741,13 @@ export default function ResourceManagerExcelInDepthPage() {
                 <h2 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
-                <img
+                <Image
                   src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
+                  width={1024}
+                  height={128}
                   className="mx-auto h-auto max-w-full"
+                  loading="lazy"
                 />
               </CardContent>
             </Card>
