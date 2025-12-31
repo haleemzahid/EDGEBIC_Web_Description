@@ -60,7 +60,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
         <div className="mt-6 lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
           <div className="mt-6 space-y-4 lg:mt-0">
             <h3 className="text-xl font-bold text-[#003d5c] md:text-2xl">
-              Integrated MRP and capacity planning
+              RMDB Integrate MRP and capacity planning
             </h3>
             <p className="text-base leading-relaxed text-slate-700">
               Manage material requirements, prevent bottlenecks with finite

@@ -99,12 +99,12 @@ export function HeroContent(): React.JSX.Element {
             </div>
 
             {/* Solution Approach */}
-            <p className="text-md font-semibold tracking-wide text-white">
+            <p className="text-md pt-[30px] font-semibold tracking-wide text-yellow-400">
               LESS TRAINING | QUICKER IMPLEMENTATION | FASTER RETURN | Preventive Maintenance
             </p>
 
             {/* Action Buttons */}
-            <div className="flex flex-col items-center justify-center gap-3 pt-[30px]  sm:flex-row">
+            <div className="flex flex-col items-center justify-center gap-x-3 !mt-3    sm:flex-row">
               <button
                 onClick={handleFirstVideoButtonClick}
                 className="inline-flex min-w-[200px] items-center justify-center gap-1 rounded-[10px] bg-yellow-400 px-6 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
