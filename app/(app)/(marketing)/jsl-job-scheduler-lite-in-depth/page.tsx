@@ -73,7 +73,7 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
                 </div>
                 <div className="flex items-center justify-center">
                   <Image
-                    src="/images/Edgebic/2022-10/insight-1.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/insight-1.png"
                     alt="JSL Production Scheduling Interface"
                     width={600}
                     height={400}
@@ -109,7 +109,7 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
                 </div>
                 <div className="flex items-center justify-center">
                   <Image
-                    src="/images/Edgebic/2022-10/le.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/le.png"
                     alt="JSL Interface"
                     width={500}
                     height={350}
@@ -141,7 +141,7 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
                 </div>
                 <div className="flex items-center justify-center">
                   <Image
-                    src="/images/Edgebic/2022-10/insight-1.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/insight-1.png"
                     alt="Production scheduling software interface"
                     width={600}
                     height={400}
@@ -169,14 +169,14 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
                 </div>
                 <div className="mt-6 grid gap-4 md:grid-cols-2">
                   <Image
-                    src="/images/Edgebic/2022-10/rit.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/rit.png"
                     alt="Daily work hours tracking"
                     width={500}
                     height={300}
                     className="rounded-lg shadow-md"
                   />
                   <Image
-                    src="/images/Edgebic/2022-10/le.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/le.png"
                     alt="Data import interface"
                     width={500}
                     height={300}
@@ -207,7 +207,7 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
                 </div>
                 <div className="flex items-center justify-center">
                   <Image
-                    src="/images/Edgebic/2022-10/import.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/import.png"
                     alt="Data import window"
                     width={500}
                     height={300}
@@ -220,7 +220,7 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div className="flex items-center justify-center lg:order-1">
                   <Image
-                    src="/images/Edgebic/2022-10/dailyhours.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/dailyhours.png"
                     alt="Daily Hours interface"
                     width={500}
                     height={300}
@@ -245,7 +245,7 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
                 </div>
                 <div className="flex items-center justify-center">
                   <Image
-                    src="/images/Edgebic/2022-10/holidays.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/holidays.png"
                     alt="Holiday management interface"
                     width={500}
                     height={300}
@@ -258,7 +258,7 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div className="flex items-center justify-center lg:order-1">
                   <Image
-                    src="/images/Edgebic/2022-10/resoursces.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/resoursces.png"
                     alt="Resource management interface"
                     width={500}
                     height={300}
@@ -283,7 +283,7 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
                 </div>
                 <div className="flex items-center justify-center">
                   <Image
-                    src="/images/Edgebic/2022-10/FG.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/FG.png"
                     alt="Inventory management interface"
                     width={500}
                     height={300}
@@ -296,7 +296,7 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div className="flex items-center justify-center lg:order-1">
                   <Image
-                    src="/images/Edgebic/2022-10/orders-1024x459.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/orders-1024x459.png"
                     alt="Order management system"
                     width={500}
                     height={300}
@@ -329,7 +329,7 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
                 </div>
                 <div className="flex items-center justify-center">
                   <Image
-                    src="/images/Edgebic/2022-10/schdle.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/schdle.png"
                     alt="Job scheduling interface"
                     width={500}
                     height={300}
@@ -342,7 +342,7 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div className="flex items-center justify-center lg:order-1">
                   <Image
-                    src="/images/Edgebic/2022-10/insight.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/insight.png"
                     alt="Scheduling software with calendar"
                     width={500}
                     height={300}
@@ -388,7 +388,7 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
                 </div>
                 <div className="flex items-center justify-center">
                   <Image
-                    src="/images/Edgebic/2022-10/exdata.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/exdata.png"
                     alt="Data export interface"
                     width={500}
                     height={300}
@@ -401,7 +401,7 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div className="flex items-center justify-center lg:order-1">
                   <Image
-                    src="/images/Edgebic/2022-10/th-conf.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/th-conf.png"
                     alt="Theme configuration interface"
                     width={500}
                     height={300}
@@ -426,7 +426,7 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
                 </div>
                 <div className="flex items-center justify-center">
                   <Image
-                    src="/images/Edgebic/2022-10/Reports.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/Reports.png"
                     alt="Schedule report interface"
                     width={500}
                     height={300}
@@ -450,7 +450,7 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
                     The trial includes full functionality so you can evaluate all features before purchasing.
                   </p>
                   <a
-                    href="/images/Edgebic/2022-10/JSLsetup.zip"
+                    href="https://www.usersolutions.com/wp-content/uploads/2022/10/JSLsetup.zip"
                     download="JSLsetup.zip"
                     className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600"
                   >
@@ -460,7 +460,7 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
               </div>
               <div className="flex items-center justify-center">
                 <Image
-                  src="/images/Edgebic/2022-10/insight-1.png"
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/insight-1.png"
                   alt="JSL Download"
                   width={600}
                   height={400}
@@ -480,10 +480,13 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
               <h3 className="mb-6 text-2xl font-bold text-slate-900">
                 CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
               </h3>
-              <img
-                src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+              <Image
+                src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                 alt="Collection of industry and business awards logos"
+                width={1024}
+                height={128}
                 className="mx-auto h-auto max-w-full"
+                loading="lazy"
               />
             </CardContent>
           </Card>

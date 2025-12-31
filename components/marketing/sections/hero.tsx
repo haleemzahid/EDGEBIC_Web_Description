@@ -255,7 +255,7 @@ function HeroIllustration(): React.JSX.Element {
             <UnderlinedTabsContent value="feature1">
               <Image
                 quality={100}
-                src="/images/Edgebic/2022-12/slide1.jpg"
+                src="https://www.usersolutions.com/wp-content/uploads/2022/12/slide1.jpg"
                 width="1328"
                 height="727"
                 alt="Feature 1 screenshot"
@@ -265,7 +265,7 @@ function HeroIllustration(): React.JSX.Element {
             <UnderlinedTabsContent value="feature2">
               <Image
                 quality={100}
-                src="/images/Edgebic/2022-12/slide2.jpg"
+                src="https://www.usersolutions.com/wp-content/uploads/2022/12/slide2.jpg"
                 width="1328"
                 height="727"
                 alt="Feature 2 screenshot"
@@ -275,7 +275,7 @@ function HeroIllustration(): React.JSX.Element {
             <UnderlinedTabsContent value="feature3">
               <Image
                 quality={100}
-                src="/images/Edgebic/2022-12/slide3.jpg"
+                src="https://www.usersolutions.com/wp-content/uploads/2022/12/slide3.jpg"
                 width="1328"
                 height="727"
                 alt="Feature 3 screenshot"
@@ -285,7 +285,7 @@ function HeroIllustration(): React.JSX.Element {
             <UnderlinedTabsContent value="feature4">
               <Image
                 quality={100}
-                src="/images/Edgebic/2022-12/slide4.jpg"
+                src="https://www.usersolutions.com/wp-content/uploads/2022/12/slide4.jpg"
                 width="1328"
                 height="727"
                 alt="Feature 4 screenshot"
@@ -295,7 +295,7 @@ function HeroIllustration(): React.JSX.Element {
             <UnderlinedTabsContent value="feature5">
               <Image
                 quality={100}
-                src="/images/Edgebic/2022-12/slide4.jpg"
+                src="https://www.usersolutions.com/wp-content/uploads/2022/12/slide4.jpg"
                 width="1328"
                 height="727"
                 alt="Feature 5 screenshot"
@@ -329,10 +329,13 @@ export function Hero(): React.JSX.Element {
               CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
             </h3>
             <div className="flex justify-center">
-              <img
-                src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+              <Image
+                src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                 alt="Collection of industry and business awards logos"
+                width={1024}
+                height={128}
                 className="h-auto max-w-full rounded-lg shadow-md"
+                loading="lazy"
               />
             </div>
           </CardContent>

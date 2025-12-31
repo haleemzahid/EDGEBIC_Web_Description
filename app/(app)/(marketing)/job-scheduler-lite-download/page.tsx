@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Download } from 'lucide-react';
 
@@ -50,7 +51,7 @@ export default function JobSchedulerLiteDownloadPage() {
             <CardHeader>
               <CardTitle className="text-center text-3xl font-bold">
                 <a
-                  href="/images/Edgebic/2022-10/JSLsetup.zip"
+                  href="https://www.usersolutions.com/wp-content/uploads/2022/10/JSLsetup.zip"
                   className="text-blue-600 hover:underline"
                 >
                   EDGEBIC Download
@@ -69,7 +70,7 @@ export default function JobSchedulerLiteDownloadPage() {
                   className="mb-6"
                 >
                   <a
-                    href="/images/Edgebic/2022-10/JSLsetup.zip"
+                    href="https://www.usersolutions.com/wp-content/uploads/2022/10/JSLsetup.zip"
                     download
                   >
                     <Download className="mr-2 size-5" />
@@ -193,10 +194,13 @@ export default function JobSchedulerLiteDownloadPage() {
                   and importing content quickly.
                 </p>
 
-                <img
-                  src="/images/Edgebic/2022-10/blck.png"
+                <Image
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/blck.png"
                   alt="Screenshot of EDGEBIC folder with files"
+                  width={800}
+                  height={600}
                   className="my-6 h-auto w-full rounded-lg shadow-md"
+                  loading="lazy"
                 />
 
                 <p>The database will default to C:\ProgramData\EDGEBIC</p>
@@ -220,10 +224,13 @@ export default function JobSchedulerLiteDownloadPage() {
             <h2 className="mb-6 text-3xl font-bold">
               CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
             </h2>
-            <img
-              src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+            <Image
+              src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
               alt="Collection of industry and business awards logos"
+              width={1024}
+              height={128}
               className="h-auto w-full"
+              loading="lazy"
             />
           </div>
         </div>

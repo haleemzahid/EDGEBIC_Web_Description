@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckCircle2 } from 'lucide-react';
 import ReCAPTCHA from 'react-google-recaptcha';
@@ -292,10 +293,13 @@ export default function ContactUsPage() {
                 <h2 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
-                <img
-                  src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                <Image
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
+                  width={1024}
+                  height={128}
                   className="mx-auto h-auto max-h-32 max-w-full object-contain"
+                  loading="lazy"
                 />
               </CardContent>
             </Card>

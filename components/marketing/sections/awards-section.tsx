@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 
 export function AwardsSection(): React.JSX.Element {
   const awards = [
@@ -90,10 +91,13 @@ export function AwardsSection(): React.JSX.Element {
                     className="h-12 w-auto max-w-[150px] lg:h-16"
                   />
                 ) : (
-                  <img
+                  <Image
                     src={award.image}
                     alt={award.alt}
+                    width={150}
+                    height={64}
                     className="h-12 w-auto max-w-[150px] object-contain lg:h-16"
+                    loading="lazy"
                   />
                 )}
               </a>

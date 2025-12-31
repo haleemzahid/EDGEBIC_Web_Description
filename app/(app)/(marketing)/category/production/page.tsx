@@ -43,7 +43,7 @@ export default function ProductionCategoryPage() {
               <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
                 <div className="relative h-64 w-full overflow-hidden">
                   <Image
-                    src="/images/Edgebic/2022-07/AirCraftMaint.jpg"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/AirCraftMaint.jpg"
                     alt="Submarine crew in control room"
                     fill
                     className="object-cover transition-transform hover:scale-105"
@@ -80,7 +80,7 @@ export default function ProductionCategoryPage() {
               <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
                 <div className="relative h-64 w-full overflow-hidden">
                   <Image
-                    src="/images/Edgebic/2024-02/sdf.jpg"
+                    src="https://www.usersolutions.com/wp-content/uploads/2024/02/sdf.jpg"
                     alt="Illustration of a worker with construction tools icons"
                     fill
                     className="object-cover transition-transform hover:scale-105"
@@ -121,10 +121,13 @@ export default function ProductionCategoryPage() {
                   <h2 className="mb-6 text-2xl font-bold text-slate-900">
                     CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                   </h2>
-                  <img
-                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                     alt="Collection of industry and business awards logos"
+                    width={1024}
+                    height={128}
                     className="mx-auto h-auto max-w-full"
+                    loading="lazy"
                   />
                 </CardContent>
               </Card>

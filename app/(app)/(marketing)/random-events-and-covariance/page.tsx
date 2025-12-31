@@ -78,7 +78,7 @@ export default function RandomEventsCovariancePage() {
               <div className="flex justify-center">
                 <div className="relative h-64 w-full max-w-md overflow-hidden rounded-lg">
                   <Image
-                    src="/images/Edgebic/2022-07/cluster.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/cluster.png"
                     alt="Scatter plot with ellipses highlighting data clusters"
                     fill
                     className="object-contain"
@@ -92,7 +92,7 @@ export default function RandomEventsCovariancePage() {
               <div className="order-2 flex justify-center md:order-1">
                 <div className="relative h-32 w-full max-w-md overflow-hidden rounded-lg">
                   <Image
-                    src="/images/Edgebic/2022-07/Covariance-300x66-1.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/Covariance-300x66-1.png"
                     alt="Covariance formula in mathematical notation"
                     fill
                     className="object-contain"
@@ -125,10 +125,13 @@ export default function RandomEventsCovariancePage() {
                 <h2 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h2>
-                <img
-                  src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                <Image
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
+                  width={1024}
+                  height={128}
                   className="mx-auto h-auto max-w-full"
+                  loading="lazy"
                 />
               </CardContent>
             </Card>

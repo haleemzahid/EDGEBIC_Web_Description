@@ -1,5 +1,6 @@
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { format } from 'date-fns';
 
 import { LexicalRenderer } from '@/components/marketing/blog/lexical-renderer';
@@ -63,11 +64,15 @@ export function BlogPost({ post }: BlogPostProps): React.JSX.Element {
           </Link>
           <div className="space-y-8">
             {post.featuredImage && (
-              <img
-                src={post.featuredImage}
-                alt={post.title}
-                className="w-full h-auto rounded-lg object-cover max-h-96"
-              />
+              <div className="relative w-full aspect-video max-h-96 overflow-hidden rounded-lg">
+                <Image
+                  src={post.featuredImage}
+                  alt={post.title}
+                  fill
+                  className="object-cover"
+                  loading="lazy"
+                />
+              </div>
             )}
             <div className="flex flex-row items-center justify-between gap-4 text-base text-muted-foreground">
               <span className="flex flex-row items-center gap-2">
@@ -155,11 +160,15 @@ export function BlogPost({ post }: BlogPostProps): React.JSX.Element {
                         </h3>
                       )}
                       {block.media && (
-                        <img
-                          src={getMediaUrl(block.media.url)}
-                          alt={block.media.alt || block.blockName || 'Media'}
-                          className="w-full h-auto rounded-lg"
-                        />
+                        <div className="relative w-full aspect-video overflow-hidden rounded-lg">
+                          <Image
+                            src={getMediaUrl(block.media.url)}
+                            alt={block.media.alt || block.blockName || 'Media'}
+                            fill
+                            className="object-cover"
+                            loading="lazy"
+                          />
+                        </div>
                       )}
                     </div>
                   );

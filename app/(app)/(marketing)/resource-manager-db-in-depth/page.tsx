@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 
 import { EDGEBIContent } from '@/components/marketing/sections/edgebi-content';
 import { RMDBFeatureList } from '@/components/marketing/sections/rmdb-feature-list';
@@ -79,10 +80,13 @@ export default function ResourceManagerDBInDepthPage() {
                   </div>
                 </div>
                 <div className="flex items-center justify-center">
-                  <img
-                    src="/images/Edgebic/2022-07/RMDB-EDGE2-1024x483.png"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
                     alt="Resource Manager-DB with EDGE (Enhanced Drag & drop Graphical Environment)"
+                    width={1024}
+                    height={483}
                     className="h-auto max-w-full rounded-lg shadow-lg"
+                    loading="lazy"
                   />
                 </div>
               </div>
@@ -91,22 +95,28 @@ export default function ResourceManagerDBInDepthPage() {
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div className="flex justify-center">
                   <div className="aspect-video w-full overflow-hidden rounded-lg shadow-lg">
-                    <iframe
-                      src="https://www.youtube.com/embed/6B4A-acolGk"
-                      title="Edge BI User Solutions"
-                      className="h-full w-full"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      referrerPolicy="strict-origin-when-cross-origin"
-                      allowFullScreen
-                    />
+                    <video
+                      className="h-full w-full object-cover"
+                      controls
+                      playsInline
+                      preload="auto"
+                    >
+                      <source
+                        src="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE BI User Solutions.mp4"
+                        type="video/mp4"
+                      />
+                      Your browser does not support the video tag.
+                    </video>
                   </div>
                 </div>
                 <div className="flex items-center justify-center">
-                  <img
-                    src="/images/Edgebic/2022-07/rmdb11.png"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/rmdb11.png"
                     alt="Resource Manager DB Processing Menu"
+                    width={800}
+                    height={600}
                     className="h-auto max-w-full rounded-lg shadow-lg"
+                    loading="lazy"
                   />
                 </div>
               </div>
@@ -136,30 +146,39 @@ export default function ResourceManagerDBInDepthPage() {
                   </p>
                 </div>
                 <div>
-                  <img
-                    src="/images/Edgebic/2022-10/RMDB-MainMenu.png"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-MainMenu.png"
                     alt="RMDB Main Menu Dashboard"
+                    width={800}
+                    height={600}
                     className="w-full rounded-lg shadow-md"
+                    loading="lazy"
                   />
                 </div>
               </div>
 
               {/* Make Manufacturing Great Again Section */}
               <div className="flex justify-center">
-                <img
-                  src="/images/Edgebic/2022-10/MMGAsmall_Colver.png"
+                <Image
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/MMGAsmall_Colver.png"
                   alt="Make Manufacturing Great Again - Vintage Car"
+                  width={400}
+                  height={300}
                   className="max-w-md rounded-lg"
+                  loading="lazy"
                 />
               </div>
 
               {/* Key Benefits Section */}
               <div className="grid items-center gap-8 md:grid-cols-2">
                 <div>
-                  <img
-                    src="/images/Edgebic/2022-10/ERP_Scheduling-300x245-1.png"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/ERP_Scheduling-300x245-1.png"
                     alt="ERP Scheduling Integration"
+                    width={300}
+                    height={245}
                     className="w-full rounded-lg"
+                    loading="lazy"
                   />
                 </div>
                 <div>
@@ -202,10 +221,13 @@ export default function ResourceManagerDBInDepthPage() {
                   </ul>
                 </div>
                 <div>
-                  <img
-                    src="/images/Edgebic/2022-10/Manufacturing_Excel_Dashboard-1024x376.png"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/Manufacturing_Excel_Dashboard-1024x376.png"
                     alt="Manufacturing Excel Dashboard"
+                    width={1024}
+                    height={376}
                     className="w-full rounded-lg shadow-md"
+                    loading="lazy"
                   />
                 </div>
               </div>
@@ -240,10 +262,13 @@ export default function ResourceManagerDBInDepthPage() {
                   </p>
                 </div>
                 <div>
-                  <img
-                    src="/images/Edgebic/2022-10/RMDB-Data-Import.png"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-Data-Import.png"
                     alt="RMDB Import Data Dialog"
+                    width={800}
+                    height={600}
                     className="w-full rounded-lg shadow-md"
+                    loading="lazy"
                   />
                 </div>
               </div>
@@ -253,10 +278,13 @@ export default function ResourceManagerDBInDepthPage() {
                 <h2 className="mb-6 text-2xl font-bold">Check the "MAP"</h2>
                 <div className="grid items-center gap-8 md:grid-cols-2">
                   <div className="flex justify-center">
-                    <img
-                      src="/images/Edgebic/2022-10/usmap.gif"
+                    <Image
+                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/usmap.gif"
                       alt="Treasure Map illustration"
+                      width={300}
+                      height={225}
                       className="max-w-xs"
+                      loading="lazy"
                     />
                   </div>
                   <div>
@@ -298,10 +326,13 @@ export default function ResourceManagerDBInDepthPage() {
                     </p>
                   </div>
                   <div>
-                    <img
-                      src="/images/Edgebic/2022-10/RMDB-MainMenu.png"
+                    <Image
+                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-MainMenu.png"
                       alt="RMDB Main Menu Interface"
+                      width={800}
+                      height={600}
                       className="w-full rounded-lg shadow-md"
+                      loading="lazy"
                     />
                   </div>
                 </div>
@@ -366,10 +397,13 @@ export default function ResourceManagerDBInDepthPage() {
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {/* Gantt Report */}
                   <div>
-                    <img
-                      src="/images/Edgebic/2022-10/07b.jpg"
+                    <Image
+                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/07b.jpg"
                       alt="Gantt Report"
+                      width={800}
+                      height={600}
                       className="mb-3 w-full rounded-lg"
+                      loading="lazy"
                     />
                     <h3 className="mb-2 text-lg font-bold">Gantt Report</h3>
                     <p className="text-slate-600">
@@ -382,10 +416,13 @@ export default function ResourceManagerDBInDepthPage() {
 
                   {/* Summary Report */}
                   <div>
-                    <img
-                      src="/images/Edgebic/2022-10/sumrpt.jpg"
+                    <Image
+                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/sumrpt.jpg"
                       alt="Summary Report"
+                      width={800}
+                      height={600}
                       className="mb-3 w-full rounded-lg"
+                      loading="lazy"
                     />
                     <h3 className="mb-2 text-lg font-bold">Summary Report</h3>
                     <p className="text-slate-600">
@@ -398,10 +435,13 @@ export default function ResourceManagerDBInDepthPage() {
 
                   {/* Item Report */}
                   <div>
-                    <img
-                      src="/images/Edgebic/2022-10/item.jpg"
+                    <Image
+                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/item.jpg"
                       alt="Item Report"
+                      width={800}
+                      height={600}
                       className="mb-3 w-full rounded-lg"
+                      loading="lazy"
                     />
                     <h3 className="mb-2 text-lg font-bold">Item Report</h3>
                     <p className="text-slate-600">
@@ -413,10 +453,13 @@ export default function ResourceManagerDBInDepthPage() {
 
                   {/* Calendar Report */}
                   <div>
-                    <img
-                      src="/images/Edgebic/2022-10/07b.jpg"
+                    <Image
+                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/07b.jpg"
                       alt="Calendar Report"
+                      width={800}
+                      height={600}
                       className="mb-3 w-full rounded-lg"
+                      loading="lazy"
                     />
                     <h3 className="mb-2 text-lg font-bold">Calendar Report</h3>
                     <p className="text-slate-600">
@@ -426,10 +469,13 @@ export default function ResourceManagerDBInDepthPage() {
 
                   {/* Workcenter Report */}
                   <div>
-                    <img
-                      src="/images/Edgebic/2022-10/RPT-DD1-300x241-1.png"
+                    <Image
+                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/RPT-DD1-300x241-1.png"
                       alt="Workcenter Report"
+                      width={300}
+                      height={241}
                       className="mb-3 w-full rounded-lg"
+                      loading="lazy"
                     />
                     <h3 className="mb-2 text-lg font-bold">Workcenter Report</h3>
                     <p className="text-slate-600">
@@ -443,10 +489,13 @@ export default function ResourceManagerDBInDepthPage() {
 
                   {/* Routing & Tree Report */}
                   <div>
-                    <img
-                      src="/images/Edgebic/2022-10/tree.jpg"
+                    <Image
+                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/tree.jpg"
                       alt="Routing & Tree Report"
+                      width={800}
+                      height={600}
                       className="mb-3 w-full rounded-lg"
+                      loading="lazy"
                     />
                     <h3 className="mb-2 text-lg font-bold">Routing & Tree Report</h3>
                     <p className="text-slate-600">
@@ -457,10 +506,13 @@ export default function ResourceManagerDBInDepthPage() {
 
                   {/* Production Report */}
                   <div>
-                    <img
-                      src="/images/Edgebic/2022-10/prodrpt.jpg"
+                    <Image
+                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/prodrpt.jpg"
                       alt="Production Report"
+                      width={800}
+                      height={600}
                       className="mb-3 w-full rounded-lg"
+                      loading="lazy"
                     />
                     <h3 className="mb-2 text-lg font-bold">Production Report</h3>
                     <p className="text-slate-600">
@@ -474,10 +526,13 @@ export default function ResourceManagerDBInDepthPage() {
 
                   {/* Purchasing & Receiving */}
                   <div>
-                    <img
-                      src="/images/Edgebic/2022-10/porpt.jpg"
+                    <Image
+                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/porpt.jpg"
                       alt="Purchasing & Receiving Report"
+                      width={800}
+                      height={600}
                       className="mb-3 w-full rounded-lg"
+                      loading="lazy"
                     />
                     <h3 className="mb-2 text-lg font-bold">Purchasing & Receiving</h3>
                     <p className="text-slate-600">
@@ -522,7 +577,7 @@ export default function ResourceManagerDBInDepthPage() {
                     Download the comprehensive Quick Start PDF guide to begin your journey with RMDB.
                   </p>
                   <a
-                    href="/images/Edgebic/2022-10/rmdbquickstart23.pdf"
+                    href="https://www.usersolutions.com/wp-content/uploads/2022/10/rmdbquickstart23.pdf"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600"
@@ -532,10 +587,13 @@ export default function ResourceManagerDBInDepthPage() {
                 </div>
               </div>
               <div className="flex items-center justify-center">
-                <img
-                  src="/images/Edgebic/2022-10/RMDB-Data-Import.png"
+                <Image
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-Data-Import.png"
                   alt="RMDB Data Import"
+                  width={800}
+                  height={600}
                   className="rounded-lg shadow-lg"
+                  loading="lazy"
                 />
               </div>
             </div>
@@ -568,10 +626,13 @@ export default function ResourceManagerDBInDepthPage() {
                 </div>
               </div>
               <div className="flex items-center justify-center">
-                <img
-                  src="/images/Edgebic/2022-07/RMDB-EDGE2-1024x483.png"
+                <Image
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
                   alt="RMDB Live Demo"
+                  width={1024}
+                  height={483}
                   className="rounded-lg shadow-lg"
+                  loading="lazy"
                 />
               </div>
             </div>
@@ -589,10 +650,13 @@ export default function ResourceManagerDBInDepthPage() {
             <h2 className="mb-6 text-xl font-bold text-slate-900">
               CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
             </h2>
-            <img
-              src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+            <Image
+              src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
               alt="Collection of industry and business awards logos"
+              width={1024}
+              height={128}
               className="mx-auto h-auto max-w-full"
+              loading="lazy"
             />
           </div>
         </div>

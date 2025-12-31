@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-
+import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -42,10 +42,12 @@ export default function UncategorizedCategoryPage() {
               {/* Article 1: Li-ion Battery */}
               <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
                 <div className="relative h-48 w-full overflow-hidden">
-                  <img
-                    src="/images/Edgebic/2022-09/image04.png"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/09/image04.png"
                     alt="Person reading a magazine with business diagrams"
-                    className="size-full object-cover transition-transform hover:scale-105"
+                    fill
+                    className="object-cover transition-transform hover:scale-105"
+                    loading="lazy"
                   />
                 </div>
                 <CardContent className="flex flex-1 flex-col p-6">
@@ -76,10 +78,12 @@ export default function UncategorizedCategoryPage() {
               {/* Article 2: Scheduling System */}
               <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
                 <div className="relative h-48 w-full overflow-hidden">
-                  <img
-                    src="/images/Edgebic/2022-09/image3.png"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/09/image3.png"
                     alt="Laptop screen displaying code in development environment"
-                    className="size-full object-cover transition-transform hover:scale-105"
+                    fill
+                    className="object-cover transition-transform hover:scale-105"
+                    loading="lazy"
                   />
                 </div>
                 <CardContent className="flex flex-1 flex-col p-6">
@@ -110,10 +114,12 @@ export default function UncategorizedCategoryPage() {
               {/* Article 3: Small Manufacturer */}
               <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
                 <div className="relative h-48 w-full overflow-hidden">
-                  <img
-                    src="/images/Edgebic/2022-09/image06-1.png"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/09/image06-1.png"
                     alt="Business professionals analyzing financial charts and data"
-                    className="size-full object-cover transition-transform hover:scale-105"
+                    fill
+                    className="object-cover transition-transform hover:scale-105"
+                    loading="lazy"
                   />
                 </div>
                 <CardContent className="flex flex-1 flex-col p-6">
@@ -144,10 +150,12 @@ export default function UncategorizedCategoryPage() {
               {/* Article 4: User Solutions Named */}
               <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
                 <div className="relative h-48 w-full overflow-hidden">
-                  <img
-                    src="/images/Edgebic/2022-09/image05.png"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/09/image05.png"
                     alt="Team meeting with laptops in modern office"
-                    className="size-full object-cover transition-transform hover:scale-105"
+                    fill
+                    className="object-cover transition-transform hover:scale-105"
+                    loading="lazy"
                   />
                 </div>
                 <CardContent className="flex flex-1 flex-col p-6">
@@ -177,10 +185,12 @@ export default function UncategorizedCategoryPage() {
               {/* Article 5: Celebrating National Manufacturing Day */}
               <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
                 <div className="relative h-48 w-full overflow-hidden">
-                  <img
-                    src="/images/Edgebic/2022-07/celebrating.png"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/celebrating.png"
                     alt="Team celebrating with holiday hats in office"
-                    className="size-full object-cover transition-transform hover:scale-105"
+                    fill
+                    className="object-cover transition-transform hover:scale-105"
+                    loading="lazy"
                   />
                 </div>
                 <CardContent className="flex flex-1 flex-col p-6">
@@ -209,10 +219,12 @@ export default function UncategorizedCategoryPage() {
               {/* Article 6: User Solutions Joins Fight */}
               <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
                 <div className="relative h-48 w-full overflow-hidden">
-                  <img
-                    src="/images/Edgebic/2022-07/image02.png"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/image02.png"
                     alt="Person budgeting with calculator and documents on table"
-                    className="size-full object-cover transition-transform hover:scale-105"
+                    fill
+                    className="object-cover transition-transform hover:scale-105"
+                    loading="lazy"
                   />
                 </div>
                 <CardContent className="flex flex-1 flex-col p-6">
@@ -248,10 +260,13 @@ export default function UncategorizedCategoryPage() {
                   <h2 className="mb-6 text-2xl font-bold text-slate-900">
                     CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                   </h2>
-                  <img
-                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                     alt="Collection of industry and business awards logos"
+                    width={1024}
+                    height={128}
                     className="mx-auto h-auto max-w-full"
+                    loading="lazy"
                   />
                 </CardContent>
               </Card>

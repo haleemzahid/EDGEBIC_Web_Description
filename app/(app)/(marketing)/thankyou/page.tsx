@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function ThankYouPage() {
   return (
@@ -7,10 +8,13 @@ export default function ThankYouPage() {
         <div className="flex flex-col items-start gap-8 md:flex-row">
           {/* Image on left */}
           <div className="w-full md:w-1/2">
-            <img
-              src="/images/Edgebic/2022-10/thankyou.jpg"
+            <Image
+              src="https://www.usersolutions.com/wp-content/uploads/2022/10/thankyou.jpg"
               alt="Thank You"
+              width={500}
+              height={375}
               className="h-auto w-full"
+              loading="lazy"
             />
           </div>
 

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowUpRightIcon, CalendarIcon, UserIcon } from 'lucide-react';
 
 import { SiteHeading } from '@/components/marketing/fragments/site-heading';
@@ -24,7 +25,7 @@ const blogPosts = [
     readTime: '5 min read',
     category: 'Supply Chain',
     image:
-      '/images/Edgebic/2022-09/usersolutionsimage-300x211.png',
+      'https://www.usersolutions.com/wp-content/uploads/2022/09/usersolutionsimage-300x211.png',
     href: '/enhancing-supply-chain-visibility-through-advanced-scheduling-solutions'
   },
   {
@@ -36,7 +37,7 @@ const blogPosts = [
     readTime: '6 min read',
     category: 'Technology',
     image:
-      '/images/Edgebic/2022-07/AirCraftMaint.jpg',
+      'https://www.usersolutions.com/wp-content/uploads/2022/07/AirCraftMaint.jpg',
     href: '/erp-solutions-for-production-planning'
   },
   {
@@ -47,7 +48,7 @@ const blogPosts = [
     date: 'May 6, 2024',
     readTime: '7 min read',
     category: 'Manufacturing',
-    image: '/images/Edgebic/2024-02/sdf.jpg',
+    image: 'https://www.usersolutions.com/wp-content/uploads/2024/02/sdf.jpg',
     href: '/lean-manufacturing-solutions'
   },
   {
@@ -58,7 +59,7 @@ const blogPosts = [
     readTime: '4 min read',
     category: 'Software',
     image:
-      '/images/Edgebic/2022-09/image04-300x163.png',
+      'https://www.usersolutions.com/wp-content/uploads/2022/09/image04-300x163.png',
     href: '/li-ion-battery-production-scheduling-software'
   },
   {
@@ -69,7 +70,7 @@ const blogPosts = [
     readTime: '5 min read',
     category: 'Case Study',
     image:
-      '/images/Edgebic/2022-09/image3-300x163.png',
+      'https://www.usersolutions.com/wp-content/uploads/2022/09/image3-300x163.png',
     href: '/scheduling-system-narrows-skills-gap-for-fire-rated-glass'
   },
   {
@@ -81,19 +82,9 @@ const blogPosts = [
     readTime: '6 min read',
     category: 'Success Story',
     image:
-      '/images/Edgebic/2022-09/image06-1-300x163.png',
+      'https://www.usersolutions.com/wp-content/uploads/2022/09/image06-1-300x163.png',
     href: '/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive'
   }
-];
-
-const categories = [
-  'All',
-  'Supply Chain',
-  'Technology',
-  'Manufacturing',
-  'Software',
-  'Case Study',
-  'Success Story'
 ];
 
 export function ResourceManagementBlog() {
@@ -149,51 +140,54 @@ export function ResourceManagementBlog() {
             {blogPosts.map((post, index) => (
               <Link key={index} href={post.href} className="block">
                 <Card className="group h-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer">
-                  <div className="aspect-video overflow-hidden bg-muted">
-                    <img
-                      src={post.image}
-                      alt={post.title}
-                      className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  </div>
-                  <CardHeader className="pb-4">
-                    <div className="mb-2 flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <CalendarIcon className="size-4" />
-                        {post.date}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <UserIcon className="size-4" />
-                        {post.readTime}
-                      </div>
+                <div className="relative aspect-video overflow-hidden bg-muted">
+                  <Image
+                    src={post.image}
+                    alt={post.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                </div>
+                <CardHeader className="pb-4">
+                  <div className="mb-2 flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <CalendarIcon className="size-4" />
+                      {post.date}
                     </div>
-                    <Badge
-                      variant="secondary"
-                      className="mb-3 w-fit"
-                    >
-                      {post.category}
-                    </Badge>
-                    <CardTitle className="line-clamp-2 transition-colors group-hover:text-blue-600">
-                      <Link href={post.href}>
-                        {post.title}
-                      </Link>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <CardDescription className="mb-4 line-clamp-3">
-                      {post.description}
-                    </CardDescription>
+                    <div className="flex items-center gap-1">
+                      <UserIcon className="size-4" />
+                      {post.readTime}
+                    </div>
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className="mb-3 w-fit"
+                  >
+                    {post.category}
+                  </Badge>
+                  <CardTitle className="line-clamp-2 transition-colors group-hover:text-blue-600">
                     <Link href={post.href}>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto p-0 font-medium text-blue-600 hover:text-blue-700"
-                      >
-                        Read more
-                        <ArrowUpRightIcon className="ml-1 size-4" />
-                      </Button>
+                      {post.title}
                     </Link>
-                  </CardContent>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <CardDescription className="mb-4 line-clamp-3">
+                    {post.description}
+                  </CardDescription>
+                  <Link href={post.href}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto p-0 font-medium text-blue-600 hover:text-blue-700"
+                    >
+                      Read more
+                      <ArrowUpRightIcon className="ml-1 size-4" />
+                    </Button>
+                  </Link>
+                </CardContent>
                 </Card>
               </Link>
             ))}
@@ -210,10 +204,13 @@ export function ResourceManagementBlog() {
                 <h3 className="mb-6 text-2xl font-bold text-slate-900">
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
-                <img
-                  src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                <Image
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                   alt="Collection of industry and business awards logos"
+                  width={1024}
+                  height={128}
                   className="mx-auto h-auto max-w-full"
+                  loading="lazy"
                 />
               </CardContent>
             </Card>

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { NTClipboardToolBox } from './ntclipboard-toolbox';
 
 export function ManufacturingFeatureSection(): React.JSX.Element {
@@ -25,10 +26,13 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
 
           <div className="mt-6 lg:mt-0">
             <div className="relative h-[300px] w-full lg:h-[350px]">
-              <img
-                src="/images/features/rmdb-edge.png"
+              <Image
+                src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
                 alt="Accurate production scheduling with real-time visibility"
-                className=" size-full object-contain"
+                fill
+                sizes="(max-width: 768px) 100vw, 33vw"
+                className="object-contain"
+                loading="lazy"
               />
             </div>
           </div>
@@ -72,22 +76,28 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               </Link>
             </div>
           </div>
-          <div className="flex items-center justify-center lg:col-start-2">
-            <img
-              src="/images/features/rmdb-menu.png"
-              alt="Accurate production scheduling with real-time visibility"
-              className=" size-full object-contain"
+          <div className="relative flex h-[300px] items-center justify-center lg:col-start-2">
+            <Image
+              src="https://www.usersolutions.com/wp-content/uploads/2022/07/rmdb11.png"
+              alt="Integrated MRP and capacity planning dashboard"
+              fill
+              sizes="(max-width: 768px) 100vw, 33vw"
+              className="object-contain"
+              loading="lazy"
             />
           </div>
         </div>
 
         {/* Swing Control Software */}
         <div className="mt-6 lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
-          <div className="relative flex items-center justify-center lg:col-start-2">
-            <img
-              src="/images/features/rmdb-data-import.png"
-              alt="Swing Control Software features"
-              className=" size-full object-contain"
+          <div className="relative flex h-[300px] items-center justify-center lg:col-start-2">
+            <Image
+              src="https://www.usersolutions.com/wp-content/uploads/2022/10/RMDB-Data-Import.png"
+              alt="Data import features for production scheduling"
+              fill
+              sizes="(max-width: 768px) 100vw, 33vw"
+              className="object-contain"
+              loading="lazy"
             />
           </div>
 
@@ -152,11 +162,14 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             </div>
           </div>
 
-          <div className="flex items-center justify-center lg:col-start-2">
-            <img
-              src="/images/features/sqc-pareto.png"
+          <div className="relative flex h-[300px] items-center justify-center lg:col-start-2">
+            <Image
+              src="https://www.usersolutions.com/wp-content/uploads/2022/09/SQC-Pareto.png"
               alt="Real-time inventory overview"
-              className=" size-full object-contain"
+              fill
+              sizes="(max-width: 768px) 100vw, 33vw"
+              className="object-contain"
+              loading="lazy"
             />
           </div>
         </div>
@@ -842,31 +855,39 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 href="https://lifecore.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center rounded-lg border border-slate-200 bg-slate-900 p-6 shadow-sm transition-all hover:shadow-md"
+                title="Visit Lifecore website"
+                className="relative flex h-24 items-center justify-center rounded-lg border border-slate-200 bg-slate-900 p-6 shadow-sm transition-all hover:shadow-md"
               >
-                <img
+                <Image
                   src="https://lifecore.com/wp-content/uploads/2025/11/Lifecore-Inj-CDMO_Logo_REV_v2.png"
                   alt="Lifecore"
-                  className="h-auto max-h-16 w-full object-contain"
+                  width={150}
+                  height={50}
+                  className="object-contain"
+                  loading="lazy"
                 />
               </a>
               <a
                 href="https://www.viking-forge.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md"
+                title="Visit Viking Forge website"
+                className="relative flex h-24 items-center justify-center rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md"
               >
-                <img
+                <Image
                   src="https://www.viking-forge.com/wp-content/uploads/2020/02/vklogo.jpg"
                   alt="Viking Forge"
-                  className="h-auto max-h-16 w-full object-contain"
+                  width={150}
+                  height={50}
+                  className="object-contain"
+                  loading="lazy"
                 />
               </a>
               <a
                 href="https://mtmmanufacturing.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md"
+                className="flex h-24 items-center justify-center rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md"
               >
                 <span className="text-center text-lg font-bold text-[#003d5c]">
                   MTM Manufacturing
@@ -876,12 +897,16 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 href="https://www.dawloom.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md"
+                title="Visit Dawloom website"
+                className="relative flex h-24 items-center justify-center rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md"
               >
-                <img
+                <Image
                   src="https://www.dawloom.com/logos/FULL%20COLOR%20NO%20BCKG.svg"
                   alt="Dawloom"
-                  className="h-auto max-h-16 w-full object-contain"
+                  width={150}
+                  height={50}
+                  className="object-contain"
+                  loading="lazy"
                 />
               </a>
             </div>

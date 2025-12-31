@@ -1,5 +1,5 @@
 import * as React from 'react';
-
+import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,10 +46,13 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                 </p>
               </div>
               <div className="overflow-hidden rounded-lg shadow-lg">
-                <img
-                  src="/images/Edgebic/2022-10/insight-1.png"
+                <Image
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/insight-1.png"
                   alt="EDGEBIC production scheduling software interface"
+                  width={800}
+                  height={600}
                   className="h-auto w-full"
+                  loading="lazy"
                 />
               </div>
             </div>
@@ -64,10 +67,13 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
           <CardContent>
             <div className="grid gap-8 md:grid-cols-2">
               <div className="overflow-hidden rounded-lg shadow-lg">
-                <img
-                  src="/images/Edgebic/2022-10/mnn.jpeg"
+                <Image
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/10/mnn.jpeg"
                   alt="JSL software menu options and interface"
-                  className="h-[400px] w-full"
+                  width={800}
+                  height={400}
+                  className="h-[400px] w-full object-cover"
+                  loading="lazy"
                 />
               </div>
               <div className="flex flex-col justify-center">
@@ -141,10 +147,13 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                     sheet.
                   </p>
                   <div className="overflow-hidden rounded-lg">
-                    <img
-                      src="/images/Edgebic/2022-10/import.png"
+                    <Image
+                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/import.png"
                       alt="Data import software window with options and required columns"
+                      width={400}
+                      height={300}
                       className="h-auto w-full"
+                      loading="lazy"
                     />
                   </div>
                 </CardContent>
@@ -157,10 +166,13 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                     Set normal operating hours for your business.
                   </p>
                   <div className="overflow-hidden rounded-lg">
-                    <img
-                      src="/images/Edgebic/2022-10/dailyhours.png"
+                    <Image
+                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/dailyhours.png"
                       alt="Daily Work Hours tracking software interface"
+                      width={400}
+                      height={300}
                       className="h-auto w-full"
+                      loading="lazy"
                     />
                   </div>
                 </CardContent>
@@ -174,10 +186,13 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                     calendar-varying events.
                   </p>
                   <div className="overflow-hidden rounded-lg">
-                    <img
-                      src="/images/Edgebic/2022-10/holidays.png"
+                    <Image
+                      src="https://www.usersolutions.com/wp-content/uploads/2022/10/holidays.png"
                       alt="Holiday management software interface with dates and times"
+                      width={400}
+                      height={300}
                       className="h-auto w-full"
+                      loading="lazy"
                     />
                   </div>
                 </CardContent>
@@ -189,10 +204,13 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                   Add workcenters with name, description, and capacity.
                 </p>
                 <div className="overflow-hidden rounded-lg">
-                  <img
-                    src="/images/Edgebic/2022-10/resoursces.png"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/resoursces.png"
                     alt="Software resource management interface"
+                    width={400}
+                    height={300}
                     className="h-auto w-full"
+                    loading="lazy"
                   />
                 </div>
               </div>
@@ -205,10 +223,13 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                   Enter orders with workcenters and timing in sequential order.
                 </p>
                 <div className="overflow-hidden rounded-lg">
-                  <img
-                    src="/images/Edgebic/2022-10/orders-1024x459.png"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/orders-1024x459.png"
                     alt="Software order management system"
+                    width={1024}
+                    height={459}
                     className="h-auto w-full"
+                    loading="lazy"
                   />
                 </div>
               </div>
@@ -221,10 +242,13 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                   Define what will be scheduled with workcenters and timing.
                 </p>
                 <div className="overflow-hidden rounded-lg">
-                  <img
-                    src="/images/Edgebic/2022-10/FG.png"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/FG.png"
                     alt="Inventory management application interface with lists and buttons"
+                    width={400}
+                    height={300}
                     className="h-auto w-full"
+                    loading="lazy"
                   />
                 </div>
               </div>
@@ -236,10 +260,13 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                   priority-based allocation.
                 </p>
                 <div className="overflow-hidden rounded-lg">
-                  <img
-                    src="/images/Edgebic/2022-10/schdle.png"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/schdle.png"
                     alt="Job scheduling software interface"
+                    width={400}
+                    height={300}
                     className="h-auto w-full"
+                    loading="lazy"
                   />
                 </div>
               </div>
@@ -251,10 +278,13 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                   tracking, and visual scheduling.
                 </p>
                 <div className="overflow-hidden rounded-lg">
-                  <img
-                    src="/images/Edgebic/2022-10/insight.png"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/insight.png"
                     alt="Scheduling software with calendar and utilization graph"
+                    width={400}
+                    height={300}
                     className="h-auto w-full"
+                    loading="lazy"
                   />
                 </div>
               </div>
@@ -312,10 +342,13 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               25 Years of Award-Winning Software
             </h2>
             <div className="mx-auto max-w-7xl overflow-hidden rounded-lg">
-              <img
-                src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+              <Image
+                src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                 alt="Collection of industry and business awards logos"
+                width={1024}
+                height={128}
                 className="h-auto w-full"
+                loading="lazy"
               />
             </div>
           </div>

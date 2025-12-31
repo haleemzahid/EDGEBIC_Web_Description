@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 type TabType = 'summary' | 'rmdb' | 'live-demo';
 
-// Video Player Component - Lite YouTube for better performance
+// Video Player Component
 function VideoPlayer({
   videoUrl,
   title,
@@ -16,16 +16,6 @@ function VideoPlayer({
   onPlayStateChange?: (isPlaying: boolean) => void;
 }) {
   const videoRef = React.useRef<HTMLVideoElement>(null);
-  const [isActivated, setIsActivated] = React.useState(false);
-
-  // Check if it's a YouTube URL
-  const isYouTube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
-
-  // Extract video ID from YouTube URL
-  const getVideoId = (url: string) => {
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
-    return match ? match[1] : '';
-  };
 
   const handlePlay = () => {
     onPlayStateChange?.(true);
@@ -38,57 +28,6 @@ function VideoPlayer({
   const handleEnded = () => {
     onPlayStateChange?.(false);
   };
-
-  if (isYouTube) {
-    const videoId = getVideoId(videoUrl);
-    const thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
-
-    // Lite YouTube - show thumbnail until user clicks
-    if (!isActivated) {
-      return (
-        <button
-          type="button"
-          onClick={() => {
-            setIsActivated(true);
-            onPlayStateChange?.(true);
-          }}
-          className="absolute inset-0 size-full cursor-pointer"
-          aria-label={`Play ${title}`}
-        >
-          <img
-            src={thumbnailUrl}
-            alt={title}
-            className="size-full rounded-lg object-cover"
-            loading="lazy"
-          />
-          {/* Play button overlay */}
-          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20 transition-colors hover:bg-black/30">
-            <div className="flex size-16 items-center justify-center rounded-full bg-red-600 shadow-lg transition-transform hover:scale-110">
-              <svg
-                className="ml-1 size-8 text-white"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
-          </div>
-        </button>
-      );
-    }
-
-    return (
-      <iframe
-        src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
-        title={title}
-        className="absolute inset-0 size-full rounded-lg"
-        frameBorder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        referrerPolicy="strict-origin-when-cross-origin"
-        allowFullScreen
-      />
-    );
-  }
 
   return (
     <video
@@ -161,7 +100,7 @@ export default function EDGEBIPage(): React.JSX.Element {
               <div className="relative overflow-hidden rounded-lg shadow-lg">
                 <div className="relative aspect-video">
                   <VideoPlayer
-                    videoUrl="https://www.youtube.com/watch?v=-Rb6_Rop2JA"
+                    videoUrl="https://www.usersolutions.com/wp-content/uploads/2022/12/EDGEBI%20updated%20thumbnail.mp4"
                     title="EDGEBI Demo"
                     onPlayStateChange={setIsVideoPlaying}
                   />
@@ -188,7 +127,7 @@ export default function EDGEBIPage(): React.JSX.Element {
                 </div>
                 <div>
                   <Image
-                    src="/images/Edgebic/2022-10/f1.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/f1.png"
                     alt="EDGEBI Screenshot - Resource Manager DB interface"
                     width={800}
                     height={600}
@@ -201,7 +140,7 @@ export default function EDGEBIPage(): React.JSX.Element {
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div>
                   <Image
-                    src="/images/Edgebic/2022-10/f2.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/f2.png"
                     alt="EDGEBI Schedule Management Interface"
                     width={800}
                     height={600}
@@ -227,7 +166,7 @@ export default function EDGEBIPage(): React.JSX.Element {
                 </div>
                 <div>
                   <Image
-                    src="/images/Edgebic/2022-10/f3.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/f3.png"
                     alt="Heat Map - Color-coded capacity utilization"
                     width={800}
                     height={400}
@@ -240,7 +179,7 @@ export default function EDGEBIPage(): React.JSX.Element {
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div>
                   <Image
-                    src="/images/Edgebic/2022-10/f4.png"
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/10/f4.png"
                     alt="Schedule Key Dates Reports"
                     width={800}
                     height={400}
@@ -294,10 +233,13 @@ export default function EDGEBIPage(): React.JSX.Element {
                   </div>
                 </div>
                 <div className="flex items-center justify-center">
-                  <img
-                    src="/images/Edgebic/2022-07/RMDB-EDGE2-1024x483.png"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
                     alt="Resource Manager-DB with EDGE (Enhanced Drag & drop Graphical Environment)"
+                    width={1024}
+                    height={483}
                     className="h-auto max-w-full rounded-lg shadow-lg"
+                    loading="lazy"
                   />
                 </div>
               </div>
@@ -306,22 +248,28 @@ export default function EDGEBIPage(): React.JSX.Element {
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div className="flex justify-center">
                   <div className="aspect-video w-full overflow-hidden rounded-lg shadow-lg">
-                    <iframe
-                      src="https://www.youtube.com/embed/6B4A-acolGk"
-                      title="Edge BI User Solutions"
-                      className="h-full w-full"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      referrerPolicy="strict-origin-when-cross-origin"
-                      allowFullScreen
-                    />
+                    <video
+                      className="h-full w-full object-cover"
+                      controls
+                      playsInline
+                      preload="auto"
+                    >
+                      <source
+                        src="https://www.usersolutions.com/wp-content/uploads/2022/10/EDGE BI User Solutions.mp4"
+                        type="video/mp4"
+                      />
+                      Your browser does not support the video tag.
+                    </video>
                   </div>
                 </div>
                 <div className="flex items-center justify-center">
-                  <img
-                    src="/images/Edgebic/2022-07/rmdb11.png"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/rmdb11.png"
                     alt="Resource Manager DB Processing Menu"
+                    width={800}
+                    height={600}
                     className="h-auto max-w-full rounded-lg shadow-lg"
+                    loading="lazy"
                   />
                 </div>
               </div>
@@ -353,7 +301,7 @@ export default function EDGEBIPage(): React.JSX.Element {
               </div>
               <div className="flex items-center justify-center">
                 <Image
-                  src="/images/Edgebic/2022-07/RMDB-EDGE2-1024x483.png"
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/RMDB-EDGE2-1024x483.png"
                   alt="EDGEBI Live Demo"
                   width={600}
                   height={400}
@@ -374,7 +322,7 @@ export default function EDGEBIPage(): React.JSX.Element {
                 CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
               </h3>
               <Image
-                src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                 alt="Collection of industry and business awards logos"
                 width={1024}
                 height={128}

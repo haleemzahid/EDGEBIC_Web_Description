@@ -1,5 +1,6 @@
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { format, isBefore } from 'date-fns';
 import { ArrowRightIcon } from 'lucide-react';
 
@@ -51,10 +52,12 @@ export async function BlogPosts(): Promise<React.JSX.Element> {
                   {/* Featured Image */}
                   {post.featuredImage && (
                     <div className="relative aspect-video w-full overflow-hidden">
-                      <img
+                      <Image
                         src={post.featuredImage}
                         alt={post.title}
-                        className="h-full w-full object-cover"
+                        fill
+                        className="object-cover"
+                        loading="lazy"
                       />
                     </div>
                   )}

@@ -27,7 +27,7 @@ export default function ThankYouSpreadsheetSchedulerPage() {
           <div className="mx-auto max-w-7xl">
             <div className="mb-6 text-center">
               <Image
-                src="/images/Edgebic/2022-10/thankyou.jpg"
+                src="https://www.usersolutions.com/wp-content/uploads/2022/10/thankyou.jpg"
                 alt="Customer service representative smiling with headset at computer"
                 width={600}
                 height={400}
@@ -167,10 +167,13 @@ export default function ThankYouSpreadsheetSchedulerPage() {
                   CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                 </h3>
                 <div className="flex justify-center">
-                  <img
-                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                     alt="Collection of industry and business awards logos"
+                    width={1024}
+                    height={128}
                     className="h-auto w-full max-w-full rounded-lg shadow-md"
+                    loading="lazy"
                   />
                 </div>
               </CardContent>

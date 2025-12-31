@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-
+import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -39,10 +39,13 @@ export default function ModernProductionPlanningTagPage() {
             {/* Article */}
             <Card className="mb-6 overflow-hidden transition-shadow hover:shadow-lg">
               <div className="relative h-96 w-full overflow-hidden">
-                <img
-                  src="/images/Edgebic/2022-07/AirCraftMaint.jpg"
+                <Image
+                  src="https://www.usersolutions.com/wp-content/uploads/2022/07/AirCraftMaint.jpg"
                   alt="Submarine crew in control room"
+                  width={800}
+                  height={600}
                   className="size-full object-cover transition-transform hover:scale-105"
+                  loading="lazy"
                 />
               </div>
               <CardContent className="p-8">
@@ -78,10 +81,13 @@ export default function ModernProductionPlanningTagPage() {
                   <h2 className="mb-6 text-2xl font-bold text-slate-900">
                     CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
                   </h2>
-                  <img
-                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                  <Image
+                    src="https://www.usersolutions.com/wp-content/uploads/2022/07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
                     alt="Collection of industry and business awards logos"
+                    width={1024}
+                    height={128}
                     className="mx-auto h-auto max-w-full"
+                    loading="lazy"
                   />
                 </CardContent>
               </Card>
