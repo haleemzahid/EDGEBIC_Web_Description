@@ -110,50 +110,71 @@ export default function ResourceManagerForExcel2Page() {
         <div className="container mx-auto max-w-7xl px-4">
           {activeTab === 'summary' && (
             <div className="space-y-8">
+              {/* Description Text */}
+              <p className="leading-relaxed text-slate-900">
+                Resource Manager for Excel (RMX) features a Bill Of Resource (BOR) that allows any combination of
+                Workcenters and/or Products. RMX is ideal for companies who have no formal systems (ERP, MRP, etc.) as
+                tool to plan for and implement those systems, or to use to fill in any existing gaps for production scheduling.
+                With the BOR concept, you can manage both Material Requirements Planning as well as Production Planning
+                and Scheduling considering Finite Capacity.. For those applications that have a need for multiple concurrent
+                users, improved security (over Excel), seamless integration with other systems, and advanced planning and
+                scheduling options, Resource Manager-DB (RMDB) is the best choice.
+              </p>
 
-              {/* Screenshot */}
-              <div className="flex justify-center">
-                <Image
-                  src="/images/Edgebic/2022-07/RMX.png"
-                  alt="Resource Manager for Excel Screenshot"
-                  width={800}
-                  height={500}
-                  className="rounded-lg shadow-lg"
-                />
+              {/* Screenshot with Adaptable and Flexible Quote */}
+              <div className="grid items-start gap-8 lg:grid-cols-2">
+                <div>
+                  <h3 className="mb-4 text-xl font-semibold text-cyan-500">"Adaptable and Flexible"</h3>
+                  <p className="leading-relaxed text-slate-900">
+                    Resource Manager for Excel is a great solution for
+                    manufacturers who are not ready for a full-blown
+                    MRPII, ERP, or Shop Management System but realize
+                    the value of effective scheduling and planning.
+                    Resource Manager for Excel is unique in that it easily
+                    adapts to the way people are running their business
+                    today".
+                  </p>
+                  <p className="mt-4 leading-relaxed text-slate-900">
+                    <span className="italic">Mike Parks, Director of Georgia Tech's CMIT, an
+                    affiliate of the NIST Manufacturing Extension
+                    Partnership.</span>
+                  </p>
+                </div>
+                <div className="flex justify-center">
+                  <Image
+                    src="/images/Edgebic/2022-07/RMX.png"
+                    alt="Resource Manager for Excel Screenshot"
+                    width={600}
+                    height={400}
+                    className="rounded-lg"
+                  />
+                </div>
               </div>
-
-              {/* Testimonial */}
-              <Card className="bg-slate-50 border-slate-200">
-                <CardContent className="p-6">
-                  <blockquote>
-                    <p className="mb-4 text-slate-700 italic leading-relaxed">
-                      "Adaptable and Flexible: Resource Manager for Excel is a great solution
-                      for manufacturers who are not ready for a full-blown MRPII, ERP, or Shop
-                      Management System but realize the value of effective scheduling and planning.
-                      Resource Manager for Excel is unique in that it easily adapts to the way
-                      people are running their business today."
-                    </p>
-                    <footer className="text-sm font-semibold text-slate-900">
-                      — Mike Parks, Director of Georgia Tech's CMIT,
-                      <span className="block text-slate-600 font-normal">
-                        an affiliate of the NIST Manufacturing Extension Partnership
-                      </span>
-                    </footer>
-                  </blockquote>
-                </CardContent>
-              </Card>
 
               {/* Features */}
               <div>
                 <h2 className="mb-4 text-xl font-bold text-slate-900">Features</h2>
                 <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {features.map((feature, index) => (
-                    <li key={index} className="flex items-center gap-2 text-slate-700">
+                    <li key={index} className="flex items-center gap-2 text-slate-900">
                       <Check className="size-4 text-green-600 shrink-0" />
                       <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
+              </div>
+
+              {/* Video Section */}
+              <div className="flex justify-center">
+                <div className="aspect-video w-full max-w-3xl overflow-hidden rounded-lg shadow-lg">
+                  <iframe
+                    src="https://www.youtube.com/embed/74uO2H-eevc"
+                    title="Resource Manager for Excel Demo Video"
+                    className="size-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
               </div>
             </div>
           )}
