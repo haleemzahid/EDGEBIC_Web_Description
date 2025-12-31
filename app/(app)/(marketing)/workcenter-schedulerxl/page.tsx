@@ -61,7 +61,7 @@ export default function WorkcenterSchedulerXLPage() {
             {/* Video - Right Side */}
             <div className="aspect-video overflow-hidden rounded-lg shadow-lg">
               <iframe
-                src="https://www.youtube.com/embed/VIDEO_ID_HERE"
+                src="https://www.youtube.com/embed/fvvMj__YHbw"
                 title="Workcenter Scheduler XL Video"
                 className="size-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -169,6 +169,19 @@ export default function WorkcenterSchedulerXLPage() {
                     </li>
                   ))}
                 </ul>
+              </div>
+
+              {/* Video Section */}
+              <div className="flex justify-center">
+                <div className="aspect-video w-full max-w-3xl overflow-hidden rounded-lg shadow-lg">
+                  <iframe
+                    src="https://www.youtube.com/embed/L4wDboRFU6k"
+                    title="Workcenter Scheduler XL Demo Video"
+                    className="size-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
               </div>
             </div>
           )}
