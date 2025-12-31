@@ -21,7 +21,7 @@ const excelApplications = [
     ],
     singleUserPrice: 'FREE',
     fiveUserPrice: 'FREE',
-    href: '/products/spreadsheet-qc',
+    href: '/spreadsheet-qc',
     icon: <FileSpreadsheetIcon className="size-8" />
   },
   {
@@ -37,7 +37,7 @@ const excelApplications = [
     ],
     singleUserPrice: 'FREE',
     fiveUserPrice: 'FREE',
-    href: '/products/workcell-planner',
+    href: '/workcell-planner',
     icon: <FileSpreadsheetIcon className="size-8" />
   },
   {
@@ -69,7 +69,7 @@ const excelApplications = [
     ],
     singleUserPrice: 'FREE',
     fiveUserPrice: 'FREE',
-    href: '/products/workcenter-excel',
+    href: '/workcenter-schedulerxl',
     icon: <FileSpreadsheetIcon className="size-8" />
   },
   {
@@ -85,7 +85,7 @@ const excelApplications = [
     ],
     singleUserPrice: 'FREE',
     fiveUserPrice: 'FREE',
-    href: '/products/resource-manager-excel',
+    href: '/resource-manager-for-excel-2',
     icon: <FileSpreadsheetIcon className="size-8" />
   }
 ];
@@ -134,9 +134,11 @@ export function NTClipboardExcelTemplates(): React.JSX.Element {
                     {app.icon}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-xl font-semibold text-gray-900">
-                      {app.title}
-                    </h3>
+                    <Link href={app.href}>
+                      <h3 className="text-xl font-semibold text-gray-900 hover:text-green-600 hover:underline cursor-pointer transition-colors">
+                        {app.title}
+                      </h3>
+                    </Link>
                     <p className="mt-2 text-sm text-gray-600">
                       {app.description}
                     </p>
