@@ -1,19 +1,17 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { useState } from 'react';
+import { Check } from 'lucide-react';
+
+import { Card, CardContent } from '@/components/ui/card';
 
 // Lazy load In Depth content
 const RMXInDepthContent = dynamic(
   () => import('@/components/marketing/sections/rmx-in-depth-content').then((mod) => ({ default: mod.RMXInDepthContent })),
   { loading: () => <div className="min-h-[400px] animate-pulse bg-slate-100 rounded-lg" /> }
 );
-import { useState } from 'react';
-import { Check } from 'lucide-react';
-
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 
 const features = [
   'Excel add-On',
@@ -186,23 +184,38 @@ export default function ResourceManagerForExcel2Page() {
           {activeTab === 'in-depth' && <RMXInDepthContent />}
 
           {activeTab === 'quick-start' && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-slate-900">Quick Start Guide</h2>
-              <p className="text-slate-700 leading-relaxed">
-                Get started with Resource Manager for Excel in minutes. Download the free trial
-                and follow our step-by-step guide to begin optimizing your production scheduling.
-              </p>
-              <div className="flex gap-4">
-                <Link href="/product-downloads">
-                  <Button className="bg-cyan-500 hover:bg-cyan-600">
-                    Download Free Trial
-                  </Button>
-                </Link>
-                <Link href="/resource-manager-for-excel-in-depth">
-                  <Button variant="outline">
-                    View Documentation
-                  </Button>
-                </Link>
+            <div className="grid items-start gap-8 lg:grid-cols-2">
+              <div>
+                <h2 className="mb-4 text-2xl font-bold text-slate-900">Quick Start</h2>
+                <div className="space-y-4 text-base leading-relaxed text-slate-600">
+                  <p>
+                    Get started with Resource Manager for Excel quickly and easily. Our Quick
+                    Start guide provides step-by-step instructions to help you set up and
+                    configure RMX for your specific needs.
+                  </p>
+                  <p>
+                    Download the comprehensive Quick Start PDF guide to begin your journey
+                    with RMX.
+                  </p>
+                  <a
+                    href="/images/Edgebic/2022-10/rmxquickstart.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
+                  >
+                    Download Quick Start Guide (PDF)
+                  </a>
+                </div>
+              </div>
+              <div className="flex items-center justify-center">
+                <Image
+                  src="/images/Edgebic/2022-07/RMX.png"
+                  alt="Resource Manager for Excel Quick Start interface"
+                  width={600}
+                  height={400}
+                  className="h-auto max-w-full rounded-lg shadow-lg"
+                  loading="lazy"
+                />
               </div>
             </div>
           )}
