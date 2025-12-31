@@ -2,6 +2,13 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+
+// Lazy load In Depth content
+const RMXInDepthContent = dynamic(
+  () => import('@/components/marketing/sections/rmx-in-depth-content').then((mod) => ({ default: mod.RMXInDepthContent })),
+  { loading: () => <div className="min-h-[400px] animate-pulse bg-slate-100 rounded-lg" /> }
+);
 import { useState } from 'react';
 import { Check } from 'lucide-react';
 
@@ -20,15 +27,16 @@ const features = [
   'Powerful scheduling engine'
 ];
 
-type TabType = 'summary' | 'quick-start';
+type TabType = 'summary' | 'in-depth' | 'quick-start' | 'live-demo';
 
 export default function ResourceManagerForExcel2Page() {
   const [activeTab, setActiveTab] = useState<TabType>('summary');
 
   const tabs = [
     { id: 'summary' as TabType, label: 'Summary' },
-    { id: 'in-depth' as const, label: 'In Depth', href: '/resource-manager-for-excel-in-depth' },
-    { id: 'quick-start' as TabType, label: 'Quick Start' }
+    { id: 'in-depth' as TabType, label: 'In Depth' },
+    { id: 'quick-start' as TabType, label: 'Quick Start' },
+    { id: 'live-demo' as TabType, label: 'Live Demo' }
   ];
 
   return (
@@ -51,33 +59,6 @@ export default function ResourceManagerForExcel2Page() {
                 functional trial is available for immediate download and/or schedule a
                 live demo with us to see it in action for your application.
               </p>
-
-              {/* Navigation Tabs - Below Text */}
-              <div className="inline-flex flex-wrap items-center gap-6 text-lg">
-                {tabs.map((tab) => (
-                  tab.href ? (
-                    <Link
-                      key={tab.id}
-                      href={tab.href}
-                      className="text-slate-700 transition-colors hover:text-cyan-500"
-                    >
-                      {tab.label}
-                    </Link>
-                  ) : (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setActiveTab(tab.id as TabType)}
-                      className={`transition-colors ${activeTab === tab.id
-                        ? 'font-semibold text-cyan-500'
-                        : 'text-slate-700 hover:text-cyan-500'
-                        }`}
-                    >
-                      {tab.label}
-                    </button>
-                  )
-                ))}
-              </div>
             </div>
 
             {/* Video - Right Side */}
@@ -94,8 +75,38 @@ export default function ResourceManagerForExcel2Page() {
         </div>
       </section>
 
+      {/* Navigation Tabs */}
+      <nav className="pt-6" aria-label="Product information tabs">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div
+            className="flex flex-wrap justify-center gap-6 text-[18px]"
+            role="tablist"
+            aria-label="Resource Manager Excel sections"
+          >
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                id={`tab-${tab.id}`}
+                role="tab"
+                aria-selected={activeTab === tab.id ? 'true' : 'false'}
+                aria-controls={`tabpanel-${tab.id}`}
+                tabIndex={activeTab === tab.id ? 0 : -1}
+                onClick={() => setActiveTab(tab.id)}
+                className={`transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 rounded-sm px-2 py-1 ${
+                  activeTab === tab.id
+                    ? 'font-semibold text-cyan-500'
+                    : 'text-slate-700 hover:text-cyan-500'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
+
       {/* Tab Content */}
-      <section className="pt-6">
+      <section className="pt-6" aria-label="Tab content">
         <div className="container mx-auto max-w-7xl px-4">
           {activeTab === 'summary' && (
             <div className="space-y-8">
@@ -147,6 +158,8 @@ export default function ResourceManagerForExcel2Page() {
             </div>
           )}
 
+          {activeTab === 'in-depth' && <RMXInDepthContent />}
+
           {activeTab === 'quick-start' && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-slate-900">Quick Start Guide</h2>
@@ -165,6 +178,43 @@ export default function ResourceManagerForExcel2Page() {
                     View Documentation
                   </Button>
                 </Link>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'live-demo' && (
+            <div className="grid items-start gap-8 lg:grid-cols-2">
+              <div>
+                <h2 className="mb-4 text-2xl font-bold text-slate-900">Live Demo</h2>
+                <div className="space-y-4 text-base leading-relaxed text-slate-600">
+                  <p>
+                    See Resource Manager for Excel in action! Schedule a live demo with our team
+                    to experience how RMX can transform your production planning and
+                    scheduling processes.
+                  </p>
+                  <p>
+                    We can even use your data in its current form to show you exactly how
+                    RMX will work for your specific operations – RISK FREE!
+                  </p>
+                  <a
+                    href="https://calendly.com/mudasirnadeem7979/30min"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
+                  >
+                    Schedule a Live Demo
+                  </a>
+                </div>
+              </div>
+              <div className="flex items-center justify-center">
+                <Image
+                  src="/images/Edgebic/2022-07/RMX.png"
+                  alt="Resource Manager for Excel interface preview for live demo"
+                  width={800}
+                  height={500}
+                  className="h-auto max-w-full rounded-lg shadow-lg"
+                  loading="lazy"
+                />
               </div>
             </div>
           )}
