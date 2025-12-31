@@ -27,7 +27,7 @@ export async function BlogPosts(): Promise<React.JSX.Element> {
           description="Learn more from members of our team and industry-leading experts."
         />
         {posts.length === 0 ? (
-          <div className="pt-6 text-center">
+          <div className="!pt-6 text-center">
             <p className="text-muted-foreground">
               No posts found. Add blog posts in Payload CMS at{' '}
               <a
@@ -62,40 +62,40 @@ export async function BlogPosts(): Promise<React.JSX.Element> {
                     </div>
                   )}
                   <div className="flex flex-1 flex-col space-y-4 p-6">
-                  <div className="flex flex-row items-center justify-between text-muted-foreground">
-                    <span className="text-sm">{post.category}</span>
-                    <time
-                      className="text-sm"
-                      dateTime={post.published}
-                    >
-                      {format(post.published, 'dd MMM yyyy')}
-                    </time>
-                  </div>
-                  <h2 className="text-lg font-semibold md:mb-4 md:text-xl lg:mb-6">
-                    {post.title}
-                  </h2>
-                  <p className="line-clamp-3 text-muted-foreground md:mb-4 lg:mb-6">
-                    {post.description}
-                  </p>
-                  <FillRemainingSpace />
-                  <div className="flex flex-1 shrink flex-row items-center justify-between">
-                    <div className="flex flex-row items-center gap-2">
-                      <Avatar className="relative size-7 flex-none rounded-full">
-                        <AvatarImage
-                          src={post.author?.avatar}
-                          alt="avatar"
-                        />
-                        <AvatarFallback className="size-7 text-[10px]">
-                          {getInitials(post.author?.name ?? '')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{post.author?.name ?? ''}</span>
+                    <div className="flex flex-row items-center justify-between text-muted-foreground">
+                      <span className="text-sm">{post.category}</span>
+                      <time
+                        className="text-sm"
+                        dateTime={post.published}
+                      >
+                        {format(post.published, 'dd MMM yyyy')}
+                      </time>
                     </div>
-                    <div className="group flex items-center gap-2 text-sm duration-200  hover:underline">
-                      Read more
-                      <ArrowRightIcon className="size-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                    <h2 className="text-lg font-semibold md:mb-4 md:text-xl lg:mb-6">
+                      {post.title}
+                    </h2>
+                    <p className="line-clamp-3 text-muted-foreground md:mb-4 lg:mb-6">
+                      {post.description}
+                    </p>
+                    <FillRemainingSpace />
+                    <div className="flex flex-1 shrink flex-row items-center justify-between">
+                      <div className="flex flex-row items-center gap-2">
+                        <Avatar className="relative size-7 flex-none rounded-full">
+                          <AvatarImage
+                            src={post.author?.avatar}
+                            alt="avatar"
+                          />
+                          <AvatarFallback className="size-7 text-[10px]">
+                            {getInitials(post.author?.name ?? '')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm">{post.author?.name ?? ''}</span>
+                      </div>
+                      <div className="group flex items-center gap-2 text-sm duration-200  hover:underline">
+                        Read more
+                        <ArrowRightIcon className="size-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                      </div>
                     </div>
-                  </div>
                   </div>
                 </Link>
               ))}
