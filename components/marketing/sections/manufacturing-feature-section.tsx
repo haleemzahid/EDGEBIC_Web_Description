@@ -12,7 +12,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
         <div className="lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-[#003d5c] ">
-              EDGEBIC simplifies production planning and scheduling
+              Edge simplifies production planning and scheduling
             </h2>
             <div>
               <Link
