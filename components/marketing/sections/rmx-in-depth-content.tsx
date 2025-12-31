@@ -28,13 +28,13 @@ export function RMXInDepthContent() {
             the complications and failure rate.
           </p>
         </div>
-        <div>
+        <div className="flex justify-center">
           <Image
             src="/images/Edgebic/2022-10/rmusman.gif"
             alt="Resource Manager user illustration"
-            width={400}
-            height={300}
-            className="w-full rounded-lg"
+            width={280}
+            height={210}
+            className="rounded-lg"
             loading="lazy"
             unoptimized
           />
