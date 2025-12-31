@@ -2,12 +2,13 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Play, Check } from 'lucide-react';
 
 import { GridSection } from '@/components/marketing/fragments/grid-section';
 import { Button } from '@/components/ui/button';
 
-// Video Player Component
+// Lazy Video Player Component - Shows thumbnail until clicked for better performance
 function VideoPlayer({
   videoUrl,
   title,
@@ -20,7 +21,13 @@ function VideoPlayer({
   onPlayStateChange?: (isPlaying: boolean) => void;
 }) {
   const videoRef = React.useRef<HTMLVideoElement>(null);
+  const [isActivated, setIsActivated] = React.useState(false);
   const [isPlaying, setIsPlaying] = React.useState(false);
+
+  const handleActivate = () => {
+    setIsActivated(true);
+    onPlayStateChange?.(true);
+  };
 
   const handlePlay = () => {
     setIsPlaying(true);
@@ -37,33 +44,30 @@ function VideoPlayer({
     onPlayStateChange?.(false);
   };
 
-  // Check if it's a YouTube URL
-  const isYouTube =
-    videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
-
-  // Extract video ID from YouTube URL
-  const getVideoId = (url: string) => {
-    const match = url.match(
-      /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/
-    );
-    return match ? match[1] : '';
-  };
-
-  if (isYouTube) {
-    const videoId = getVideoId(videoUrl);
-    // Use specific embed URL with si parameter for the Excel template video
-    const embedUrl = '';
+  // Show thumbnail with play button until clicked (lazy loading)
+  if (!isActivated) {
+    // Generate poster image URL from video URL or use provided thumbnail
+    const posterUrl = thumbnail || videoUrl.replace('.mp4', '.jpg');
 
     return (
-      <iframe
-        src="https://www.youtube.com/embed/IduVVYgeXZg?si=HV7y45YVfX1Jk_sK"
-        title="YouTube video player"
-        className="absolute inset-0 size-full rounded-lg"
-        frameBorder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        referrerPolicy="strict-origin-when-cross-origin"
-        allowFullScreen
-      />
+      <button
+        type="button"
+        onClick={handleActivate}
+        className="absolute inset-0 size-full cursor-pointer bg-slate-200"
+        aria-label={`Play ${title}`}
+      >
+        {/* Placeholder background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200" />
+        {/* Play button overlay */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="flex size-16 items-center justify-center rounded-full bg-white/90 shadow-lg transition-transform hover:scale-110">
+            <Play className="ml-1 size-8 text-gray-800" fill="currentColor" />
+          </div>
+        </div>
+        <span className="absolute bottom-2 left-2 rounded bg-black/60 px-2 py-1 text-xs text-white">
+          {title}
+        </span>
+      </button>
     );
   }
 
@@ -75,6 +79,7 @@ function VideoPlayer({
       className="absolute inset-0 size-full rounded-lg object-cover"
       controls
       playsInline
+      autoPlay
       onPlay={handlePlay}
       onPause={handlePause}
       onEnded={handleEnded}

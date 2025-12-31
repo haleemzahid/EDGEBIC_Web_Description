@@ -59,7 +59,18 @@ export function HeroContent(): React.JSX.Element {
   }, []);
 
   return (
-    <div className="relative w-full bg-hero-manufacturing bg-cover bg-center bg-no-repeat">
+    <div className="relative w-full">
+      {/* Hero Background Image - Priority for LCP */}
+      <Image
+        src="https://www.usersolutions.com/wp-content/uploads/2022/12/slide4.jpg"
+        alt="Manufacturing production planning background"
+        fill
+        priority
+        fetchPriority="high"
+        sizes="100vw"
+        className="object-cover object-center"
+        quality={75}
+      />
       {/* Main Hero Content */}
       <div className="relative z-10 mx-auto max-w-7xl p-6">
         <div className="mx-auto py-10 my-5 max-w-7xl text-center">

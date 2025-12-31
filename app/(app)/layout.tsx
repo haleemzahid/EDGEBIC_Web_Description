@@ -10,6 +10,13 @@ import { getBaseUrl } from '@/lib/urls/get-base-url';
 
 import { Providers } from './providers';
 
+// Preconnect hints for external resources
+const preconnectUrls = [
+  'https://www.usersolutions.com',
+  'https://www.youtube.com',
+  'https://i.ytimg.com',
+];
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -71,6 +78,15 @@ export default async function RootLayout({
       className="size-full min-h-screen"
       suppressHydrationWarning
     >
+      <head>
+        {/* Preconnect to external domains for faster loading */}
+        {preconnectUrls.map((url) => (
+          <React.Fragment key={url}>
+            <link rel="preconnect" href={url} />
+            <link rel="dns-prefetch" href={url} />
+          </React.Fragment>
+        ))}
+      </head>
       <body className={`${inter.className} size-full`}>
         <Providers>
           {children}
