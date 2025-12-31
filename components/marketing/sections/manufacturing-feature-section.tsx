@@ -859,7 +859,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 className="relative flex h-24 items-center justify-center rounded-lg border border-slate-200 bg-slate-900 p-6 shadow-sm transition-all hover:shadow-md"
               >
                 <Image
-                  src="https://lifecore.com/wp-content/uploads/2025/11/Lifecore-Inj-CDMO_Logo_REV_v2.png"
+                  src="/images/Edgebic/partners/lifecore-logo.png"
                   alt="Lifecore"
                   width={150}
                   height={50}
@@ -875,7 +875,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 className="relative flex h-24 items-center justify-center rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md"
               >
                 <Image
-                  src="https://www.viking-forge.com/wp-content/uploads/2020/02/vklogo.jpg"
+                  src="/images/Edgebic/partners/vklogo.jpg"
                   alt="Viking Forge"
                   width={150}
                   height={50}
@@ -901,7 +901,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 className="relative flex h-24 items-center justify-center rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md"
               >
                 <Image
-                  src="https://www.dawloom.com/logos/FULL%20COLOR%20NO%20BCKG.svg"
+                  src="/images/Edgebic/partners/dawloom-logo.svg"
                   alt="Dawloom"
                   width={150}
                   height={50}

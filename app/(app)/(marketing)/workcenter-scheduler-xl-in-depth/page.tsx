@@ -9,32 +9,23 @@ export default function WorkcenterSchedulerXLInDepthPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800 py-6 text-white">
+      <section className="py-6">
         <div className="container mx-auto px-4 text-center">
           <div className="mx-auto max-w-7xl">
             <h1 className="mb-6 text-4xl font-bold md:text-5xl">
-              : In Depth
+              Workcenter Scheduler XL: In Depth
             </h1>
-            <p className="mb-6 text-xl md:text-2xl">
+            <p className="mb-6 text-xl text-muted-foreground md:text-2xl">
               Complete Finite Capacity Planning and Job Scheduling
             </p>
             <div className="flex flex-col justify-center gap-4 sm:flex-row">
               <Link href="/product-downloads">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-white text-white hover:bg-white hover:text-blue-600"
-                >
+                <Button size="lg" variant="outline">
                   Live Demo
                 </Button>
               </Link>
               <Link href="/contact-us">
-                <Button
-                  size="lg"
-                  className="bg-white text-blue-600 hover:bg-gray-100"
-                >
-                  Request Free Product
-                </Button>
+                <Button size="lg">Request Free Product</Button>
               </Link>
             </div>
           </div>
@@ -51,7 +42,7 @@ export default function WorkcenterSchedulerXLInDepthPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <p className="text-lg leading-relaxed text-muted-foreground">
-                  (WCXL) is a high performance planning
+                  Workcenter Scheduler XL (WCXL) is a high performance planning
                   and scheduling offering for Job Shops, Fabricators,
                   Service/Repair Shops, and others where customer service and
                   shipping on time is vital. WCXL will enhance the
@@ -229,6 +220,17 @@ export default function WorkcenterSchedulerXLInDepthPage() {
               <Card>
                 <CardContent className="p-6">
                   <h3 className="mb-3 text-xl font-semibold text-blue-600">
+                    Defaults Report
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Shows capacity defaults for each workcenter per
+                    configuration date
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="mb-3 text-xl font-semibold text-blue-600">
                     Routing Report
                   </h3>
                   <p className="text-muted-foreground">
@@ -334,6 +336,15 @@ export default function WorkcenterSchedulerXLInDepthPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
+                <h3 className="text-2xl font-semibold text-foreground">
+                  Job Interruption Tracking
+                </h3>
+                <p className="text-lg leading-relaxed text-muted-foreground">
+                  The Job Interruption sheet includes columns for Job ID,
+                  Workcenter, Interrupt Date, Resume Date, and Comments. This
+                  documents any jobs interrupted by higher-priority scheduling.
+                </p>
+
                 <h3 className="text-2xl font-semibold text-foreground">
                   Freezing A Job
                 </h3>

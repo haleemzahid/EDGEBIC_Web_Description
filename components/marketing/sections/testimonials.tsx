@@ -14,7 +14,7 @@ const DATA = [
   {
     name: 'David Zhang',
     role: 'VP of Sales at GlobalTech Solutions',
-    img: 'https://randomuser.me/api/portraits/men/91.jpg',
+    img: '/images/Edgebic/avatars/men-91.jpg',
     description: (
       <p>
         {AppInfo.APP_NAME} has revolutionized how we manage customer
@@ -29,7 +29,7 @@ const DATA = [
   {
     name: 'Maria Rodriguez',
     role: 'Customer Success Director at Cloud Dynamics',
-    img: 'https://randomuser.me/api/portraits/women/12.jpg',
+    img: '/images/Edgebic/avatars/women-12.jpg',
     description: (
       <p>
         {AppInfo.APP_NAME}'s customer prediction model has drastically improved
@@ -42,7 +42,7 @@ const DATA = [
   {
     name: 'James Wilson',
     role: 'Head of Business Development at Velocity Inc',
-    img: 'https://randomuser.me/api/portraits/men/45.jpg',
+    img: '/images/Edgebic/avatars/men-45.jpg',
     description: (
       <p>
         As a startup, we needed a system that could scale with us.{' '}
@@ -55,7 +55,7 @@ const DATA = [
   {
     name: 'Sarah Kim',
     role: 'Senior Account Executive at Digital First',
-    img: 'https://randomuser.me/api/portraits/women/83.jpg',
+    img: '/images/Edgebic/avatars/women-83.jpg',
     description: (
       <p>
         {AppInfo.APP_NAME}'s multi-language support has made managing global
@@ -70,7 +70,7 @@ const DATA = [
   {
     name: 'Marcus Johnson',
     role: 'Sales Operations Manager at Revenue Pulse',
-    img: 'https://randomuser.me/api/portraits/men/1.jpg',
+    img: '/images/Edgebic/avatars/men-1.jpg',
     description: (
       <p>
         {AppInfo.APP_NAME}'s analytics dashboard gives us unprecedented insights
@@ -86,7 +86,7 @@ const DATA = [
   {
     name: 'Priya Sharma',
     role: 'Chief Revenue Officer at Scale Systems',
-    img: 'https://randomuser.me/api/portraits/women/5.jpg',
+    img: '/images/Edgebic/avatars/women-5.jpg',
     description: (
       <p>
         {AppInfo.APP_NAME}'s integration with our existing tools has streamlined
@@ -99,7 +99,7 @@ const DATA = [
   {
     name: 'Miguel Santos',
     role: 'Account Management Director at Grow Corp',
-    img: 'https://randomuser.me/api/portraits/men/14.jpg',
+    img: '/images/Edgebic/avatars/men-14.jpg',
     description: (
       <p>
         {AppInfo.APP_NAME}'s sustainability tracking features help us monitor
@@ -114,7 +114,7 @@ const DATA = [
   {
     name: 'Lisa Thompson',
     role: 'Inside Sales Manager at Quantum Enterprises',
-    img: 'https://randomuser.me/api/portraits/women/56.jpg',
+    img: '/images/Edgebic/avatars/women-56.jpg',
     description: (
       <p>
         {AppInfo.APP_NAME}'s customer segmentation tools have transformed our
@@ -129,7 +129,7 @@ const DATA = [
   {
     name: 'Daniel Park',
     role: 'Business Operations Lead at Swift Solutions',
-    img: 'https://randomuser.me/api/portraits/men/18.jpg',
+    img: '/images/Edgebic/avatars/men-18.jpg',
     description: (
       <p>
         {AppInfo.APP_NAME}'s HIPAA-compliant features make it perfect for
@@ -144,7 +144,7 @@ const DATA = [
   {
     name: 'Emma Anderson',
     role: 'Director of Client Relations at Peak Partners',
-    img: 'https://randomuser.me/api/portraits/women/73.jpg',
+    img: '/images/Edgebic/avatars/women-73.jpg',
     description: (
       <p>
         {AppInfo.APP_NAME}'s education-focused features have doubled our student
@@ -159,7 +159,7 @@ const DATA = [
   {
     name: 'Robert Chen',
     role: 'Sales Enablement Manager at Catalyst Group',
-    img: 'https://randomuser.me/api/portraits/men/25.jpg',
+    img: '/images/Edgebic/avatars/men-25.jpg',
     description: (
       <p>
         {AppInfo.APP_NAME}'s enterprise-grade security features give us complete
@@ -172,7 +172,7 @@ const DATA = [
   {
     name: 'Maya Patel',
     role: 'Customer Experience Director at Apex Solutions',
-    img: 'https://randomuser.me/api/portraits/women/78.jpg',
+    img: '/images/Edgebic/avatars/women-78.jpg',
     description: (
       <p>
         {AppInfo.APP_NAME}'s project management integration has streamlined our
@@ -185,7 +185,7 @@ const DATA = [
   {
     name: "Thomas O'Brien",
     role: 'Sales Strategy Manager at Future Dynamics',
-    img: 'https://randomuser.me/api/portraits/men/54.jpg',
+    img: '/images/Edgebic/avatars/men-54.jpg',
     description: (
       <p>
         {AppInfo.APP_NAME}'s startup-friendly pricing and scalability made it an

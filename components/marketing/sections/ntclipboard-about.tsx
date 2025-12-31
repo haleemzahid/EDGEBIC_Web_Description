@@ -28,7 +28,7 @@ export function NTClipboardAbout(): React.JSX.Element {
       fiverr: 'https://www.fiverr.com/haleemzahid',
       linkedin: 'https://www.linkedin.com/in/haleemzahid35/',
       facebook: 'https://www.facebook.com/haleem.zahid',
-      image: 'https://www.dawloom.com/team/Haleem%20Khan.png',
+      image: '/images/Edgebic/partners/haleem-khan.png',
       description:
         'Haleem brings over a decade of software development experience and leads the company with expertise in .NET and custom software solutions. His deep technical knowledge combined with business acumen helps drive innovation and deliver high-quality solutions to clients.',
       philosophy:
@@ -46,7 +46,7 @@ export function NTClipboardAbout(): React.JSX.Element {
     {
       name: 'Shahid Khan',
       title: '.NET Senior Developer',
-      image: 'https://www.dawloom.com/team/Shahid%20Khan.png',
+      image: '/images/Edgebic/partners/shahid-khan.png',
       description:
         'Shahid is a highly skilled .NET developer with extensive experience building scalable and high-performance applications for businesses of all sizes.',
       philosophy:
@@ -55,7 +55,7 @@ export function NTClipboardAbout(): React.JSX.Element {
     {
       name: 'Hamza Khan',
       title: '.NET Desktop & Mobile Developer',
-      image: 'https://www.dawloom.com/team/Hamza%20Khan.jpg',
+      image: '/images/Edgebic/partners/hamza-khan.jpg',
       description:
         'Hamza brings 5+ years of experience in developing desktop and mobile applications using .NET technologies, providing seamless user experiences.',
       philosophy:
