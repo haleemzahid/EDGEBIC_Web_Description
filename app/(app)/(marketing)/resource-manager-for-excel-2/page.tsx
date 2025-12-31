@@ -44,22 +44,12 @@ export default function ResourceManagerForExcel2Page() {
                 Resource Manager For Excel
               </h1>
               <p className="text-slate-700 leading-relaxed">
-                Resource Manager for Excel (RMX) features a Bill Of Resource (BOR) that
-                allows any combination of Workcenters and/or Products. RMX is ideal for
-                companies who have no formal systems (ERP, MRP, etc.) as a tool to plan
-                for and implement those systems, or to use to fill in any existing gaps
-                for production scheduling. With the BOR concept, you can manage both
-                Material Requirements Planning as well as Production Planning and
-                Scheduling considering Finite Capacity.
-              </p>
-              <p className="text-slate-700 leading-relaxed">
-                For those applications that have a need for multiple concurrent users,
-                improved security (over Excel), seamless integration with other systems,
-                and advanced planning and scheduling options,{' '}
-                <Link href="/resource-manager-db-in-depth" className="text-cyan-500 hover:underline">
-                  Resource Manager-DB (RMDB)
-                </Link>{' '}
-                is the best choice.
+                Resource Manager for Excel (RMX) offers basic MRP and Shop Scheduling
+                that is quick to implement and very affordable. RMX is designed to adapt
+                to your specific needs and utilizes all the powerful features of Excel
+                for data integration, customization, sharing and reporting. A fully
+                functional trial is available for immediate download and/or schedule a
+                live demo with us to see it in action for your application.
               </p>
 
               {/* Navigation Tabs - Below Text */}
