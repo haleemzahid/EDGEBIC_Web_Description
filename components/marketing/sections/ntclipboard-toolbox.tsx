@@ -116,10 +116,10 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 {/* Video Section */}
                 <div className="relative overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
-                    <VideoPlayer
-                      videoUrl="/images/Edgebic/2022-07/Resource-Manager-for-Excel.mp4"
+                    <YouTubePlayer
+                      videoId="DRWDNVq31l4"
                       title="Operations Manager Excel Templates"
-                      thumbnail="/images/Edgebic/2022-07/Resource-Manager-for-Excel.mp4"
+                      thumbnail="/images/Edgebic/2022-11/advanced-1.png"
                       onPlayStateChange={(isPlaying) =>
                         handleVideoPlayState('end', isPlaying)
                       }
@@ -189,10 +189,10 @@ export function NTClipboardToolBox(): React.JSX.Element {
               </div>{' '}
               <div className="">
                 {/* Video Section */}
-                <div className="relative  overflow-hidden rounded-lg">
+                <div className="relative overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
-                    <VideoPlayer
-                      videoUrl="/images/Edgebic/2022-12/RMDB%20updated%20thumbnail.mp4"
+                    <YouTubePlayer
+                      videoId="kn92TIHhbm8"
                       title="Resource Manager DB"
                       thumbnail="/images/Edgebic/2022-11/advanced-1.png"
                       onPlayStateChange={(isPlaying) =>
@@ -262,10 +262,10 @@ export function NTClipboardToolBox(): React.JSX.Element {
 
               <div className="">
                 {/* Video Section */}
-                <div className="relative  overflow-hidden rounded-lg">
+                <div className="relative overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
-                    <VideoPlayer
-                      videoUrl="/images/Edgebic/2022-12/EDGEBI%20updated%20thumbnail.mp4"
+                    <YouTubePlayer
+                      videoId="snltXMHeojU"
                       title="EDGEBIC Demo"
                       thumbnail="/images/Edgebic/2022-10/insight-1.png"
                       onPlayStateChange={(isPlaying) =>
