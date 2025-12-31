@@ -845,8 +845,8 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             </div>
           </div>
 
-          {/* Customer Logos */}
-          <div className="mt-6">
+          {/* Customer Logos - Commented out */}
+          {/* <div className="mt-6">
             <h3 className="mb-6 text-center text-2xl font-bold text-[#003d5c]">
               Some of our customers
             </h3>
@@ -910,7 +910,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 />
               </a>
             </div>
-          </div>
+          </div> */}
 
         </div>
       </div>
