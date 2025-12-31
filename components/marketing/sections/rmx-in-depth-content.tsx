@@ -7,10 +7,15 @@ import { CheckCircle2 } from 'lucide-react';
 export function RMXInDepthContent() {
   return (
     <div className="space-y-8">
+      {/* Section Title */}
+      <h2 className="text-2xl font-bold text-slate-900">
+        RESOURCE MANAGER FOR EXCEL: IN DEPTH
+      </h2>
+
       {/* Overview Section */}
       <div className="grid items-center gap-8 lg:grid-cols-2">
         <div>
-          <h2 className="mb-4 text-2xl font-bold text-slate-900">Overview</h2>
+          <h3 className="mb-4 text-xl font-bold text-cyan-500">Overview</h3>
           <div className="space-y-4">
             <p className="leading-relaxed text-slate-700">
               Resource Manager is the only low-cost, planning and scheduling
@@ -18,6 +23,11 @@ export function RMXInDepthContent() {
               to Excel (version 97 and greater) and is designed for single concurrent
               users who are familiar with Excel. A fully functional trial is available
               for immediate download.
+            </p>
+            <p className="leading-relaxed text-slate-700">
+              Resource Manager-DB (RMDB) is an upgraded version written in Visual Basic,
+              utilizing Microsoft Access with SQL Server compatibility, containing all
+              RM-X functionality.
             </p>
             <p className="leading-relaxed text-slate-700">
               By combining ease-of-use for small to medium sized manufacturing operations
@@ -30,7 +40,7 @@ export function RMXInDepthContent() {
         <div className="flex justify-center">
           <Image
             src="/images/Edgebic/2022-10/rmusman.gif"
-            alt="Delivery worker pushing a hand truck with boxes"
+            alt="Resource Manager user illustration"
             width={400}
             height={300}
             className="rounded-lg"
@@ -41,7 +51,7 @@ export function RMXInDepthContent() {
 
       {/* Works The Way You Do */}
       <div>
-        <h2 className="mb-4 text-2xl font-bold text-slate-900">Works The Way You Do</h2>
+        <h3 className="mb-4 text-xl font-bold text-cyan-500">Works The Way You Do</h3>
         <p className="leading-relaxed text-slate-700">
           Resource Manager is the only solution that is designed to adapt to your
           specific needs, addressing the key issues facing your operation.
@@ -50,7 +60,7 @@ export function RMXInDepthContent() {
 
       {/* Immediate, Guaranteed Benefits */}
       <div>
-        <h2 className="mb-4 text-2xl font-bold text-slate-900">Immediate, Guaranteed Benefits</h2>
+        <h3 className="mb-4 text-xl font-bold text-cyan-500">Immediate, Guaranteed Benefits</h3>
         <div className="space-y-4">
           <p className="leading-relaxed text-slate-700">
             Resource Manager delivers the help you need to effectively plan and schedule
@@ -68,9 +78,18 @@ export function RMXInDepthContent() {
         </div>
       </div>
 
+      {/* Best of All */}
+      <div>
+        <h3 className="mb-4 text-xl font-bold text-cyan-500">Best of All</h3>
+        <p className="leading-relaxed text-slate-700">
+          Resource Manager runs with Microsoft Office, so you are already familiar with entering
+          data, printing reports, graphing, and more!
+        </p>
+      </div>
+
       {/* Features */}
       <div>
-        <h2 className="mb-4 text-2xl font-bold text-slate-900">Features</h2>
+        <h3 className="mb-4 text-xl font-bold text-cyan-500">Features</h3>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-3">
             {[
@@ -105,10 +124,19 @@ export function RMXInDepthContent() {
         </div>
       </div>
 
+      {/* Fill'er Up */}
+      <div>
+        <h3 className="mb-4 text-xl font-bold text-cyan-500">Fill'er Up</h3>
+        <p className="leading-relaxed text-slate-700">
+          Resource Manager for Excel offers basic copy and paste for loading data, or form
+          driven data entry.
+        </p>
+      </div>
+
       {/* Check the "MAP" */}
       <div className="grid items-center gap-8 lg:grid-cols-2">
         <div>
-          <h2 className="mb-4 text-2xl font-bold text-slate-900">Check the "MAP"</h2>
+          <h3 className="mb-4 text-xl font-bold text-cyan-500">Check the "MAP"</h3>
           <div className="space-y-4">
             <p className="leading-relaxed text-slate-700">
               Where do you need to go? Which orders need to be shipped when? Resource Manager
@@ -117,6 +145,10 @@ export function RMXInDepthContent() {
             <p className="leading-relaxed text-slate-700">
               Enter (or link with outside system), the quantities and due dates. Optionally
               add detailed customer or order information. Now schedule.
+            </p>
+            <p className="leading-relaxed text-slate-700">
+              Only Resource Manager gives you quick and easy top level control for recognizing
+              the immediate benefits of an integrated manufacturing system.
             </p>
           </div>
         </div>
@@ -135,13 +167,22 @@ export function RMXInDepthContent() {
       {/* Relax, Cruise Control is on */}
       <div className="grid items-center gap-8 lg:grid-cols-2">
         <div>
-          <h2 className="mb-4 text-2xl font-bold text-slate-900">Relax, Cruise Control is on</h2>
-          <p className="leading-relaxed text-slate-700">
-            That's it! You are in the driver's seat and cruise control is on. Enjoy the view.
-            Check the production calendar for a quick view of finite – capacity loading on
-            work centers and time-phased inventory levels. Bottlenecks are easy to spot by
-            the red flags.
-          </p>
+          <h3 className="mb-4 text-xl font-bold text-cyan-500">Relax, Cruise Control is on</h3>
+          <div className="space-y-4">
+            <p className="leading-relaxed text-slate-700">
+              That's it! You are in the driver's seat and cruise control is on. Enjoy the view.
+              Check the production calendar for a quick view of finite – capacity loading on
+              work centers and time-phased inventory levels. Bottlenecks are easy to spot by
+              the red flags.
+            </p>
+            <p className="leading-relaxed text-slate-700">
+              Need to correct a schedule? Quickly adjust working calendar, shift available
+              resources, and click to reschedule. For effortless cruise control of your business,
+              simply make the top level changes and regenerate the master schedule with a click
+              of the mouse. Change delivery due dates, split up quantities, combine forward and
+              reverse scheduling; all the options for a quick adjustment are under your immediate control.
+            </p>
+          </div>
         </div>
         <div className="flex justify-center">
           <Image
@@ -149,48 +190,153 @@ export function RMXInDepthContent() {
             alt="Screenshot of a resource management software interface"
             width={800}
             height={600}
-            className="h-auto max-w-full rounded-lg shadow-md"
+            className="h-auto max-w-full rounded-lg"
             loading="lazy"
           />
         </div>
       </div>
 
-      {/* Reports Section */}
+      {/* Fine Tuning */}
       <div>
-        <h2 className="mb-4 text-2xl font-bold text-slate-900">Reporting Overview</h2>
+        <h3 className="mb-4 text-xl font-bold text-cyan-500">Fine Tuning</h3>
+        <p className="mb-4 leading-relaxed text-slate-700">
+          Beyond the top-level cruise control, Resource Manager-DB allows the user to implement
+          detailed execution plans at their own pace.
+        </p>
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
+          {[
+            'Prioritize job sequence',
+            'Make inventory adjustments',
+            'Track receipts',
+            'Generate purchase orders',
+            'Regenerate schedule with new priority',
+            'Sequence any time',
+            'Complete inventory management',
+            'Feedback actual mfg. data',
+            'Run adjusted net plan',
+            'Instantly reconfigure and reschedule',
+            'BOMs and Routings to reflect reality'
+          ].map((item, index) => (
+            <div key={index} className="flex items-start">
+              <CheckCircle2 className="mr-2 mt-1 size-4 shrink-0 text-green-500" />
+              <span className="text-sm text-slate-700">{item}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Reporting Overview */}
+      <div>
+        <h3 className="mb-4 text-xl font-bold text-cyan-500">Reporting Overview</h3>
         <div className="space-y-4">
           <p className="leading-relaxed text-slate-700">
-            With quick, powerful, and intuitive reporting, Resource Manager stands above
+            With quick, powerful, and intuitive reporting, Resource Manager-DB stands above
             the crowd in its ability to present the important data in an easy and meaningful way.
+            In addition to the robust reports that are included with Resource Manager-DB, the user
+            can easily configure canned, custom reports that become a permanent part of the system.
           </p>
-
-          <div className="grid gap-6 md:grid-cols-2">
-            <div>
-              <h4 className="mb-2 font-semibold text-slate-900">Gantt Report</h4>
-              <p className="text-sm text-slate-600">
-                A great top-level view of all activity with details only a click away.
-              </p>
-            </div>
-            <div>
-              <h4 className="mb-2 font-semibold text-slate-900">Summary Report</h4>
-              <p className="text-sm text-slate-600">
-                View what you need to buy or make, how much, and when – all consolidated.
-              </p>
-            </div>
-            <div>
-              <h4 className="mb-2 font-semibold text-slate-900">Workcenter Report</h4>
-              <p className="text-sm text-slate-600">
-                Instant, real-time views of all critical workcenter activity.
-              </p>
-            </div>
-            <div>
-              <h4 className="mb-2 font-semibold text-slate-900">Production Report</h4>
-              <p className="text-sm text-slate-600">
-                Perfect for traveler or work order printout with job costing.
-              </p>
-            </div>
-          </div>
+          <p className="leading-relaxed text-slate-700">
+            In addition, you can work with the schedule database directly and use all the power
+            of Access and Excel to sort, graph, view, print and export, to meet your unique requirements.
+          </p>
         </div>
+      </div>
+
+      {/* Individual Report Sections */}
+      <div className="space-y-6">
+        {/* Gantt Report */}
+        <div>
+          <h4 className="mb-2 text-lg font-semibold text-cyan-500">Gantt Report</h4>
+          <p className="text-slate-700">
+            A great top-level view of all activity with details only a click away. Instantly check
+            the due dates of all jobs in schedule, drill down to find bottlenecks, adjust capacity
+            and schedule to meet critical dates.
+          </p>
+        </div>
+
+        {/* Summary Report */}
+        <div>
+          <h4 className="mb-2 text-lg font-semibold text-cyan-500">Summary Report</h4>
+          <p className="text-slate-700">
+            The report will tell you what you need to buy or make, how much, and when – all
+            consolidated on a single sheet. An instant, top level MRP Report for all products
+            and workcenter loading. View over any time horizon – by day, week, or month.
+          </p>
+        </div>
+
+        {/* Item Report */}
+        <div>
+          <h4 className="mb-2 text-lg font-semibold text-cyan-500">Item Report</h4>
+          <p className="text-slate-700">
+            This sheet summarizes all requirements per part number. Ideal for WorkCenter Loading,
+            the system lists each job, when to start, when complete, and how much is required.
+          </p>
+        </div>
+
+        {/* Calendar Report */}
+        <div>
+          <h4 className="mb-2 text-lg font-semibold text-cyan-500">Calendar Report</h4>
+          <p className="text-slate-700">
+            View and print the schedule in familiar 'wall calendar' format.
+          </p>
+        </div>
+
+        {/* Workcenter Report */}
+        <div>
+          <h4 className="mb-2 text-lg font-semibold text-cyan-500">Workcenter Report</h4>
+          <p className="text-slate-700">
+            Instant, real-time views of all critical workcenter activity by: daily loading, backlog,
+            % utilization, hours available and bottlenecks. Allows for quick overtime scheduling and
+            other detailed adjustments for any workcenter on any day. Also features a daily workcenter
+            'to-do' list.
+          </p>
+        </div>
+
+        {/* Routing & Tree Report */}
+        <div>
+          <h4 className="mb-2 text-lg font-semibold text-cyan-500">Routing & Tree Report</h4>
+          <p className="text-slate-700">
+            Intuitive reports for visual bill-of-resource verification, process flow and schedule feedback.
+          </p>
+        </div>
+
+        {/* Production Report */}
+        <div>
+          <h4 className="mb-2 text-lg font-semibold text-cyan-500">Production Report</h4>
+          <p className="text-slate-700">
+            Perfect for traveler or work order printout. Automatically reconciles inventory and capacity
+            for a job and lists sequence of operations and products to fulfill order on time. Includes
+            space for check off and actual feedback as well as job costing and variance reporting.
+          </p>
+        </div>
+      </div>
+
+      {/* Purchasing & Receiving */}
+      <div>
+        <h3 className="mb-4 text-xl font-bold text-cyan-500">Purchasing & Receiving</h3>
+        <div className="space-y-4">
+          <p className="leading-relaxed text-slate-700">
+            Resource Manager-DB excels with its integrated purchasing and receiving module. Designed
+            to meet the tough requirements for Lean Manufacturing, you won't find any muda here.
+            With a single click, the user can generate purchase orders per Kanban and/or standard
+            schedule requirements.
+          </p>
+          <p className="leading-relaxed text-slate-700">
+            The system tracks each received quantity, open or closed status, and adjusts inventory –
+            simply and automatically. Automatically e-mail RFQs and POs to vendors.
+          </p>
+        </div>
+      </div>
+
+      {/* Special Services */}
+      <div>
+        <h3 className="mb-4 text-xl font-bold text-cyan-500">Special Services & Partners</h3>
+        <p className="leading-relaxed text-slate-700">
+          User Solutions offers a variety of direct services to meet any special needs, including:
+          automatic data integration with other systems, customized reports, on site training and
+          configuration and much more. In addition, User Solutions has partnered with a number of
+          complementary product and service companies to provide complete solutions focused on unique needs.
+        </p>
       </div>
     </div>
   );

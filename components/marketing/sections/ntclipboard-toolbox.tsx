@@ -92,11 +92,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     className="mb-4 w-full border-green-200 text-green-700 hover:bg-green-50"
                     asChild
                   >
-                    <Link
-                      href="/excel-templates"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                    <Link href="/resource-manager-for-excel-2">
                       View Details
                     </Link>
                   </Button>
