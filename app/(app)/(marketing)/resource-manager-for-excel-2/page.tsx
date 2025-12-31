@@ -33,25 +33,16 @@ export default function ResourceManagerForExcel2Page() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="py-6">
-        <div className="container mx-auto max-w-7xl px-4 text-center">
-          <h1 className="text-3xl font-bold">
-            Resource Manager For Excel
-          </h1>
-          <p className="mt-2 text-lg italic text-slate-600">
-            Manufacturing software <span className="font-semibold">made easy</span>
-          </p>
-        </div>
-      </section>
-
       {/* Main Content */}
-      <section className="pt-6">
+      <section className="py-6">
         <div className="container mx-auto max-w-7xl px-4">
           {/* Text and Video Side by Side */}
           <div className="grid gap-8 lg:grid-cols-2">
-            {/* Left Side - Text and Tabs */}
+            {/* Left Side - Header, Text and Tabs */}
             <div className="space-y-4">
+              <h1 className="text-3xl font-bold">
+                Resource Manager For Excel
+              </h1>
               <p className="text-slate-700 leading-relaxed">
                 Resource Manager for Excel (RMX) features a Bill Of Resource (BOR) that
                 allows any combination of Workcenters and/or Products. RMX is ideal for
@@ -72,7 +63,7 @@ export default function ResourceManagerForExcel2Page() {
               </p>
 
               {/* Navigation Tabs - Below Text */}
-              <div className="inline-flex flex-wrap items-center gap-6 text-lg border border-slate-200 rounded-md px-6 py-2">
+              <div className="inline-flex flex-wrap items-center gap-6 text-lg">
                 {tabs.map((tab) => (
                   tab.href ? (
                     <Link
@@ -87,11 +78,10 @@ export default function ResourceManagerForExcel2Page() {
                       key={tab.id}
                       type="button"
                       onClick={() => setActiveTab(tab.id as TabType)}
-                      className={`transition-colors ${
-                        activeTab === tab.id
-                          ? 'font-semibold text-cyan-500'
-                          : 'text-slate-700 hover:text-cyan-500'
-                      }`}
+                      className={`transition-colors ${activeTab === tab.id
+                        ? 'font-semibold text-cyan-500'
+                        : 'text-slate-700 hover:text-cyan-500'
+                        }`}
                     >
                       {tab.label}
                     </button>
