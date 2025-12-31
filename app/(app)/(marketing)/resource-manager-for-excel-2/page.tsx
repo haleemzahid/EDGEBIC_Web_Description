@@ -92,11 +92,10 @@ export default function ResourceManagerForExcel2Page() {
                 aria-controls={`tabpanel-${tab.id}`}
                 tabIndex={activeTab === tab.id ? 0 : -1}
                 onClick={() => setActiveTab(tab.id)}
-                className={`transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 rounded-sm px-2 py-1 ${
-                  activeTab === tab.id
+                className={`transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 rounded-sm px-2 py-1 ${activeTab === tab.id
                     ? 'font-semibold text-cyan-500'
                     : 'text-slate-700 hover:text-cyan-500'
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -110,8 +109,13 @@ export default function ResourceManagerForExcel2Page() {
         <div className="container mx-auto max-w-7xl px-4">
           {activeTab === 'summary' && (
             <div className="space-y-8">
+              {/* Section Title */}
+              <h2 className="text-2xl font-bold text-slate-900">
+                RESOURCE MANAGER FOR EXCEL: SUMMARY
+              </h2>
+
               {/* Description Text */}
-              <p className="leading-relaxed text-slate-900">
+              <p className="leading-relaxed text-slate-700">
                 Resource Manager for Excel (RMX) features a Bill Of Resource (BOR) that allows any combination of
                 Workcenters and/or Products. RMX is ideal for companies who have no formal systems (ERP, MRP, etc.) as
                 tool to plan for and implement those systems, or to use to fill in any existing gaps for production scheduling.
@@ -124,8 +128,8 @@ export default function ResourceManagerForExcel2Page() {
               {/* Screenshot with Adaptable and Flexible Quote */}
               <div className="grid items-start gap-8 lg:grid-cols-2">
                 <div>
-                  <h3 className="mb-4 text-xl font-semibold text-cyan-500">"Adaptable and Flexible"</h3>
-                  <p className="leading-relaxed text-slate-900">
+                  <h3 className="mb-4 text-xl font-semibold">"Adaptable and Flexible"</h3>
+                  <p className="leading-relaxed text-slate-700">
                     Resource Manager for Excel is a great solution for
                     manufacturers who are not ready for a full-blown
                     MRPII, ERP, or Shop Management System but realize
@@ -134,10 +138,10 @@ export default function ResourceManagerForExcel2Page() {
                     adapts to the way people are running their business
                     today".
                   </p>
-                  <p className="mt-4 leading-relaxed text-slate-900">
+                  <p className="mt-4 leading-relaxed text-slate-700">
                     <span className="italic">Mike Parks, Director of Georgia Tech's CMIT, an
-                    affiliate of the NIST Manufacturing Extension
-                    Partnership.</span>
+                      affiliate of the NIST Manufacturing Extension
+                      Partnership.</span>
                   </p>
                 </div>
                 <div className="flex justify-center">
@@ -156,7 +160,7 @@ export default function ResourceManagerForExcel2Page() {
                 <h2 className="mb-4 text-xl font-bold text-slate-900">Features</h2>
                 <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {features.map((feature, index) => (
-                    <li key={index} className="flex items-center gap-2 text-slate-900">
+                    <li key={index} className="flex items-center gap-2 text-slate-700">
                       <Check className="size-4 text-green-600 shrink-0" />
                       <span>{feature}</span>
                     </li>
