@@ -33,7 +33,7 @@ export function RMXInDepthContent() {
             alt="Delivery worker pushing a hand truck with boxes"
             width={400}
             height={300}
-            className="rounded-lg shadow-md"
+            className="rounded-lg"
             loading="lazy"
           />
         </div>
@@ -126,7 +126,7 @@ export function RMXInDepthContent() {
             alt="Drawn treasure map with red X mark"
             width={400}
             height={300}
-            className="rounded-lg shadow-md"
+            className="rounded-lg"
             loading="lazy"
           />
         </div>
