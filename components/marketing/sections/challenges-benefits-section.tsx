@@ -39,9 +39,14 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Left Column - Solving Challenges and Reaping Benefits */}
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h3 className="mb-4 text-lg font-semibold text-gray-900">
-              Solving Challenges and Reaping Benefits
-            </h3>
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-full bg-green-100">
+                <Check className="size-5 text-green-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Solving Challenges and Reaping Benefits
+              </h3>
+            </div>
             <ul className="space-y-2">
               {challenges.map((item, index) => (
                 <li key={index} className="flex items-start gap-2 text-md text-gray-700">
