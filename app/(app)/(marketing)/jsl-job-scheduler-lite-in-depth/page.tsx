@@ -41,8 +41,8 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`transition-colors ${activeTab === tab.id
-                  ? 'font-semibold text-cyan-500'
-                  : 'text-slate-700 hover:text-cyan-500'
+                  ? 'font-semibold  '
+                  : 'text-slate-700 hover: '
                   }`}
               >
                 {tab.label}

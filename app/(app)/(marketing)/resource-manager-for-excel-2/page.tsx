@@ -93,8 +93,8 @@ export default function ResourceManagerForExcel2Page() {
                 tabIndex={activeTab === tab.id ? 0 : -1}
                 onClick={() => setActiveTab(tab.id)}
                 className={`transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 rounded-sm px-2 py-1 ${activeTab === tab.id
-                    ? 'font-semibold text-cyan-500'
-                    : 'text-slate-700 hover:text-cyan-500'
+                  ? 'font-semibold  '
+                  : 'text-slate-700 hover: '
                   }`}
               >
                 {tab.label}

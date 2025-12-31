@@ -41,8 +41,8 @@ export default function ResourceManagerDBInDepthPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`transition-colors ${
                   activeTab === tab.id
-                    ? 'font-semibold text-cyan-500'
-                    : 'text-slate-700 hover:text-cyan-500'
+                    ? 'font-semibold  '
+                    : 'text-slate-700 hover: '
                 }`}
               >
                 {tab.label}
@@ -58,7 +58,7 @@ export default function ResourceManagerDBInDepthPage() {
           {/* Summary Tab */}
           {activeTab === 'summary' && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-cyan-500">RESOURCE MANAGER DB: SUMMARY</h2>
+              <h2 className="text-2xl font-bold  ">RESOURCE MANAGER DB: SUMMARY</h2>
               <div className="grid items-start gap-8 lg:grid-cols-2">
                 <div>
                   <div className="space-y-4 text-base leading-relaxed text-slate-700">

@@ -43,8 +43,8 @@ export default function EDGEBIPage(): React.JSX.Element {
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
                     className={`text-md transition-colors ${activeTab === tab.id
-                      ? 'font-semibold text-cyan-500'
-                      : 'text-slate-700 hover:text-cyan-500'
+                      ? 'font-semibold  '
+                      : 'text-slate-700 hover: '
                       }`}
                   >
                     {tab.label}
