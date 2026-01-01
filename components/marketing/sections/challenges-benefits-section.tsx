@@ -72,7 +72,7 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
               >
                 <div className="flex items-center gap-3">
                   <div className="flex size-10 items-center justify-center rounded-full bg-green-100">
-                    <Check className="size-5 text-green-600" />
+                    <Check className="size-6 text-green-600" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900">What we WILL do</h3>
                 </div>
@@ -103,7 +103,7 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
               >
                 <div className="flex items-center gap-3">
                   <div className="flex size-10 items-center justify-center rounded-full bg-red-100">
-                    <X className="size-5 text-red-600" />
+                    <X className="size-6 text-red-600" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900">What we WON&apos;T do</h3>
                 </div>
