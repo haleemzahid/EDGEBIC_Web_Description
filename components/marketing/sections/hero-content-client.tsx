@@ -62,7 +62,7 @@ export function HeroContent(): React.JSX.Element {
     <div className="relative w-full">
       {/* Hero Background Image - Priority for LCP */}
       <Image
-        src="/images/Edgebic/2022-12/slide4.jpg"
+        src="/images/Edgebic/2022-12/heroImage.jpg"
         alt="Manufacturing production planning background"
         fill
         priority
