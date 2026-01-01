@@ -38,7 +38,7 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
   const [wontDoExpanded, setWontDoExpanded] = useState(false);
 
   return (
-    <section className="pt-6">
+    <section className='pt-2'>
       <div className="mx-auto max-w-7xl">
         <div className="flex justify-end">
           {/* Left Column - Solving Challenges and Reaping Benefits - COMMENTED OUT */}
@@ -62,13 +62,13 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
           </div> */}
 
           {/* What we WILL do / WON'T do side by side */}
-          <div className="grid w-[80%] items-start grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="grid w-[50%] items-start grid-cols-1 gap-3 md:grid-cols-2">
             {/* What we WILL do */}
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)] flex-1">
               <button
                 type="button"
                 onClick={() => setWillDoExpanded(!willDoExpanded)}
-                className="flex w-full items-center justify-between p-4 py-3 text-left transition-colors hover:bg-gray-50"
+                className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex size-10 items-center justify-center rounded-full bg-green-100">
@@ -99,7 +99,7 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
               <button
                 type="button"
                 onClick={() => setWontDoExpanded(!wontDoExpanded)}
-                className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-gray-50"
+                className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex size-10 items-center justify-center rounded-full bg-red-100">

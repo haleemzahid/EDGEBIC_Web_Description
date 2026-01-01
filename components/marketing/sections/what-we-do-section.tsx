@@ -3,7 +3,7 @@ import { Check, X } from 'lucide-react';
 
 export function WhatWeDoSection(): React.JSX.Element {
   return (
-    <section className="pt-6">
+    <section>
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-6 md:grid-cols-2">
           {/* What we WILL do Card */}
