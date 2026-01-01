@@ -162,16 +162,16 @@ export function TestHomeHero(): React.JSX.Element {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative h-[250px] md:h-[320px] lg:h-full min-h-[300px] rounded-lg overflow-hidden"
+            className="relative h-[250px] md:h-[320px] lg:h-full min-h-[300px] overflow-hidden"
           >
             <Image
-              src="/images/Edgebic/2022-12/heroImage.jpg"
+              src="/images/Edgebic/2022-12/slide4.jpg"
               alt="Manufacturing production planning background"
               fill
               priority
               fetchPriority="high"
               sizes="(max-width: 1024px) 100vw, 60vw"
-              className="object-cover object-center"
+              className="object-cover"
               quality={75}
             />
           </motion.div>

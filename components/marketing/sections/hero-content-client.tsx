@@ -60,15 +60,29 @@ export function HeroContent(): React.JSX.Element {
 
   return (
     <div className="relative w-full">
-      {/* Main Hero Content - Two Column Layout */}
-      <div className="relative z-10 mx-auto max-w-7xl pt-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+      {/* Full Width Background Image */}
+      <div className="absolute inset-0 w-full h-full">
+        <Image
+          src="/images/Edgebic/2022-12/slide4.jpg"
+          alt="Manufacturing production planning background"
+          fill
+          priority
+          fetchPriority="high"
+          sizes="100vw"
+          className="object-cover"
+          quality={75}
+        />
+      </div>
+
+      {/* Main Hero Content */}
+      <div className="relative z-10 mx-auto max-w-7xl pt-6 pb-6">
+        <div className="flex">
           {/* Left Side - Text Content */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
-            className="space-y-8 text-left"
+            className="space-y-8 text-left lg:w-1/2 bg-white/80 backdrop-blur-sm p-6 rounded-lg"
           >
             {/* Main Title */}
             <h1 className="text-2xl leading-tight text-black md:text-4xl lg:text-5xl">
@@ -157,24 +171,6 @@ export function HeroContent(): React.JSX.Element {
             </div>
           </motion.div>
 
-          {/* Right Side - Hero Image */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative h-[250px] md:h-[320px] lg:h-full min-h-[300px] rounded-lg overflow-hidden"
-          >
-            <Image
-              src="/images/Edgebic/2022-12/heroImage.jpg"
-              alt="Manufacturing production planning background"
-              fill
-              priority
-              fetchPriority="high"
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-cover object-center rounded-lg"
-              quality={75}
-            />
-          </motion.div>
         </div>
       </div>
 
