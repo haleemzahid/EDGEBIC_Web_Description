@@ -66,6 +66,10 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'www.dawloom.com'
+      },
+      {
+        protocol: 'https',
+        hostname: 'payloadcms-theta.vercel.app'
       }
     ]
   },
