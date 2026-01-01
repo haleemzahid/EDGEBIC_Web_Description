@@ -62,7 +62,7 @@ export function TestHomeHero(): React.JSX.Element {
     <div className="relative w-full">
       {/* Main Hero Content - Two Column Layout: 40% text, 60% image */}
       <div className="relative z-10 mx-auto max-w-7xl pt-6">
-        <div className="grid grid-cols-1 lg:grid-cols-[40%_60%] gap-6 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-3 items-stretch">
           {/* Left Side - Text Content (40%) */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -171,7 +171,7 @@ export function TestHomeHero(): React.JSX.Element {
               priority
               fetchPriority="high"
               sizes="(max-width: 1024px) 100vw, 60vw"
-              className="object-cover object-center rounded-lg"
+              className="object-cover object-center"
               quality={75}
             />
           </motion.div>
