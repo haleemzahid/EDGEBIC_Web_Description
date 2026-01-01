@@ -50,8 +50,8 @@ export default function ContactUsPage() {
   } = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
     defaultValues: {
-      productInterest: '',
-      hearAboutUs: ''
+      productInterest: 'production-planning',
+      hearAboutUs: 'where-did-you-hear'
     }
   });
 
@@ -217,7 +217,6 @@ export default function ContactUsPage() {
                           {...register('productInterest')}
                           className="w-full border-b border-input bg-transparent px-2 py-3 pr-8 text-muted-foreground focus:border-primary focus:outline-none appearance-none cursor-pointer"
                         >
-                          <option value="">Select Product Interest</option>
                           <option value="production-planning">
                             Production Planning & Scheduling
                           </option>
@@ -244,7 +243,7 @@ export default function ContactUsPage() {
                           {...register('hearAboutUs')}
                           className="w-full border-b border-input bg-transparent px-2 py-3 pr-8 text-muted-foreground focus:border-primary focus:outline-none appearance-none cursor-pointer"
                         >
-                          <option value="">Where did you hear about US?</option>
+                          <option value="where-did-you-hear">Where did you hear about US?</option>
                           <option value="google">Google Search</option>
                           <option value="press-release">Press Release</option>
                           <option value="referral">Referral</option>
