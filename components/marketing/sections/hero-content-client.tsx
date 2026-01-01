@@ -62,7 +62,7 @@ export function HeroContent(): React.JSX.Element {
     <div className="relative w-full">
       {/* Main Hero Content - Two Column Layout */}
       <div className="relative z-10 mx-auto max-w-7xl pt-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           {/* Left Side - Text Content */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -162,7 +162,7 @@ export function HeroContent(): React.JSX.Element {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative h-[250px] md:h-[320px] lg:h-[400px] rounded-lg overflow-hidden"
+            className="relative h-[250px] md:h-[320px] lg:h-full min-h-[300px] rounded-lg overflow-hidden"
           >
             <Image
               src="/images/Edgebic/2022-12/heroImage.jpg"
