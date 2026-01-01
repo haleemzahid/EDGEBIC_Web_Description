@@ -97,7 +97,7 @@ export async function ContactTabs({
       </UnderlinedTabsContent>
       <UnderlinedTabsContent
         value={Tab.Meetings}
-        className="m-0 p-0 md:grow md:overflow-hidden"
+        className="m-0 h-full min-h-0 flex-1 overflow-hidden p-0"
       >
         <React.Suspense>
           <ContactMeetingsTab contact={contact} />

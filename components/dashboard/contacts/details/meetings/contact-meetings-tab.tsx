@@ -129,8 +129,8 @@ export function ContactMeetingsTab({ contact }: ContactMeetingsTabProps): React.
   const pastMeetings = meetings.filter((m) => m.start <= new Date());
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b px-4 py-3">
+    <div className="flex h-full flex-col overflow-hidden">
+      <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
         <h3 className="text-sm font-medium">Meetings</h3>
         <Button
           variant="ghost"
@@ -142,7 +142,7 @@ export function ContactMeetingsTab({ contact }: ContactMeetingsTabProps): React.
         </Button>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="h-0 min-h-0 flex-1">
         <div className="space-y-4 p-4">
           {error && (
             <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
