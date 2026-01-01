@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, ChevronDown, ChevronUp } from 'lucide-react';
 
 const challenges = [
@@ -62,16 +63,30 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
                   <ChevronDown className="size-5 text-[#1e3a5f]" />
                 )}
               </button>
-              {willDoExpanded && (
-                <ul className="space-y-3 px-5 pb-5 text-md text-gray-600">
-                  {willDoItems.map((item, index) => (
-                    <li key={index} className="flex gap-3">
-                      <Check className="mt-0.5 size-4 shrink-0 text-green-500" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <AnimatePresence>
+                {willDoExpanded && (
+                  <motion.ul
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="space-y-3 px-5 pb-5 text-md text-gray-600 overflow-hidden"
+                  >
+                    {willDoItems.map((item, index) => (
+                      <motion.li
+                        key={index}
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        className="flex gap-3"
+                      >
+                        <Check className="mt-0.5 size-4 shrink-0 text-green-500" />
+                        <span>{item}</span>
+                      </motion.li>
+                    ))}
+                  </motion.ul>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* What we WON'T do */}
@@ -93,16 +108,30 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
                   <ChevronDown className="size-5 text-[#1e3a5f]" />
                 )}
               </button>
-              {wontDoExpanded && (
-                <ul className="space-y-3 px-5 pb-5 text-md text-gray-600">
-                  {wontDoItems.map((item, index) => (
-                    <li key={index} className="flex gap-3">
-                      <X className="mt-0.5 size-4 shrink-0 text-red-500" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <AnimatePresence>
+                {wontDoExpanded && (
+                  <motion.ul
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="space-y-3 px-5 pb-5 text-md text-gray-600 overflow-hidden"
+                  >
+                    {wontDoItems.map((item, index) => (
+                      <motion.li
+                        key={index}
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        className="flex gap-3"
+                      >
+                        <X className="mt-0.5 size-4 shrink-0 text-red-500" />
+                        <span>{item}</span>
+                      </motion.li>
+                    ))}
+                  </motion.ul>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
