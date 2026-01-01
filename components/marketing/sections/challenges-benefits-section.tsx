@@ -40,7 +40,7 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
   return (
     <section className='pt-2'>
       <div className="mx-auto max-w-7xl">
-        <div className="flex justify-end">
+        <div className="flex justify-start">
           {/* Left Column - Solving Challenges and Reaping Benefits - COMMENTED OUT */}
           {/* <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center gap-3">
@@ -62,9 +62,9 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
           </div> */}
 
           {/* What we WILL do / WON'T do side by side */}
-          <div className="grid w-[50%] items-start grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="flex w-[50%] items-start gap-3">
             {/* What we WILL do */}
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)] flex-1">
+            <div className={`overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)] transition-all duration-300 ${willDoExpanded ? 'flex-[2]' : 'flex-1'}`}>
               <button
                 type="button"
                 onClick={() => setWillDoExpanded(!willDoExpanded)}
@@ -95,7 +95,7 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
             </div>
 
             {/* What we WON'T do */}
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)] flex-1">
+            <div className={`overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)] transition-all duration-300 ${wontDoExpanded ? 'flex-[2]' : 'flex-1'}`}>
               <button
                 type="button"
                 onClick={() => setWontDoExpanded(!wontDoExpanded)}
