@@ -40,7 +40,7 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
 
   return (
     <section className='pt-2'>
-      <div className="mx-auto max-w-7xl">
+      <div className="m">
         <div className="flex justify-end">
           {/* What we WILL do / WON'T do side by side */}
           <div className={`flex items-start gap-3 transition-all duration-300 ${willDoExpanded || wontDoExpanded ? 'w-[70%]' : 'w-[50%]'}`}>
