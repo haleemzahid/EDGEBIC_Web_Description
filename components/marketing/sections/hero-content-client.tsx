@@ -60,33 +60,22 @@ export function HeroContent(): React.JSX.Element {
 
   return (
     <div className="relative w-full">
-      {/* Hero Background Image - Priority for LCP */}
-      <Image
-        src="/images/Edgebic/2022-12/heroImage.jpg"
-        alt="Manufacturing production planning background"
-        fill
-        priority
-        fetchPriority="high"
-        sizes="100vw"
-        className="object-cover object-center"
-        quality={75}
-      />
-      {/* Main Hero Content */}
-      <div className="relative z-10 mx-auto max-w-7xl p-6">
-        <div className="mx-auto pt-6 max-w-7xl text-center">
-          {/* Text Content */}
+      {/* Main Hero Content - Two Column Layout */}
+      <div className="relative z-10 mx-auto max-w-7xl pt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+          {/* Left Side - Text Content */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
-            className="space-y-8"
+            className="space-y-8 text-left"
           >
             {/* Main Title */}
-            <h1 className="text-2xl leading-tight text-white md:text-4xl lg:text-5xl">
+            <h1 className="text-2xl leading-tight text-black md:text-4xl lg:text-5xl">
               Production Planning and Scheduling Software
             </h1>
             {/* Description */}
-            <div className="mx-auto  text-base leading-relaxed text-white/90">
+            <div className="text-base leading-relaxed text-black">
               <p>
                 What makes <span className="font-semibold italic">US</span>{' '}
                 (User Solution) unique: we work{' '}
@@ -99,15 +88,15 @@ export function HeroContent(): React.JSX.Element {
             </div>
 
             {/* Solution Approach */}
-            <p className="text-md pt-[30px] font-semibold tracking-wide text-yellow-400">
+            <p className="text-md  font-semibold tracking-wide text-yellow-400">
               LESS TRAINING | QUICKER IMPLEMENTATION | FASTER RETURN | Preventive Maintenance
             </p>
 
             {/* Action Buttons */}
-            <div className="flex flex-col items-center justify-center gap-x-3 !mt-3    sm:flex-row">
+            <div className="flex flex-row items-center gap-3 !mt-3 flex-wrap">
               <button
                 onClick={handleFirstVideoButtonClick}
-                className="inline-flex min-w-[200px] items-center justify-center gap-1 rounded-[10px] bg-yellow-400 px-6 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
+                className="inline-flex items-center justify-center gap-1 rounded-[10px] bg-yellow-400 px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
               >
                 <Image
                   src="/images/footprint.png"
@@ -121,7 +110,7 @@ export function HeroContent(): React.JSX.Element {
               </button>
               <button
                 onClick={handleSecondVideoButtonClick}
-                className="inline-flex items-center justify-center rounded-[10px] bg-yellow-400 px-6 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
+                className="inline-flex items-center justify-center rounded-[10px] bg-yellow-400 px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
               >
                 <Image
                   src="/images/footprint.png"
@@ -139,14 +128,14 @@ export function HeroContent(): React.JSX.Element {
                   className="size-7 mr-1"
                   style={{ objectFit: 'contain' }}
                 />
-                90 SEC COMPANY OVERVIEW
+                See How It Works
               </button>
               <button
                 type="button"
                 onClick={() => {
                   window.open('https://calendly.com/mudasirnadeem7979/30min', '_blank');
                 }}
-                className="inline-flex min-w-[200px] items-center justify-center gap-2 rounded-[10px] bg-yellow-400 px-6 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
+                className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-yellow-400 px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -166,11 +155,33 @@ export function HeroContent(): React.JSX.Element {
                 Fix My Schedule!
               </button>
             </div>
+          </motion.div>
 
-            {/* Ratings/Reviews Section */}
-            {/* <div className="flex flex-col items-center gap-3"> */}
-            {/* <div className="flex items-center justify-center gap-1"> */}
-            {/* {[...Array(4)].map((_, i) => (
+          {/* Right Side - Hero Image */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="relative h-[250px] md:h-[320px] lg:h-[400px] rounded-lg overflow-hidden"
+          >
+            <Image
+              src="/images/Edgebic/2022-12/heroImage.jpg"
+              alt="Manufacturing production planning background"
+              fill
+              priority
+              fetchPriority="high"
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="object-cover object-center rounded-lg"
+              quality={75}
+            />
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Ratings/Reviews Section */}
+      {/* <div className="flex flex-col items-center gap-3"> */}
+      {/* <div className="flex items-center justify-center gap-1"> */}
+      {/* {[...Array(4)].map((_, i) => (
                   <svg
                     key={i}
                     className="size-5 fill-yellow-400"
@@ -179,8 +190,8 @@ export function HeroContent(): React.JSX.Element {
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
                 ))} */}
-            {/* Half star */}
-            {/* <svg
+      {/* Half star */}
+      {/* <svg
                   className="size-5"
                   viewBox="0 0 20 20"
                 >
@@ -201,12 +212,12 @@ export function HeroContent(): React.JSX.Element {
                     d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
                   />
                 </svg> */}
-            {/* <span className="ml-2 text-sm text-white">
+      {/* <span className="ml-2 text-sm text-white">
                   Top-Rated Manufacturing Software
                 </span> */}
-            {/* </div> */}
-            {/* <div className="flex items-center justify-center gap-4"> */}
-            {/* <a
+      {/* </div> */}
+      {/* <div className="flex items-center justify-center gap-4"> */}
+      {/* <a
                   href="https://www.g2.com/products/resource-manager-db-rmdb/competitors/alternativesproducts/resource-manager-db-rmdb/competitors/alternatives"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -386,11 +397,8 @@ export function HeroContent(): React.JSX.Element {
                     </g>
                   </svg>
                 </a> */}
-            {/* </div> */}
-            {/* </div> */}
-          </motion.div>
-        </div>
-      </div>
+      {/* </div> */}
+      {/* </div> */}
 
       {/* Video Modal */}
       <VideoModal
