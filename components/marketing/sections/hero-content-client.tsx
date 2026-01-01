@@ -75,21 +75,21 @@ export function HeroContent(): React.JSX.Element {
       </div>
 
       {/* Main Hero Content */}
-      <div className="relative z-10 mx-auto max-w-7xl pt-6 pb-6">
+      <div className="relative z-10 mx-auto max-w-7xl py-6">
         <div className="flex">
           {/* Left Side - Text Content */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
-            className="space-y-8 text-left lg:w-1/2 bg-white/80 backdrop-blur-sm p-6 rounded-lg"
+            className="space-y-8 text-left lg:w-1/2 p-6"
           >
             {/* Main Title */}
-            <h1 className="text-2xl leading-tight text-black md:text-4xl lg:text-5xl">
+            <h1 className="text-2xl leading-tight text-white md:text-4xl lg:text-5xl">
               Production Planning and Scheduling Software
             </h1>
             {/* Description */}
-            <div className="text-base leading-relaxed text-black">
+            <div className="text-base leading-relaxed text-white">
               <p>
                 What makes <span className="font-semibold italic">US</span>{' '}
                 (User Solution) unique: we work{' '}
@@ -102,15 +102,15 @@ export function HeroContent(): React.JSX.Element {
             </div>
 
             {/* Solution Approach */}
-            <p className="text-md font-semibold tracking-wide text-black">
+            {/* <p className="text-md font-semibold tracking-wide text-white">
               LESS TRAINING | QUICKER IMPLEMENTATION | FASTER RETURN
-            </p>
+            </p> */}
 
             {/* Action Buttons */}
             <div className="flex flex-row items-center gap-3 !mt-3 flex-wrap">
               <button
                 onClick={handleFirstVideoButtonClick}
-                className="inline-flex h-10 w-[180px] items-center justify-center gap-2 rounded-[10px] border-2 border-[#1e3a5f] bg-transparent px-4 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-[#1e3a5f]/10"
+                className="inline-flex h-10 w-[180px] items-center justify-center gap-2 rounded-[10px] border-2 border-white bg-transparent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10"
               >
                 <Image
                   src="/images/footprint.png"
@@ -124,7 +124,7 @@ export function HeroContent(): React.JSX.Element {
               </button>
               <button
                 onClick={handleSecondVideoButtonClick}
-                className="inline-flex h-10 items-center justify-center px-4 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:text-[#2d4a6f]"
+                className="inline-flex h-10 items-center justify-center rounded-[10px] border-2 border-white px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10"
               >
                 <Image
                   src="/images/footprint.png"
