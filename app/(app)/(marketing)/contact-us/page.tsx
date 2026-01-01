@@ -293,7 +293,7 @@ export default function ContactUsPage() {
               </div>
 
               {/* Right Side - Image */}
-              <div className="hidden lg:flex lg:w-1/3 flex-col items-center">
+              <div className="hidden lg:flex lg:w-[40%] flex-col items-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/images/Edgebic/contact-sidebar.png"
