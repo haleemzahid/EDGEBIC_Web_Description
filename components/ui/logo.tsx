@@ -25,14 +25,14 @@ export function Logo({
       {...other}
     >
       {!hideSymbol && (
-        <div className="flex size-24 items-center justify-center p-1">
-          <div className="flex size-24 items-center justify-center">
+        <div className="flex h-[50px] w-[120px] items-center justify-center">
+          <div className="flex h-[50px] w-[120px] items-center justify-center">
             {/* EDGEBIC Logo */}
             <Image
               src="/logos/edgebic-logo.png"
               alt="EDGEBIC Logo"
-              width={100}
-              height={100}
+              width={120}
+              height={50}
               className="object-contain"
               priority
             />
