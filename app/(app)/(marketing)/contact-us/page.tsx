@@ -50,8 +50,8 @@ export default function ContactUsPage() {
   } = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
     defaultValues: {
-      productInterest: 'production-planning',
-      hearAboutUs: 'not-specified'
+      productInterest: '',
+      hearAboutUs: ''
     }
   });
 
@@ -100,28 +100,47 @@ export default function ContactUsPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <div className="w-full">
-              <Card>
-                <CardContent>
-                  <p className="text-lg text-center pt-6 leading-relaxed">
-                    Please email me with options for free templates and no-risk trials and/or book a quick free call to discuss your specific challenges!
+            {/* Contact US Heading */}
+            <div className="text-center mb-8">
+              <h1 className="text-4xl md:text-5xl font-bold text-slate-900">
+                Contact <span className="text-blue-600">US</span>
+              </h1>
+            </div>
+
+            <div className="flex flex-col lg:flex-row gap-8">
+              {/* Form Section */}
+              <div className="w-full lg:w-1/2">
+                {/* Description Box */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                  <p className="text-gray-700 leading-relaxed mb-4">
+                    Instead of a one size fits all approach, lets discuss YOUR processes and challenges and explore situations to fit YOUR WAY. We can even use your data during a live demo meeting. Contact <span className="font-bold italic">US</span> by filling out the form below and we will be in touch to prepare custom demo.
                   </p>
 
-                  {/* Calendly Button */}
-                  <div className="flex pt-3 justify-center">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        window.open('https://calendly.com/mudasirnadeem7979/30min', '_blank');
-                      }}
-                      className="rounded-md bg-blue-600 px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700"
-                    >
-                      Schedule a Call
-                    </button>
+                  {/* Checkboxes */}
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-cyan-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-gray-700">Schedule a quick call to discuss your application.</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-cyan-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-gray-700">Schedule a live, custom demo (We will be in contact to understand your application and obtain your actual data/reports).</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-cyan-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-gray-700">We&apos;ll be periodically sending you updates about our new products and features.</span>
+                    </div>
                   </div>
+                </div>
 
-                  {/* Contact Form */}
-                  <div className="p-6">
+                {/* Contact Form */}
+                <div className="py-2">
                     <form
                       onSubmit={handleSubmit(onSubmit)}
                       className="space-y-4"
@@ -194,22 +213,21 @@ export default function ContactUsPage() {
                       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
                           <select
-                            hidden
                             id="productInterest"
                             {...register('productInterest')}
                             className="w-full border-b border-input bg-transparent px-2 py-3 text-foreground focus:border-primary focus:outline-none"
-                            defaultValue="production-planning"
                           >
+                            <option value="">Select Product Interest</option>
                             <option value="production-planning">
                               Production Planning & Scheduling
                             </option>
-                            <option value="inventory-management">
-                              Inventory Management
+                            <option value="integration">
+                              Integration with other Systems
                             </option>
-                            <option value="shop-floor-control">
-                              Shop Floor Control
+                            <option value="general-inquiries">
+                              General Inquiries
                             </option>
-                            <option value="other">Other</option>
+                            <option value="all-above">All the Above</option>
                           </select>
                           {errors.productInterest && (
                             <p className="mt-1 text-sm text-destructive">
@@ -219,20 +237,16 @@ export default function ContactUsPage() {
                         </div>
                         <div>
                           <select
-                            hidden
                             id="hearAboutUs"
                             {...register('hearAboutUs')}
                             className="w-full border-b border-input bg-transparent px-2 py-3 text-foreground focus:border-primary focus:outline-none"
-                            defaultValue="not-specified"
                           >
-                            <option value="not-specified">
-                              Where did you hear about US?
-                            </option>
+                            <option value="">Where did you hear about US?</option>
                             <option value="google">Google Search</option>
-                            <option value="linkedin">LinkedIn</option>
+                            <option value="press-release">Press Release</option>
                             <option value="referral">Referral</option>
-                            <option value="trade-show">Trade Show</option>
-                            <option value="other">Other</option>
+                            <option value="social-media">Social Media</option>
+                            <option value="other">Others</option>
                           </select>
                           {errors.hearAboutUs && (
                             <p className="mt-1 text-sm text-destructive">
@@ -245,7 +259,6 @@ export default function ContactUsPage() {
                       {/* Message */}
                       <div>
                         <textarea
-                          hidden
                           id="message"
                           {...register('message')}
                           rows={4}
@@ -276,16 +289,33 @@ export default function ContactUsPage() {
                         {isSubmitting ? 'Submitting...' : 'Submit'}
                       </button>
                     </form>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
+
+              {/* Right Side - Image */}
+              <div className="hidden lg:flex lg:w-1/2 flex-col items-center">
+                <Image
+                  src="/images/Edgebic/contact-sidebar.png"
+                  alt="Diverse professionals representing our client base"
+                  width={400}
+                  height={500}
+                  className="w-full max-w-md h-auto object-contain"
+                />
+
+                {/* Perfect Complement Text */}
+                <div className="bg-red-600 text-white p-4 rounded-lg text-center mt-6 max-w-md">
+                  <p className="font-medium">
+                    The perfect complement for companies of any size... from <span className="text-cyan-300">Job Shops</span> to <span className="text-cyan-300">Small-Medium Manufacturers</span> to <span className="text-cyan-300">Global Multi-Nationals</span>
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Awards Banner */}
-      <section className="pt-6">
+      <section className="py-12">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
             <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
