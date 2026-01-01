@@ -9,15 +9,21 @@ import { Button } from '@/components/ui/button';
 // YouTube Video Player Component - Embeds YouTube iframe directly
 function YouTubePlayer({
   videoId,
-  title
+  title,
+  hidePoster = false
 }: {
   videoId: string;
   title: string;
+  hidePoster?: boolean;
 }) {
+  const params = hidePoster
+    ? `?rel=0&modestbranding=1&iv_load_policy=3`
+    : `?rel=0`;
+
   return (
     <iframe
       className="absolute inset-0 size-full"
-      src={`https://www.youtube.com/embed/${videoId}?rel=0`}
+      src={`https://www.youtube.com/embed/${videoId}${params}`}
       title={title}
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
       allowFullScreen
@@ -181,6 +187,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                   <YouTubePlayer
                     videoId="snltXMHeojU"
                     title="EDGEBIC Demo"
+                    hidePoster={true}
                   />
                 </div>
               </div>
