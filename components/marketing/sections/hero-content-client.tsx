@@ -89,7 +89,7 @@ export function HeroContent(): React.JSX.Element {
 
             {/* Solution Approach */}
             <p className="text-md font-semibold tracking-wide text-black">
-              LESS TRAINING | QUICKER IMPLEMENTATION | FASTER RETURN | Preventive Maintenance
+              LESS TRAINING | QUICKER IMPLEMENTATION | FASTER RETURN
             </p>
 
             {/* Action Buttons */}

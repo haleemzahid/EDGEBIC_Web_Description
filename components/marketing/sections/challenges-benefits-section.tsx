@@ -64,7 +64,7 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
           {/* What we WILL do / WON'T do side by side */}
           <div className="grid w-full items-start grid-cols-1 gap-6 lg:col-span-2 md:grid-cols-2">
             {/* What we WILL do */}
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm flex-1">
+            <div className="overflow-hidden rounded-xl border-2 border-[#1e3a5f] bg-white shadow-[0_4px_12px_rgba(30,58,95,0.15)] flex-1">
               <button
                 type="button"
                 onClick={() => setWillDoExpanded(!willDoExpanded)}
@@ -77,9 +77,9 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
                   <h3 className="text-lg font-semibold text-gray-900">What we WILL do</h3>
                 </div>
                 {willDoExpanded ? (
-                  <ChevronUp className="size-5 text-gray-500" />
+                  <ChevronUp className="size-5 text-[#1e3a5f]" />
                 ) : (
-                  <ChevronDown className="size-5 text-gray-500" />
+                  <ChevronDown className="size-5 text-[#1e3a5f]" />
                 )}
               </button>
               {willDoExpanded && (
@@ -108,9 +108,9 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
                   <h3 className="text-lg font-semibold text-gray-900">What we WON&apos;T do</h3>
                 </div>
                 {wontDoExpanded ? (
-                  <ChevronUp className="size-5 text-gray-500" />
+                  <ChevronUp className="size-5 text-[#1e3a5f]" />
                 ) : (
-                  <ChevronDown className="size-5 text-gray-500" />
+                  <ChevronDown className="size-5 text-[#1e3a5f]" />
                 )}
               </button>
               {wontDoExpanded && (
