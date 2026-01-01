@@ -64,7 +64,7 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
           {/* What we WILL do / WON'T do side by side */}
           <div className="grid w-full items-start grid-cols-1 gap-6 lg:col-span-2 md:grid-cols-2">
             {/* What we WILL do */}
-            <div className="overflow-hidden rounded-xl border-2 border-[#1e3a5f] bg-white shadow-[0_4px_12px_rgba(30,58,95,0.15)] flex-1">
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)] flex-1">
               <button
                 type="button"
                 onClick={() => setWillDoExpanded(!willDoExpanded)}
@@ -95,7 +95,7 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
             </div>
 
             {/* What we WON'T do */}
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm flex-1">
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)] flex-1">
               <button
                 type="button"
                 onClick={() => setWontDoExpanded(!wontDoExpanded)}
