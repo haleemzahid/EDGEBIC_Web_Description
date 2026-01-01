@@ -107,10 +107,10 @@ export function HeroContent(): React.JSX.Element {
             </p> */}
 
             {/* Action Buttons */}
-            <div className="flex flex-row items-center gap-3 !mt-3 flex-wrap">
+            <div className="flex flex-row items-center gap-3 !mt-3">
               <button
                 onClick={handleFirstVideoButtonClick}
-                className="inline-flex h-10 w-[180px] items-center justify-center gap-2 rounded-[10px] border-2 border-white bg-transparent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-[10px] border-2 border-white/70 bg-transparent px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10"
               >
                 <Image
                   src="/images/footprint.png"
@@ -124,7 +124,7 @@ export function HeroContent(): React.JSX.Element {
               </button>
               <button
                 onClick={handleSecondVideoButtonClick}
-                className="inline-flex h-10 items-center justify-center rounded-[10px] border-2 border-white px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                className="inline-flex h-10 items-center justify-center rounded-[10px] border-2 border-white/70 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10"
               >
                 <Image
                   src="/images/footprint.png"
@@ -149,7 +149,7 @@ export function HeroContent(): React.JSX.Element {
                 onClick={() => {
                   window.open('https://calendly.com/mudasirnadeem7979/30min', '_blank');
                 }}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-[10px] bg-[#1e3a5f] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#2d4a6f]"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-[10px] border-2 border-white/70 bg-[#1e3a5f] px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#2d4a6f]"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
