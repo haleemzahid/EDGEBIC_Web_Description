@@ -96,7 +96,7 @@ export function HeroContent(): React.JSX.Element {
             <div className="flex flex-row items-center gap-3 !mt-3 flex-wrap">
               <button
                 onClick={handleFirstVideoButtonClick}
-                className="inline-flex items-center justify-center gap-1 rounded-[10px] bg-yellow-400 px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
+                className="inline-flex h-10 items-center justify-center gap-1 rounded-[10px] bg-yellow-400 px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
               >
                 <Image
                   src="/images/footprint.png"
@@ -110,7 +110,7 @@ export function HeroContent(): React.JSX.Element {
               </button>
               <button
                 onClick={handleSecondVideoButtonClick}
-                className="inline-flex items-center justify-center rounded-[10px] bg-yellow-400 px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
+                className="inline-flex h-10 items-center justify-center rounded-[10px] bg-yellow-400 px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
               >
                 <Image
                   src="/images/footprint.png"
@@ -135,7 +135,7 @@ export function HeroContent(): React.JSX.Element {
                 onClick={() => {
                   window.open('https://calendly.com/mudasirnadeem7979/30min', '_blank');
                 }}
-                className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-yellow-400 px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-[10px] bg-yellow-400 px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-300"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
