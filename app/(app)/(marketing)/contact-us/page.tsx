@@ -324,12 +324,12 @@ export default function ContactUsPage() {
               </div>
 
               {/* Right Side - Image */}
-              <div className="hidden lg:flex lg:w-[40%] flex-col items-center">
+              <div className="hidden h-auto lg:flex lg:w-[40%] flex-col items-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/images/Edgebic/contact-sidebar.png"
                   alt="Diverse professionals representing our client base"
-                  className="w-full max-w-xs h-auto object-contain"
+                  className="w-full max-w-xs h-[100%] object-contain"
                 />
 
                 {/* Perfect Complement Text */}

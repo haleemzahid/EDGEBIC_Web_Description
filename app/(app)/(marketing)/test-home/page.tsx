@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 
 import { AwardsSection } from '@/components/marketing/sections/awards-section';
 import { ManufacturingFeatureSection } from '@/components/marketing/sections/manufacturing-feature-section';
-import { NTClipboardHero } from '@/components/marketing/sections/ntclipboard-hero';
+import { TestHomeHero } from '@/components/marketing/sections/test-home-hero';
 import { NTClipboardSummary } from '@/components/marketing/sections/ntclipboard-summary';
 import { NTClipboardTestimonials } from '@/components/marketing/sections/ntclipboard-testimonials';
 import { NTClipboardToolBox } from '@/components/marketing/sections/ntclipboard-toolbox';
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export default function TestHomePage(): React.JSX.Element {
   return (
     <>
-      <NTClipboardHero />
+      <TestHomeHero />
       <ChallengesBenefitsSection />
       <AwardsSection />
       {/* <NTClipboardSummary /> */}
