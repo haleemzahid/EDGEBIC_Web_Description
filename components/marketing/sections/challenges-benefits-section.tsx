@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { Check, X } from 'lucide-react';
+import { useState } from 'react';
+import { Check, X, ChevronDown, ChevronUp } from 'lucide-react';
 
 const challenges = [
   'Generate accurate, dynamic customer lead times and meet them.',
@@ -33,12 +34,15 @@ const wontDoItems = [
 ];
 
 export function ChallengesBenefitsSection(): React.JSX.Element {
+  const [willDoExpanded, setWillDoExpanded] = useState(false);
+  const [wontDoExpanded, setWontDoExpanded] = useState(false);
+
   return (
     <section className="pt-6">
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Left Column - Solving Challenges and Reaping Benefits */}
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          {/* Left Column - Solving Challenges and Reaping Benefits - COMMENTED OUT */}
+          {/* <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-full bg-green-100">
                 <Check className="size-5 text-green-600" />
@@ -55,44 +59,70 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
                 </li>
               ))}
             </ul>
-          </div>
+          </div> */}
 
-          {/* Right Column - What we WILL do / WON'T do stacked */}
-          <div className="flex flex-col gap-6">
+          {/* What we WILL do / WON'T do side by side */}
+          <div className="grid w-full items-start grid-cols-1 gap-6 lg:col-span-2 md:grid-cols-2">
             {/* What we WILL do */}
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-full bg-green-100">
-                  <Check className="size-5 text-green-600" />
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm flex-1">
+              <button
+                type="button"
+                onClick={() => setWillDoExpanded(!willDoExpanded)}
+                className="flex w-full items-center justify-between p-5 text-left transition-colors hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 items-center justify-center rounded-full bg-green-100">
+                    <Check className="size-5 text-green-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">What we WILL do</h3>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">What we WILL do</h3>
-              </div>
-              <ul className="space-y-3 text-md text-gray-600">
-                {willDoItems.map((item, index) => (
-                  <li key={index} className="flex gap-3">
-                    <Check className="mt-0.5 size-4 shrink-0 text-green-500" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
+                {willDoExpanded ? (
+                  <ChevronUp className="size-5 text-gray-500" />
+                ) : (
+                  <ChevronDown className="size-5 text-gray-500" />
+                )}
+              </button>
+              {willDoExpanded && (
+                <ul className="space-y-3 px-5 pb-5 text-md text-gray-600">
+                  {willDoItems.map((item, index) => (
+                    <li key={index} className="flex gap-3">
+                      <Check className="mt-0.5 size-4 shrink-0 text-green-500" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             {/* What we WON'T do */}
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-full bg-red-100">
-                  <X className="size-5 text-red-600" />
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm flex-1">
+              <button
+                type="button"
+                onClick={() => setWontDoExpanded(!wontDoExpanded)}
+                className="flex w-full items-center justify-between p-5 text-left transition-colors hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 items-center justify-center rounded-full bg-red-100">
+                    <X className="size-5 text-red-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">What we WON&apos;T do</h3>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">What we WON&apos;T do</h3>
-              </div>
-              <ul className="space-y-3 text-md text-gray-600">
-                {wontDoItems.map((item, index) => (
-                  <li key={index} className="flex gap-3">
-                    <X className="mt-0.5 size-4 shrink-0 text-red-500" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
+                {wontDoExpanded ? (
+                  <ChevronUp className="size-5 text-gray-500" />
+                ) : (
+                  <ChevronDown className="size-5 text-gray-500" />
+                )}
+              </button>
+              {wontDoExpanded && (
+                <ul className="space-y-3 px-5 pb-5 text-md text-gray-600">
+                  {wontDoItems.map((item, index) => (
+                    <li key={index} className="flex gap-3">
+                      <X className="mt-0.5 size-4 shrink-0 text-red-500" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         </div>
