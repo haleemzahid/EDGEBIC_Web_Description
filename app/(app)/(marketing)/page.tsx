@@ -20,7 +20,6 @@ export default function IndexPage(): React.JSX.Element {
     <>
       <NTClipboardHero />
       <ChallengesBenefitsSection />
-      <AwardsSection />
       {/* <NTClipboardSummary /> */}
       <ManufacturingFeatureSection />
       {/* <NTClipboardTestimonials /> */}
@@ -28,6 +27,7 @@ export default function IndexPage(): React.JSX.Element {
       {/* <NTClipboardDemo /> */}
       {/* <NTClipboardFAQ /> */}
       {/* <NTClipboardCTA /> */}
+      <AwardsSection />
     </>
   );
 }

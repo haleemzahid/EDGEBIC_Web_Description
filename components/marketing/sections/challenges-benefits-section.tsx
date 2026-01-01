@@ -40,7 +40,7 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
   return (
     <section className="pt-6">
       <div className="mx-auto max-w-7xl">
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="flex justify-end">
           {/* Left Column - Solving Challenges and Reaping Benefits - COMMENTED OUT */}
           {/* <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center gap-3">
@@ -62,7 +62,7 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
           </div> */}
 
           {/* What we WILL do / WON'T do side by side */}
-          <div className="grid w-full items-start grid-cols-1 gap-6 lg:col-span-2 md:grid-cols-2">
+          <div className="grid w-[60%] items-start grid-cols-1 gap-6 md:grid-cols-2">
             {/* What we WILL do */}
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)] flex-1">
               <button
