@@ -68,7 +68,7 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
               <button
                 type="button"
                 onClick={() => setWillDoExpanded(!willDoExpanded)}
-                className="flex w-full items-center justify-between p-5 text-left transition-colors hover:bg-gray-50"
+                className="flex w-full items-center justify-between p-4 py-3 text-left transition-colors hover:bg-gray-50"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex size-10 items-center justify-center rounded-full bg-green-100">
@@ -99,7 +99,7 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
               <button
                 type="button"
                 onClick={() => setWontDoExpanded(!wontDoExpanded)}
-                className="flex w-full items-center justify-between p-5 text-left transition-colors hover:bg-gray-50"
+                className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-gray-50"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex size-10 items-center justify-center rounded-full bg-red-100">
