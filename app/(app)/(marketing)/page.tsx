@@ -1,7 +1,7 @@
 import * as React from 'react';
 import type { Metadata } from 'next';
 
-import { AwardsSection } from '@/components/marketing/sections/awards-section';
+// import { AwardsSection } from '@/components/marketing/sections/awards-section';
 import { ManufacturingFeatureSection } from '@/components/marketing/sections/manufacturing-feature-section';
 import { NTClipboardHero } from '@/components/marketing/sections/ntclipboard-hero';
 import { NTClipboardSummary } from '@/components/marketing/sections/ntclipboard-summary';
@@ -27,7 +27,7 @@ export default function IndexPage(): React.JSX.Element {
       {/* <NTClipboardDemo /> */}
       {/* <NTClipboardFAQ /> */}
       {/* <NTClipboardCTA /> */}
-      <AwardsSection />
+      {/* <AwardsSection /> */}
     </>
   );
 }

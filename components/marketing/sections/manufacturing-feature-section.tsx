@@ -7,7 +7,7 @@ import { NTClipboardToolBox } from './ntclipboard-toolbox';
 
 export function ManufacturingFeatureSection(): React.JSX.Element {
   return (
-    <section className="bg-white py-6">
+    <section className="bg-white pt-6">
       <div className="mx-auto max-w-7xl">
         <div className="lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
           <div className="space-y-6">
@@ -571,7 +571,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
           </h2>
 
           {/* Testimonial Cards */}
-          <div className="mt-6 grid gap-8 md:grid-cols-3">
+          <div className="mt-6 grid gap-6 md:grid-cols-3">
             {/* Testimonial 1 */}
             <div className="flex flex-col rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
               <div className="mb-4 flex items-start gap-4">
