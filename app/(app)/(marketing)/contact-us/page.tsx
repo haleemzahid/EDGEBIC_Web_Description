@@ -211,11 +211,11 @@ export default function ContactUsPage() {
 
                     {/* Product Interest & Where did you hear about us */}
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div>
+                      <div className="relative">
                         <select
                           id="productInterest"
                           {...register('productInterest')}
-                          className="w-full border-b border-input bg-transparent px-2 py-3 text-foreground focus:border-primary focus:outline-none"
+                          className="w-full border-b border-input bg-transparent px-2 py-3 pr-8 text-muted-foreground focus:border-primary focus:outline-none appearance-none cursor-pointer"
                         >
                           <option value="">Select Product Interest</option>
                           <option value="production-planning">
@@ -229,17 +229,20 @@ export default function ContactUsPage() {
                           </option>
                           <option value="all-above">All the Above</option>
                         </select>
+                        <svg className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
                         {errors.productInterest && (
                           <p className="mt-1 text-sm text-destructive">
                             {errors.productInterest.message}
                           </p>
                         )}
                       </div>
-                      <div>
+                      <div className="relative">
                         <select
                           id="hearAboutUs"
                           {...register('hearAboutUs')}
-                          className="w-full border-b border-input bg-transparent px-2 py-3 text-foreground focus:border-primary focus:outline-none"
+                          className="w-full border-b border-input bg-transparent px-2 py-3 pr-8 text-muted-foreground focus:border-primary focus:outline-none appearance-none cursor-pointer"
                         >
                           <option value="">Where did you hear about US?</option>
                           <option value="google">Google Search</option>
@@ -248,6 +251,9 @@ export default function ContactUsPage() {
                           <option value="social-media">Social Media</option>
                           <option value="other">Others</option>
                         </select>
+                        <svg className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
                         {errors.hearAboutUs && (
                           <p className="mt-1 text-sm text-destructive">
                             {errors.hearAboutUs.message}
