@@ -185,8 +185,8 @@ export function NTClipboardToolBox(): React.JSX.Element {
               <div className="relative overflow-hidden rounded-lg">
                 <div className="relative aspect-video bg-slate-100">
                   <YouTubePlayer
-                    videoId="snltXMHeojU"
-                    title="EDGEBIC Demo"
+                    videoId="-Rb6_Rop2JA"
+                    title="EDGEBI Demo"
                     hidePoster={true}
                   />
                 </div>
@@ -230,9 +230,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     asChild
                   >
                     <Link
-                      href="/jsl-job-scheduler-lite"
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      href="/edgebi"
                     >
                       View Details
                     </Link>
