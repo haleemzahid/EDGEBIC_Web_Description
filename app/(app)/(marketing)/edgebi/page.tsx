@@ -58,7 +58,7 @@ export default function EDGEBIPage(): React.JSX.Element {
               <div className="overflow-hidden rounded-lg bg-black shadow-lg">
                 <iframe
                   className="aspect-video w-full"
-                  src="https://www.youtube.com/embed/snltXMHeojU?rel=0"
+                  src="https://www.youtube.com/embed/-Rb6_Rop2JA?rel=0"
                   title="EDGEBI Demo"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
