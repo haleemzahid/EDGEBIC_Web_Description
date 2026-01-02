@@ -242,6 +242,9 @@ export default function LetsMakeManufacturingGreatAgainPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

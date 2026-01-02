@@ -51,6 +51,9 @@ export default function OperationsManagerAcceptsaPage(): React.JSX.Element {
                 acceptance number, AQL, and LTPD.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

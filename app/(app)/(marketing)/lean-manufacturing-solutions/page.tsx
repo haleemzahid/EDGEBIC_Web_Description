@@ -214,6 +214,9 @@ export default function LeanManufacturingSolutionsPage() {
                 landscape.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

@@ -49,6 +49,9 @@ export default function MissionPage(): React.JSX.Element {
                 solution that fits you like a glove!
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

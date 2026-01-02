@@ -195,6 +195,9 @@ export default function LiIonBatterySchedulingPage() {
                 Ventures.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
