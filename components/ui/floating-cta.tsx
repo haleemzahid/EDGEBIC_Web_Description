@@ -9,7 +9,7 @@ export function FloatingCTA(): React.JSX.Element {
   return (
     <Link
       href={Routes.Contact}
-      className="fixed bottom-4 right-4 z-50 inline-flex items-center gap-2 rounded-full bg-[#1e3a5f] px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:bg-[#2d4a6f]"
+      className="fixed bottom-4 right-4 z-50 inline-flex items-center gap-2 rounded-full bg-[#FAE74D] px-6 py-3 text-sm font-semibold text-[#1E3A5F] shadow-lg transition-all duration-300 hover:scale-105 hover:bg-[#f5e03d]"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
