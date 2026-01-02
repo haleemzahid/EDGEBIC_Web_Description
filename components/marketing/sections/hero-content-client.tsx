@@ -149,7 +149,7 @@ export function HeroContent(): React.JSX.Element {
                 onClick={() => {
                   window.open('https://calendly.com/mudasirnadeem7979/30min', '_blank');
                 }}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-[10px] bg-white px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-gray-100"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-[10px] bg-[#FAE74D] px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-[#e6d445]"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
