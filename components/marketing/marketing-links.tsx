@@ -140,7 +140,7 @@ export const FOOTER_LINKS: Array<{
   {
     title: 'Products',
     links: [
-      { name: 'EDGEBIC', href: Routes.JobSchedulerLite, external: false },
+      { name: 'EDGEBI', href: Routes.JobSchedulerLite, external: false },
       {
         name: 'Operations Manager',
         href: Routes.OperationsManager,
