@@ -82,6 +82,9 @@ export default function AdditmonPage(): React.JSX.Element {
                 choosing a seasonal pattern.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

@@ -42,6 +42,9 @@ export default function OperationsManagerAppPage(): React.JSX.Element {
                 usually just as important.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

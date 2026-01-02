@@ -66,6 +66,9 @@ export default function EoqPage(): React.JSX.Element {
                 ball-park figure is good enough.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

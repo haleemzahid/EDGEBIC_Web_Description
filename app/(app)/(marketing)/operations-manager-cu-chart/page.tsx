@@ -53,6 +53,9 @@ export default function OperationsManagerCuChartPage(): React.JSX.Element {
                 any particular location in each unit must be very small.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

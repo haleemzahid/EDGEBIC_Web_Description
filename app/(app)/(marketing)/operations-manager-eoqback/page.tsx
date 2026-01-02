@@ -49,6 +49,9 @@ export default function OperationsManagerEOQBACKPage() {
                 customers are lost, then the model is inappropriate.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
