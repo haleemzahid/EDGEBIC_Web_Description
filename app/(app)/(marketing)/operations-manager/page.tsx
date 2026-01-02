@@ -43,7 +43,7 @@ export default function OperationsManagerPage(): React.JSX.Element {
         {
           title: 'Complete Forecasting package',
           price: 'FREE',
-          infoLink: '/docs/forecasting-package.pdf',
+          infoLink: '/docs/FORECASTING-D (2).doc',
           isPackage: true
         }
       ]
@@ -80,7 +80,7 @@ export default function OperationsManagerPage(): React.JSX.Element {
         {
           title: 'Complete Inventory Management Package',
           price: 'FREE',
-          infoLink: '/docs/inventory-management-package.pdf',
+          infoLink: '/docs/INVENTORY-MANAGEMENT-D (1).doc',
           isPackage: true
         }
       ]
@@ -103,7 +103,7 @@ export default function OperationsManagerPage(): React.JSX.Element {
         {
           title: 'Complete MRP Package',
           price: 'FREE',
-          infoLink: '/docs/mrp-package.pdf',
+          infoLink: '/docs/mrp-d (1).doc',
           isPackage: true
         }
       ]
@@ -130,7 +130,7 @@ export default function OperationsManagerPage(): React.JSX.Element {
         {
           title: 'Complete Production Planning Package',
           price: 'FREE',
-          infoLink: '/docs/production-planning-package.pdf',
+          infoLink: '/docs/PRODUCTION-PLANNING-D.doc',
           isPackage: true
         }
       ]
@@ -148,7 +148,7 @@ export default function OperationsManagerPage(): React.JSX.Element {
         {
           title: 'Complete Facility Location Package',
           price: 'FREE',
-          infoLink: '/docs/facility-location-package.pdf',
+          infoLink: '/docs/LOCATION-D.doc',
           isPackage: true
         }
       ]
@@ -175,7 +175,7 @@ export default function OperationsManagerPage(): React.JSX.Element {
         {
           title: 'Complete Scheduling Package',
           price: 'FREE',
-          infoLink: '/docs/scheduling-package.pdf',
+          infoLink: '/docs/SCHEDULING-D.doc',
           isPackage: true
         }
       ]
@@ -217,7 +217,7 @@ export default function OperationsManagerPage(): React.JSX.Element {
         {
           title: 'Complete Quality Control Package',
           price: 'FREE',
-          infoLink: '/docs/quality-control-package.pdf',
+          infoLink: '/docs/quality-d.doc',
           isPackage: true
         }
       ]
@@ -239,7 +239,7 @@ export default function OperationsManagerPage(): React.JSX.Element {
         {
           title: 'Complete Analysis of Waiting Lines',
           price: 'FREE',
-          infoLink: '/docs/waiting-lines-package.pdf',
+          infoLink: '/contact-us',
           isPackage: true
         }
       ]
@@ -307,17 +307,27 @@ export default function OperationsManagerPage(): React.JSX.Element {
                               {item.price}
                             </span>
                             <div className="flex space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                asChild
-                              >
-                                <Link href={item.infoLink}>
-                                  {item.infoLink.includes('.pdf')
-                                    ? 'Doc'
-                                    : 'Info'}
-                                </Link>
-                              </Button>
+                              {item.infoLink.includes('.pdf') || item.infoLink.includes('.doc') ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  asChild
+                                >
+                                  <a href={item.infoLink} download>
+                                    Doc
+                                  </a>
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  asChild
+                                >
+                                  <Link href={item.infoLink}>
+                                    Info
+                                  </Link>
+                                </Button>
+                              )}
                               <Button
                                 size="sm"
                                 className="bg-blue-600 hover:bg-blue-700"

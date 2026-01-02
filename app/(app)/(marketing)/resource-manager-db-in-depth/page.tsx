@@ -573,7 +573,7 @@ export default function ResourceManagerDBInDepthPage() {
                     Download the comprehensive Quick Start PDF guide to begin your journey with RMDB.
                   </p>
                   <a
-                    href="https://www.usersolutions.com/wp-content/uploads/2022/10/rmdbquickstart23.pdf"
+                    href="/pdf/RMXQuickStart.pdf"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600"
