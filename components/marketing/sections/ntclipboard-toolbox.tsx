@@ -37,6 +37,7 @@ function YouTubePlayer({
 
   return (
     <button
+      type="button"
       onClick={() => setIsPlaying(true)}
       className="absolute inset-0 size-full cursor-pointer group"
       aria-label={`Play ${title}`}
