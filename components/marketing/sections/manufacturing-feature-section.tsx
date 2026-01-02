@@ -1,11 +1,16 @@
 'use client';
 
 import * as React from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown, ChevronUp, Target } from 'lucide-react';
 import { NTClipboardToolBox } from './ntclipboard-toolbox';
 
 export function ManufacturingFeatureSection(): React.JSX.Element {
+  const [strategicExpanded, setStrategicExpanded] = useState(false);
+
   return (
     <section className="bg-white pt-6">
       <div className="mx-auto max-w-7xl">
@@ -20,6 +25,41 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             <p className="text-sm text-slate-600">
               We guide you through a structured five-step path to move from raw data to an Optimal Schedule that reflects shop-floor reality.
             </p>
+            {/* Strategic Alignment Expandable Card */}
+            <div className="mt-3 w-[50%] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+              <button
+                type="button"
+                onClick={() => setStrategicExpanded(!strategicExpanded)}
+                className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 items-center justify-center rounded-full bg-blue-100">
+                    <Target className="size-6 text-blue-600" />
+                  </div>
+                  <h3 className="text-md font-semibold text-gray-900">Strategic Alignment</h3>
+                </div>
+                {strategicExpanded ? (
+                  <ChevronUp className="size-5 text-[#1e3a5f]" />
+                ) : (
+                  <ChevronDown className="size-5 text-[#1e3a5f]" />
+                )}
+              </button>
+              <AnimatePresence>
+                {strategicExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="overflow-hidden px-5 pb-5"
+                  >
+                    <p className="text-md text-gray-600">
+                      We begin by agreeing on the specific production challenges to address and the strategic benefits you wish to pursue.
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
 
