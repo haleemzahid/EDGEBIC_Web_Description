@@ -10,7 +10,6 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -100,23 +99,15 @@ export default function ContactUsPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            {/* Contact US Heading */}
-            <div className="text-center mb-6">
-              <h1 className="text-4xl md:text-5xl font-bold text-slate-900">
-                Contact <span className="text-blue-600">US</span>
-              </h1>
-            </div>
-
             <div className="flex flex-col lg:flex-row gap-8">
               {/* Form Section */}
               <div className="w-full lg:w-[60%]">
-                {/* Description Box */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                {/* Description */}
+                <div className="mb-6">
                   <p className="text-gray-700 leading-relaxed mb-4">
                     Instead of a one size fits all approach, lets discuss YOUR processes and challenges and explore situations to fit YOUR WAY. We can even use your data during a live demo meeting. Contact <span className="font-bold italic">US</span> by filling out the form below and we will be in touch to prepare custom demo.
                   </p>
 
-                  {/* Checkboxes */}
                   <div className="space-y-2">
                     <div className="flex items-start gap-2">
                       <svg className="w-5 h-5 text-cyan-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -138,7 +129,6 @@ export default function ContactUsPage() {
                     </div>
                   </div>
 
-                  {/* Fix My Schedule Button */}
                   <button
                     type="button"
                     onClick={() => {
@@ -347,22 +337,18 @@ export default function ContactUsPage() {
       {/* Awards Banner */}
       <section className="py-12">
         <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-7xl">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
-              <CardContent className="p-8 text-center">
-                <h2 className="mb-6 text-2xl font-bold text-slate-900">
-                  CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
-                </h2>
-                <Image
-                  src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
-                  alt="Collection of industry and business awards logos"
-                  width={1024}
-                  height={128}
-                  className="mx-auto h-auto max-h-32 max-w-full object-contain"
-                  loading="lazy"
-                />
-              </CardContent>
-            </Card>
+          <div className="mx-auto max-w-7xl text-center">
+            <h2 className="mb-6 text-2xl font-bold text-slate-900">
+              CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
+            </h2>
+            <Image
+              src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+              alt="Collection of industry and business awards logos"
+              width={1024}
+              height={128}
+              className="mx-auto h-auto max-h-32 max-w-full object-contain"
+              loading="lazy"
+            />
           </div>
         </div>
       </section>
