@@ -55,7 +55,7 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
                   <div className="flex size-10 items-center justify-center rounded-full bg-green-100">
                     <Check className="size-6 text-green-600" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">What we WILL do</h3>
+                  <h3 className="text-md font-semibold text-gray-900">What we WILL do</h3>
                 </div>
                 {willDoExpanded ? (
                   <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -100,7 +100,7 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
                   <div className="flex size-10 items-center justify-center rounded-full bg-red-100">
                     <X className="size-6 text-red-600" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">What we WON&apos;T do</h3>
+                  <h3 className="text-md font-semibold text-gray-900">What we WON&apos;T do</h3>
                 </div>
                 {wontDoExpanded ? (
                   <ChevronUp className="size-5 text-[#1e3a5f]" />
