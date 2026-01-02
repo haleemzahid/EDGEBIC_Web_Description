@@ -1,60 +1,29 @@
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
-import { Check, Play } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 import { GridSection } from '@/components/marketing/fragments/grid-section';
 import { Button } from '@/components/ui/button';
 
-// YouTube Video Player Component - Shows thumbnail until clicked
+// YouTube Video Player Component
 function YouTubePlayer({
   videoId,
   title,
-  thumbnailUrl
+  start = 5
 }: {
   videoId: string;
   title: string;
-  thumbnailUrl?: string;
+  start?: number;
 }) {
-  const [isPlaying, setIsPlaying] = useState(false);
-
-  // Use custom thumbnail or YouTube's maxresdefault thumbnail
-  const thumbnail = thumbnailUrl || `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-
-  if (isPlaying) {
-    return (
-      <iframe
-        className="absolute inset-0 size-full"
-        src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
-        title={title}
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowFullScreen
-      />
-    );
-  }
-
   return (
-    <button
-      type="button"
-      onClick={() => setIsPlaying(true)}
-      className="absolute inset-0 size-full cursor-pointer group"
-      aria-label={`Play ${title}`}
-    >
-      <Image
-        src={thumbnail}
-        alt={title}
-        fill
-        className="object-cover"
-      />
-      {/* Play button overlay */}
-      <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
-        <div className="flex size-16 items-center justify-center rounded-full bg-red-600 text-white shadow-lg group-hover:bg-red-700 transition-colors">
-          <Play className="size-8 fill-white" />
-        </div>
-      </div>
-    </button>
+    <iframe
+      className="absolute inset-0 size-full"
+      src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&start=${start}`}
+      title={title}
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      allowFullScreen
+    />
   );
 }
 
