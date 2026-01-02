@@ -13,9 +13,14 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
           <h2 className="text-2xl font-bold text-[#003d5c]">
             Edge simplifies production planning and scheduling
           </h2>
-          <h3 className="text-lg font-bold text-[#003d5c]">
-            Implementation & Optimization Process
-          </h3>
+          <div className="text-left">
+            <h3 className="text-lg font-bold text-[#003d5c]">
+              Implementation & Optimization Process
+            </h3>
+            <p className="text-sm text-slate-600">
+              We guide you through a structured five-step path to move from raw data to an Optimal Schedule that reflects shop-floor reality.
+            </p>
+          </div>
         </div>
 
         <div className="lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
