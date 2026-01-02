@@ -69,7 +69,7 @@ export function Footer(): React.JSX.Element {
       {/* Awards Section */}
       <div className="w-full px-6 pt-6">
         <h2 className="mb-6 text-center text-2xl font-bold text-slate-900 md:text-3xl">
-          Award-winning Manufacturing Software
+          CELEBRATING 35 YEARS OF Award-winning Manufacturing Software
         </h2>
         <div className="relative overflow-hidden pb-4">
           <style jsx>{`
