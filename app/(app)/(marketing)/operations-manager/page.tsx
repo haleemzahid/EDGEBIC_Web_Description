@@ -239,7 +239,7 @@ export default function OperationsManagerPage(): React.JSX.Element {
         {
           title: 'Complete Analysis of Waiting Lines',
           price: 'FREE',
-          infoLink: '/contact-us',
+          infoLink: '/docs/WAITINGLINES-D.doc',
           isPackage: true
         }
       ]
