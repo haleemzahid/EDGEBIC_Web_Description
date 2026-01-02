@@ -1,6 +1,5 @@
 import { withContentCollections } from '@content-collections/next';
 import withBundleAnalyzer from '@next/bundle-analyzer';
-import { withPayload } from '@payloadcms/next/withPayload';
 import { createSecureHeaders } from 'next-secure-headers';
 
 const bundleAnalyzerConfig = withBundleAnalyzer({
@@ -193,10 +192,8 @@ const nextConfig = {
   }
 };
 
-// Apply all wrappers first
-const wrappedConfig = withPayload(
-  withContentCollections(bundleAnalyzerConfig(nextConfig))
-);
+// Apply all wrappers
+const wrappedConfig = withContentCollections(bundleAnalyzerConfig(nextConfig));
 
 // Force images configuration to prevent wrappers from overriding it
 wrappedConfig.images = nextConfig.images;
