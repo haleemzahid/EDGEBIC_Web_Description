@@ -30,7 +30,7 @@ export const mainNavItems: NavItem[] = [
   },
   {
     title: 'Blog',
-    href: '/blog',
+    href: 'https://payloadcms-theta.vercel.app/',
     icon: FileTextIcon
   },
   {
