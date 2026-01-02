@@ -17,6 +17,7 @@ export enum Routes {
   ResourceManagement = '/resource-management-blog',
   JobSchedulerLite = '/jsl-job-scheduler-lite',
   JobSchedulerLiteDownload = '/jsl-job-scheduler-lite-download',
+  Edgebi = '/edgebi',
   OperationsManager = '/operations-manager',
   Roadmap = 'https://achromatic.canny.io',
   Docs = '/docs',
