@@ -5,7 +5,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp, Target, Database, Settings, Wrench, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronUp, Target, Database, Settings, Wrench, RefreshCw, Layers, Brain, Shuffle } from 'lucide-react';
 import { NTClipboardToolBox } from './ntclipboard-toolbox';
 
 export function ManufacturingFeatureSection(): React.JSX.Element {
@@ -14,22 +14,129 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
   const [ruleConfigExpanded, setRuleConfigExpanded] = useState(false);
   const [tacticalExpanded, setTacticalExpanded] = useState(false);
   const [maintenanceExpanded, setMaintenanceExpanded] = useState(false);
+  const [dynamicBorExpanded, setDynamicBorExpanded] = useState(false);
+  const [comprehensiveLogicExpanded, setComprehensiveLogicExpanded] = useState(false);
+  const [strategicFlexibilityExpanded, setStrategicFlexibilityExpanded] = useState(false);
 
   return (
     <section className="bg-white pt-6">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="mb-6 grid grid-cols-1 items-start gap-6  lg:grid-cols-2">
           {/* Left Section */}
-          <div className="flex flex-col justify-center space-y-4">
-            <h2 className="text-2xl font-bold text-[#003d5c]">
-              Edge simplifies production planning and scheduling
-            </h2>
+          <div className="flex flex-col  justify-center   space-y-4">
             <h3 className="text-xl font-bold text-[#003d5c]">
               RMDB/EDGE Core Capabilities
             </h3>
             <p className="text-base text-slate-600">
               Our system is engineered to generate accurate, dynamic customer lead times and ensure you meet them consistently.
             </p>
+            {/* Dynamic BOR Expandable Card */}
+            <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+              <button
+                type="button"
+                onClick={() => setDynamicBorExpanded(!dynamicBorExpanded)}
+                className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 items-center justify-center rounded-full bg-indigo-100">
+                    <Layers className="size-6 text-indigo-600" />
+                  </div>
+                  <h3 className="text-md font-semibold text-gray-900">Dynamic Bill Of Resource (BOR)</h3>
+                </div>
+                {dynamicBorExpanded ? (
+                  <ChevronUp className="size-5 text-[#1e3a5f]" />
+                ) : (
+                  <ChevronDown className="size-5 text-[#1e3a5f]" />
+                )}
+              </button>
+              <AnimatePresence>
+                {dynamicBorExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="overflow-hidden px-5 pb-5"
+                  >
+                    <p className="text-md text-gray-600">
+                      Rapidly configure or import a BOR that includes any combination of labor, materials, workcenters, tools, and sub-assemblies in any order to define your deliverable product or service.
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Comprehensive Logic Expandable Card */}
+            <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+              <button
+                type="button"
+                onClick={() => setComprehensiveLogicExpanded(!comprehensiveLogicExpanded)}
+                className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 items-center justify-center rounded-full bg-cyan-100">
+                    <Brain className="size-6 text-cyan-600" />
+                  </div>
+                  <h3 className="text-md font-semibold text-gray-900">Comprehensive Logic</h3>
+                </div>
+                {comprehensiveLogicExpanded ? (
+                  <ChevronUp className="size-5 text-[#1e3a5f]" />
+                ) : (
+                  <ChevronDown className="size-5 text-[#1e3a5f]" />
+                )}
+              </button>
+              <AnimatePresence>
+                {comprehensiveLogicExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="overflow-hidden px-5 pb-5"
+                  >
+                    <p className="text-md text-gray-600">
+                      Integration of all standard scheduling rules and known constraints to ensure technical accuracy.
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Strategic Flexibility Expandable Card */}
+            <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+              <button
+                type="button"
+                onClick={() => setStrategicFlexibilityExpanded(!strategicFlexibilityExpanded)}
+                className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 items-center justify-center rounded-full bg-amber-100">
+                    <Shuffle className="size-6 text-amber-600" />
+                  </div>
+                  <h3 className="text-md font-semibold text-gray-900">Strategic Flexibility</h3>
+                </div>
+                {strategicFlexibilityExpanded ? (
+                  <ChevronUp className="size-5 text-[#1e3a5f]" />
+                ) : (
+                  <ChevronDown className="size-5 text-[#1e3a5f]" />
+                )}
+              </button>
+              <AnimatePresence>
+                {strategicFlexibilityExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="overflow-hidden px-5 pb-5"
+                  >
+                    <p className="text-md text-gray-600">
+                      Perform various &quot;What-If&quot; analyses and manual overrides to quickly optimize schedule.
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
           {/* Right Section */}
@@ -43,185 +150,185 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             <div className="flex gap-4">
               {/* Expandable Cards Column */}
               <div className="w-1/2">
-            {/* Strategic Alignment Expandable Card */}
-            <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
-              <button
-                type="button"
-                onClick={() => setStrategicExpanded(!strategicExpanded)}
-                className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-full bg-blue-100">
-                    <Target className="size-6 text-blue-600" />
-                  </div>
-                  <h3 className="text-md font-semibold text-gray-900">Strategic Alignment</h3>
-                </div>
-                {strategicExpanded ? (
-                  <ChevronUp className="size-5 text-[#1e3a5f]" />
-                ) : (
-                  <ChevronDown className="size-5 text-[#1e3a5f]" />
-                )}
-              </button>
-              <AnimatePresence>
-                {strategicExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="overflow-hidden px-5 pb-5"
+                {/* Strategic Alignment Expandable Card */}
+                <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                  <button
+                    type="button"
+                    onClick={() => setStrategicExpanded(!strategicExpanded)}
+                    className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
                   >
-                    <p className="text-md text-gray-600">
-                      We begin by agreeing on the specific production challenges to address and the strategic benefits you wish to pursue.
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex size-10 items-center justify-center rounded-full bg-blue-100">
+                        <Target className="size-6 text-blue-600" />
+                      </div>
+                      <h3 className="text-md font-semibold text-gray-900">Strategic Alignment</h3>
+                    </div>
+                    {strategicExpanded ? (
+                      <ChevronUp className="size-5 text-[#1e3a5f]" />
+                    ) : (
+                      <ChevronDown className="size-5 text-[#1e3a5f]" />
+                    )}
+                  </button>
+                  <AnimatePresence>
+                    {strategicExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="overflow-hidden px-5 pb-5"
+                      >
+                        <p className="text-md text-gray-600">
+                          We begin by agreeing on the specific production challenges to address and the strategic benefits you wish to pursue.
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
-            {/* Data Architecture Expandable Card */}
-            <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
-              <button
-                type="button"
-                onClick={() => setDataArchitectureExpanded(!dataArchitectureExpanded)}
-                className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-full bg-purple-100">
-                    <Database className="size-6 text-purple-600" />
-                  </div>
-                  <h3 className="text-md font-semibold text-gray-900">Data Architecture</h3>
-                </div>
-                {dataArchitectureExpanded ? (
-                  <ChevronUp className="size-5 text-[#1e3a5f]" />
-                ) : (
-                  <ChevronDown className="size-5 text-[#1e3a5f]" />
-                )}
-              </button>
-              <AnimatePresence>
-                {dataArchitectureExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="overflow-hidden px-5 pb-5"
+                {/* Data Architecture Expandable Card */}
+                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                  <button
+                    type="button"
+                    onClick={() => setDataArchitectureExpanded(!dataArchitectureExpanded)}
+                    className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
                   >
-                    <p className="text-md text-gray-600">
-                      We determine the necessary existing data—such as setup times, cycle times, and shop calendars—while identifying and incorporating any missing data necessary for a complete model.
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex size-10 items-center justify-center rounded-full bg-purple-100">
+                        <Database className="size-6 text-purple-600" />
+                      </div>
+                      <h3 className="text-md font-semibold text-gray-900">Data Architecture</h3>
+                    </div>
+                    {dataArchitectureExpanded ? (
+                      <ChevronUp className="size-5 text-[#1e3a5f]" />
+                    ) : (
+                      <ChevronDown className="size-5 text-[#1e3a5f]" />
+                    )}
+                  </button>
+                  <AnimatePresence>
+                    {dataArchitectureExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="overflow-hidden px-5 pb-5"
+                      >
+                        <p className="text-md text-gray-600">
+                          We determine the necessary existing data—such as setup times, cycle times, and shop calendars—while identifying and incorporating any missing data necessary for a complete model.
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
-            {/* Rule Configuration Expandable Card */}
-            <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
-              <button
-                type="button"
-                onClick={() => setRuleConfigExpanded(!ruleConfigExpanded)}
-                className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-full bg-orange-100">
-                    <Settings className="size-6 text-orange-600" />
-                  </div>
-                  <h3 className="text-md font-semibold text-gray-900">Rule Configuration</h3>
-                </div>
-                {ruleConfigExpanded ? (
-                  <ChevronUp className="size-5 text-[#1e3a5f]" />
-                ) : (
-                  <ChevronDown className="size-5 text-[#1e3a5f]" />
-                )}
-              </button>
-              <AnimatePresence>
-                {ruleConfigExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="overflow-hidden px-5 pb-5"
+                {/* Rule Configuration Expandable Card */}
+                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                  <button
+                    type="button"
+                    onClick={() => setRuleConfigExpanded(!ruleConfigExpanded)}
+                    className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
                   >
-                    <p className="text-md text-gray-600">
-                      All data is imported and configured with known scheduling and business intelligence rules to create a &quot;first pass,&quot; mostly reasonable schedule.
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex size-10 items-center justify-center rounded-full bg-orange-100">
+                        <Settings className="size-6 text-orange-600" />
+                      </div>
+                      <h3 className="text-md font-semibold text-gray-900">Rule Configuration</h3>
+                    </div>
+                    {ruleConfigExpanded ? (
+                      <ChevronUp className="size-5 text-[#1e3a5f]" />
+                    ) : (
+                      <ChevronDown className="size-5 text-[#1e3a5f]" />
+                    )}
+                  </button>
+                  <AnimatePresence>
+                    {ruleConfigExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="overflow-hidden px-5 pb-5"
+                      >
+                        <p className="text-md text-gray-600">
+                          All data is imported and configured with known scheduling and business intelligence rules to create a &quot;first pass,&quot; mostly reasonable schedule.
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
-            {/* Tactical Refinement Expandable Card */}
-            <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
-              <button
-                type="button"
-                onClick={() => setTacticalExpanded(!tacticalExpanded)}
-                className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-full bg-teal-100">
-                    <Wrench className="size-6 text-teal-600" />
-                  </div>
-                  <h3 className="text-md font-semibold text-gray-900">Tactical Refinement</h3>
-                </div>
-                {tacticalExpanded ? (
-                  <ChevronUp className="size-5 text-[#1e3a5f]" />
-                ) : (
-                  <ChevronDown className="size-5 text-[#1e3a5f]" />
-                )}
-              </button>
-              <AnimatePresence>
-                {tacticalExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="overflow-hidden px-5 pb-5"
+                {/* Tactical Refinement Expandable Card */}
+                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                  <button
+                    type="button"
+                    onClick={() => setTacticalExpanded(!tacticalExpanded)}
+                    className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
                   >
-                    <p className="text-md text-gray-600">
-                      Because automated rules are never exact enough for the real world, we provide an easy, intuitive method for manual overrides. This allows you to adjust the schedule based on the random events and disruptions that occur in reality.
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex size-10 items-center justify-center rounded-full bg-teal-100">
+                        <Wrench className="size-6 text-teal-600" />
+                      </div>
+                      <h3 className="text-md font-semibold text-gray-900">Tactical Refinement</h3>
+                    </div>
+                    {tacticalExpanded ? (
+                      <ChevronUp className="size-5 text-[#1e3a5f]" />
+                    ) : (
+                      <ChevronDown className="size-5 text-[#1e3a5f]" />
+                    )}
+                  </button>
+                  <AnimatePresence>
+                    {tacticalExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="overflow-hidden px-5 pb-5"
+                      >
+                        <p className="text-md text-gray-600">
+                          Because automated rules are never exact enough for the real world, we provide an easy, intuitive method for manual overrides. This allows you to adjust the schedule based on the random events and disruptions that occur in reality.
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
-            {/* Automated Maintenance & Rebalancing Expandable Card */}
-            <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
-              <button
-                type="button"
-                onClick={() => setMaintenanceExpanded(!maintenanceExpanded)}
-                className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-full bg-green-100">
-                    <RefreshCw className="size-6 text-green-600" />
-                  </div>
-                  <h3 className="text-md font-semibold text-gray-900">Automated Maintenance</h3>
-                </div>
-                {maintenanceExpanded ? (
-                  <ChevronUp className="size-5 text-[#1e3a5f]" />
-                ) : (
-                  <ChevronDown className="size-5 text-[#1e3a5f]" />
-                )}
-              </button>
-              <AnimatePresence>
-                {maintenanceExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="overflow-hidden px-5 pb-5"
+                {/* Automated Maintenance & Rebalancing Expandable Card */}
+                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                  <button
+                    type="button"
+                    onClick={() => setMaintenanceExpanded(!maintenanceExpanded)}
+                    className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
                   >
-                    <p className="text-md text-gray-600">
-                      Once the optimal schedule is created by blending system rules with manual adjustments, maintenance is effortless. The system intelligently rebalances based on your updates; for instance, if you report starting the 6th step of a process, RMDB/EDGE automatically assumes previous steps are complete and reschedules all subsequent steps.
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex size-10 items-center justify-center rounded-full bg-green-100">
+                        <RefreshCw className="size-6 text-green-600" />
+                      </div>
+                      <h3 className="text-md font-semibold text-gray-900">Automated Maintenance</h3>
+                    </div>
+                    {maintenanceExpanded ? (
+                      <ChevronUp className="size-5 text-[#1e3a5f]" />
+                    ) : (
+                      <ChevronDown className="size-5 text-[#1e3a5f]" />
+                    )}
+                  </button>
+                  <AnimatePresence>
+                    {maintenanceExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="overflow-hidden px-5 pb-5"
+                      >
+                        <p className="text-md text-gray-600">
+                          Once the optimal schedule is created by blending system rules with manual adjustments, maintenance is effortless. The system intelligently rebalances based on your updates; for instance, if you report starting the 6th step of a process, RMDB/EDGE automatically assumes previous steps are complete and reschedules all subsequent steps.
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
               {/* Scheduling Process Image */}
               <div className="w-1/2 flex items-center justify-center">
