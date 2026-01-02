@@ -5,22 +5,31 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp, Target, Database } from 'lucide-react';
+import { ChevronDown, ChevronUp, Target, Database, Settings, Wrench, RefreshCw } from 'lucide-react';
 import { NTClipboardToolBox } from './ntclipboard-toolbox';
 
 export function ManufacturingFeatureSection(): React.JSX.Element {
   const [strategicExpanded, setStrategicExpanded] = useState(false);
   const [dataArchitectureExpanded, setDataArchitectureExpanded] = useState(false);
+  const [ruleConfigExpanded, setRuleConfigExpanded] = useState(false);
+  const [tacticalExpanded, setTacticalExpanded] = useState(false);
+  const [maintenanceExpanded, setMaintenanceExpanded] = useState(false);
 
   return (
     <section className="bg-white pt-6">
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Left Section */}
-          <div className="flex items-center">
+          <div className="flex flex-col justify-center space-y-4">
             <h2 className="text-2xl font-bold text-[#003d5c]">
               Edge simplifies production planning and scheduling
             </h2>
+            <h3 className="text-xl font-bold text-[#003d5c]">
+              RMDB/EDGE Core Capabilities
+            </h3>
+            <p className="text-base text-slate-600">
+              Our system is engineered to generate accurate, dynamic customer lead times and ensure you meet them consistently.
+            </p>
           </div>
 
           {/* Right Section */}
@@ -31,8 +40,11 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             <p className="text-md text-slate-600">
               We guide you through a structured five-step path to move from raw data to an Optimal Schedule that reflects shop-floor reality.
             </p>
+            <div className="flex gap-4">
+              {/* Expandable Cards Column */}
+              <div className="w-1/2">
             {/* Strategic Alignment Expandable Card */}
-            <div className="mt-1 w-[50%] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+            <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
               <button
                 type="button"
                 onClick={() => setStrategicExpanded(!strategicExpanded)}
@@ -68,7 +80,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             </div>
 
             {/* Data Architecture Expandable Card */}
-            <div className="mt-3 w-[50%] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+            <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
               <button
                 type="button"
                 onClick={() => setDataArchitectureExpanded(!dataArchitectureExpanded)}
@@ -101,6 +113,127 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   </motion.div>
                 )}
               </AnimatePresence>
+            </div>
+
+            {/* Rule Configuration Expandable Card */}
+            <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+              <button
+                type="button"
+                onClick={() => setRuleConfigExpanded(!ruleConfigExpanded)}
+                className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 items-center justify-center rounded-full bg-orange-100">
+                    <Settings className="size-6 text-orange-600" />
+                  </div>
+                  <h3 className="text-md font-semibold text-gray-900">Rule Configuration</h3>
+                </div>
+                {ruleConfigExpanded ? (
+                  <ChevronUp className="size-5 text-[#1e3a5f]" />
+                ) : (
+                  <ChevronDown className="size-5 text-[#1e3a5f]" />
+                )}
+              </button>
+              <AnimatePresence>
+                {ruleConfigExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="overflow-hidden px-5 pb-5"
+                  >
+                    <p className="text-md text-gray-600">
+                      All data is imported and configured with known scheduling and business intelligence rules to create a &quot;first pass,&quot; mostly reasonable schedule.
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Tactical Refinement Expandable Card */}
+            <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+              <button
+                type="button"
+                onClick={() => setTacticalExpanded(!tacticalExpanded)}
+                className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 items-center justify-center rounded-full bg-teal-100">
+                    <Wrench className="size-6 text-teal-600" />
+                  </div>
+                  <h3 className="text-md font-semibold text-gray-900">Tactical Refinement</h3>
+                </div>
+                {tacticalExpanded ? (
+                  <ChevronUp className="size-5 text-[#1e3a5f]" />
+                ) : (
+                  <ChevronDown className="size-5 text-[#1e3a5f]" />
+                )}
+              </button>
+              <AnimatePresence>
+                {tacticalExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="overflow-hidden px-5 pb-5"
+                  >
+                    <p className="text-md text-gray-600">
+                      Because automated rules are never exact enough for the real world, we provide an easy, intuitive method for manual overrides. This allows you to adjust the schedule based on the random events and disruptions that occur in reality.
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Automated Maintenance & Rebalancing Expandable Card */}
+            <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+              <button
+                type="button"
+                onClick={() => setMaintenanceExpanded(!maintenanceExpanded)}
+                className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 items-center justify-center rounded-full bg-green-100">
+                    <RefreshCw className="size-6 text-green-600" />
+                  </div>
+                  <h3 className="text-md font-semibold text-gray-900">Automated Maintenance</h3>
+                </div>
+                {maintenanceExpanded ? (
+                  <ChevronUp className="size-5 text-[#1e3a5f]" />
+                ) : (
+                  <ChevronDown className="size-5 text-[#1e3a5f]" />
+                )}
+              </button>
+              <AnimatePresence>
+                {maintenanceExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="overflow-hidden px-5 pb-5"
+                  >
+                    <p className="text-md text-gray-600">
+                      Once the optimal schedule is created by blending system rules with manual adjustments, maintenance is effortless. The system intelligently rebalances based on your updates; for instance, if you report starting the 6th step of a process, RMDB/EDGE automatically assumes previous steps are complete and reschedules all subsequent steps.
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+              </div>
+              {/* Scheduling Process Image */}
+              <div className="w-1/2 flex items-center justify-center">
+                <Image
+                  src="/images/Edgebic/Gemini_Generated_Image_obe2ceobe2ceobe2.png"
+                  alt="Scheduling step process diagram showing optimal scheduling workflow"
+                  width={400}
+                  height={500}
+                  className="object-contain"
+                  loading="lazy"
+                />
+              </div>
             </div>
           </div>
         </div>
