@@ -5,11 +5,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp, Target } from 'lucide-react';
+import { ChevronDown, ChevronUp, Target, Database } from 'lucide-react';
 import { NTClipboardToolBox } from './ntclipboard-toolbox';
 
 export function ManufacturingFeatureSection(): React.JSX.Element {
   const [strategicExpanded, setStrategicExpanded] = useState(false);
+  const [dataArchitectureExpanded, setDataArchitectureExpanded] = useState(false);
 
   return (
     <section className="bg-white pt-6">
@@ -24,14 +25,14 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
 
           {/* Right Section */}
           <div className="text-left">
-            <h3 className="text-md font-bold text-[#003d5c]">
+            <h3 className="text-lg font-bold text-[#003d5c]">
               Implementation & Optimization Process
             </h3>
-            <p className="text-sm text-slate-600">
+            <p className="text-md text-slate-600">
               We guide you through a structured five-step path to move from raw data to an Optimal Schedule that reflects shop-floor reality.
             </p>
             {/* Strategic Alignment Expandable Card */}
-            <div className="mt-3 w-[50%] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+            <div className="mt-1 w-[50%] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
               <button
                 type="button"
                 onClick={() => setStrategicExpanded(!strategicExpanded)}
@@ -60,6 +61,42 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   >
                     <p className="text-md text-gray-600">
                       We begin by agreeing on the specific production challenges to address and the strategic benefits you wish to pursue.
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Data Architecture Expandable Card */}
+            <div className="mt-3 w-[50%] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+              <button
+                type="button"
+                onClick={() => setDataArchitectureExpanded(!dataArchitectureExpanded)}
+                className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 items-center justify-center rounded-full bg-purple-100">
+                    <Database className="size-6 text-purple-600" />
+                  </div>
+                  <h3 className="text-md font-semibold text-gray-900">Data Architecture</h3>
+                </div>
+                {dataArchitectureExpanded ? (
+                  <ChevronUp className="size-5 text-[#1e3a5f]" />
+                ) : (
+                  <ChevronDown className="size-5 text-[#1e3a5f]" />
+                )}
+              </button>
+              <AnimatePresence>
+                {dataArchitectureExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="overflow-hidden px-5 pb-5"
+                  >
+                    <p className="text-md text-gray-600">
+                      We determine the necessary existing data—such as setup times, cycle times, and shop calendars—while identifying and incorporating any missing data necessary for a complete model.
                     </p>
                   </motion.div>
                 )}
