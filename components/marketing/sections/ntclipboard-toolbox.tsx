@@ -1,33 +1,59 @@
 'use client';
 
+import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { Check } from 'lucide-react';
+import { Check, Play } from 'lucide-react';
 
 import { GridSection } from '@/components/marketing/fragments/grid-section';
 import { Button } from '@/components/ui/button';
 
-// YouTube Video Player Component - Embeds YouTube iframe directly
+// YouTube Video Player Component - Shows thumbnail until clicked
 function YouTubePlayer({
   videoId,
   title,
-  hidePoster = false
+  thumbnailUrl
 }: {
   videoId: string;
   title: string;
-  hidePoster?: boolean;
+  thumbnailUrl?: string;
 }) {
-  const params = hidePoster
-    ? `?rel=0&modestbranding=1&iv_load_policy=3`
-    : `?rel=0`;
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  // Use custom thumbnail or YouTube's maxresdefault thumbnail
+  const thumbnail = thumbnailUrl || `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+
+  if (isPlaying) {
+    return (
+      <iframe
+        className="absolute inset-0 size-full"
+        src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
+        title={title}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowFullScreen
+      />
+    );
+  }
 
   return (
-    <iframe
-      className="absolute inset-0 size-full"
-      src={`https://www.youtube.com/embed/${videoId}${params}`}
-      title={title}
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-      allowFullScreen
-    />
+    <button
+      onClick={() => setIsPlaying(true)}
+      className="absolute inset-0 size-full cursor-pointer group"
+      aria-label={`Play ${title}`}
+    >
+      <Image
+        src={thumbnail}
+        alt={title}
+        fill
+        className="object-cover"
+      />
+      {/* Play button overlay */}
+      <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+        <div className="flex size-16 items-center justify-center rounded-full bg-red-600 text-white shadow-lg group-hover:bg-red-700 transition-colors">
+          <Play className="size-8 fill-white" />
+        </div>
+      </div>
+    </button>
   );
 }
 
@@ -196,7 +222,6 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     <YouTubePlayer
                       videoId="-Rb6_Rop2JA"
                       title="EDGEBI Demo"
-                      hidePoster={true}
                     />
                   </div>
                 </div>

@@ -258,27 +258,6 @@ export default function ResourceManagerForExcel2Page() {
           )}
         </div>
       </section>
-
-      {/* Awards Section */}
-      <section className="py-8">
-        <div className="container mx-auto max-w-7xl px-4">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-0">
-            <CardContent className="p-6 text-center">
-              <h3 className="mb-4 text-xl font-bold text-slate-900">
-                CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
-              </h3>
-              <Image
-                src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
-                alt="Collection of industry and business awards logos"
-                width={1024}
-                height={128}
-                className="mx-auto h-auto max-w-full"
-                loading="lazy"
-              />
-            </CardContent>
-          </Card>
-        </div>
-      </section>
     </div>
   );
 }

@@ -335,28 +335,6 @@ export default function ResourceManagerDBPage() {
 
         {/* Features Section */}
         <RMDBFeatureList />
-
-        {/* Awards Section */}
-        <section aria-labelledby="awards-heading">
-          <div className="container mx-auto">
-            <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
-              <CardContent className="p-8 text-center">
-                <h2 id="awards-heading" className="mb-6 text-2xl font-bold text-slate-900">
-                  CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
-                </h2>
-                <Image
-                  src={IMAGES.awardsBanner}
-                  alt="Collection of industry and business awards logos including multiple year achievements"
-                  width={1024}
-                  height={128}
-                  className="mx-auto h-auto max-w-full"
-                  loading="lazy"
-                  quality={85}
-                />
-              </CardContent>
-            </Card>
-          </div>
-        </section>
       </main>
     </>
   );

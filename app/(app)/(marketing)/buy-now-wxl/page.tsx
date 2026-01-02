@@ -113,32 +113,6 @@ export default function BuyNowWXLPage() {
           </Card>
         </div>
       </section>
-
-      {/* Awards Section */}
-      <section className="pb-6">
-        <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-7xl">
-            <Card className="overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100">
-              <CardHeader>
-                <CardTitle className="text-center text-2xl text-blue-900">
-                  CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex justify-center p-6">
-                <div className="w-full max-w-4xl">
-                  <Image
-                    alt="Collection of industry and business awards logos"
-                    className="h-auto w-full"
-                    height={128}
-                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
-                    width={1024}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

@@ -118,65 +118,6 @@ export default function UsersolAdmin2AuthorPage() {
       </section>
 
       {/* Articles Section */}
-      <section className="pt-6">
-        <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-7xl space-y-6">
-            {articles.map((article, index) => (
-              <Card
-                key={index}
-                className="overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
-              >
-                <Link
-                  href={article.href}
-                  className="block transition-all duration-300"
-                >
-                  <div className="grid gap-6 md:grid-cols-[300px_1fr]">
-                    {/* Article Image */}
-                    <div className="relative h-64 w-full overflow-hidden md:h-full">
-                      <Image
-                        src={article.image}
-                        alt={article.alt}
-                        fill
-                        className="object-cover transition-transform duration-300 hover:scale-110"
-                        unoptimized
-                      />
-                    </div>
-
-                    {/* Article Content */}
-                    <CardContent className="flex flex-col justify-center p-6">
-                      <h2 className="mb-3 text-2xl font-bold text-slate-900">
-                        {article.title}
-                      </h2>
-                      <p className="text-sm text-muted-foreground">
-                        {article.description}
-                      </p>
-                    </CardContent>
-                  </div>
-                </Link>
-              </Card>
-            ))}
-
-            {/* Award Logo Card */}
-            <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
-              <CardContent className="p-8 text-center">
-                <h2 className="mb-6 text-2xl font-bold text-slate-900">
-                  CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
-                </h2>
-                <div className="relative mx-auto h-auto w-full max-w-4xl">
-                  <Image
-                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
-                    alt="Collection of industry and business awards logos"
-                    width={1024}
-                    height={128}
-                    className="mx-auto h-auto max-w-full"
-                    unoptimized
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

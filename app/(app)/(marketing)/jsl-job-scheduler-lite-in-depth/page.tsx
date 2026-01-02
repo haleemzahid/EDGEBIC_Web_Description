@@ -471,27 +471,6 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
           )}
         </div>
       </section>
-
-      {/* Awards Section */}
-      <section>
-        <div className="container mx-auto">
-          <Card className="mt-6 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
-            <CardContent className="p-8 text-center">
-              <h3 className="mb-6 text-2xl font-bold text-slate-900">
-                CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
-              </h3>
-              <Image
-                src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
-                alt="Collection of industry and business awards logos"
-                width={1024}
-                height={128}
-                className="mx-auto h-auto max-w-full"
-                loading="lazy"
-              />
-            </CardContent>
-          </Card>
-        </div>
-      </section>
     </div>
   );
 }

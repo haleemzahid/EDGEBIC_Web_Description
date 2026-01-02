@@ -304,23 +304,6 @@ export default function NewsPage(): React.JSX.Element {
             ))}
           </div>
         </div>
-
-        {/* Awards */}
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
-          <CardContent className="p-8 text-center">
-            <h2 className="mb-6 text-2xl font-bold text-slate-900">
-              CELEBRATING 25 YEARS OF AWARD WINNING SOFTWARE!
-            </h2>
-            <Image
-              src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
-              alt="Collection of industry and business awards logos"
-              width={1024}
-              height={128}
-              className="mx-auto h-auto max-w-full"
-              unoptimized
-            />
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
