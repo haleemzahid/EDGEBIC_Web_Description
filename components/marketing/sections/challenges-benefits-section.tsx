@@ -39,7 +39,7 @@ export function ChallengesBenefitsSection(): React.JSX.Element {
   const [wontDoExpanded, setWontDoExpanded] = useState(false);
 
   return (
-    <section className='pt-2'>
+    <section className='pt-1'>
       <div className="m">
         <div className="flex justify-end">
           {/* What we WILL do / WON'T do side by side */}
