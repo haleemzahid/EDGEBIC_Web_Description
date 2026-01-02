@@ -201,6 +201,9 @@ export default function SupplyChainVisibilityPage() {
                 prepared to meet the demands of tomorrow.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

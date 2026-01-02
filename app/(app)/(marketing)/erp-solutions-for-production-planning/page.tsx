@@ -215,6 +215,9 @@ export default function ERPSolutionsProductionPlanningPage() {
                 competitive marketplace.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

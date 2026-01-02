@@ -252,6 +252,9 @@ export default function UncategorizedCategoryPage() {
                 </CardContent>
               </Card>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

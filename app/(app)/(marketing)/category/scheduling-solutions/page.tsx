@@ -72,6 +72,9 @@ export default function SchedulingSolutionsCategoryPage() {
                 </a>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

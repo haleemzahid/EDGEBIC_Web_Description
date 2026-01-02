@@ -113,6 +113,9 @@ export default function ProductionCategoryPage() {
                 </CardContent>
               </Card>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
