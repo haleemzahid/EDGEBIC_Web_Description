@@ -14,12 +14,17 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
   return (
     <section className="bg-white pt-6">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-6 flex flex-col items-center justify-between gap-4 lg:flex-row">
-          <h2 className="text-2xl font-bold text-[#003d5c]">
-            Edge simplifies production planning and scheduling
-          </h2>
+        <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Left Section */}
+          <div className="flex items-center">
+            <h2 className="text-2xl font-bold text-[#003d5c]">
+              Edge simplifies production planning and scheduling
+            </h2>
+          </div>
+
+          {/* Right Section */}
           <div className="text-left">
-            <h3 className="text-lg font-bold text-[#003d5c]">
+            <h3 className="text-md font-bold text-[#003d5c]">
               Implementation & Optimization Process
             </h3>
             <p className="text-sm text-slate-600">
