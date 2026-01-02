@@ -203,7 +203,7 @@ export default function WorkcenterSchedulerXLPage() {
                     with WCXL.
                   </p>
                   <a
-                    href="/images/Edgebic/2022-10/wcxlquickstart.pdf"
+                    href="/pdf/RMXQuickStart.pdf"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"

@@ -211,7 +211,7 @@ export default function ProductVideoPage() {
                   <Link href="/resource-manager-for-excel-in-depth">
                     <Button variant="outline">In Depth</Button>
                   </Link>
-                  <Link href="/wp-content/uploads/2022/09/WCXLQuickStart.pdf">
+                  <Link href="/pdf/RMXQuickStart.pdf">
                     <Button variant="outline">Quick Start</Button>
                   </Link>
                   <Link href="/contact-us">

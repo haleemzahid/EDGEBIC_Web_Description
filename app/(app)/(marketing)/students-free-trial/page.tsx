@@ -195,7 +195,7 @@ export default function StudentsFreeTrialPage() {
                   <Link href="/students">
                     <Button variant="outline">Summary</Button>
                   </Link>
-                  <Link href="/wp-content/uploads/2022/10/RMXQuickStart.pdf">
+                  <Link href="/pdf/RMXQuickStart.pdf">
                     <Button variant="outline">Quick Start</Button>
                   </Link>
                   <Link href="/videos/#resource-manager-excel">
