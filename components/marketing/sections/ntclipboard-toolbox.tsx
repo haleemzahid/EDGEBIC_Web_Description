@@ -52,7 +52,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
             <div className="flex flex-col">
               {/* Option Label above card */}
               <div className="mb-4 text-center">
-                <span className="border-b-2 border-[#003d5c] pb-1 text-lg font-bold text-[#003d5c]">
+                <span className="border-b-2 border-[#003d5c] pb-1 text-2xl font-bold text-[#003d5c]">
                   Starter
                 </span>
               </div>
@@ -116,8 +116,10 @@ export function NTClipboardToolBox(): React.JSX.Element {
             {/* Resource Manager DB */}
             <div className="flex flex-col">
               {/* Option Label above card */}
-              <div className="mb-4 text-center text-sm font-semibold text-gray-600">
-                ADVANCED
+              <div className="mb-4 text-center">
+                <span className="border-b-2 border-[#003d5c] pb-1 text-2xl font-bold text-[#003d5c]">
+                  Advanced
+                </span>
               </div>
               <div className="group relative flex flex-1 flex-col overflow-hidden rounded-3xl border border-orange-200 bg-white shadow-lg transition-all hover:shadow-xl">
 
@@ -182,8 +184,10 @@ export function NTClipboardToolBox(): React.JSX.Element {
             {/* Premium - EDGEBI */}
             <div className="flex flex-col">
               {/* Option Label above card */}
-              <div className="mb-4 text-center text-sm font-semibold text-gray-600">
-                Premium
+              <div className="mb-4 text-center">
+                <span className="border-b-2 border-[#003d5c] pb-1 text-2xl font-bold text-[#003d5c]">
+                  Premium
+                </span>
               </div>
               <div className="group relative flex flex-1 flex-col overflow-hidden rounded-3xl border bg-white shadow-lg transition-all hover:shadow-xl">
                 {/* Video Section */}
