@@ -114,6 +114,9 @@ export default function TopERPSolutions2016Page() {
                 flexibility and speed to implement.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

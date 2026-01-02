@@ -36,6 +36,9 @@ export default function OperationsManagerSked2aPage(): React.JSX.Element {
                 minimize the total time needed to complete a batch of jobs.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

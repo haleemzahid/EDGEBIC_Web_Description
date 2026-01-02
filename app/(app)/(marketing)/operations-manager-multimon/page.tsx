@@ -75,6 +75,9 @@ export default function MultimonPage(): React.JSX.Element {
                 choosing a seasonal pattern.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

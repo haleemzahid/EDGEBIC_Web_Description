@@ -75,6 +75,9 @@ export default function ProductionEfficiencyTagPage() {
                 </CardContent>
               </Link>
             </Card>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

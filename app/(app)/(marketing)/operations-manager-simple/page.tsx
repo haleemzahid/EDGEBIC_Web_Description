@@ -49,6 +49,9 @@ export default function OperationsManagerSimplePage(): React.JSX.Element {
                 smoothing model (TRENDSMOOTH).
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

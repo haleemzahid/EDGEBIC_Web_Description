@@ -185,6 +185,9 @@ export default function SchedulingSystemSkillsGapPage() {
                 today&apos;s commercial buildings.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

@@ -37,6 +37,9 @@ export default function MultiqPage(): React.JSX.Element {
                 queue capacity or the size of the source population.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

@@ -116,6 +116,9 @@ export default function WorkcellPlannerPage() {
                 />
               </div>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

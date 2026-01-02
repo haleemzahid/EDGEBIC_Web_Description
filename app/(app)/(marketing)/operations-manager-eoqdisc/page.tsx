@@ -50,6 +50,9 @@ export default function OperationsManagerEoqdiscPage(): React.JSX.Element {
                 once.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

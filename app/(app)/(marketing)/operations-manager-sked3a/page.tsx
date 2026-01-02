@@ -40,6 +40,9 @@ export default function Sked3aPage(): React.JSX.Element {
                 different sequences with the same makespan.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

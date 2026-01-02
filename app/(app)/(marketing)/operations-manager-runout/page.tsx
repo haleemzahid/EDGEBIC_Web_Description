@@ -41,6 +41,9 @@ export default function RunoutPage(): React.JSX.Element {
                 the RUNOUT model.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

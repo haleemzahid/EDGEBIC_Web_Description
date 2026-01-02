@@ -486,6 +486,8 @@ export default function Top10ManufacturingKPIsPage() {
               </li>
             </ul>
           </div>
+        </div>
+      </section>
     </div>
   );
 }

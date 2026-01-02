@@ -44,6 +44,9 @@ export default function OperationsManagerPoqPage(): React.JSX.Element {
                 remnants and give lower costs with lumpy demand.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

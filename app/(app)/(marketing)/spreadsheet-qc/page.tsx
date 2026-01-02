@@ -126,6 +126,9 @@ export default function SpreadsheetQCPage() {
                 />
               </div>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

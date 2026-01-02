@@ -35,6 +35,9 @@ export default function LimitPage(): React.JSX.Element {
                 control limit formulas.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

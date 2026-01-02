@@ -51,6 +51,9 @@ export default function MrChartPage(): React.JSX.Element {
                 to a standard deviation.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

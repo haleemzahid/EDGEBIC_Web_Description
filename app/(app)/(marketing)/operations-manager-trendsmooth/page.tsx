@@ -92,6 +92,9 @@ export default function TrendsmoothPage(): React.JSX.Element {
                 correct.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

@@ -198,6 +198,9 @@ export default function SmallManufacturerSuccessStoryPage() {
                 improved customer service and profitability.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

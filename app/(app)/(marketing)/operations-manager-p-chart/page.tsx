@@ -44,6 +44,9 @@ export default function PChartPage(): React.JSX.Element {
                 problems.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

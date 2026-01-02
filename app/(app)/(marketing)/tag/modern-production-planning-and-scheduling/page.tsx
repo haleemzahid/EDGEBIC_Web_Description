@@ -73,6 +73,9 @@ export default function ModernProductionPlanningTagPage() {
                 </a>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

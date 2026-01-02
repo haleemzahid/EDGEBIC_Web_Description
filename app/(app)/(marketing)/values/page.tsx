@@ -91,6 +91,9 @@ export default function ValuesPage(): React.JSX.Element {
               </blockquote>
               <p className="mt-4 text-lg text-orange-600">— The EDGEBIC Team</p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

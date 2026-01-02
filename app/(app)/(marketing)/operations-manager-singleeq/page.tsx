@@ -38,6 +38,9 @@ export default function OperationsManagerSingleeqPage(): React.JSX.Element {
                 population feeding the queue.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

@@ -43,6 +43,9 @@ export default function IChartPage(): React.JSX.Element {
                 the house at the end of a work period.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

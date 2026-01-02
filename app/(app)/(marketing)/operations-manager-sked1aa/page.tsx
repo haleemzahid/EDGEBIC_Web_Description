@@ -37,6 +37,9 @@ export default function OperationsManagerSked1aaPage(): React.JSX.Element {
                 late, or the maximum time late for any job.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

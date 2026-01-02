@@ -118,6 +118,9 @@ export default function RandomEventsCovariancePage() {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

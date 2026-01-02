@@ -34,6 +34,9 @@ export default function OperationsManagerRopPage(): React.JSX.Element {
                 worksheet used to compute safety stocks and reorder points.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

@@ -44,6 +44,9 @@ export default function EoqprodPage(): React.JSX.Element {
                 sales made during the production run.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

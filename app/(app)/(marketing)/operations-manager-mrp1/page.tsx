@@ -49,6 +49,9 @@ export default function Mrp1Page(): React.JSX.Element {
                 uncertain, you can decrease the yield percentage.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

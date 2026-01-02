@@ -34,6 +34,9 @@ export default function LearnPage(): React.JSX.Element {
                 cumulative production increases.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

@@ -229,6 +229,9 @@ export default function SpreadsheetSchedulerPage() {
                 </li>
               </ul>
             </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
