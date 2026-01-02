@@ -147,9 +147,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             <p className="text-md text-slate-600">
               We guide you through a structured five-step path to move from raw data to an Optimal Schedule that reflects shop-floor reality.
             </p>
-            <div className="flex gap-4">
+            <div className="flex gap-4 items-stretch">
               {/* Expandable Cards Column */}
-              <div className="w-1/2">
+              <div className="w-1/2 flex flex-col">
                 {/* Strategic Alignment Expandable Card */}
                 <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
@@ -331,13 +331,13 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
               </div>
               {/* Scheduling Process Image */}
-              <div className="w-1/2 flex items-center justify-center">
+              <div className="w-1/2 flex items-stretch justify-center">
                 <Image
                   src="/images/Edgebic/Gemini_Generated_Image_obe2ceobe2ceobe2.png"
                   alt="Scheduling step process diagram showing optimal scheduling workflow"
-                  width={400}
-                  height={500}
-                  className="object-contain"
+                  width={500}
+                  height={600}
+                  className="object-cover h-full w-full rounded-lg"
                   loading="lazy"
                 />
               </div>
