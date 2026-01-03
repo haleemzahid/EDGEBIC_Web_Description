@@ -28,8 +28,8 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL!),
   title: {
-    template: '%s | EDGEBIC',
-    default: 'EDGEBIC - Production Planning Software'
+    template: '%s - EDGEBI',
+    default: 'EDGEBI - Production Planning Software'
   },
   description: AppInfo.APP_DESCRIPTION,
   keywords:
