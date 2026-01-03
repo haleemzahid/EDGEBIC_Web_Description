@@ -41,6 +41,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                       videoId="DRWDNVq31l4"
                       title="Operations Manager Excel Templates"
                       className="absolute inset-0 size-full"
+                      hidePlayButton
                     />
                   </div>
                 </div>
@@ -107,6 +108,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                       videoId="kn92TIHhbm8"
                       title="Resource Manager DB"
                       className="absolute inset-0 size-full"
+                      hidePlayButton
                     />
                   </div>
                 </div>
@@ -175,6 +177,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                       videoId="-Rb6_Rop2JA"
                       title="EDGEBI Demo"
                       className="absolute inset-0 size-full"
+                      hidePlayButton
                     />
                   </div>
                 </div>

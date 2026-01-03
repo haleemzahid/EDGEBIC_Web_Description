@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 
 interface YouTubeFacadeProps {
   videoId: string;
@@ -8,6 +9,7 @@ interface YouTubeFacadeProps {
   start?: number;
   className?: string;
   thumbnailQuality?: 'default' | 'hqdefault' | 'mqdefault' | 'sddefault' | 'maxresdefault';
+  hidePlayButton?: boolean;
 }
 
 /**
@@ -27,10 +29,10 @@ export function YouTubeFacade({
   title,
   start = 0,
   className = '',
-  thumbnailQuality = 'hqdefault'
+  thumbnailQuality = 'hqdefault',
+  hidePlayButton = false
 }: YouTubeFacadeProps) {
   const [isPlaying, setIsPlaying] = React.useState(false);
-  const [isImageLoaded, setIsImageLoaded] = React.useState(false);
 
   const thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/${thumbnailQuality}.jpg`;
 
@@ -74,35 +76,34 @@ export function YouTubeFacade({
         aria-label={`Play video: ${title}`}
       >
         {/* Thumbnail image */}
-        <img
+        <Image
           src={thumbnailUrl}
           alt={title}
-          className={`size-full object-cover transition-opacity duration-300 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
-          loading="lazy"
-          onLoad={() => setIsImageLoaded(true)}
+          fill
+          className="object-cover"
+          unoptimized
         />
 
-        {/* Placeholder while image loads */}
-        {!isImageLoaded && (
-          <div className="absolute inset-0 animate-pulse bg-slate-200" />
+        {/* Dark overlay on hover - only show when play button is visible */}
+        {!hidePlayButton && (
+          <div className="absolute inset-0 bg-black/20 transition-colors group-hover:bg-black/30" />
         )}
 
-        {/* Dark overlay on hover */}
-        <div className="absolute inset-0 bg-black/20 transition-colors group-hover:bg-black/30" />
-
         {/* YouTube Play Button */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex size-16 items-center justify-center rounded-xl bg-red-600 shadow-lg transition-transform group-hover:scale-110 sm:size-[68px]">
-            <svg
-              className="ml-1 size-8 text-white"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path d="M8 5v14l11-7z" />
-            </svg>
+        {!hidePlayButton && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex size-16 items-center justify-center rounded-xl bg-red-600 shadow-lg transition-transform group-hover:scale-110 sm:size-[68px]">
+              <svg
+                className="ml-1 size-8 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </div>
           </div>
-        </div>
+        )}
       </button>
     </div>
   );
