@@ -16,7 +16,9 @@ export default function MarketingLayout(
       {/* Uncomment to enable announcement bar */}
       {/* <AnnouncementBar /> */}
       <Navbar />
-      <PageTransition>{props.children}</PageTransition>
+      <main id="main-content">
+        <PageTransition>{props.children}</PageTransition>
+      </main>
       <Footer />
       <CookieBanner />
       {/* <BackToTop /> */}

@@ -3,6 +3,8 @@
 import * as React from 'react';
 import Image from 'next/image';
 
+import { YouTubeFacade } from '@/components/ui/youtube-facade';
+
 type TabType = 'summary' | 'rmdb' | 'live-demo';
 
 export default function EDGEBIPage(): React.JSX.Element {
@@ -56,13 +58,10 @@ export default function EDGEBIPage(): React.JSX.Element {
             {/* Right - Video */}
             <div>
               <div className="overflow-hidden rounded-lg bg-black shadow-lg">
-                <iframe
-                  className="aspect-video w-full"
-                  src="https://www.youtube.com/embed/-Rb6_Rop2JA?rel=0"
+                <YouTubeFacade
+                  videoId="-Rb6_Rop2JA"
                   title="EDGEBI Demo"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
+                  className="aspect-video w-full"
                 />
               </div>
             </div>
@@ -207,13 +206,10 @@ export default function EDGEBIPage(): React.JSX.Element {
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div className="flex justify-center">
                   <div className="w-full overflow-hidden rounded-lg bg-black shadow-lg">
-                    <iframe
-                      className="aspect-video w-full"
-                      src="https://www.youtube.com/embed/kn92TIHhbm8?rel=0"
+                    <YouTubeFacade
+                      videoId="kn92TIHhbm8"
                       title="Resource Manager DB Summary"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
+                      className="aspect-video w-full"
                     />
                   </div>
                 </div>

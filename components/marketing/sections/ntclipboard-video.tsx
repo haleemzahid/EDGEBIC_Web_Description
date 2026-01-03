@@ -1,11 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import Image from 'next/image';
 
 import { GridSection } from '@/components/marketing/fragments/grid-section';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { YouTubeFacade } from '@/components/ui/youtube-facade';
 
 interface NTClipboardVideoProps {
   videoUrl?: string | null;
@@ -190,7 +189,6 @@ export function NTClipboardVideo({
   };
 
   const videoId = getVideoId(currentVideo.url);
-  const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0`;
 
   // Reset active video when category changes
   React.useEffect(() => {
@@ -353,13 +351,11 @@ export function NTClipboardVideo({
               </div>
 
               <div className="relative overflow-hidden rounded-2xl bg-black shadow-2xl">
-                <iframe
-                  className="aspect-video w-full"
-                  src={embedUrl}
+                <YouTubeFacade
+                  key={videoId}
+                  videoId={videoId}
                   title={currentVideo.title}
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
+                  className="aspect-video w-full"
                 />
               </div>
 

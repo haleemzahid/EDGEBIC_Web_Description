@@ -3,6 +3,7 @@
 import * as React from 'react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { YouTubeFacadeWithIntersection } from '@/components/ui/youtube-facade';
 
 interface YouTubeVideoProps {
   videoUrl?: string | null;
@@ -56,21 +57,18 @@ export function YouTubeVideo({
     );
   }
 
-  const embedUrl = `https://www.youtube.com/embed/${videoId}`;
-
   return (
     <Card className={className}>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="aspect-video w-full">
-          <iframe
-            src={embedUrl}
+        <div className="aspect-video w-full overflow-hidden rounded-b-lg">
+          <YouTubeFacadeWithIntersection
+            videoId={videoId}
             title={title}
-            className="h-full w-full rounded-b-lg"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
+            className="size-full"
+            rootMargin="100px"
           />
         </div>
       </CardContent>

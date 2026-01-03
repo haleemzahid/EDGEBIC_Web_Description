@@ -5,27 +5,7 @@ import { Check } from 'lucide-react';
 
 import { GridSection } from '@/components/marketing/fragments/grid-section';
 import { Button } from '@/components/ui/button';
-
-// YouTube Video Player Component
-function YouTubePlayer({
-  videoId,
-  title,
-  start = 5
-}: {
-  videoId: string;
-  title: string;
-  start?: number;
-}) {
-  return (
-    <iframe
-      className="absolute inset-0 size-full"
-      src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&start=${start}`}
-      title={title}
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-      allowFullScreen
-    />
-  );
-}
+import { YouTubeFacade } from '@/components/ui/youtube-facade';
 
 export function NTClipboardToolBox(): React.JSX.Element {
   return (
@@ -57,9 +37,10 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 {/* Video Section */}
                 <div className="relative overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
-                    <YouTubePlayer
+                    <YouTubeFacade
                       videoId="DRWDNVq31l4"
                       title="Operations Manager Excel Templates"
+                      className="absolute inset-0 size-full"
                     />
                   </div>
                 </div>
@@ -122,9 +103,10 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 {/* Video Section */}
                 <div className="relative overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
-                    <YouTubePlayer
+                    <YouTubeFacade
                       videoId="kn92TIHhbm8"
                       title="Resource Manager DB"
+                      className="absolute inset-0 size-full"
                     />
                   </div>
                 </div>
@@ -189,9 +171,10 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 {/* Video Section */}
                 <div className="relative overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
-                    <YouTubePlayer
+                    <YouTubeFacade
                       videoId="-Rb6_Rop2JA"
                       title="EDGEBI Demo"
+                      className="absolute inset-0 size-full"
                     />
                   </div>
                 </div>

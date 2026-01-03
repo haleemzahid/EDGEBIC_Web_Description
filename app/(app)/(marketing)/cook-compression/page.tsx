@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 
-import { Card, CardContent } from '@/components/ui/card';
-
 export const metadata: Metadata = {
   title: 'Cook Compression | User Solutions',
   description:
@@ -66,30 +64,6 @@ export default function CookCompressionPage() {
         </div>
       </section>
 
-      {/* Awards Banner */}
-      <section className="py-6">
-        <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-7xl">
-            <Card className="rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
-              <CardContent className="p-8 text-center">
-                <h2 className="mb-6 text-2xl font-bold text-slate-900">
-                  Celebrating 25 Years of Award Winning Software!
-                </h2>
-                <div className="relative mx-auto h-auto w-full max-w-4xl">
-                  <Image
-                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
-                    alt="Collection of industry and business awards logos"
-                    width={1024}
-                    height={128}
-                    className="mx-auto h-auto max-w-full"
-                    unoptimized
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

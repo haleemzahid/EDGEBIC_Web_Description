@@ -20,8 +20,8 @@ const preconnectUrls = [
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  minimumScale: 1,
-  maximumScale: 1,
+  // Removed minimumScale and maximumScale to allow user zooming for accessibility
+  // Users with low vision need to be able to zoom the page
   themeColor: 'white'
 };
 

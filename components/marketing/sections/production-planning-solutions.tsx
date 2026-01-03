@@ -723,7 +723,8 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               </p>
               <Button
                 size="lg"
-                className="gap-2"
+                variant="outline"
+                className="gap-2 border-2 border-slate-800 bg-white text-slate-800 hover:bg-slate-100"
                 onClick={() => router.push('/contact-us')}
               >
                 <Users className="size-4" />
