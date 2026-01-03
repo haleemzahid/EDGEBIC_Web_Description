@@ -25,7 +25,7 @@ export function NTClipboardAbout(): React.JSX.Element {
       name: 'Haleem Khan',
       title: 'Development Manager at User Solutions | CEO at Dawloom',
       link: 'https://www.dawloom.com/',
-      fiverr: 'https://www.fiverr.com/haleemzahid',
+      fiverr: 'https://www.fiverr.com/s/kLNdNQw',
       linkedin: 'https://www.linkedin.com/in/haleemzahid35/',
       facebook: 'https://www.facebook.com/haleem.zahid',
       image: '/images/Edgebic/partners/haleem-khan.png',
