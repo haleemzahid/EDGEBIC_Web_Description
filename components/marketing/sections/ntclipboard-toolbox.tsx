@@ -119,7 +119,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                   <div className="mb-6 flex-1 space-y-3">
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Product Scheduling your Way</span>
+                      <span className="text-sm">Production Planning and Scheduling Your Way</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />

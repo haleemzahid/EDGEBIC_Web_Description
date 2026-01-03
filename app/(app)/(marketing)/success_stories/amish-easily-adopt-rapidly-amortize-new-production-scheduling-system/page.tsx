@@ -115,13 +115,13 @@ export default function AmishProductionPage() {
               </div>
 
               {/* Image Column */}
-              <div className="space-y-6 lg:sticky lg:top-6">
+              <div className="space-y-4 lg:sticky lg:top-6">
                 <Image
                   src="/images/Edgebic/2022-07/image001-150x150-1.png"
                   alt="Homestead Furniture craftsmanship"
                   width={150}
                   height={150}
-                  className="h-auto w-full rounded-lg shadow-md"
+                  className="h-[280px] w-full rounded-lg shadow-md object-cover"
                   unoptimized
                 />
                 <Image
@@ -129,7 +129,7 @@ export default function AmishProductionPage() {
                   alt="Amish furniture manufacturing process"
                   width={150}
                   height={138}
-                  className="h-auto w-full rounded-lg shadow-md"
+                  className="h-[260px] w-full rounded-lg shadow-md object-cover"
                   unoptimized
                 />
                 <Image
@@ -137,7 +137,7 @@ export default function AmishProductionPage() {
                   alt="Advanced manufacturing methodologies"
                   width={150}
                   height={112}
-                  className="h-auto w-full rounded-lg shadow-md"
+                  className="h-[240px] w-full rounded-lg shadow-md object-cover"
                   unoptimized
                 />
               </div>

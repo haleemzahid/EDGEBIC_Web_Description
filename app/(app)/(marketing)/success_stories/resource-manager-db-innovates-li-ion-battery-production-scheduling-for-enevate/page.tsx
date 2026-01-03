@@ -107,7 +107,15 @@ export default function EnevatePage() {
               </div>
 
               {/* Image Column */}
-              <div className="lg:sticky lg:top-6">
+              <div className="space-y-6 lg:sticky lg:top-6">
+                <Image
+                  src="/images/Edgebic/2022-07/enevate-1.png"
+                  alt="Enevate Corporation logo"
+                  width={330}
+                  height={330}
+                  className="h-auto w-full rounded-lg shadow-md"
+                  unoptimized
+                />
                 <Image
                   src="/images/Edgebic/2022-07/Manufacturing_Excel_Dashboard-1024x376-1.png"
                   alt="Manufacturing Excel Dashboard"

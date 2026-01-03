@@ -91,10 +91,10 @@ export default function ConsultingProjectsSchedulingPage() {
               <div className="lg:sticky lg:top-6">
                 <Image
                   src="/images/Edgebic/2022-07/wCXL-1024x342.png"
-                  alt="  interface"
+                  alt="Workcenter Scheduler XL interface"
                   width={1024}
                   height={342}
-                  className="h-auto w-full rounded-lg shadow-md"
+                  className="h-[400px] w-full rounded-lg shadow-md object-cover"
                   unoptimized
                 />
               </div>
