@@ -174,7 +174,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 <div className="relative overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
                     <YouTubeFacade
-                      videoId="-Rb6_Rop2JA"
+                      videoId="_0LjI9MY8zo"
                       title="EDGEBI Demo"
                       className="absolute inset-0 size-full"
                       hidePlayButton
