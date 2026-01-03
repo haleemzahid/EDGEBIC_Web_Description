@@ -148,7 +148,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   alt="RMDB Core Capabilities dashboard"
                   width={500}
                   height={300}
-                  className="object-contain w-full rounded-lg"
+                  className="object-contain w-full h-[280px] rounded-lg"
                   loading="lazy"
                 />
               </div>
@@ -352,8 +352,8 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   src="/images/Edgebic/Gemini_Generated_Image_obe2ceobe2ceobe2.png"
                   alt="Scheduling step process diagram showing optimal scheduling workflow"
                   width={500}
-                  height={300}
-                  className="object-contain w-full rounded-lg"
+                  height={353}
+                  className="object-contain w-full h-[353px] rounded-lg"
                   loading="lazy"
                 />
               </div>
