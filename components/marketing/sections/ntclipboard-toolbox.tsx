@@ -66,7 +66,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
 
               <div className="flex flex-1 flex-col p-6">
                 <h3 className="mb-4 text-xl font-bold text-gray-900">
-                  Resource Manager For XL
+                  Resource Manager For Excel
                 </h3>
 
                 <div className="mb-6 flex-1 space-y-3">
