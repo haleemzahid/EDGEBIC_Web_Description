@@ -59,7 +59,7 @@ export default function EDGEBIPage(): React.JSX.Element {
             <div>
               <div className="overflow-hidden rounded-lg bg-black shadow-lg">
                 <YouTubeFacade
-                  videoId="-Rb6_Rop2JA"
+                  videoId="_0LjI9MY8zo"
                   title="EDGEBI Demo"
                   className="aspect-video w-full"
                 />
