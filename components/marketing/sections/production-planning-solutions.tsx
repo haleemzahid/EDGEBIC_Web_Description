@@ -110,16 +110,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
       <div className="container pt-6">
         {/* Hero Section */}
         <SiteHeading
-          title={
-            <a
-              href="https://en.wikipedia.org/wiki/Production_planning"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
-              Production Planning and Scheduling Solutions
-            </a>
-          }
+          title="Production Planning and Scheduling Solutions"
           description="Manufacturing Solutions That Boost Efficiency"
         />
 
@@ -127,7 +118,15 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
           {/* Introduction */}
           <div className="mb-6 text-center">
             <p className="mb-4 text-lg text-slate-700">
-              Discover powerful Production Planning and Scheduling Solutions
+              Discover powerful{' '}
+              <a
+                href="https://en.wikipedia.org/wiki/Production_planning"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                Production Planning and Scheduling Solutions
+              </a>{' '}
               that help manufacturers boost efficiency—from Excel job shop tools
               to advanced APS software that works either standalone or
               integrates with your ERP. We look forward to resolving your
