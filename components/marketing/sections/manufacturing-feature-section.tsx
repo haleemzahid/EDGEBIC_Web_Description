@@ -20,7 +20,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
 
   return (
     <section className="bg-white pt-3">
-      <div className="mx-auto max-w-7xl">
+      <div className="px-3">
         <div className="mb-6 grid grid-cols-1 items-start gap-6  lg:grid-cols-2">
           {/* Left Section */}
           <div className="text-left">
@@ -30,7 +30,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             <p className="text-base text-slate-600">
               Our system is engineered to generate accurate, dynamic customer lead times and ensure you meet them consistently.
             </p>
-            <div className="flex gap-4 items-stretch">
+            <div className="flex gap-4">
               {/* Expandable Cards Column */}
               <div className="w-1/2 flex flex-col">
                 {/* Dynamic BOR Expandable Card */}
@@ -142,13 +142,13 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
               </div>
               {/* RMDB Image */}
-              <div className="w-1/2 flex items-stretch justify-center">
+              <div className="w-1/2">
                 <Image
                   src="/images/Edgebic/2022-07/rmdb11.png"
                   alt="RMDB Core Capabilities dashboard"
                   width={500}
-                  height={600}
-                  className="object-cover h-full w-full rounded-lg"
+                  height={300}
+                  className="object-contain w-full rounded-lg"
                   loading="lazy"
                 />
               </div>
@@ -163,7 +163,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             <p className="text-md text-slate-600">
               We guide you through a structured five-step path to move from raw data to an Optimal Schedule that reflects shop-floor reality.
             </p>
-            <div className="flex gap-4 items-stretch">
+            <div className="flex gap-4">
               {/* Expandable Cards Column */}
               <div className="w-1/2 flex flex-col">
                 {/* Strategic Alignment Expandable Card */}
@@ -347,13 +347,13 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
               </div>
               {/* Scheduling Process Image */}
-              <div className="w-1/2 flex items-stretch justify-center">
+              <div className="w-1/2">
                 <Image
                   src="/images/Edgebic/Gemini_Generated_Image_obe2ceobe2ceobe2.png"
                   alt="Scheduling step process diagram showing optimal scheduling workflow"
                   width={500}
-                  height={600}
-                  className="object-cover h-full w-full rounded-lg"
+                  height={300}
+                  className="object-contain w-full rounded-lg"
                   loading="lazy"
                 />
               </div>
