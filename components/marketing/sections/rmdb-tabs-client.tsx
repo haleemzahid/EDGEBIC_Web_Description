@@ -65,7 +65,7 @@ export function RMDBTabsClient({
       <nav className="pt-6" aria-label="Product information tabs">
         <div className="container mx-auto max-w-7xl px-4">
           <div
-            className="flex flex-wrap justify-center gap-6 text-[18px]"
+            className="flex flex-wrap justify-start gap-6 text-[18px]"
             role="tablist"
             aria-label="Resource Manager DB sections"
           >

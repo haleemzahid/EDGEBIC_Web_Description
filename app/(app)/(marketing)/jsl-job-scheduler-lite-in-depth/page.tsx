@@ -34,7 +34,7 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
       {/* Navigation Tabs */}
       <section className="pt-6">
         <div className="container mx-auto max-w-7xl px-4">
-          <div className="flex flex-wrap justify-center gap-6 text-[18px]">
+          <div className="flex flex-wrap justify-start gap-6 text-[18px]">
             {tabs.map((tab) => (
               <button
                 type="button"
