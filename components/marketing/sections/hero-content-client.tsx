@@ -92,7 +92,7 @@ export function HeroContent(): React.JSX.Element {
             <div className="text-base leading-relaxed text-white">
               <p>
                 What makes <span className="font-semibold italic">US</span>{' '}
-                (User Solution) unique: we work{' '}
+                (User Solutions) unique: we work{' '}
                 <span className="font-semibold italic">with you</span> to solve
                 production scheduling challenges{' '}
                 <span className="font-semibold italic">your way</span>. Benefit

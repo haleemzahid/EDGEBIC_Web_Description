@@ -51,7 +51,7 @@ export default function SmallManufacturerSuccessStoryPage() {
               <p className="leading-relaxed text-gray-700">
                 Lue Manufacturing, based in Goshen, IN has been producing
                 fine custom made countertops, cabinetry and case work for 40
-                years. User Solution&apos;s affordable production planning
+                years. User Solutions&apos; affordable production planning
                 tools have been providing immediate returns for job shops
                 serving the construction industry.
               </p>

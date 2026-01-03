@@ -78,7 +78,7 @@ export function TestHomeHero(): React.JSX.Element {
             <div className="text-sm leading-relaxed text-black">
               <p>
                 What makes <span className="font-semibold italic">US</span>{' '}
-                (User Solution) unique: we work{' '}
+                (User Solutions) unique: we work{' '}
                 <span className="font-semibold italic">with you</span> to solve
                 production scheduling challenges{' '}
                 <span className="font-semibold italic">your way</span>. Benefit

@@ -115,7 +115,7 @@ const pressReleases = [
     link: 'https://www.prnewswire.com/news-releases/user-solutions-continues-partnerships-with-multiple-universitys-for-real-life-experience-on-launching-a-production-scheduling-offering-301970708.html'
   },
   {
-    title: 'User Solution Unveils Revolutionary Manufacturing Software: Customized Solutions for Enhanced Scheduling and Planning',
+    title: 'User Solutions Unveils Revolutionary Manufacturing Software: Customized Solutions for Enhanced Scheduling and Planning',
     date: 'October 4, 2023',
     image: '/images/Edgebic/2023-12/Screenshot-12-1024x561.png',
     link: 'https://www.prnewswire.com/news-releases/user-solution-unveils-revolutionary-manufacturing-software-customized-solutions-for-enhanced-scheduling-and-planning-301946707.html'
