@@ -148,7 +148,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   alt="RMDB Core Capabilities dashboard"
                   width={500}
                   height={300}
-                  className="object-contain w-full h-[280px] rounded-lg"
+                  className="object-cover object-center w-full h-[200px] rounded-lg"
                   loading="lazy"
                 />
               </div>
