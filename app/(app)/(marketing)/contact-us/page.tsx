@@ -79,6 +79,13 @@ export default function ContactUsPage() {
         toast.success(
           "Thank you for contacting us! We'll get back to you within 24 hours."
         );
+
+        // Trigger cache revalidation so contact appears immediately in CRM
+        try {
+          await fetch('/api/revalidate-contacts');
+        } catch (revalidateError) {
+          console.log('Cache revalidation failed (non-critical):', revalidateError);
+        }
       }
     } catch (error) {
       console.error('Error submitting form:', error);

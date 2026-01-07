@@ -31,6 +31,10 @@ export const metadata: Metadata = {
   title: createTitle('Contacts')
 };
 
+// Force dynamic rendering to always show latest contacts
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function ContactsPage({
   searchParams
 }: NextPageProps): Promise<React.JSX.Element> {
