@@ -15,6 +15,32 @@ import { Caching, OrganizationCacheKey } from '@/data/caching';
 import { prisma } from '@/lib/db/prisma';
 import { sendContactFormEmail } from '@/lib/smtp/send-contact-form-email';
 
+// Verify reCAPTCHA token with Google
+async function verifyCaptcha(token: string): Promise<boolean> {
+  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+
+  if (!secretKey) {
+    console.error('RECAPTCHA_SECRET_KEY is not configured');
+    return false;
+  }
+
+  try {
+    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `secret=${secretKey}&response=${token}`,
+    });
+
+    const data = await response.json();
+    return data.success === true;
+  } catch (error) {
+    console.error('Error verifying captcha:', error);
+    return false;
+  }
+}
+
 const contactFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(255),
   lastName: z.string().min(1, 'Last name is required').max(255),
@@ -70,8 +96,32 @@ export async function POST(request: NextRequest) {
       phone,
       productInterest,
       hearAboutUs,
-      message
+      message,
+      captcha
     } = validationResult.data;
+
+    // Verify reCAPTCHA
+    if (!captcha) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Captcha is required'
+        },
+        { status: 400 }
+      );
+    }
+
+    const isCaptchaValid = await verifyCaptcha(captcha);
+
+    if (!isCaptchaValid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid captcha verification. Please try again.'
+        },
+        { status: 400 }
+      );
+    }
 
     // Get or create organization
     const organization = await getOrCreateOrganization();

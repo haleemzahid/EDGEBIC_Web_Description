@@ -18,9 +18,11 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 
-const RECAPTCHA_SITE_KEY =
-  process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ||
-  '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
+const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '';
+
+if (typeof window !== 'undefined') {
+  console.log('reCAPTCHA Site Key:', RECAPTCHA_SITE_KEY);
+}
 
 const contactFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(255),
@@ -129,7 +131,7 @@ export default function ContactUsPage() {
                     </div>
                   </div>
 
-                  </div>
+                </div>
 
                 {/* Contact Form */}
                 <div className="py-2">
