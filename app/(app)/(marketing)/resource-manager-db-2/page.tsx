@@ -18,7 +18,7 @@ const IMAGES = {
   dataImportImage: '/images/rmdb/rmdb-data-import.png',
   awardsBanner: '/images/rmdb/awards-banner.jpg',
   // Local video paths
-  heroVideo: 'https://www.youtube.com/watch?v=I8fOWJkTv-k',
+  heroVideo: 'https://www.youtube.com/watch?v=kn92TIHhbm8',
   summaryVideo: 'https://www.youtube.com/watch?v=6B4A-acolGk',
 };
 
