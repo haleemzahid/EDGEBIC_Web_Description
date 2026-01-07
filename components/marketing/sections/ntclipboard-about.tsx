@@ -87,7 +87,7 @@ export function NTClipboardAbout(): React.JSX.Element {
         'Jeff also directly manages customer sales and support throughout Asia, bringing global perspective to manufacturing solutions.'
     },
     {
-      name: 'Dennis Johnson',
+      name: 'Dennis Massey',
       title: 'Senior Solutions Consultant  (RETIRED)',
       image:
         '/images/Edgebic/2022-09/Dennis-150x150.png',
