@@ -5,7 +5,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp, Target, Database, Settings, Wrench, RefreshCw, Layers, Brain, Shuffle } from 'lucide-react';
+import { ChevronDown, ChevronUp, Target, Database, Settings, Wrench, RefreshCw, Layers, Brain, Shuffle, FileText, GitMerge } from 'lucide-react';
 import { NTClipboardToolBox } from './ntclipboard-toolbox';
 
 export function ManufacturingFeatureSection(): React.JSX.Element {
@@ -17,6 +17,8 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
   const [dynamicBorExpanded, setDynamicBorExpanded] = useState(false);
   const [comprehensiveLogicExpanded, setComprehensiveLogicExpanded] = useState(false);
   const [strategicFlexibilityExpanded, setStrategicFlexibilityExpanded] = useState(false);
+  const [reportingExpanded, setReportingExpanded] = useState(false);
+  const [dataIntegrationExpanded, setDataIntegrationExpanded] = useState(false);
 
   return (
     <section className="bg-white pt-3">
@@ -140,6 +142,78 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                     )}
                   </AnimatePresence>
                 </div>
+
+                {/* Powerful, Flexible, Customizable Reporting Expandable Card */}
+                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                  <button
+                    type="button"
+                    onClick={() => setReportingExpanded(!reportingExpanded)}
+                    className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex size-10 items-center justify-center rounded-full bg-blue-100">
+                        <FileText className="size-6 text-blue-600" />
+                      </div>
+                      <h3 className="text-md font-semibold text-gray-900">Powerful, Flexible, Customizable Reporting</h3>
+                    </div>
+                    {reportingExpanded ? (
+                      <ChevronUp className="size-5 text-[#1e3a5f]" />
+                    ) : (
+                      <ChevronDown className="size-5 text-[#1e3a5f]" />
+                    )}
+                  </button>
+                  <AnimatePresence>
+                    {reportingExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="overflow-hidden px-5 pb-5"
+                      >
+                        <p className="text-md text-gray-600">
+                          Use Excel to customize any reports, and or have US develop and include with system.
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Data Integration Expandable Card */}
+                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                  <button
+                    type="button"
+                    onClick={() => setDataIntegrationExpanded(!dataIntegrationExpanded)}
+                    className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex size-10 items-center justify-center rounded-full bg-emerald-100">
+                        <GitMerge className="size-6 text-emerald-600" />
+                      </div>
+                      <h3 className="text-md font-semibold text-gray-900">Data Integration</h3>
+                    </div>
+                    {dataIntegrationExpanded ? (
+                      <ChevronUp className="size-5 text-[#1e3a5f]" />
+                    ) : (
+                      <ChevronDown className="size-5 text-[#1e3a5f]" />
+                    )}
+                  </button>
+                  <AnimatePresence>
+                    {dataIntegrationExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="overflow-hidden px-5 pb-5"
+                      >
+                        <p className="text-md text-gray-600">
+                          Easily map existing data, from your ERP or Excel or any other system directly into RMDB for importing. The same capability exists for exporting data to other systems.
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
               {/* RMDB Image */}
               <div className="w-1/2 flex justify-center">
@@ -148,8 +222,8 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                     src="/images/Edgebic/2022-07/rmdb11.png"
                     alt="RMDB Core Capabilities dashboard"
                     width={500}
-                    height={300}
-                    className="h-[200px] w-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                    height={400}
+                    className="h-[350px] w-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                     loading="lazy"
                   />
                 </Link>
