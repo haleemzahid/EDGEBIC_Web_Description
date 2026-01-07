@@ -35,10 +35,10 @@ export default function ThankYouPage() {
             <p className="mb-4">
               Send data or post questions anytime to{' '}
               <Link
-                href="mailto:US@usersolutions.mystagingwebsite.com"
+                href="mailto:US@usersolutions.com"
                 className="text-sky-500 hover:underline"
               >
-                US@usersolutions.mystagingwebsite.com
+                US@usersolutions.com
               </Link>{' '}
               or at{' '}
               <Link
