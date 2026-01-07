@@ -45,9 +45,9 @@ async function fetchGoogleCalendarEvents(): Promise<CalendarEvent[]> {
   }
 
   const timeMin = new Date();
-  timeMin.setMonth(timeMin.getMonth() - 1); // Get events from 1 month ago
+  timeMin.setFullYear(timeMin.getFullYear() - 1); // Get events from 1 year ago
   const timeMax = new Date();
-  timeMax.setMonth(timeMax.getMonth() + 3); // Get events up to 3 months ahead
+  timeMax.setFullYear(timeMax.getFullYear() + 1); // Get events up to 1 year ahead
 
   const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(
     GOOGLE_CALENDAR_ID
