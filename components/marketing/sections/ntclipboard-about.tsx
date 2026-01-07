@@ -13,7 +13,7 @@ export function NTClipboardAbout(): React.JSX.Element {
   const teamMembers = [
     {
       name: 'Jim Convis',
-      title: 'Founder & CEO',
+      title: 'President',
       image:
         '/images/Edgebic/2022-09/jim-150x150.png',
       description:
@@ -61,26 +61,7 @@ export function NTClipboardAbout(): React.JSX.Element {
       philosophy:
         'Hamza is dedicated to creating intuitive applications that bridge the gap between powerful functionality and user-friendly design.'
     },
-    {
-      name: 'Dennis Johnson',
-      title: 'Senior Solutions Consultant',
-      image:
-        '/images/Edgebic/2022-09/Dennis-150x150.png',
-      description:
-        'Dennis graduated from the University of Arkansas at Fayetteville with a degree in Industrial Management. The first twenty years of his career were in Industrial Engineering and manufacturing management. He learned the needs and requirements of various industries and sectors. The last twenty years of his career have been spent in the manufacturing software industry where he applied many different experiences of solutions for selecting, selling, implementing, training, consulting and using software.',
-      philosophy:
-        "Dennis' primary goal through the years has been to combine professional expertise with industry knowledge to help customers tackle their most pressing issues."
-    },
-    {
-      name: 'Bob Russell',
-      title: 'Operations Manager',
-      image:
-        '/images/Edgebic/2022-09/Russell-150x150.png',
-      description:
-        'Bob graduated Summa Cum Laude (with highest honors) from California State University San Francisco after serving four years in the US Navy. For many decades, Bob has been engaged exclusively in the manufacturing industry as buyer, production control manager, material planner, quality control manager, controller, operations manager, vice president of operations, and chief executive officer.',
-      philosophy:
-        'In 1995, Bob started his own business consulting company specializing in advising companies on how to best apply computer systems in their operations as well as developing custom software solutions when necessary.'
-    },
+
     {
       name: 'Jeff Martinez',
       title: 'Technical Director & Asia Operations',
@@ -92,14 +73,24 @@ export function NTClipboardAbout(): React.JSX.Element {
         'Jeff also directly manages customer sales and support throughout Asia, bringing global perspective to manufacturing solutions.'
     },
     {
-      name: 'Jack Convis',
-      title: 'Social Media Manager',
+      name: 'Dennis Johnson',
+      title: 'Senior Solutions Consultant  (RETIRED)',
       image:
-        '/images/Edgebic/2022-11/IMG_5910-1-100x100.png',
+        '/images/Edgebic/2022-09/Dennis-150x150.png',
       description:
-        'Jack graduated high school in 2020 and has since been accepted into an exclusive software engineering program at Grand Circus in Detroit -- the program Jack is enrolled in had a narrow, eight-percent acceptance rate. Having built a subscriber base on YouTube of 7,000+ over a few years, he is an accomplished video editor & producer for various businesses.',
+        'Dennis graduated from the University of Arkansas at Fayetteville with a degree in Industrial Management. The first twenty years of his career were in Industrial Engineering and manufacturing management. He learned the needs and requirements of various industries and sectors. The last twenty years of his career have been spent in the manufacturing software industry where he applied many different experiences of solutions for selecting, selling, implementing, training, consulting and using software.',
       philosophy:
-        'Jack brings fresh digital marketing perspective and technical skills to help User Solutions connect with the next generation of manufacturing professionals.'
+        "Dennis' primary goal through the years has been to combine professional expertise with industry knowledge to help customers tackle their most pressing issues."
+    },
+    {
+      name: 'Bob Russell',
+      title: 'Operations Manager  (RETIRED)',
+      image:
+        '/images/Edgebic/2022-09/Russell-150x150.png',
+      description:
+        'Bob graduated Summa Cum Laude (with highest honors) from California State University San Francisco after serving four years in the US Navy. For many decades, Bob has been engaged exclusively in the manufacturing industry as buyer, production control manager, material planner, quality control manager, controller, operations manager, vice president of operations, and chief executive officer.',
+      philosophy:
+        'In 1995, Bob started his own business consulting company specializing in advising companies on how to best apply computer systems in their operations as well as developing custom software solutions when necessary.'
     }
   ];
 
@@ -108,7 +99,7 @@ export function NTClipboardAbout(): React.JSX.Element {
       <div className="container pt-6">
         <SiteHeading
           title="Meet Our Team"
-          description="The experts behind 30+ years of manufacturing software excellence"
+          description="The folks behind 35+ years of delivering manufacturing software excellence"
         />
 
         {/* Team Members Section */}

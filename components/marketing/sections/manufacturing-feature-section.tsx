@@ -865,7 +865,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
           </div> */}
 
           <h2 className="text-center text-3xl font-bold text-[#003d5c] md:text-4xl">
-            Trusted by Manufacturers Worldwide for Over 25 Years
+            Trusted by Manufacturers Worldwide for Over 35 Years
           </h2>
 
           {/* Testimonial Cards */}

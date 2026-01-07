@@ -236,7 +236,7 @@ export default function ProductVideoPage() {
             </h2>
             <div className="rounded-lg bg-white p-8 shadow-lg">
               <p className="mb-4 text-gray-600">
-                Trusted by manufacturers worldwide for over 25 years
+                Trusted by Manufacturers Worldwide for Over 35 Years
               </p>
               <div className="flex flex-wrap items-center justify-center gap-6 opacity-70">
                 <div className="text-sm font-semibold text-gray-500">
