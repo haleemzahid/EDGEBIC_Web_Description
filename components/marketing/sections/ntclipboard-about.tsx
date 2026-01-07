@@ -63,6 +63,20 @@ export function NTClipboardAbout(): React.JSX.Element {
     },
 
     {
+      name: 'Jon Frazier',
+      title: 'Senior Developer',
+      image: '',
+      description: '',
+      philosophy: ''
+    },
+    {
+      name: 'Richard Ensley',
+      title: 'Marketing',
+      image: '',
+      description: '',
+      philosophy: ''
+    },
+    {
       name: 'Jeff Martinez',
       title: 'Technical Director & Asia Operations',
       image:
