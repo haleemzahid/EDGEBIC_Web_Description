@@ -65,7 +65,7 @@ export function RMDBTabsClient({
       <nav className="pt-6" aria-label="Product information tabs">
         <div className="container mx-auto max-w-7xl px-4">
           <div
-            className="flex flex-wrap justify-start gap-6 text-[18px]"
+            className="flex flex-wrap justify-start gap-2 text-[18px]"
             role="tablist"
             aria-label="Resource Manager DB sections"
           >
@@ -79,9 +79,9 @@ export function RMDBTabsClient({
                 tabIndex={activeTab === tab.id ? 0 : -1}
                 onClick={() => setActiveTab(tab.id)}
                 onKeyDown={(e) => handleKeyDown(e, index)}
-                className={`transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 rounded-sm px-2 py-1 ${activeTab === tab.id
-                    ? 'font-semibold  '
-                    : 'text-slate-700 hover: '
+                className={`transition-all duration-200 focus:outline-none px-4 py-3 border-b-2 ${activeTab === tab.id
+                    ? 'font-semibold text-cyan-600 border-cyan-600'
+                    : 'text-slate-600 hover:text-cyan-600 border-transparent hover:border-cyan-600'
                   }`}
               >
                 {tab.label}
