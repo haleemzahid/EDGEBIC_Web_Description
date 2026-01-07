@@ -31,18 +31,20 @@ export default function ResourceManagerDBInDepthPage() {
       </section>
 
       {/* Navigation Tabs */}
-      <section className="pt-6">
-        <div className="container flex items-center justify-center mx-auto max-w-7xl px-4">
-          <div className="flex flex-wrap gap-6 text-lg">
+      <nav className="pt-6" aria-label="Product information tabs">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="flex flex-wrap justify-start gap-2 text-[18px]" role="tablist" aria-label="Resource Manager DB sections">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
+                role="tab"
+                aria-selected={activeTab === tab.id ? 'true' : 'false'}
                 onClick={() => setActiveTab(tab.id)}
-                className={`transition-colors ${
+                className={`transition-all duration-200 focus:outline-none px-4 py-3 border-b-2 ${
                   activeTab === tab.id
-                    ? 'font-semibold  '
-                    : 'text-slate-700 hover: '
+                    ? 'font-semibold text-cyan-600 border-cyan-600'
+                    : 'text-slate-600 hover:text-cyan-600 border-transparent hover:border-cyan-600'
                 }`}
               >
                 {tab.label}
@@ -50,7 +52,7 @@ export default function ResourceManagerDBInDepthPage() {
             ))}
           </div>
         </div>
-      </section>
+      </nav>
 
       {/* Tab Content */}
       <section className="pt-6">

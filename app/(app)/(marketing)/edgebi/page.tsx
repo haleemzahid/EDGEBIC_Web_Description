@@ -38,15 +38,17 @@ export default function EDGEBIPage(): React.JSX.Element {
               </p>
 
               {/* Navigation Tabs */}
-              <div className="flex flex-wrap gap-6">
+              <div className="flex flex-wrap gap-2" role="tablist" aria-label="EDGEBI sections">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     type="button"
+                    role="tab"
+                    aria-selected={activeTab === tab.id ? 'true' : 'false'}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`text-md transition-colors ${activeTab === tab.id
-                      ? 'font-semibold  '
-                      : 'text-slate-700 hover: '
+                    className={`transition-all duration-200 focus:outline-none px-4 py-3 border-b-2 ${activeTab === tab.id
+                      ? 'font-semibold text-cyan-600 border-cyan-600'
+                      : 'text-slate-600 hover:text-cyan-600 border-transparent hover:border-cyan-600'
                       }`}
                   >
                     {tab.label}
