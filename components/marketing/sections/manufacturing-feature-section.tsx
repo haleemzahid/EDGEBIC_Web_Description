@@ -143,14 +143,16 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               </div>
               {/* RMDB Image */}
               <div className="w-1/2 flex justify-center">
-                <Image
-                  src="/images/Edgebic/2022-07/rmdb11.png"
-                  alt="RMDB Core Capabilities dashboard"
-                  width={500}
-                  height={300}
-                  className="h-[200px] w-auto rounded-lg"
-                  loading="lazy"
-                />
+                <Link href="/resource-manager-db-2">
+                  <Image
+                    src="/images/Edgebic/2022-07/rmdb11.png"
+                    alt="RMDB Core Capabilities dashboard"
+                    width={500}
+                    height={300}
+                    className="h-[200px] w-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                    loading="lazy"
+                  />
+                </Link>
               </div>
             </div>
           </div>

@@ -299,9 +299,9 @@ export default function ContactUsPage() {
                 />
 
                 {/* Perfect Complement Text */}
-                <div className="bg-red-600 text-white p-3 rounded-lg text-center mt-4 text-sm">
+                <div className="p-3 rounded-lg text-center mt-4 text-sm">
                   <p className="font-medium">
-                    The perfect complement for companies of any size... from <span className="text-cyan-300">Job Shops</span> to <span className="text-cyan-300">Small-Medium Manufacturers</span> to <span className="text-cyan-300">Global Multi-Nationals</span>
+                    The perfect complement for companies of any size... from <span className="text-blue-600">Job Shops</span> to <span className="text-blue-600">Small-Medium Manufacturers</span> to <span className="text-blue-600">Global Multi-Nationals</span>
                   </p>
                 </div>
               </div>
