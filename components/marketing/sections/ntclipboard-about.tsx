@@ -23,10 +23,10 @@ export function NTClipboardAbout(): React.JSX.Element {
     },
     {
       name: 'Jon Frazier',
-      title: 'Senior Developer',
-      image: '',
-      description: '',
-      philosophy: ''
+      title: 'RMDB Chief Architect',
+      image: '/images/Edgebic/2022-09/Jon.jpg',
+      description: 'Jon, our founding developer and U-M Physics standout (4.0 GPA), has led our platform\'s evolution for over 30 years. In an industry where high turnover often leaves customers stranded with unfixable code, Jon\'s presence ensures we can customize your solution quickly and reliably. We don\'t believe in "rewriting from scratch" or forcing you into painful product migrations—just expert, stable support from the person who wrote the code.',
+      philosophy: 'Continuity You Can Count On'
     },
     {
       name: 'Richard Ensley',
