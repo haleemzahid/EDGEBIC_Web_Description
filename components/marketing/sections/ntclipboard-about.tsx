@@ -32,7 +32,7 @@ export function NTClipboardAbout(): React.JSX.Element {
       name: 'Richard James Ensley',
       title: 'Marketing',
       image: '/images/Edgebic/2022-09/Richard.png',
-      description: 'Richard joined User Solutions as a wee lad of 14 or 15 looking to learn about Graphic Design, Marketing and more and, we believe, Richard taught himself HTML and built the very first Manufacturing Software Website way back in the early 90\'s! We are so grateful he is still part of US.',
+      description: 'Richard joined User Solutions as a we lad of 14 or 15 looking to learn about Graphic Design, Marketing and more and, we believe, Richard taught himself HTML and built the very first Manufacturing Software Website way back in the early 90\'s! We are so grateful he is still part of US.',
       philosophy: ''
     },
     {
