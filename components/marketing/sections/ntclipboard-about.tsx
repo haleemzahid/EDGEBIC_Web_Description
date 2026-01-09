@@ -22,6 +22,20 @@ export function NTClipboardAbout(): React.JSX.Element {
         'With a vision statement of "Listen and Deliver" you could add \'guaranteed\' to complete our philosophy on making you successful.'
     },
     {
+      name: 'Jon Frazier',
+      title: 'Senior Developer',
+      image: '',
+      description: '',
+      philosophy: ''
+    },
+    {
+      name: 'Richard Ensley',
+      title: 'Marketing',
+      image: '',
+      description: 'Richard joined User Solutions as a wee lad of 14 or 15 looking to learn about Graphic Design, Marketing and more and, we believe, Richard taught',
+      philosophy: ''
+    },
+    {
       name: 'Haleem Khan',
       title: 'Development Manager at User Solutions | CEO at Dawloom',
       link: 'https://www.dawloom.com/',
@@ -61,34 +75,9 @@ export function NTClipboardAbout(): React.JSX.Element {
       philosophy:
         'Hamza is dedicated to creating intuitive applications that bridge the gap between powerful functionality and user-friendly design.'
     },
-
-    {
-      name: 'Jon Frazier',
-      title: 'Senior Developer',
-      image: '',
-      description: '',
-      philosophy: ''
-    },
-    {
-      name: 'Richard Ensley',
-      title: 'Marketing',
-      image: '',
-      description: '',
-      philosophy: ''
-    },
-    {
-      name: 'Jeff Martinez',
-      title: 'Technical Director & Asia Operations',
-      image:
-        '/images/Edgebic/2022-09/Jeff-150x150.png',
-      description:
-        'Jeff graduated Summa Cum Laude (with highest honors) from California State University San Francisco after serving four years in the US Navy. For many decades, Jeff has been engaged exclusively in the manufacturing industry across various roles from buyer to chief executive officer. Jeff manages the User Solutions SolverLution offering, which blends Higher Level Optimization techniques with Production Scheduling techniques.',
-      philosophy:
-        'Jeff also directly manages customer sales and support throughout Asia, bringing global perspective to manufacturing solutions.'
-    },
     {
       name: 'Dennis Massey',
-      title: 'Senior Solutions Consultant  (RETIRED)',
+      title: 'National Sales Manager (Retired)',
       image:
         '/images/Edgebic/2022-09/Dennis-150x150.png',
       description:
@@ -98,7 +87,7 @@ export function NTClipboardAbout(): React.JSX.Element {
     },
     {
       name: 'Bob Russell',
-      title: 'Operations Manager  (RETIRED)',
+      title: 'Senior Developer (Retired)',
       image:
         '/images/Edgebic/2022-09/Russell-150x150.png',
       description:
