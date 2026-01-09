@@ -156,6 +156,12 @@ export default function EDGEBIPage(): React.JSX.Element {
                 </div>
               </div>
 
+              <p className="text-[18px] text-slate-700">
+                discuss your specific application and challenges
+              </p>
+              <p className="text-[18px] text-slate-700">
+                EDGEBI is the perfect, interactive, view for your application.
+              </p>
               {/* CTA Section */}
               <div className="text-center">
                 <p className="mb-4 text-[18px] text-slate-700">
