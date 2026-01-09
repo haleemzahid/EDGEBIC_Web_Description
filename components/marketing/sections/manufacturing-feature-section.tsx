@@ -40,13 +40,13 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   <button
                     type="button"
                     onClick={() => setDynamicBorExpanded(!dynamicBorExpanded)}
-                    className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+                    className="flex w-full items-center justify-between p-1 text-left transition-colors hover:bg-gray-50"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex size-10 items-center justify-center rounded-full bg-indigo-100">
-                        <Layers className="size-6 text-indigo-600" />
+                      <div className="flex size-8 items-center justify-center rounded-full bg-indigo-100">
+                        <Layers className="size-4 text-indigo-600" />
                       </div>
-                      <h3 className="text-md font-semibold text-gray-900">Dynamic Bill Of Resource (BOR)</h3>
+                      <h3 className="text-[16px] font-semibold text-gray-900">Dynamic Bill Of Resource (BOR)</h3>
                     </div>
                     {dynamicBorExpanded ? (
                       <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -72,17 +72,17 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
 
                 {/* Comprehensive Logic Expandable Card */}
-                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
                     type="button"
                     onClick={() => setComprehensiveLogicExpanded(!comprehensiveLogicExpanded)}
-                    className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+                    className="flex w-full items-center justify-between p-1 text-left transition-colors hover:bg-gray-50"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex size-10 items-center justify-center rounded-full bg-cyan-100">
-                        <Brain className="size-6 text-cyan-600" />
+                      <div className="flex size-8 items-center justify-center rounded-full bg-cyan-100">
+                        <Brain className="size-4 text-cyan-600" />
                       </div>
-                      <h3 className="text-md font-semibold text-gray-900">Comprehensive Logic</h3>
+                      <h3 className="text-[16px] font-semibold text-gray-900">Comprehensive Logic</h3>
                     </div>
                     {comprehensiveLogicExpanded ? (
                       <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -108,17 +108,17 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
 
                 {/* Strategic Flexibility Expandable Card */}
-                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
                     type="button"
                     onClick={() => setStrategicFlexibilityExpanded(!strategicFlexibilityExpanded)}
-                    className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+                    className="flex w-full items-center justify-between p-1 text-left transition-colors hover:bg-gray-50"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex size-10 items-center justify-center rounded-full bg-amber-100">
-                        <Shuffle className="size-6 text-amber-600" />
+                      <div className="flex size-8 items-center justify-center rounded-full bg-amber-100">
+                        <Shuffle className="size-4 text-amber-600" />
                       </div>
-                      <h3 className="text-md font-semibold text-gray-900">Strategic Flexibility</h3>
+                      <h3 className="text-[16px] font-semibold text-gray-900">Strategic Flexibility</h3>
                     </div>
                     {strategicFlexibilityExpanded ? (
                       <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -144,17 +144,17 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
 
                 {/* Powerful, Flexible, Customizable Reporting Expandable Card */}
-                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
                     type="button"
                     onClick={() => setReportingExpanded(!reportingExpanded)}
-                    className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+                    className="flex w-full items-center justify-between p-1 text-left transition-colors hover:bg-gray-50"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex size-10 items-center justify-center rounded-full bg-blue-100">
-                        <FileText className="size-6 text-blue-600" />
+                      <div className="flex size-8 items-center justify-center rounded-full bg-blue-100">
+                        <FileText className="size-4 text-blue-600" />
                       </div>
-                      <h3 className="text-md font-semibold text-gray-900">Powerful, Flexible, Customizable Reporting</h3>
+                      <h3 className="text-[16px] font-semibold text-gray-900">Powerful, Flexible, Customizable Reporting</h3>
                     </div>
                     {reportingExpanded ? (
                       <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -180,17 +180,17 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
 
                 {/* Data Integration Expandable Card */}
-                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
                     type="button"
                     onClick={() => setDataIntegrationExpanded(!dataIntegrationExpanded)}
-                    className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+                    className="flex w-full items-center justify-between p-1 text-left transition-colors hover:bg-gray-50"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex size-10 items-center justify-center rounded-full bg-emerald-100">
-                        <GitMerge className="size-6 text-emerald-600" />
+                      <div className="flex size-8 items-center justify-center rounded-full bg-emerald-100">
+                        <GitMerge className="size-4 text-emerald-600" />
                       </div>
-                      <h3 className="text-md font-semibold text-gray-900">Data Integration</h3>
+                      <h3 className="text-[16px] font-semibold text-gray-900">Data Integration</h3>
                     </div>
                     {dataIntegrationExpanded ? (
                       <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -217,13 +217,13 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               </div>
               {/* RMDB Image */}
               <div className="w-1/2 flex justify-center">
-                <Link className='py-4' href="/resource-manager-db-2">
+                <Link href="/resource-manager-db-2">
                   <Image
                     src="/images/Edgebic/2022-07/rmdb11.png"
                     alt="RMDB Core Capabilities dashboard"
                     width={500}
-                    height={500}
-                    className="h-[100%] w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                    height={280}
+                    className="h-[240px] w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                     loading="lazy"
                   />
                 </Link>
@@ -247,13 +247,13 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   <button
                     type="button"
                     onClick={() => setStrategicExpanded(!strategicExpanded)}
-                    className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+                    className="flex w-full items-center justify-between p-1 text-left transition-colors hover:bg-gray-50"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex size-10 items-center justify-center rounded-full bg-blue-100">
-                        <Target className="size-6 text-blue-600" />
+                      <div className="flex size-8 items-center justify-center rounded-full bg-blue-100">
+                        <Target className="size-4 text-blue-600" />
                       </div>
-                      <h3 className="text-md font-semibold text-gray-900">Strategic Alignment</h3>
+                      <h3 className="text-[16px] font-semibold text-gray-900">Strategic Alignment</h3>
                     </div>
                     {strategicExpanded ? (
                       <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -279,17 +279,17 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
 
                 {/* Data Architecture Expandable Card */}
-                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
                     type="button"
                     onClick={() => setDataArchitectureExpanded(!dataArchitectureExpanded)}
-                    className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+                    className="flex w-full items-center justify-between p-1 text-left transition-colors hover:bg-gray-50"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex size-10 items-center justify-center rounded-full bg-purple-100">
-                        <Database className="size-6 text-purple-600" />
+                      <div className="flex size-8 items-center justify-center rounded-full bg-purple-100">
+                        <Database className="size-4 text-purple-600" />
                       </div>
-                      <h3 className="text-md font-semibold text-gray-900">Data Architecture</h3>
+                      <h3 className="text-[16px] font-semibold text-gray-900">Data Architecture</h3>
                     </div>
                     {dataArchitectureExpanded ? (
                       <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -315,17 +315,17 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
 
                 {/* Rule Configuration Expandable Card */}
-                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
                     type="button"
                     onClick={() => setRuleConfigExpanded(!ruleConfigExpanded)}
-                    className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+                    className="flex w-full items-center justify-between p-1 text-left transition-colors hover:bg-gray-50"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex size-10 items-center justify-center rounded-full bg-orange-100">
-                        <Settings className="size-6 text-orange-600" />
+                      <div className="flex size-8 items-center justify-center rounded-full bg-orange-100">
+                        <Settings className="size-4 text-orange-600" />
                       </div>
-                      <h3 className="text-md font-semibold text-gray-900">Rule Configuration</h3>
+                      <h3 className="text-[16px] font-semibold text-gray-900">Rule Configuration</h3>
                     </div>
                     {ruleConfigExpanded ? (
                       <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -351,17 +351,17 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
 
                 {/* Tactical Refinement Expandable Card */}
-                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
                     type="button"
                     onClick={() => setTacticalExpanded(!tacticalExpanded)}
-                    className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+                    className="flex w-full items-center justify-between p-1 text-left transition-colors hover:bg-gray-50"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex size-10 items-center justify-center rounded-full bg-teal-100">
-                        <Wrench className="size-6 text-teal-600" />
+                      <div className="flex size-8 items-center justify-center rounded-full bg-teal-100">
+                        <Wrench className="size-4 text-teal-600" />
                       </div>
-                      <h3 className="text-md font-semibold text-gray-900">Tactical Refinement</h3>
+                      <h3 className="text-[16px] font-semibold text-gray-900">Tactical Refinement</h3>
                     </div>
                     {tacticalExpanded ? (
                       <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -387,17 +387,17 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
 
                 {/* Automated Maintenance & Rebalancing Expandable Card */}
-                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
                     type="button"
                     onClick={() => setMaintenanceExpanded(!maintenanceExpanded)}
-                    className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+                    className="flex w-full items-center justify-between p-1 text-left transition-colors hover:bg-gray-50"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex size-10 items-center justify-center rounded-full bg-green-100">
-                        <RefreshCw className="size-6 text-green-600" />
+                      <div className="flex size-8 items-center justify-center rounded-full bg-green-100">
+                        <RefreshCw className="size-4 text-green-600" />
                       </div>
-                      <h3 className="text-md font-semibold text-gray-900">Automated Maintenance</h3>
+                      <h3 className="text-[16px] font-semibold text-gray-900">Automated Maintenance</h3>
                     </div>
                     {maintenanceExpanded ? (
                       <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -428,8 +428,8 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   src="/images/Edgebic/Gemini_Generated_Image_obe2ceobe2ceobe2.png"
                   alt="Scheduling step process diagram showing optimal scheduling workflow"
                   width={500}
-                  height={353}
-                  className="object-contain w-full h-[353px] rounded-lg"
+                  height={280}
+                  className="w-full h-[230px] rounded-lg"
                   loading="lazy"
                 />
               </div>
