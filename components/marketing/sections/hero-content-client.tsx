@@ -75,7 +75,7 @@ export function HeroContent(): React.JSX.Element {
       </div>
 
       {/* Main Hero Content */}
-      <div className="relative z-10 mx-auto max-w-7xl py-6">
+      <div className="relative z-10 mx-auto  py-6">
         <div className="flex">
           {/* Left Side - Text Content */}
           <motion.div
