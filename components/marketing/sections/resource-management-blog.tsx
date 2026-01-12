@@ -16,70 +16,70 @@ import {
 } from '@/components/ui/card';
 
 const blogPosts = [
-  {
-    title:
-      'Enhancing Supply Chain Visibility through Advanced Scheduling Solutions',
-    description:
-      "Supply Chain Visibility Solutions for Modern Manufacturers. Are your supply chain operations as transparent and efficient as they should be? In today's fast-paced market, full visibility into your supply chain is crucial for maintaining competitive advantage.",
-    date: 'May 26, 2024',
-    readTime: '5 min read',
-    category: 'Supply Chain',
-    image: '/images/Edgebic/2022-09/usersolutionsimage-300x211.png',
-    href: '/enhancing-supply-chain-visibility-through-advanced-scheduling-solutions'
-  },
-  {
-    title:
-      'The Role of Technology in Modern Production Planning and Scheduling',
-    description:
-      'Have you ever wondered how technology can transform the traditional landscape of production planning and scheduling? In an era where efficiency dictates market leaders, the integration of advanced technology solutions is no longer optional.',
-    date: 'May 16, 2024',
-    readTime: '6 min read',
-    category: 'Technology',
-    image: '/images/Edgebic/2022-07/AirCraftMaint.jpg',
-    href: '/erp-solutions-for-production-planning'
-  },
-  {
-    title:
-      'Implementing Lean Manufacturing Principles for Improved Production Efficiency',
-    description:
-      "Is your manufacturing process as streamlined and cost-effective as it could be? In today's competitive landscape, companies are constantly seeking methods to enhance efficiency and reduce waste through lean manufacturing principles.",
-    date: 'May 6, 2024',
-    readTime: '7 min read',
-    category: 'Manufacturing',
-    image: '/images/Edgebic/2024-02/sdf.jpg',
-    href: '/lean-manufacturing-solutions'
-  },
-  {
-    title: 'Li-ion Battery Production Scheduling Software',
-    description:
-      'Resource Manager-DB V6 Transforms Li-ion Battery Production Scheduling. User Solutions, a leader in flexible production scheduling and planning software, has released Resource Manager-DB (RM-DB) V6.',
-    date: 'September 8, 2022',
-    readTime: '4 min read',
-    category: 'Software',
-    image: '/images/Edgebic/2022-09/image04-300x163.png',
-    href: '/li-ion-battery-production-scheduling-software'
-  },
-  {
-    title: 'Scheduling System Narrows Skills Gap for Fire-Rated Glass',
-    description:
-      "Scheduling System Narrows Skills Gap for Fire-Rated Glass. User Solutions' Resource Manager-DB enables Technical Glass Products to strategically cross-train their way to optimization.",
-    date: 'September 8, 2022',
-    readTime: '5 min read',
-    category: 'Case Study',
-    image: '/images/Edgebic/2022-09/image3-300x163.png',
-    href: '/scheduling-system-narrows-skills-gap-for-fire-rated-glass'
-  },
-  {
-    title:
-      'Small Manufacturer and Job Shop Uses Planning, Scheduling, and Tracking Tools from User Solutions, Inc. to Become More Efficient and Competitive',
-    description:
-      'Small Manufacturer and Job Shop Uses Planning, Scheduling, and Tracking Tools from User Solutions, Inc. to Become More Efficient and Competitive. Resource Manager for Excel transforms operations for growing businesses.',
-    date: 'September 8, 2022',
-    readTime: '6 min read',
-    category: 'Success Story',
-    image: '/images/Edgebic/2022-09/image06-1-300x163.png',
-    href: '/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive'
-  }
+  // {
+  //   title:
+  //     'Enhancing Supply Chain Visibility through Advanced Scheduling Solutions',
+  //   description:
+  //     "Supply Chain Visibility Solutions for Modern Manufacturers. Are your supply chain operations as transparent and efficient as they should be? In today's fast-paced market, full visibility into your supply chain is crucial for maintaining competitive advantage.",
+  //   date: 'May 26, 2024',
+  //   readTime: '5 min read',
+  //   category: 'Supply Chain',
+  //   image: '/images/Edgebic/2022-09/usersolutionsimage-300x211.png',
+  //   href: '/enhancing-supply-chain-visibility-through-advanced-scheduling-solutions'
+  // },
+  // {
+  //   title:
+  //     'The Role of Technology in Modern Production Planning and Scheduling',
+  //   description:
+  //     'Have you ever wondered how technology can transform the traditional landscape of production planning and scheduling? In an era where efficiency dictates market leaders, the integration of advanced technology solutions is no longer optional.',
+  //   date: 'May 16, 2024',
+  //   readTime: '6 min read',
+  //   category: 'Technology',
+  //   image: '/images/Edgebic/2022-07/AirCraftMaint.jpg',
+  //   href: '/erp-solutions-for-production-planning'
+  // },
+  // {
+  //   title:
+  //     'Implementing Lean Manufacturing Principles for Improved Production Efficiency',
+  //   description:
+  //     "Is your manufacturing process as streamlined and cost-effective as it could be? In today's competitive landscape, companies are constantly seeking methods to enhance efficiency and reduce waste through lean manufacturing principles.",
+  //   date: 'May 6, 2024',
+  //   readTime: '7 min read',
+  //   category: 'Manufacturing',
+  //   image: '/images/Edgebic/2024-02/sdf.jpg',
+  //   href: '/lean-manufacturing-solutions'
+  // },
+  // {
+  //   title: 'Li-ion Battery Production Scheduling Software',
+  //   description:
+  //     'Resource Manager-DB V6 Transforms Li-ion Battery Production Scheduling. User Solutions, a leader in flexible production scheduling and planning software, has released Resource Manager-DB (RM-DB) V6.',
+  //   date: 'September 8, 2022',
+  //   readTime: '4 min read',
+  //   category: 'Software',
+  //   image: '/images/Edgebic/2022-09/image04-300x163.png',
+  //   href: '/li-ion-battery-production-scheduling-software'
+  // },
+  // {
+  //   title: 'Scheduling System Narrows Skills Gap for Fire-Rated Glass',
+  //   description:
+  //     "Scheduling System Narrows Skills Gap for Fire-Rated Glass. User Solutions' Resource Manager-DB enables Technical Glass Products to strategically cross-train their way to optimization.",
+  //   date: 'September 8, 2022',
+  //   readTime: '5 min read',
+  //   category: 'Case Study',
+  //   image: '/images/Edgebic/2022-09/image3-300x163.png',
+  //   href: '/scheduling-system-narrows-skills-gap-for-fire-rated-glass'
+  // },
+  // {
+  //   title:
+  //     'Small Manufacturer and Job Shop Uses Planning, Scheduling, and Tracking Tools from User Solutions, Inc. to Become More Efficient and Competitive',
+  //   description:
+  //     'Small Manufacturer and Job Shop Uses Planning, Scheduling, and Tracking Tools from User Solutions, Inc. to Become More Efficient and Competitive. Resource Manager for Excel transforms operations for growing businesses.',
+  //   date: 'September 8, 2022',
+  //   readTime: '6 min read',
+  //   category: 'Success Story',
+  //   image: '/images/Edgebic/2022-09/image06-1-300x163.png',
+  //   href: '/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive'
+  // }
 ];
 
 export function ResourceManagementBlog() {

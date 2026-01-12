@@ -78,13 +78,13 @@ export const MENU_LINKS = [
     href: Routes.About,
     external: false
   },
-  {
-    title: 'News',
-    description: 'Latest news and updates',
-    icon: <NewspaperIcon className="size-5 shrink-0" />,
-    href: Routes.News,
-    external: false
-  },
+  // {
+  //   title: 'News',
+  //   description: 'Latest news and updates',
+  //   icon: <NewspaperIcon className="size-5 shrink-0" />,
+  //   href: Routes.News,
+  //   external: false
+  // },
   // {
   //   title: 'Excel Templates',
   //   description: 'Excel applications for manufacturing scheduling',
