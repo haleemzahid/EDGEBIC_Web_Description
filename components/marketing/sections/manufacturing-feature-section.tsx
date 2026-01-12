@@ -437,7 +437,8 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
           </div>
         </div>
 
-        <div className="lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
+        {/* RMDB Integrate MRP and capacity planning - Moved to resource-management page */}
+        {/* <div className="lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
           <div className="mt-6 space-y-4 lg:mt-0">
             <h3 className="text-xl font-bold text-[#003d5c] md:text-2xl">
               RMDB Integrate MRP and capacity planning
@@ -466,10 +467,10 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               loading="lazy"
             />
           </div>
-        </div>
+        </div> */}
 
-        {/* Swing Control Software */}
-        <div className="mt-6 lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
+        {/* Feature Section - Moved to resource-management page */}
+        {/* <div className="mt-6 lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
           <div className="relative flex h-[300px] items-center justify-center lg:col-start-2">
             <Image
               src="/images/Edgebic/2022-10/RMDB-Data-Import.png"
@@ -520,10 +521,10 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               </Link>
             </div>
           </div>
-        </div>
+        </div> */}
 
-        {/* Real-time inventory overview */}
-        <div className="mt-6 lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
+        {/* Real-time inventory overview - Moved to resource-management page */}
+        {/* <div className="mt-6 lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
           <div className="mt-6 space-y-4 lg:mt-0">
             <h3 className="text-xl font-bold text-[#003d5c] md:text-2xl">
               Real-time inventory overview
@@ -552,16 +553,15 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               loading="lazy"
             />
           </div>
-        </div>
+        </div> */}
 
         {/* Integrated Manufacturing Software for Business Growth */}
-        <div className="mt-6">
+        {/* <div className="mt-6">
           <h2 className="text-center text-3xl font-bold text-[#003d5c] md:text-4xl">
             Integrated Manufacturing Software for Business Growth
           </h2>
 
           <div className="mt-6 grid gap-12 md:grid-cols-2 lg:grid-cols-3">
-            {/* Production Planning */}
             <div className="flex flex-col items-center text-center">
               <div className="mb-6 flex size-20 items-center justify-center">
                 <svg
@@ -645,7 +645,6 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               </p>
             </div>
 
-            {/* Inventory */}
             <div className="flex flex-col items-center text-center">
               <div className="mb-6 flex size-20 items-center justify-center">
                 <svg
@@ -695,7 +694,6 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               </p>
             </div>
 
-            {/* Sales Management */}
             <div className="flex flex-col items-center text-center">
               <div className="mb-6 flex size-20 items-center justify-center">
                 <svg
@@ -757,7 +755,6 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               </p>
             </div>
 
-            {/* Workforce */}
             <div className="flex flex-col items-center text-center">
               <div className="mb-6 flex size-20 items-center justify-center">
                 <svg
@@ -811,7 +808,6 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               </p>
             </div>
 
-            {/* Procurement */}
             <div className="flex flex-col items-center text-center">
               <div className="mb-6 flex size-20 items-center justify-center">
                 <svg
@@ -856,7 +852,6 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               </p>
             </div>
 
-            {/* Finances */}
             <div className="flex flex-col items-center text-center">
               <div className="mb-6 flex size-20 items-center justify-center">
                 <svg
@@ -917,7 +912,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             </div>
           </div>
 
-        </div>
+        </div> */}
 
         <NTClipboardToolBox />
 

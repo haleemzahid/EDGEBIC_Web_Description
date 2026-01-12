@@ -105,6 +105,497 @@ export function ResourceManagementBlog() {
         </div>
       </section>
 
+      {/* Three Image Sections */}
+      <section className="pt-6">
+        <div className="container">
+          {/* RMDB Integrate MRP and capacity planning */}
+          <div className="lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
+            <div className="mt-6 space-y-4 lg:mt-0">
+              <h3 className="text-xl font-bold text-[#003d5c] md:text-2xl">
+                RMDB Integrate MRP and capacity planning
+              </h3>
+              <p className="text-base leading-relaxed text-slate-700">
+                Manage material requirements, prevent bottlenecks with finite
+                capacity scheduling, and optimize workcenter loading with visual
+                heat maps and what-if analysis capabilities.
+              </p>
+              <div className="mt-6">
+                <Link
+                  href="/resource-manager-db-2"
+                  className="inline-flex items-center justify-center rounded-md border-2 border-[#003d5c] bg-transparent px-5 py-2 text-sm font-medium text-[#003d5c] transition-all duration-200 hover:bg-[#003d5c] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#003d5c] focus:ring-offset-2]"
+                >
+                  View Details
+                </Link>
+              </div>
+            </div>
+            <div className="relative flex h-[300px] items-center justify-center lg:col-start-2">
+              <Image
+                src="/images/Edgebic/2022-07/rmdb11.png"
+                alt="Integrated MRP and capacity planning dashboard"
+                fill
+                sizes="(max-width: 768px) 100vw, 33vw"
+                className="object-contain"
+                loading="lazy"
+              />
+            </div>
+          </div>
+
+          {/* Feature Section */}
+          <div className="mt-6 lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
+            <div className="relative flex h-[300px] items-center justify-center lg:col-start-2">
+              <Image
+                src="/images/Edgebic/2022-10/RMDB-Data-Import.png"
+                alt="Data import features for production scheduling"
+                fill
+                sizes="(max-width: 768px) 100vw, 33vw"
+                className="object-contain"
+                loading="lazy"
+              />
+            </div>
+
+            <div className="mt-6 space-y-4 lg:mt-0">
+              <h3 className="text-xl font-bold text-[#003d5c] md:text-2xl">
+                Feature
+              </h3>
+              <ul className="space-y-2 text-base leading-relaxed text-slate-700">
+                <li className="flex items-start">
+                  <span className="mr-2 mt-1 text-[#2FB8DE]">◉</span>
+                  <span>Finite Planning & Scheduling</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-2 mt-1 text-[#2FB8DE]">◉</span>
+                  <span>MRP and Inventory Management</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-2 mt-1 text-[#2FB8DE]">◉</span>
+                  <span>Routings and Priority Scheduling</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-2 mt-1 text-[#2FB8DE]">◉</span>
+                  <span>Easy "what-if" analysis</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-2 mt-1 text-[#2FB8DE]">◉</span>
+                  <span>Purchasing and Receiving</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-2 mt-1 text-[#2FB8DE]">◉</span>
+                  <span>Forecasting</span>
+                </li>
+              </ul>
+              <div className="mt-6">
+                <Link
+                  href="/resource-manager-db-in-depth"
+                  className="inline-flex items-center justify-center rounded-md border-2 border-[#003d5c] bg-transparent px-5 py-2 text-sm font-medium text-[#003d5c] transition-all duration-200 hover:bg-[#003d5c] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#003d5c] focus:ring-offset-2]"
+                >
+                  View Details
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Real-time inventory overview */}
+          <div className="mt-6 lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
+            <div className="mt-6 space-y-4 lg:mt-0">
+              <h3 className="text-xl font-bold text-[#003d5c] md:text-2xl">
+                Real-time inventory overview
+              </h3>
+              <p className="text-base leading-relaxed text-slate-700">
+                Prevent stock-outs, lower inventory levels, automate inventory
+                transactions, view purchase requirements, track lots, and more.
+              </p>
+              <div className="mt-6">
+                <Link
+                  href="/production-scheduling-products"
+                  className="inline-flex items-center justify-center rounded-md border-2 border-[#003d5c] bg-transparent px-5 py-2 text-sm font-medium text-[#003d5c] transition-all duration-200 hover:bg-[#003d5c] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#003d5c] focus:ring-offset-2]"
+                >
+                  View Details
+                </Link>
+              </div>
+            </div>
+
+            <div className="relative flex h-[300px] items-center justify-center lg:col-start-2">
+              <Image
+                src="/images/Edgebic/2022-09/SQC-Pareto.png"
+                alt="Real-time inventory overview"
+                fill
+                sizes="(max-width: 768px) 100vw, 33vw"
+                className="object-contain"
+                loading="lazy"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Integrated Manufacturing Software Section */}
+      <section className="pt-6">
+        <div className="container">
+          <div className="mt-6">
+            <h2 className="text-center text-3xl font-bold text-[#003d5c] md:text-4xl">
+              Integrated Manufacturing Software for Business Growth
+            </h2>
+
+            <div className="mt-6 grid gap-12 md:grid-cols-2 lg:grid-cols-3">
+              {/* Production Planning */}
+              <div className="flex flex-col items-center text-center">
+                <div className="mb-6 flex size-20 items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 64 64"
+                    className="size-16"
+                  >
+                    <rect
+                      x="12"
+                      y="8"
+                      width="40"
+                      height="48"
+                      rx="4"
+                      fill="#5C77F1"
+                    />
+                    <rect
+                      x="16"
+                      y="16"
+                      width="12"
+                      height="8"
+                      rx="1"
+                      fill="#2FB8DE"
+                    />
+                    <rect
+                      x="16"
+                      y="28"
+                      width="12"
+                      height="8"
+                      rx="1"
+                      fill="#2FB8DE"
+                    />
+                    <rect
+                      x="16"
+                      y="40"
+                      width="12"
+                      height="8"
+                      rx="1"
+                      fill="#2FB8DE"
+                    />
+                    <rect
+                      x="32"
+                      y="16"
+                      width="16"
+                      height="4"
+                      rx="1"
+                      fill="#8CE6FF"
+                    />
+                    <rect
+                      x="32"
+                      y="24"
+                      width="16"
+                      height="4"
+                      rx="1"
+                      fill="#8CE6FF"
+                    />
+                    <rect
+                      x="32"
+                      y="32"
+                      width="16"
+                      height="4"
+                      rx="1"
+                      fill="#8CE6FF"
+                    />
+                    <rect
+                      x="32"
+                      y="40"
+                      width="16"
+                      height="4"
+                      rx="1"
+                      fill="#8CE6FF"
+                    />
+                  </svg>
+                </div>
+                <h3 className="mb-3 text-xl font-bold text-[#003d5c]">
+                  Production Planning
+                </h3>
+                <p className="text-base text-slate-700">
+                  Generate reliable, detailed production plans. Balance materials
+                  and capacity with actual demand. Effortlessly reschedule
+                  production orders.
+                </p>
+              </div>
+
+              {/* Inventory */}
+              <div className="flex flex-col items-center text-center">
+                <div className="mb-6 flex size-20 items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 64 64"
+                    className="size-16"
+                  >
+                    <rect
+                      x="20"
+                      y="12"
+                      width="24"
+                      height="16"
+                      rx="2"
+                      fill="#5C77F1"
+                    />
+                    <rect
+                      x="20"
+                      y="32"
+                      width="24"
+                      height="16"
+                      rx="2"
+                      fill="#2FB8DE"
+                    />
+                    <rect
+                      x="16"
+                      y="28"
+                      width="32"
+                      height="4"
+                      fill="#003557"
+                    />
+                    <rect
+                      x="16"
+                      y="48"
+                      width="32"
+                      height="4"
+                      fill="#003557"
+                    />
+                  </svg>
+                </div>
+                <h3 className="mb-3 text-xl font-bold text-[#003d5c]">
+                  Inventory
+                </h3>
+                <p className="text-base text-slate-700">
+                  Always know what you have in stock. Easily avoid inventory
+                  shortages and excess. Track inventory by lot or batch, use
+                  serial numbers and barcodes.
+                </p>
+              </div>
+
+              {/* Sales Management */}
+              <div className="flex flex-col items-center text-center">
+                <div className="mb-6 flex size-20 items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 64 64"
+                    className="size-16"
+                  >
+                    <rect
+                      x="12"
+                      y="16"
+                      width="40"
+                      height="6"
+                      rx="1"
+                      fill="#5C77F1"
+                    />
+                    <rect
+                      x="12"
+                      y="26"
+                      width="40"
+                      height="6"
+                      rx="1"
+                      fill="#2FB8DE"
+                    />
+                    <rect
+                      x="12"
+                      y="36"
+                      width="40"
+                      height="6"
+                      rx="1"
+                      fill="#8CE6FF"
+                    />
+                    <circle
+                      cx="8"
+                      cy="19"
+                      r="2"
+                      fill="#003557"
+                    />
+                    <circle
+                      cx="8"
+                      cy="29"
+                      r="2"
+                      fill="#003557"
+                    />
+                    <circle
+                      cx="8"
+                      cy="39"
+                      r="2"
+                      fill="#003557"
+                    />
+                  </svg>
+                </div>
+                <h3 className="mb-3 text-xl font-bold text-[#003d5c]">
+                  Sales Management
+                </h3>
+                <p className="text-base text-slate-700">
+                  Calculate order costs and lead times in just a few clicks. Send
+                  confirmed orders straight to production. Easily manage invoices,
+                  shipping, and returns.
+                </p>
+              </div>
+
+              {/* Workforce */}
+              <div className="flex flex-col items-center text-center">
+                <div className="mb-6 flex size-20 items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 64 64"
+                    className="size-16"
+                  >
+                    <circle
+                      cx="32"
+                      cy="20"
+                      r="8"
+                      fill="#5C77F1"
+                    />
+                    <path
+                      d="M32 32 L20 44 L44 44 Z"
+                      fill="#2FB8DE"
+                    />
+                    <circle
+                      cx="18"
+                      cy="24"
+                      r="6"
+                      fill="#5C77F1"
+                      opacity="0.7"
+                    />
+                    <circle
+                      cx="46"
+                      cy="24"
+                      r="6"
+                      fill="#5C77F1"
+                      opacity="0.7"
+                    />
+                    <path
+                      d="M18 34 L10 44 L26 44 Z"
+                      fill="#2FB8DE"
+                      opacity="0.7"
+                    />
+                    <path
+                      d="M46 34 L38 44 L54 44 Z"
+                      fill="#2FB8DE"
+                      opacity="0.7"
+                    />
+                  </svg>
+                </div>
+                <h3 className="mb-3 text-xl font-bold text-[#003d5c]">
+                  Workforce
+                </h3>
+                <p className="text-base text-slate-700">
+                  Stay informed on your labor requirements and utilization.
+                  Provide shop floor workers with a simple interface for reporting
+                  orders and material use.
+                </p>
+              </div>
+
+              {/* Procurement */}
+              <div className="flex flex-col items-center text-center">
+                <div className="mb-6 flex size-20 items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 64 64"
+                    className="size-16"
+                  >
+                    <rect
+                      x="16"
+                      y="16"
+                      width="32"
+                      height="32"
+                      rx="2"
+                      fill="#5C77F1"
+                    />
+                    <path
+                      d="M24 28 L32 20 L40 28"
+                      stroke="#2FB8DE"
+                      strokeWidth="3"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <line
+                      x1="32"
+                      y1="22"
+                      x2="32"
+                      y2="40"
+                      stroke="#2FB8DE"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </div>
+                <h3 className="mb-3 text-xl font-bold text-[#003d5c]">
+                  Procurement
+                </h3>
+                <p className="text-base text-slate-700">
+                  Easily forecast your procurement requirements. Create pre-filled
+                  purchase orders in one click. Manage supplier relationships.
+                  Compare terms and reliability.
+                </p>
+              </div>
+
+              {/* Finances */}
+              <div className="flex flex-col items-center text-center">
+                <div className="mb-6 flex size-20 items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 64 64"
+                    className="size-16"
+                  >
+                    <rect
+                      x="12"
+                      y="12"
+                      width="40"
+                      height="40"
+                      rx="2"
+                      fill="#5C77F1"
+                    />
+                    <path
+                      d="M20 32 L28 24 L36 36 L44 20"
+                      stroke="#2FB8DE"
+                      strokeWidth="2.5"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <circle
+                      cx="20"
+                      cy="32"
+                      r="2"
+                      fill="#8CE6FF"
+                    />
+                    <circle
+                      cx="28"
+                      cy="24"
+                      r="2"
+                      fill="#8CE6FF"
+                    />
+                    <circle
+                      cx="36"
+                      cy="36"
+                      r="2"
+                      fill="#8CE6FF"
+                    />
+                    <circle
+                      cx="44"
+                      cy="20"
+                      r="2"
+                      fill="#8CE6FF"
+                    />
+                  </svg>
+                </div>
+                <h3 className="mb-3 text-xl font-bold text-[#003d5c]">
+                  Finances
+                </h3>
+                <p className="text-base text-slate-700">
+                  Manage transactions, track income and expenses, and create
+                  accurate reports. Streamline accounting tasks and make better
+                  financial decisions.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Blog Posts Section */}
       <section className="pt-6">
         <div className="container">
