@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Check } from 'lucide-react';
+import { Check, CircleCheck } from 'lucide-react';
 
 import { GridSection } from '@/components/marketing/fragments/grid-section';
 import { Button } from '@/components/ui/button';
@@ -28,8 +28,8 @@ export function NTClipboardToolBox(): React.JSX.Element {
             <div className="flex flex-col">
               {/* Option Label above card */}
               <div className="mb-4 text-center">
-                <span className="border-b-2 border-[#003d5c] pb-1 text-2xl font-bold text-[#003d5c]">
-                  Starter
+                <span className="text-lg font-bold text-[#003d5c]">
+                  DIY in Excel
                 </span>
               </div>
               <div className="group relative flex flex-1 flex-col overflow-hidden rounded-3xl border bg-white shadow-lg transition-all hover:shadow-xl">
@@ -51,6 +51,18 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     Resource Manager For Excel
                   </h3>
 
+                  {/* Feature Description with Icon */}
+                  <div className="mb-4 rounded-lg bg-blue-50 p-3">
+                    <div className="flex items-start gap-2">
+                      <div className="mt-0.5">
+                        <CircleCheck className="size-5 text-blue-600" />
+                      </div>
+                      <p className="text-sm text-blue-900">
+                        Entry-level production scheduling solution for creating routing steps and scheduling according to capacity limitations
+                      </p>
+                    </div>
+                  </div>
+
                   <div className="mb-6 flex-1 space-y-3">
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
@@ -58,19 +70,19 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Forward Scheduling</span>
+                      <span className="text-sm">DIY</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    {/* <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
                       <span className="text-sm">Finite Capacity</span>
-                    </div>
-                    <div className="flex items-center gap-2">
+                    </div> */}
+                    {/* <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
                       <span className="text-sm">No Risk Trials</span>
-                    </div>
-                    <div className="ml-6 text-sm text-gray-500">
+                    </div> */}
+                    {/* <div className="ml-6 text-sm text-gray-500">
                       Implementation support included!
-                    </div>
+                    </div> */}
                   </div>
 
                   <div className="mt-auto">
@@ -83,9 +95,9 @@ export function NTClipboardToolBox(): React.JSX.Element {
                         View Details
                       </Link>
                     </Button>
-                    <div className="text-center text-3xl font-bold text-green-700">
+                    {/* <div className="text-center text-3xl font-bold text-green-700">
                       $1K+
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </div>
@@ -95,8 +107,8 @@ export function NTClipboardToolBox(): React.JSX.Element {
             <div className="flex flex-col">
               {/* Option Label above card */}
               <div className="mb-4 text-center">
-                <span className="border-b-2 border-[#003d5c] pb-1 text-2xl font-bold text-[#003d5c]">
-                  Advanced
+                <span className="text-lg font-bold text-[#003d5c]">
+                  APS Single User
                 </span>
               </div>
               <div className="group relative flex flex-1 flex-col overflow-hidden rounded-3xl border border-orange-200 bg-white shadow-lg transition-all hover:shadow-xl">
@@ -118,6 +130,18 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     Resource Manager DB
                   </h3>
 
+                  {/* Feature Description with Icon */}
+                  <div className="mb-4 rounded-lg bg-orange-50 p-3">
+                    <div className="flex items-start gap-2">
+                      <div className="mt-0.5">
+                        <CircleCheck className="size-5 text-orange-600" />
+                      </div>
+                      <p className="text-sm text-orange-900">
+                        Advanced production planning and scheduling solution that adapts to your existing data and workflows
+                      </p>
+                    </div>
+                  </div>
+
                   <div className="mb-6 flex-1 space-y-3">
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
@@ -125,19 +149,19 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Flexible and Adaptable</span>
+                      <span className="text-sm">Include RMX+</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Easy to implement APS & MRP</span>
+                      <span className="text-sm">Single User</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
-                      <span className="text-sm">No Risk Trials</span>
+                      <span className="text-sm">APS</span>
                     </div>
-                    <div className="ml-6 text-sm text-gray-500">
+                    {/* <div className="ml-6 text-sm text-gray-500">
                       Implementation support included!
-                    </div>
+                    </div> */}
                   </div>
 
                   <div className="mt-auto">
@@ -153,9 +177,9 @@ export function NTClipboardToolBox(): React.JSX.Element {
                         View Details
                       </Link>
                     </Button>
-                    <div className="text-center text-3xl font-bold text-green-700">
+                    {/* <div className="text-center text-3xl font-bold text-green-700">
                       $3K+
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </div>
@@ -165,8 +189,8 @@ export function NTClipboardToolBox(): React.JSX.Element {
             <div className="flex flex-col">
               {/* Option Label above card */}
               <div className="mb-4 text-center">
-                <span className="border-b-2 border-[#003d5c] pb-1 text-2xl font-bold text-[#003d5c]">
-                  Premium
+                <span className="text-lg font-bold text-[#003d5c]">
+                  Multi User plus Graphical Interface
                 </span>
               </div>
               <div className="group relative flex flex-1 flex-col overflow-hidden rounded-3xl border bg-white shadow-lg transition-all hover:shadow-xl">
@@ -187,6 +211,18 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     EDGEBI <span className="text-sm font-normal text-gray-500">(Bundled w/ RMDB)</span>
                   </h3>
 
+                  {/* Feature Description with Icon */}
+                  <div className="mb-4 rounded-lg bg-purple-50 p-3">
+                    <div className="flex items-start gap-2">
+                      <div className="mt-0.5">
+                        <CircleCheck className="size-5 text-purple-600" />
+                      </div>
+                      <p className="text-sm text-purple-900">
+                        Graphical overlay with business intelligence for intuitive drag-and-drop schedule management
+                      </p>
+                    </div>
+                  </div>
+
                   <div className="mb-6 flex-1 space-y-3">
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
@@ -198,19 +234,19 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Graphical Environment</span>
+                      <span className="text-sm">configured for you, graphical - multi user</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
-                      <span className="text-sm">with Business Intelligence</span>
+                      <span className="text-sm">Includes alt RMDB</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    {/* <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
                       <span className="text-sm">No Risk Trials</span>
-                    </div>
-                    <div className="ml-6 text-sm text-gray-500">
+                    </div> */}
+                    {/* <div className="ml-6 text-sm text-gray-500">
                       Implementation support included!
-                    </div>
+                    </div> */}
                   </div>
 
                   <div className="mt-auto">
@@ -225,9 +261,9 @@ export function NTClipboardToolBox(): React.JSX.Element {
                         View Details
                       </Link>
                     </Button>
-                    <div className="text-center text-3xl font-bold text-green-700">
+                    {/* <div className="text-center text-3xl font-bold text-green-700">
                       $10K+
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </div>

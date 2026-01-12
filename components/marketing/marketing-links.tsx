@@ -49,19 +49,19 @@ export const MENU_LINKS = [
     title: 'Resources',
     items: [
       {
-        title: 'Resource Management',
+        title: 'List Applications/Solutions',
         description: 'Resource management insights and best practices',
         icon: <BookIcon className="size-5 shrink-0" />,
         href: Routes.ResourceManagement,
         external: false
       },
-      {
-        title: 'Blog',
-        description: 'Insights, articles, and updates',
-        icon: <BookIcon className="size-5 shrink-0" />,
-        href: Routes.Blog,
-        external: false
-      },
+      // {
+      //   title: 'Blog',
+      //   description: 'Insights, articles, and updates',
+      //   icon: <BookIcon className="size-5 shrink-0" />,
+      //   href: Routes.Blog,
+      //   external: false
+      // },
       {
         title: 'Product Video',
         description: 'Watch product demonstrations and tutorials',
@@ -141,17 +141,17 @@ export const FOOTER_LINKS: Array<{
     title: 'Products',
     links: [
       { name: 'EDGEBI', href: Routes.Edgebi, external: false },
-      {
-        name: 'Operations Manager',
-        href: Routes.OperationsManager,
-        external: false
-      },
-      { name: 'Excel Templates', href: Routes.ExcelTemplates, external: false },
-      {
-        name: 'Product Downloads',
-        href: Routes.ProductDownloads,
-        external: false
-      },
+      // {
+      //   name: 'Operations Manager',
+      //   href: Routes.OperationsManager,
+      //   external: false
+      // },
+      // { name: 'Excel Templates', href: Routes.ExcelTemplates, external: false },
+      // {
+      //   name: 'Product Downloads',
+      //   href: Routes.ProductDownloads,
+      //   external: false
+      // },
       { name: 'Product Videos', href: Routes.ProductVideos, external: false }
     ]
   },

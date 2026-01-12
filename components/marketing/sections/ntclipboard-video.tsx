@@ -159,23 +159,13 @@ export function NTClipboardVideo({
   ];
 
   const [activeVideo, setActiveVideo] = React.useState(0);
-  const [selectedCategory, setSelectedCategory] = React.useState('All');
 
   // Drag functionality state
   const [isDragging, setIsDragging] = React.useState(false);
   const [dragStart, setDragStart] = React.useState({ x: 0, scrollLeft: 0 });
 
-  // Get unique categories
-  const categories = [
-    'All',
-    ...Array.from(new Set(productVideos.map((video) => video.category)))
-  ];
-
-  // Filter videos by category
-  const filteredVideos =
-    selectedCategory === 'All'
-      ? productVideos
-      : productVideos.filter((video) => video.category === selectedCategory);
+  // Show all videos without filtering
+  const filteredVideos = productVideos;
 
   const currentVideo = filteredVideos[activeVideo] || productVideos[0];
 
@@ -190,11 +180,6 @@ export function NTClipboardVideo({
 
   const videoId = getVideoId(currentVideo.url);
 
-  // Reset active video when category changes
-  React.useEffect(() => {
-    setActiveVideo(0);
-  }, [selectedCategory]);
-
   return (
     <GridSection hideVerticalGridLines>
       <div>
@@ -204,25 +189,8 @@ export function NTClipboardVideo({
               Product Video Library
             </h2>
             <p className="mb-6 text-[18px] text-muted-foreground">
-              Video demonstrations and training for our manufacturing software solutions
+              Demo/Training videos for our manufacturing software solutions
             </p>
-
-            {/* Category Filter */}
-            <div className="mb-6 flex flex-wrap justify-center gap-2">
-              {categories.map((category) => (
-                <Button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  variant={
-                    category === selectedCategory ? 'default' : 'outline'
-                  }
-                  size="sm"
-                  className="rounded-full"
-                >
-                  {category}
-                </Button>
-              ))}
-            </div>
 
             <div className="mx-auto max-w-4xl">
               {/* Video Selection - Now above the video */}
