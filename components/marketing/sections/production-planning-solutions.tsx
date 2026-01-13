@@ -178,92 +178,6 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
           {/* Product Tiers - Using NTClipboardToolBox */}
           <NTClipboardToolBox />
 
-          {/* Customer Testimonials */}
-          {/* <div className="my-6">
-            <h2 className="mb-6 text-center text-2xl font-bold text-slate-900">
-              What Our Customers Say
-            </h2>
-            <div className="grid gap-6 md:grid-cols-3">
-              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50">
-                <CardContent className="p-6">
-                  <div className="mb-4 flex items-center gap-2">
-                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
-                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
-                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
-                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
-                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
-                  </div>
-                  <blockquote className="mb-4 text-slate-700">
-                    "Best choice for MRP and project management software"
-                  </blockquote>
-                  <cite className="text-sm font-medium text-slate-900">
-                    — Sleepmaster Ltd
-                  </cite>
-                  <div className="mt-3">
-                    <Link
-                      href="/sleepmaster-ltd"
-                      className="text-sm text-blue-600 underline hover:text-blue-800"
-                    >
-                      Read More
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-green-50 to-emerald-50">
-                <CardContent className="p-6">
-                  <div className="mb-4 flex items-center gap-2">
-                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
-                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
-                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
-                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
-                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
-                  </div>
-                  <blockquote className="mb-4 text-slate-700">
-                    "Manufacturing scheduling software with fantastic support"
-                  </blockquote>
-                  <cite className="text-sm font-medium text-slate-900">
-                    — Cook Compression
-                  </cite>
-                  <div className="mt-3">
-                    <Link
-                      href="/cook-compression"
-                      className="text-sm text-blue-600 underline hover:text-blue-800"
-                    >
-                      Read More
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-purple-50 to-violet-50">
-                <CardContent className="p-6">
-                  <div className="mb-4 flex items-center gap-2">
-                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
-                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
-                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
-                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
-                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
-                  </div>
-                  <blockquote className="mb-4 text-slate-700">
-                    "Easy ERP add-on for manufacturing resource planning"
-                  </blockquote>
-                  <cite className="text-sm font-medium text-slate-900">
-                    — Incon Incorporated
-                  </cite>
-                  <div className="mt-3">
-                    <Link
-                      href="/incon-incorporated"
-                      className="text-sm text-blue-600 underline hover:text-blue-800"
-                    >
-                      Read More
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div> */}
-
           {/* Production Scheduling Features Section */}
           <div className="mb-6">
             <h2 className="mb-6 text-center text-3xl font-bold text-slate-900">
@@ -422,43 +336,6 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                 </CardContent>
               </Card>
             </div>
-
-            {/* Key Benefits Section */}
-            {/* <div className="mt-6 grid gap-6 md:grid-cols-3">
-              <div className="text-center">
-                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-blue-100">
-                  <Clock className="size-8 text-blue-600" />
-                </div>
-                <h3 className="mb-2 text-lg font-semibold text-slate-900">
-                  Save Time
-                </h3>
-                <p className="text-sm text-slate-600">
-                  Reduce planning time by up to 75% with automated scheduling
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-green-100">
-                  <Target className="size-8 text-green-600" />
-                </div>
-                <h3 className="mb-2 text-lg font-semibold text-slate-900">
-                  Increase Efficiency
-                </h3>
-                <p className="text-sm text-slate-600">
-                  Optimize resource utilization and reduce bottlenecks
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-purple-100">
-                  <Users className="size-8 text-purple-600" />
-                </div>
-                <h3 className="mb-2 text-lg font-semibold text-slate-900">
-                  Better Collaboration
-                </h3>
-                <p className="text-sm text-slate-600">
-                  Real-time visibility across all teams and departments
-                </p>
-              </div>
-            </div> */}
           </div>
 
           {/* Feature Comparison Matrix */}
@@ -716,7 +593,136 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
             </div>
 
             {/* Call to Action */}
-            <div className="mt-8 text-center">
+         
+          </div>
+
+          {/* Customer Testimonials */}
+          <div className="my-6">
+            <h2 className="mb-6 text-center text-2xl font-bold text-slate-900">
+              What Our Customers Say
+            </h2>
+            <div className="grid gap-6 md:grid-cols-3">
+              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50">
+                <CardContent className="p-6">
+                  <div className="mb-4 flex items-center gap-2">
+                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
+                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
+                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
+                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
+                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
+                  </div>
+                  <blockquote className="mb-4 text-slate-700">
+                    "Best choice for MRP and project management software"
+                  </blockquote>
+                  <cite className="text-sm font-medium text-slate-900">
+                    — Sleepmaster Ltd
+                  </cite>
+                  <div className="mt-3">
+                    <Link
+                      href="/sleepmaster-ltd"
+                      className="text-sm text-blue-600 underline hover:text-blue-800"
+                    >
+                      Read More
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-green-50 to-emerald-50">
+                <CardContent className="p-6">
+                  <div className="mb-4 flex items-center gap-2">
+                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
+                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
+                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
+                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
+                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
+                  </div>
+                  <blockquote className="mb-4 text-slate-700">
+                    "Manufacturing scheduling software with fantastic support"
+                  </blockquote>
+                  <cite className="text-sm font-medium text-slate-900">
+                    — Cook Compression
+                  </cite>
+                  <div className="mt-3">
+                    <Link
+                      href="/cook-compression"
+                      className="text-sm text-blue-600 underline hover:text-blue-800"
+                    >
+                      Read More
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-purple-50 to-violet-50">
+                <CardContent className="p-6">
+                  <div className="mb-4 flex items-center gap-2">
+                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
+                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
+                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
+                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
+                    <Star className="size-5 fill-yellow-400 text-yellow-400" />
+                  </div>
+                  <blockquote className="mb-4 text-slate-700">
+                    "Easy ERP add-on for manufacturing resource planning"
+                  </blockquote>
+                  <cite className="text-sm font-medium text-slate-900">
+                    — Incon Incorporated
+                  </cite>
+                  <div className="mt-3">
+                    <Link
+                      href="/incon-incorporated"
+                      className="text-sm text-blue-600 underline hover:text-blue-800"
+                    >
+                      Read More
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Key Benefits Section */}
+          <div className="mb-6">
+            <div className="grid gap-6 md:grid-cols-3">
+              <div className="text-center">
+                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-blue-100">
+                  <Clock className="size-8 text-blue-600" />
+                </div>
+                <h3 className="mb-2 text-lg font-semibold text-slate-900">
+                  Save Time
+                </h3>
+                <p className="text-sm text-slate-600">
+                  Reduce planning time by up to 75% with automated scheduling
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-green-100">
+                  <Target className="size-8 text-green-600" />
+                </div>
+                <h3 className="mb-2 text-lg font-semibold text-slate-900">
+                  Increase Efficiency
+                </h3>
+                <p className="text-sm text-slate-600">
+                  Optimize resource utilization and reduce bottlenecks
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-purple-100">
+                  <Users className="size-8 text-purple-600" />
+                </div>
+                <h3 className="mb-2 text-lg font-semibold text-slate-900">
+                  Better Collaboration
+                </h3>
+                <p className="text-sm text-slate-600">
+                  Real-time visibility across all teams and departments
+                </p>
+              </div>
+            </div>
+          </div>
+
+
+   <div className="mt-8 text-center">
               <p className="mb-4 text-slate-600">
                 Not sure which solution is right for you?
               </p>
@@ -730,8 +736,6 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                 Schedule a Live Demo
               </Button>
             </div>
-          </div>
-
                   </div>
       </div>
     </GridSection>
