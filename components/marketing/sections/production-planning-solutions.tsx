@@ -721,6 +721,35 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
             </div>
           </div>
 
+          {/* Pricing Section */}
+          <div className="mb-6">
+            <h2 className="mb-6 text-center text-3xl font-bold text-slate-900">
+              Pricing
+            </h2>
+
+            <div className="grid gap-6 md:grid-cols-3">
+              <div className="text-center">
+                <p className="text-xl text-slate-700">
+                  <span className="font-semibold text-blue-700">Resource Manager For Excel</span>
+                </p>
+                <p className="text-2xl font-bold text-slate-900">$795</p>
+              </div>
+
+              <div className="text-center">
+                <p className="text-xl text-slate-700">
+                  <span className="font-semibold text-orange-700">Resource Manager DB</span>
+                </p>
+                <p className="text-2xl font-bold text-slate-900">$7,995</p>
+              </div>
+
+              <div className="text-center">
+                <p className="text-xl text-slate-700">
+                  <span className="font-semibold text-purple-700">EDGE Suite</span>
+                </p>
+                <p className="text-2xl font-bold text-slate-900">$10,000</p>
+              </div>
+            </div>
+          </div>
 
    <div className="mt-8 text-center">
               <p className="mb-4 text-slate-600">
