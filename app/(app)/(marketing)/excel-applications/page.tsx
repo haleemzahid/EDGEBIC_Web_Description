@@ -173,8 +173,8 @@ export default function ExcelApplicationsPage() {
                 </CardContent>
               </Card>
 
-              {/* Workcenter for XL */}
-              <Card>
+              {/* Workcenter for XL - Product dropped */}
+              {/* <Card>
                 <CardHeader className="bg-gradient-to-r from-indigo-50 to-indigo-100">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-2xl">
@@ -216,7 +216,7 @@ export default function ExcelApplicationsPage() {
                     </Link>
                   </div>
                 </CardContent>
-              </Card>
+              </Card> */}
 
               {/* Resource Manager for Excel */}
               <Card>

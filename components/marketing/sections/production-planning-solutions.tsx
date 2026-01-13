@@ -179,7 +179,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
           <NTClipboardToolBox />
 
           {/* Customer Testimonials */}
-          <div className="my-6">
+          {/* <div className="my-6">
             <h2 className="mb-6 text-center text-2xl font-bold text-slate-900">
               What Our Customers Say
             </h2>
@@ -262,7 +262,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                 </CardContent>
               </Card>
             </div>
-          </div>
+          </div> */}
 
           {/* Production Scheduling Features Section */}
           <div className="mb-6">
@@ -424,7 +424,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
             </div>
 
             {/* Key Benefits Section */}
-            <div className="mt-6 grid gap-6 md:grid-cols-3">
+            {/* <div className="mt-6 grid gap-6 md:grid-cols-3">
               <div className="text-center">
                 <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-blue-100">
                   <Clock className="size-8 text-blue-600" />
@@ -458,7 +458,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                   Real-time visibility across all teams and departments
                 </p>
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Feature Comparison Matrix */}

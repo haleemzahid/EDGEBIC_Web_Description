@@ -88,13 +88,13 @@ export default function ShopPage() {
       icon: '/images/Edgebic/2022-09/excelicon.png',
       link: '/operations-manager'
     },
-    {
-      name: 'Workcenter for XL',
-      singleUserPrice: '$5-$39',
-      fiveUserPrice: '$10-$78',
-      icon: '/images/Edgebic/2022-09/excelicon.png',
-      link: '/workcenter-schedulerxl'
-    },
+    // {
+    //   name: 'Workcenter for XL',
+    //   singleUserPrice: '$5-$39',
+    //   fiveUserPrice: '$10-$78',
+    //   icon: '/images/Edgebic/2022-09/excelicon.png',
+    //   link: '/workcenter-schedulerxl'
+    // },
     {
       name: 'Resource Manager for Excel',
       singleUserPrice: '$5-$39',

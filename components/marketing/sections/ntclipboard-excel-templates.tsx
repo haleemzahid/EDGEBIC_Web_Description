@@ -56,22 +56,22 @@ const excelApplications = [
     href: '/operations-manager',
     icon: <FileSpreadsheetIcon className="size-8" />
   },
-  {
-    id: 5,
-    title: 'Workcenter for Excel',
-    description:
-      'Excel-based workcenter scheduling and management solution for shop floor operations.',
-    features: [
-      'Workcenter scheduling',
-      'Shop floor management',
-      'Real-time updates',
-      'Excel integration'
-    ],
-    singleUserPrice: 'FREE',
-    fiveUserPrice: 'FREE',
-    href: '/workcenter-schedulerxl',
-    icon: <FileSpreadsheetIcon className="size-8" />
-  },
+  // {
+  //   id: 5,
+  //   title: 'Workcenter for Excel',
+  //   description:
+  //     'Excel-based workcenter scheduling and management solution for shop floor operations.',
+  //   features: [
+  //     'Workcenter scheduling',
+  //     'Shop floor management',
+  //     'Real-time updates',
+  //     'Excel integration'
+  //   ],
+  //   singleUserPrice: 'FREE',
+  //   fiveUserPrice: 'FREE',
+  //   href: '/workcenter-schedulerxl',
+  //   icon: <FileSpreadsheetIcon className="size-8" />
+  // },
   {
     id: 6,
     title: 'Resource Manager for Excel',

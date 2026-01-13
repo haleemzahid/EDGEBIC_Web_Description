@@ -425,7 +425,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               {/* Scheduling Process Image */}
               <div className="w-1/2">
                 <Image
-                  src="/images/Edgebic/Gemini_Generated_Image_obe2ceobe2ceobe2.png"
+                  src="/images/Edgebic/2022-09/Gemini_Generated_Image_rzemdnrzemdnrzem.png"
                   alt="Scheduling step process diagram showing optimal scheduling workflow"
                   width={500}
                   height={280}

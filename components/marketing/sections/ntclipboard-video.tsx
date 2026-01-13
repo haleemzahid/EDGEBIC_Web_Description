@@ -44,13 +44,13 @@ export function NTClipboardVideo({
         'Channel overview clip highlighting manufacturing software solutions made easy',
       category: 'Overview'
     },
-    {
-      url: 'https://www.youtube.com/watch?v=L4wDboRFU6k',
-      title: 'WorkCenter Scheduler XL Overview',
-      description:
-        'Complete overview of WorkCenter Scheduler XL for production scheduling',
-      category: 'Product Demo'
-    },
+    // {
+    //   url: 'https://www.youtube.com/watch?v=L4wDboRFU6k',
+    //   title: 'WorkCenter Scheduler XL Overview',
+    //   description:
+    //     'Complete overview of WorkCenter Scheduler XL for production scheduling',
+    //   category: 'Product Demo'
+    // },
     {
       url: 'https://www.youtube.com/watch?v=fvvMj__YHbw',
       title: '  — Summary',

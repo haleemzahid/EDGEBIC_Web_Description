@@ -105,7 +105,7 @@ export default function ExcelApplicationsOldPage() {
                 </CardContent>
               </Card>
 
-              <Card>
+              {/* <Card>
                 <CardHeader className="bg-indigo-50">
                   <CardTitle>Workcenter for XL</CardTitle>
                 </CardHeader>
@@ -117,7 +117,7 @@ export default function ExcelApplicationsOldPage() {
                     <Button className="w-full">Info/Buy</Button>
                   </Link>
                 </CardContent>
-              </Card>
+              </Card> */}
 
               <Card>
                 <CardHeader className="bg-teal-50">

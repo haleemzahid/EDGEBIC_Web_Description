@@ -113,15 +113,15 @@ const successStories = [
     excerpt:
       'User Solutions has announced another successful manufacturing scheduling application for Plastilite. Plastilite Corporation, located in Omaha Nebraska, provides insulated and protective packing solutions to companies shipping perishable and fragile products across the United States. Their containers are now routinely used in transporting everything from Omaha Steaks to pies to vaccines and even biological materials, and […]'
   },
-  {
-    title: 'Repair Shops Triple On-Time Shipping Percentage from 30% to 90%',
-    slug: 'repair-shops-triple-on-time-shipping-percentage-from-30-to-90',
-    image:
-      '/images/Edgebic/2022-07/logo1-161026-5810e0bfe3bef.png',
-    alt: 'User Solutions Logo',
-    excerpt:
-      'GE Railcar Services Corporation, a unit of General Electric Corporation manages a fleet of over 180,000 railcars throughout North America. "Over the past several years, Workcenter SchedulerXL has successfully helped our repair network to improve the Shipping On-Time accuracy from 30% to over 90%. Additionally, since installing Workcenter SchedulerXL, we have improved our overall shop cycle time by […]'
-  },
+  // {
+  //   title: 'Repair Shops Triple On-Time Shipping Percentage from 30% to 90%',
+  //   slug: 'repair-shops-triple-on-time-shipping-percentage-from-30-to-90',
+  //   image:
+  //     '/images/Edgebic/2022-07/logo1-161026-5810e0bfe3bef.png',
+  //   alt: 'User Solutions Logo',
+  //   excerpt:
+  //     'GE Railcar Services Corporation, a unit of General Electric Corporation manages a fleet of over 180,000 railcars throughout North America. "Over the past several years, Workcenter SchedulerXL has successfully helped our repair network to improve the Shipping On-Time accuracy from 30% to over 90%. Additionally, since installing Workcenter SchedulerXL, we have improved our overall shop cycle time by […]'
+  // },
   {
     title: 'Job Shop Increases Throughput While Improving Shipping on Time',
     slug: 'job-shop-increases-throughput-while-improving-shipping-on-time',
