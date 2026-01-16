@@ -49,7 +49,7 @@ export const MENU_LINKS = [
     title: 'Resources',
     items: [
       {
-        title: 'List Applications/Solutions',
+        title: 'Applications/Solutions',
         description: 'Resource management insights and best practices',
         icon: <BookIcon className="size-5 shrink-0" />,
         href: Routes.ResourceManagement,
@@ -116,56 +116,56 @@ export const FOOTER_LINKS: Array<{
     external: boolean;
   }>;
 }> = [
-  {
-    title: 'Success Stories',
-    links: [
-      {
-        name: 'All Success Stories',
-        href: Routes.SuccessStories,
-        external: false
-      },
-      { name: 'Sleepmaster Ltd', href: Routes.SleepmasterLtd, external: false },
-      {
-        name: 'Cook Compression',
-        href: Routes.CookCompression,
-        external: false
-      },
-      {
-        name: 'Incon Incorporated',
-        href: Routes.InconIncorporated,
-        external: false
-      }
-    ]
-  },
-  {
-    title: 'Products',
-    links: [
-      { name: 'EDGEBI', href: Routes.Edgebi, external: false },
-      // {
-      //   name: 'Operations Manager',
-      //   href: Routes.OperationsManager,
-      //   external: false
-      // },
-      // { name: 'Excel Templates', href: Routes.ExcelTemplates, external: false },
-      // {
-      //   name: 'Product Downloads',
-      //   href: Routes.ProductDownloads,
-      //   external: false
-      // },
-      { name: 'Product Videos', href: Routes.ProductVideos, external: false }
-    ]
-  },
-  {
-    title: 'Company',
-    links: [
-      { name: 'About Us', href: Routes.About, external: false },
-      { name: 'Mission Statement', href: Routes.Mission, external: false },
-      { name: 'Values', href: Routes.Values, external: false },
-      { name: 'Company History', href: Routes.History, external: false },
-      { name: 'Partners', href: Routes.Partners, external: false }
-    ]
-  }
-];
+    {
+      title: 'Success Stories',
+      links: [
+        {
+          name: 'All Success Stories',
+          href: Routes.SuccessStories,
+          external: false
+        },
+        { name: 'Sleepmaster Ltd', href: Routes.SleepmasterLtd, external: false },
+        {
+          name: 'Cook Compression',
+          href: Routes.CookCompression,
+          external: false
+        },
+        {
+          name: 'Incon Incorporated',
+          href: Routes.InconIncorporated,
+          external: false
+        }
+      ]
+    },
+    {
+      title: 'Products',
+      links: [
+        { name: 'EDGEBI', href: Routes.Edgebi, external: false },
+        // {
+        //   name: 'Operations Manager',
+        //   href: Routes.OperationsManager,
+        //   external: false
+        // },
+        // { name: 'Excel Templates', href: Routes.ExcelTemplates, external: false },
+        // {
+        //   name: 'Product Downloads',
+        //   href: Routes.ProductDownloads,
+        //   external: false
+        // },
+        { name: 'Product Videos', href: Routes.ProductVideos, external: false }
+      ]
+    },
+    {
+      title: 'Company',
+      links: [
+        { name: 'About Us', href: Routes.About, external: false },
+        { name: 'Mission Statement', href: Routes.Mission, external: false },
+        { name: 'Values', href: Routes.Values, external: false },
+        { name: 'Company History', href: Routes.History, external: false },
+        { name: 'Partners', href: Routes.Partners, external: false }
+      ]
+    }
+  ];
 export const SOCIAL_LINKS = [
   {
     name: 'X (formerly Twitter)',
