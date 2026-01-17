@@ -249,7 +249,7 @@ export default function Product2Page(): React.JSX.Element {
                     Resource Manager DB
                   </th>
                   <th className="p-4 text-center font-semibold text-purple-600">
-                    EDGE Suite
+                    Edgebi suite
                   </th>
                 </tr>
               </thead>

@@ -275,9 +275,7 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
                       {milestone.title}
                     </h3>
 
-                    <p className="text-slate-700">
-                      {milestone.description}
-                    </p>
+                    <p className="text-slate-700">{milestone.description}</p>
                   </div>
                 </div>
 
@@ -301,7 +299,7 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
                 our core commitment to customer success.
               </p>
               <p className="text-xl font-semibold text-orange-600">
-                30+ Years of Production Planning Excellence - Here's to the
+                35 Years of Production Planning Excellence - Here's to the
                 Future!
               </p>
             </div>

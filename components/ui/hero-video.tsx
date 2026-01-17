@@ -36,24 +36,22 @@ export function HeroVideo({
 
   return (
     <div className={`relative ${className}`}>
-      {!showVideo ? (
+      {!showVideo && poster ? (
         <>
           {/* Priority image for LCP */}
-          {poster && (
-            <Image
-              src={poster}
-              alt={title}
-              fill
-              priority={priority}
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 700px"
-              onLoad={() => setIsLoaded(true)}
-            />
-          )}
+          <Image
+            src={poster}
+            alt={title}
+            fill
+            priority={priority}
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 700px"
+            onLoad={() => setIsLoaded(true)}
+          />
           {/* Play button overlay */}
           <button
             onClick={handlePlayClick}
-            className={`absolute inset-0 flex items-center justify-center transition-colors hover:bg-black/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 ${poster ? 'bg-black/20' : 'bg-gray-900'}`}
+            className="absolute inset-0 flex items-center justify-center bg-black/20 transition-colors hover:bg-black/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
             aria-label={`Play ${title}`}
           >
             <div className={`flex size-16 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-110 ${isYouTube ? 'bg-red-600' : 'bg-white/90'}`}>

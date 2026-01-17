@@ -550,7 +550,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-purple-700">
                     <Zap className="size-5" />
-                    EDGE Suite
+                    Edgebi suite
                   </CardTitle>
                   <CardDescription>
                     Graphical overlay with business intelligence for intuitive
@@ -617,7 +617,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               <div className="text-center">
                 <p className="text-xl text-slate-700">
                   <span className="font-semibold text-purple-700">
-                    EDGE Suite
+                    Edgebi suite
                   </span>
                 </p>
                 <p className="text-2xl font-bold text-slate-900">$10K+</p>
