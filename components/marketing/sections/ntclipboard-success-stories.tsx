@@ -153,6 +153,94 @@ const successStories = [
     author: 'Joe Van Wagner, Cummins Engine',
     logo: '/images/Edgebic/2022-07/cumminslogo-59492683dd7a2.png',
     href: '/success_stories/scheduling-labor-out-several-months-increases-customer-satisfaction'
+  },
+  {
+    id: 13,
+    title: 'Enhancing Supply Chain Visibility through Advanced Scheduling Solutions',
+    description:
+      'Discover how advanced scheduling solutions can transform your supply chain operations by providing real-time visibility, improving coordination, and enabling better decision-making across the entire manufacturing process.',
+    quote:
+      'Advanced scheduling solutions transformed our supply chain operations with real-time visibility and improved coordination.',
+    author: 'Manufacturing Industry Expert',
+    logo: '/images/Edgebic/2022-09/usersolutionsimage-300x211.png',
+    href: '/enhancing-supply-chain-visibility-through-advanced-scheduling-solutions/'
+  },
+  {
+    id: 14,
+    title: 'The Role of Technology in Modern Production Planning and Scheduling',
+    description:
+      'Explore how modern technology is revolutionizing production planning and scheduling in manufacturing, from ERP integration to real-time data analytics and automated scheduling systems.',
+    quote:
+      'Modern technology has revolutionized our production planning with ERP integration and real-time analytics.',
+    author: 'Production Planning Specialist',
+    logo: '/images/Edgebic/2022-07/AirCraftMaint.jpg',
+    href: '/erp-solutions-for-production-planning/'
+  },
+  {
+    id: 15,
+    title: 'Implementing Lean Manufacturing Principles for Improved Production Efficiency',
+    description:
+      'Learn how implementing lean manufacturing principles can dramatically improve production efficiency, reduce waste, and optimize resource utilization in your manufacturing operations.',
+    quote:
+      'Lean manufacturing principles dramatically improved our production efficiency and reduced waste significantly.',
+    author: 'Lean Manufacturing Consultant',
+    logo: '/images/Edgebic/2024-02/sdf.jpg',
+    href: '/lean-manufacturing-solutions/'
+  },
+  {
+    id: 16,
+    title: 'Li-ion Battery Production Scheduling Software',
+    description:
+      'Specialized production scheduling software designed for Li-ion battery manufacturing, addressing unique challenges in battery production including precise timing, quality control, and complex multi-stage processes.',
+    quote:
+      'This specialized scheduling software addressed our unique battery production challenges with precise timing and quality control.',
+    author: 'Li-ion Battery Manufacturer',
+    logo: '/images/Edgebic/2022-09/image04-300x163.png',
+    href: '/li-ion-battery-production-scheduling-software/'
+  },
+  {
+    id: 17,
+    title: 'Scheduling System Narrows Skills Gap for Fire-Rated Glass',
+    description:
+      'See how an intelligent scheduling system helped a fire-rated glass manufacturer overcome workforce skill gaps while maintaining high production standards and meeting critical safety requirements.',
+    quote:
+      'The intelligent scheduling system helped us overcome skill gaps while maintaining high safety and production standards.',
+    author: 'Fire-Rated Glass Manufacturer',
+    logo: '/images/Edgebic/2022-09/image3-300x163.png',
+    href: '/scheduling-system-narrows-skills-gap-for-fire-rated-glass/'
+  },
+  {
+    id: 18,
+    title: 'Small Manufacturer and Job Shop Uses Planning, Scheduling, and Tracking Tools',
+    description:
+      'Our products are constantly changing and, for only a few hours per month, the Resource Manager provides the ideal format to configure new Bills-Of-Material, prepare production schedules, and manage our inventory.',
+    quote:
+      'Resource Manager provides the ideal format to configure BOMs and prepare schedules. Since we already knew Excel, there wasn\'t even a learning curve.',
+    author: 'Small Job Shop Manager',
+    logo: '/images/Edgebic/2022-09/image06-1-300x163.png',
+    href: '/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive/'
+  },
+  {
+    id: 19,
+    title: 'User Solutions, Inc. Named as One of Top ERP Solutions Transforming Business 2016',
+    description:
+      'User Solutions, Inc. recognized by CIO Applications as one of the Top ERP Solutions Transforming Business in 2016, celebrating 25 years of providing innovative production planning and scheduling solutions to manufacturers.',
+    quote:
+      'Recognized as one of the top ERP solutions transforming business for our innovative production planning and scheduling solutions.',
+    author: 'CIO Applications Magazine',
+    logo: '/images/Edgebic/2022-09/image05-300x163.png',
+    href: '/user-solutions-inc-named-as-one-of-top-erp-solutions-transforming-business-2016-by-cio-applications-as-they-celebrate-25-years-in-business/'
+  },
+  {
+    id: 20,
+    title: 'Celebrating National Manufacturing Day',
+    description:
+      'Join us in celebrating National Manufacturing Day and recognizing the vital role of manufacturing in our economy, showcasing the innovation, technology, and skilled workforce driving modern production facilities.',
+    quote:
+      'Celebrating the innovation, technology, and skilled workforce that drives modern manufacturing excellence.',
+    author: 'Manufacturing Industry Association',
+    logo: '/images/Edgebic/2022-07/celebrating-300x163.png',
+    href: '/random-events-and-covariance/'
   }
 ];
 

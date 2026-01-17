@@ -206,6 +206,70 @@ const successStories = [
     alt: 'User Solutions Logo',
     excerpt:
       "BAE Systems/Ordinance Systems Inc. set out to design and implement a process that would enable our manufacturing personnel to systematically identify process, equipment, labor, and material limitations. We had already purchased and implemented an ERP system but we weren't satisfied with its ability to recognize our capacity constraints or meet our finite scheduling needs. Now, we have a solution that […]"
+  },
+  {
+    title: 'Enhancing Supply Chain Visibility through Advanced Scheduling Solutions',
+    slug: 'enhancing-supply-chain-visibility-through-advanced-scheduling-solutions',
+    image: '/images/Edgebic/2022-09/usersolutionsimage-300x211.png',
+    alt: 'Advanced scheduling solutions for supply chain visibility',
+    excerpt:
+      'Discover how advanced scheduling solutions can transform your supply chain operations by providing real-time visibility, improving coordination, and enabling better decision-making across the entire manufacturing process.'
+  },
+  {
+    title: 'The Role of Technology in Modern Production Planning and Scheduling',
+    slug: 'erp-solutions-for-production-planning',
+    image: '/images/Edgebic/2022-07/AirCraftMaint.jpg',
+    alt: 'Technology in production planning and scheduling',
+    excerpt:
+      'Explore how modern technology is revolutionizing production planning and scheduling in manufacturing, from ERP integration to real-time data analytics and automated scheduling systems.'
+  },
+  {
+    title: 'Implementing Lean Manufacturing Principles for Improved Production Efficiency',
+    slug: 'lean-manufacturing-solutions',
+    image: '/images/Edgebic/2024-02/sdf.jpg',
+    alt: 'Lean manufacturing principles for production efficiency',
+    excerpt:
+      'Learn how implementing lean manufacturing principles can dramatically improve production efficiency, reduce waste, and optimize resource utilization in your manufacturing operations.'
+  },
+  {
+    title: 'Li-ion Battery Production Scheduling Software',
+    slug: 'li-ion-battery-production-scheduling-software',
+    image: '/images/Edgebic/2022-09/image04-300x163.png',
+    alt: 'Li-ion battery production scheduling software',
+    excerpt:
+      'Specialized production scheduling software designed for Li-ion battery manufacturing, addressing unique challenges in battery production including precise timing, quality control, and complex multi-stage processes.'
+  },
+  {
+    title: 'Scheduling System Narrows Skills Gap for Fire-Rated Glass',
+    slug: 'scheduling-system-narrows-skills-gap-for-fire-rated-glass',
+    image: '/images/Edgebic/2022-09/image3-300x163.png',
+    alt: 'Scheduling system for fire-rated glass manufacturing',
+    excerpt:
+      'See how an intelligent scheduling system helped a fire-rated glass manufacturer overcome workforce skill gaps while maintaining high production standards and meeting critical safety requirements.'
+  },
+  {
+    title: 'Small Manufacturer and Job Shop Uses Planning, Scheduling, and Tracking Tools',
+    slug: 'small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive',
+    image: '/images/Edgebic/2022-09/image06-1-300x163.png',
+    alt: 'Planning and scheduling tools for small manufacturers',
+    excerpt:
+      'Our products are constantly changing and, for only a few hours per month, the Resource Manager provides the ideal format to configure new Bills-Of-Material, prepare production schedules, and manage our inventory. Since we are already familiar with Excel, there wasn\'t even a learning curve.'
+  },
+  {
+    title: 'User Solutions, Inc. Named as One of Top ERP Solutions Transforming Business 2016',
+    slug: 'user-solutions-inc-named-as-one-of-top-erp-solutions-transforming-business-2016-by-cio-applications-as-they-celebrate-25-years-in-business',
+    image: '/images/Edgebic/2022-09/image05-300x163.png',
+    alt: 'Top ERP solutions transforming business award',
+    excerpt:
+      'User Solutions, Inc. recognized by CIO Applications as one of the Top ERP Solutions Transforming Business in 2016, celebrating 25 years of providing innovative production planning and scheduling solutions to manufacturers.'
+  },
+  {
+    title: 'Celebrating National Manufacturing Day',
+    slug: 'random-events-and-covariance',
+    image: '/images/Edgebic/2022-07/celebrating-300x163.png',
+    alt: 'Celebrating National Manufacturing Day',
+    excerpt:
+      'Join us in celebrating National Manufacturing Day and recognizing the vital role of manufacturing in our economy, showcasing the innovation, technology, and skilled workforce driving modern production facilities.'
   }
 ];
 
