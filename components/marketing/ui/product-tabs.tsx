@@ -43,7 +43,7 @@ export function ProductTabs<T extends string>({
   };
 
   return (
-    <nav className="pt-6" aria-label={ariaLabel}>
+    <nav className="pt-6 border-b border-slate-200" aria-label={ariaLabel}>
       <div className="container mx-auto max-w-7xl px-4">
         <div
           className="flex flex-wrap justify-start gap-2 text-[18px]"
@@ -61,10 +61,10 @@ export function ProductTabs<T extends string>({
               tabIndex={activeTab === tab.id ? 0 : -1}
               onClick={() => onTabChange(tab.id)}
               onKeyDown={(e) => handleKeyDown(e, index)}
-              className={`transition-all duration-200 focus:outline-none px-4 py-3 border-b-2 ${
+              className={`transition-all duration-200 focus:outline-none px-4 py-3 border border-slate-200 rounded-t-lg ${
                 activeTab === tab.id
-                  ? 'font-semibold text-blue-600 border-blue-600 bg-blue-50'
-                  : 'text-slate-600 hover:text-blue-600 border-transparent hover:border-blue-600 hover:bg-blue-50'
+                  ? 'font-semibold text-blue-600 bg-white border-b-white -mb-[1px]'
+                  : 'text-slate-600 hover:text-blue-600 bg-slate-50 hover:bg-slate-100 border-b-slate-200'
               }`}
             >
               {tab.label}
