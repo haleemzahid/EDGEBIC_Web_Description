@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 
 import { AppInfo } from '@/constants/app-info';
 
-import { NotFoundContent } from './not-found-content';
+import { NotFoundContent } from './(app)/not-found-content';
 
 export const metadata: Metadata = {
   title: `404 – Page Not Found | ${AppInfo.APP_NAME}`,
