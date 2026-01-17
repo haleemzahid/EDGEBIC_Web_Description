@@ -178,166 +178,6 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
           {/* Product Tiers - Using NTClipboardToolBox */}
           <NTClipboardToolBox />
 
-          {/* Production Scheduling Features Section */}
-          <div className="mb-6">
-            <h2 className="mb-6 text-center text-3xl font-bold text-slate-900">
-              Production Scheduling Features
-            </h2>
-            <p className="mb-6 text-center text-lg text-slate-600">
-              Comprehensive production planning and scheduling capabilities
-              designed to optimize your manufacturing operations
-            </p>
-
-            {/* Features Grid */}
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {/* Operations Manager Excel Features */}
-              <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-blue-700">
-                    <Target className="size-5" />
-                    Resource Manager For Excel
-                  </CardTitle>
-                  <CardDescription>
-                    Entry-level production scheduling solution for creating
-                    routing steps and scheduling according to capacity
-                    limitations
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {[
-                    'Simple, familiar interface',
-                    'Easy to configure and run',
-                    'Finite Capacity - Only schedules to what is available',
-                    'Customizable Workcenter Calendars and Daily Calendar',
-                    'Forward/Reverse scheduling',
-                    'Mixed Mode Scheduling - Forward based on start date or Reverse based on due date',
-                    'Routings - Workcenter Set-up and Cycle Times',
-                    'Queue / Move Times, Linear and non-Linear',
-                    'Color coded Graphics',
-                    'Import Data',
-                    'Resources management',
-                    'Orders tracking',
-                    'Reports generation',
-                    'Schedule module',
-                    'Export Data'
-                  ].map((feature, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2"
-                    >
-                      <CheckCircle className="size-4 text-blue-600" />
-                      <span className="text-sm text-slate-700">
-                        {feature}
-                      </span>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              {/* Resource Manager DB Features */}
-              <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-orange-700">
-                    <Settings className="size-5" />
-                    Resource Manager DB
-                  </CardTitle>
-                  <CardDescription>
-                    Advanced production planning and scheduling solution that
-                    adapts to your existing data and workflows
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {[
-                    'Finite Capacity Planning & Scheduling',
-                    'Advanced Planning and Scheduling - Alternate Routings, Multiple Constraints',
-                    'Routings - Workcenter Set-up and Cycle Times, Queue/Move Times',
-                    'Tracking Actuals - Import Actuals or direct entry',
-                    'Drag-and-drop to track WIP',
-                    'Bill of Materials - Quantity per, Parent-child, Sub-Assemblies',
-                    'Rev Control and much more',
-                    'Mixed Mode Scheduling - Time Fenced, Per job or group of orders',
-                    'Prioritize at any level',
-                    'Rescheduling - Import Actuals and rescheduling on demand',
-                    'MRP and Inventory Management - Low maintenance, Safety Stocks',
-                    'Yield Factors, Purchasing UOM, ATP, Reporting',
-                    'Material Planning Basic - What materials are required for what jobs and when',
-                    'Materials Planning Advanced - MRP Calculations, Shortage Reports',
-                    'Lot and Batch Sizing',
-                    'Purchase Orders - Easy, fast, accurate based on scheduled demand',
-                    'Stock replenishment, Paperless option',
-                    'Drag and Drop - Visually change dates per job, per workcenter',
-                    'Drag job from one workcenter to another',
-                    'Integration with other systems - Import/Export Excel, ODBC drivers',
-                    'Integrates easily with most ERP and custom systems',
-                    'Customizable - We specialize in enhancing to meet your unique needs',
-                    'What-if Analysis',
-                    'Purchasing and Receiving',
-                    'Downtime Analysis and Reporting',
-                    'Costing and Estimating',
-                    'Production Planning',
-                    'Multi-Resource Scheduling',
-                    'LP Optimization (Optional)',
-                    'Customized Reports'
-                  ].map((feature, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2"
-                    >
-                      <CheckCircle className="size-4 text-orange-600" />
-                      <span className="text-sm text-slate-700">
-                        {feature}
-                      </span>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              {/* EDGEBIC Features */}
-              <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100 md:col-span-2 lg:col-span-1">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-purple-700">
-                    <Zap className="size-5" />
-                    EDGE Suite
-                  </CardTitle>
-                  <CardDescription>
-                    Graphical overlay with business intelligence for intuitive
-                    drag-and-drop schedule management
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {[
-                    'Enhanced Drag-n-drop Interface',
-                    'Business Intelligence Integration',
-                    'Heat Map Report - View capacity loading for entire schedule at a glance',
-                    'Schedule Key Dates - Run reports with export to Excel',
-                    'Live embedded Excel - Import and Export to Excel',
-                    'Direct importing via ODBC drivers',
-                    'Integrates easily with most ERP and custom systems',
-                    'Advanced Drag and Drop - Alternate Routings, Multiple Constraints',
-                    'Multiple Priorities, Rescheduling on demand',
-                    'Intuitive Graphical Approach',
-                    'Color-coded Schedule Status',
-                    'Drag and Drop Job Segments',
-                    'Capacity Utilization Graph',
-                    'Custom Reporting - Customized per your requests',
-                    'Advanced Security Options',
-                    'Interactive Schedule Management'
-                  ].map((feature, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2"
-                    >
-                      <CheckCircle className="size-4 text-purple-600" />
-                      <span className="text-sm text-slate-700">
-                        {feature}
-                      </span>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
           {/* Feature Comparison Matrix */}
           <div className="mb-6">
             <h2 className="mb-6 text-center text-3xl font-bold text-slate-900">
@@ -593,7 +433,167 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
             </div>
 
             {/* Call to Action */}
-         
+
+          </div>
+
+          {/* Production Scheduling Features Section */}
+          <div className="mb-6">
+            <h2 className="mb-6 text-center text-3xl font-bold text-slate-900">
+              Production Scheduling Features
+            </h2>
+            <p className="mb-6 text-center text-lg text-slate-600">
+              Comprehensive production planning and scheduling capabilities
+              designed to optimize your manufacturing operations
+            </p>
+
+            {/* Features Grid */}
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {/* Operations Manager Excel Features */}
+              <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-blue-700">
+                    <Target className="size-5" />
+                    Resource Manager For Excel
+                  </CardTitle>
+                  <CardDescription>
+                    Entry-level production scheduling solution for creating
+                    routing steps and scheduling according to capacity
+                    limitations
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {[
+                    'Simple, familiar interface',
+                    'Easy to configure and run',
+                    'Finite Capacity - Only schedules to what is available',
+                    'Customizable Workcenter Calendars and Daily Calendar',
+                    'Forward/Reverse scheduling',
+                    'Mixed Mode Scheduling - Forward based on start date or Reverse based on due date',
+                    'Routings - Workcenter Set-up and Cycle Times',
+                    'Queue / Move Times, Linear and non-Linear',
+                    'Color coded Graphics',
+                    'Import Data',
+                    'Resources management',
+                    'Orders tracking',
+                    'Reports generation',
+                    'Schedule module',
+                    'Export Data'
+                  ].map((feature, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2"
+                    >
+                      <CheckCircle className="size-4 text-blue-600" />
+                      <span className="text-sm text-slate-700">
+                        {feature}
+                      </span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* Resource Manager DB Features */}
+              <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-orange-700">
+                    <Settings className="size-5" />
+                    Resource Manager DB
+                  </CardTitle>
+                  <CardDescription>
+                    Advanced production planning and scheduling solution that
+                    adapts to your existing data and workflows
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {[
+                    'Finite Capacity Planning & Scheduling',
+                    'Advanced Planning and Scheduling - Alternate Routings, Multiple Constraints',
+                    'Routings - Workcenter Set-up and Cycle Times, Queue/Move Times',
+                    'Tracking Actuals - Import Actuals or direct entry',
+                    'Drag-and-drop to track WIP',
+                    'Bill of Materials - Quantity per, Parent-child, Sub-Assemblies',
+                    'Rev Control and much more',
+                    'Mixed Mode Scheduling - Time Fenced, Per job or group of orders',
+                    'Prioritize at any level',
+                    'Rescheduling - Import Actuals and rescheduling on demand',
+                    'MRP and Inventory Management - Low maintenance, Safety Stocks',
+                    'Yield Factors, Purchasing UOM, ATP, Reporting',
+                    'Material Planning Basic - What materials are required for what jobs and when',
+                    'Materials Planning Advanced - MRP Calculations, Shortage Reports',
+                    'Lot and Batch Sizing',
+                    'Purchase Orders - Easy, fast, accurate based on scheduled demand',
+                    'Stock replenishment, Paperless option',
+                    'Drag and Drop - Visually change dates per job, per workcenter',
+                    'Drag job from one workcenter to another',
+                    'Integration with other systems - Import/Export Excel, ODBC drivers',
+                    'Integrates easily with most ERP and custom systems',
+                    'Customizable - We specialize in enhancing to meet your unique needs',
+                    'What-if Analysis',
+                    'Purchasing and Receiving',
+                    'Downtime Analysis and Reporting',
+                    'Costing and Estimating',
+                    'Production Planning',
+                    'Multi-Resource Scheduling',
+                    'LP Optimization (Optional)',
+                    'Customized Reports'
+                  ].map((feature, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2"
+                    >
+                      <CheckCircle className="size-4 text-orange-600" />
+                      <span className="text-sm text-slate-700">
+                        {feature}
+                      </span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* EDGEBIC Features */}
+              <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100 md:col-span-2 lg:col-span-1">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-purple-700">
+                    <Zap className="size-5" />
+                    EDGE Suite
+                  </CardTitle>
+                  <CardDescription>
+                    Graphical overlay with business intelligence for intuitive
+                    drag-and-drop schedule management
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {[
+                    'Enhanced Drag-n-drop Interface',
+                    'Business Intelligence Integration',
+                    'Heat Map Report - View capacity loading for entire schedule at a glance',
+                    'Schedule Key Dates - Run reports with export to Excel',
+                    'Live embedded Excel - Import and Export to Excel',
+                    'Direct importing via ODBC drivers',
+                    'Integrates easily with most ERP and custom systems',
+                    'Advanced Drag and Drop - Alternate Routings, Multiple Constraints',
+                    'Multiple Priorities, Rescheduling on demand',
+                    'Intuitive Graphical Approach',
+                    'Color-coded Schedule Status',
+                    'Drag and Drop Job Segments',
+                    'Capacity Utilization Graph',
+                    'Custom Reporting - Customized per your requests',
+                    'Advanced Security Options',
+                    'Interactive Schedule Management'
+                  ].map((feature, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2"
+                    >
+                      <CheckCircle className="size-4 text-purple-600" />
+                      <span className="text-sm text-slate-700">
+                        {feature}
+                      </span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {/* Pricing Section */}

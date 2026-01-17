@@ -43,8 +43,8 @@ export default function ResourceManagerDBInDepthPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`transition-all duration-200 focus:outline-none px-4 py-3 border-b-2 ${
                   activeTab === tab.id
-                    ? 'font-semibold text-cyan-600 border-cyan-600'
-                    : 'text-slate-600 hover:text-cyan-600 border-transparent hover:border-cyan-600'
+                    ? 'font-semibold text-blue-600 border-blue-600 bg-blue-50'
+                    : 'text-slate-600 hover:text-blue-600 border-transparent hover:border-blue-600 hover:bg-blue-50'
                 }`}
               >
                 {tab.label}

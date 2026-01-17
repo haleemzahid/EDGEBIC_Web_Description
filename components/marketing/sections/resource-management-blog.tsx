@@ -92,11 +92,7 @@ export function ResourceManagementBlog() {
             <SiteHeading
               title={
                 <>
-                  Resource Management
-                  <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    {' '}
-                    Blog
-                  </span>
+                  Resource Management Application/Solution
                 </>
               }
               description="Discover insights, tips, and best practices for resource management in manufacturing, production planning, and scheduling solutions."
@@ -626,54 +622,54 @@ export function ResourceManagementBlog() {
             {blogPosts.map((post, index) => (
               <Link key={index} href={post.href} className="block">
                 <Card className="group h-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer">
-                <div className="relative aspect-video overflow-hidden bg-muted">
-                  <Image
-                    src={post.image}
-                    alt={post.title}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                </div>
-                <CardHeader className="pb-4">
-                  <div className="mb-2 flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <CalendarIcon className="size-4" />
-                      {post.date}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <UserIcon className="size-4" />
-                      {post.readTime}
-                    </div>
+                  <div className="relative aspect-video overflow-hidden bg-muted">
+                    <Image
+                      src={post.image}
+                      alt={post.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                    />
                   </div>
-                  <Badge
-                    variant="secondary"
-                    className="mb-3 w-fit"
-                  >
-                    {post.category}
-                  </Badge>
-                  <CardTitle className="line-clamp-2 transition-colors group-hover:text-blue-600">
-                    <Link href={post.href}>
-                      {post.title}
-                    </Link>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <CardDescription className="mb-4 line-clamp-3">
-                    {post.description}
-                  </CardDescription>
-                  <Link href={post.href}>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-auto p-0 font-medium text-blue-600 hover:text-blue-700"
+                  <CardHeader className="pb-4">
+                    <div className="mb-2 flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <CalendarIcon className="size-4" />
+                        {post.date}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <UserIcon className="size-4" />
+                        {post.readTime}
+                      </div>
+                    </div>
+                    <Badge
+                      variant="secondary"
+                      className="mb-3 w-fit"
                     >
-                      Read more
-                      <ArrowUpRightIcon className="ml-1 size-4" />
-                    </Button>
-                  </Link>
-                </CardContent>
+                      {post.category}
+                    </Badge>
+                    <CardTitle className="line-clamp-2 transition-colors group-hover:text-blue-600">
+                      <Link href={post.href}>
+                        {post.title}
+                      </Link>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <CardDescription className="mb-4 line-clamp-3">
+                      {post.description}
+                    </CardDescription>
+                    <Link href={post.href}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto p-0 font-medium text-blue-600 hover:text-blue-700"
+                      >
+                        Read more
+                        <ArrowUpRightIcon className="ml-1 size-4" />
+                      </Button>
+                    </Link>
+                  </CardContent>
                 </Card>
               </Link>
             ))}

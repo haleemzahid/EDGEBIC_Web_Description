@@ -73,10 +73,29 @@ export const MENU_LINKS = [
   },
   {
     title: 'About',
-    description: 'Meet our team and learn our story',
-    icon: <BookIcon className="size-5 shrink-0" />,
-    href: Routes.About,
-    external: false
+    items: [
+      {
+        title: 'Mission',
+        description: 'Our mission and vision for the future',
+        icon: <BookIcon className="size-5 shrink-0" />,
+        href: Routes.Mission,
+        external: false
+      },
+      {
+        title: 'Team',
+        description: 'Meet the people behind our success',
+        icon: <BookIcon className="size-5 shrink-0" />,
+        href: Routes.About,
+        external: false
+      },
+      {
+        title: 'History',
+        description: 'Our journey and company heritage',
+        icon: <BookIcon className="size-5 shrink-0" />,
+        href: Routes.History,
+        external: false
+      }
+    ]
   },
   // {
   //   title: 'News',
@@ -161,8 +180,8 @@ export const FOOTER_LINKS: Array<{
         { name: 'About Us', href: Routes.About, external: false },
         { name: 'Mission Statement', href: Routes.Mission, external: false },
         { name: 'Values', href: Routes.Values, external: false },
-        { name: 'Company History', href: Routes.History, external: false },
-        { name: 'Partners', href: Routes.Partners, external: false }
+        { name: 'Company History', href: Routes.History, external: false }
+        // { name: 'Partners', href: Routes.Partners, external: false }
       ]
     }
   ];

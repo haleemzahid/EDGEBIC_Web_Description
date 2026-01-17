@@ -26,7 +26,7 @@ const successStories = [
       'Resource Manager-DB product provided a unique combination of planning, scheduling, and tracking functionality within a single, yet flexible system.',
     author: 'Scott Bennett, Enevate',
     logo: '/images/Edgebic/2022-07/01-300x300.png',
-    href: '/success_stories/resource-manager-db-innovates-li-ion-battery-production-scheduling-for-enevate'
+    href: '/resource-management-blog'
   },
   {
     id: 2,
@@ -38,7 +38,7 @@ const successStories = [
       'The system was incredibly easy to adopt and we saw immediate returns on our investment.',
     author: 'Ohio Furniture Manufacturer',
     logo: '/images/Edgebic/2022-07/02-300x300.png',
-    href: '/success_stories/amish-easily-adopt-rapidly-amortize-new-production-scheduling-system'
+    href: '/resource-management-blog'
   },
   {
     id: 3,
@@ -49,7 +49,7 @@ const successStories = [
       'This solution enabled us to systematically identify and resolve bottlenecks in our production process.',
     author: 'BAE Systems/Ordinance Systems Inc.',
     logo: '/images/Edgebic/2022-07/03-300x300.png',
-    href: '/success_stories/capacity-and-production-planning-add-on-for-erp'
+    href: '/resource-management-blog'
   },
   {
     id: 4,
