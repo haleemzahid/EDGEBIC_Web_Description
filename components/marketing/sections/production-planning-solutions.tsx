@@ -233,7 +233,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       Resource Manager DB
                     </th>
                     <th className="p-4 text-center font-semibold text-purple-600">
-                      EDGE Suite
+                      EDGEBI Suite
                     </th>
                   </tr>
                 </thead>
@@ -433,7 +433,6 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
             </div>
 
             {/* Call to Action */}
-
           </div>
 
           {/* Production Scheduling Features Section */}
@@ -484,9 +483,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       className="flex items-center gap-2"
                     >
                       <CheckCircle className="size-4 text-blue-600" />
-                      <span className="text-sm text-slate-700">
-                        {feature}
-                      </span>
+                      <span className="text-sm text-slate-700">{feature}</span>
                     </div>
                   ))}
                 </CardContent>
@@ -542,9 +539,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       className="flex items-center gap-2"
                     >
                       <CheckCircle className="size-4 text-orange-600" />
-                      <span className="text-sm text-slate-700">
-                        {feature}
-                      </span>
+                      <span className="text-sm text-slate-700">{feature}</span>
                     </div>
                   ))}
                 </CardContent>
@@ -586,9 +581,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       className="flex items-center gap-2"
                     >
                       <CheckCircle className="size-4 text-purple-600" />
-                      <span className="text-sm text-slate-700">
-                        {feature}
-                      </span>
+                      <span className="text-sm text-slate-700">{feature}</span>
                     </div>
                   ))}
                 </CardContent>
@@ -605,21 +598,27 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
             <div className="grid gap-6 md:grid-cols-3">
               <div className="text-center">
                 <p className="text-xl text-slate-700">
-                  <span className="font-semibold text-blue-700">Resource Manager For Excel</span>
+                  <span className="font-semibold text-blue-700">
+                    Resource Manager For Excel
+                  </span>
                 </p>
                 <p className="text-2xl font-bold text-slate-900">$1,200</p>
               </div>
 
               <div className="text-center">
                 <p className="text-xl text-slate-700">
-                  <span className="font-semibold text-orange-700">Resource Manager DB</span>
+                  <span className="font-semibold text-orange-700">
+                    Resource Manager DB
+                  </span>
                 </p>
                 <p className="text-2xl font-bold text-slate-900">$3K+</p>
               </div>
 
               <div className="text-center">
                 <p className="text-xl text-slate-700">
-                  <span className="font-semibold text-purple-700">EDGE Suite</span>
+                  <span className="font-semibold text-purple-700">
+                    EDGE Suite
+                  </span>
                 </p>
                 <p className="text-2xl font-bold text-slate-900">$10K+</p>
               </div>
@@ -751,21 +750,21 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
             </div>
           </div>
 
-   <div className="mt-8 text-center">
-              <p className="mb-4 text-slate-600">
-                Not sure which solution is right for you?
-              </p>
-              <Button
-                size="lg"
-                variant="outline"
-                className="gap-2 border-2 border-slate-800 bg-white text-slate-800 hover:bg-slate-100"
-                onClick={() => router.push('/contact-us')}
-              >
-                <Users className="size-4" />
-                Schedule a Live Demo
-              </Button>
-            </div>
-                  </div>
+          <div className="mt-8 text-center">
+            <p className="mb-4 text-slate-600">
+              Not sure which solution is right for you?
+            </p>
+            <Button
+              size="lg"
+              variant="outline"
+              className="gap-2 border-2 border-slate-800 bg-white text-slate-800 hover:bg-slate-100"
+              onClick={() => router.push('/contact-us')}
+            >
+              <Users className="size-4" />
+              Schedule a Live Demo
+            </Button>
+          </div>
+        </div>
       </div>
     </GridSection>
   );
