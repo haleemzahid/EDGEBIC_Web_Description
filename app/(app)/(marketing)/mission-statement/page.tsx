@@ -1,6 +1,9 @@
 import * as React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import type { Metadata } from 'next';
+
+import { Routes } from '@/constants/routes';
 
 export const metadata: Metadata = {
   title: 'Mission Statement - User Solutions',
@@ -77,9 +80,21 @@ export default function MissionPage(): React.JSX.Element {
                 </p>
 
                 <div className="space-y-2 text-lg text-slate-700">
-                  <p>Contact</p>
-                  <p>Our Team</p>
-                  <p>view User Solution History</p>
+                  <p>
+                    <Link href={Routes.Contact} className="text-blue-600 hover:underline">
+                      Contact
+                    </Link>
+                  </p>
+                  <p>
+                    <Link href={Routes.Team} className="text-blue-600 hover:underline">
+                      Our Team
+                    </Link>
+                  </p>
+                  <p>
+                    <Link href={Routes.History} className="text-blue-600 hover:underline">
+                      view User Solution History
+                    </Link>
+                  </p>
                 </div>
               </div>
 
