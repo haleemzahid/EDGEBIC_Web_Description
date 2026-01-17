@@ -46,8 +46,12 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 </div>
 
                 <div className="flex flex-1 flex-col p-6">
-                  <h3 className="mb-4 text-xl font-bold text-gray-900">
-                    Resource Manager For Excel
+                  <h3 className="mb-4 ">
+                    <span className="text-lg font-bold text-gray-900">
+                      {' '}
+                      Resource Manager For Excel{' '}
+                    </span>
+                    <span className="text-sm"> (RMX)</span>
                   </h3>
 
                   {/* Feature Description with Icon */}
@@ -134,8 +138,12 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 </div>
 
                 <div className="flex flex-1 flex-col p-6">
-                  <h3 className="mb-4 text-xl font-bold text-gray-900">
-                    Resource Manager DB
+                  <h3 className="mb-4 ">
+                    <span className="text-lg font-bold text-gray-900">
+                      {' '}
+                      Resource Manager DB{' '}
+                    </span>
+                    <span className="text-sm"> (RMDB)</span>
                   </h3>
 
                   {/* Feature Description with Icon */}
@@ -227,11 +235,12 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 </div>
 
                 <div className="flex flex-1 flex-col p-6">
-                  <h3 className="mb-4 text-xl font-bold text-gray-900">
-                    EDGEBI{' '}
-                    <span className="text-sm font-normal text-gray-500">
-                      (Bundled w/ RMDB)
+                  <h3 className="mb-4 ">
+                    <span className="text-lg font-bold text-gray-900">
+                      {' '}
+                      EDGEBI{' '}
                     </span>
+                    <span className="text-sm"> (Bundled w/ RMDB)</span>
                   </h3>
 
                   {/* Feature Description with Icon */}
