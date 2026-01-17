@@ -158,7 +158,7 @@ function SummaryContent() {
             alt="Make Manufacturing Great Again"
             width={400}
             height={280}
-            className="rounded-lg shadow-lg"
+            className="rounded-lg"
             loading="lazy"
             quality={80}
           />
