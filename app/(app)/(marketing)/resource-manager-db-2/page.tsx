@@ -120,34 +120,49 @@ const jsonLd = {
 function SummaryContent() {
   return (
     <div className="space-y-6">
-      <div className="space-y-4 text-base leading-relaxed text-slate-700">
-        <p>
-          If you have tried to use your ERP for creating a viable Production
-          Schedule, and still end up with a tangle of custom Excel Reports,
-          messy whiteboard or worse yet, late shipments, we can help.
-        </p>
-        <p>
-          RMDB was specifically architected to easily adapt to the way you
-          work, using your existing data. It can be easily configured, and/or
-          reconfigured, on the fly to address your most pressing issues.
-        </p>
-        <p>
-          We can focus and resolve your most pressing issues quickly — letting
-          you reap immediate ROI. Then, delve deeper without having to spend
-          more!
-        </p>
-        <p>
-          Schedule a live demo, even using your data in its current form –
-          RISK FREE!!
-        </p>
-        <p>
-          RMDB contains deep functionality to address a multitude of
-          challenges for production planning and scheduling: alternate
-          workcenters, complex routings & processes, discrete and/or batch,
-          multiple constraints (labor, machines, materials, etc.), advanced
-          drag and drop graphical calendar screens, downtime management,
-          sub-assemblies, optimization, and much more.
-        </p>
+      <div className="grid items-start gap-8 lg:grid-cols-2">
+        <div>
+          <div className="space-y-4 text-base leading-relaxed text-slate-700">
+            <p>
+              If you have tried to use your ERP for creating a viable Production
+              Schedule, and still end up with a tangle of custom Excel Reports,
+              messy whiteboard or worse yet, late shipments, we can help.
+            </p>
+            <p>
+              RMDB was specifically architected to easily adapt to the way you
+              work, using your existing data. It can be easily configured, and/or
+              reconfigured, on the fly to address your most pressing issues.
+            </p>
+            <p>
+              We can focus and resolve your most pressing issues quickly — letting
+              you reap immediate ROI. Then, delve deeper without having to spend
+              more!
+            </p>
+            <p>
+              Schedule a live demo, even using your data in its current form –
+              RISK FREE!!
+            </p>
+            <p>
+              RMDB contains deep functionality to address a multitude of
+              challenges for production planning and scheduling: alternate
+              workcenters, complex routings & processes, discrete and/or batch,
+              multiple constraints (labor, machines, materials, etc.), advanced
+              drag and drop graphical calendar screens, downtime management,
+              sub-assemblies, optimization, and much more.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center">
+          <Image
+            src={IMAGES.menuImage}
+            alt="Resource Manager DB Processing Menu"
+            width={600}
+            height={450}
+            className="h-auto max-w-full rounded-lg shadow-lg"
+            loading="lazy"
+            quality={85}
+          />
+        </div>
       </div>
     </div>
   );
