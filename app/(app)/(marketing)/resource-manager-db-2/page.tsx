@@ -7,7 +7,6 @@ import { RMDBFeatureList } from '@/components/marketing/sections/rmdb-feature-li
 import { RMDBTabsClient } from '@/components/marketing/sections/rmdb-tabs-client';
 import { Card, CardContent } from '@/components/ui/card';
 import { HeroVideo } from '@/components/ui/hero-video';
-import { LazyVideo } from '@/components/ui/lazy-video';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://edgebic.com';
 
@@ -149,31 +148,6 @@ function SummaryContent() {
           drag and drop graphical calendar screens, downtime management,
           sub-assemblies, optimization, and much more.
         </p>
-      </div>
-
-      {/* Video and Image Section */}
-      <div className="grid items-center gap-8 lg:grid-cols-2">
-        <div className="flex items-center justify-center">
-          <Image
-            src={IMAGES.menuImage}
-            alt="Resource Manager DB Processing Menu"
-            width={600}
-            height={450}
-            className="h-auto max-w-full rounded-lg shadow-lg"
-            loading="lazy"
-            quality={85}
-          />
-        </div>
-        <div className="flex justify-center">
-          <div className="aspect-video w-full overflow-hidden rounded-lg shadow-lg">
-            <LazyVideo
-              src={IMAGES.summaryVideo}
-              poster={IMAGES.heroImage}
-              className="h-full w-full object-cover"
-              title="EDGE BI User Solutions demonstration video"
-            />
-          </div>
-        </div>
       </div>
     </div>
   );
