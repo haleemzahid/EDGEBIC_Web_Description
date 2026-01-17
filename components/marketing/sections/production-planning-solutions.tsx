@@ -233,7 +233,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       Resource Manager DB
                     </th>
                     <th className="p-4 text-center font-semibold text-purple-600">
-                      EDGEBI Suite
+                      Edgebi Suite
                     </th>
                   </tr>
                 </thead>
