@@ -97,6 +97,79 @@ export function ResourceManagementBlog() {
         </div>
       </section>
 
+      {/* Blog Posts Section */}
+      <section className="pt-6">
+        <div className="container">
+          <div className="mb-6 text-center">
+            <h2 className="mb-4 text-3xl font-bold">Latest Insights</h2>
+            <p className="mx-auto max-w-2xl text-muted-foreground">
+              Stay updated with the latest trends, technologies, and best
+              practices in resource management
+            </p>
+          </div>
+
+          {/* Blog Posts Grid */}
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {blogPosts.map((post, index) => (
+              <Link
+                key={index}
+                href={post.href}
+                className="block"
+              >
+                <Card className="group h-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer">
+                  <div className="relative aspect-video overflow-hidden bg-muted">
+                    <Image
+                      src={post.image}
+                      alt={post.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  </div>
+                  <CardHeader className="pb-4">
+                    <div className="mb-2 flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <CalendarIcon className="size-4" />
+                        {post.date}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <UserIcon className="size-4" />
+                        {post.readTime}
+                      </div>
+                    </div>
+                    <Badge
+                      variant="secondary"
+                      className="mb-3 w-fit"
+                    >
+                      {post.category}
+                    </Badge>
+                    <CardTitle className="line-clamp-2 transition-colors group-hover:text-blue-600">
+                      <Link href={post.href}>{post.title}</Link>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <CardDescription className="mb-4 line-clamp-3">
+                      {post.description}
+                    </CardDescription>
+                    <Link href={post.href}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto p-0 font-medium text-blue-600 hover:text-blue-700"
+                      >
+                        Read more
+                        <ArrowUpRightIcon className="ml-1 size-4" />
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Three Image Sections */}
       <section className="pt-6">
         <div className="container">
@@ -588,92 +661,6 @@ export function ResourceManagementBlog() {
         </div>
       </section>
 
-      {/* Blog Posts Section */}
-      <section className="pt-6">
-        <div className="container">
-          <div className="mb-6 text-center">
-            <h2 className="mb-4 text-3xl font-bold">Latest Insights</h2>
-            <p className="mx-auto max-w-2xl text-muted-foreground">
-              Stay updated with the latest trends, technologies, and best
-              practices in resource management
-            </p>
-          </div>
-
-          {/* Category Filter */}
-          {/* <div className="mb-6 flex flex-wrap justify-center gap-2">
-            {categories.map((category) => (
-              <Button
-                key={category}
-                variant={category === 'All' ? 'default' : 'outline'}
-                size="sm"
-                className="rounded-full"
-              >
-                {category}
-              </Button>
-            ))}
-          </div> */}
-
-          {/* Blog Posts Grid */}
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {blogPosts.map((post, index) => (
-              <Link
-                key={index}
-                href={post.href}
-                className="block"
-              >
-                <Card className="group h-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer">
-                  <div className="relative aspect-video overflow-hidden bg-muted">
-                    <Image
-                      src={post.image}
-                      alt={post.title}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                  </div>
-                  <CardHeader className="pb-4">
-                    <div className="mb-2 flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <CalendarIcon className="size-4" />
-                        {post.date}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <UserIcon className="size-4" />
-                        {post.readTime}
-                      </div>
-                    </div>
-                    <Badge
-                      variant="secondary"
-                      className="mb-3 w-fit"
-                    >
-                      {post.category}
-                    </Badge>
-                    <CardTitle className="line-clamp-2 transition-colors group-hover:text-blue-600">
-                      <Link href={post.href}>{post.title}</Link>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <CardDescription className="mb-4 line-clamp-3">
-                      {post.description}
-                    </CardDescription>
-                    <Link href={post.href}>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto p-0 font-medium text-blue-600 hover:text-blue-700"
-                      >
-                        Read more
-                        <ArrowUpRightIcon className="ml-1 size-4" />
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
