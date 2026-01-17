@@ -1,8 +1,34 @@
 import Image from 'next/image';
+import { LazyVideo } from '@/components/ui/lazy-video';
 
 export function EDGEBIContent() {
   return (
     <div className="space-y-16">
+      {/* Hero Image Section */}
+      <div className="flex items-center justify-center">
+        <Image
+          src="/images/rmdb/rmdb-edge-hero.png"
+          alt="Resource Manager-DB with EDGE (Enhanced Drag & drop Graphical Environment)"
+          width={1024}
+          height={483}
+          className="h-auto max-w-full rounded-lg shadow-lg"
+          loading="lazy"
+          quality={85}
+        />
+      </div>
+
+      {/* Video Section */}
+      <div className="flex justify-center">
+        <div className="aspect-video w-full max-w-4xl overflow-hidden rounded-lg shadow-lg">
+          <LazyVideo
+            src="https://www.youtube.com/watch?v=6B4A-acolGk"
+            poster="/images/rmdb/rmdb-edge-hero.png"
+            className="h-full w-full object-cover"
+            title="EDGE BI User Solutions demonstration video"
+          />
+        </div>
+      </div>
+
       {/* Overview Header with Image Side by Side */}
       <div className="grid items-center gap-8 lg:grid-cols-2">
         <div>

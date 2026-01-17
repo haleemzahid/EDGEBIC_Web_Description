@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
 import { ArrowUpRightIcon, CalendarIcon, UserIcon } from 'lucide-react';
 
 import { SiteHeading } from '@/components/marketing/fragments/site-heading';
@@ -90,11 +90,7 @@ export function ResourceManagementBlog() {
         <div className="container relative">
           <div className="mx-auto max-w-7xl text-center">
             <SiteHeading
-              title={
-                <>
-                  Resource Management Application/Solution
-                </>
-              }
+              title={<>Resource Management Applications/Solutions</>}
               description="Discover insights, tips, and best practices for resource management in manufacturing, production planning, and scheduling solutions."
             />
           </div>
@@ -311,9 +307,9 @@ export function ResourceManagementBlog() {
                   Production Planning
                 </h3>
                 <p className="text-base text-slate-700">
-                  Generate reliable, detailed production plans. Balance materials
-                  and capacity with actual demand. Effortlessly reschedule
-                  production orders.
+                  Generate reliable, detailed production plans. Balance
+                  materials and capacity with actual demand. Effortlessly
+                  reschedule production orders.
                 </p>
               </div>
 
@@ -423,9 +419,9 @@ export function ResourceManagementBlog() {
                   Sales Management
                 </h3>
                 <p className="text-base text-slate-700">
-                  Calculate order costs and lead times in just a few clicks. Send
-                  confirmed orders straight to production. Easily manage invoices,
-                  shipping, and returns.
+                  Calculate order costs and lead times in just a few clicks.
+                  Send confirmed orders straight to production. Easily manage
+                  invoices, shipping, and returns.
                 </p>
               </div>
 
@@ -478,8 +474,8 @@ export function ResourceManagementBlog() {
                 </h3>
                 <p className="text-base text-slate-700">
                   Stay informed on your labor requirements and utilization.
-                  Provide shop floor workers with a simple interface for reporting
-                  orders and material use.
+                  Provide shop floor workers with a simple interface for
+                  reporting orders and material use.
                 </p>
               </div>
 
@@ -522,9 +518,9 @@ export function ResourceManagementBlog() {
                   Procurement
                 </h3>
                 <p className="text-base text-slate-700">
-                  Easily forecast your procurement requirements. Create pre-filled
-                  purchase orders in one click. Manage supplier relationships.
-                  Compare terms and reliability.
+                  Easily forecast your procurement requirements. Create
+                  pre-filled purchase orders in one click. Manage supplier
+                  relationships. Compare terms and reliability.
                 </p>
               </div>
 
@@ -620,7 +616,11 @@ export function ResourceManagementBlog() {
           {/* Blog Posts Grid */}
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {blogPosts.map((post, index) => (
-              <Link key={index} href={post.href} className="block">
+              <Link
+                key={index}
+                href={post.href}
+                className="block"
+              >
                 <Card className="group h-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer">
                   <div className="relative aspect-video overflow-hidden bg-muted">
                     <Image
@@ -650,9 +650,7 @@ export function ResourceManagementBlog() {
                       {post.category}
                     </Badge>
                     <CardTitle className="line-clamp-2 transition-colors group-hover:text-blue-600">
-                      <Link href={post.href}>
-                        {post.title}
-                      </Link>
+                      <Link href={post.href}>{post.title}</Link>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
