@@ -154,13 +154,13 @@ function SummaryContent() {
         </div>
         <div className="flex items-center justify-center">
           <Image
-            src={IMAGES.menuImage}
-            alt="Resource Manager DB Processing Menu"
-            width={600}
-            height={450}
-            className="h-auto max-w-full rounded-lg shadow-lg"
+            src="/images/Edgebic/2022-10/MMGAsmall_Colver.png"
+            alt="Make Manufacturing Great Again"
+            width={400}
+            height={280}
+            className="rounded-lg shadow-lg"
             loading="lazy"
-            quality={85}
+            quality={80}
           />
         </div>
       </div>
