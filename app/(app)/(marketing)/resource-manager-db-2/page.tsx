@@ -152,30 +152,30 @@ function SummaryContent() {
             </p>
           </div>
         </div>
-        <div className="flex items-center justify-center">
-          <Image
-            src="/images/Edgebic/2022-10/MMGAsmall_Colver.png"
-            alt="Make Manufacturing Great Again"
-            width={400}
-            height={280}
-            className="rounded-lg"
-            loading="lazy"
-            quality={80}
-          />
+        <div className="space-y-4">
+          <div className="flex items-center justify-center">
+            <Image
+              src="/images/Edgebic/2022-10/MMGAsmall_Colver.png"
+              alt="Make Manufacturing Great Again"
+              width={400}
+              height={280}
+              className="rounded-lg"
+              loading="lazy"
+              quality={80}
+            />
+          </div>
+          <div className="flex items-center justify-center">
+            <Image
+              src="/images/Edgebic/2022-10/f2.png"
+              alt="EDGEBI Schedule Management Interface"
+              width={600}
+              height={400}
+              className="rounded-lg shadow-lg"
+              loading="lazy"
+              quality={80}
+            />
+          </div>
         </div>
-      </div>
-
-      {/* Schedule Calendar Image */}
-      <div className="flex items-center justify-center">
-        <Image
-          src="/images/Edgebic/2022-10/f2.png"
-          alt="EDGEBI Schedule Management Interface"
-          width={600}
-          height={400}
-          className="rounded-lg shadow-lg"
-          loading="lazy"
-          quality={80}
-        />
       </div>
     </div>
   );
