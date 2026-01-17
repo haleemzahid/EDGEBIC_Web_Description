@@ -67,7 +67,10 @@ export function NTClipboardToolBox(): React.JSX.Element {
                   <div className="mb-6 flex-1 space-y-3">
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Features BOR (Bill of Resources) for routings and material</span>
+                      <span className="text-sm">
+                        Features BOR (Bill of Resources) for routings and
+                        material
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
@@ -79,7 +82,15 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Leverages Excel (speed and 1,000,000 rows/tab)</span>
+                      <span className="text-sm">
+                        Leverages Excel (speed and 1,000,000 rows/tab)
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="size-4 text-green-500" />
+                      <span className="text-sm">
+                        Forward and/or Reverse Scheduling
+                      </span>
                     </div>
                   </div>
 
@@ -149,19 +160,27 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Includes everything in (RMX) plus</span>
+                      <span className="text-sm">
+                        Includes everything in (RMX) plus
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Data Integration with other systems</span>
+                      <span className="text-sm">
+                        Data Integration with other systems
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Advanced Planning and Scheduling Tools (APS)</span>
+                      <span className="text-sm">
+                        Advanced Planning and Scheduling Tools (APS)
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Automatic Maintenance Options</span>
+                      <span className="text-sm">
+                        Automatic Maintenance Options
+                      </span>
                     </div>
                   </div>
 
@@ -231,11 +250,15 @@ export function NTClipboardToolBox(): React.JSX.Element {
                   <div className="mb-6 flex-1 space-y-3">
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Easy, Graphical configuration</span>
+                      <span className="text-sm">
+                        Easy, Graphical configuration
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Completely and easily customizable</span>
+                      <span className="text-sm">
+                        Completely and easily customizable
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
@@ -247,7 +270,9 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="size-4 text-green-500" />
-                      <span className="text-sm">Heat Maps, Utilization Calendars, and so much more</span>
+                      <span className="text-sm">
+                        Heat Maps, Utilization Calendars, and so much more
+                      </span>
                     </div>
                   </div>
 

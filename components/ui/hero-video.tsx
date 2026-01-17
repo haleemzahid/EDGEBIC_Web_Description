@@ -5,7 +5,7 @@ import * as React from 'react';
 
 interface HeroVideoProps {
   src: string;
-  poster: string;
+  poster?: string;
   title: string;
   className?: string;
   priority?: boolean;
@@ -39,19 +39,21 @@ export function HeroVideo({
       {!showVideo ? (
         <>
           {/* Priority image for LCP */}
-          <Image
-            src={poster}
-            alt={title}
-            fill
-            priority={priority}
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, 700px"
-            onLoad={() => setIsLoaded(true)}
-          />
+          {poster && (
+            <Image
+              src={poster}
+              alt={title}
+              fill
+              priority={priority}
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 700px"
+              onLoad={() => setIsLoaded(true)}
+            />
+          )}
           {/* Play button overlay */}
           <button
             onClick={handlePlayClick}
-            className="absolute inset-0 flex items-center justify-center bg-black/20 transition-colors hover:bg-black/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+            className={`absolute inset-0 flex items-center justify-center transition-colors hover:bg-black/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 ${poster ? 'bg-black/20' : 'bg-gray-900'}`}
             aria-label={`Play ${title}`}
           >
             <div className={`flex size-16 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-110 ${isYouTube ? 'bg-red-600' : 'bg-white/90'}`}>

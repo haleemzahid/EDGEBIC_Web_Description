@@ -309,7 +309,6 @@ export default function ResourceManagerDBPage() {
                 <div className="aspect-video w-full max-w-[700px] overflow-hidden rounded-lg shadow-lg">
                   <HeroVideo
                     src={IMAGES.heroVideo}
-                    poster={IMAGES.heroImage}
                     className="h-full w-full"
                     title="Resource Manager DB product overview video"
                     priority
