@@ -101,8 +101,18 @@ export function EDGEBIContent() {
         </p>
       </div>
 
-      {/* Hero Image and Video Section */}
+      {/* Video and Hero Image Section */}
       <div className="grid items-center gap-8 lg:grid-cols-2">
+        <div className="flex justify-center">
+          <div className="aspect-video w-full overflow-hidden rounded-lg shadow-lg">
+            <LazyVideo
+              src="https://www.youtube.com/watch?v=6B4A-acolGk"
+              poster="/images/rmdb/rmdb-edge-hero.png"
+              className="h-full w-full object-cover"
+              title="EDGE BI User Solutions demonstration video"
+            />
+          </div>
+        </div>
         <div className="flex items-center justify-center">
           <Image
             src="/images/rmdb/rmdb-edge-hero.png"
@@ -113,16 +123,6 @@ export function EDGEBIContent() {
             loading="lazy"
             quality={85}
           />
-        </div>
-        <div className="flex justify-center">
-          <div className="aspect-video w-full overflow-hidden rounded-lg shadow-lg">
-            <LazyVideo
-              src="https://www.youtube.com/watch?v=6B4A-acolGk"
-              poster="/images/rmdb/rmdb-edge-hero.png"
-              className="h-full w-full object-cover"
-              title="EDGE BI User Solutions demonstration video"
-            />
-          </div>
         </div>
       </div>
     </div>
