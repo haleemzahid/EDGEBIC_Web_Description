@@ -179,7 +179,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
           <NTClipboardToolBox />
 
           {/* Feature Comparison Matrix */}
-          <div className="mb-6">
+          <div className="my-6">
             <h2 className="mb-6 text-center text-3xl font-bold text-slate-900">
               Choose the Right Solution for Your Business
             </h2>
@@ -233,7 +233,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       Resource Manager DB
                     </th>
                     <th className="p-4 text-center font-semibold text-purple-600">
-                      Edgebi Suite
+                      EDGEBI Suite
                     </th>
                   </tr>
                 </thead>
@@ -550,7 +550,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-purple-700">
                     <Zap className="size-5" />
-                    Edgebi suite
+                    EDGEBI Suite
                   </CardTitle>
                   <CardDescription>
                     Graphical overlay with business intelligence for intuitive
@@ -617,7 +617,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               <div className="text-center">
                 <p className="text-xl text-slate-700">
                   <span className="font-semibold text-purple-700">
-                    Edgebi suite
+                    EDGEBI Suite
                   </span>
                 </p>
                 <p className="text-2xl font-bold text-slate-900">$10K+</p>

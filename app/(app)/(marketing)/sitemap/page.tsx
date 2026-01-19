@@ -231,7 +231,7 @@ export default function SitemapPage() {
                     href="/edgebi"
                     className="text-blue-600 hover:underline"
                   >
-                    Edgebi suite
+                    EDGEBI Suite
                   </Link>
                 </li>
                 <li>
