@@ -107,7 +107,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
 
   return (
     <GridSection hideVerticalGridLines>
-      <div className="container pt-6">
+      <div className="pt-6">
         {/* Hero Section */}
         <SiteHeading
           title="Production Planning and Scheduling Solutions"
