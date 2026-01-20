@@ -10,6 +10,9 @@ interface YouTubeFacadeProps {
   className?: string;
   thumbnailQuality?: 'default' | 'hqdefault' | 'mqdefault' | 'sddefault' | 'maxresdefault';
   hidePlayButton?: boolean;
+  showChannelInfo?: boolean;
+  channelName?: string;
+  channelThumbnail?: string;
 }
 
 /**
@@ -30,7 +33,10 @@ export function YouTubeFacade({
   start = 0,
   className = '',
   thumbnailQuality = 'hqdefault',
-  hidePlayButton = false
+  hidePlayButton = false,
+  showChannelInfo = false,
+  channelName = '',
+  channelThumbnail = ''
 }: YouTubeFacadeProps) {
   const [isPlaying, setIsPlaying] = React.useState(false);
 
