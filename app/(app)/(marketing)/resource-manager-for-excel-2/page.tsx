@@ -1,8 +1,8 @@
 'use client';
 
-import Image from 'next/image';
-import dynamic from 'next/dynamic';
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import { Check } from 'lucide-react';
 
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,8 +10,15 @@ import { YouTubeFacade } from '@/components/ui/youtube-facade';
 
 // Lazy load In Depth content
 const RMXInDepthContent = dynamic(
-  () => import('@/components/marketing/sections/rmx-in-depth-content').then((mod) => ({ default: mod.RMXInDepthContent })),
-  { loading: () => <div className="min-h-[400px] animate-pulse bg-slate-100 rounded-lg" /> }
+  () =>
+    import('@/components/marketing/sections/rmx-in-depth-content').then(
+      (mod) => ({ default: mod.RMXInDepthContent })
+    ),
+  {
+    loading: () => (
+      <div className="min-h-[400px] animate-pulse bg-slate-100 rounded-lg" />
+    )
+  }
 );
 
 const features = [
@@ -47,16 +54,15 @@ export default function ResourceManagerForExcel2Page() {
           <div className="grid gap-8 lg:grid-cols-2">
             {/* Left Side - Header, Text and Tabs */}
             <div className="space-y-4">
-              <h1 className="text-3xl font-bold">
-                Resource Manager For Excel
-              </h1>
+              <h1 className="text-3xl font-bold">Resource Manager For Excel</h1>
               <p className="text-slate-700 leading-relaxed">
-                Resource Manager for Excel (RMX) offers basic MRP and Shop Scheduling
-                that is quick to implement and very affordable. RMX is designed to adapt
-                to your specific needs and utilizes all the powerful features of Excel
-                for data integration, customization, sharing and reporting. A fully
-                functional trial is available for immediate download and/or schedule a
-                live demo with us to see it in action for your application.
+                Resource Manager for Excel (RMX) offers basic MRP and Shop
+                Scheduling that is quick to implement and very affordable. RMX
+                is designed to adapt to your specific needs and utilizes all the
+                powerful features of Excel for data integration, customization,
+                sharing and reporting. A fully functional trial is available for
+                immediate download and/or schedule a live demo with us to see it
+                in action for your application.
               </p>
             </div>
 
@@ -74,7 +80,10 @@ export default function ResourceManagerForExcel2Page() {
       </section>
 
       {/* Navigation Tabs */}
-      <nav className="pt-8 bg-gradient-to-b from-slate-50 to-white" aria-label="Product information tabs">
+      <nav
+        className="pt-8 bg-gradient-to-b from-slate-50 to-white"
+        aria-label="Product information tabs"
+      >
         <div className="container mx-auto max-w-7xl px-4">
           <div
             className="flex flex-wrap justify-start gap-2"
@@ -90,11 +99,10 @@ export default function ResourceManagerForExcel2Page() {
                 aria-controls={`tabpanel-${tab.id}`}
                 tabIndex={activeTab === tab.id ? 0 : -1}
                 onClick={() => setActiveTab(tab.id)}
-                className={`transition-all duration-200 focus:outline-none px-8 py-4 text-[16px] font-semibold rounded-t-xl border-2 border-b-0 relative ${
-                  activeTab === tab.id
-                    ? 'bg-white text-blue-600 border-blue-500 shadow-lg z-10 -mb-[2px]'
-                    : 'bg-blue-500 text-white border-blue-500 shadow-md hover:bg-blue-600 hover:border-blue-600'
-                }`}
+                className={`transition-all duration-200 focus:outline-none px-8 py-4 text-[16px] font-semibold rounded-t-xl border-2 border-b-0 relative ${activeTab === tab.id
+                    ? 'bg-white text-blue-600 border-blue-500 z-10 -mb-[2px]'
+                    : 'bg-blue-500 text-white border-blue-500 shadow-sm hover:bg-blue-600 hover:border-blue-600'
+                  }`}
               >
                 {tab.label}
               </button>
@@ -111,7 +119,10 @@ export default function ResourceManagerForExcel2Page() {
       </div>
 
       {/* Tab Content */}
-      <section className="pt-6" aria-label="Tab content">
+      <section
+        className="pt-6"
+        aria-label="Tab content"
+      >
         <div className="container mx-auto max-w-7xl px-4">
           {activeTab === 'summary' && (
             <div className="space-y-8">
@@ -122,32 +133,39 @@ export default function ResourceManagerForExcel2Page() {
 
               {/* Description Text */}
               <p className="leading-relaxed text-slate-700">
-                Resource Manager for Excel (RMX) features a Bill Of Resource (BOR) that allows any combination of
-                Workcenters and/or Products. RMX is ideal for companies who have no formal systems (ERP, MRP, etc.) as
-                tool to plan for and implement those systems, or to use to fill in any existing gaps for production scheduling.
-                With the BOR concept, you can manage both Material Requirements Planning as well as Production Planning
-                and Scheduling considering Finite Capacity.. For those applications that have a need for multiple concurrent
-                users, improved security (over Excel), seamless integration with other systems, and advanced planning and
-                scheduling options, Resource Manager-DB (RMDB) is the best choice.
+                Resource Manager for Excel (RMX) features a Bill Of Resource
+                (BOR) that allows any combination of Workcenters and/or
+                Products. RMX is ideal for companies who have no formal systems
+                (ERP, MRP, etc.) as tool to plan for and implement those
+                systems, or to use to fill in any existing gaps for production
+                scheduling. With the BOR concept, you can manage both Material
+                Requirements Planning as well as Production Planning and
+                Scheduling considering Finite Capacity.. For those applications
+                that have a need for multiple concurrent users, improved
+                security (over Excel), seamless integration with other systems,
+                and advanced planning and scheduling options, Resource
+                Manager-DB (RMDB) is the best choice.
               </p>
 
               {/* Screenshot with Adaptable and Flexible Quote */}
               <div className="grid items-start gap-8 lg:grid-cols-2">
                 <div>
-                  <h3 className="mb-4 text-xl font-semibold">"Adaptable and Flexible"</h3>
+                  <h3 className="mb-4 text-xl font-semibold">
+                    "Adaptable and Flexible"
+                  </h3>
                   <p className="leading-relaxed text-slate-700">
                     Resource Manager for Excel is a great solution for
-                    manufacturers who are not ready for a full-blown
-                    MRPII, ERP, or Shop Management System but realize
-                    the value of effective scheduling and planning.
-                    Resource Manager for Excel is unique in that it easily
-                    adapts to the way people are running their business
-                    today".
+                    manufacturers who are not ready for a full-blown MRPII, ERP,
+                    or Shop Management System but realize the value of effective
+                    scheduling and planning. Resource Manager for Excel is
+                    unique in that it easily adapts to the way people are
+                    running their business today".
                   </p>
                   <p className="mt-4 leading-relaxed text-slate-700">
-                    <span className="italic">Mike Parks, Director of Georgia Tech's CMIT, an
-                      affiliate of the NIST Manufacturing Extension
-                      Partnership.</span>
+                    <span className="italic">
+                      Mike Parks, Director of Georgia Tech's CMIT, an affiliate
+                      of the NIST Manufacturing Extension Partnership.
+                    </span>
                   </p>
                 </div>
                 <div className="flex justify-center">
@@ -163,10 +181,15 @@ export default function ResourceManagerForExcel2Page() {
 
               {/* Features */}
               <div>
-                <h2 className="mb-4 text-xl font-bold text-slate-900">Features</h2>
+                <h2 className="mb-4 text-xl font-bold text-slate-900">
+                  Features
+                </h2>
                 <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {features.map((feature, index) => (
-                    <li key={index} className="flex items-center gap-2 text-slate-700">
+                    <li
+                      key={index}
+                      className="flex items-center gap-2 text-slate-700"
+                    >
                       <Check className="size-4 text-green-600 shrink-0" />
                       <span>{feature}</span>
                     </li>
@@ -193,16 +216,19 @@ export default function ResourceManagerForExcel2Page() {
           {activeTab === 'quick-start' && (
             <div className="grid items-start gap-8 lg:grid-cols-2">
               <div>
-                <h2 className="mb-4 text-2xl font-bold text-slate-900">Quick Start</h2>
+                <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                  Quick Start
+                </h2>
                 <div className="space-y-4 text-base leading-relaxed text-slate-600">
                   <p>
-                    Get started with Resource Manager for Excel quickly and easily. Our Quick
-                    Start guide provides step-by-step instructions to help you set up and
-                    configure RMX for your specific needs.
+                    Get started with Resource Manager for Excel quickly and
+                    easily. Our Quick Start guide provides step-by-step
+                    instructions to help you set up and configure RMX for your
+                    specific needs.
                   </p>
                   <p>
-                    Download the comprehensive Quick Start PDF guide to begin your journey
-                    with RMX.
+                    Download the comprehensive Quick Start PDF guide to begin
+                    your journey with RMX.
                   </p>
                   <a
                     href="/pdf/RMXQuickStart.pdf"
@@ -230,16 +256,19 @@ export default function ResourceManagerForExcel2Page() {
           {activeTab === 'live-demo' && (
             <div className="grid items-start gap-8 lg:grid-cols-2">
               <div>
-                <h2 className="mb-4 text-2xl font-bold text-slate-900">Live Demo</h2>
+                <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                  Live Demo
+                </h2>
                 <div className="space-y-4 text-base leading-relaxed text-slate-600">
                   <p>
-                    See Resource Manager for Excel in action! Schedule a live demo with our team
-                    to experience how RMX can transform your production planning and
-                    scheduling processes.
+                    See Resource Manager for Excel in action! Schedule a live
+                    demo with our team to experience how RMX can transform your
+                    production planning and scheduling processes.
                   </p>
                   <p>
-                    We can even use your data in its current form to show you exactly how
-                    RMX will work for your specific operations – RISK FREE!
+                    We can even use your data in its current form to show you
+                    exactly how RMX will work for your specific operations –
+                    RISK FREE!
                   </p>
                   <a
                     href="https://calendly.com/mudasirnadeem7979/30min"
