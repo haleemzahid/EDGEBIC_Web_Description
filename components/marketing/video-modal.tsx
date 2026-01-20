@@ -84,16 +84,18 @@ export function VideoModal({
             <div className="relative overflow-hidden rounded-lg bg-black">
               <div className="relative aspect-video w-full">
                 {isPlaying ? (
-                  <iframe
-                    key={currentVideoId}
-                    src={embedUrl}
-                    title="YouTube video player"
-                    className="absolute inset-0 size-full"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    referrerPolicy="strict-origin-when-cross-origin"
-                    allowFullScreen
-                  />
+                  <>
+                    <iframe
+                      key={currentVideoId}
+                      src={embedUrl}
+                      title="YouTube video player"
+                      className="absolute inset-0 size-full"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allowFullScreen
+                    />
+                  </>
                 ) : (
                   <button
                     type="button"
