@@ -16,7 +16,7 @@ interface AnnouncementBarProps {
 }
 
 export function AnnouncementBar({
-  message = '🎉 Special Offer: Get 20% off EDGEBIC - Limited Time!',
+  message = '🎉 Special Offer: Get 20% off EDGEBI - Limited Time!',
   linkText = 'Learn More',
   linkHref = Routes.JobSchedulerLite,
   dismissible = true

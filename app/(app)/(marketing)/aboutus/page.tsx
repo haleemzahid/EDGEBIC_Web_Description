@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -108,7 +108,7 @@ export default function AboutUsPage() {
                       href="/jsl-job-scheduler-lite"
                       className="text-lg font-semibold text-blue-600 hover:text-blue-800"
                     >
-                      EDGEBIC
+                      EDGEBI
                     </Link>
                     <p className="mt-2 text-gray-700">
                       Comprehensive job scheduling solution for manufacturing
@@ -132,7 +132,7 @@ export default function AboutUsPage() {
                       href="/edgebi"
                       className="text-lg font-semibold text-blue-600 hover:text-blue-800"
                     >
-                      EDGEBIC
+                      EDGEBI
                     </Link>
                     <p className="mt-2 text-gray-700">
                       Business intelligence and analytics for manufacturing

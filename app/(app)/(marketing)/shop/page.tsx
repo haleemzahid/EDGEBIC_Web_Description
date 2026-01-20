@@ -219,7 +219,7 @@ export default function ShopPage() {
               href="/jsl-job-scheduler-lite"
               className="block hover:underline"
             >
-              EDGEBIC
+              EDGEBI
             </Link>
             <Link
               href="/resource-manager-db-2"
@@ -231,7 +231,7 @@ export default function ShopPage() {
               href="/edgebi"
               className="block hover:underline"
             >
-              EDGEBIC
+              EDGEBI
             </Link>
           </div>
         </div>

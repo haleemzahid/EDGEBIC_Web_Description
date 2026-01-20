@@ -1,16 +1,16 @@
 'use client';
 
 import * as React from 'react';
-import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { motion } from 'framer-motion';
 
 import { VideoModal } from '@/components/marketing/video-modal';
 
 const newsItems = [
-  'EDGEBIC announces revolutionary method for Production Planning and Scheduling evaluations',
+  'EDGEBI announces revolutionary method for Production Planning and Scheduling evaluations',
   'Forging Ahead: Leveraging ERP Data for Enhanced Planning and Scheduling',
-  'EDGEBIC continues partnerships with multiple Universities for real-life experience',
-  'EDGEBIC Unveils Revolutionary Manufacturing Software: Customized Solutions for Enhanced Scheduling',
+  'EDGEBI continues partnerships with multiple Universities for real-life experience',
+  'EDGEBI Unveils Revolutionary Manufacturing Software: Customized Solutions for Enhanced Scheduling',
   'Resource Manager-DB Innovates Li-ion Battery Production Scheduling',
   'Scheduling System Narrows Skills Gap for Fire-Rated Glass Manufacturing'
 ];
@@ -133,7 +133,10 @@ export function TestHomeHero(): React.JSX.Element {
               <button
                 type="button"
                 onClick={() => {
-                  window.open('https://calendly.com/mudasirnadeem7979/30min', '_blank');
+                  window.open(
+                    'https://calendly.com/mudasirnadeem7979/30min',
+                    '_blank'
+                  );
                 }}
                 className="inline-flex h-9 items-center justify-center gap-2 rounded-[10px] bg-[#1e3a5f] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#2d4a6f]"
               >
@@ -147,10 +150,32 @@ export function TestHomeHero(): React.JSX.Element {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
+                  <rect
+                    x="3"
+                    y="4"
+                    width="18"
+                    height="18"
+                    rx="2"
+                    ry="2"
+                  />
+                  <line
+                    x1="16"
+                    y1="2"
+                    x2="16"
+                    y2="6"
+                  />
+                  <line
+                    x1="8"
+                    y1="2"
+                    x2="8"
+                    y2="6"
+                  />
+                  <line
+                    x1="3"
+                    y1="10"
+                    x2="21"
+                    y2="10"
+                  />
                 </svg>
                 Fix My Schedule!
               </button>

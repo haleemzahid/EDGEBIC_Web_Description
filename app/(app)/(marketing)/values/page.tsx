@@ -14,7 +14,7 @@ export default function ValuesPage(): React.JSX.Element {
               What Drives Us Forward
             </h1>
             <p className="text-gray-700">
-              The principles that have guided EDGEBIC for over three decades
+              The principles that have guided EDGEBI for over three decades
             </p>
           </div>
         </div>
@@ -64,7 +64,9 @@ export default function ValuesPage(): React.JSX.Element {
                   </span>
                 </li>
                 <li>
-                  <strong className="text-slate-900">Quality Excellence:</strong>{' '}
+                  <strong className="text-slate-900">
+                    Quality Excellence:
+                  </strong>{' '}
                   <span className="text-gray-700">
                     We don&apos;t just meet standards, we set them. Every
                     solution reflects our commitment to manufacturing
@@ -89,7 +91,7 @@ export default function ValuesPage(): React.JSX.Element {
                 the foundation of every solution we create and every
                 relationship we build.&quot;
               </blockquote>
-              <p className="mt-4 text-lg text-orange-600">— The EDGEBIC Team</p>
+              <p className="mt-4 text-lg text-orange-600">— The EDGEBI Team</p>
             </div>
           </div>
         </div>

@@ -22,8 +22,7 @@ export function NTClipboardCoreValues(): React.JSX.Element {
       title: 'Customer-Centric',
       description:
         'Your success is our priority. We listen, understand, and deliver solutions that truly fit your needs.',
-      color:
-        'from-red-100 to-pink-100',
+      color: 'from-red-100 to-pink-100',
       iconBg: 'bg-red-100',
       iconColor: 'text-red-600'
     },
@@ -32,8 +31,7 @@ export function NTClipboardCoreValues(): React.JSX.Element {
       title: 'Partnership Approach',
       description:
         'We work alongside you as partners, not just vendors. Your challenges become our challenges to solve together.',
-      color:
-        'from-blue-100 to-cyan-100',
+      color: 'from-blue-100 to-cyan-100',
       iconBg: 'bg-blue-100',
       iconColor: 'text-blue-600'
     },
@@ -42,8 +40,7 @@ export function NTClipboardCoreValues(): React.JSX.Element {
       title: 'Innovation & Adaptability',
       description:
         'We embrace new technologies while respecting proven methods, creating solutions that evolve with your business.',
-      color:
-        'from-yellow-100 to-orange-100',
+      color: 'from-yellow-100 to-orange-100',
       iconBg: 'bg-yellow-100',
       iconColor: 'text-yellow-600'
     },
@@ -52,8 +49,7 @@ export function NTClipboardCoreValues(): React.JSX.Element {
       title: 'Reliability & Trust',
       description:
         'Over 30 years of consistent delivery. When we commit, we deliver. Your trust is our most valuable asset.',
-      color:
-        'from-green-100 to-emerald-100',
+      color: 'from-green-100 to-emerald-100',
       iconBg: 'bg-green-100',
       iconColor: 'text-green-600'
     },
@@ -62,8 +58,7 @@ export function NTClipboardCoreValues(): React.JSX.Element {
       title: 'Quality Excellence',
       description:
         "We don't just meet standards, we set them. Every solution reflects our commitment to manufacturing excellence.",
-      color:
-        'from-purple-100 to-violet-100',
+      color: 'from-purple-100 to-violet-100',
       iconBg: 'bg-purple-100',
       iconColor: 'text-purple-600'
     },
@@ -72,8 +67,7 @@ export function NTClipboardCoreValues(): React.JSX.Element {
       title: 'Integrity & Transparency',
       description:
         'Honest communication, fair pricing, and transparent processes. We build relationships based on mutual respect.',
-      color:
-        'from-indigo-100 to-blue-100',
+      color: 'from-indigo-100 to-blue-100',
       iconBg: 'bg-indigo-100',
       iconColor: 'text-indigo-600'
     }
@@ -104,9 +98,7 @@ export function NTClipboardCoreValues(): React.JSX.Element {
                   {value.title}
                 </h3>
 
-                <p className="text-slate-700">
-                  {value.description}
-                </p>
+                <p className="text-slate-700">{value.description}</p>
               </div>
             ))}
           </div>
@@ -117,9 +109,7 @@ export function NTClipboardCoreValues(): React.JSX.Element {
                 "Our values aren't just words on a wall – they're the foundation
                 of every solution we create and every relationship we build."
               </blockquote>
-              <p className="mt-4 text-lg text-orange-600">
-                — The EDGEBIC Team
-              </p>
+              <p className="mt-4 text-lg text-orange-600">— The EDGEBI Team</p>
             </div>
           </div>
         </div>

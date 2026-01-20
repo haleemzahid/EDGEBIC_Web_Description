@@ -6,7 +6,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { NTClipboardToolBox } from '@/components/marketing/sections/ntclipboard-toolbox';
-
 import { Card, CardContent } from '@/components/ui/card';
 import { Routes } from '@/constants/routes';
 import { createTitle } from '@/lib/utils';
@@ -18,13 +17,12 @@ export default function ProductDownloadsPage(): React.JSX.Element {
         <title>{createTitle('Product Downloads')}</title>
         <meta
           name="description"
-          content="Download User Solutions production scheduling software including EDGEBIC, Resource Manager DB, EDGEBIC, and Excel applications. Free trials and samples available."
+          content="Download User Solutions production scheduling software including EDGEBI, Resource Manager DB, EDGEBI, and Excel applications. Free trials and samples available."
         />
       </Head>
       <div className="container mx-auto px-4 pt-6">
         {/* Product Downloads Badge */}
-        <div className="mx-auto mb-4 flex items-center justify-center">
-        </div>
+        <div className="mx-auto mb-4 flex items-center justify-center"></div>
 
         {/* Header Section */}
         <div className="mb-6 text-center">
@@ -52,7 +50,7 @@ export default function ProductDownloadsPage(): React.JSX.Element {
         <NTClipboardToolBox />
 
         {/* Excel Products Section */}
-        <section className='mt-6'>
+        <section className="mt-6">
           <h2 className=" mb-6 text-center text-3xl font-semibold">
             Excel Products
           </h2>
@@ -72,49 +70,97 @@ export default function ProductDownloadsPage(): React.JSX.Element {
               <tbody className="divide-y divide-gray-200">
                 <tr>
                   <td className="px-6 py-3">
-                    <span className="font-medium text-gray-900">Spreadsheet Scheduler</span>
+                    <span className="font-medium text-gray-900">
+                      Spreadsheet Scheduler
+                    </span>
                     <span className="ml-2 font-bold text-green-600">Free</span>
                   </td>
                   <td className="px-6 py-3 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <Link href="/spreadsheet-scheduler" className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700">Info</Link>
-                      <Link href={Routes.Contact} className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">Request Free</Link>
+                      <Link
+                        href="/spreadsheet-scheduler"
+                        className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
+                      >
+                        Info
+                      </Link>
+                      <Link
+                        href={Routes.Contact}
+                        className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
+                      >
+                        Request Free
+                      </Link>
                     </div>
                   </td>
                 </tr>
                 <tr className="bg-gray-50">
                   <td className="px-6 py-3">
-                    <span className="font-medium text-gray-900">Workcell Planner</span>
+                    <span className="font-medium text-gray-900">
+                      Workcell Planner
+                    </span>
                     <span className="ml-2 font-bold text-green-600">Free</span>
                   </td>
                   <td className="px-6 py-3 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <Link href="/workcell-planner" className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700">Info</Link>
-                      <Link href={Routes.Contact} className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">Request Free</Link>
+                      <Link
+                        href="/workcell-planner"
+                        className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
+                      >
+                        Info
+                      </Link>
+                      <Link
+                        href={Routes.Contact}
+                        className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
+                      >
+                        Request Free
+                      </Link>
                     </div>
                   </td>
                 </tr>
                 <tr>
                   <td className="px-6 py-3">
-                    <span className="font-medium text-gray-900">Operations Manager</span>
+                    <span className="font-medium text-gray-900">
+                      Operations Manager
+                    </span>
                     <span className="ml-2 font-bold text-green-600">Free</span>
                   </td>
                   <td className="px-6 py-3 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <Link href="/operations-manager" className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700">Info</Link>
-                      <Link href={Routes.Contact} className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">Request Free</Link>
+                      <Link
+                        href="/operations-manager"
+                        className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
+                      >
+                        Info
+                      </Link>
+                      <Link
+                        href={Routes.Contact}
+                        className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
+                      >
+                        Request Free
+                      </Link>
                     </div>
                   </td>
                 </tr>
                 <tr className="bg-gray-50">
                   <td className="px-6 py-3">
-                    <span className="font-medium text-gray-900">Spreadsheet QC</span>
+                    <span className="font-medium text-gray-900">
+                      Spreadsheet QC
+                    </span>
                     <span className="ml-2 font-bold text-green-600">Free</span>
                   </td>
                   <td className="px-6 py-3 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <Link href="/spreadsheet-qc" className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700">Info</Link>
-                      <Link href={Routes.Contact} className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">Request Free</Link>
+                      <Link
+                        href="/spreadsheet-qc"
+                        className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
+                      >
+                        Info
+                      </Link>
+                      <Link
+                        href={Routes.Contact}
+                        className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
+                      >
+                        Request Free
+                      </Link>
                     </div>
                   </td>
                 </tr>

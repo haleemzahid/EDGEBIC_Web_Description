@@ -1,6 +1,6 @@
 import React from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -45,7 +45,7 @@ export default function ThankYouJSLPage() {
                   href="/jsl-job-scheduler-lite-download"
                   className="inline-block rounded-lg bg-blue-600 px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-blue-700"
                 >
-                  Download EDGEBIC
+                  Download EDGEBI
                 </Link>
               </div>
 

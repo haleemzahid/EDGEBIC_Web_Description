@@ -6,10 +6,10 @@ import { motion } from 'framer-motion';
 import { GraduationCap } from 'lucide-react';
 
 const newsItems = [
-  'EDGEBIC announces revolutionary method for Production Planning and Scheduling evaluations',
+  'EDGEBI announces revolutionary method for Production Planning and Scheduling evaluations',
   'Forging Ahead: Leveraging ERP Data for Enhanced Planning and Scheduling',
-  'EDGEBIC continues partnerships with multiple Universities for real-life experience',
-  'EDGEBIC Unveils Revolutionary Manufacturing Software: Customized Solutions for Enhanced Scheduling',
+  'EDGEBI continues partnerships with multiple Universities for real-life experience',
+  'EDGEBI Unveils Revolutionary Manufacturing Software: Customized Solutions for Enhanced Scheduling',
   'Resource Manager-DB Innovates Li-ion Battery Production Scheduling',
   'Scheduling System Narrows Skills Gap for Fire-Rated Glass Manufacturing'
 ];

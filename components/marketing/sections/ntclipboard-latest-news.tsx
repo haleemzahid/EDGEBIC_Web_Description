@@ -11,7 +11,7 @@ const newsItems = [
   {
     id: 1,
     title:
-      'EDGEBIC announces revolutionary method for Production Planning and Scheduling evaluations',
+      'EDGEBI announces revolutionary method for Production Planning and Scheduling evaluations',
     link: '#'
   },
   {
@@ -23,13 +23,13 @@ const newsItems = [
   {
     id: 3,
     title:
-      'EDGEBIC continues partnerships with multiple Universities for real-life experience on launching a Production Scheduling Offering',
+      'EDGEBI continues partnerships with multiple Universities for real-life experience on launching a Production Scheduling Offering',
     link: '#'
   },
   {
     id: 4,
     title:
-      'EDGEBIC Unveils Revolutionary Manufacturing Software: Customized Solutions for Enhanced Scheduling and Planning',
+      'EDGEBI Unveils Revolutionary Manufacturing Software: Customized Solutions for Enhanced Scheduling and Planning',
     link: '#'
   },
   {
@@ -148,11 +148,10 @@ export function LatestNewsSection(): React.JSX.Element {
                 <button
                   key={index}
                   onClick={() => setCurrentIndex(index)}
-                  className={`size-3 rounded-full transition-all ${
-                    index === currentIndex
+                  className={`size-3 rounded-full transition-all ${index === currentIndex
                       ? 'bg-blue-600'
                       : 'bg-gray-300 hover:bg-gray-400'
-                  }`}
+                    }`}
                   aria-label={`Go to slide ${index + 1}`}
                   title={`Go to slide ${index + 1}`}
                 />

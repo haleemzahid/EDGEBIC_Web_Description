@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -88,7 +88,7 @@ export default function ProductionSchedulingProductsOldPage() {
               {/* EDGEBIC */}
               <Card>
                 <CardHeader className="bg-blue-50">
-                  <CardTitle>EDGEBIC </CardTitle>
+                  <CardTitle>EDGEBI </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
                   <p className="mb-4 text-muted-foreground">
@@ -120,7 +120,7 @@ export default function ProductionSchedulingProductsOldPage() {
               {/* EDGEBIC */}
               <Card>
                 <CardHeader className="bg-green-50">
-                  <CardTitle>EDGEBIC</CardTitle>
+                  <CardTitle>EDGEBI</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
                   <p className="mb-4 text-muted-foreground">

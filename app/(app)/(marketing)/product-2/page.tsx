@@ -243,7 +243,7 @@ export default function Product2Page(): React.JSX.Element {
                     Features
                   </th>
                   <th className="p-4 text-center font-semibold text-blue-600">
-                    EDGEBIC
+                    EDGEBI
                   </th>
                   <th className="p-4 text-center font-semibold text-orange-600">
                     Resource Manager DB

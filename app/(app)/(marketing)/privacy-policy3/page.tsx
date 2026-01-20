@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function PrivacyPolicy3Page() {
@@ -39,10 +38,10 @@ export default function PrivacyPolicy3Page() {
                   operations with affordable, easy-to-implement software.
                 </p>
                 <p className="text-muted-foreground">
-                  Our products include EDGEBIC , Resource Manager for Excel,
-                  Resource Manager DB, and EDGEBIC – designed to work the way
-                  you do, adapting to your specific needs without the complexity
-                  and cost of traditional enterprise systems.
+                  Our products include EDGEBI , Resource Manager for Excel,
+                  Resource Manager DB, and EDGEBI – designed to work the way you
+                  do, adapting to your specific needs without the complexity and
+                  cost of traditional enterprise systems.
                 </p>
               </CardContent>
             </Card>

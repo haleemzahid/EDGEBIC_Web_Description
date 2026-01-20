@@ -32,11 +32,9 @@ export function DashboardOverview({
     <div className="space-y-8 p-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Edgebic Dashboard
-        </h1>
+        <h1 className="text-3xl font-bold tracking-tight">Edgebi Dashboard</h1>
         <p className="text-muted-foreground">
-          Overview of your Edgebic sales, customers, and performance metrics
+          Overview of your Edgebi sales, customers, and performance metrics
         </p>
       </div>
 

@@ -29,12 +29,11 @@ export default function CompareProductsPage(): React.JSX.Element {
 
   const products = [
     {
-      name: 'EDGEBIC  ',
+      name: 'EDGEBI  ',
       tier: 'Starter',
       price: '$1,000+',
       description: 'Perfect for Job Shops & Small Manufacturers',
-      image:
-        '/images/Edgebic/2022-10/starter.png',
+      image: '/images/Edgebic/2022-10/starter.png',
       link: '/jsl-job-scheduler-lite',
       features: {
         'Shop Scheduling': false,
@@ -59,8 +58,7 @@ export default function CompareProductsPage(): React.JSX.Element {
       tier: 'Advanced',
       price: '$5,000+',
       description: 'Ideal for Growing SMBs & Mid-Size Companies',
-      image:
-        '/images/Edgebic/2022-11/advanced-1.png',
+      image: '/images/Edgebic/2022-11/advanced-1.png',
       link: '/resource-manager-db-2',
       features: {
         'Shop Scheduling': true,
@@ -85,8 +83,7 @@ export default function CompareProductsPage(): React.JSX.Element {
       tier: 'Premium',
       price: '$25,000+',
       description: 'Enterprise-Grade for Multi-Nationals',
-      image:
-        '/images/Edgebic/2022-11/Premium-1.png',
+      image: '/images/Edgebic/2022-11/Premium-1.png',
       link: '/edgebi',
       features: {
         'Shop Scheduling': true,

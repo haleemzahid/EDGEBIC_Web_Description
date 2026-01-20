@@ -15,7 +15,7 @@ export async function sendInstallerEmail(
 ): Promise<boolean> {
   const emailTemplate: EmailTemplate = {
     to: customerEmail,
-    subject: 'Your EdgebicInstaller is Ready!',
+    subject: 'Your Edgebi Installer is Ready!',
     htmlContent: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #f97316;">Welcome to NTClipboard!</h1>
@@ -25,7 +25,7 @@ export async function sendInstallerEmail(
         <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3>What's included:</h3>
           <ul>
-            <li>✅ Complete EdgebicDesktop Application</li>
+            <li>✅ Complete Edgebi Desktop Application</li>
             <li>✅ Smart PDF Data Extraction</li>
             <li>✅ Windows Clipboard Integration</li>
             <li>✅ Lifetime Updates</li>
@@ -35,7 +35,7 @@ export async function sendInstallerEmail(
         
         <a href="https://your-domain.com/download?token=SECURE_TOKEN" 
            style="background: linear-gradient(135deg, #f97316, #dc2626); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
-          Download EdgebicNow
+          Download Edgebi Now
         </a>
         
         <p style="margin-top: 30px;">
@@ -46,7 +46,7 @@ export async function sendInstallerEmail(
         
         <p>Need help? Reply to this email or contact us at support@ntclipboard.com</p>
         
-        <p>Best regards,<br>The EdgebicTeam</p>
+        <p>Best regards,<br>The Edgebi Team</p>
       </div>
     `
   };

@@ -20,7 +20,7 @@ const testimonials = [
     role: 'Operations Director',
     company: 'Electronics Assembly',
     quote:
-      'After struggling with our ERP for years, EDGEBIC gave us the production planning tools we actually needed. The drag-and-drop scheduling saves us hours every week.',
+      'After struggling with our ERP for years, EDGEBI gave us the production planning tools we actually needed. The drag-and-drop scheduling saves us hours every week.',
     rating: 5
   },
   {
@@ -125,7 +125,7 @@ export function NTClipboardTestimonials(): React.JSX.Element {
             </h3>
             <p className="mb-6 text-muted-foreground">
               Ready to transform your production scheduling? Let's discuss how
-              EDGEBIC can solve your specific challenges.
+              EDGEBI can solve your specific challenges.
             </p>
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
               <a

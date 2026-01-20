@@ -14,7 +14,7 @@ import { Providers } from './providers';
 const preconnectUrls = [
   'https://www.usersolutions.com',
   'https://www.youtube.com',
-  'https://i.ytimg.com',
+  'https://i.ytimg.com'
 ];
 
 export const viewport: Viewport = {
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
         url: '/og.jpg',
         width: 1200,
         height: 630,
-        alt: 'EDGEBIC - Production Planning Solution'
+        alt: 'EDGEBI - Production Planning Solution'
       }
     ]
   },
@@ -82,8 +82,14 @@ export default async function RootLayout({
         {/* Preconnect to external domains for faster loading */}
         {preconnectUrls.map((url) => (
           <React.Fragment key={url}>
-            <link rel="preconnect" href={url} />
-            <link rel="dns-prefetch" href={url} />
+            <link
+              rel="preconnect"
+              href={url}
+            />
+            <link
+              rel="dns-prefetch"
+              href={url}
+            />
           </React.Fragment>
         ))}
       </head>

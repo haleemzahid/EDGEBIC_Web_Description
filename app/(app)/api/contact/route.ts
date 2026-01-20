@@ -25,13 +25,16 @@ async function verifyCaptcha(token: string): Promise<boolean> {
   }
 
   try {
-    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: `secret=${secretKey}&response=${token}`,
-    });
+    const response = await fetch(
+      'https://www.google.com/recaptcha/api/siteverify',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: `secret=${secretKey}&response=${token}`
+      }
+    );
 
     const data = await response.json();
     return data.success === true;
@@ -151,15 +154,24 @@ export async function POST(request: NextRequest) {
     );
 
     // Send email notification to all recipients from env
-    const recipients = (process.env.EMAIL_CONTACT_RECIPIENTS || 'mudasirnadeem7979@gmail.com')
+    const recipients = (
+      process.env.EMAIL_CONTACT_RECIPIENTS || 'mudasirnadeem7979@gmail.com'
+    )
       .split(',')
       .map((email) => email.trim())
       .filter((email) => email.length > 0);
 
-    console.log('EMAIL_CONTACT_RECIPIENTS env:', process.env.EMAIL_CONTACT_RECIPIENTS);
+    console.log(
+      'EMAIL_CONTACT_RECIPIENTS env:',
+      process.env.EMAIL_CONTACT_RECIPIENTS
+    );
     console.log('Sending emails to recipients:', recipients);
 
-    const emailResults: { recipient: string; success: boolean; error?: string }[] = [];
+    const emailResults: {
+      recipient: string;
+      success: boolean;
+      error?: string;
+    }[] = [];
 
     for (const recipient of recipients) {
       try {
@@ -181,7 +193,11 @@ export async function POST(request: NextRequest) {
           `Error sending contact form email to ${recipient}:`,
           emailError
         );
-        emailResults.push({ recipient, success: false, error: String(emailError) });
+        emailResults.push({
+          recipient,
+          success: false,
+          error: String(emailError)
+        });
       }
     }
 

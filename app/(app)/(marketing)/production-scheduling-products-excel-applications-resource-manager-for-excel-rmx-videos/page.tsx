@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,7 +12,8 @@ export default function ProductionSchedulingProductsVideosPage() {
         <div className="container mx-auto max-w-7xl px-4 text-center">
           <h1 className="mb-4 text-4xl font-bold">Product Videos</h1>
           <p className="text-lg text-muted-foreground">
-            Production Scheduling Products | Excel Applications | Resource Manager for Excel (RMX) Videos
+            Production Scheduling Products | Excel Applications | Resource
+            Manager for Excel (RMX) Videos
           </p>
         </div>
       </section>
@@ -27,13 +28,14 @@ export default function ProductionSchedulingProductsVideosPage() {
                 <h2 className="mb-4 text-2xl font-bold">Welcome</h2>
                 <p className="mb-4 text-muted-foreground">
                   Welcome to User Solutions product video gallery. Explore our
-                  comprehensive manufacturing software solutions designed to streamline
-                  your production scheduling and planning processes.
+                  comprehensive manufacturing software solutions designed to
+                  streamline your production scheduling and planning processes.
                 </p>
                 <p className="text-muted-foreground">
-                  From Excel-based tools to enterprise-grade database solutions, our
-                  videos demonstrate how each product can help you optimize workflows,
-                  reduce scheduling conflicts, and improve overall manufacturing efficiency.
+                  From Excel-based tools to enterprise-grade database solutions,
+                  our videos demonstrate how each product can help you optimize
+                  workflows, reduce scheduling conflicts, and improve overall
+                  manufacturing efficiency.
                 </p>
               </div>
               <div className="overflow-hidden rounded-lg bg-slate-100">
@@ -95,7 +97,9 @@ export default function ProductionSchedulingProductsVideosPage() {
 
               {/* Resource Manager For Excel */}
               <div>
-                <h3 className="mb-3 text-xl font-bold">Resource Manager For Excel</h3>
+                <h3 className="mb-3 text-xl font-bold">
+                  Resource Manager For Excel
+                </h3>
                 <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100">
                   <iframe
                     src="https://www.youtube.com/embed/DRWDNVq31l4"
@@ -116,18 +120,18 @@ export default function ProductionSchedulingProductsVideosPage() {
 
               {/* EDGEBIC */}
               <div>
-                <h3 className="mb-3 text-xl font-bold">EDGEBIC</h3>
+                <h3 className="mb-3 text-xl font-bold">EDGEBI</h3>
                 <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100">
                   <iframe
                     src="https://www.youtube.com/embed/snltXMHeojU"
-                    title="EDGEBIC Video"
+                    title="EDGEBI Video"
                     className="size-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                   />
                 </div>
                 <p className="mb-3 text-sm text-muted-foreground">
-                  Introduction to EDGEBIC for simplified production scheduling
+                  Introduction to EDGEBI for simplified production scheduling
                 </p>
                 <Link href="/jsl-job-scheduler-lite">
                   <Button size="sm">Learn More</Button>
@@ -141,8 +145,8 @@ export default function ProductionSchedulingProductsVideosPage() {
                 Resource Manager Training Videos (RMX)
               </h2>
               <p className="mb-6 text-muted-foreground">
-                Complete training video series covering all aspects of
-                Resource Manager for Excel
+                Complete training video series covering all aspects of Resource
+                Manager for Excel
               </p>
               <div className="grid gap-8 md:grid-cols-2">
                 <div>
@@ -159,8 +163,8 @@ export default function ProductionSchedulingProductsVideosPage() {
                     />
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Learn how to build Bills of Resource in Resource Manager
-                    for Excel
+                    Learn how to build Bills of Resource in Resource Manager for
+                    Excel
                   </p>
                 </div>
                 <div>
@@ -195,8 +199,8 @@ export default function ProductionSchedulingProductsVideosPage() {
                     />
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Using Forecast Calendar for production planning in
-                    Resource Manager for Excel
+                    Using Forecast Calendar for production planning in Resource
+                    Manager for Excel
                   </p>
                 </div>
                 <div>
@@ -231,8 +235,8 @@ export default function ProductionSchedulingProductsVideosPage() {
                     />
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Generating and analyzing Summary Reports in Resource
-                    Manager for Excel
+                    Generating and analyzing Summary Reports in Resource Manager
+                    for Excel
                   </p>
                 </div>
                 <div>

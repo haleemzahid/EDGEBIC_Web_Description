@@ -146,7 +146,7 @@ export default function NavigationDemoPage(): React.JSX.Element {
             </CardHeader>
             <CardContent>
               <p className="text-blue-800">
-                Your EDGEBIC project now has a complete, smooth navigation
+                Your EDGEBI project now has a complete, smooth navigation
                 system! Check the NAVIGATION_GUIDE.md file for detailed usage
                 instructions and customization options.
               </p>

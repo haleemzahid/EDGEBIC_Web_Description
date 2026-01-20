@@ -1,7 +1,7 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Script from 'next/script';
-import { Suspense } from 'react';
 
 import { RMDBFeatureList } from '@/components/marketing/sections/rmdb-feature-list';
 import { RMDBTabsClient } from '@/components/marketing/sections/rmdb-tabs-client';
@@ -18,7 +18,7 @@ const IMAGES = {
   awardsBanner: '/images/rmdb/awards-banner.jpg',
   // Local video paths
   heroVideo: 'https://www.youtube.com/watch?v=kn92TIHhbm8',
-  summaryVideo: 'https://www.youtube.com/watch?v=6B4A-acolGk',
+  summaryVideo: 'https://www.youtube.com/watch?v=6B4A-acolGk'
 };
 
 export const metadata: Metadata = {
@@ -36,34 +36,34 @@ export const metadata: Metadata = {
     'inventory management',
     'drag and drop scheduling',
     'Excel integration',
-    'manufacturing software',
+    'manufacturing software'
   ],
   alternates: {
-    canonical: `${BASE_URL}/resource-manager-db-2`,
+    canonical: `${BASE_URL}/resource-manager-db-2`
   },
   openGraph: {
     title: 'Resource Manager DB - User Solutions',
     description:
       'Flexible and affordable production planning, scheduling, and tracking solution. Features finite capacity planning, MRP, and drag-and-drop scheduling.',
     url: `${BASE_URL}/resource-manager-db-2`,
-    siteName: 'EDGEBIC',
+    siteName: 'EDGEBI',
     images: [
       {
         url: `${BASE_URL}/images/rmdb/rmdb-edge-hero.png`,
         width: 1024,
         height: 483,
-        alt: 'Resource Manager DB - EDGE Interface',
-      },
+        alt: 'Resource Manager DB - EDGE Interface'
+      }
     ],
     locale: 'en_US',
-    type: 'website',
+    type: 'website'
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Resource Manager DB - Production Planning & Scheduling Software',
     description:
       'Flexible and affordable production planning, scheduling, and tracking solution designed to adapt to your operations.',
-    images: [`${BASE_URL}/images/rmdb/rmdb-edge-hero.png`],
+    images: [`${BASE_URL}/images/rmdb/rmdb-edge-hero.png`]
   },
   robots: {
     index: true,
@@ -73,9 +73,9 @@ export const metadata: Metadata = {
       follow: true,
       'max-video-preview': -1,
       'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
+      'max-snippet': -1
+    }
+  }
 };
 
 // JSON-LD Structured Data for SEO
@@ -91,12 +91,12 @@ const jsonLd = {
     '@type': 'Offer',
     price: '0',
     priceCurrency: 'USD',
-    availability: 'https://schema.org/InStock',
+    availability: 'https://schema.org/InStock'
   },
   aggregateRating: {
     '@type': 'AggregateRating',
     ratingValue: '4.8',
-    ratingCount: '150',
+    ratingCount: '150'
   },
   featureList: [
     'Finite Capacity Planning & Scheduling',
@@ -105,15 +105,15 @@ const jsonLd = {
     'Drag and Drop Adjustments',
     'Excel Integration',
     'Production Planning',
-    'Customized Reports',
+    'Customized Reports'
   ],
   screenshot: `${BASE_URL}/images/rmdb/rmdb-edge-hero.png`,
   softwareVersion: '2023',
   publisher: {
     '@type': 'Organization',
     name: 'User Solutions',
-    url: 'https://www.usersolutions.com',
-  },
+    url: 'https://www.usersolutions.com'
+  }
 };
 
 // Summary tab content - rendered server-side
@@ -130,13 +130,14 @@ function SummaryContent() {
             </p>
             <p>
               RMDB was specifically architected to easily adapt to the way you
-              work, using your existing data. It can be easily configured, and/or
-              reconfigured, on the fly to address your most pressing issues.
+              work, using your existing data. It can be easily configured,
+              and/or reconfigured, on the fly to address your most pressing
+              issues.
             </p>
             <p>
-              We can focus and resolve your most pressing issues quickly — letting
-              you reap immediate ROI. Then, delve deeper without having to spend
-              more!
+              We can focus and resolve your most pressing issues quickly —
+              letting you reap immediate ROI. Then, delve deeper without having
+              to spend more!
             </p>
             <p>
               Schedule a live demo, even using your data in its current form –
@@ -190,12 +191,12 @@ function QuickStartContent() {
         <div className="space-y-4 text-base leading-relaxed text-slate-600">
           <p>
             Get started with Resource Manager-DB quickly and easily. Our Quick
-            Start guide provides step-by-step instructions to help you set up and
-            configure RMDB for your specific needs.
+            Start guide provides step-by-step instructions to help you set up
+            and configure RMDB for your specific needs.
           </p>
           <p>
-            Download the comprehensive Quick Start PDF guide to begin your journey
-            with RMDB.
+            Download the comprehensive Quick Start PDF guide to begin your
+            journey with RMDB.
           </p>
           <a
             href="/pdf/rmdbquickstart23.pdf"
@@ -230,13 +231,13 @@ function LiveDemoContent() {
         <h2 className="mb-4 text-2xl font-bold text-slate-900">Live Demo</h2>
         <div className="space-y-4 text-base leading-relaxed text-slate-600">
           <p>
-            See Resource Manager-DB in action! Schedule a live demo with our team
-            to experience how RMDB can transform your production planning and
-            scheduling processes.
+            See Resource Manager-DB in action! Schedule a live demo with our
+            team to experience how RMDB can transform your production planning
+            and scheduling processes.
           </p>
           <p>
-            We can even use your data in its current form to show you exactly how
-            RMDB will work for your specific operations – RISK FREE!
+            We can even use your data in its current form to show you exactly
+            how RMDB will work for your specific operations – RISK FREE!
           </p>
           <a
             href="https://calendly.com/mudasirnadeem7979/30min"
@@ -276,20 +277,27 @@ export default function ResourceManagerDBPage() {
 
       <main className="min-h-screen">
         {/* Hero Section */}
-        <section className="pt-6" aria-labelledby="hero-heading">
+        <section
+          className="pt-6"
+          aria-labelledby="hero-heading"
+        >
           <div className="container mx-auto max-w-7xl px-4">
             <div className="grid items-center gap-8 lg:grid-cols-2">
               <div>
-                <h1 id="hero-heading" className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl">
+                <h1
+                  id="hero-heading"
+                  className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl"
+                >
                   Resource Manager DB
                 </h1>
                 <p className="text-lg leading-relaxed text-slate-600">
-                  Resource Manager-DB (RMDB) is a flexible and affordable production
-                  planning, scheduling, and tracking solution that is designed to
-                  adapt to your operations. We can work with whatever data you have
-                  to achieve better production scheduling, just easier and quicker
-                  than you ever thought possible. Give US a chance to prove it by
-                  scheduling a Live Demo today!
+                  Resource Manager-DB (RMDB) is a flexible and affordable
+                  production planning, scheduling, and tracking solution that is
+                  designed to adapt to your operations. We can work with
+                  whatever data you have to achieve better production
+                  scheduling, just easier and quicker than you ever thought
+                  possible. Give US a chance to prove it by scheduling a Live
+                  Demo today!
                 </p>
               </div>
               <div className="flex justify-center">
@@ -309,7 +317,11 @@ export default function ResourceManagerDBPage() {
         {/* Tabs Section - Client Component */}
         <Suspense
           fallback={
-            <div className="min-h-[200px] animate-pulse bg-slate-100 rounded-lg mx-4" aria-busy="true" aria-label="Loading tabs" />
+            <div
+              className="min-h-[200px] animate-pulse bg-slate-100 rounded-lg mx-4"
+              aria-busy="true"
+              aria-label="Loading tabs"
+            />
           }
         >
           <RMDBTabsClient

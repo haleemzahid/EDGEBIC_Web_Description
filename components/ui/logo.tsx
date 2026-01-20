@@ -30,7 +30,7 @@ export function Logo({
             {/* EDGEBIC Logo */}
             <Image
               src="/logos/edgebic-logo.png"
-              alt="EDGEBIC Logo"
+              alt="EDGEBI Logo"
               width={120}
               height={50}
               className="object-contain"

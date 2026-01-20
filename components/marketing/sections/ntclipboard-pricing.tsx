@@ -18,7 +18,7 @@ import { getNTClipboardPricing } from '@/lib/billing/get-ntclipboard-pricing';
 import { PurchaseForm } from './purchase-form';
 
 const features = [
-  'Complete EDGEBIC Production Planning Solution',
+  'Complete EDGEBI Production Planning Solution',
   'Advanced Production Scheduling',
   'Real-time Tracking & Monitoring',
   'Custom Data Integration',
@@ -79,12 +79,12 @@ export async function NTClipboardPricing(): Promise<React.JSX.Element> {
                       size="lg"
                       className="mb-4 w-full bg-gradient-to-r from-orange-500 to-red-500 py-4 text-lg font-bold text-white hover:from-orange-600 hover:to-red-600"
                     >
-                      Get EDGEBIC Now - {displayPrice}
+                      Get EDGEBI Now - {displayPrice}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                      <DialogTitle>Purchase EDGEBIC</DialogTitle>
+                      <DialogTitle>Purchase EDGEBI</DialogTitle>
                     </DialogHeader>
                     <PurchaseForm price={displayPrice} />
                   </DialogContent>

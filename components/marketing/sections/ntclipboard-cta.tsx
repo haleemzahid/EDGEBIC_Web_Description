@@ -27,7 +27,7 @@ export async function NTClipboardCTA(): Promise<React.JSX.Element> {
               className="bg-gradient-to-r from-orange-500 to-red-500 px-8 py-3 text-lg font-bold text-white hover:from-orange-600 hover:to-red-600"
               asChild
             >
-              <a href="#EDGEBICPricing">Get EDGEBIC - {displayPrice}</a>
+              <a href="#EDGEBICPricing">Get EDGEBI - {displayPrice}</a>
             </Button>
             <Button
               size="lg"

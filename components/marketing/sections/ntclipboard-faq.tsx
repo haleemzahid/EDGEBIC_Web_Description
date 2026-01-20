@@ -14,17 +14,17 @@ async function getFaqs(price: string) {
     {
       question: 'What types of PDFs does Edgebicwork with?',
       answer:
-        'Edgebicworks with any PDF containing structured data like parts lists, inventory documents, job sheets, and technical specifications. It uses intelligent pattern recognition to identify part numbers, descriptions, quantities, weights, and job numbers.'
+        'Edgebi works with any PDF containing structured data like parts lists, inventory documents, job sheets, and technical specifications. It uses intelligent pattern recognition to identify part numbers, descriptions, quantities, weights, and job numbers.'
     },
     {
       question: 'How secure is my data?',
       answer:
-        'Your data never leaves your computer. Edgebicprocesses everything locally on your Windows machine, ensuring complete privacy and security. No internet connection is required for the core functionality.'
+        'Your data never leaves your computer. Edgebi processes everything locally on your Windows machine, ensuring complete privacy and security. No internet connection is required for the core functionality.'
     },
     {
       question: 'What keyboard shortcuts are available?',
       answer:
-        'Edgebicincludes several time-saving shortcuts: ESC to clear, TAB to send selected items to clipboard, and ` (backtick) to view current clipboard contents. The app also minimizes to system tray for quick access.'
+        'Edgebi includes several time-saving shortcuts: ESC to clear, TAB to send selected items to clipboard, and ` (backtick) to view current clipboard contents. The app also minimizes to system tray for quick access.'
     },
     // {
     //   question: 'Can I customize the output format?',

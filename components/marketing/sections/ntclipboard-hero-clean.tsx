@@ -23,7 +23,7 @@ function HeroButtons({ price }: HeroButtonsProps): React.JSX.Element {
         asChild
         className="bg-gradient-to-r from-orange-500 to-red-500 px-8 py-3 text-lg font-bold text-white hover:from-orange-600 hover:to-red-600"
       >
-        <a href="#NTClipboardPricing">Get Edgebic- {price}</a>
+        <a href="#NTClipboardPricing">Get Edgebi- {price}</a>
       </Button>
       <Button
         size="lg"
@@ -100,7 +100,7 @@ export async function NTClipboardHero(): Promise<React.JSX.Element> {
             Like Never Before
           </h1>
           <p className="mx-auto mb-6 max-w-3xl text-xl text-muted-foreground md:text-2xl">
-            Transform your workflow with Edgebic- the ultimate tool for
+            Transform your workflow with Edgebi- the ultimate tool for
             extracting and managing data from PDFs with seamless clipboard
             integration.
           </p>

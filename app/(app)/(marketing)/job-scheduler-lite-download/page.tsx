@@ -14,7 +14,7 @@ export default function JobSchedulerLiteDownloadPage() {
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              EDGEBIC Download
+              EDGEBI Download
             </h1>
             <p className="text-xl">60 day fully functional trial</p>
           </div>
@@ -54,7 +54,7 @@ export default function JobSchedulerLiteDownloadPage() {
                   href="https://www.usersolutions.com/wp-content/uploads/2022/10/JSLsetup.zip"
                   className="text-blue-600 hover:underline"
                 >
-                  EDGEBIC Download
+                  EDGEBI Download
                 </a>
               </CardTitle>
             </CardHeader>
@@ -196,14 +196,14 @@ export default function JobSchedulerLiteDownloadPage() {
 
                 <Image
                   src="/images/Edgebic/2022-10/blck.png"
-                  alt="Screenshot of EDGEBIC folder with files"
+                  alt="Screenshot of EDGEBI folder with files"
                   width={800}
                   height={600}
                   className="my-6 h-auto w-full rounded-lg shadow-md"
                   loading="lazy"
                 />
 
-                <p>The database will default to C:\ProgramData\EDGEBIC</p>
+                <p>The database will default to C:\ProgramData\EDGEBI</p>
 
                 <p>
                   The third file is an Excel file for quickly loading data. That

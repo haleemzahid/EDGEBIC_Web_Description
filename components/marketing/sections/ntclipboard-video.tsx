@@ -54,15 +54,14 @@ export function NTClipboardVideo({
     {
       url: 'https://www.youtube.com/watch?v=fvvMj__YHbw',
       title: '  — Summary',
-      description:
-        'Summary of   features and capabilities',
+      description: 'Summary of   features and capabilities',
       category: 'Product Demo'
     },
     {
       url: 'https://www.youtube.com/watch?v=snltXMHeojU',
-      title: 'Welcome to EDGEBIC  ',
+      title: 'Welcome to EDGEBI  ',
       description:
-        'Introduction to EDGEBIC for simplified production scheduling',
+        'Introduction to EDGEBI for simplified production scheduling',
       category: 'Product Demo'
     },
     {

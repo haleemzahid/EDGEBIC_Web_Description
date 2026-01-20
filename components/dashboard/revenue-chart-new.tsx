@@ -53,9 +53,7 @@ export function RevenueChart(): React.JSX.Element {
     <Card>
       <CardHeader>
         <CardTitle>Revenue Over Time</CardTitle>
-        <CardDescription>
-          Monthly revenue from Edgebic sales
-        </CardDescription>
+        <CardDescription>Monthly revenue from EDGEBI sales</CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (

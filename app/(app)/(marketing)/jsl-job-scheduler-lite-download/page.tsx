@@ -3,22 +3,20 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 
 import { JSLDownloadForm } from '@/components/marketing/sections/jsl-download-form';
-
 import { Card, CardContent } from '@/components/ui/card';
 import { createTitle } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: createTitle('EDGEBIC   Download'),
+  title: createTitle('EDGEBI   Download'),
   description:
-    'Download EDGEBIC   - 60 day fully functional trial. Production scheduling software with Excel integration and .NET framework support.'
+    'Download EDGEBI   - 60 day fully functional trial. Production scheduling software with Excel integration and .NET framework support.'
 };
 
 export default function JSLDownloadPage(): React.JSX.Element {
   return (
     <div className="container mx-auto px-4 pt-6">
       {/* Page Badge */}
-      <div className="mb-6 text-center">
-      </div>
+      <div className="mb-6 text-center"></div>
       {/* Header Section */}
       <div className="mb-6 text-center">
         <h1 className="mb-6 text-4xl font-bold">
@@ -27,7 +25,7 @@ export default function JSLDownloadPage(): React.JSX.Element {
             download="JSLsetup.zip"
             className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline"
           >
-            EDGEBIC Download
+            EDGEBI Download
           </a>
         </h1>
         <p className="text-xl font-semibold text-green-600">
@@ -92,13 +90,13 @@ export default function JSLDownloadPage(): React.JSX.Element {
             className="mx-auto rounded-lg border shadow-md"
           />
           <p className="mt-4 text-sm text-muted-foreground">
-            EDGEBIC folder structure after installation
+            EDGEBI folder structure after installation
           </p>
         </div>
 
         <div className="mt-6 space-y-4 text-gray-700">
           <p>
-            The database will default to <strong>C:\ProgramData\EDGEBIC</strong>
+            The database will default to <strong>C:\ProgramData\EDGEBI</strong>
           </p>
 
           <p>

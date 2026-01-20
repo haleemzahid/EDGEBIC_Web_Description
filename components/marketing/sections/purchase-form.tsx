@@ -80,19 +80,19 @@ export function PurchaseForm({ onSuccess, price = '$49' }: PurchaseFormProps) {
 
   const handleInputChange =
     (field: keyof typeof formData) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setFormData((prev) => ({
-        ...prev,
-        [field]: e.target.value
-      }));
-      // Clear error when user starts typing
-      if (errors[field]) {
-        setErrors((prev) => ({
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData((prev) => ({
           ...prev,
-          [field]: ''
+          [field]: e.target.value
         }));
-      }
-    };
+        // Clear error when user starts typing
+        if (errors[field]) {
+          setErrors((prev) => ({
+            ...prev,
+            [field]: ''
+          }));
+        }
+      };
 
   return (
     <form
@@ -148,7 +148,7 @@ export function PurchaseForm({ onSuccess, price = '$49' }: PurchaseFormProps) {
         className="w-full bg-gradient-to-r from-orange-500 to-red-500 py-4 text-lg font-bold text-white hover:from-orange-600 hover:to-red-600"
         disabled={isLoading}
       >
-        {isLoading ? 'Processing...' : `Purchase Edgebic- ${price}`}
+        {isLoading ? 'Processing...' : `Purchase Edgebi- ${price}`}
       </Button>
 
       <div className="text-center">
