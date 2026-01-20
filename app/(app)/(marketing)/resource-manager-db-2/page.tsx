@@ -299,6 +299,7 @@ export default function ResourceManagerDBPage() {
                     className="h-full w-full"
                     title="Resource Manager DB product overview video"
                     priority
+                    hidePlayButton={true}
                   />
                 </div>
               </div>

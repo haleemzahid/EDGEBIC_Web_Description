@@ -9,6 +9,7 @@ interface HeroVideoProps {
   title: string;
   className?: string;
   priority?: boolean;
+  hidePlayButton?: boolean;
 }
 
 export function HeroVideo({
@@ -17,6 +18,7 @@ export function HeroVideo({
   title,
   className = '',
   priority = false,
+  hidePlayButton = false,
 }: HeroVideoProps) {
   const [showVideo, setShowVideo] = React.useState(false);
   const [isLoaded, setIsLoaded] = React.useState(false);
@@ -49,22 +51,25 @@ export function HeroVideo({
             onLoad={() => setIsLoaded(true)}
           />
           {/* Play button overlay */}
-          <button
-            onClick={handlePlayClick}
-            className="absolute inset-0 flex items-center justify-center bg-black/20 transition-colors hover:bg-black/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
-            aria-label={`Play ${title}`}
-          >
-            <div className={`flex size-16 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-110 ${isYouTube ? 'bg-red-600' : 'bg-white/90'}`}>
-              <svg
-                className={`ml-1 size-8 ${isYouTube ? 'text-white' : 'text-cyan-600'}`}
-                fill="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
-          </button>
+          {!hidePlayButton && (
+            <button
+              type="button"
+              onClick={handlePlayClick}
+              className="absolute inset-0 flex items-center justify-center bg-black/20 transition-colors hover:bg-black/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+              aria-label={`Play ${title}`}
+            >
+              <div className={`flex size-16 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-110 ${isYouTube ? 'bg-red-600' : 'bg-white/90'}`}>
+                <svg
+                  className={`ml-1 size-8 ${isYouTube ? 'text-white' : 'text-cyan-600'}`}
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+            </button>
+          )}
         </>
       ) : isYouTube ? (
         <iframe

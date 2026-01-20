@@ -110,6 +110,7 @@ export function EDGEBIContent() {
               poster="/images/rmdb/rmdb-edge-hero.png"
               className="h-full w-full object-cover"
               title="EDGE BI User Solutions demonstration video"
+              hidePlayButton={true}
             />
           </div>
         </div>

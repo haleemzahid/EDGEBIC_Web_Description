@@ -7,9 +7,10 @@ interface LazyVideoProps {
   poster?: string;
   className?: string;
   title?: string;
+  hidePlayButton?: boolean;
 }
 
-export function LazyVideo({ src, poster, className = '', title = 'Video content' }: LazyVideoProps) {
+export function LazyVideo({ src, poster, className = '', title = 'Video content', hidePlayButton = false }: LazyVideoProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const [isInView, setIsInView] = React.useState(false);
@@ -66,17 +67,19 @@ export function LazyVideo({ src, poster, className = '', title = 'Video content'
               />
             )}
             {/* Play button overlay */}
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition-colors hover:bg-black/30">
-              <div className="flex size-16 items-center justify-center rounded-full bg-red-600 shadow-lg transition-transform hover:scale-110">
-                <svg
-                  className="ml-1 size-8 text-white"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M8 5v14l11-7z" />
-                </svg>
+            {!hidePlayButton && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition-colors hover:bg-black/30">
+                <div className="flex size-16 items-center justify-center rounded-full bg-red-600 shadow-lg transition-transform hover:scale-110">
+                  <svg
+                    className="ml-1 size-8 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </div>
               </div>
-            </div>
+            )}
           </button>
         ) : (
           // Full YouTube iframe (only loads when user clicks play)
