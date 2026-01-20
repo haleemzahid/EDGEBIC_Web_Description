@@ -68,11 +68,11 @@ export function HeroVideo({
         </>
       ) : isYouTube ? (
         <iframe
-          src={`https://www.youtube.com/embed/${getVideoId(src)}?autoplay=1`}
+          src={`https://www.youtube.com/embed/${getVideoId(src)}`}
           title={title}
           className="size-full"
           frameBorder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           referrerPolicy="strict-origin-when-cross-origin"
           allowFullScreen
         />

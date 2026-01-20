@@ -980,7 +980,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 ))}
               </div>
 
-              <h4 className="mb-3 text-left text-lg font-semibold text-[#003d5c]">
+              <h4 className="text-left text-lg font-semibold text-[#003d5c]">
                 "Flexible MRP with great ongoing support"
               </h4>
 
