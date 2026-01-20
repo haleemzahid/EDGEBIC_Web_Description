@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Check } from 'lucide-react';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { YouTubeFacade } from '@/components/ui/youtube-facade';
 
 // Lazy load In Depth content
 const RMXInDepthContent = dynamic(
@@ -61,12 +62,11 @@ export default function ResourceManagerForExcel2Page() {
 
             {/* Video - Right Side */}
             <div className="aspect-video overflow-hidden rounded-lg shadow-lg">
-              <iframe
-                src="https://www.youtube.com/embed/DRWDNVq31l4"
+              <YouTubeFacade
+                videoId="DRWDNVq31l4"
                 title="Resource Manager For Excel Video"
                 className="size-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
+                hidePlayButton={true}
               />
             </div>
           </div>
@@ -169,12 +169,11 @@ export default function ResourceManagerForExcel2Page() {
               {/* Video Section */}
               <div className="flex justify-center">
                 <div className="aspect-video w-full max-w-3xl overflow-hidden rounded-lg shadow-lg">
-                  <iframe
-                    src="https://www.youtube.com/embed/74uO2H-eevc"
+                  <YouTubeFacade
+                    videoId="74uO2H-eevc"
                     title="Resource Manager for Excel Demo Video"
                     className="size-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
+                    hidePlayButton={true}
                   />
                 </div>
               </div>

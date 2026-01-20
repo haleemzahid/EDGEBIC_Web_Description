@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Check } from 'lucide-react';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { YouTubeFacade } from '@/components/ui/youtube-facade';
 
 // Lazy load In Depth content
 const WCXLInDepthContent = dynamic(
@@ -60,12 +61,11 @@ export default function WorkcenterSchedulerXLPage() {
 
             {/* Video - Right Side */}
             <div className="aspect-video overflow-hidden rounded-lg shadow-lg">
-              <iframe
-                src="https://www.youtube.com/embed/fvvMj__YHbw"
+              <YouTubeFacade
+                videoId="fvvMj__YHbw"
                 title="Workcenter Scheduler XL Video"
                 className="size-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
+                hidePlayButton={true}
               />
             </div>
           </div>
@@ -174,12 +174,11 @@ export default function WorkcenterSchedulerXLPage() {
               {/* Video Section */}
               <div className="flex justify-center">
                 <div className="aspect-video w-full max-w-3xl overflow-hidden rounded-lg shadow-lg">
-                  <iframe
-                    src="https://www.youtube.com/embed/L4wDboRFU6k"
+                  <YouTubeFacade
+                    videoId="L4wDboRFU6k"
                     title="Workcenter Scheduler XL Demo Video"
                     className="size-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
+                    hidePlayButton={true}
                   />
                 </div>
               </div>

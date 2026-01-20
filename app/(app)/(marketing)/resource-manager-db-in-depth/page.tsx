@@ -5,6 +5,7 @@ import Image from 'next/image';
 
 import { EDGEBIContent } from '@/components/marketing/sections/edgebi-content';
 import { RMDBFeatureList } from '@/components/marketing/sections/rmdb-feature-list';
+import { YouTubeFacade } from '@/components/ui/youtube-facade';
 
 type TabType = 'summary' | 'in-depth' | 'quick-start' | 'edgebi' | 'live-demo';
 
@@ -97,13 +98,11 @@ export default function ResourceManagerDBInDepthPage() {
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div className="flex justify-center">
                   <div className="w-full overflow-hidden rounded-lg bg-black shadow-lg">
-                    <iframe
-                      className="aspect-video w-full"
-                      src="https://www.youtube.com/embed/kn92TIHhbm8?rel=0"
+                    <YouTubeFacade
+                      videoId="kn92TIHhbm8"
                       title="Resource Manager DB Summary"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
+                      className="aspect-video w-full"
+                      hidePlayButton={true}
                     />
                   </div>
                 </div>

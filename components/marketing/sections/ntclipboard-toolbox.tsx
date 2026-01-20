@@ -198,12 +198,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                       className="mb-4 w-full border-green-200 text-green-700 hover:bg-green-50"
                       asChild
                     >
-                      <Link
-                        href="/resource-manager-db-2"
-                        target="_blank"
-                      >
-                        View Details
-                      </Link>
+                      <Link href="/resource-manager-db-2">View Details</Link>
                     </Button>
                     {/* <div className="text-center text-3xl font-bold text-green-700">
                       $3K+

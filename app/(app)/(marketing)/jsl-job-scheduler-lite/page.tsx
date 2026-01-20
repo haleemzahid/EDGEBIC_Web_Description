@@ -3,6 +3,7 @@ import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { YouTubeFacade } from '@/components/ui/youtube-facade';
 
 export default function JobSchedulerLitePage(): React.JSX.Element {
   return (
@@ -65,13 +66,11 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
             <h2 className="mb-4 text-3xl font-bold text-foreground">See JSL in Action</h2>
             <div className="grid gap-8 md:grid-cols-2">
               <div className="overflow-hidden rounded-lg bg-black shadow-lg">
-                <iframe
-                  className="aspect-video w-full"
-                  src="https://www.youtube.com/embed/snltXMHeojU?rel=0"
+                <YouTubeFacade
+                  videoId="snltXMHeojU"
                   title="EDGEBIC Demo Video"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
+                  className="aspect-video w-full"
+                  hidePlayButton={true}
                 />
               </div>
               <div>

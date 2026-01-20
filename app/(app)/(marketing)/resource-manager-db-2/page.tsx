@@ -6,7 +6,7 @@ import { Suspense } from 'react';
 import { RMDBFeatureList } from '@/components/marketing/sections/rmdb-feature-list';
 import { RMDBTabsClient } from '@/components/marketing/sections/rmdb-tabs-client';
 import { Card, CardContent } from '@/components/ui/card';
-import { HeroVideo } from '@/components/ui/hero-video';
+import { YouTubeFacade } from '@/components/ui/youtube-facade';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://edgebic.com';
 
@@ -294,11 +294,10 @@ export default function ResourceManagerDBPage() {
               </div>
               <div className="flex justify-center">
                 <div className="aspect-video w-full max-w-[700px] overflow-hidden rounded-lg shadow-lg">
-                  <HeroVideo
-                    src={IMAGES.heroVideo}
-                    className="h-full w-full"
+                  <YouTubeFacade
+                    videoId="kn92TIHhbm8"
                     title="Resource Manager DB product overview video"
-                    priority
+                    className="size-full"
                     hidePlayButton={true}
                   />
                 </div>
