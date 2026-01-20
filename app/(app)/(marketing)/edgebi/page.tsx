@@ -67,6 +67,7 @@ export default function EDGEBIPage(): React.JSX.Element {
                   videoId="_0LjI9MY8zo"
                   title="EDGEBI Demo"
                   className="aspect-video w-full"
+                  hidePlayButton={true}
                 />
               </div>
             </div>
@@ -221,6 +222,7 @@ export default function EDGEBIPage(): React.JSX.Element {
                       videoId="kn92TIHhbm8"
                       title="Resource Manager DB Summary"
                       className="aspect-video w-full"
+                      hidePlayButton={true}
                     />
                   </div>
                 </div>
