@@ -114,20 +114,6 @@ export function VideoModal({
 
                     {/* Dark overlay on hover */}
                     <div className="absolute inset-0 bg-black/20 transition-colors group-hover:bg-black/30" />
-
-                    {/* YouTube Play Button */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="flex size-20 items-center justify-center rounded-xl bg-red-600 shadow-lg transition-transform group-hover:scale-110 sm:size-24">
-                        <svg
-                          className="ml-1 size-10 text-white sm:size-12"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
-                          aria-hidden="true"
-                        >
-                          <path d="M8 5v14l11-7z" />
-                        </svg>
-                      </div>
-                    </div>
                   </button>
                 )}
               </div>
