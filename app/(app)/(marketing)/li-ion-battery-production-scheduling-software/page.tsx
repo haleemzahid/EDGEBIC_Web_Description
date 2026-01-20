@@ -5,11 +5,11 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Resource Manager-DB V6 Transforms Li-ion Battery Production Scheduling',
+    'Li-ion Battery Production Scheduling',
   description:
     'User Solutions releases Resource Manager-DB V6 with Bills-of-Resources, finite capacity planning, and advanced features. Enevate Corporation case study on Li-ion battery production.',
   openGraph: {
-    title: 'Resource Manager-DB V6 Transforms Li-ion Battery Production',
+    title: 'Li-ion Battery Production Scheduling - User Solutions',
     description:
       'South Lyon, MI 6/9/2016 - RM-DB V6 driven by customer demand for more power and flexibility',
     url: 'https://www.usersolutions.com/li-ion-battery-production-scheduling-software'
