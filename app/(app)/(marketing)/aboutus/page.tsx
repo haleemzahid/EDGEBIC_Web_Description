@@ -1,7 +1,14 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+export const metadata: Metadata = {
+  title: 'About Us',
+  description:
+    'Learn about User Solutions, Inc. - providers of production planning and scheduling software solutions since 1991.'
+};
 
 export default function AboutUsPage() {
   return (

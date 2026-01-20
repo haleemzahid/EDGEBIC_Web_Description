@@ -6,7 +6,7 @@ import type { Metadata } from 'next';
 import { Routes } from '@/constants/routes';
 
 export const metadata: Metadata = {
-  title: 'Mission Statement - User Solutions',
+  title: 'Mission Statement',
   description:
     'Empower manufacturers to become more competitive and profitable through efficient resource management tools that are affordable, adaptable, and easily implemented.',
 };

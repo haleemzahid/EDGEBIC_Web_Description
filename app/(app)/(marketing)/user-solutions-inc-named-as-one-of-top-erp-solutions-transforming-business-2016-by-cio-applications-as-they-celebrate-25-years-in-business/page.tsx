@@ -7,11 +7,11 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'User Solutions Inc Named as One of Top ERP Solutions Transforming Business 2016 by CIO Applications | 25 Years in Business',
+    'Top ERP Solutions 2016',
   description:
     'User Solutions Inc. recognized as one of the top ERP solutions transforming business in 2016 by CIO Applications as they celebrate 25 years in business.',
   openGraph: {
-    title: 'Top ERP Solutions 2016 - User Solutions 25 Years',
+    title: 'Top ERP Solutions 2016 - User Solutions',
     description:
       'Recognized by CIO Applications as top ERP solution transforming business',
     url: 'https://www.usersolutions.com/user-solutions-inc-named-as-one-of-top-erp-solutions-transforming-business-2016-by-cio-applications-as-they-celebrate-25-years-in-business'
