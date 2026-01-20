@@ -27,83 +27,10 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card';
-
-// Video Player Component for YouTube and MP4
-function VideoPlayer({
-  videoUrl,
-  title,
-  thumbnail,
-  onPlayStateChange
-}: {
-  videoUrl: string;
-  title: string;
-  thumbnail: string;
-  onPlayStateChange?: (isPlaying: boolean) => void;
-}) {
-  // Check if it's a YouTube URL or direct MP4
-  const isYouTube =
-    videoUrl.includes('youtu.be/') || videoUrl.includes('youtube.com');
-  const isMp4 = videoUrl.includes('.mp4');
-
-  // Convert YouTube URL to embed URL
-  const getYouTubeEmbedUrl = (url: string) => {
-    const videoId = url.includes('youtu.be/')
-      ? url.split('youtu.be/')[1]?.split('?')[0]
-      : url.split('v=')[1]?.split('&')[0];
-    return `https://www.youtube.com/embed/${videoId}`;
-  };
-
-  if (isYouTube) {
-    return (
-      <iframe
-        src={getYouTubeEmbedUrl(videoUrl)}
-        title={title}
-        className="absolute inset-0 size-full rounded-lg"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-      />
-    );
-  }
-
-  const handleVideoPlay = () => {
-    onPlayStateChange?.(true);
-  };
-
-  const handleVideoPause = () => {
-    onPlayStateChange?.(false);
-  };
-
-  if (isMp4) {
-    return (
-      <video
-        className="absolute inset-0 size-full rounded-lg object-cover"
-        controls
-        poster={thumbnail}
-        preload="metadata"
-        onPlay={handleVideoPlay}
-        onPause={handleVideoPause}
-        onEnded={handleVideoPause}
-      >
-        <source
-          src={videoUrl}
-          type="video/mp4"
-        />
-        Your browser does not support the video tag.
-      </video>
-    );
-  }
-
-  // Fallback for other video types
-  return (
-    <div className="absolute inset-0 flex items-center justify-center bg-slate-200">
-      <p className="text-slate-500">Video format not supported</p>
-    </div>
-  );
-}
+import { YouTubeFacade } from '@/components/ui/youtube-facade';
 
 export function ProductionPlanningSolutions(): React.JSX.Element {
   const router = useRouter();
-  const [isVideoPlaying, setIsVideoPlaying] = React.useState(false);
 
   return (
     <GridSection hideVerticalGridLines>
@@ -146,11 +73,11 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               {/* Video */}
               <div className="relative overflow-hidden rounded-xl border bg-slate-100 shadow-lg">
                 <div className="relative aspect-video">
-                  <VideoPlayer
-                    videoUrl="https://youtu.be/IR8NhOlV_zM"
+                  <YouTubeFacade
+                    videoId="IR8NhOlV_zM"
                     title="Production Planning and Scheduling Solutions Demo"
-                    thumbnail=""
-                    onPlayStateChange={setIsVideoPlaying}
+                    className="absolute inset-0 size-full"
+                    hidePlayButton={true}
                   />
                 </div>
               </div>
