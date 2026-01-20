@@ -32,9 +32,9 @@ export default function ResourceManagerDBInDepthPage() {
       </section>
 
       {/* Navigation Tabs */}
-      <nav className="pt-6" aria-label="Product information tabs">
+      <nav className="pt-8 bg-gradient-to-b from-slate-50 to-white" aria-label="Product information tabs">
         <div className="container mx-auto max-w-7xl px-4">
-          <div className="flex flex-wrap justify-start gap-2 text-[18px]" role="tablist" aria-label="Resource Manager DB sections">
+          <div className="flex flex-wrap justify-start gap-2" role="tablist" aria-label="Resource Manager DB sections">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -42,10 +42,10 @@ export default function ResourceManagerDBInDepthPage() {
                 role="tab"
                 aria-selected={activeTab === tab.id ? 'true' : 'false'}
                 onClick={() => setActiveTab(tab.id)}
-                className={`transition-all duration-200 focus:outline-none px-4 py-3 border-b-2 ${
+                className={`transition-all duration-200 focus:outline-none px-8 py-4 text-[16px] font-semibold rounded-t-xl border-2 border-b-0 relative ${
                   activeTab === tab.id
-                    ? 'font-semibold text-blue-600 border-blue-600 bg-blue-50'
-                    : 'text-slate-600 hover:text-blue-600 border-transparent hover:border-blue-600 hover:bg-blue-50'
+                    ? 'bg-white text-blue-600 border-blue-500 z-10 -mb-[2px]'
+                    : 'bg-blue-500 text-white border-blue-500 shadow-sm hover:bg-blue-600 hover:border-blue-600'
                 }`}
               >
                 {tab.label}
@@ -54,6 +54,13 @@ export default function ResourceManagerDBInDepthPage() {
           </div>
         </div>
       </nav>
+
+      {/* Tab Content Container with Border */}
+      <div className="border-t-2 border-blue-500 bg-white">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="h-2 bg-gradient-to-b from-blue-50 to-transparent"></div>
+        </div>
+      </div>
 
       {/* Tab Content */}
       <section className="pt-6">

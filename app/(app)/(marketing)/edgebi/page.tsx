@@ -38,8 +38,8 @@ export default function EDGEBIPage(): React.JSX.Element {
               </p>
 
               {/* Navigation Tabs */}
-              <div className="border-b border-slate-200 pb-0">
-                <div className="flex flex-wrap gap-2 text-[18px]" role="tablist" aria-label="EDGEBI sections">
+              <div className="pt-4 bg-gradient-to-b from-slate-50 to-white">
+                <div className="flex flex-wrap gap-2" role="tablist" aria-label="EDGEBI sections">
                   {tabs.map((tab, index) => (
                     <button
                       key={tab.id}
@@ -48,15 +48,20 @@ export default function EDGEBIPage(): React.JSX.Element {
                       aria-selected={activeTab === tab.id}
                       tabIndex={activeTab === tab.id ? 0 : -1}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`transition-all duration-200 focus:outline-none px-4 py-3 border border-slate-200 rounded-t-lg ${activeTab === tab.id
-                        ? 'font-semibold text-blue-600 bg-white border-b-white -mb-[1px]'
-                        : 'text-slate-600 hover:text-blue-600 bg-slate-50 hover:bg-slate-100 border-b-slate-200'
+                      className={`transition-all duration-200 focus:outline-none px-8 py-4 text-[16px] font-semibold rounded-t-xl border-2 border-b-0 relative ${activeTab === tab.id
+                        ? 'bg-white text-blue-600 border-blue-500 z-10 -mb-[2px]'
+                        : 'bg-blue-500 text-white border-blue-500 shadow-sm hover:bg-blue-600 hover:border-blue-600'
                         }`}
                     >
                       {tab.label}
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Tab Content Container with Border */}
+              <div className="border-t-2 border-blue-500 bg-white">
+                <div className="h-2 bg-gradient-to-b from-blue-50 to-transparent"></div>
               </div>
             </div>
 
