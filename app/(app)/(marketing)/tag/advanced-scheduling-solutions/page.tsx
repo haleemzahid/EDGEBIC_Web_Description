@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
-  title: 'Advanced Scheduling Solutions | User Solutions',
+  title: 'Advanced Scheduling Solutions',
   description:
     'Explore articles about advanced scheduling solutions for modern manufacturing and supply chain management.'
 };

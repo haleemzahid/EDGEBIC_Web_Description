@@ -6,12 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Hi-Tech Connector Mfr Accurately Schedules Labor with MRP Add-On | User Solutions',
+    'Hi-Tech Connector Mfr Accurately Schedules Labor with MRP Add-On',
   description:
     'Discover how a hi-tech connector manufacturer improved labor scheduling accuracy with MRP add-on solutions.',
   openGraph: {
     title:
-      'Hi-Tech Connector Mfr Accurately Schedules Labor with MRP Add-On | User Solutions',
+      'Hi-Tech Connector Mfr Accurately Schedules Labor with MRP Add-On',
     description:
       'Discover how a hi-tech connector manufacturer improved labor scheduling accuracy with MRP add-on solutions.',
     url: 'https://www.usersolutions.com/success-stories/hi-tech-connector-mfr-accurately-schedules-labor-with-mrp-add-on'

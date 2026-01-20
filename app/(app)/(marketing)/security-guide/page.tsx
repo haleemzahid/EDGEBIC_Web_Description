@@ -4,10 +4,9 @@ import Image from 'next/image';
 
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { createTitle } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: createTitle('Security Guide'),
+  title: 'Security Guide',
   description:
     'Step-by-step guide to improve security for windows, anti-virus programs and excel macros. Know how to unblock files and enable VBA Macros now.'
 };

@@ -6,10 +6,9 @@ import { StoryTeam } from '@/components/marketing/sections/story-team';
 import { StoryTimeline } from '@/components/marketing/sections/story-timeline';
 import { StoryValues } from '@/components/marketing/sections/story-values';
 import { StoryVision } from '@/components/marketing/sections/story-vision';
-import { createTitle } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: createTitle('Story')
+  title: 'Story'
 };
 
 export default function StoryPage(): React.JSX.Element {

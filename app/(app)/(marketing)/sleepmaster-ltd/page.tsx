@@ -6,12 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Affordable, Easy-to-Implement MRP for Smaller Manufacturer | User Solutions',
+    'Affordable, Easy-to-Implement MRP for Smaller Manufacturer',
   description:
     'Discover how SleepMaster implemented an affordable MRP for small manufacturers to simplify operations and improve global scalability.',
   openGraph: {
     title:
-      'Affordable, Easy-to-Implement MRP for Smaller Manufacturer | User Solutions',
+      'Affordable, Easy-to-Implement MRP for Smaller Manufacturer',
     description:
       'Discover how SleepMaster implemented an affordable MRP for small manufacturers to simplify operations and improve global scalability.',
     url: 'https://www.usersolutions.com/sleepmaster-ltd/'

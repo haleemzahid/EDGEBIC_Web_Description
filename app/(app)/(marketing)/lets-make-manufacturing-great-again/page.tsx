@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
-  title: "Let's Make Manufacturing Great Again | User Solutions",
+  title: "Let's Make Manufacturing Great Again",
   description:
     'Celebrating National Manufacturing Day 2017 - Learn how User Solutions helps manufacturers achieve operational excellence through partnerships with MEP and educational institutions.',
   openGraph: {

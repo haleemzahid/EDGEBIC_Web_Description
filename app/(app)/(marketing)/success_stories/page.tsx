@@ -6,12 +6,12 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
-  title: 'Success Stories | Manufacturing Scheduling Software | User Solutions',
+  title: 'Success Stories | Manufacturing Scheduling Software',
   description:
     'Read how manufacturers across industries have improved on-time delivery, increased throughput, and optimized production scheduling with User Solutions software.',
   openGraph: {
     title:
-      'Success Stories | Manufacturing Scheduling Software | User Solutions',
+      'Success Stories | Manufacturing Scheduling Software',
     description:
       'Read how manufacturers across industries have improved on-time delivery, increased throughput, and optimized production scheduling with User Solutions software.',
     url: 'https://www.usersolutions.com/success_stories'

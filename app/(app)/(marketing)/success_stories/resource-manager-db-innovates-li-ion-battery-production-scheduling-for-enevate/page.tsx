@@ -6,12 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Resource Manager DB Innovates Li-Ion Battery Production Scheduling for Enevate | User Solutions',
+    'Resource Manager DB Innovates Li-Ion Battery Production Scheduling for Enevate',
   description:
     'Learn how Enevate Corporation uses Resource Manager-DB for innovative Li-ion battery production scheduling.',
   openGraph: {
     title:
-      'Resource Manager DB Innovates Li-Ion Battery Production Scheduling for Enevate | User Solutions',
+      'Resource Manager DB Innovates Li-Ion Battery Production Scheduling for Enevate',
     description:
       'Learn how Enevate Corporation uses Resource Manager-DB for innovative Li-ion battery production scheduling.',
     url: 'https://www.usersolutions.com/success-stories/resource-manager-db-innovates-li-ion-battery-production-scheduling-for-enevate'

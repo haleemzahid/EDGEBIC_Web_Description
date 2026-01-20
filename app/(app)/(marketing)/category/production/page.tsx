@@ -4,11 +4,11 @@ import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
-  title: 'Production | User Solutions',
+  title: 'Production ',
   description:
     'Explore production planning and scheduling solutions for modern manufacturers.',
   openGraph: {
-    title: 'Production | User Solutions',
+    title: 'Production ',
     description:
       'Explore production planning and scheduling solutions for modern manufacturers.',
     url: 'https://www.usersolutions.com/category/production'

@@ -6,12 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Smart Coffee Machines Get Smarter Purchasing with ERP Add-On | User Solutions',
+    'Smart Coffee Machines Get Smarter Purchasing with ERP Add-On',
   description:
     'See how smart coffee machine manufacturers optimized purchasing decisions with integrated ERP add-on solutions.',
   openGraph: {
     title:
-      'Smart Coffee Machines Get Smarter Purchasing with ERP Add-On | User Solutions',
+      'Smart Coffee Machines Get Smarter Purchasing with ERP Add-On',
     description:
       'See how smart coffee machine manufacturers optimized purchasing decisions with integrated ERP add-on solutions.',
     url: 'https://www.usersolutions.com/success-stories/smart-coffee-machines-get-smarter-purchasing-with-erp-add-on'

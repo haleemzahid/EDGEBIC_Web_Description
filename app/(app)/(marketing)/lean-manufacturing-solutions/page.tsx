@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
-  title: 'Lean Manufacturing Solutions | User Solutions',
+  title: 'Lean Manufacturing Solutions',
   description:
     'Explore lean manufacturing principles with User Solutions, Inc. Learn about waste reduction, continuous improvement, and advanced resource management solutions.',
   openGraph: {

@@ -6,12 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Lean Manufacturing Realized by Hi-Tech Amplifier Manufacturer | User Solutions',
+    'Lean Manufacturing Realized by Hi-Tech Amplifier Manufacturer',
   description:
     'See how a high-tech amplifier manufacturer achieved lean manufacturing excellence with advanced production scheduling.',
   openGraph: {
     title:
-      'Lean Manufacturing Realized by Hi-Tech Amplifier Manufacturer | User Solutions',
+      'Lean Manufacturing Realized by Hi-Tech Amplifier Manufacturer',
     description:
       'See how a high-tech amplifier manufacturer achieved lean manufacturing excellence with advanced production scheduling.',
     url: 'https://www.usersolutions.com/success-stories/lean-manufacturing-realized-by-hi-tech-amplifier-manufacturer'

@@ -6,12 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Job Shop Gains Control of Highly Volatile Schedule and Inventory Needs | User Solutions',
+    'Job Shop Gains Control of Highly Volatile Schedule and Inventory Needs',
   description:
     'See how a job shop manufacturing company gained control over volatile scheduling and complex inventory management.',
   openGraph: {
     title:
-      'Job Shop Gains Control of Highly Volatile Schedule and Inventory Needs | User Solutions',
+      'Job Shop Gains Control of Highly Volatile Schedule and Inventory Needs',
     description:
       'See how a job shop manufacturing company gained control over volatile scheduling and complex inventory management.',
     url: 'https://www.usersolutions.com/success-stories/job-shop-gains-control-of-highly-volatile-schedule-and-inventory-needs'

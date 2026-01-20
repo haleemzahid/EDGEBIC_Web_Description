@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
-  title: 'usersol-admin-2 | User Solutions',
+  title: 'usersol-admin-2',
   description:
     'Articles by usersol-admin-2 covering manufacturing solutions, production scheduling, and supply chain management.'
 };

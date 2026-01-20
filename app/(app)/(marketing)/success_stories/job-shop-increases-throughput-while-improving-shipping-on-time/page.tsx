@@ -6,12 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Job Shop Increases Throughput While Improving Shipping On-Time | User Solutions',
+    'Job Shop Increases Throughput While Improving Shipping On-Time',
   description:
     'Learn how Technical Glass Products increased throughput and improved on-time shipping with advanced scheduling.',
   openGraph: {
     title:
-      'Job Shop Increases Throughput While Improving Shipping On-Time | User Solutions',
+      'Job Shop Increases Throughput While Improving Shipping On-Time',
     description:
       'Learn how Technical Glass Products increased throughput and improved on-time shipping with advanced scheduling.',
     url: 'https://www.usersolutions.com/success-stories/job-shop-increases-throughput-while-improving-shipping-on-time'

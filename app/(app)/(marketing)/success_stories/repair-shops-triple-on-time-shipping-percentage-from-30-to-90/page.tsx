@@ -6,12 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Repair Shops Triple On-Time Shipping Percentage from 30% to 90% | User Solutions',
+    'Repair Shops Triple On-Time Shipping Percentage from 30% to 90%',
   description:
     'See how GE Railcar Services improved on-time shipping from 30% to over 90% using Workcenter SchedulerXL.',
   openGraph: {
     title:
-      'Repair Shops Triple On-Time Shipping Percentage from 30% to 90% | User Solutions',
+      'Repair Shops Triple On-Time Shipping Percentage from 30% to 90%',
     description:
       'See how GE Railcar Services improved on-time shipping from 30% to over 90% using Workcenter SchedulerXL.',
     url: 'https://www.usersolutions.com/success-stories/repair-shops-triple-on-time-shipping-percentage-from-30-to-90'

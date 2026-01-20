@@ -6,12 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Complements Traditional MRP for Job Shop Scheduling and Efficiency | User Solutions',
+    'Complements Traditional MRP for Job Shop Scheduling and Efficiency',
   description:
     'Explore how complementary scheduling solutions enhance traditional MRP systems in job shop environments.',
   openGraph: {
     title:
-      'Complements Traditional MRP for Job Shop Scheduling and Efficiency | User Solutions',
+      'Complements Traditional MRP for Job Shop Scheduling and Efficiency',
     description:
       'Explore how complementary scheduling solutions enhance traditional MRP systems in job shop environments.',
     url: 'https://www.usersolutions.com/success-stories/complements-traditional-mrp-and-shop-control-systems'

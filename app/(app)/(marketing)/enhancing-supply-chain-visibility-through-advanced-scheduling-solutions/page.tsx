@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Supply Chain Visibility Solutions for Modern Manufacturers | User Solutions',
+    'Supply Chain Visibility Solutions for Modern Manufacturers',
   description:
     'Improve supply chain transparency with advanced scheduling solutions and ERP software from User Solutions, Inc. Enhance visibility, efficiency, and agility.',
   openGraph: {

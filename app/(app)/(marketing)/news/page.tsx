@@ -4,10 +4,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { createTitle } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: createTitle('News'),
+  title: 'News',
   description:
     "View User Solutions' press announcements and media coverage to stay up-to-date on our innovative production planning and scheduling solutions and how they can help manufacturers become more competitive and profitable through efficient resource management."
 };

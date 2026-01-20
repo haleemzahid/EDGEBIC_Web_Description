@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Small Manufacturer and Job Shop Uses Planning, Scheduling and Tracking Tools to Become More Efficient | User Solutions',
+    'Small Manufacturer and Job Shop Uses Planning, Scheduling and Tracking Tools to Become More Efficient',
   description:
     'Success story: How Lue Manufacturing used Resource Manager tools from User Solutions to improve scheduling efficiency and competitiveness in custom cabinetry.',
   openGraph: {

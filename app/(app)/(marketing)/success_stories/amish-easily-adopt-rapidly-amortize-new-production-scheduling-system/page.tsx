@@ -6,12 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Amish Easily Adopt, Rapidly Amortize New Production Scheduling System | User Solutions',
+    'Amish Easily Adopt, Rapidly Amortize New Production Scheduling System',
   description:
     'See how Homestead Furniture successfully implemented modern production scheduling while honoring traditional Amish values.',
   openGraph: {
     title:
-      'Amish Easily Adopt, Rapidly Amortize New Production Scheduling System | User Solutions',
+      'Amish Easily Adopt, Rapidly Amortize New Production Scheduling System',
     description:
       'See how Homestead Furniture successfully implemented modern production scheduling while honoring traditional Amish values.',
     url: 'https://www.usersolutions.com/success-stories/amish-easily-adopt-rapidly-amortize-new-production-scheduling-system'

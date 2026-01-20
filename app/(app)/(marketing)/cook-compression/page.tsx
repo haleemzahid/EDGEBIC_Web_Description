@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 
 export const metadata: Metadata = {
-  title: 'Cook Compression | User Solutions',
+  title: 'Cook Compression',
   description:
     'Cook Compression shares their exceptional experience with User Solutions world-class support and service.',
   openGraph: {
-    title: 'Cook Compression | User Solutions',
+    title: 'Cook Compression',
     description:
       'Cook Compression shares their exceptional experience with User Solutions world-class support and service.',
     url: 'https://www.usersolutions.com/cook-compression/'

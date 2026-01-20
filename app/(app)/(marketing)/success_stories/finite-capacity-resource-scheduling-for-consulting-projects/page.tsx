@@ -6,12 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Finite Capacity Resource Scheduling for Consulting Projects | User Solutions',
+    'Finite Capacity Resource Scheduling for Consulting Projects',
   description:
     'GEMS Healthcare Solutions uses   to manage multiple consulting projects with shared resources.',
   openGraph: {
     title:
-      'Finite Capacity Resource Scheduling for Consulting Projects | User Solutions',
+      'Finite Capacity Resource Scheduling for Consulting Projects',
     description:
       'GEMS Healthcare Solutions uses   to manage multiple consulting projects with shared resources.',
     url: 'https://www.usersolutions.com/success-stories/finite-capacity-resource-scheduling-for-consulting-projects'

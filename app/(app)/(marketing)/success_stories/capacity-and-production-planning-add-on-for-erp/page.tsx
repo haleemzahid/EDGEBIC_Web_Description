@@ -6,12 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Capacity and Production Planning Reduce Outsourcing Costs, Backlog | User Solutions',
+    'Capacity and Production Planning Reduce Outsourcing Costs, Backlog',
   description:
     'Discover how effective capacity and production planning strategies reduced outsourcing costs and eliminated backlog.',
   openGraph: {
     title:
-      'Capacity and Production Planning Reduce Outsourcing Costs, Backlog | User Solutions',
+      'Capacity and Production Planning Reduce Outsourcing Costs, Backlog',
     description:
       'Discover how effective capacity and production planning strategies reduced outsourcing costs and eliminated backlog.',
     url: 'https://www.usersolutions.com/success-stories/capacity-and-production-planning-add-on-for-erp'

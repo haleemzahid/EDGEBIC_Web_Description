@@ -6,11 +6,11 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
-  title: 'Production Efficiency | User Solutions',
+  title: 'Production Efficiency',
   description:
     'Discover articles about production efficiency and lean manufacturing principles.',
   openGraph: {
-    title: 'Production Efficiency | User Solutions',
+    title: 'Production Efficiency',
     description:
       'Discover articles about production efficiency and lean manufacturing principles.',
     url: 'https://www.usersolutions.com/tag/production-efficiency'

@@ -6,12 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'NIST MEP and Industrial Damping Leader Improve On-Time Delivery | User Solutions',
+    'NIST MEP and Industrial Damping Leader Improve On-Time Delivery',
   description:
     'Discover how NIST MEP collaboration helped an industrial damping manufacturer achieve better on-time delivery performance.',
   openGraph: {
     title:
-      'NIST MEP and Industrial Damping Leader Improve On-Time Delivery | User Solutions',
+      'NIST MEP and Industrial Damping Leader Improve On-Time Delivery',
     description:
       'Discover how NIST MEP collaboration helped an industrial damping manufacturer achieve better on-time delivery performance.',
     url: 'https://www.usersolutions.com/success-stories/nist-mep-and-industrial-damping-leader-improve-on-time-delivery'

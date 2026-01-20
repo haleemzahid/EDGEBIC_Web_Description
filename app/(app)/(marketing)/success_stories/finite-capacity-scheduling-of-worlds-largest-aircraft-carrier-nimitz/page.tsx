@@ -6,12 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    "Finite Capacity Scheduling of World's Largest Aircraft Carrier Nimitz | User Solutions",
+    "Finite Capacity Scheduling of World's Largest Aircraft Carrier Nimitz",
   description:
     "See how finite capacity scheduling was implemented for the USS Nimitz aircraft carrier's complex maintenance operations.",
   openGraph: {
     title:
-      "Finite Capacity Scheduling of World's Largest Aircraft Carrier Nimitz | User Solutions",
+      "Finite Capacity Scheduling of World's Largest Aircraft Carrier Nimitz",
     description:
       "See how finite capacity scheduling was implemented for the USS Nimitz aircraft carrier's complex maintenance operations.",
     url: 'https://www.usersolutions.com/success-stories/finite-capacity-scheduling-of-worlds-largest-aircraft-carrier-nimitz'

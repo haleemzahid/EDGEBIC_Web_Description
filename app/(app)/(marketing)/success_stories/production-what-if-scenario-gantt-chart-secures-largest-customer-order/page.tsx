@@ -6,12 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Production What-If Scenario Gantt Chart Secures Largest Customer Order | User Solutions',
+    'Production What-If Scenario Gantt Chart Secures Largest Customer Order',
   description:
     'Learn how Turner Suspension Bicycles used Resource Manager for Excel to handle their largest customer order with what-if scenario planning.',
   openGraph: {
     title:
-      'Production What-If Scenario Gantt Chart Secures Largest Customer Order | User Solutions',
+      'Production What-If Scenario Gantt Chart Secures Largest Customer Order',
     description:
       'Learn how Turner Suspension Bicycles used Resource Manager for Excel to handle their largest customer order with what-if scenario planning.',
     url: 'https://www.usersolutions.com/success-stories/production-what-if-scenario-gantt-chart-secures-largest-customer-order'

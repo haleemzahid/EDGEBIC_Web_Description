@@ -6,12 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Quick and Easy Production Scheduling Replaces Complex Custom Excel Program | User Solutions',
+    'Quick and Easy Production Scheduling Replaces Complex Custom Excel Program',
   description:
     'Kyocera Industrial Ceramics replaced a complex custom Excel program with User Solutions scheduling software.',
   openGraph: {
     title:
-      'Quick and Easy Production Scheduling Replaces Complex Custom Excel Program | User Solutions',
+      'Quick and Easy Production Scheduling Replaces Complex Custom Excel Program',
     description:
       'Kyocera Industrial Ceramics replaced a complex custom Excel program with User Solutions scheduling software.',
     url: 'https://www.usersolutions.com/success-stories/quick-and-easy-production-scheduling-replaces-complex-custom-excel-program'

@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
-  title: 'Blame Random Events and Covariance | User Solutions',
+  title: 'Blame Random Events and Covariance',
   description:
     'Understanding how random events and covariance affect production scheduling, traffic flow, and manufacturing operations.',
   openGraph: {

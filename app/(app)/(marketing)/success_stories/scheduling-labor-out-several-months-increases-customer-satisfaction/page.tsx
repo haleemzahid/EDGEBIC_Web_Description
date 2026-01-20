@@ -6,12 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Scheduling Labor Out Several Months Increases Customer Satisfaction | User Solutions',
+    'Scheduling Labor Out Several Months Increases Customer Satisfaction',
   description:
     'Learn how Cummins Engine improved customer satisfaction by scheduling labor and resources several months in advance.',
   openGraph: {
     title:
-      'Scheduling Labor Out Several Months Increases Customer Satisfaction | User Solutions',
+      'Scheduling Labor Out Several Months Increases Customer Satisfaction',
     description:
       'Learn how Cummins Engine improved customer satisfaction by scheduling labor and resources several months in advance.',
     url: 'https://www.usersolutions.com/success-stories/scheduling-labor-out-several-months-increases-customer-satisfaction'

@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Scheduling System Narrows Skills Gap for Fire Rated Glass | User Solutions',
+    'Scheduling System Narrows Skills Gap for Fire Rated Glass',
   description:
     'User Solutions Resource Manager-DB enables Technical Glass Products to strategically cross-train their way to optimization and narrow the skills gap.',
   openGraph: {

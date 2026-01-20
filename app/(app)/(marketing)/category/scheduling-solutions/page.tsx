@@ -4,11 +4,11 @@ import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
-  title: 'Scheduling Solutions | User Solutions',
+  title: 'Scheduling Solutions ',
   description:
     'Explore advanced scheduling solutions for supply chain and manufacturing optimization.',
   openGraph: {
-    title: 'Scheduling Solutions | User Solutions',
+    title: 'Scheduling Solutions ',
     description:
       'Explore advanced scheduling solutions for supply chain and manufacturing optimization.',
     url: 'https://www.usersolutions.com/category/scheduling-solutions'

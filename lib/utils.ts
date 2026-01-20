@@ -29,7 +29,7 @@ export function createTitle(title: string, addSuffix: boolean = true): string {
     return AppInfo.APP_NAME;
   }
 
-  return `${title} | ${AppInfo.APP_NAME}`;
+  return `${title} - User Solutions`;
 }
 
 export function capitalize(str: string): string {

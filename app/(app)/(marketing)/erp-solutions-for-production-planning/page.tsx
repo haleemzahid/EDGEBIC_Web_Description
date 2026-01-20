@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
-  title: 'The Evolution of Production Planning | User Solutions',
+  title: 'The Evolution of Production Planning',
   description:
     'Discover how technology transforms production planning and scheduling with cutting-edge ERP solutions, IoT integration, and advanced analytics for modern manufacturing.',
   openGraph: {

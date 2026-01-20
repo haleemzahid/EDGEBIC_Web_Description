@@ -4,11 +4,11 @@ import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
-  title: 'INCON Incorporated | User Solutions',
+  title: 'INCON Incorporated',
   description:
     'Hi-tech Connector Mfr Accurately Schedules Labor with MRP Add-On.',
   openGraph: {
-    title: 'INCON Incorporated | User Solutions',
+    title: 'INCON Incorporated',
     description:
       'Hi-tech Connector Mfr Accurately Schedules Labor with MRP Add-On.',
     url: 'https://www.usersolutions.com/incon-incorporate/'

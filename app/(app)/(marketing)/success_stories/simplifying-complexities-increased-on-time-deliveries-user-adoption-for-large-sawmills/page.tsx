@@ -6,12 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Simplifying Complexities Increased On-Time Deliveries User Adoption for Large Sawmills | User Solutions',
+    'Simplifying Complexities Increased On-Time Deliveries User Adoption for Large Sawmills',
   description:
     'Learn how large sawmill operations simplified complex processes to improve on-time deliveries and user adoption.',
   openGraph: {
     title:
-      'Simplifying Complexities Increased On-Time Deliveries User Adoption for Large Sawmills | User Solutions',
+      'Simplifying Complexities Increased On-Time Deliveries User Adoption for Large Sawmills',
     description:
       'Learn how large sawmill operations simplified complex processes to improve on-time deliveries and user adoption.',
     url: 'https://www.usersolutions.com/success-stories/simplifying-complexities-increased-on-time-deliveries-user-adoption-for-large-sawmills'

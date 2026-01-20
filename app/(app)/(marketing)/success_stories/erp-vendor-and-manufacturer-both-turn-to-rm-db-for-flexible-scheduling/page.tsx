@@ -6,12 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'ERP Vendor and Manufacturer Both Turn to RM-DB for Flexible Scheduling | User Solutions',
+    'ERP Vendor and Manufacturer Both Turn to RM-DB for Flexible Scheduling',
   description:
     'Learn how both an ERP vendor and manufacturer chose Resource Manager-DB for advanced production planning and scheduling.',
   openGraph: {
     title:
-      'ERP Vendor and Manufacturer Both Turn to RM-DB for Flexible Scheduling | User Solutions',
+      'ERP Vendor and Manufacturer Both Turn to RM-DB for Flexible Scheduling',
     description:
       'Learn how both an ERP vendor and manufacturer chose Resource Manager-DB for advanced production planning and scheduling.',
     url: 'https://www.usersolutions.com/success-stories/erp-vendor-and-manufacturer-both-turn-to-rm-db-for-flexible-scheduling'

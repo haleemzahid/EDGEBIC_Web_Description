@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title:
-    'Resource Manager-DB V6 Transforms Li-ion Battery Production Scheduling | User Solutions',
+    'Resource Manager-DB V6 Transforms Li-ion Battery Production Scheduling',
   description:
     'User Solutions releases Resource Manager-DB V6 with Bills-of-Resources, finite capacity planning, and advanced features. Enevate Corporation case study on Li-ion battery production.',
   openGraph: {
