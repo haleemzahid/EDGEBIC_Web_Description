@@ -2,21 +2,38 @@
 
 import * as React from 'react';
 import { useState } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp, Target, Database, Settings, Wrench, RefreshCw, Layers, Brain, Shuffle, FileText, GitMerge } from 'lucide-react';
+import Link from 'next/link';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  Brain,
+  ChevronDown,
+  ChevronUp,
+  Database,
+  FileText,
+  GitMerge,
+  Layers,
+  RefreshCw,
+  Settings,
+  Shuffle,
+  Target,
+  Wrench
+} from 'lucide-react';
+
 import { NTClipboardToolBox } from './ntclipboard-toolbox';
 
 export function ManufacturingFeatureSection(): React.JSX.Element {
   const [strategicExpanded, setStrategicExpanded] = useState(false);
-  const [dataArchitectureExpanded, setDataArchitectureExpanded] = useState(false);
+  const [dataArchitectureExpanded, setDataArchitectureExpanded] =
+    useState(false);
   const [ruleConfigExpanded, setRuleConfigExpanded] = useState(false);
   const [tacticalExpanded, setTacticalExpanded] = useState(false);
   const [maintenanceExpanded, setMaintenanceExpanded] = useState(false);
   const [dynamicBorExpanded, setDynamicBorExpanded] = useState(false);
-  const [comprehensiveLogicExpanded, setComprehensiveLogicExpanded] = useState(false);
-  const [strategicFlexibilityExpanded, setStrategicFlexibilityExpanded] = useState(false);
+  const [comprehensiveLogicExpanded, setComprehensiveLogicExpanded] =
+    useState(false);
+  const [strategicFlexibilityExpanded, setStrategicFlexibilityExpanded] =
+    useState(false);
   const [reportingExpanded, setReportingExpanded] = useState(false);
   const [dataIntegrationExpanded, setDataIntegrationExpanded] = useState(false);
 
@@ -30,7 +47,8 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               RMDB/EDGE Core Capabilities
             </h3>
             <p className="text-base text-slate-600">
-              Our system is engineered to generate accurate, dynamic customer lead times and ensure you meet them consistently.
+              Our system is engineered to generate accurate, dynamic customer
+              lead times and ensure you meet them consistently.
             </p>
             <div className="flex gap-4">
               {/* Expandable Cards Column */}
@@ -46,7 +64,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                       <div className="flex size-8 items-center justify-center rounded-full bg-indigo-100">
                         <Layers className="size-4 text-indigo-600" />
                       </div>
-                      <h3 className="text-[16px] font-semibold text-gray-900">Dynamic Bill Of Resource (BOR)</h3>
+                      <h3 className="text-[16px] font-semibold text-gray-900">
+                        Dynamic Bill Of Resource (BOR)
+                      </h3>
                     </div>
                     {dynamicBorExpanded ? (
                       <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -64,7 +84,10 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          Rapidly configure or import a BOR that includes any combination of labor, materials, workcenters, tools, and sub-assemblies in any order to define your deliverable product or service.
+                          Rapidly configure or import a BOR that includes any
+                          combination of labor, materials, workcenters, tools,
+                          and sub-assemblies in any order to define your
+                          deliverable product or service.
                         </p>
                       </motion.div>
                     )}
@@ -75,14 +98,18 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
                     type="button"
-                    onClick={() => setComprehensiveLogicExpanded(!comprehensiveLogicExpanded)}
+                    onClick={() =>
+                      setComprehensiveLogicExpanded(!comprehensiveLogicExpanded)
+                    }
                     className="flex w-full items-center justify-between p-1 text-left transition-colors hover:bg-gray-50"
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex size-8 items-center justify-center rounded-full bg-cyan-100">
                         <Brain className="size-4 text-cyan-600" />
                       </div>
-                      <h3 className="text-[16px] font-semibold text-gray-900">Comprehensive Logic</h3>
+                      <h3 className="text-[16px] font-semibold text-gray-900">
+                        Comprehensive Logic
+                      </h3>
                     </div>
                     {comprehensiveLogicExpanded ? (
                       <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -100,7 +127,8 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          Integration of all standard scheduling rules and known constraints to ensure technical accuracy.
+                          Integration of all standard scheduling rules and known
+                          constraints to ensure technical accuracy.
                         </p>
                       </motion.div>
                     )}
@@ -111,14 +139,20 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
                     type="button"
-                    onClick={() => setStrategicFlexibilityExpanded(!strategicFlexibilityExpanded)}
+                    onClick={() =>
+                      setStrategicFlexibilityExpanded(
+                        !strategicFlexibilityExpanded
+                      )
+                    }
                     className="flex w-full items-center justify-between p-1 text-left transition-colors hover:bg-gray-50"
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex size-8 items-center justify-center rounded-full bg-amber-100">
                         <Shuffle className="size-4 text-amber-600" />
                       </div>
-                      <h3 className="text-[16px] font-semibold text-gray-900">Strategic Flexibility</h3>
+                      <h3 className="text-[16px] font-semibold text-gray-900">
+                        Strategic Flexibility
+                      </h3>
                     </div>
                     {strategicFlexibilityExpanded ? (
                       <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -136,7 +170,8 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          Perform various &quot;What-If&quot; analyses and manual overrides to quickly optimize schedule.
+                          Perform various &quot;What-If&quot; analyses and
+                          manual overrides to quickly optimize schedule.
                         </p>
                       </motion.div>
                     )}
@@ -154,7 +189,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                       <div className="flex size-8 items-center justify-center rounded-full bg-blue-100">
                         <FileText className="size-4 text-blue-600" />
                       </div>
-                      <h3 className="text-[16px] font-semibold text-gray-900">Powerful, Flexible, Customizable Reporting</h3>
+                      <h3 className="text-[16px] font-semibold text-gray-900">
+                        Powerful, Flexible, Customizable Reporting
+                      </h3>
                     </div>
                     {reportingExpanded ? (
                       <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -172,7 +209,8 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          Use Excel to customize any reports, and or have US develop and include with system.
+                          Use Excel to customize any reports, and or have US
+                          develop and include with system.
                         </p>
                       </motion.div>
                     )}
@@ -183,14 +221,18 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
                     type="button"
-                    onClick={() => setDataIntegrationExpanded(!dataIntegrationExpanded)}
+                    onClick={() =>
+                      setDataIntegrationExpanded(!dataIntegrationExpanded)
+                    }
                     className="flex w-full items-center justify-between p-1 text-left transition-colors hover:bg-gray-50"
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex size-8 items-center justify-center rounded-full bg-emerald-100">
                         <GitMerge className="size-4 text-emerald-600" />
                       </div>
-                      <h3 className="text-[16px] font-semibold text-gray-900">Data Integration</h3>
+                      <h3 className="text-[16px] font-semibold text-gray-900">
+                        Data Integration
+                      </h3>
                     </div>
                     {dataIntegrationExpanded ? (
                       <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -208,7 +250,10 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          Easily map existing data, from your ERP or Excel or any other system directly into RMDB for importing. The same capability exists for exporting data to other systems.
+                          Easily map existing data, from your ERP or Excel or
+                          any other system directly into RMDB for importing. The
+                          same capability exists for exporting data to other
+                          systems.
                         </p>
                       </motion.div>
                     )}
@@ -237,7 +282,8 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               Implementation & Optimization Process
             </h3>
             <p className="text-md text-slate-600">
-              We guide you through a structured five-step path to move from raw data to an Optimal Schedule that reflects shop-floor reality.
+              We guide you through a structured five-step path to move from raw
+              data to an Optimal Schedule that reflects shop-floor reality.
             </p>
             <div className="flex gap-4">
               {/* Expandable Cards Column */}
@@ -253,7 +299,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                       <div className="flex size-8 items-center justify-center rounded-full bg-blue-100">
                         <Target className="size-4 text-blue-600" />
                       </div>
-                      <h3 className="text-[16px] font-semibold text-gray-900">Strategic Alignment</h3>
+                      <h3 className="text-[16px] font-semibold text-gray-900">
+                        Strategic Alignment
+                      </h3>
                     </div>
                     {strategicExpanded ? (
                       <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -271,7 +319,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          We begin by agreeing on the specific production challenges to address and the strategic benefits you wish to pursue.
+                          We begin by agreeing on the specific production
+                          challenges to address and the strategic benefits you
+                          wish to pursue.
                         </p>
                       </motion.div>
                     )}
@@ -282,14 +332,18 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
                     type="button"
-                    onClick={() => setDataArchitectureExpanded(!dataArchitectureExpanded)}
+                    onClick={() =>
+                      setDataArchitectureExpanded(!dataArchitectureExpanded)
+                    }
                     className="flex w-full items-center justify-between p-1 text-left transition-colors hover:bg-gray-50"
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex size-8 items-center justify-center rounded-full bg-purple-100">
                         <Database className="size-4 text-purple-600" />
                       </div>
-                      <h3 className="text-[16px] font-semibold text-gray-900">Data Architecture</h3>
+                      <h3 className="text-[16px] font-semibold text-gray-900">
+                        Data Architecture
+                      </h3>
                     </div>
                     {dataArchitectureExpanded ? (
                       <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -307,7 +361,10 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          We determine the necessary existing data—such as setup times, cycle times, and shop calendars—while identifying and incorporating any missing data necessary for a complete model.
+                          We determine the necessary existing data—such as setup
+                          times, cycle times, and shop calendars—while
+                          identifying and incorporating any missing data
+                          necessary for a complete model.
                         </p>
                       </motion.div>
                     )}
@@ -325,7 +382,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                       <div className="flex size-8 items-center justify-center rounded-full bg-orange-100">
                         <Settings className="size-4 text-orange-600" />
                       </div>
-                      <h3 className="text-[16px] font-semibold text-gray-900">Rule Configuration</h3>
+                      <h3 className="text-[16px] font-semibold text-gray-900">
+                        Rule Configuration
+                      </h3>
                     </div>
                     {ruleConfigExpanded ? (
                       <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -343,7 +402,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          All data is imported and configured with known scheduling and business intelligence rules to create a &quot;first pass,&quot; mostly reasonable schedule.
+                          All data is imported and configured with known
+                          scheduling and business intelligence rules to create a
+                          &quot;first pass,&quot; mostly reasonable schedule.
                         </p>
                       </motion.div>
                     )}
@@ -361,7 +422,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                       <div className="flex size-8 items-center justify-center rounded-full bg-teal-100">
                         <Wrench className="size-4 text-teal-600" />
                       </div>
-                      <h3 className="text-[16px] font-semibold text-gray-900">Tactical Refinement</h3>
+                      <h3 className="text-[16px] font-semibold text-gray-900">
+                        Tactical Refinement
+                      </h3>
                     </div>
                     {tacticalExpanded ? (
                       <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -379,7 +442,11 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          Because automated rules are never exact enough for the real world, we provide an easy, intuitive method for manual overrides. This allows you to adjust the schedule based on the random events and disruptions that occur in reality.
+                          Because automated rules are never exact enough for the
+                          real world, we provide an easy, intuitive method for
+                          manual overrides. This allows you to adjust the
+                          schedule based on the random events and disruptions
+                          that occur in reality.
                         </p>
                       </motion.div>
                     )}
@@ -397,7 +464,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                       <div className="flex size-8 items-center justify-center rounded-full bg-green-100">
                         <RefreshCw className="size-4 text-green-600" />
                       </div>
-                      <h3 className="text-[16px] font-semibold text-gray-900">Automated Maintenance</h3>
+                      <h3 className="text-[16px] font-semibold text-gray-900">
+                        Automated Maintenance
+                      </h3>
                     </div>
                     {maintenanceExpanded ? (
                       <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -415,7 +484,13 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          Once the optimal schedule is created by blending system rules with manual adjustments, maintenance is effortless. The system intelligently rebalances based on your updates; for instance, if you report starting the 6th step of a process, RMDB/EDGE automatically assumes previous steps are complete and reschedules all subsequent steps.
+                          Once the optimal schedule is created by blending
+                          system rules with manual adjustments, maintenance is
+                          effortless. The system intelligently rebalances based
+                          on your updates; for instance, if you report starting
+                          the 6th step of a process, RMDB/EDGE automatically
+                          assumes previous steps are complete and reschedules
+                          all subsequent steps.
                         </p>
                       </motion.div>
                     )}
@@ -429,7 +504,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   alt="Scheduling step process diagram showing optimal scheduling workflow"
                   width={500}
                   height={280}
-                  className="w-full h-[230px] rounded-lg"
+                  className="w-full h-[230px] object-cover rounded-lg"
                   loading="lazy"
                 />
               </div>
@@ -956,15 +1031,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   </div>
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="mb-1 font-bold text-[#003d5c]">
-                    Joel K.
-                  </h3>
-                  <p className="text-sm text-slate-600">
-                    Lean Facilitator
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    Furniture
-                  </p>
+                  <h3 className="mb-1 font-bold text-[#003d5c]">Joel K.</h3>
+                  <p className="text-sm text-slate-600">Lean Facilitator</p>
+                  <p className="text-xs text-slate-500">Furniture</p>
                 </div>
               </div>
 
@@ -1033,9 +1102,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   </div>
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="mb-1 font-bold text-[#003d5c]">
-                    Robert K.
-                  </h3>
+                  <h3 className="mb-1 font-bold text-[#003d5c]">Robert K.</h3>
                   <p className="text-sm text-slate-600">
                     Epicor ERP Consultant
                   </p>
@@ -1130,12 +1197,8 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   </div>
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="mb-1 font-bold text-[#003d5c]">
-                    Mike W.
-                  </h3>
-                  <p className="text-sm text-slate-600">
-                    Regional Manager
-                  </p>
+                  <h3 className="mb-1 font-bold text-[#003d5c]">Mike W.</h3>
+                  <p className="text-sm text-slate-600">Regional Manager</p>
                   <p className="text-xs text-slate-500">
                     Management Consulting
                   </p>
@@ -1278,7 +1341,6 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               </a>
             </div>
           </div> */}
-
         </div>
       </div>
     </section>
