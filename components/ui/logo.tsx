@@ -27,7 +27,7 @@ export function Logo({
       {!hideSymbol && (
         <div className="flex h-[50px] w-[120px] items-center justify-center">
           <div className="flex h-[50px] w-[120px] items-center justify-center">
-            {/* EDGEBIC Logo */}
+            {/* EDGEBI Logo */}
             <Image
               src="/logos/edgebic-logo.png"
               alt="EDGEBI Logo"

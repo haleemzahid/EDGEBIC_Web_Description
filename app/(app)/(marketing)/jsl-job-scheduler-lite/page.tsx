@@ -47,7 +47,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
                 Overview
               </h2>
               <p className="text-lg leading-relaxed text-muted-foreground">
-                Welcome to EDGEBIC. Designed as an entry level production
+                Welcome to EDGEBI. Designed as an entry level production
                 scheduling offering that allows users to quickly create a series
                 of routing steps then schedule according to capacity
                 limitations, direction (Forward or Reverse), and Priorities. It
@@ -58,7 +58,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
             <div className="overflow-hidden rounded-lg">
               <Image
                 src="/images/Edgebic/2022-10/insight-1.png"
-                alt="EDGEBIC production scheduling software interface"
+                alt="EDGEBI production scheduling software interface"
                 width={800}
                 height={600}
                 className="h-auto w-full"
@@ -76,7 +76,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
               <div className="overflow-hidden rounded-lg bg-black shadow-lg">
                 <YouTubeFacade
                   videoId="snltXMHeojU"
-                  title="EDGEBIC Demo Video"
+                  title="EDGEBI Demo Video"
                   className="aspect-video w-full"
                   hidePlayButton={true}
                 />

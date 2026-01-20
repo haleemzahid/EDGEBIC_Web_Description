@@ -14,7 +14,7 @@ export default function ThankYouJSLPage() {
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <h1 className="mb-6 text-4xl font-bold text-white sm:text-5xl md:text-6xl">
-              Thank You for Downloading EDGEBIC!
+              Thank You for Downloading EDGEBI!
             </h1>
             <p className="text-xl text-white/90">
               Your download is ready. We'll be in touch shortly to help you get

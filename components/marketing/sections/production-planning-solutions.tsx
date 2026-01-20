@@ -472,7 +472,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                 </CardContent>
               </Card>
 
-              {/* EDGEBIC Features */}
+              {/* EDGEBI Features */}
               <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100 md:col-span-2 lg:col-span-1">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-purple-700">

@@ -79,7 +79,7 @@ export default function CompareProductsPage(): React.JSX.Element {
       }
     },
     {
-      name: 'EDGEBIC (Bundled w/ RMDB)',
+      name: 'EDGEBI (Bundled w/ RMDB)',
       tier: 'Premium',
       price: '$25,000+',
       description: 'Enterprise-Grade for Multi-Nationals',

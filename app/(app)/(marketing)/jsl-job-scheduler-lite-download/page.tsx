@@ -84,7 +84,7 @@ export default function JSLDownloadPage(): React.JSX.Element {
         <div className="mt-8 text-center">
           <Image
             src="/images/Edgebic/2022-10/blck.png"
-            alt="Screenshot of EDGEBIC folder with files"
+            alt="Screenshot of EDGEBI folder with files"
             width={600}
             height={400}
             className="mx-auto rounded-lg border shadow-md"

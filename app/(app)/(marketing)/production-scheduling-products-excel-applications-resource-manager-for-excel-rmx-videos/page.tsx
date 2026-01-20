@@ -118,7 +118,7 @@ export default function ProductionSchedulingProductsVideosPage() {
                 </Link>
               </div>
 
-              {/* EDGEBIC */}
+              {/* EDGEBI */}
               <div>
                 <h3 className="mb-3 text-xl font-bold">EDGEBI</h3>
                 <div className="mb-3 aspect-video overflow-hidden rounded-lg bg-slate-100">

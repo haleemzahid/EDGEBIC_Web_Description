@@ -78,7 +78,7 @@ export function NTClipboardCoreValues(): React.JSX.Element {
       <div className="container py-6">
         <SiteHeading
           title="What Drives Us Forward"
-          description="The principles that have guided EDGEBIC for over three decades"
+          description="The principles that have guided EDGEBI for over three decades"
         />
 
         <div className="mx-auto mt-8 max-w-7xl">

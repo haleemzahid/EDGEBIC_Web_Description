@@ -22,7 +22,7 @@ export function HeroButtons({ price }: HeroButtonsProps): React.JSX.Element {
         asChild
         className="bg-gradient-to-r from-orange-500 to-red-500 px-8 py-3 text-lg font-bold text-white hover:from-orange-600 hover:to-red-600"
       >
-        <a href="#EDGEBICPricing">Get EDGEBIC - {price}</a>
+        <a href="#EDGEBICPricing">Get EDGEBI - {price}</a>
       </Button>
       <Button
         size="lg"

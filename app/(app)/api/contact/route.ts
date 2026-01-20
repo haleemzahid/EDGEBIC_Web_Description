@@ -64,7 +64,7 @@ async function getOrCreateOrganization() {
   if (!organization) {
     organization = await prisma.organization.create({
       data: {
-        name: 'EDGEBIC',
+        name: 'EDGEBI',
         stripeCustomerId: 'default_stripe_customer'
       }
     });

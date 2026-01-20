@@ -17,8 +17,8 @@ export async function NTClipboardCTA(): Promise<React.JSX.Element> {
         </h3>
         <p className="max-w-2xl text-lg text-muted-foreground">
           Join thousands of professionals who have revolutionized their
-          production scheduling process with EDGEBIC. One-time purchase,
-          lifetime value.
+          production scheduling process with EDGEBI. One-time purchase, lifetime
+          value.
         </p>
         <BlurFade inView>
           <div className="flex flex-col gap-3 sm:flex-row">
