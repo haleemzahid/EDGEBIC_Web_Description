@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import Image from 'next/image';
 
 interface VideoModalProps {
   isOpen: boolean;
@@ -22,14 +23,17 @@ export function VideoModal({
   const [currentVideo, setCurrentVideo] = React.useState<'first' | 'second'>(
     initialVideo
   );
+  const [isPlaying, setIsPlaying] = React.useState(false);
 
   React.useEffect(() => {
     if (isOpen) {
       setCurrentVideo(initialVideo);
+      setIsPlaying(false); // Reset when modal opens
     }
   }, [isOpen, initialVideo]);
 
   const handleCloseClick = () => {
+    setIsPlaying(false);
     onClose();
   };
 
@@ -37,13 +41,18 @@ export function VideoModal({
     e.stopPropagation();
   };
 
+  const handlePlayClick = () => {
+    setIsPlaying(true);
+  };
+
   if (!isOpen) return <></>;
 
   const currentVideoId =
     currentVideo === 'first' ? firstVideoId : secondVideoId;
 
-  // Use the standard YouTube embed URL without extra parameters
-  const embedUrl = `https://www.youtube.com/embed/${currentVideoId}`;
+  const thumbnailUrl = `https://i.ytimg.com/vi/${currentVideoId}/hqdefault.jpg`;
+
+  const embedUrl = `https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1&rel=0&modestbranding=1`;
 
   return (
     <AnimatePresence>
@@ -73,17 +82,52 @@ export function VideoModal({
             </button>
             {/* Video Container */}
             <div className="relative overflow-hidden rounded-lg bg-black">
-              <div className="aspect-video w-full">
-                <iframe
-                  key={currentVideoId}
-                  src={embedUrl}
-                  title="YouTube video player"
-                  className="size-full"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  allowFullScreen
-                />
+              <div className="relative aspect-video w-full">
+                {isPlaying ? (
+                  <iframe
+                    key={currentVideoId}
+                    src={embedUrl}
+                    title="YouTube video player"
+                    className="absolute inset-0 size-full"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handlePlayClick}
+                    className="group relative size-full cursor-pointer border-0 bg-transparent p-0"
+                    aria-label="Play video"
+                  >
+                    {/* YouTube Thumbnail */}
+                    <Image
+                      src={thumbnailUrl}
+                      alt="Video thumbnail"
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+
+                    {/* Dark overlay on hover */}
+                    <div className="absolute inset-0 bg-black/20 transition-colors group-hover:bg-black/30" />
+
+                    {/* YouTube Play Button */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="flex size-20 items-center justify-center rounded-xl bg-red-600 shadow-lg transition-transform group-hover:scale-110 sm:size-24">
+                        <svg
+                          className="ml-1 size-10 text-white sm:size-12"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>
