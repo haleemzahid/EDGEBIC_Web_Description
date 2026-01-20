@@ -324,6 +324,7 @@ export function NTClipboardVideo({
                   videoId={videoId}
                   title={currentVideo.title}
                   className="aspect-video w-full"
+                  hidePlayButton={true}
                 />
               </div>
 

@@ -69,6 +69,7 @@ export function YouTubeVideo({
             title={title}
             className="size-full"
             rootMargin="100px"
+            hidePlayButton={true}
           />
         </div>
       </CardContent>

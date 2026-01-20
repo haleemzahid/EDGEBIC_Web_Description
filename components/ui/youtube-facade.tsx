@@ -128,6 +128,7 @@ export function YouTubeFacadeWithIntersection({
   start = 0,
   className = '',
   thumbnailQuality = 'hqdefault',
+  hidePlayButton = false,
   rootMargin = '200px'
 }: YouTubeFacadeProps & { rootMargin?: string }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -210,22 +211,26 @@ export function YouTubeFacadeWithIntersection({
           <div className="absolute inset-0 animate-pulse bg-slate-200" />
         )}
 
-        {/* Dark overlay on hover */}
-        <div className="absolute inset-0 bg-black/20 transition-colors group-hover:bg-black/30" />
+        {/* Dark overlay on hover - only show when play button is visible */}
+        {!hidePlayButton && (
+          <div className="absolute inset-0 bg-black/20 transition-colors group-hover:bg-black/30" />
+        )}
 
         {/* YouTube Play Button */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex size-16 items-center justify-center rounded-xl bg-red-600 shadow-lg transition-transform group-hover:scale-110 sm:size-[68px]">
-            <svg
-              className="ml-1 size-8 text-white"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path d="M8 5v14l11-7z" />
-            </svg>
+        {!hidePlayButton && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex size-16 items-center justify-center rounded-xl bg-red-600 shadow-lg transition-transform group-hover:scale-110 sm:size-[68px]">
+              <svg
+                className="ml-1 size-8 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </div>
           </div>
-        </div>
+        )}
       </button>
     </div>
   );
