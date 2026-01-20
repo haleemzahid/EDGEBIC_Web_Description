@@ -22,7 +22,7 @@ const IMAGES = {
 };
 
 export const metadata: Metadata = {
-  title: 'Resource Manager DB - Production Planning & Scheduling Software',
+  title: 'Resource Manager DB',
   description:
     'Resource Manager-DB (RMDB) is a flexible and affordable production planning, scheduling, and tracking solution designed to adapt to your operations. Features finite capacity planning, MRP, drag-and-drop scheduling, and Excel integration.',
   keywords: [
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     canonical: `${BASE_URL}/resource-manager-db-2`,
   },
   openGraph: {
-    title: 'Resource Manager DB - Production Planning & Scheduling Software',
+    title: 'Resource Manager DB - User Solutions',
     description:
       'Flexible and affordable production planning, scheduling, and tracking solution. Features finite capacity planning, MRP, and drag-and-drop scheduling.',
     url: `${BASE_URL}/resource-manager-db-2`,

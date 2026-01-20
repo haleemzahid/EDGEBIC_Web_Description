@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL!),
   title: {
     template: '%s - User Solutions',
-    default: 'User Solutions - Production Planning Software'
+    default: 'Production Planning Software - User Solutions'
   },
   description: AppInfo.APP_DESCRIPTION,
   keywords:
