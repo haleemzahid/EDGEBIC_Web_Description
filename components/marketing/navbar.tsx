@@ -40,7 +40,7 @@ export function Navbar(): React.JSX.Element {
                 <NavigationMenuList className="gap-1">
                   {MENU_LINKS.map((item, index) =>
                     item.items ? (
-                      <NavigationMenuItem key={index}>
+                      <NavigationMenuItem key={index} className="relative">
                         <NavigationMenuTrigger
                           data-active={
                             item.items.some((subItem) =>
@@ -53,7 +53,7 @@ export function Navbar(): React.JSX.Element {
                         >
                           {item.title}
                         </NavigationMenuTrigger>
-                        <NavigationMenuContent>
+                        <NavigationMenuContent className="left-1/2 -translate-x-1/2">
                           <ul className="w-96 list-none p-4">
                             {item.items.map((subItem, subIndex) => (
                               <li key={subIndex}>
