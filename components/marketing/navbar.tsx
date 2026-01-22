@@ -90,7 +90,6 @@ export function Navbar(): React.JSX.Element {
                             ))}
                           </ul>
                         </NavigationMenuContent>
-                        <NavigationMenuIndicator />
                       </NavigationMenuItem>
                     ) : (
                       <NavigationMenuItem key={index}>
