@@ -13,9 +13,9 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
     {
       year: '2022',
       icon: <Globe className="size-6" />,
-      title: 'EDGE & Visual Scheduler Cloud',
+      title: 'EDGEBI & Visual Scheduler Cloud',
       description:
-        'Released EDGE (Enhanced Drag-n-Drop Graphical Environment) for Resource Manager-DB with network PC compatibility, powerful graphical and calendar views, drag-and-drop job segments between workcenters, and time scales from minutes to years. Released Visual Scheduler for the Cloud combining SweetRP and Visual Scheduler.net with powerful Gantt Charts, worker assignments, and finite capacity constraints.',
+        'Released EDGEBI (Enhanced Drag-n-Drop Graphical Environment) for Resource Manager-DB with network PC compatibility, powerful graphical and calendar views, drag-and-drop job segments between workcenters, and time scales from minutes to years. Released Visual Scheduler for the Cloud combining SweetRP and Visual Scheduler.net with powerful Gantt Charts, worker assignments, and finite capacity constraints.',
       highlight: 'Modern Innovation'
     },
     {
