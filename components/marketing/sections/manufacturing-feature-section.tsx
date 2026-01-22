@@ -504,7 +504,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   alt="Scheduling step process diagram showing optimal scheduling workflow"
                   width={500}
                   height={280}
-                  className="w-full h-[230px] object-fill rounded-lg"
+                  className="w-full h-[230px] object-cover xl:object-fill  rounded-lg"
                   loading="lazy"
                 />
               </div>
