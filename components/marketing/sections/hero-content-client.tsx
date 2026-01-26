@@ -89,15 +89,9 @@ export function HeroContent(): React.JSX.Element {
               Production Planning and Scheduling Software
             </h1>
             {/* Description */}
-            <div className="text-base leading-relaxed text-white">
+            <div className="text-base leading-relaxed text-white max-w-xl">
               <p>
-                What makes <span className="font-semibold italic">US</span>{' '}
-                (User Solutions) unique: we work{' '}
-                <span className="font-semibold italic">with you</span> to solve
-                production scheduling challenges{' '}
-                <span className="font-semibold italic">your way</span>. Benefit
-                from an adaptable and affordable solution that will fit you like
-                a glove.
+                Your Partner for solving production scheduling challenges and improving efficiency and profitability throughout your enterprise.
               </p>
             </div>
 
