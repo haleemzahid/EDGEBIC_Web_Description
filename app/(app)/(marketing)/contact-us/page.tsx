@@ -4,11 +4,12 @@ import React, { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Check, X, ChevronDown, ChevronUp } from 'lucide-react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import {
   Dialog,
@@ -36,11 +37,27 @@ const contactFormSchema = z.object({
 
 type ContactFormValues = z.infer<typeof contactFormSchema>;
 
+const willDoItems = [
+  'Be honest and respectful towards you, your team, your company, and your challenges.',
+  'Adapt software to solve your most pressing issues, as quick and easy as possible.',
+  'Offer a no-risk trial with Implementation support included.',
+  'Draft a custom help "cheat sheet" to fully document your application.',
+  'Help you design a scheduling approach that improves customer service and optimizes operations.'
+];
+
+const wontDoItems = [
+  'Pound you with emails and phone calls to buy our software.',
+  'Share ANY of your information or data with anyone, at anytime, for any reason.',
+  'Expect compensation before we prove out solution.'
+];
+
 export default function ContactUsPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [captchaValue, setCaptchaValue] = useState<string | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [willDoExpanded, setWillDoExpanded] = useState(false);
+  const [wontDoExpanded, setWontDoExpanded] = useState(false);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   const {
@@ -259,6 +276,99 @@ export default function ContactUsPage() {
                             {errors.hearAboutUs.message}
                           </p>
                         )}
+                      </div>
+                    </div>
+
+                    {/* What we WILL do / WON'T do cards */}
+                    <div className="flex items-start gap-3">
+                      {/* What we WILL do */}
+                      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)] transition-all duration-300 flex-1">
+                        <button
+                          type="button"
+                          onClick={() => setWillDoExpanded(!willDoExpanded)}
+                          className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="flex size-10 items-center justify-center rounded-full bg-green-100">
+                              <Check className="size-6 text-green-600" />
+                            </div>
+                            <h3 className="text-md font-semibold text-gray-900">What we WILL do</h3>
+                          </div>
+                          {willDoExpanded ? (
+                            <ChevronUp className="size-5 text-[#1e3a5f]" />
+                          ) : (
+                            <ChevronDown className="size-5 text-[#1e3a5f]" />
+                          )}
+                        </button>
+                        <AnimatePresence>
+                          {willDoExpanded && (
+                            <motion.ul
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.3, ease: 'easeInOut' }}
+                              className="space-y-3 px-5 pb-5 text-md text-gray-600 overflow-hidden"
+                            >
+                              {willDoItems.map((item, index) => (
+                                <motion.li
+                                  key={index}
+                                  initial={{ x: -20, opacity: 0 }}
+                                  animate={{ x: 0, opacity: 1 }}
+                                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                                  className="flex gap-3"
+                                >
+                                  <Check className="mt-0.5 size-4 shrink-0 text-green-500" />
+                                  <span>{item}</span>
+                                </motion.li>
+                              ))}
+                            </motion.ul>
+                          )}
+                        </AnimatePresence>
+                      </div>
+
+                      {/* What we WON'T do */}
+                      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)] transition-all duration-300 flex-1">
+                        <button
+                          type="button"
+                          onClick={() => setWontDoExpanded(!wontDoExpanded)}
+                          className="flex w-full items-center justify-between p-2 text-left transition-colors hover:bg-gray-50"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="flex size-10 items-center justify-center rounded-full bg-red-100">
+                              <X className="size-6 text-red-600" />
+                            </div>
+                            <h3 className="text-md font-semibold text-gray-900">What we WON&apos;T do</h3>
+                          </div>
+                          {wontDoExpanded ? (
+                            <ChevronUp className="size-5 text-[#1e3a5f]" />
+                          ) : (
+                            <ChevronDown className="size-5 text-[#1e3a5f]" />
+                          )}
+                        </button>
+                        <AnimatePresence>
+                          {wontDoExpanded && (
+                            <motion.ul
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.3, ease: 'easeInOut' }}
+                              className="space-y-3 px-5 pb-5 text-md text-gray-600 overflow-hidden"
+                            >
+                              {wontDoItems.map((item, index) => (
+                                <motion.li
+                                  key={index}
+                                  initial={{ x: -20, opacity: 0 }}
+                                  animate={{ x: 0, opacity: 1 }}
+                                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                                  className="flex gap-3"
+                                >
+                                  <X className="mt-0.5 size-4 shrink-0 text-red-500" />
+                                  <span>{item}</span>
+                                </motion.li>
+                              ))}
+                            </motion.ul>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </div>
 
