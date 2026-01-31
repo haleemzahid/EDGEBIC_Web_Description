@@ -112,22 +112,7 @@ export function TestHomeHero(): React.JSX.Element {
                 onClick={handleSecondVideoButtonClick}
                 className="inline-flex h-9 items-center justify-center px-3 py-1.5 text-xs font-semibold text-[#1e3a5f] transition-colors hover:text-[#2d4a6f]"
               >
-                <Image
-                  src="/images/footprint.png"
-                  alt="Step one indicator"
-                  width={24}
-                  height={24}
-                  className="size-6"
-                  style={{ objectFit: 'contain' }}
-                />
-                <Image
-                  src="/images/footprint.png"
-                  alt="Step two indicator"
-                  width={28}
-                  height={28}
-                  className="size-6 mr-1"
-                  style={{ objectFit: 'contain' }}
-                />
+
                 See How It Works
               </button>
               <button
