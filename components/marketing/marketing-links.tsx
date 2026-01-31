@@ -45,32 +45,32 @@ export const MENU_LINKS = [
     href: Routes.SuccessStories,
     external: false
   },
-  {
-    title: 'Resources',
-    items: [
-      {
-        title: 'Applications/Solutions',
-        description: 'Resource management insights and best practices',
-        icon: <BookIcon className="size-5 shrink-0" />,
-        href: Routes.ResourceManagement,
-        external: false
-      },
-      // {
-      //   title: 'Blog',
-      //   description: 'Insights, articles, and updates',
-      //   icon: <BookIcon className="size-5 shrink-0" />,
-      //   href: Routes.Blog,
-      //   external: false
-      // },
-      {
-        title: 'Product Video',
-        description: 'Watch product demonstrations and tutorials',
-        icon: <VideoIcon className="size-5 shrink-0" />,
-        href: Routes.ProductVideos,
-        external: false
-      }
-    ]
-  },
+  // {
+  //   title: 'Resources',
+  //   items: [
+  //     {
+  //       title: 'Applications/Solutions',
+  //       description: 'Resource management insights and best practices',
+  //       icon: <BookIcon className="size-5 shrink-0" />,
+  //       href: Routes.ResourceManagement,
+  //       external: false
+  //     },
+  //     // {
+  //     //   title: 'Blog',
+  //     //   description: 'Insights, articles, and updates',
+  //     //   icon: <BookIcon className="size-5 shrink-0" />,
+  //     //   href: Routes.Blog,
+  //     //   external: false
+  //     // },
+  //     {
+  //       title: 'Product Video',
+  //       description: 'Watch product demonstrations and tutorials',
+  //       icon: <VideoIcon className="size-5 shrink-0" />,
+  //       href: Routes.ProductVideos,
+  //       external: false
+  //     }
+  //   ]
+  // },
   {
     title: 'About',
     items: [
