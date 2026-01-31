@@ -529,7 +529,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     Resource Manager For Excel
                   </span>
                 </p>
-                <p className="text-2xl font-bold text-slate-900">$1,200</p>
+                <p className="text-2xl font-bold text-slate-900">Starting at $1,200</p>
               </div>
 
               <div className="text-center">
@@ -538,7 +538,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     Resource Manager DB
                   </span>
                 </p>
-                <p className="text-2xl font-bold text-slate-900">$3K</p>
+                <p className="text-2xl font-bold text-slate-900">Starting at $3K</p>
               </div>
 
               <div className="text-center">
@@ -547,7 +547,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     EDGEBI Suite
                   </span>
                 </p>
-                <p className="text-2xl font-bold text-slate-900">$10K</p>
+                <p className="text-2xl font-bold text-slate-900">Starting at $10K</p>
               </div>
             </div>
           </div>

@@ -104,13 +104,13 @@ export function HeroContent(): React.JSX.Element {
             <div className="flex flex-row items-center gap-3 !mt-3">
               <button
                 onClick={handleFirstVideoButtonClick}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-[10px] bg-white px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-gray-100"
+                className="inline-flex h-10 w-[170px] items-center justify-center gap-2 rounded-[10px] bg-white px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-gray-100"
               >
                 Intro <span className="italic">US</span>
               </button>
               <button
                 onClick={handleSecondVideoButtonClick}
-                className="inline-flex h-10 items-center justify-center rounded-[10px] bg-white px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-gray-100"
+                className="inline-flex h-10 w-[170px] items-center justify-center rounded-[10px] bg-white px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-gray-100"
               >
                 See How It Works
               </button>
@@ -122,7 +122,7 @@ export function HeroContent(): React.JSX.Element {
                     '_blank'
                   );
                 }}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-[10px] bg-[#FAE74D] px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-[#e6d445]"
+                className="inline-flex h-10 w-[170px] items-center justify-center gap-2 rounded-[10px] bg-[#FAE74D] px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-[#e6d445]"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
