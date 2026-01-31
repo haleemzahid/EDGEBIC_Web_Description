@@ -23,7 +23,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
               </p>
             </div> */}
 
-          <div className="mt-6 px-4 grid gap-8 md:grid-cols-3">
+          <div className="mt-6 grid gap-8 md:grid-cols-3">
             {/* Excel Templates - Operations Manager */}
             <div className="flex flex-col">
               {/* Option Label above card */}
