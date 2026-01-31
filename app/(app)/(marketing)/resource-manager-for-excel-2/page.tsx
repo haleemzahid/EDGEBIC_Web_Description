@@ -72,7 +72,7 @@ export default function ResourceManagerForExcel2Page() {
                 videoId="DRWDNVq31l4"
                 title="Resource Manager For Excel Video"
                 className="size-full"
-                hidePlayButton={true}
+                useBluePlayButton
               />
             </div>
           </div>
@@ -100,8 +100,8 @@ export default function ResourceManagerForExcel2Page() {
                 tabIndex={activeTab === tab.id ? 0 : -1}
                 onClick={() => setActiveTab(tab.id)}
                 className={`transition-all duration-200 focus:outline-none px-8 py-4 text-[16px] font-semibold rounded-t-xl border-2 border-b-0 relative ${activeTab === tab.id
-                    ? 'bg-white text-blue-600 border-blue-500 z-10 -mb-[2px]'
-                    : 'bg-blue-500 text-white border-blue-500 shadow-sm hover:bg-blue-600 hover:border-blue-600'
+                  ? 'bg-white text-blue-600 border-blue-500 z-10 -mb-[2px]'
+                  : 'bg-blue-500 text-white border-blue-500 shadow-sm hover:bg-blue-600 hover:border-blue-600'
                   }`}
               >
                 {tab.label}
@@ -204,7 +204,7 @@ export default function ResourceManagerForExcel2Page() {
                     videoId="74uO2H-eevc"
                     title="Resource Manager for Excel Demo Video"
                     className="size-full"
-                    hidePlayButton={true}
+                    useBluePlayButton
                   />
                 </div>
               </div>

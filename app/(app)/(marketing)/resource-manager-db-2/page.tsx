@@ -306,7 +306,7 @@ export default function ResourceManagerDBPage() {
                     videoId="kn92TIHhbm8"
                     title="Resource Manager DB product overview video"
                     className="size-full"
-                    hidePlayButton={true}
+                    useBluePlayButton
                   />
                 </div>
               </div>
