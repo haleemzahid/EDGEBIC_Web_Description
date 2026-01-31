@@ -81,13 +81,13 @@ export const MENU_LINKS = [
         href: Routes.Mission,
         external: false
       },
-      {
-        title: 'Team',
-        description: 'Meet the people behind our success',
-        icon: <BookIcon className="size-5 shrink-0" />,
-        href: Routes.About,
-        external: false
-      },
+      // {
+      //   title: 'Team',
+      //   description: 'Meet the people behind our success',
+      //   icon: <BookIcon className="size-5 shrink-0" />,
+      //   href: Routes.About,
+      //   external: false
+      // },
       {
         title: 'History',
         description: 'Our journey and company heritage',
