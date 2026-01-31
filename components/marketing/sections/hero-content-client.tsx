@@ -85,13 +85,13 @@ export function HeroContent(): React.JSX.Element {
             className="space-y-8 text-left lg:w-1/2 p-6"
           >
             {/* Main Title */}
-            <h1 className="text-2xl leading-tight text-white md:text-4xl lg:text-5xl">
+            {/* <h1 className="text-2xl leading-tight text-white md:text-4xl lg:text-5xl">
               Production Planning and Scheduling Software
-            </h1>
+            </h1> */}
             {/* Description */}
-            <div className="text-base leading-relaxed text-white max-w-xl">
-              <p>
-                Your Partner for solving production scheduling challenges and improving efficiency and profitability throughout your enterprise.
+            <div className="text-white max-w-2xl">
+              <p className="text-2xl leading-tight md:text-3xl lg:text-4xl font-semibold">
+                Your Partner For Solving Production Planning And Scheduling Challenges your way.
               </p>
             </div>
 
