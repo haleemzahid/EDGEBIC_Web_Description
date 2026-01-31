@@ -1,13 +1,16 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { Check, CircleCheck } from 'lucide-react';
+import { Check, CircleCheck, Play } from 'lucide-react';
 
 import { GridSection } from '@/components/marketing/fragments/grid-section';
 import { Button } from '@/components/ui/button';
 import { YouTubeFacade } from '@/components/ui/youtube-facade';
 
 export function NTClipboardToolBox(): React.JSX.Element {
+  const [playingVideo, setPlayingVideo] = useState<string | null>(null);
+
   return (
     <GridSection hideVerticalGridLines>
       <div>
@@ -36,12 +39,36 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 {/* Video Section */}
                 <div className="relative overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
-                    <YouTubeFacade
-                      videoId="DRWDNVq31l4"
-                      title="Operations Manager Excel Templates"
-                      className="absolute inset-0 size-full"
-                      hidePlayButton
-                    />
+                    {playingVideo === 'video1' ? (
+                      <iframe
+                        className="absolute inset-0 size-full"
+                        src="https://www.youtube-nocookie.com/embed/DRWDNVq31l4?autoplay=1&rel=0&modestbranding=1"
+                        title="Operations Manager Excel Templates"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerPolicy="strict-origin-when-cross-origin"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <>
+                        <YouTubeFacade
+                          videoId="DRWDNVq31l4"
+                          title="Operations Manager Excel Templates"
+                          className="absolute inset-0 size-full"
+                          hidePlayButton
+                        />
+                        {/* Play Icon Overlay */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <button
+                            type="button"
+                            onClick={() => setPlayingVideo('video1')}
+                            className="flex size-16 items-center justify-center rounded-full bg-blue-600/90 shadow-lg transition-transform hover:scale-110 cursor-pointer"
+                            aria-label="Play video"
+                          >
+                            <Play className="size-8 fill-white text-white" />
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -128,12 +155,36 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 {/* Video Section */}
                 <div className="relative overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
-                    <YouTubeFacade
-                      videoId="kn92TIHhbm8"
-                      title="Resource Manager DB"
-                      className="absolute inset-0 size-full"
-                      hidePlayButton
-                    />
+                    {playingVideo === 'video2' ? (
+                      <iframe
+                        className="absolute inset-0 size-full"
+                        src="https://www.youtube-nocookie.com/embed/kn92TIHhbm8?autoplay=1&rel=0&modestbranding=1"
+                        title="Resource Manager DB"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerPolicy="strict-origin-when-cross-origin"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <>
+                        <YouTubeFacade
+                          videoId="kn92TIHhbm8"
+                          title="Resource Manager DB"
+                          className="absolute inset-0 size-full"
+                          hidePlayButton
+                        />
+                        {/* Play Icon Overlay */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <button
+                            type="button"
+                            onClick={() => setPlayingVideo('video2')}
+                            className="flex size-16 items-center justify-center rounded-full bg-blue-600/90 shadow-lg transition-transform hover:scale-110 cursor-pointer"
+                            aria-label="Play video"
+                          >
+                            <Play className="size-8 fill-white text-white" />
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -220,12 +271,36 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 {/* Video Section */}
                 <div className="relative overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
-                    <YouTubeFacade
-                      videoId="_0LjI9MY8zo"
-                      title="EDGEBI Demo"
-                      className="absolute inset-0 size-full"
-                      hidePlayButton
-                    />
+                    {playingVideo === 'video3' ? (
+                      <iframe
+                        className="absolute inset-0 size-full"
+                        src="https://www.youtube-nocookie.com/embed/_0LjI9MY8zo?autoplay=1&rel=0&modestbranding=1"
+                        title="EDGEBI Demo"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerPolicy="strict-origin-when-cross-origin"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <>
+                        <YouTubeFacade
+                          videoId="_0LjI9MY8zo"
+                          title="EDGEBI Demo"
+                          className="absolute inset-0 size-full"
+                          hidePlayButton
+                        />
+                        {/* Play Icon Overlay */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <button
+                            type="button"
+                            onClick={() => setPlayingVideo('video3')}
+                            className="flex size-16 items-center justify-center rounded-full bg-blue-600/90 shadow-lg transition-transform hover:scale-110 cursor-pointer"
+                            aria-label="Play video"
+                          >
+                            <Play className="size-8 fill-white text-white" />
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
