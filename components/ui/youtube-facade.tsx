@@ -13,6 +13,7 @@ interface YouTubeFacadeProps {
   showChannelInfo?: boolean;
   channelName?: string;
   channelThumbnail?: string;
+  useBluePlayButton?: boolean;
 }
 
 /**
@@ -36,7 +37,8 @@ export function YouTubeFacade({
   hidePlayButton = false,
   showChannelInfo = false,
   channelName = '',
-  channelThumbnail = ''
+  channelThumbnail = '',
+  useBluePlayButton = false
 }: YouTubeFacadeProps) {
   const [isPlaying, setIsPlaying] = React.useState(false);
 
@@ -98,16 +100,29 @@ export function YouTubeFacade({
         {/* YouTube Play Button */}
         {!hidePlayButton && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex size-16 items-center justify-center rounded-xl bg-red-600 shadow-lg transition-transform group-hover:scale-110 sm:size-[68px]">
-              <svg
-                className="ml-1 size-8 text-white"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
+            {useBluePlayButton ? (
+              <div className="flex size-16 items-center justify-center rounded-full bg-blue-600/90 shadow-lg transition-transform group-hover:scale-110">
+                <svg
+                  className="size-8 text-white fill-white"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+            ) : (
+              <div className="flex size-16 items-center justify-center rounded-xl bg-red-600 shadow-lg transition-transform group-hover:scale-110 sm:size-[68px]">
+                <svg
+                  className="ml-1 size-8 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+            )}
           </div>
         )}
       </button>
@@ -129,6 +144,7 @@ export function YouTubeFacadeWithIntersection({
   className = '',
   thumbnailQuality = 'hqdefault',
   hidePlayButton = false,
+  useBluePlayButton = false,
   rootMargin = '200px'
 }: YouTubeFacadeProps & { rootMargin?: string }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -219,16 +235,29 @@ export function YouTubeFacadeWithIntersection({
         {/* YouTube Play Button */}
         {!hidePlayButton && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex size-16 items-center justify-center rounded-xl bg-red-600 shadow-lg transition-transform group-hover:scale-110 sm:size-[68px]">
-              <svg
-                className="ml-1 size-8 text-white"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
+            {useBluePlayButton ? (
+              <div className="flex size-16 items-center justify-center rounded-full bg-blue-600/90 shadow-lg transition-transform group-hover:scale-110">
+                <svg
+                  className="size-8 text-white fill-white"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+            ) : (
+              <div className="flex size-16 items-center justify-center rounded-xl bg-red-600 shadow-lg transition-transform group-hover:scale-110 sm:size-[68px]">
+                <svg
+                  className="ml-1 size-8 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+            )}
           </div>
         )}
       </button>

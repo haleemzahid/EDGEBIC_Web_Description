@@ -77,7 +77,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     videoId="IR8NhOlV_zM"
                     title="Production Planning and Scheduling Solutions Demo"
                     className="absolute inset-0 size-full"
-                    hidePlayButton={true}
+                    useBluePlayButton
                   />
                 </div>
               </div>
