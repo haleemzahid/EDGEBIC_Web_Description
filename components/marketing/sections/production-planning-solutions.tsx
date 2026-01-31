@@ -538,7 +538,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     Resource Manager DB
                   </span>
                 </p>
-                <p className="text-2xl font-bold text-slate-900">$3K+</p>
+                <p className="text-2xl font-bold text-slate-900">$3K</p>
               </div>
 
               <div className="text-center">
@@ -547,7 +547,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     EDGEBI Suite
                   </span>
                 </p>
-                <p className="text-2xl font-bold text-slate-900">$10K+</p>
+                <p className="text-2xl font-bold text-slate-900">$10K</p>
               </div>
             </div>
           </div>
