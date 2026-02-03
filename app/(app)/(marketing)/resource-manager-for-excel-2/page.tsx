@@ -7,6 +7,7 @@ import { Check } from 'lucide-react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { YouTubeFacade } from '@/components/ui/youtube-facade';
+import { RMXQuickStartContent } from '@/components/marketing/rmx-quick-start-content';
 
 // Lazy load In Depth content
 const RMXInDepthContent = dynamic(
@@ -213,45 +214,7 @@ export default function ResourceManagerForExcel2Page() {
 
           {activeTab === 'in-depth' && <RMXInDepthContent />}
 
-          {activeTab === 'quick-start' && (
-            <div className="grid items-start gap-8 lg:grid-cols-2">
-              <div>
-                <h2 className="mb-4 text-2xl font-bold text-slate-900">
-                  Quick Start
-                </h2>
-                <div className="space-y-4 text-base leading-relaxed text-slate-600">
-                  <p>
-                    Get started with Resource Manager for Excel quickly and
-                    easily. Our Quick Start guide provides step-by-step
-                    instructions to help you set up and configure RMX for your
-                    specific needs.
-                  </p>
-                  <p>
-                    Download the comprehensive Quick Start PDF guide to begin
-                    your journey with RMX.
-                  </p>
-                  <a
-                    href="/pdf/RMXQuickStart.pdf"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
-                  >
-                    Download Quick Start Guide (PDF)
-                  </a>
-                </div>
-              </div>
-              <div className="flex items-center justify-center">
-                <Image
-                  src="/images/Edgebic/2022-07/RMX.png"
-                  alt="Resource Manager for Excel Quick Start interface"
-                  width={600}
-                  height={400}
-                  className="h-auto max-w-full rounded-lg shadow-lg"
-                  loading="lazy"
-                />
-              </div>
-            </div>
-          )}
+          {activeTab === 'quick-start' && <RMXQuickStartContent />}
 
           {activeTab === 'live-demo' && (
             <div className="grid items-start gap-8 lg:grid-cols-2">
