@@ -28,7 +28,7 @@ export function VideoModal({
   React.useEffect(() => {
     if (isOpen) {
       setCurrentVideo(initialVideo);
-      setIsPlaying(false); // Reset when modal opens
+      setIsPlaying(true); // Autoplay when modal opens
     }
   }, [isOpen, initialVideo]);
 
