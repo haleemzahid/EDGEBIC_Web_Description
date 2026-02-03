@@ -77,10 +77,10 @@ export default function ThankYouWorkcellPlannerPage() {
                   </Link>{' '}
                   or at{' '}
                   <Link
-                    href="tel:248.486.1934"
+                    href="tel:248.486.6365"
                     className="font-semibold text-blue-600 hover:underline"
                   >
-                    248.486.1934
+                    248.486.6365
                   </Link>
                 </p>
 
