@@ -90,8 +90,11 @@ export function HeroContent(): React.JSX.Element {
             </h1> */}
             {/* Description */}
             <div className="text-white max-w-2xl">
-              <p className="text-2xl leading-tight md:text-3xl lg:text-4xl font-semibold">
-                Your Partner For Solving Production Planning And Scheduling Challenges your way.
+              <p className="text-2xl leading-tight md:text-3xl lg:text-4xl font-bold">
+                Your Partner for Solving Production Planning and Scheduling Challenges
+              </p>
+              <p className="text-2xl leading-tight md:text-3xl lg:text-4xl italic font-normal text-center mt-2 mr-10 pr-10">
+                Your Way!
               </p>
             </div>
 
