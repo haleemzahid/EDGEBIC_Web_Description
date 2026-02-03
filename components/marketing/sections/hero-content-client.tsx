@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 import { VideoModal } from '@/components/marketing/video-modal';
@@ -117,14 +118,8 @@ export function HeroContent(): React.JSX.Element {
               >
                 See How It Works
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  window.open(
-                    'https://calendly.com/mudasirnadeem7979/30min',
-                    '_blank'
-                  );
-                }}
+              <Link
+                href="/contact-us"
                 className="inline-flex h-10 w-[170px] items-center justify-center gap-2 rounded-[10px] bg-[#FAE74D] px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-[#e6d445]"
               >
                 <svg
@@ -165,7 +160,7 @@ export function HeroContent(): React.JSX.Element {
                   />
                 </svg>
                 Fix My Schedule!
-              </button>
+              </Link>
             </div>
           </motion.div>
         </div>
