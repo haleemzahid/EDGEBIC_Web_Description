@@ -19,6 +19,10 @@ export function RMXQuickStartContent() {
         // Remove the dark background color (#444) and replace with white
         html = html.replace(/background-color:\s*#444;?/g, 'background-color: white;');
 
+        // Remove body padding to make content full width
+        html = html.replace(/padding:\s*0\s+10px;?/g, 'padding: 0;');
+        html = html.replace(/margin:\s*0;?/g, 'margin: 0;');
+
         if (iframeRef.current) {
           const iframeDoc = iframeRef.current.contentDocument || iframeRef.current.contentWindow?.document;
           if (iframeDoc) {
@@ -60,8 +64,8 @@ export function RMXQuickStartContent() {
       )}
       <iframe
         ref={iframeRef}
-        className="w-full border-0 rounded-lg shadow-md"
-        style={{ minHeight: '800px', height: '100vh' }}
+        className="w-full border-0"
+        style={{ minHeight: '1163vw' }}
         title="RMX Quick Start Guide"
         sandbox="allow-same-origin allow-scripts"
       />
