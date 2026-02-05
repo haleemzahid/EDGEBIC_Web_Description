@@ -98,8 +98,8 @@ export default function MissionPage(): React.JSX.Element {
                 </div>
               </div>
 
-              {/* Right Column - Image */}
-              <div className="flex items-start justify-center md:justify-end">
+              {/* Right Column - Images */}
+              <div className="flex flex-col items-start justify-center gap-6 md:justify-end">
                 <Image
                   src="/images/make-manufacturing-great-again.jpg"
                   alt="Make Manufacturing Great Again - Vintage car and factory"
@@ -107,6 +107,13 @@ export default function MissionPage(): React.JSX.Element {
                   height={210}
                   className="rounded-lg"
                   priority
+                />
+                <Image
+                  src="/happy.jpeg"
+                  alt="Happy"
+                  width={300}
+                  height={210}
+                  className="rounded-lg"
                 />
               </div>
             </div>
