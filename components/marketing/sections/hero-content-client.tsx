@@ -76,25 +76,29 @@ export function HeroContent(): React.JSX.Element {
       </div>
 
       {/* Main Hero Content */}
-      <div className="relative z-10 mx-auto  py-6">
-        <div className="flex">
+      <div className="relative z-10 mx-auto py-6">
+        <div className="flex w-full">
           {/* Left Side - Text Content */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
-            className="space-y-8 text-left lg:w-1/2 p-6"
+            className="space-y-8 text-left w-[70%] p-6 pe-0"
           >
             {/* Main Title */}
             {/* <h1 className="text-2xl leading-tight text-white md:text-4xl lg:text-5xl">
               Production Planning and Scheduling Software
             </h1> */}
             {/* Description */}
-            <div className="text-white max-w-2xl">
-              <p className="text-2xl leading-tight md:text-3xl lg:text-4xl font-bold">
-                Your Partner for Solving Production Planning and Scheduling Challenges
+            <div className="text-white w-[732px] ">
+              <p className="text-3xl text-center leading-tight">
+                Your Partner for Solving
               </p>
-              <p className="text-2xl leading-tight md:text-3xl lg:text-4xl italic font-normal text-center mt-2 mr-10 pr-10">
+              <p className="text-3xl  leading-tight  ">
+                Production Planning and Scheduling Challenges
+              </p>
+
+              <p className="text-3xl font-bold leading-tight   italic  text-center mt-2">
                 Your Way!
               </p>
             </div>
@@ -163,6 +167,9 @@ export function HeroContent(): React.JSX.Element {
               </Link>
             </div>
           </motion.div>
+
+          {/* Right Side - Empty */}
+          <div className="w-[30%]"></div>
         </div>
       </div>
 

@@ -33,14 +33,13 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 </span>
               </div>
               <div className="group relative flex flex-1 flex-col overflow-hidden rounded-3xl border bg-white shadow-lg transition-all hover:shadow-xl">
-                {/* Video Section */}
+                {/* Image Section */}
                 <div className="relative overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
-                    <YouTubeFacade
-                      videoId="DRWDNVq31l4"
-                      title="Operations Manager Excel Templates"
-                      className="absolute inset-0 size-full"
-                      useBluePlayButton
+                    <img
+                      src="/image.png"
+                      alt="Resource Manager For Excel"
+                      className="absolute inset-0 size-full object-cover"
                     />
                   </div>
                 </div>
@@ -125,14 +124,13 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 </span>
               </div>
               <div className="group relative flex flex-1 flex-col overflow-hidden rounded-3xl border border-orange-200 bg-white shadow-lg transition-all hover:shadow-xl">
-                {/* Video Section */}
+                {/* Image Section */}
                 <div className="relative overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
-                    <YouTubeFacade
-                      videoId="kn92TIHhbm8"
-                      title="Resource Manager DB"
-                      className="absolute inset-0 size-full"
-                      useBluePlayButton
+                    <img
+                      src="/singleuser.png"
+                      alt="Resource Manager DB"
+                      className="absolute inset-0 size-full object-cover"
                     />
                   </div>
                 </div>
@@ -217,14 +215,13 @@ export function NTClipboardToolBox(): React.JSX.Element {
                 </span>
               </div>
               <div className="group relative flex flex-1 flex-col overflow-hidden rounded-3xl border bg-white shadow-lg transition-all hover:shadow-xl">
-                {/* Video Section */}
+                {/* Image Section */}
                 <div className="relative overflow-hidden rounded-lg">
                   <div className="relative aspect-video bg-slate-100">
-                    <YouTubeFacade
-                      videoId="_0LjI9MY8zo"
-                      title="EDGEBI Demo"
-                      className="absolute inset-0 size-full"
-                      useBluePlayButton
+                    <img
+                      src="/multi user.png"
+                      alt="EDGEBI"
+                      className="absolute inset-0 size-full object-cover"
                     />
                   </div>
                 </div>

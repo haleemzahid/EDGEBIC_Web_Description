@@ -38,7 +38,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
         {/* Hero Section */}
         <SiteHeading
           title="Production Planning and Scheduling Solutions"
-          description="Manufacturing Solutions That Boost Efficiency"
+          description="Address your scheduling challenges and boost your company’s efficiency, profitability, and competitiveness with a solution that fits, JUST RIGHT!"
         />
 
         <div className="mx-auto mt-8 max-w-7xl">
@@ -54,16 +54,10 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               >
                 Production Planning and Scheduling Solutions
               </a>{' '}
-              that help manufacturers boost efficiency—from Excel job shop tools
-              to advanced APS software that works either standalone or
-              integrates with your ERP. We look forward to resolving your
-              manufacturing scheduling challenges. Schedule a Live Demo Today!
-              Choose the product that best suits your company's needs by using
-              our product matrix.
+              that help manufacturers solve challenges and boost efficiency—from a powerful Excel Add-On to advanced APS software that works either standalone or integrates with your ERP or any system.
             </p>
             <p className="mb-6 text-lg text-slate-700">
-              Contact us to discuss which product is the best fit for your
-              application and budget.
+              We look forward to working with you to resolve your most pressing issues. Reduce/Eliminate late deliveries, reduce expediting costs, optimize labor and workcenter demands, improve customer service, minimize inventory costs, and so much, much more. Could you benefit from a system that gives you an end-to-end view of your entire supply chain? And gives you options to accommodate rush orders, and even deal with outside issues such as weather, hunting season, power outages, no shows on Labor, outside vendors for processing or material problems.
             </p>
           </div>
 
@@ -83,13 +77,11 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               </div>
               {/* Text Content */}
               <div className="space-y-4">
-                <h3 className="text-2xl font-bold text-slate-900">
-                  Want to get your production in the groove?
-                </h3>
+
                 <p className="text-lg text-slate-700">
-                  Watch this classic video and get your operations movin' and
-                  groovin' today!
+                  Let’s work together to solve the most pressing issues, as fast and easy as possible, then move on to next one!
                 </p>
+                <p className="text-lg text-slate-700">Contact US today to discuss which product fits your budget and application.</p>
                 <Button
                   size="lg"
                   variant="outline"
