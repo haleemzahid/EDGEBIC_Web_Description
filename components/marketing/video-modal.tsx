@@ -29,6 +29,8 @@ export function VideoModal({
     if (isOpen) {
       setCurrentVideo(initialVideo);
       setIsPlaying(true); // Autoplay when modal opens
+    } else {
+      setIsPlaying(false); // Reset when modal closes
     }
   }, [isOpen, initialVideo]);
 
@@ -38,7 +40,9 @@ export function VideoModal({
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+    if (e.target === e.currentTarget) {
+      handleCloseClick();
+    }
   };
 
   const handlePlayClick = () => {
@@ -52,7 +56,7 @@ export function VideoModal({
 
   const thumbnailUrl = `https://i.ytimg.com/vi/${currentVideoId}/hqdefault.jpg`;
 
-  const embedUrl = `https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1&rel=0&modestbranding=1`;
+  const embedUrl = `https://www.youtube.com/embed/${currentVideoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1`;
 
   return (
     <AnimatePresence>
