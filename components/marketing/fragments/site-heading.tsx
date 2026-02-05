@@ -24,12 +24,12 @@ export function SiteHeading({
         </Badge>
       )}
       {title && (
-        <h1 className="text-pretty text-5xl font-bold leading-tight lg:text-6xl lg:leading-tight">
+        <h1 className="text-pretty text-3xl font-bold leading-tight lg:text-4xl lg:leading-tight">
           {title}
         </h1>
       )}
       {description && (
-        <p className="text-lg text-muted-foreground lg:text-xl">
+        <p className="text-muted-foreground" style={{ fontSize: '18px' }}>
           {description}
         </p>
       )}
