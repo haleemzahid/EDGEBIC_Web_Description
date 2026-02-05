@@ -42,6 +42,11 @@ export function NTClipboardToolBox(): React.JSX.Element {
                       className="absolute inset-0 size-full object-cover"
                     />
                   </div>
+                  <div className="bg-slate-50 px-4 py-2 text-center">
+                    <p className="text-sm font-medium text-slate-700">
+                      Just Do It in Excel
+                    </p>
+                  </div>
                 </div>
 
                 <div className="flex flex-1 flex-col p-6">
@@ -133,6 +138,11 @@ export function NTClipboardToolBox(): React.JSX.Element {
                       className="absolute inset-0 size-full object-cover"
                     />
                   </div>
+                  <div className="bg-slate-50 px-4 py-2 text-center">
+                    <p className="text-sm font-medium text-slate-700">
+                      Single-User Source of Truth
+                    </p>
+                  </div>
                 </div>
 
                 <div className="flex flex-1 flex-col p-6">
@@ -223,6 +233,11 @@ export function NTClipboardToolBox(): React.JSX.Element {
                       alt="EDGEBI"
                       className="absolute inset-0 size-full object-cover"
                     />
+                  </div>
+                  <div className="bg-slate-50 px-4 py-2 text-center">
+                    <p className="text-sm font-medium text-slate-700">
+                      Intuitive and easy to use
+                    </p>
                   </div>
                 </div>
 
