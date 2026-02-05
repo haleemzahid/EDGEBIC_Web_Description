@@ -159,19 +159,9 @@ export const FOOTER_LINKS: Array<{
     {
       title: 'Products',
       links: [
-        { name: 'EDGEBI', href: Routes.Edgebi, external: false },
-        // {
-        //   name: 'Operations Manager',
-        //   href: Routes.OperationsManager,
-        //   external: false
-        // },
-        // { name: 'Excel Templates', href: Routes.ExcelTemplates, external: false },
-        // {
-        //   name: 'Product Downloads',
-        //   href: Routes.ProductDownloads,
-        //   external: false
-        // },
-        { name: 'Product Videos', href: Routes.ProductVideos, external: false }
+        { name: 'Resource Manager for Excel (RMX)', href: '/resource-manager-for-excel-2', external: false },
+        { name: 'Resource Manager DB (RMDB)', href: '/resource-manager-db-2', external: false },
+        { name: 'EDGEBIC', href: Routes.Edgebi, external: false }
       ]
     },
     {

@@ -86,8 +86,8 @@ export default function MissionPage(): React.JSX.Element {
                     </Link>
                   </p>
                   <p>
-                    <Link href={Routes.Team} className="text-blue-600 hover:underline">
-                      Our Team
+                    <Link href="" className="text-blue-600 hover:underline">
+                      No More Our Team
                     </Link>
                   </p>
                   <p>
@@ -99,7 +99,7 @@ export default function MissionPage(): React.JSX.Element {
               </div>
 
               {/* Right Column - Images */}
-              <div className="flex flex-col items-start justify-center gap-6 md:justify-end">
+              <div className="flex flex-col items-start gap-6">
                 <Image
                   src="/images/make-manufacturing-great-again.jpg"
                   alt="Make Manufacturing Great Again - Vintage car and factory"
