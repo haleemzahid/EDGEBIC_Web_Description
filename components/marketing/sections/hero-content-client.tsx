@@ -110,13 +110,13 @@ export function HeroContent(): React.JSX.Element {
                 onClick={handleFirstVideoButtonClick}
                 className="inline-flex h-10 w-[170px] items-center justify-center gap-2 rounded-[10px] bg-white px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-gray-100"
               >
-                Intro <span className="italic">US</span>
+                Introduction
               </button>
               <button
                 onClick={handleSecondVideoButtonClick}
                 className="inline-flex h-10 w-[170px] items-center justify-center rounded-[10px] bg-white px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-gray-100"
               >
-                See How It Works
+                Welcome
               </button>
               <Link
                 href="/contact-us"

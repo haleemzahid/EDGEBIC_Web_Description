@@ -147,12 +147,6 @@ export default function ContactUsPage() {
                       </svg>
                       <span className="text-gray-700">Schedule a live, custom demo (We will be in contact to understand your application and obtain your actual data/reports).</span>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <svg className="w-5 h-5 text-cyan-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span className="text-gray-700">We&apos;ll be periodically sending you updates about our new products and features.</span>
-                    </div>
                   </div>
 
                 </div>
@@ -279,6 +273,22 @@ export default function ContactUsPage() {
                       </div>
                     </div>
 
+                    {/* Message */}
+                    <div>
+                      <textarea
+                        id="message"
+                        {...register('message')}
+                        rows={4}
+                        className="w-full border-b border-input bg-transparent px-2 py-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                        placeholder="What do you need help with?"
+                      />
+                      {errors.message && (
+                        <p className="mt-1 text-sm text-destructive">
+                          {errors.message.message}
+                        </p>
+                      )}
+                    </div>
+
                     {/* What we WILL do / WON'T do cards */}
                     <div className="flex items-start gap-3">
                       {/* What we WILL do */}
@@ -370,22 +380,6 @@ export default function ContactUsPage() {
                           )}
                         </AnimatePresence>
                       </div>
-                    </div>
-
-                    {/* Message */}
-                    <div>
-                      <textarea
-                        id="message"
-                        {...register('message')}
-                        rows={4}
-                        className="w-full border-b border-input bg-transparent px-2 py-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-                        placeholder="What do you need help with?"
-                      />
-                      {errors.message && (
-                        <p className="mt-1 text-sm text-destructive">
-                          {errors.message.message}
-                        </p>
-                      )}
                     </div>
 
                     {/* reCAPTCHA */}
