@@ -62,11 +62,11 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
           </div>
 
           {/* Video Section - Side by Side Layout */}
-          <div className="mb-6">
+          <div className="">
             <div className="grid items-center gap-8 md:grid-cols-2">
               {/* Video */}
-              <div className="relative overflow-hidden rounded-xl border bg-slate-100 shadow-lg">
-                <div className="relative aspect-video">
+              <div className="relative overflow-hidden rounded-xl border bg-slate-100 shadow-lg max-h-[300px]">
+                <div className="relative aspect-video max-h-[300px]">
                   <YouTubeFacade
                     videoId="IR8NhOlV_zM"
                     title="Production Planning and Scheduling Solutions Demo"
