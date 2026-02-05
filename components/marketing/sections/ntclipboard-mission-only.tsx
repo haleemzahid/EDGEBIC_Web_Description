@@ -15,7 +15,7 @@ export function NTClipboardMissionOnly(): React.JSX.Element {
       <div className="container py-6">
         <SiteHeading
           title="Make Manufacturing Great Again!"
-          description="Empowering manufacturers since 1991 with solutions that fit like a glove"
+          description="Empowering manufacturers since 1991 with solutions that fit like a glove."
         />
 
         {/* Logo Section */}
