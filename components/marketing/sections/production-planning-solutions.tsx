@@ -43,8 +43,8 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
 
         <div className="mx-auto  max-w-7xl">
           {/* Introduction */}
-          <div className="mb-6 text-center">
-            <p className=" text-md text-muted-foreground">
+          <div className="mb-[17px] text-center">
+            <p className=" text-lg mb-3 text-muted-foreground">
               Discover powerful{' '}
               <a
                 href="https://en.wikipedia.org/wiki/Production_planning"
@@ -56,7 +56,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               </a>{' '}
               that help manufacturers solve challenges and boost efficiency—from a powerful Excel Add-On to advanced APS software that works either standalone or integrates with your ERP or any system.
             </p>
-            <p className="mb-4 text-md text-muted-foreground">
+            <p className="mb-4 text-lg  text-muted-foreground">
               We look forward to working with you to resolve your most pressing issues. Reduce/Eliminate late deliveries, reduce expediting costs, optimize labor and workcenter demands, improve customer service, minimize inventory costs, and so much, much more. Could you benefit from a system that gives you an end-to-end view of your entire supply chain? And gives you options to accommodate rush orders, and even deal with outside issues such as weather, hunting season, power outages, no shows on Labor, outside vendors for processing or material problems.
             </p>
           </div>

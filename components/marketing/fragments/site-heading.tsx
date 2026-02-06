@@ -29,7 +29,7 @@ export function SiteHeading({
         </h1>
       )}
       {description && (
-        <p className="text-muted-foreground" style={{ fontSize: '18px' }}>
+        <p className="text-lg text-muted-foreground mb-3">
           {description}
         </p>
       )}
