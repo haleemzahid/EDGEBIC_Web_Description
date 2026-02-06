@@ -161,7 +161,7 @@ export const FOOTER_LINKS: Array<{
       links: [
         { name: 'Resource Manager for Excel (RMX)', href: '/resource-manager-for-excel-2', external: false },
         { name: 'Resource Manager DB (RMDB)', href: '/resource-manager-db-2', external: false },
-        { name: 'EDGEBIC', href: Routes.Edgebi, external: false }
+        { name: 'EDGEBI', href: Routes.Edgebi, external: false }
       ]
     },
     {
