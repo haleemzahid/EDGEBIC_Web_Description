@@ -162,16 +162,31 @@ export function NTClipboardSuccessStories(): React.JSX.Element {
       {/* Hero Section */}
       <section className="py-6">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-              Customer Success Stories
-            </h1>
-            <p className="mx-auto mt-4 max-w-4xl text-lg text-muted-foreground">
-              Click on logos or Read More to view just a sample of our customers' success stories. You too can realize great success by working with <strong>US</strong>!
-            </p>
-            <p className="mx-auto mt-2 max-w-4xl text-lg text-muted-foreground">
-              Contact <strong>US</strong> today to discover how easy and affordable it is to become even more competitive and profitable through efficient production planning, scheduling, tracking, combined with improved communications.
-            </p>
+          <div className="grid items-center gap-8 lg:grid-cols-2">
+            {/* Left - Text Content */}
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+                Customer Success Stories
+              </h1>
+              <p className="mt-6 text-lg text-muted-foreground leading-relaxed">
+                Click on logos or Read More to view just a sample of our customers' success stories. You too can realize great success by working with <strong>US</strong>!
+              </p>
+              <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
+                Contact <strong>US</strong> today to discover how easy and affordable it is to become even more competitive and profitable through efficient production planning, scheduling, tracking, combined with improved communications.
+              </p>
+            </div>
+
+            {/* Right - Image */}
+            <div className="flex items-center justify-center">
+              <Image
+                src="/images/Edgebic/successStories.jpeg"
+                alt="Success Stories"
+                width={600}
+                height={400}
+                className="rounded-lg shadow-lg object-cover"
+                priority
+              />
+            </div>
           </div>
         </div>
       </section>
