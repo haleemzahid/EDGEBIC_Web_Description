@@ -84,7 +84,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                 <p className="text-lg text-slate-700">Contact US today to discuss which product fits your budget and application.</p>
                 <Button
                   size="lg"
-                  className="gap-2 bg-[#FAE74D] text-[#1e3a5f] hover:bg-[#e6d445] font-semibold px-6 py-6 text-base rounded-full"
+                  className="gap-2 flex m-auto bg-[#FAE74D] text-[#1e3a5f] hover:bg-[#e6d445] font-semibold px-6 py-6 text-base rounded-full"
                   onClick={() => router.push('/contact-us')}
                 >
                   <img
