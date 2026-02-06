@@ -240,9 +240,7 @@ function LiveDemoContent() {
             how RMDB will work for your specific operations – RISK FREE!
           </p>
           <a
-            href="https://calendly.com/mudasirnadeem7979/30min"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/contact-us"
             className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
           >
             Schedule a Live Demo

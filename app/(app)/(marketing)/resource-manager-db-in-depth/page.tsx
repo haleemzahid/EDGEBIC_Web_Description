@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 import { EDGEBIContent } from '@/components/marketing/sections/edgebi-content';
 import { RMDBFeatureList } from '@/components/marketing/sections/rmdb-feature-list';
@@ -618,15 +619,12 @@ export default function ResourceManagerDBInDepthPage() {
                   <p>
                     We can even use your data in its current form to show you exactly how RMDB will work for your specific operations – RISK FREE!
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      window.open('https://calendly.com/mudasirnadeem7979/30min', '_blank');
-                    }}
+                  <Link
+                    href="/contact-us"
                     className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600"
                   >
                     Schedule a Live Demo
-                  </button>
+                  </Link>
                 </div>
               </div>
               <div className="flex items-center justify-center">
