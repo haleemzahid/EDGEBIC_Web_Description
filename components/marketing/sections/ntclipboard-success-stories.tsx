@@ -182,8 +182,8 @@ export function NTClipboardSuccessStories(): React.JSX.Element {
                 src="/images/Edgebic/successStories.jpeg"
                 alt="Success Stories"
                 width={600}
-                height={400}
-                className="rounded-lg shadow-lg object-cover"
+                height={300}
+                className="rounded-lg shadow-lg object-cover max-h-[300px]"
                 priority
               />
             </div>

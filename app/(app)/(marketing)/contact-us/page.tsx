@@ -129,8 +129,8 @@ export default function ContactUsPage() {
               {/* Form Section */}
               <div className="w-full lg:w-[60%]">
                 {/* Description */}
-                <div className="mb-6">
-                  <p className="text-gray-700 leading-relaxed mb-4">
+                <div className="mb-3">
+                  <p className="text-gray-700 leading-relaxed text-[17px] mb-2">
                     Instead of a one size fits all approach, lets discuss YOUR processes and challenges and explore situations to fit YOUR WAY. We can even use your data during a live demo meeting. Contact <span className="font-bold italic">US</span> by filling out the form below and we will be in touch to prepare custom demo.
                   </p>
 
@@ -139,23 +139,22 @@ export default function ContactUsPage() {
                       <svg className="w-5 h-5 text-cyan-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      <span className="text-gray-700">Schedule a quick call to discuss your application.</span>
+                      <span className="text-gray-700 text-[17px]">Schedule a quick call to discuss your application.</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <svg className="w-5 h-5 text-cyan-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      <span className="text-gray-700">Schedule a live, custom demo (We will be in contact to understand your application and obtain your actual data/reports).</span>
+                      <span className="text-gray-700 text-[17px]">Schedule a live, custom demo (We will be in contact to understand your application and obtain your actual data/reports).</span>
                     </div>
                   </div>
 
                 </div>
 
                 {/* Contact Form */}
-                <div className="py-2">
+                <div>
                   <form
                     onSubmit={handleSubmit(onSubmit)}
-                    className="space-y-4"
                   >
                     {/* First Name & Last Name */}
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -278,8 +277,8 @@ export default function ContactUsPage() {
                       <textarea
                         id="message"
                         {...register('message')}
-                        rows={4}
-                        className="w-full border-b border-input bg-transparent px-2 py-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                        rows={2}
+                        className="w-full border-b border-input bg-transparent px-2 py-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none resize-none"
                         placeholder="What do you need help with?"
                       />
                       {errors.message && (
@@ -394,7 +393,7 @@ export default function ContactUsPage() {
                     <button
                       type="submit"
                       disabled={isSubmitting || !captchaValue}
-                      className="rounded-md bg-blue-600 px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-md mt-2 bg-blue-600 px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isSubmitting ? 'Submitting...' : 'Submit'}
                     </button>
@@ -403,12 +402,12 @@ export default function ContactUsPage() {
               </div>
 
               {/* Right Side - Image */}
-              <div className="hidden h-auto lg:flex lg:w-[40%] flex-col items-center">
+              <div className="hidden h-[550px] lg:flex lg:w-[40%] flex-col items-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/images/Edgebic/contact-sidebar.png"
                   alt="Diverse professionals representing our client base"
-                  className="w-full max-w-xs h-[100%] object-contain"
+                  className="w-full  h-[100%] object-contain"
                 />
 
                 {/* Perfect Complement Text */}
