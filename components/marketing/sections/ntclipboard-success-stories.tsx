@@ -207,49 +207,49 @@ export function NTClipboardSuccessStories(): React.JSX.Element {
 
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {successStories.map((story) => (
-              <Link key={story.id} href={story.href} className="block">
-                <Card className="group h-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer">
+              <Card key={story.id} className="group h-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer">
+                <Link href={story.href} className="block">
                   <div className="aspect-video overflow-hidden bg-muted">
                     <Image
                       src={story.logo}
                       alt={`${story.author} logo`}
                       width={400}
                       height={225}
-                      className="size-full object-fill transition-transform duration-300 group-hover:scale-105"
+                      className="size-full object-contain transition-transform duration-300 group-hover:scale-105"
                     />
                   </div>
-                  <CardHeader className="pb-4">
-                    <Link href={story.href}>
-                      <CardTitle className="line-clamp-2 cursor-pointer text-lg transition-colors hover:text-blue-600 group-hover:text-blue-600">
-                        {story.title}
-                      </CardTitle>
+                </Link>
+                <CardHeader className="pb-4">
+                  <CardTitle className="line-clamp-2 text-lg transition-colors hover:text-blue-600 group-hover:text-blue-600">
+                    <Link href={story.href} className="hover:underline">
+                      {story.title}
                     </Link>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <CardDescription className="mb-4 line-clamp-3">
-                      {story.description}
-                    </CardDescription>
-                    <blockquote className="mb-4 border-l-4 border-blue-500 pl-4">
-                      <p className="text-sm italic text-foreground">
-                        "{story.quote}"
-                      </p>
-                      <footer className="mt-2 text-xs text-muted-foreground">
-                        — {story.author}
-                      </footer>
-                    </blockquote>
-                    <Link href={story.href}>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto p-0 font-medium text-blue-600 hover:text-blue-700"
-                      >
-                        Read more
-                        <ArrowUpRightIcon className="ml-1 size-4" />
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              </Link>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <CardDescription className="mb-4 line-clamp-3">
+                    {story.description}
+                  </CardDescription>
+                  <blockquote className="mb-4 border-l-4 border-blue-500 pl-4">
+                    <p className="text-sm italic text-foreground">
+                      "{story.quote}"
+                    </p>
+                    <footer className="mt-2 text-xs text-muted-foreground">
+                      — {story.author}
+                    </footer>
+                  </blockquote>
+                  <Link href={story.href}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto p-0 font-medium text-blue-600 hover:text-blue-700"
+                    >
+                      Read more
+                      <ArrowUpRightIcon className="ml-1 size-4" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>

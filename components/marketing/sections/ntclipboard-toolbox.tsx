@@ -43,7 +43,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     />
                   </div>
                   <div className="bg-slate-50 px-4 py-2 text-center">
-                    <p className="text-sm font-medium text-slate-700">
+                    <p className="text-sm font-bold italic text-slate-700">
                       Just Do It in Excel
                     </p>
                   </div>
@@ -139,7 +139,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     />
                   </div>
                   <div className="bg-slate-50 px-4 py-2 text-center">
-                    <p className="text-sm font-medium text-slate-700">
+                    <p className="text-sm font-bold italic text-slate-700">
                       Single-User Source of Truth
                     </p>
                   </div>
@@ -235,7 +235,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     />
                   </div>
                   <div className="bg-slate-50 px-4 py-2 text-center">
-                    <p className="text-sm font-medium text-slate-700">
+                    <p className="text-sm font-bold italic text-slate-700">
                       Intuitive and easy to use
                     </p>
                   </div>
