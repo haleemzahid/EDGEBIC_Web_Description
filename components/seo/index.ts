@@ -6,3 +6,5 @@ export {
   ArticleJsonLd,
   FAQJsonLd
 } from './json-ld';
+
+export { DynamicBreadcrumbJsonLd } from './breadcrumb-schema';
