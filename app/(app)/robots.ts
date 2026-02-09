@@ -1,13 +1,16 @@
-import type { MetadataRoute } from 'next';
-
-import { getBaseUrl } from '@/lib/urls/get-base-url';
+import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
+
   return {
-    rules: {
-      userAgent: '*',
-      allow: '/'
-    },
-    sitemap: `${getBaseUrl()}/sitemap.xml`
+    rules: [
+      {
+        userAgent: '*',
+        allow: '/',
+        disallow: ['/api/', '/auth/', '/dashboard/']
+      }
+    ],
+    sitemap: `${baseUrl}/sitemap.xml`
   };
 }

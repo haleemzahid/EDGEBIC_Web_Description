@@ -1,31 +1,25 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { MetadataRoute } from 'next';
 import { allDocs, allPosts } from 'content-collections';
 
-type SitemapEntry = {
-  url: string;
-  lastModified: Date | string;
-  changeFreq?: string;
-  priority?: number;
-};
-
-async function getMarketingPages(baseUrl: string): Promise<SitemapEntry[]> {
+async function getMarketingPages(baseUrl: string): Promise<MetadataRoute.Sitemap> {
   const marketingPath = path.join(process.cwd(), 'app', '(app)', '(marketing)');
   const entries = await fs.readdir(marketingPath, { withFileTypes: true });
-  const routes: SitemapEntry[] = [];
+  const routes: MetadataRoute.Sitemap = [];
 
   for (const entry of entries.filter((e) => e.isDirectory())) {
+    // Skip 'home' directory as it's handled separately as the root URL
+    if (entry.name === 'home') continue;
+
     // Check for page.tsx in the directory
     try {
       const fullPath = path.join(marketingPath, entry.name);
       const pageStats = await fs.stat(path.join(fullPath, 'page.tsx'));
-      const route = entry.name === 'home' ? '' : entry.name;
 
       routes.push({
-        url: `${baseUrl}/${route}`,
-        lastModified: pageStats.mtime,
-        priority: route === '' ? 1.0 : 0.8,
-        changeFreq: 'weekly'
+        url: `${baseUrl}/${entry.name}`,
+        lastModified: pageStats.mtime
       });
     } catch {
       // No page.tsx found, skip this directory
@@ -36,29 +30,23 @@ async function getMarketingPages(baseUrl: string): Promise<SitemapEntry[]> {
   return routes;
 }
 
-export default async function Sitemap(): Promise<SitemapEntry[]> {
+export default async function Sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
   const marketingPages = await getMarketingPages(baseUrl);
 
-  const sitemap: SitemapEntry[] = [
+  const sitemap: MetadataRoute.Sitemap = [
     {
       url: `${baseUrl}/`,
-      lastModified: new Date(),
-      priority: 1,
-      changeFreq: 'weekly'
+      lastModified: new Date()
     },
     ...marketingPages,
     ...allDocs.map((doc) => ({
       url: `${baseUrl}${doc.slug}`,
-      lastModified: new Date(),
-      priority: 0.8,
-      changeFreq: 'weekly'
+      lastModified: new Date()
     })),
     ...allPosts.map((post) => ({
       url: `${baseUrl}${post.slug}`,
-      lastModified: post.published,
-      priority: 0.6,
-      changeFreq: 'monthly'
+      lastModified: post.published
     }))
   ];
 
