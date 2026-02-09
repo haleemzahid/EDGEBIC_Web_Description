@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Job Sequencing for Single Work Station',
+  description:
+    'SKED1A schedules jobs for a single work station. Minimize flow time, late jobs, or maximum lateness for optimal scheduling.',
+  path: '/operations-manager-sked1aa',
+  keywords: 'job sequencing, single work station, flow time, job scheduling, manufacturing scheduling'
+});
 
 export default function OperationsManagerSked1aaPage(): React.JSX.Element {
   return (

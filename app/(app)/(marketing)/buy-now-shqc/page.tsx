@@ -2,6 +2,15 @@ import React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Request Spreadsheet QC',
+  description:
+    '15 Excel templates for quality control including control charts, SPC, P Charts, acceptance sampling. Easy customization.',
+  path: '/buy-now-shqc',
+  keywords: 'Spreadsheet QC, quality control, control charts, SPC, acceptance sampling, Excel templates'
+});
 
 export default function BuyNowSHQCPage() {
   return (

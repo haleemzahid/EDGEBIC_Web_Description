@@ -3,6 +3,15 @@ import { Check } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Purchase Spreadsheet Scheduler',
+  description:
+    '14 Excel templates for project scheduling, Gantt charting, CPM, job sequencing, and workflow modeling.',
+  path: '/buy-now-spreadsheet-scheduler',
+  keywords: 'Spreadsheet Scheduler, Gantt chart, CPM, project scheduling, job sequencing, Excel templates'
+});
 
 export default function BuyNowSpreadsheetSchedulerPage() {
   return (

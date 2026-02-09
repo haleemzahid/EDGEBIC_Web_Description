@@ -1,6 +1,15 @@
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Workcell Planner',
+  description:
+    'Capacity planning tool for determining machine and manpower requirements. Identify bottlenecks and optimize resource utilization.',
+  path: '/workcell-planner',
+  keywords: 'workcell planner, capacity planning, resource optimization, bottleneck analysis, manufacturing capacity'
+});
 
 export default function WorkcellPlannerPage() {
   return (

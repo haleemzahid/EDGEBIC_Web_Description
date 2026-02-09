@@ -3,6 +3,15 @@ import { Check } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Purchase Spreadsheet QC',
+  description:
+    '15 Excel templates for quality control including control charts, SPC, acceptance sampling, and process capability analysis.',
+  path: '/buy-now-spreadsheet-qc',
+  keywords: 'Spreadsheet QC, quality control, Excel templates, control charts, SPC, acceptance sampling'
+});
 
 export default function BuyNowSpreadsheetQCPage() {
   return (

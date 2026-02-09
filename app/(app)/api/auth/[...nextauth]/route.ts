@@ -1,13 +1,14 @@
 import { NextRequest } from 'next/server';
 
 import { handlers } from '@/lib/auth';
+import { getBaseUrl } from '@/lib/urls/get-base-url';
 
 const reqWithOrigin = (req: NextRequest): NextRequest => {
   const { href, origin } = req.nextUrl;
   return new NextRequest(
     href.replace(
       origin,
-      new URL(process.env.NEXT_PUBLIC_BASE_URL as string).origin
+      new URL(getBaseUrl()).origin
     ),
     req
   );

@@ -3,6 +3,15 @@ import { Check } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Purchase Lead Time Calculator',
+  description:
+    'Calculate and manage manufacturing lead times. Improve delivery performance and customer satisfaction with accurate lead time estimates.',
+  path: '/buy-now-leadtime',
+  keywords: 'lead time calculator, manufacturing lead times, delivery performance, production scheduling'
+});
 
 export default function BuyNowLeadTimePage() {
   return (

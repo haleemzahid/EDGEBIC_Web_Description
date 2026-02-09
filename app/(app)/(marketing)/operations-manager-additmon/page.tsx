@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Seasonal Adjustment - Difference to Moving Average',
+  description:
+    'ADDITMON uses the difference-to-moving average method for monthly seasonal adjustment. Classical decomposition for forecasting seasonal data.',
+  path: '/operations-manager-additmon',
+  keywords: 'seasonal adjustment, difference to moving average, monthly data, decomposition, seasonality'
+});
 
 export default function AdditmonPage(): React.JSX.Element {
   return (

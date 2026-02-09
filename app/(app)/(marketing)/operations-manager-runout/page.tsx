@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Run-Out Time Production Planning',
+  description:
+    'Run-out time production planning model to balance inventory levels. Calculate equal run-out times for inventory management.',
+  path: '/operations-manager-runout',
+  keywords: 'run-out time, production planning, inventory management, stock production, what-if analysis'
+});
 
 export default function RunoutPage(): React.JSX.Element {
   return (

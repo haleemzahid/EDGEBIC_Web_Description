@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Job Sequencing for 3 Work Stations',
+  description:
+    'SKED3A for flow shops with 3 work stations in series. Minimize makespan with optimal job sequencing algorithms.',
+  path: '/operations-manager-sked3a',
+  keywords: 'job sequencing, flow shop, 3 work stations, makespan, batch scheduling'
+});
 
 export default function Sked3aPage(): React.JSX.Element {
   return (

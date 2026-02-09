@@ -1,24 +1,27 @@
-import type { Metadata } from 'next';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { ArticleJsonLd } from '@/components/seo';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
-  title:
-    'Supply Chain Visibility Solutions for Modern Manufacturers',
+export const metadata = createPageMetadata({
+  title: 'Supply Chain Visibility Solutions for Modern Manufacturers',
   description:
     'Improve supply chain transparency with advanced scheduling solutions and ERP software from User Solutions, Inc. Enhance visibility, efficiency, and agility.',
-  openGraph: {
-    title: 'Supply Chain Visibility Solutions for Modern Manufacturers',
-    description:
-      'Advanced scheduling and ERP solutions for supply chain transparency',
-    url: 'https://www.usersolutions.com/enhancing-supply-chain-visibility-through-advanced-scheduling-solutions'
-  }
-};
+  path: '/enhancing-supply-chain-visibility-through-advanced-scheduling-solutions',
+  keywords: 'supply chain visibility, scheduling solutions, ERP software, manufacturing, inventory management'
+});
 
 export default function SupplyChainVisibilityPage() {
   return (
-    <div className="min-h-screen text-[18px]">
+    <>
+      <ArticleJsonLd
+        title="Supply Chain Visibility Solutions for Modern Manufacturers"
+        description="Improve supply chain transparency with advanced scheduling solutions and ERP software from User Solutions, Inc. Enhance visibility, efficiency, and agility."
+        url="/enhancing-supply-chain-visibility-through-advanced-scheduling-solutions"
+        datePublished="2024-05-26"
+      />
+      <div className="min-h-screen text-[18px]">
       {/* Hero Section */}
       <section className="py-6">
         <div className="container mx-auto px-4">
@@ -204,6 +207,7 @@ export default function SupplyChainVisibilityPage() {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 }

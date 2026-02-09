@@ -1,22 +1,27 @@
-import type { Metadata } from 'next';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { ArticleJsonLd } from '@/components/seo';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
   title: 'Lean Manufacturing Solutions',
   description:
     'Explore lean manufacturing principles with User Solutions, Inc. Learn about waste reduction, continuous improvement, and advanced resource management solutions.',
-  openGraph: {
-    title: 'Lean Manufacturing Solutions',
-    description: 'Eliminate waste and maximize value with lean principles',
-    url: 'https://www.usersolutions.com/lean-manufacturing-solutions'
-  }
-};
+  path: '/lean-manufacturing-solutions',
+  keywords: 'lean manufacturing, waste reduction, continuous improvement, Kaizen, Kanban, 5S, manufacturing efficiency'
+});
 
 export default function LeanManufacturingSolutionsPage() {
   return (
-    <div className="min-h-screen text-[18px]">
+    <>
+      <ArticleJsonLd
+        title="Lean Manufacturing Solutions"
+        description="Explore lean manufacturing principles with User Solutions, Inc. Learn about waste reduction, continuous improvement, and advanced resource management solutions."
+        url="/lean-manufacturing-solutions"
+        datePublished="2024-05-06"
+      />
+      <div className="min-h-screen text-[18px]">
       {/* Hero Section */}
       <section className="py-6">
         <div className="container mx-auto px-4">
@@ -217,6 +222,7 @@ export default function LeanManufacturingSolutionsPage() {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 }

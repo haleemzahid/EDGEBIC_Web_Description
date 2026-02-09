@@ -1,23 +1,27 @@
-import type { Metadata } from 'next';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { ArticleJsonLd } from '@/components/seo';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
   title: 'The Evolution of Production Planning',
   description:
     'Discover how technology transforms production planning and scheduling with cutting-edge ERP solutions, IoT integration, and advanced analytics for modern manufacturing.',
-  openGraph: {
-    title: 'The Evolution of Production Planning',
-    description:
-      'Technology transforming production planning and scheduling for modern manufacturers',
-    url: 'https://www.usersolutions.com/erp-solutions-for-production-planning'
-  }
-};
+  path: '/erp-solutions-for-production-planning',
+  keywords: 'ERP solutions, production planning, IoT integration, big data analytics, manufacturing technology'
+});
 
 export default function ERPSolutionsProductionPlanningPage() {
   return (
-    <div className="min-h-screen text-[18px]">
+    <>
+      <ArticleJsonLd
+        title="The Evolution of Production Planning"
+        description="Discover how technology transforms production planning and scheduling with cutting-edge ERP solutions, IoT integration, and advanced analytics for modern manufacturing."
+        url="/erp-solutions-for-production-planning"
+        datePublished="2024-05-16"
+      />
+      <div className="min-h-screen text-[18px]">
       {/* Hero Section */}
       <section className="py-6">
         <div className="container mx-auto px-4">
@@ -218,6 +222,7 @@ export default function ERPSolutionsProductionPlanningPage() {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 }

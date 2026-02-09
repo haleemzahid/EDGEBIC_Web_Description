@@ -1,9 +1,17 @@
 import * as React from 'react';
 import Image from 'next/image';
 
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Multivariate Analysis for Operations',
+  description:
+    'MVA provides PCA, Factor Analysis, Cluster Analysis, Discriminant Analysis, and MANOVA for complex multi-variable data analysis.',
+  path: '/operations-manager-mva',
+  keywords: 'multivariate analysis, PCA, factor analysis, cluster analysis, discriminant analysis, MANOVA'
+});
 
 export default function OperationsManagerMVAPage(): React.JSX.Element {
   return (

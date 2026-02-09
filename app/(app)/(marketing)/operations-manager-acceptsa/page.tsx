@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Acceptance Sampling for Quality Control',
+  description:
+    'Acceptance sampling procedure for screening lots of incoming material. Calculate producer and consumer risks with this quality control tool.',
+  path: '/operations-manager-acceptsa',
+  keywords: 'acceptance sampling, quality control, lot inspection, producer risk, consumer risk, binomial distribution'
+});
 
 export default function OperationsManagerAcceptsaPage(): React.JSX.Element {
   return (

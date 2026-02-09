@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Simple Exponential Smoothing',
+  description:
+    'Simple exponential smoothing for short-range forecasting. Easy-to-implement forecasting model in Excel spreadsheet format.',
+  path: '/operations-manager-simple',
+  keywords: 'exponential smoothing, forecasting, demand planning, time series, short-range forecast'
+});
 
 export default function OperationsManagerSimplePage(): React.JSX.Element {
   return (

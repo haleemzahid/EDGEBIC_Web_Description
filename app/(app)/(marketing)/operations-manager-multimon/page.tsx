@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Seasonal Adjustment - Ratio to Moving Average',
+  description:
+    'MULTIMON uses the ratio-to-moving average method to adjust monthly data for seasonal patterns. Classical decomposition for accurate forecasting.',
+  path: '/operations-manager-multimon',
+  keywords: 'seasonal adjustment, moving average, monthly data, decomposition, seasonality, forecasting'
+});
 
 export default function MultimonPage(): React.JSX.Element {
   return (

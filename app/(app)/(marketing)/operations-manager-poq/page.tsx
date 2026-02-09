@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Period-Order-Quantity for MRP',
+  description:
+    'Period-Order-Quantity model for lumpy demand in MRP systems. Avoid remnants and achieve lower costs than standard EOQ.',
+  path: '/operations-manager-poq',
+  keywords: 'period order quantity, POQ, MRP lot sizing, lumpy demand, inventory remnants'
+});
 
 export default function OperationsManagerPoqPage(): React.JSX.Element {
   return (
