@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { MetadataRoute } from 'next';
 import { allDocs, allPosts } from 'content-collections';
+import { getBaseUrl } from '@/lib/urls/get-base-url';
 
 async function getMarketingPages(baseUrl: string): Promise<MetadataRoute.Sitemap> {
   const marketingPath = path.join(process.cwd(), 'app', '(app)', '(marketing)');
@@ -31,7 +32,7 @@ async function getMarketingPages(baseUrl: string): Promise<MetadataRoute.Sitemap
 }
 
 export default async function Sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
+  const baseUrl = getBaseUrl();
   const marketingPages = await getMarketingPages(baseUrl);
 
   const sitemap: MetadataRoute.Sitemap = [

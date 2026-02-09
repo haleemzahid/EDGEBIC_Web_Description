@@ -1,7 +1,8 @@
 import { DEFAULT_LOCALE } from '@/lib/i18n/locale';
 
 const baseUrl =
-  process.env.NEXT_PUBLIC_BASE_URL ??
+  process.env.NEXT_PUBLIC_BASE_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
   `http://localhost:${process.env.PORT ?? 3000}`;
 
 export function shouldAppendLocale(locale?: string | null): boolean {
