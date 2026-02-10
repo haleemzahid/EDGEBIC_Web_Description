@@ -65,8 +65,8 @@ export default function MissionPage(): React.JSX.Element {
                     <Image
                       src="/images/make-manufacturing-great-again.jpg"
                       alt="Make Manufacturing Great Again - Vintage car and factory"
-                      width={300}
-                      height={210}
+                      width={450}
+                      height={550}
                       className="rounded-lg"
                       priority
                     />
@@ -74,12 +74,12 @@ export default function MissionPage(): React.JSX.Element {
                 </div>
 
                 <div className="flex flex-col gap-6 md:flex-row md:items-start">
-                  <div className="flex-shrink-0 md:w-[280px]">
+                  <div className="flex-shrink-0 md:w-[450px]">
                     <Image
                       src="/happy.jpeg"
                       alt="Happy manufacturing professional"
-                      width={280}
-                      height={350}
+                      width={450}
+                      height={550}
                       className="rounded-lg w-full h-auto"
                     />
                   </div>
