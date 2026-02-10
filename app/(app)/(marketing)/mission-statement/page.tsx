@@ -76,26 +76,24 @@ export default function MissionPage(): React.JSX.Element {
                 </p>
 
                 <p className="text-lg leading-relaxed text-slate-700">
-                  Contact <strong>US</strong> Today!
+                  <Link href={Routes.Contact} className="text-blue-600 hover:underline">
+                    Contact <strong className='italic'>US</strong>
+                  </Link> Today!
                 </p>
-
-                <div className="space-y-2 text-lg text-slate-700">
+                <p>
+                  <Link href={Routes.History} className="text-blue-600 hover:underline">
+                    view User Solution History
+                  </Link>
+                </p>
+                {/* 
+                <div className="space-y-2  text-lg text-slate-700">
                   <p>
                     <Link href={Routes.Contact} className="text-blue-600 hover:underline">
-                      Contact
+                      Contact <strong className='italic'>US</strong>
                     </Link>
                   </p>
-                  <p>
-                    <Link href="" className="text-blue-600 hover:underline">
-                      No More Our Team
-                    </Link>
-                  </p>
-                  <p>
-                    <Link href={Routes.History} className="text-blue-600 hover:underline">
-                      view User Solution History
-                    </Link>
-                  </p>
-                </div>
+               
+                </div> */}
               </div>
 
               {/* Right Column - Images */}
