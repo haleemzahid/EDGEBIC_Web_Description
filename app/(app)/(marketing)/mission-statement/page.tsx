@@ -59,28 +59,42 @@ export default function MissionPage(): React.JSX.Element {
                   solution.
                 </p>
 
-                <p className="text-lg leading-relaxed text-slate-700">
-                  We look forward to hearing from you and learning of your
-                  challenges and the opportunity to deliver an affordable
-                  solution that <strong>fits you like a glove!</strong>
-                </p>
+                <div className="flex flex-col gap-4 md:flex-row md:items-start">
+                  <div className="flex-shrink-0">
+                    <Image
+                      src="/happy.jpeg"
+                      alt="Happy manufacturing professional"
+                      width={300}
+                      height={210}
+                      className="rounded-lg"
+                    />
+                  </div>
 
-                <p className="text-lg leading-relaxed text-slate-700">
-                  From adding a Finite Capacity Scheduling capability to any ERP
-                  system, or providing Material Requirements Planning for smaller
-                  operations who only have a simple accounting solution, or
-                  delivering simple Job Shop Scheduling Solutions, or even
-                  providing educational templates for Production and Operations
-                  Management, we are grateful for the opportunity to work with
-                  you to Make Manufacturing Great Again!
-                </p>
+                  <div className="flex-1 space-y-4">
+                    <p className="text-lg leading-relaxed text-slate-700">
+                      We look forward to hearing from you and learning of your
+                      challenges and the opportunity to deliver an affordable
+                      solution that <strong>fits you like a glove!</strong>
+                    </p>
+
+                    <p className="text-lg leading-relaxed text-slate-700">
+                      From adding a Finite Capacity Scheduling capability to any ERP
+                      system, or providing Material Requirements Planning for smaller
+                      operations who only have a simple accounting solution, or
+                      delivering simple Job Shop Scheduling Solutions, or even
+                      providing educational templates for Production and Operations
+                      Management, we are grateful for the opportunity to work with
+                      you to Make Manufacturing Great Again!
+                    </p>
+                  </div>
+                </div>
 
                 <p className="text-lg leading-relaxed text-slate-700">
                   <Link href={Routes.Contact} className="text-blue-600 hover:underline">
                     Contact <strong className='italic'>US</strong>
                   </Link> Today!
                 </p>
-                <p>
+                <p className='!mt-0'>
                   <Link href={Routes.History} className="text-blue-600 hover:underline">
                     view User Solution History
                   </Link>
@@ -105,13 +119,6 @@ export default function MissionPage(): React.JSX.Element {
                   height={210}
                   className="rounded-lg"
                   priority
-                />
-                <Image
-                  src="/happy.jpeg"
-                  alt="Happy"
-                  width={300}
-                  height={210}
-                  className="rounded-lg"
                 />
               </div>
             </div>
