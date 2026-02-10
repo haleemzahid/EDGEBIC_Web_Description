@@ -3,6 +3,15 @@ import { Check } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Purchase Workcell Planner',
+  description:
+    'Capacity planning and resource optimization. Translate forecasts into machine and manpower requirements with what-if analysis.',
+  path: '/buy-now-workcell-planner',
+  keywords: 'Workcell Planner, capacity planning, resource optimization, machine requirements, bottleneck analysis'
+});
 
 export default function BuyNowWorkcellPlannerPage() {
   return (

@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'EOQ with Quantity Discounts',
+  description:
+    'Analyze quantity discount offers and make better purchasing decisions with the EOQDISC model. Find breakeven prices for vendor negotiations.',
+  path: '/operations-manager-eoqdisc',
+  keywords: 'EOQ quantity discounts, purchasing decisions, breakeven price, vendor negotiation, discount analysis'
+});
 
 export default function OperationsManagerEoqdiscPage(): React.JSX.Element {
   return (

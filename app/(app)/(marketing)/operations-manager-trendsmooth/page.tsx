@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Trend Smoothing Forecasting',
+  description:
+    'Exponential smoothing with trend for linear, exponential, and damped trend forecasting. Robust forecasting model for business planning.',
+  path: '/operations-manager-trendsmooth',
+  keywords: 'trend smoothing, exponential smoothing, forecasting, linear trend, damped trend, business forecasting'
+});
 
 export default function TrendsmoothPage(): React.JSX.Element {
   return (

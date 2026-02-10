@@ -1,15 +1,17 @@
 import * as React from 'react';
-import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
   title: 'News',
   description:
-    "View User Solutions' press announcements and media coverage to stay up-to-date on our innovative production planning and scheduling solutions and how they can help manufacturers become more competitive and profitable through efficient resource management."
-};
+    "View User Solutions' press announcements and media coverage to stay up-to-date on our innovative production planning and scheduling solutions.",
+  path: '/news',
+  keywords:
+    'manufacturing news, production scheduling news, press releases, media coverage, User Solutions news'
+});
 
 const mediaCoverage = [
   {

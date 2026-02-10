@@ -94,11 +94,11 @@ export function HeroContent(): React.JSX.Element {
               <p className="text-3xl text-center leading-tight">
                 Your Partner for Solving
               </p>
-              <p className="text-3xl  leading-tight  ">
+              <h1 className="text-3xl leading-tight">
                 Production Planning and Scheduling Challenges
-              </p>
+              </h1>
 
-              <p className="text-3xl font-bold leading-tight   italic  text-center mt-2">
+              <p className="text-3xl font-bold leading-tight italic text-center mt-2">
                 Your Way!
               </p>
             </div>

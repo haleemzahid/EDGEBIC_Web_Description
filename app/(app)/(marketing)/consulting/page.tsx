@@ -1,9 +1,17 @@
 import * as React from 'react';
-import Image from 'next/image';
-
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Consulting Services',
+  description:
+    'Expert simulation consulting to accelerate your optimization and decision-making success. Get professional guidance for manufacturing, healthcare, and logistics operations.',
+  path: '/consulting',
+  keywords:
+    'simulation consulting, manufacturing consulting, production optimization, operations consulting, process improvement'
+});
 
 export default function ConsultingPage(): React.JSX.Element {
   return (

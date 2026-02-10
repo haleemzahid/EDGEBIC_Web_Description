@@ -1,7 +1,15 @@
-import Image from 'next/image';
 import Link from 'next/link';
 
-import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Blog',
+  description:
+    'Read the latest insights on manufacturing software, production scheduling, lean manufacturing, and industry best practices from EDGEBI Solutions.',
+  path: '/blogs',
+  keywords:
+    'manufacturing blog, production scheduling insights, lean manufacturing, industry news, manufacturing software tips'
+});
 
 export default function BlogsPage() {
   return (

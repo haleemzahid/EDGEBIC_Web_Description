@@ -1,9 +1,18 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Excel Applications',
+  description:
+    'Powerful Excel-based production planning and scheduling applications. Choose the product that best suits your company needs with our product matrix.',
+  path: '/excel-applications',
+  keywords:
+    'Excel production planning, Excel scheduling, Excel manufacturing software, spreadsheet scheduling'
+});
 
 export default function ExcelApplicationsPage() {
   return (

@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Multi-Server Queue Analysis',
+  description:
+    'MULTIQ analyzes waiting line problems with a single queue processed by 2 or more servers. Poisson arrivals, exponential service times.',
+  path: '/operations-manager-multiq',
+  keywords: 'multi-server queue, queuing theory, waiting lines, multiple servers, Poisson arrivals'
+});
 
 export default function MultiqPage(): React.JSX.Element {
   return (

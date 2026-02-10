@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Individual Observations Control Chart',
+  description:
+    'I-CHART for monitoring individual observations with samples of one. Ideal for long lead times and infrequent quality observations.',
+  path: '/operations-manager-i-chart',
+  keywords: 'I-chart, individual observations, control chart, quality control, SPC, variables chart'
+});
 
 export default function IChartPage(): React.JSX.Element {
   return (

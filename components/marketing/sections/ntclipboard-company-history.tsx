@@ -2,30 +2,16 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { Award, Building, Calendar, Globe, Rocket, Users } from 'lucide-react';
+import Link from 'next/link';
+import { Award, Building, Calendar, Globe, Rocket, Users, Target, RefreshCw, Sliders, Heart } from 'lucide-react';
 
 import { GridSection } from '@/components/marketing/fragments/grid-section';
 import { SiteHeading } from '@/components/marketing/fragments/site-heading';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 export function NTClipboardCompanyHistory(): React.JSX.Element {
   const milestones = [
-    {
-      year: '2022',
-      icon: <Globe className="size-6" />,
-      title: 'EDGEBI & Visual Scheduler Cloud',
-      description:
-        'Released EDGEBI (Enhanced Drag-n-Drop Graphical Environment) for Resource Manager-DB with network PC compatibility, powerful graphical and calendar views, drag-and-drop job segments between workcenters, and time scales from minutes to years. Released Visual Scheduler for the Cloud combining SweetRP and Visual Scheduler.net with powerful Gantt Charts, worker assignments, and finite capacity constraints.',
-      highlight: 'Modern Innovation'
-    },
-    {
-      year: '2016',
-      icon: <Rocket className="size-6" />,
-      title: '25 Year Anniversary & Recognition',
-      description:
-        'Celebrated 25 Year Anniversary. CIO-Applications selected User Solutions as one of only 25 companies transforming the ERP space. Integrated OpenSolver (Excel-compatible optimization software) for first combined optimization and production scheduling package. Added sliding window workcenter monitoring and MRP Lot/Serial Tracking for pharmaceutical compliance.',
-      highlight: 'Silver Anniversary'
-    },
     {
       year: '2015',
       icon: <Award className="size-6" />,
@@ -237,6 +223,111 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
         />
 
         <div className="mx-auto mt-6 max-w-7xl">
+          {/* 2016+ Featured Section */}
+          <div className="mb-12">
+            <div className="rounded-3xl border-2 border-orange-200 bg-gradient-to-br from-orange-50 via-white to-slate-50 p-8 shadow-lg">
+              <div className="mb-6 flex items-center gap-4">
+                <div className="flex items-center justify-center rounded-full bg-orange-500 p-3 text-white">
+                  <Rocket className="size-8" />
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-orange-600">2016+</div>
+                  <div className="text-lg font-medium text-orange-500">The Modern Era</div>
+                </div>
+              </div>
+
+              <h3 className="mb-4 text-2xl font-bold text-slate-900">
+                Continuing Innovation & Customer Focus
+              </h3>
+
+              <p className="mb-6 text-lg text-slate-700">
+                In the last decade, User Solutions continues to enhance and adapt their flagship offering (Resource Manager DB with EDGE Overlay) to accommodate various customer challenges while at the same time focusing on developing a new generation of powerful but easy to use production planning and scheduling tools on latest technology to take advantage of AI, Mobile, Subscription Based, and more.
+              </p>
+
+              <p className="mb-8 text-slate-700">
+                With a flexible approach, we are continuing to develop tools for both the smallest manufacturing concerns, folks who basically have no system except perhaps a whiteboard or manual Excel, all the way to Fortune 500 companies who need to fill in serious gaps with their ERP installation.
+              </p>
+
+              {/* Image */}
+              <div className="mb-8 overflow-hidden rounded-2xl border shadow-md">
+                <Image
+                  src="/images/Edgebic/2022-07/RMDB-EDGE2-1024x483.png"
+                  alt="Resource Manager DB with EDGE Overlay - Modern Production Scheduling"
+                  width={1024}
+                  height={483}
+                  className="w-full object-cover"
+                />
+              </div>
+
+              {/* Four Focus Areas */}
+              <div className="mb-8 grid gap-6 md:grid-cols-2">
+                {/* Focus Area 1 */}
+                <div className="rounded-2xl border bg-white p-6 shadow-sm">
+                  <div className="mb-3 flex items-center gap-3">
+                    <div className="flex items-center justify-center rounded-full bg-orange-100 p-2 text-orange-600">
+                      <Target className="size-5" />
+                    </div>
+                    <h4 className="text-lg font-bold text-slate-900">Filling Gaps in ERP</h4>
+                  </div>
+                  <p className="text-slate-700">
+                    Especially for real-time END TO END Supply Chain Visibility! We are seeing more and more customers who had to implement their ERP Systems several times – to account for the dynamics of companies that blend both PROCESS/BATCH type processing all the way to DISCRETE for final processing and shipments. This is where RMDB/EDGE Shines – we can quickly and accurately map out an end-to-end view for any enterprise. This is very common for the Pharmaceutical Industry, but we have seen it in many other applications (Foundry, Lithium Battery Production, Munitions, etc.).
+                  </p>
+                </div>
+
+                {/* Focus Area 2 */}
+                <div className="rounded-2xl border bg-white p-6 shadow-sm">
+                  <div className="mb-3 flex items-center gap-3">
+                    <div className="flex items-center justify-center rounded-full bg-orange-100 p-2 text-orange-600">
+                      <RefreshCw className="size-5" />
+                    </div>
+                    <h4 className="text-lg font-bold text-slate-900">Reconfigure on the Fly</h4>
+                  </div>
+                  <p className="text-slate-700">
+                    During COVID, previously known constraints (machines, skilled labor, outside processes) were completely disrupted. For many customers, we were able to completely reconfigure the constraints to match reality – a severe labor constraint. It is remarkable to be able to completely reconfigure a system in hours so the customer can adapt to current realities. We have also integrated Excel Solver and other Linear Programming methods for the most complex problems.
+                  </p>
+                </div>
+
+                {/* Focus Area 3 */}
+                <div className="rounded-2xl border bg-white p-6 shadow-sm">
+                  <div className="mb-3 flex items-center gap-3">
+                    <div className="flex items-center justify-center rounded-full bg-orange-100 p-2 text-orange-600">
+                      <Sliders className="size-5" />
+                    </div>
+                    <h4 className="text-lg font-bold text-slate-900">Reasonable Schedules with Instant Overrides</h4>
+                  </div>
+                  <p className="text-slate-700">
+                    There is NO scheduling system that can provide an optimized schedule without human intervention. What can actually be accomplished on any given day depends on who shows up, what material we have, the weather, political environment, and more. There is a massive need for a system that can quickly generate a reasonable schedule but allow for user overrides, any time, and have the system rebalance based on the latest customer override. We are working on major enhancements in this area.
+                  </p>
+                </div>
+
+                {/* Focus Area 4 */}
+                <div className="rounded-2xl border bg-white p-6 shadow-sm">
+                  <div className="mb-3 flex items-center gap-3">
+                    <div className="flex items-center justify-center rounded-full bg-orange-100 p-2 text-orange-600">
+                      <Heart className="size-5" />
+                    </div>
+                    <h4 className="text-lg font-bold text-slate-900">Customer is the HERO</h4>
+                  </div>
+                  <p className="text-slate-700">
+                    We start by assuming we know NOTHING about you, your company, or your challenges. Our job is to listen intently to what your environment is, what you believe you need, and work diligently – with YOU all the way. Every manufacturer is different, every worker is different, everyone has their own idea and vision of what could be. Our job is to deliver your vision as best we can, as fast as we can, and as affordably as possible.
+                  </p>
+                </div>
+              </div>
+
+              {/* CTA Section */}
+              <div className="rounded-2xl bg-gradient-to-r from-orange-100 to-orange-50 p-6 text-center">
+                <p className="mb-4 text-lg font-medium text-slate-800">
+                  A system that can quickly generate a reasonable schedule then allow for any overrides and rebalance the entire schedule – that is our main focus. You are welcome to join us in this endeavor!
+                </p>
+                <Link href="/contact-us">
+                  <Button size="lg" className="bg-orange-600 text-white hover:bg-orange-700">
+                    Join Us in This Endeavor
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+
           {/* Timeline */}
           <div className="relative">
             {/* Timeline line */}

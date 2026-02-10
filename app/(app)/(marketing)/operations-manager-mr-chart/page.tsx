@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Control Chart for Mean and Range',
+  description:
+    'MR-CHART for statistical process control. Monitor production quality with control limits for sample means and ranges.',
+  path: '/operations-manager-mr-chart',
+  keywords: 'control chart, mean range, SPC, quality control, control limits, process control'
+});
 
 export default function MrChartPage(): React.JSX.Element {
   return (

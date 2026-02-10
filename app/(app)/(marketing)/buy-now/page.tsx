@@ -2,6 +2,15 @@ import React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Request Free Product',
+  description:
+    'Request free Gantt charting and project management templates for Excel. CPM, Critical Path Analysis, and production scheduling tools.',
+  path: '/buy-now',
+  keywords: 'free Excel templates, Gantt chart, project management, production scheduling, CPM, critical path'
+});
 
 export default function BuyNowPage() {
   return (

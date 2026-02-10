@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Aggregate Production Planning',
+  description:
+    'Aggregate production planning tool for determining production timing, inventory levels, workforce, and overtime for up to 12 months.',
+  path: '/operations-manager-app',
+  keywords: 'aggregate planning, production planning, workforce planning, inventory planning, overtime management'
+});
 
 export default function OperationsManagerAppPage(): React.JSX.Element {
   return (

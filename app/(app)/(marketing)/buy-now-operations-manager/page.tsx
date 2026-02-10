@@ -3,6 +3,15 @@ import { Check } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Purchase Operations Manager',
+  description:
+    'Complete operations management toolkit including forecasting, inventory control, quality management, and process analysis.',
+  path: '/buy-now-operations-manager',
+  keywords: 'operations manager, purchase, forecasting, inventory control, quality management, process analysis'
+});
 
 export default function BuyNowOperationsManagerPage() {
   return (

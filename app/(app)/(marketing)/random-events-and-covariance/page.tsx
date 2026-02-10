@@ -1,23 +1,27 @@
-import type { Metadata } from 'next';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { ArticleJsonLd } from '@/components/seo';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
   title: 'Blame Random Events and Covariance',
   description:
     'Understanding how random events and covariance affect production scheduling, traffic flow, and manufacturing operations.',
-  openGraph: {
-    title: 'Blame Random Events and Covariance',
-    description:
-      'Mathematical principles impacting manufacturing and scheduling',
-    url: 'https://www.usersolutions.com/random-events-and-covariance'
-  }
-};
+  path: '/random-events-and-covariance',
+  keywords: 'random events, covariance, production scheduling, manufacturing, project management, Murphys Law'
+});
 
 export default function RandomEventsCovariancePage() {
   return (
-    <div className="min-h-screen text-[18px]">
+    <>
+      <ArticleJsonLd
+        title="Blame Random Events and Covariance"
+        description="Understanding how random events and covariance affect production scheduling, traffic flow, and manufacturing operations."
+        url="/random-events-and-covariance"
+        datePublished="2022-07-18"
+      />
+      <div className="min-h-screen text-[18px]">
       {/* Hero Section */}
       <section className="py-6">
         <div className="container mx-auto px-4">
@@ -121,6 +125,7 @@ export default function RandomEventsCovariancePage() {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 }

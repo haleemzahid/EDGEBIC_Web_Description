@@ -3,6 +3,15 @@ import { Check } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Purchase Resource Manager',
+  description:
+    'Production planning and scheduling made easy. Choose Resource Manager for Excel or Resource Manager DB for advanced features.',
+  path: '/buy-now-resource-manager',
+  keywords: 'resource manager, production planning, production scheduling, Excel, database'
+});
 
 export default function BuyNowResourceManagerPage() {
   return (

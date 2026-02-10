@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Job Sequencing for 2 Work Stations',
+  description:
+    'SKED2A for flow shops with 2 work stations in series. Minimize total time to complete job batches with optimal sequencing.',
+  path: '/operations-manager-sked2a',
+  keywords: 'job sequencing, flow shop, 2 work stations, batch scheduling, makespan optimization'
+});
 
 export default function OperationsManagerSked2aPage(): React.JSX.Element {
   return (

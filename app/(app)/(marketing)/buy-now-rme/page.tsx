@@ -2,6 +2,15 @@ import React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Request Resource Manager for Excel',
+  description:
+    'Request free Resource Manager for Excel (RMX) with basic MRP and shop scheduling. Quick to implement and affordable.',
+  path: '/buy-now-rme',
+  keywords: 'Resource Manager Excel, RMX, MRP, shop scheduling, Excel add-on'
+});
 
 export default function BuyNowRMEPage() {
   return (

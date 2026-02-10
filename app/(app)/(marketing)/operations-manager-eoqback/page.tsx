@@ -1,6 +1,15 @@
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'EOQ with Backorders',
+  description:
+    'Economic Order Quantity model modified for backorders. Calculate optimal inventory levels when backorders are acceptable.',
+  path: '/operations-manager-eoqback',
+  keywords: 'EOQ backorders, inventory management, backorder cost, customer goodwill, inventory financing'
+});
 
 export default function OperationsManagerEOQBACKPage() {
   return (

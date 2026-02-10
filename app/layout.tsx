@@ -5,6 +5,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 
 import { Toaster } from '@/components/ui/sonner';
+import { OrganizationJsonLd, WebSiteJsonLd } from '@/components/seo';
 import { AppInfo } from '@/constants/app-info';
 import { getBaseUrl } from '@/lib/urls/get-base-url';
 
@@ -23,7 +24,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL!),
+  metadataBase: new URL(getBaseUrl()),
   title: {
     template: '%s - User Solutions',
     default: 'Production Planning Software'
@@ -41,6 +42,13 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+    yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION,
+    other: {
+      'msvalidate.01': process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION || ''
+    }
   },
   openGraph: {
     title: AppInfo.APP_NAME,
@@ -88,6 +96,8 @@ export default async function RootLayout({
             />
           </React.Fragment>
         ))}
+        <OrganizationJsonLd />
+        <WebSiteJsonLd />
       </head>
       <body className={`${inter.className} size-full`}>
         <Providers>

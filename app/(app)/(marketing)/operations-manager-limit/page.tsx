@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Control Limit Calculator',
+  description:
+    'LIMIT calculator for control limits in MR-CHART, P-CHART, and CU-CHART. Calculate 3 sigma control limits for quality control.',
+  path: '/operations-manager-limit',
+  keywords: 'control limits, 3 sigma, quality control, control chart, SPC calculator'
+});
 
 export default function LimitPage(): React.JSX.Element {
   return (

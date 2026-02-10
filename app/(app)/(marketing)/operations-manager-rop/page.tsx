@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Reorder Points and Safety Stocks',
+  description:
+    'Calculate optimal reorder points and safety stocks when demand is uncertain. Excel worksheet for inventory management.',
+  path: '/operations-manager-rop',
+  keywords: 'reorder point, safety stock, uncertain demand, inventory investment, ROP calculator'
+});
 
 export default function OperationsManagerRopPage(): React.JSX.Element {
   return (

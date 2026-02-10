@@ -1,24 +1,27 @@
-import type { Metadata } from 'next';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { ArticleJsonLd } from '@/components/seo';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
-  title:
-    'Li-ion Battery Production Scheduling',
+export const metadata = createPageMetadata({
+  title: 'Li-ion Battery Production Scheduling',
   description:
     'User Solutions releases Resource Manager-DB V6 with Bills-of-Resources, finite capacity planning, and advanced features. Enevate Corporation case study on Li-ion battery production.',
-  openGraph: {
-    title: 'Li-ion Battery Production Scheduling - User Solutions',
-    description:
-      'South Lyon, MI 6/9/2016 - RM-DB V6 driven by customer demand for more power and flexibility',
-    url: 'https://www.usersolutions.com/li-ion-battery-production-scheduling-software'
-  }
-};
+  path: '/li-ion-battery-production-scheduling-software',
+  keywords: 'Li-ion battery, production scheduling, Resource Manager DB, Enevate, finite capacity planning, manufacturing'
+});
 
 export default function LiIonBatterySchedulingPage() {
   return (
-    <div className="min-h-screen text-[18px]">
+    <>
+      <ArticleJsonLd
+        title="Resource Manager-DB V6 Transforms Li-ion Battery Production Scheduling"
+        description="User Solutions releases Resource Manager-DB V6 with Bills-of-Resources, finite capacity planning, and advanced features. Enevate Corporation case study."
+        url="/li-ion-battery-production-scheduling-software"
+        datePublished="2016-06-09"
+      />
+      <div className="min-h-screen text-[18px]">
       {/* Hero Section */}
       <section className="py-6">
         <div className="container mx-auto px-4">
@@ -198,6 +201,7 @@ export default function LiIonBatterySchedulingPage() {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 }

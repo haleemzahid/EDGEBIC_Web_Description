@@ -1,24 +1,27 @@
-import type { Metadata } from 'next';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { ArticleJsonLd } from '@/components/seo';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
-  title:
-    'Scheduling System Narrows Skills Gap for Fire Rated Glass',
+export const metadata = createPageMetadata({
+  title: 'Scheduling System Narrows Skills Gap for Fire Rated Glass',
   description:
     'User Solutions Resource Manager-DB enables Technical Glass Products to strategically cross-train their way to optimization and narrow the skills gap.',
-  openGraph: {
-    title: 'Scheduling System Narrows Skills Gap - Fire Rated Glass',
-    description:
-      'Resource Manager-DB enables strategic cross-training and optimization',
-    url: 'https://www.usersolutions.com/scheduling-system-narrows-skills-gap-for-fire-rated-glass'
-  }
-};
+  path: '/scheduling-system-narrows-skills-gap-for-fire-rated-glass',
+  keywords: 'scheduling system, skills gap, fire rated glass, cross-training, Resource Manager DB, Technical Glass Products'
+});
 
 export default function SchedulingSystemSkillsGapPage() {
   return (
-    <div className="min-h-screen text-[18px]">
+    <>
+      <ArticleJsonLd
+        title="Scheduling System Narrows Skills Gap for Fire-Rated Glass"
+        description="User Solutions Resource Manager-DB enables Technical Glass Products to strategically cross-train their way to optimization and narrow the skills gap."
+        url="/scheduling-system-narrows-skills-gap-for-fire-rated-glass"
+        datePublished="2016-08-31"
+      />
+      <div className="min-h-screen text-[18px]">
       {/* Hero Section */}
       <section className="py-6">
         <div className="container mx-auto px-4">
@@ -188,6 +191,7 @@ export default function SchedulingSystemSkillsGapPage() {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 }

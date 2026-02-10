@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Single-Server Queue Analysis',
+  description:
+    'SINGLEQ includes 4 alternative models for single queue analysis processed by a single server. Poisson arrivals, various service distributions.',
+  path: '/operations-manager-singleeq',
+  keywords: 'single server queue, queuing theory, Poisson arrivals, waiting line analysis, service facility'
+});
 
 export default function OperationsManagerSingleeqPage(): React.JSX.Element {
   return (

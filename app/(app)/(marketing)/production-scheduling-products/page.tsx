@@ -4,6 +4,16 @@ import { NTClipboardToolBox } from '@/components/marketing/sections/ntclipboard-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Routes } from '@/constants/routes';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Production Scheduling Products',
+  description:
+    'Explore our comprehensive range of production planning and scheduling solutions. Find the perfect fit for your manufacturing application and budget.',
+  path: '/production-scheduling-products',
+  keywords:
+    'production scheduling software, manufacturing planning tools, scheduling solutions, production planning products'
+});
 
 export default function ProductionSchedulingProductsPage() {
   return (

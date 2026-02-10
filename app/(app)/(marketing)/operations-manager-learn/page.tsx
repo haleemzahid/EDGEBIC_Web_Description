@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Learning Curves Calculator',
+  description:
+    'Learning curve model to predict reduction in direct labor hours or costs per unit as cumulative production increases.',
+  path: '/operations-manager-learn',
+  keywords: 'learning curve, labor hours, production cost, cumulative production, manufacturing efficiency'
+});
 
 export default function LearnPage(): React.JSX.Element {
   return (

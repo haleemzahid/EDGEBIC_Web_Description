@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'P-Chart for Percent Defective',
+  description:
+    'P-CHART is the most versatile control chart for monitoring percent defective. Classify items as good or bad for quality control.',
+  path: '/operations-manager-p-chart',
+  keywords: 'P-chart, percent defective, attributes chart, quality control, defect monitoring, SPC'
+});
 
 export default function PChartPage(): React.JSX.Element {
   return (

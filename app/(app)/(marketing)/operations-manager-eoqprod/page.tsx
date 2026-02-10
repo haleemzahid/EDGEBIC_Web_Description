@@ -2,6 +2,15 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'EOQ for Production Lot Sizes',
+  description:
+    'Modified EOQ model for production lot sizes. Optimize manufacturing batch quantities accounting for production time and sales during runs.',
+  path: '/operations-manager-eoqprod',
+  keywords: 'EOQ production, lot sizing, manufacturing batch, production lot sizes, inventory optimization'
+});
 
 export default function EoqprodPage(): React.JSX.Element {
   return (
