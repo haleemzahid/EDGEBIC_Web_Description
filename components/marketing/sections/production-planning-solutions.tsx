@@ -369,7 +369,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
             </h2>
             <p className="mb-6 text-center text-lg text-slate-600">
               Comprehensive production planning and scheduling capabilities
-              designed to optimize your manufacturing operations
+              designed to optimize your manufacturing operations.
             </p>
 
             {/* Features Grid */}
@@ -384,7 +384,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                   <CardDescription>
                     Entry-level production scheduling solution for creating
                     routing steps and scheduling according to capacity
-                    limitations
+                    limitations.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -425,7 +425,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                   </CardTitle>
                   <CardDescription>
                     Advanced production planning and scheduling solution that
-                    adapts to your existing data and workflows
+                    adapts to your existing data and workflows.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -481,7 +481,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                   </CardTitle>
                   <CardDescription>
                     Graphical overlay with business intelligence for intuitive
-                    drag-and-drop schedule management
+                    drag-and-drop schedule management.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
