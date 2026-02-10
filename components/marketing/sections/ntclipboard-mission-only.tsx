@@ -38,7 +38,7 @@ export function NTClipboardMissionOnly(): React.JSX.Element {
             </blockquote>
 
             <p className="mb-6 text-lg text-slate-700">
-              Since 1991, what makes US unique is we work with you to solve
+              Since 1991, what makes <strong className='italic'>US</strong> unique is we work with you to solve
               production planning, scheduling, and tracking challenges your way.
             </p>
 

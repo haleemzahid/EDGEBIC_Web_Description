@@ -59,18 +59,18 @@ export default function MissionPage(): React.JSX.Element {
                   solution.
                 </p>
 
-                <div className="flex flex-col gap-6 md:flex-row md:items-stretch">
+                <div className="flex flex-col gap-6 md:flex-row md:items-stretch md:min-h-[450px]">
                   <div className="flex-shrink-0 md:w-[300px]">
                     <Image
                       src="/happy.jpeg"
                       alt="Happy manufacturing professional"
                       width={300}
-                      height={400}
-                      className="rounded-lg w-full h-auto"
+                      height={450}
+                      className="rounded-lg w-full h-full object-cover"
                     />
                   </div>
 
-                  <div className="flex-1 space-y-4 flex flex-col justify-center">
+                  <div className="flex-1 space-y-6 flex flex-col">
                     <p className="text-lg leading-relaxed text-slate-700">
                       We look forward to hearing from you and learning of your
                       challenges and the opportunity to deliver an affordable
