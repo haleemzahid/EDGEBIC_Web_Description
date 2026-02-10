@@ -198,7 +198,7 @@ export default function Product2Page(): React.JSX.Element {
               Choose the Right Solution for Your Business
             </h2>
             <p className="mb-4 text-lg text-slate-600">
-              Compare features across our product range to find the perfect fit
+              Compare features across our product range to find the perfect fit.
             </p>
           </div>
 

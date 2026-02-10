@@ -111,7 +111,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               Choose the Right Solution for Your Business
             </h2>
             <p className="mb-4 text-center text-lg text-slate-600">
-              Compare features across our product range to find the perfect fit
+              Compare features across our product range to find the perfect fit.
             </p>
 
             {/* Expand/Collapse Controls */}
