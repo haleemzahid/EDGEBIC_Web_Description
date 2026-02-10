@@ -31,33 +31,47 @@ export default function MissionPage(): React.JSX.Element {
 
       {/* Main Content */}
       <section className="py-6">
-        <div className="container mx-auto px-4">
+        <div className="mx-auto px-4">
           <div className="mx-auto max-w-7xl">
             {/* Two Column Layout */}
             <div>
               {/* Left Column - Text Content */}
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-slate-900">
-                  Mission Statement
-                </h2>
+                <div className='flex'>
+                  <div>
 
-                <blockquote className="text-xl font-bold leading-relaxed text-slate-900">
-                  &quot;Empower manufacturers to become more competitive and
-                  profitable through efficient resource management tools that are
-                  affordable, adaptable, and easily implemented.&quot;
-                </blockquote>
+                    <h2 className="text-2xl font-bold text-slate-900">
+                      Mission Statement
+                    </h2>
+                    <blockquote className="text-xl font-bold leading-relaxed text-slate-900">
+                      &quot;Empower manufacturers to become more competitive and
+                      profitable through efficient resource management tools that are
+                      affordable, adaptable, and easily implemented.&quot;
+                    </blockquote>
 
-                <p className="text-lg leading-relaxed text-slate-700">
-                  Since 1991, what makes <em>US</em> unique is we work with you to solve
-                  production planning, scheduling, and tracking challenges{' '}
-                  <em>your way</em>.
-                </p>
+                    <p className="text-lg leading-relaxed text-slate-700">
+                      Since 1991, what makes <em>US</em> unique is we work with you to solve
+                      production planning, scheduling, and tracking challenges{' '}
+                      <em>your way</em>.
+                    </p>
 
-                <p className="text-lg leading-relaxed text-slate-700">
-                  <strong>User Solutions: LISTEN and DELIVER. LISTEN</strong> to the customer,
-                  understand <em>their</em> needs, and <strong>DELIVER</strong> a
-                  solution.
-                </p>
+                    <p className="text-lg leading-relaxed text-slate-700">
+                      <strong>User Solutions: LISTEN and DELIVER. LISTEN</strong> to the customer,
+                      understand <em>their</em> needs, and <strong>DELIVER</strong> a
+                      solution.
+                    </p>
+                  </div>
+                  <div>
+                    <Image
+                      src="/images/make-manufacturing-great-again.jpg"
+                      alt="Make Manufacturing Great Again - Vintage car and factory"
+                      width={300}
+                      height={210}
+                      className="rounded-lg"
+                      priority
+                    />
+                  </div>
+                </div>
 
                 <div className="flex flex-col gap-6 md:flex-row md:items-start">
                   <div className="flex-shrink-0 md:w-[280px]">
