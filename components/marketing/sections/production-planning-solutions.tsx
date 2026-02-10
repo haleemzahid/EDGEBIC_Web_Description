@@ -38,12 +38,16 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
         {/* Hero Section */}
         <SiteHeading
           title="Production Planning and Scheduling Solutions"
-          description="Address your scheduling challenges and boost your company’s efficiency, profitability, and competitiveness with a solution that fits, JUST RIGHT!"
+          description={
+            <>
+              Address your scheduling challenges and boost your company's efficiency, profitability, and competitiveness with a solution that fits, <strong className="italic">JUST RIGHT!</strong>
+            </>
+          }
         />
 
         <div className="mx-auto  max-w-7xl">
           {/* Introduction */}
-          <div className="mb-[17px] text-center">
+          <div className="mb-[17px]">
             <p className=" text-lg mb-3 text-muted-foreground">
               Discover powerful{' '}
               <a
