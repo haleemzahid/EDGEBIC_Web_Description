@@ -34,7 +34,7 @@ export default function MissionPage(): React.JSX.Element {
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
             {/* Two Column Layout */}
-            <div className="grid gap-8 md:grid-cols-[2fr_1fr]">
+            <div>
               {/* Left Column - Text Content */}
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-slate-900">
@@ -108,18 +108,6 @@ export default function MissionPage(): React.JSX.Element {
                   </p>
                
                 </div> */}
-              </div>
-
-              {/* Right Column - Images */}
-              <div className="flex flex-col items-start gap-6">
-                <Image
-                  src="/images/make-manufacturing-great-again.jpg"
-                  alt="Make Manufacturing Great Again - Vintage car and factory"
-                  width={300}
-                  height={210}
-                  className="rounded-lg"
-                  priority
-                />
               </div>
             </div>
           </div>
