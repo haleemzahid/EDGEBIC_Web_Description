@@ -165,22 +165,6 @@ export default function EDGEBIPage(): React.JSX.Element {
                   </p>
                 </div>
               </div>
-
-              <p className="text-[18px] text-slate-700">
-                discuss your specific application and challenges
-              </p>
-              <p className="text-[18px] text-slate-700">
-                EDGEBI is the perfect, interactive, view for your application.
-              </p>
-              {/* CTA Section */}
-              <div className="text-center">
-                <p className="mb-4 text-[18px] text-slate-700">
-                  Now:  <button type="button" onClick={() => setActiveTab('live-demo')} className="font-semibold text-cyan-600 hover:text-cyan-700"> Contact US</button> to discuss your specific application and challenges and let us prove out the solution with a free Proof Of Concept using your data!
-                </p>
-                <p className="text-[18px] text-slate-700">
-                  With solutions for any application and budget, from job shops on up, better production scheduling is only a click away.
-                </p>
-              </div>
             </div>
           )}
 

@@ -35,18 +35,6 @@ export function RMDBInDepthContent() {
         </div>
       </div>
 
-      {/* Make Manufacturing Great Again Section */}
-      <div className="flex justify-center">
-        <Image
-          src="/images/Edgebic/2022-10/MMGAsmall_Colver.png"
-          alt="Make Manufacturing Great Again - Vintage Car"
-          width={400}
-          height={300}
-          className="max-w-md rounded-lg"
-          loading="lazy"
-          quality={80}
-        />
-      </div>
 
       {/* Key Benefits Section */}
       <div className="grid items-center gap-8 md:grid-cols-2">
@@ -130,7 +118,7 @@ export function RMDBInDepthContent() {
           </p>
           <p className="mb-4 text-slate-600">
             Resource Manager-DB is designed to work seamlessly with Excel. <strong>IMPORTANT
-            TAKEAWAY #1:</strong> This provides great flexibility in rapid implementation
+              TAKEAWAY #1:</strong> This provides great flexibility in rapid implementation
             options as it allows you to load, edit, reload entire data sets with the click
             of a button.
           </p>
