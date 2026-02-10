@@ -87,16 +87,16 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                 </p>
                 <p className="text-lg text-slate-700">Contact US today to discuss which product fits your budget and application.</p>
                 <Button
-                  size="lg"
-                  className="gap-2 flex m-auto bg-[#FAE74D] text-[#1e3a5f] hover:bg-[#e6d445] font-semibold px-6 py-6 text-base rounded-full"
+                  size="default"
+                  className="gap-3 flex m-auto bg-[#FAE74D] text-[#1e3a5f] hover:bg-[#e6d445] font-bold px-6 py-3 text-[16px] rounded-full shadow-lg"
                   onClick={() => router.push('/contact-us')}
                 >
                   <img
                     src="/images/onefootprint-1.png"
                     alt="footprint icon"
-                    className="w-6 h-6"
+                    className="w-10 h-10"
                   />
-                  NEXT STEPS
+                  <span className="tracking-wide">NEXT STEPS</span>
                 </Button>
               </div>
             </div>
