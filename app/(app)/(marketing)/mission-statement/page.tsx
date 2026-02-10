@@ -96,7 +96,7 @@ export default function MissionPage(): React.JSX.Element {
                 </p>
                 <p className='!mt-0'>
                   <Link href={Routes.History} className="text-blue-600 hover:underline">
-                    view User Solution History
+                    View User Solution History
                   </Link>
                 </p>
                 {/* 
