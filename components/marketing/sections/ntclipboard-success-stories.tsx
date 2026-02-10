@@ -169,7 +169,7 @@ export function NTClipboardSuccessStories(): React.JSX.Element {
                 Customer Success Stories
               </h1>
               <p className="mt-6 text-lg text-muted-foreground leading-relaxed">
-                Click on logos or Read More to view just a sample of our customers' success stories. You too can realize great success by working with <strong className='italic'> US</strong>!
+                Click on logos or Read More to view just a sample of our customers' success stories. You too can realize great success by working with <strong className='italic'> US</strong> !
               </p>
               <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
                 Contact <strong className='italic'>US</strong> today to discover how easy and affordable it is to become even more competitive and profitable through efficient production planning, scheduling, tracking, combined with improved communications.
