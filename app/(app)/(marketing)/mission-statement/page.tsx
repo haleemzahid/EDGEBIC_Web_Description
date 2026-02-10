@@ -65,8 +65,8 @@ export default function MissionPage(): React.JSX.Element {
                     <Image
                       src="/images/make-manufacturing-great-again.jpg"
                       alt="Make Manufacturing Great Again - Vintage car and factory"
-                      width={450}
-                      height={550}
+                      width={650}
+                      height={750}
                       className="rounded-lg"
                       priority
                     />
