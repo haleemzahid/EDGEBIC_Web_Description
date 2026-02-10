@@ -44,11 +44,10 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
           {/* Left Section */}
           <div className="text-left">
             <h3 className="text-xl font-bold text-[#003d5c]">
-              RMDB/EDGE Core Capabilities
+              Core Capabilities
             </h3>
             <p className="text-base text-slate-600">
-              Our system is engineered to generate accurate, dynamic customer
-              lead times and ensure you meet them consistently.
+              Let's focus on the main challenges in scheduling by:
             </p>
             <div className="flex gap-4">
               {/* Expandable Cards Column */}
@@ -65,7 +64,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         <Layers className="size-4 text-indigo-600" />
                       </div>
                       <h3 className="text-[16px] font-semibold text-gray-900">
-                        Dynamic Bill Of Resource (BOR)
+                        Filling Gaps in ERP
                       </h3>
                     </div>
                     {dynamicBorExpanded ? (
@@ -84,10 +83,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          Rapidly configure or import a BOR that includes any
-                          combination of labor, materials, workcenters, tools,
-                          and sub-assemblies in any order to define your
-                          deliverable product or service.
+                          Would an END-END, near realtime view of your entire supply chain be useful?  How about adding Finite-Capacty scheduling to your existing ERP?
                         </p>
                       </motion.div>
                     )}
@@ -108,7 +104,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         <Brain className="size-4 text-cyan-600" />
                       </div>
                       <h3 className="text-[16px] font-semibold text-gray-900">
-                        Comprehensive Logic
+                        Reconfigure on Demand
                       </h3>
                     </div>
                     {comprehensiveLogicExpanded ? (
@@ -127,8 +123,8 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          Integration of all standard scheduling rules and known
-                          constraints to ensure technical accuracy.
+                          With a method to completely reconfigure system upon demand, its suprisingly
+                          easy to try various models to achieve maximum efficiency.
                         </p>
                       </motion.div>
                     )}
@@ -151,7 +147,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         <Shuffle className="size-4 text-amber-600" />
                       </div>
                       <h3 className="text-[16px] font-semibold text-gray-900">
-                        Strategic Flexibility
+                        Provides Good Schedule
                       </h3>
                     </div>
                     {strategicFlexibilityExpanded ? (
@@ -170,8 +166,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          Perform various &quot;What-If&quot; analyses and
-                          manual overrides to quickly optimize schedule.
+                          By identifying constaints and other business rules, the system quickly and easily generates a reasonable schedule.
                         </p>
                       </motion.div>
                     )}
@@ -190,7 +185,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         <FileText className="size-4 text-blue-600" />
                       </div>
                       <h3 className="text-[16px] font-semibold text-gray-900">
-                        Powerful, Flexible, Customizable Reporting
+                        Instant User Overides
                       </h3>
                     </div>
                     {reportingExpanded ? (
@@ -209,8 +204,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          Use Excel to customize any reports, and or have US
-                          develop and include with system.
+                          It's nearly impossible to create a perfect schedule due to the so many random events we encounter.   This is where the system shines - easily manually override current schedule and system will completely rebalance and alert.
                         </p>
                       </motion.div>
                     )}
