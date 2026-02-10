@@ -91,7 +91,7 @@ export default function ValuesPage(): React.JSX.Element {
               {/* Right Column - Success Stories Image */}
               <div className="relative h-[400px] w-full overflow-hidden rounded-lg shadow-lg lg:h-full lg:min-h-[500px]">
                 <Image
-                  src="/images/Edgebic/successStories.jpeg"
+                  src="/value.jpeg"
                   alt="Success Stories - Our Values in Action"
                   fill
                   className="object-cover"
