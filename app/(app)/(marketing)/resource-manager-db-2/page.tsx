@@ -155,15 +155,14 @@ function SummaryContent() {
         </div>
         <div className="space-y-4">
           <div className="flex items-center justify-center">
-            <Image
-              src="/images/Edgebic/2022-10/MMGAsmall_Colver.png"
-              alt="Make Manufacturing Great Again"
-              width={400}
-              height={280}
-              className="rounded-lg"
-              loading="lazy"
-              quality={80}
-            />
+            <div className="aspect-video w-full max-w-[600px] overflow-hidden rounded-lg shadow-lg">
+              <YouTubeFacade
+                videoId="6B4A-acolGk"
+                title="EDGE BI User Solutions demonstration video"
+                className="size-full"
+                useBluePlayButton
+              />
+            </div>
           </div>
           <div className="flex items-center justify-center">
             <Image

@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { LazyVideo } from '@/components/ui/lazy-video';
+import { YouTubeFacade } from '@/components/ui/youtube-facade';
 
 export function EDGEBIContent() {
   return (
@@ -105,12 +105,11 @@ export function EDGEBIContent() {
       <div className="grid items-center gap-8 lg:grid-cols-2">
         <div className="flex justify-center">
           <div className="aspect-video w-full overflow-hidden rounded-lg shadow-lg">
-            <LazyVideo
-              src="https://www.youtube.com/watch?v=6B4A-acolGk"
-              poster="/images/rmdb/rmdb-edge-hero.png"
-              className="h-full w-full object-cover"
+            <YouTubeFacade
+              videoId="6B4A-acolGk"
               title="EDGE BI User Solutions demonstration video"
-              hidePlayButton={true}
+              className="size-full"
+              useBluePlayButton
             />
           </div>
         </div>
