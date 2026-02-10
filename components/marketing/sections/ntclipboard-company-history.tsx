@@ -11,6 +11,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 export function NTClipboardCompanyHistory(): React.JSX.Element {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+
   const milestones = [
     {
       year: '2015',
@@ -226,20 +228,31 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
           {/* 2016+ Featured Section */}
           <div className="mb-12">
             <div className="rounded-3xl border-2 border-orange-200 bg-gradient-to-br from-orange-50 via-white to-slate-50 p-8 shadow-lg">
-              <div className="mb-6 flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="mb-6 flex w-full items-center gap-4 text-left transition-opacity hover:opacity-80"
+              >
                 <div className="flex items-center justify-center rounded-full bg-orange-500 p-3 text-white">
                   <Rocket className="size-8" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <div className="text-3xl font-bold text-orange-600">2016+</div>
                   <div className="text-lg font-medium text-orange-500">The Modern Era</div>
                 </div>
-              </div>
+                <div className={`text-orange-600 transition-transform duration-300 ${isExpanded ? 'rotate-180' : 'rotate-0'}`}>
+                  <svg className="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </button>
 
               <h3 className="mb-4 text-2xl font-bold text-slate-900">
                 Continuing Innovation & Customer Focus
               </h3>
 
+              {isExpanded && (
+              <>
               <p className="mb-6 text-lg text-slate-700">
                 In the last decade, User Solutions continues to enhance and adapt their flagship offering (Resource Manager DB with EDGE Overlay) to accommodate various customer challenges while at the same time focusing on developing a new generation of powerful but easy to use production planning and scheduling tools on latest technology to take advantage of AI, Mobile, Subscription Based, and more.
               </p>
@@ -325,6 +338,8 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
                   </Button>
                 </Link>
               </div>
+              </>
+              )}
             </div>
           </div>
 
