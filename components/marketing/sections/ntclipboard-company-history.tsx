@@ -219,7 +219,7 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
       <div className="container pt-6">
         <SiteHeading
           title="Providing Production Planning and Scheduling Solutions since 1991"
-          description="Over three decades of innovation in manufacturing resource planning and production scheduling"
+          description="Over three decades of innovation in manufacturing resource planning and production scheduling."
         />
 
         <div className="mx-auto mt-6 max-w-7xl">
