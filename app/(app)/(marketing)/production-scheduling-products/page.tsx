@@ -26,7 +26,7 @@ export default function ProductionSchedulingProductsPage() {
               Production Planning and Scheduling Solutions
             </h1>
             <p className="text-[18px] text-gray-700">
-              Contact US to discuss which product is the best fit for your
+              Contact <strong><em>US</em></strong> to discuss which product is the best fit for your
               application and budget.
             </p>
           </div>

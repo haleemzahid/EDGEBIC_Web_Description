@@ -59,7 +59,7 @@ export default function ProductionSchedulingProductsOldPage() {
             <Card>
               <CardContent className="pt-6">
                 <p className="mb-4 text-lg leading-relaxed text-muted-foreground">
-                  Contact US to discuss which product is the best fit for your
+                  Contact <strong><em>US</em></strong> to discuss which product is the best fit for your
                   application and budget. From a simple Excel based job shop
                   scheduling application to advanced planning and scheduling
                   software (APS) that works either standalone or integrates with

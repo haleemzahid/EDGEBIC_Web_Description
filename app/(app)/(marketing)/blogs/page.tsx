@@ -37,7 +37,7 @@ export default function BlogsPage() {
               href="/contact-us"
               className="inline-block rounded-lg bg-blue-600 px-6 py-3 text-white transition-colors hover:bg-blue-700"
             >
-              Contact Us for Updates
+              Contact <strong><em>Us</em></strong> for Updates
             </Link>
           </div>
         </div>

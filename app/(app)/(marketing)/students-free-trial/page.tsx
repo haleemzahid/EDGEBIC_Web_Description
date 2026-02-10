@@ -134,7 +134,7 @@ export default function StudentsFreeTrialPage() {
                     <Button>Learn About Resource Manager DB</Button>
                   </Link>
                   <Link href="/contact-us">
-                    <Button variant="outline">Contact Us</Button>
+                    <Button variant="outline">Contact <strong><em>Us</em></strong></Button>
                   </Link>
                 </div>
               </CardContent>
@@ -154,7 +154,7 @@ export default function StudentsFreeTrialPage() {
                 </p>
                 <div className="space-y-4 text-center">
                   <p className="italic text-gray-600">
-                    Contact us to request your student free trial download
+                    Contact <strong><em>us</em></strong> to request your student free trial download
                   </p>
                   <div className="flex flex-col justify-center gap-4 sm:flex-row">
                     <Link href="mailto:us@usersolutions.com">

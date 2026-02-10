@@ -128,7 +128,7 @@ export default function CovidPressReleasePage() {
                   href="/contact-us"
                   className="rounded-lg bg-blue-600 px-6 py-3 text-white transition-colors hover:bg-blue-700"
                 >
-                  Contact Us
+                  Contact <strong><em>Us</em></strong>
                 </Link>
                 <Link
                   href="/resource-manager-for-excel-2"

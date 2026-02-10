@@ -299,7 +299,7 @@ export default function ManufacturingDayPressReleasePage() {
                 In celebration of National Manufacturing Day, User Solutions is
                 offering complimentary scheduling assessments to help
                 manufacturers identify opportunities to improve their production
-                planning processes. Contact us to schedule a consultation and
+                planning processes. Contact <strong><em>us</em></strong> to schedule a consultation and
                 learn how advanced scheduling technology can benefit your
                 operation.
               </p>

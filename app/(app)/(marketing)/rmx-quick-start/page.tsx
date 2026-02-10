@@ -284,7 +284,7 @@ export default function RMXQuickStartPage() {
               href="/contact-us"
               className="bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-bold py-3 px-8 rounded-lg text-center transition-colors"
             >
-              Contact Us Today
+              Contact <strong><em>Us</em></strong> Today
             </a>
             <a
               href="tel:8003218737"

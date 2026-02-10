@@ -199,7 +199,7 @@ function EnterpriseTierCard(): React.JSX.Element {
           'group mt-auto h-11 w-full rounded-xl bg-blue-600 text-white shadow-none transition-colors duration-200 hover:bg-blue-700'
         )}
       >
-        Contact Us
+        Contact <strong><em>Us</em></strong>
         <ChevronRight className="ml-1 size-4 transition-transform group-hover:translate-x-0.5" />
       </Link>
     </div>

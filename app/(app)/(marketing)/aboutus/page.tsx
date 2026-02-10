@@ -29,7 +29,7 @@ export default function AboutUsPage() {
                   size="lg"
                   className="text-lg"
                 >
-                  Contact Us: us@usersolutions.com
+                  Contact <strong><em>Us</em></strong>: us@usersolutions.com
                 </Button>
               </Link>
               <Link href="tel:248.486.6365">

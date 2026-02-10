@@ -85,7 +85,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                 <p className="text-lg text-slate-700">
                   Let’s work together to solve the most pressing issues, as fast and easy as possible, then move on to next one!
                 </p>
-                <p className="text-lg text-slate-700">Contact US today to discuss which product fits your budget and application.</p>
+                <p className="text-lg text-slate-700">Contact <strong><em>US</em></strong> today to discuss which product fits your budget and application.</p>
                 <Button
                   size="default"
                   className="gap-1 flex m-auto bg-[#FAE74D] text-[#1e3a5f] hover:bg-[#e6d445] font-bold px-4 py-3 text-[16px] rounded-full shadow-lg"

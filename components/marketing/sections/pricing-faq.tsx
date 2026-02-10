@@ -73,7 +73,7 @@ const DATA = [
           <li>24/7 Enterprise Support</li>
           <li>Unlimited team members</li>
         </ul>
-        <p className="mt-2">Contact us to discuss your organization's needs.</p>
+        <p className="mt-2">Contact <strong><em>us</em></strong> to discuss your organization's needs.</p>
       </div>
     )
   },
@@ -123,7 +123,7 @@ export function PricingFAQ(): React.JSX.Element {
                 href={Routes.Contact}
                 className="font-normal text-inherit underline hover:text-foreground"
               >
-                Contact us
+                Contact <strong><em>us</em></strong>
               </Link>{' '}
               - we're here to help you find the perfect fit for your needs.
             </p>

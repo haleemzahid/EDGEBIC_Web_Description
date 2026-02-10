@@ -94,7 +94,7 @@ export function EDGEBIContent() {
       {/* CTA Section */}
       <div className="text-center">
         <p className="mb-4 text-[18px] text-slate-700">
-          Contact US to discuss your specific application and challenges and let us prove out the solution with a free Proof Of Concept using your data!
+          Contact <strong><em>US</em></strong> to discuss your specific application and challenges and let us prove out the solution with a free Proof Of Concept using your data!
         </p>
         <p className="text-[18px] text-slate-700">
           With solutions for any application and budget, from job shops on up, better production scheduling is only a click away.

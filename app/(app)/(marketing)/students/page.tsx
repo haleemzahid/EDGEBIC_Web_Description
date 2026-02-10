@@ -164,7 +164,7 @@ export default function StudentsPage(): React.JSX.Element {
                     className="flex items-center gap-2"
                   >
                     <Users className="size-5" />
-                    Contact Us
+                    Contact <strong><em>Us</em></strong>
                   </Link>
                 </Button>
               </div>

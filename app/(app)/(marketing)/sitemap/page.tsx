@@ -63,7 +63,7 @@ export default function SitemapPage() {
                     href="/contact-us"
                     className="text-blue-600 hover:underline"
                   >
-                    Contact Us
+                    Contact <strong><em>Us</em></strong>
                   </Link>
                 </li>
                 <li>
@@ -856,7 +856,7 @@ export default function SitemapPage() {
               Can&apos;t Find What You&apos;re Looking For?
             </h3>
             <p className="mb-6 text-blue-100">
-              Contact us and we&apos;ll help you find the right solution for
+              Contact <strong><em>us</em></strong> and we&apos;ll help you find the right solution for
               your needs
             </p>
             <Link
@@ -864,7 +864,7 @@ export default function SitemapPage() {
               className="inline-flex items-center gap-2 rounded-md bg-white px-6 py-3 font-semibold text-blue-600 transition-transform hover:scale-105"
             >
               <Mail className="size-5" />
-              Contact Us
+              Contact <strong><em>Us</em></strong>
             </Link>
           </div>
         </div>

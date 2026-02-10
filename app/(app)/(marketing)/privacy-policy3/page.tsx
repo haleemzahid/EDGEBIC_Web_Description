@@ -223,7 +223,7 @@ export default function PrivacyPolicy3Page() {
           <div className="mx-auto max-w-7xl">
             <Card>
               <CardHeader>
-                <CardTitle>Contact Us</CardTitle>
+                <CardTitle>Contact <strong><em>Us</em></strong></CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="mb-4 text-muted-foreground">

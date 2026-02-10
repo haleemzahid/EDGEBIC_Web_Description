@@ -135,7 +135,7 @@ export default function CompareProductsPage(): React.JSX.Element {
                 Production Planning and Scheduling Solutions
               </h1>
               <p className="mb-6 text-xl text-muted-foreground">
-                Contact us to discuss which product is the best fit for your
+                Contact <strong><em>us</em></strong> to discuss which product is the best fit for your
                 application and budget
               </p>
               <p className="text-lg text-muted-foreground">

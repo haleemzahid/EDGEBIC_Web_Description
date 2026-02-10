@@ -282,7 +282,7 @@ export default function CheckoutPage() {
                 href="/contact-us"
                 className="inline-block rounded-lg bg-gray-600 px-6 py-3 text-white transition-colors hover:bg-gray-700"
               >
-                Contact Us
+                Contact <strong><em>Us</em></strong>
               </Link>
               <a
                 href="tel:248.486.6365"
