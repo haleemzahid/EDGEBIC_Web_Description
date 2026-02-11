@@ -20,6 +20,17 @@ import { Logo } from '@/components/ui/logo';
 import { Routes } from '@/constants/routes';
 import { cn } from '@/lib/utils';
 
+// Helper function to format "US" in titles with bold and italic
+function formatTitle(title: string | React.ReactNode): React.ReactNode {
+  if (typeof title !== 'string') return title;
+
+  if (title === 'Contact US') {
+    return <>Contact <strong className="italic">US</strong></>;
+  }
+
+  return title;
+}
+
 export function MobileMenu({
   className,
   ...other
@@ -175,7 +186,7 @@ function MainMobileMenu({
                       className="flex h-9 w-full items-center justify-between px-4 text-left"
                     >
                       <span className="text-base font-medium">
-                        {item.title}
+                        {formatTitle(item.title)}
                       </span>
                       {expanded[item.title.toLowerCase()] ? (
                         <ChevronUp className="size-4" />
@@ -235,7 +246,7 @@ function MainMobileMenu({
                   )}
                   onClick={onLinkClicked}
                 >
-                  <span className="text-base">{item.title}</span>
+                  <span className="text-base">{formatTitle(item.title)}</span>
                 </Link>
               )}
             </li>

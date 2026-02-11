@@ -119,11 +119,7 @@ export const MENU_LINKS = [
   //   external: false
   // },
   {
-    title: (
-      <>
-        Contact <strong className="italic">US</strong>
-      </>
-    ),
+    title: 'Contact US',
     description: 'Reach out for assistance',
     icon: <PaperPlaneIcon className="size-5 shrink-0" />,
     href: Routes.Contact,

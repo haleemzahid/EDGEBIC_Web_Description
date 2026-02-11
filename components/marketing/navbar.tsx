@@ -22,6 +22,17 @@ import {
 import { Routes } from '@/constants/routes';
 import { cn } from '@/lib/utils';
 
+// Helper function to format "US" in titles with bold and italic
+function formatTitle(title: string | React.ReactNode): React.ReactNode {
+  if (typeof title !== 'string') return title;
+
+  if (title === 'Contact US') {
+    return <>Contact <strong className="italic">US</strong></>;
+  }
+
+  return title;
+}
+
 export function Navbar(): React.JSX.Element {
   const pathname = usePathname();
   return (
@@ -51,7 +62,7 @@ export function Navbar(): React.JSX.Element {
                           }
                           className="h-20 rounded-none border-b-2 border-transparent text-[15px] font-medium text-slate-700 transition-all duration-200 hover:border-blue-600 hover:bg-transparent hover:text-blue-600 data-[active]:border-blue-600 data-[active]:text-blue-600 data-[state=open]:border-blue-600 data-[state=open]:bg-transparent data-[state=open]:text-blue-600"
                         >
-                          {item.title}
+                          {formatTitle(item.title)}
                         </NavigationMenuTrigger>
                         <NavigationMenuContent className="left-1/2 -translate-x-1/2">
                           <ul className="w-96 list-none p-4">
@@ -115,7 +126,7 @@ export function Navbar(): React.JSX.Element {
                                 'border-blue-600 text-blue-600'
                             )}
                           >
-                            {item.title}
+                            {formatTitle(item.title)}
                           </Link>
                         </NavigationMenuLink>
                       </NavigationMenuItem>
