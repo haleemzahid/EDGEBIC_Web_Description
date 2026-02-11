@@ -261,69 +261,74 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
                 With a flexible approach, we are continuing to develop tools for both the smallest manufacturing concerns, folks who basically have no system except perhaps a whiteboard or manual Excel, all the way to Fortune 500 companies who need to fill in serious gaps with their ERP installation.
               </p>
 
-              {/* Image */}
-              <div className="mb-8 overflow-hidden rounded-2xl border shadow-md">
-                <Image
-                  src="/images/Edgebic/2022-07/RMDB-EDGE2-1024x483.png"
-                  alt="Resource Manager DB with EDGE Overlay - Modern Production Scheduling"
-                  width={1024}
-                  height={483}
-                  className="w-full object-cover"
-                />
-              </div>
-
-              {/* Four Focus Areas */}
-              <div className="mb-8 grid gap-6 md:grid-cols-2">
-                {/* Focus Area 1 */}
-                <div className="rounded-2xl border bg-white p-6 shadow-sm">
-                  <div className="mb-3 flex items-center gap-3">
-                    <div className="flex items-center justify-center rounded-full bg-orange-100 p-2 text-orange-600">
-                      <Target className="size-5" />
+              {/* Two Column Layout: Cards on Left, Image on Right */}
+              <div className="mb-8 grid gap-6 lg:grid-cols-2">
+                {/* Four Focus Areas - Left Column */}
+                <div className="grid gap-6">
+                  {/* Focus Area 1 */}
+                  <div className="rounded-2xl border bg-white p-6 shadow-sm">
+                    <div className="mb-3 flex items-center gap-3">
+                      <div className="flex items-center justify-center rounded-full bg-orange-100 p-2 text-orange-600">
+                        <Target className="size-5" />
+                      </div>
+                      <h4 className="text-lg font-bold text-slate-900">Filling Gaps in ERP</h4>
                     </div>
-                    <h4 className="text-lg font-bold text-slate-900">Filling Gaps in ERP</h4>
+                    <p className="text-slate-700">
+                      Especially for real-time END TO END Supply Chain Visibility! We are seeing more and more customers who had to implement their ERP Systems several times – to account for the dynamics of companies that blend both PROCESS/BATCH type processing all the way to DISCRETE for final processing and shipments. This is where RMDB/EDGE Shines – we can quickly and accurately map out an end-to-end view for any enterprise. This is very common for the Pharmaceutical Industry, but we have seen it in many other applications (Foundry, Lithium Battery Production, Munitions, etc.).
+                    </p>
                   </div>
-                  <p className="text-slate-700">
-                    Especially for real-time END TO END Supply Chain Visibility! We are seeing more and more customers who had to implement their ERP Systems several times – to account for the dynamics of companies that blend both PROCESS/BATCH type processing all the way to DISCRETE for final processing and shipments. This is where RMDB/EDGE Shines – we can quickly and accurately map out an end-to-end view for any enterprise. This is very common for the Pharmaceutical Industry, but we have seen it in many other applications (Foundry, Lithium Battery Production, Munitions, etc.).
-                  </p>
+
+                  {/* Focus Area 2 */}
+                  <div className="rounded-2xl border bg-white p-6 shadow-sm">
+                    <div className="mb-3 flex items-center gap-3">
+                      <div className="flex items-center justify-center rounded-full bg-orange-100 p-2 text-orange-600">
+                        <RefreshCw className="size-5" />
+                      </div>
+                      <h4 className="text-lg font-bold text-slate-900">Reconfigure on the Fly</h4>
+                    </div>
+                    <p className="text-slate-700">
+                      During COVID, previously known constraints (machines, skilled labor, outside processes) were completely disrupted. For many customers, we were able to completely reconfigure the constraints to match reality – a severe labor constraint. It is remarkable to be able to completely reconfigure a system in hours so the customer can adapt to current realities. We have also integrated Excel Solver and other Linear Programming methods for the most complex problems.
+                    </p>
+                  </div>
+
+                  {/* Focus Area 3 */}
+                  <div className="rounded-2xl border bg-white p-6 shadow-sm">
+                    <div className="mb-3 flex items-center gap-3">
+                      <div className="flex items-center justify-center rounded-full bg-orange-100 p-2 text-orange-600">
+                        <Sliders className="size-5" />
+                      </div>
+                      <h4 className="text-lg font-bold text-slate-900">Reasonable Schedules with Instant Overrides</h4>
+                    </div>
+                    <p className="text-slate-700">
+                      There is NO scheduling system that can provide an optimized schedule without human intervention. What can actually be accomplished on any given day depends on who shows up, what material we have, the weather, political environment, and more. There is a massive need for a system that can quickly generate a reasonable schedule but allow for user overrides, any time, and have the system rebalance based on the latest customer override. We are working on major enhancements in this area.
+                    </p>
+                  </div>
+
+                  {/* Focus Area 4 */}
+                  <div className="rounded-2xl border bg-white p-6 shadow-sm">
+                    <div className="mb-3 flex items-center gap-3">
+                      <div className="flex items-center justify-center rounded-full bg-orange-100 p-2 text-orange-600">
+                        <Heart className="size-5" />
+                      </div>
+                      <h4 className="text-lg font-bold text-slate-900">Customer is the HERO</h4>
+                    </div>
+                    <p className="text-slate-700">
+                      We start by assuming we know NOTHING about you, your company, or your challenges. Our job is to listen intently to what your environment is, what you believe you need, and work diligently – with YOU all the way. Every manufacturer is different, every worker is different, everyone has their own idea and vision of what could be. Our job is to deliver your vision as best we can, as fast as we can, and as affordably as possible.
+                    </p>
+                  </div>
                 </div>
 
-                {/* Focus Area 2 */}
-                <div className="rounded-2xl border bg-white p-6 shadow-sm">
-                  <div className="mb-3 flex items-center gap-3">
-                    <div className="flex items-center justify-center rounded-full bg-orange-100 p-2 text-orange-600">
-                      <RefreshCw className="size-5" />
-                    </div>
-                    <h4 className="text-lg font-bold text-slate-900">Reconfigure on the Fly</h4>
+                {/* Image - Right Column */}
+                <div className="flex items-center">
+                  <div className="overflow-hidden rounded-2xl border shadow-md">
+                    <Image
+                      src="/images/Edgebic/2022-07/RMDB-EDGE2-1024x483.png"
+                      alt="Resource Manager DB with EDGE Overlay - Modern Production Scheduling"
+                      width={1024}
+                      height={483}
+                      className="h-full w-full object-cover"
+                    />
                   </div>
-                  <p className="text-slate-700">
-                    During COVID, previously known constraints (machines, skilled labor, outside processes) were completely disrupted. For many customers, we were able to completely reconfigure the constraints to match reality – a severe labor constraint. It is remarkable to be able to completely reconfigure a system in hours so the customer can adapt to current realities. We have also integrated Excel Solver and other Linear Programming methods for the most complex problems.
-                  </p>
-                </div>
-
-                {/* Focus Area 3 */}
-                <div className="rounded-2xl border bg-white p-6 shadow-sm">
-                  <div className="mb-3 flex items-center gap-3">
-                    <div className="flex items-center justify-center rounded-full bg-orange-100 p-2 text-orange-600">
-                      <Sliders className="size-5" />
-                    </div>
-                    <h4 className="text-lg font-bold text-slate-900">Reasonable Schedules with Instant Overrides</h4>
-                  </div>
-                  <p className="text-slate-700">
-                    There is NO scheduling system that can provide an optimized schedule without human intervention. What can actually be accomplished on any given day depends on who shows up, what material we have, the weather, political environment, and more. There is a massive need for a system that can quickly generate a reasonable schedule but allow for user overrides, any time, and have the system rebalance based on the latest customer override. We are working on major enhancements in this area.
-                  </p>
-                </div>
-
-                {/* Focus Area 4 */}
-                <div className="rounded-2xl border bg-white p-6 shadow-sm">
-                  <div className="mb-3 flex items-center gap-3">
-                    <div className="flex items-center justify-center rounded-full bg-orange-100 p-2 text-orange-600">
-                      <Heart className="size-5" />
-                    </div>
-                    <h4 className="text-lg font-bold text-slate-900">Customer is the HERO</h4>
-                  </div>
-                  <p className="text-slate-700">
-                    We start by assuming we know NOTHING about you, your company, or your challenges. Our job is to listen intently to what your environment is, what you believe you need, and work diligently – with YOU all the way. Every manufacturer is different, every worker is different, everyone has their own idea and vision of what could be. Our job is to deliver your vision as best we can, as fast as we can, and as affordably as possible.
-                  </p>
                 </div>
               </div>
 
