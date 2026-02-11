@@ -77,8 +77,8 @@ export function NTClipboardCoreValues(): React.JSX.Element {
     <GridSection hideVerticalGridLines>
       <div className="container py-6">
         <SiteHeading
-          title="What Drives Us Forward"
-          description="The principles that have guided EDGEBI for over three decades"
+          title="What Drives US Forward"
+          description="The principles that have guided EDGEBI for over three decades."
         />
 
         <div className="mx-auto mt-8 max-w-7xl">

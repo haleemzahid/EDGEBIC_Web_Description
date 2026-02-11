@@ -47,7 +47,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               Core Capabilities
             </h3>
             <p className="text-base text-slate-600">
-              Let's focus on the main challenges in scheduling by:
+              Let's focus on the main challenges in scheduling by
             </p>
             <div className="flex gap-4">
               {/* Expandable Cards Column */}

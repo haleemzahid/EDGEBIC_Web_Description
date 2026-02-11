@@ -11,10 +11,10 @@ export default function ValuesPage(): React.JSX.Element {
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
             <h1 className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl">
-              What Drives <strong className='italic'> Us</strong> Forward
+              What Drives <strong className='italic'> US</strong> Forward
             </h1>
             <p className="text-gray-700">
-              The principles that have guided product development for over three decades
+              The principles that have guided product development for over three decades.
             </p>
           </div>
         </div>
@@ -28,7 +28,7 @@ export default function ValuesPage(): React.JSX.Element {
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
               {/* Left Column - Core Values */}
               <div>
-                <h2 className="mb-6 text-2xl font-bold text-slate-900">
+                <h2 className="relative bottom-[9px] mb-3 text-2xl font-bold text-slate-900">
                   Our Core Values
                 </h2>
                 <ul className="space-y-4">
@@ -89,12 +89,12 @@ export default function ValuesPage(): React.JSX.Element {
               </div>
 
               {/* Right Column - Success Stories Image */}
-              <div className="relative h-full w-full overflow-hidden rounded-lg shadow-lg lg:min-h-[600px]">
+              <div className="relative  h-full w-full overflow-hidden rounded-lg shadow-lg lg:min-h-[500px]">
                 <Image
                   src="/value.jpeg"
                   alt="Success Stories - Our Values in Action"
                   fill
-                  className="object-cover"
+                  className="object-cover "
                   priority
                 />
               </div>

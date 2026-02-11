@@ -119,7 +119,11 @@ export const MENU_LINKS = [
   //   external: false
   // },
   {
-    title: 'Contact US',
+    title: (
+      <>
+        Contact <strong className="italic">US</strong>
+      </>
+    ),
     description: 'Reach out for assistance',
     icon: <PaperPlaneIcon className="size-5 shrink-0" />,
     href: Routes.Contact,
@@ -130,7 +134,7 @@ export const MENU_LINKS = [
 export const FOOTER_LINKS: Array<{
   title: string;
   links: Array<{
-    name: string;
+    name: string | React.ReactNode;
     href: string;
     external: boolean;
   }>;
@@ -167,7 +171,7 @@ export const FOOTER_LINKS: Array<{
     {
       title: 'Company',
       links: [
-        { name: 'About Us', href: Routes.About, external: false },
+        { name: (<>About <strong className="italic">Us</strong></>), href: Routes.About, external: false },
         { name: 'Mission Statement', href: Routes.Mission, external: false },
         { name: 'Values', href: Routes.Values, external: false },
         { name: 'Company History', href: Routes.History, external: false }
