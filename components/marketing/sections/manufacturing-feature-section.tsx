@@ -91,7 +91,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
 
                 {/* Comprehensive Logic Expandable Card */}
-                <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
                     type="button"
                     onClick={() =>
@@ -132,7 +132,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
 
                 {/* Strategic Flexibility Expandable Card */}
-                <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
                     type="button"
                     onClick={() =>
@@ -174,7 +174,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
 
                 {/* Powerful, Flexible, Customizable Reporting Expandable Card */}
-                <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
                     type="button"
                     onClick={() => setReportingExpanded(!reportingExpanded)}
@@ -212,7 +212,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
 
                 {/* Data Integration Expandable Card */}
-                <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
                     type="button"
                     onClick={() =>
@@ -261,8 +261,8 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                     src="/images/Edgebic/2022-07/rmdb11.png"
                     alt="RMDB Core Capabilities dashboard"
                     width={500}
-                    height={280}
-                    className="h-[240px] w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                    height={291}
+                    className="h-[261px] w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                     loading="lazy"
                   />
                 </Link>

@@ -27,7 +27,7 @@ function formatTitle(title: string | React.ReactNode): React.ReactNode {
   if (typeof title !== 'string') return title;
 
   if (title === 'Contact US') {
-    return <>Contact <strong className="italic">US</strong></>;
+    return <>Contact <strong className="italic ps-1"> US</strong></>;
   }
 
   return title;
@@ -123,7 +123,7 @@ export function Navbar(): React.JSX.Element {
                               (item.href === Routes.Root
                                 ? pathname === '/'
                                 : pathname.startsWith(item.href)) &&
-                                'border-blue-600 text-blue-600'
+                              'border-blue-600 text-blue-600'
                             )}
                           >
                             {formatTitle(item.title)}

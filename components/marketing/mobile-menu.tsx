@@ -25,7 +25,7 @@ function formatTitle(title: string | React.ReactNode): React.ReactNode {
   if (typeof title !== 'string') return title;
 
   if (title === 'Contact US') {
-    return <>Contact <strong className="italic">US</strong></>;
+    return <>Contact <strong className="italic"> US</strong></>;
   }
 
   return title;
