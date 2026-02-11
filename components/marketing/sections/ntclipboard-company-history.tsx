@@ -379,17 +379,13 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
                 </div>
 
                 {/* Image - Right Column */}
-                <div className="flex items-center">
-                  <div className="overflow-hidden rounded-2xl border shadow-md">
-                    <Image
-                      src="/images/Edgebic/2022-07/RMDB-EDGE2-1024x483.png"
-                      alt="Resource Manager DB with EDGE Overlay - Modern Production Scheduling"
-                      width={1024}
-                      height={483}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                </div>
+                <Image
+                  src="/images/Edgebic/2022-07/RMDB-EDGE2-1024x483.png"
+                  alt="Resource Manager DB with EDGE Overlay - Modern Production Scheduling"
+                  width={1024}
+                  height={483}
+                  className="h-[250px] w-full object-cover"
+                />
               </div>
 
               {/* CTA Section */}
