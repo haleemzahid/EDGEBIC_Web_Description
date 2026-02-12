@@ -27,7 +27,7 @@ if (typeof window !== 'undefined') {
 
 const contactFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(255),
-  lastName: z.string().min(1, 'Last name is required').max(255),
+  lastName: z.string().max(255).optional(),
   email: z.string().email('Valid email is required'),
   phone: z.string().max(32).optional(),
   productInterest: z.string().min(1, 'Please select a product'),
@@ -139,7 +139,7 @@ export default function ContactUsPage() {
                       <svg className="w-5 h-5 text-cyan-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      <span className="text-gray-700 text-[17px]">Schedule a quick call to discuss your application.</span>
+                      <span className="text-gray-700 text-[17px]">ADD CALENDY BUTTON NEXT TO IT</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <svg className="w-5 h-5 text-cyan-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
