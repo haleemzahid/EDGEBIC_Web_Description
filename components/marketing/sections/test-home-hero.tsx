@@ -119,7 +119,7 @@ export function TestHomeHero(): React.JSX.Element {
                 type="button"
                 onClick={() => {
                   window.open(
-                    'https://calendly.com/mudasirnadeem7979/30min',
+                    'https://calendly.com/jc-123/new-meeting',
                     '_blank'
                   );
                 }}

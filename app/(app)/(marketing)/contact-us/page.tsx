@@ -448,7 +448,7 @@ export default function ContactUsPage() {
                 setShowScheduleModal(false);
                 // Small delay to let modal close before opening Calendly
                 setTimeout(() => {
-                  window.open('https://calendly.com/mudasirnadeem7979/30min', '_blank');
+                  window.open('https://calendly.com/jc-123/new-meeting', '_blank');
                 }, 100);
               }}
               className="flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700"
