@@ -236,33 +236,24 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
           description="Over three decades of innovation in manufacturing resource planning and production scheduling."
         />
 
-        <div className="mx-auto mt-6 max-w-7xl">
+        <div className="mx-auto  max-w-7xl">
           {/* 2016+ Featured Section */}
-          <div className="mb-12">
-            <div className="rounded-3xl border-2 border-orange-200 bg-gradient-to-br from-orange-50 via-white to-slate-50 p-8 shadow-lg">
-              <div className="mb-6 flex items-center gap-4">
-                <div className="flex items-center justify-center rounded-full bg-orange-500 p-3 text-white">
-                  <Rocket className="size-8" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-3xl font-bold text-orange-600">2016+</div>
-                  <div className="text-lg font-medium text-orange-500">The Modern Era</div>
-                </div>
-              </div>
+          <div className="mb-2">
+            <div className="rounded-3xl border-2 border-orange-200 bg-gradient-to-br from-orange-50 via-white to-slate-50 px-4 py-3 shadow-lg">
 
-              <h3 className="mb-4 text-2xl font-bold text-slate-900">
+              <h3 className="text-2xl font-bold text-slate-900">
                 Continuing Innovation & Customer Focus
               </h3>
-              <p className="mb-6 text-lg text-slate-700">
+              <p className="text-md text-slate-700">
                 In the last decade, User Solutions continues to enhance and adapt their flagship offering (Resource Manager DB with EDGE Overlay) to accommodate various customer challenges while at the same time focusing on developing a new generation of powerful but easy to use production planning and scheduling tools on latest technology to take advantage of AI, Mobile, Subscription Based, and more.
               </p>
 
-              <p className="mb-8 text-slate-700">
+              <p className="text-slate-700">
                 With a flexible approach, we are continuing to develop tools for both the smallest manufacturing concerns, folks who basically have no system except perhaps a whiteboard or manual Excel, all the way to Fortune 500 companies who need to fill in serious gaps with their ERP installation.
               </p>
 
               {/* Two Column Layout: Cards on Left, Image on Right */}
-              <div className="mb-6 grid gap-6 lg:grid-cols-2">
+              <div className="grid gap-6 lg:grid-cols-2">
                 {/* Four Focus Areas - Left Column */}
                 <div className="grid gap-2">
                   {/* Focus Area 1 */}
@@ -270,13 +261,13 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
                     <button
                       type="button"
                       onClick={() => toggleCard(1)}
-                      className="flex w-full items-center justify-between px-4 py-3 text-left transition-opacity hover:opacity-80"
+                      className="flex w-full items-center justify-between p-2 text-left transition-opacity hover:opacity-80"
                     >
                       <div className="flex items-center gap-3">
                         <div className="flex items-center justify-center rounded-full bg-orange-100 p-2 text-orange-600">
                           <Target className="size-5" />
                         </div>
-                        <h4 className="text-lg font-bold text-slate-900">Filling Gaps in ERP</h4>
+                        <h4 className="text-md font-bold text-slate-900">Filling Gaps in ERP</h4>
                       </div>
                       <div className={`text-orange-600 transition-transform duration-300 ${expandedCards[1] ? 'rotate-180' : 'rotate-0'}`}>
                         <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -298,13 +289,13 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
                     <button
                       type="button"
                       onClick={() => toggleCard(2)}
-                      className="flex w-full items-center justify-between px-4 py-3 text-left transition-opacity hover:opacity-80"
+                      className="flex w-full items-center justify-between p-2 text-left transition-opacity hover:opacity-80"
                     >
                       <div className="flex items-center gap-3">
                         <div className="flex items-center justify-center rounded-full bg-orange-100 p-2 text-orange-600">
                           <RefreshCw className="size-5" />
                         </div>
-                        <h4 className="text-lg font-bold text-slate-900">Reconfigure on the Fly</h4>
+                        <h4 className="text-md font-bold text-slate-900">Reconfigure on the Fly</h4>
                       </div>
                       <div className={`text-orange-600 transition-transform duration-300 ${expandedCards[2] ? 'rotate-180' : 'rotate-0'}`}>
                         <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -326,13 +317,13 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
                     <button
                       type="button"
                       onClick={() => toggleCard(3)}
-                      className="flex w-full items-center justify-between px-4 py-3 text-left transition-opacity hover:opacity-80"
+                      className="flex w-full items-center justify-between p-2 text-left transition-opacity hover:opacity-80"
                     >
                       <div className="flex items-center gap-3">
                         <div className="flex items-center justify-center rounded-full bg-orange-100 p-2 text-orange-600">
                           <Sliders className="size-5" />
                         </div>
-                        <h4 className="text-lg font-bold text-slate-900">Reasonable Schedules with Instant Overrides</h4>
+                        <h4 className="text-md font-bold text-slate-900">Reasonable Schedules with Instant Overrides</h4>
                       </div>
                       <div className={`text-orange-600 transition-transform duration-300 ${expandedCards[3] ? 'rotate-180' : 'rotate-0'}`}>
                         <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -354,13 +345,13 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
                     <button
                       type="button"
                       onClick={() => toggleCard(4)}
-                      className="flex w-full items-center justify-between px-4 py-3 text-left transition-opacity hover:opacity-80"
+                      className="flex w-full items-center justify-between p-2 text-left transition-opacity hover:opacity-80"
                     >
                       <div className="flex items-center gap-3">
                         <div className="flex items-center justify-center rounded-full bg-orange-100 p-2 text-orange-600">
                           <Heart className="size-5" />
                         </div>
-                        <h4 className="text-lg font-bold text-slate-900">Customer is the HERO</h4>
+                        <h4 className="text-md font-bold text-slate-900">Customer is the HERO</h4>
                       </div>
                       <div className={`text-orange-600 transition-transform duration-300 ${expandedCards[4] ? 'rotate-180' : 'rotate-0'}`}>
                         <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -380,7 +371,7 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
 
                 {/* Image - Right Column */}
                 <Image
-                  src="/images/Edgebic/2022-07/RMDB-EDGE2-1024x483.png"
+                  src="/happygrils.jpeg"
                   alt="Resource Manager DB with EDGE Overlay - Modern Production Scheduling"
                   width={1024}
                   height={483}
@@ -389,13 +380,13 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
               </div>
 
               {/* CTA Section */}
-              <div className="rounded-2xl bg-gradient-to-r from-orange-100 to-orange-50 p-6 text-center">
-                <p className="mb-4 text-lg font-medium text-slate-800">
+              <div className="rounded-2xl mt-3 bg-gradient-to-r from-orange-100 to-orange-50 p-4 text-center">
+                <p className="mb-4 text-md font-medium text-slate-800">
                   A system that can quickly generate a reasonable schedule then allow for any overrides and rebalance the entire schedule – that is our main focus. You are welcome to join us in this endeavor!
                 </p>
                 <Link href="/contact-us">
                   <Button size="lg" className="bg-orange-600 text-white hover:bg-orange-700">
-                    Join Us in This Endeavor
+                    Join <strong className='italic mx-1'> Us </strong> in This Endeavor
                   </Button>
                 </Link>
               </div>

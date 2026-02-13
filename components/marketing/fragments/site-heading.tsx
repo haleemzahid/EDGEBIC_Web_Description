@@ -24,7 +24,7 @@ export function SiteHeading({
         </Badge>
       )}
       {title && (
-        <h1 className="text-pretty text-3xl font-bold leading-tight lg:text-4xl lg:leading-tight">
+        <h1 className="text-pretty text-3xl font-bold leading-tight lg:leading-tight">
           {title}
         </h1>
       )}
