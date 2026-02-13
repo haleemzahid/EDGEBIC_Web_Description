@@ -367,6 +367,19 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
                       </div>
                     )}
                   </div>
+
+
+                  {/* CTA Section */}
+                  <div className="rounded-2xl mt-3 bg-gradient-to-r from-orange-100 to-orange-50 p-4 text-center">
+                    <p className="mb-4 text-md font-medium text-slate-800">
+                      A system that can quickly generate a reasonable schedule then allow for any overrides and rebalance the entire schedule – that is our main focus. You are welcome to join us in this endeavor!
+                    </p>
+                    <Link href="/contact-us">
+                      <Button size="lg" className="bg-orange-600 text-white hover:bg-orange-700">
+                        Join <strong className='italic mx-1'> Us </strong> in This Endeavor
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
 
                 {/* Image - Right Column */}
@@ -379,17 +392,7 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
                 />
               </div>
 
-              {/* CTA Section */}
-              <div className="rounded-2xl mt-3 bg-gradient-to-r from-orange-100 to-orange-50 p-4 text-center">
-                <p className="mb-4 text-md font-medium text-slate-800">
-                  A system that can quickly generate a reasonable schedule then allow for any overrides and rebalance the entire schedule – that is our main focus. You are welcome to join us in this endeavor!
-                </p>
-                <Link href="/contact-us">
-                  <Button size="lg" className="bg-orange-600 text-white hover:bg-orange-700">
-                    Join <strong className='italic mx-1'> Us </strong> in This Endeavor
-                  </Button>
-                </Link>
-              </div>
+
             </div>
           </div>
 
