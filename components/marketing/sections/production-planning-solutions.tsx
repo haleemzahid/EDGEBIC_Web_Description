@@ -156,7 +156,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       Features
                     </th>
                     <th className="p-4 text-center font-semibold text-blue-600">
-                      Resource Manager For Excel
+                      Resource Manager/Excel
                     </th>
                     <th className="p-4 text-center font-semibold text-orange-600">
                       Resource Manager DB
@@ -193,9 +193,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       edgebi: true
                     },
                     {
-                      feature: 'Bill of Materials',
+                      feature: ' Bill-Of-Resources (BOR)',
                       description:
-                        'Quantity per, Parent-child, Sub-Assemblies, Rev Control, much more.',
+                        'please use what we had for BOR on home page - I cant seem to readily find it - let me know if you need me to write new.',
                       jsl: false,
                       rmdb: true,
                       edgebi: true
@@ -296,14 +296,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       rmdb: false,
                       edgebi: true
                     },
-                    {
-                      feature: 'Live embedded Excel',
-                      description:
-                        'Import and Export to Excel and direct importing via ODBC drivers. Integrates easily with most ERP and custom systems.',
-                      jsl: false,
-                      rmdb: false,
-                      edgebi: true
-                    },
+
                     {
                       feature: 'Advanced Drag and Drop',
                       description:
