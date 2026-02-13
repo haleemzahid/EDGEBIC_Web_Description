@@ -82,7 +82,7 @@ const successStories = [
     quote:
       'Integrated scheduling solutions have transformed our consulting project delivery capabilities.',
     author: 'GEMS Healthcare Solutions',
-    logo: '/images/Edgebic/2022-07/07-300x300.png',
+    logo: '/images/ge-healthcare-logo-custom.svg',
     href: '/success_stories/finite-capacity-resource-scheduling-for-consulting-projects'
   },
   {
@@ -104,7 +104,7 @@ const successStories = [
       'GE Railcar Services Corporation, a unit of General Electric Corporation manages a fleet of over 180,000 railcars throughout North America and has successfully deployed Workcenter solutions.',
     quote: 'We tripled our on-time shipping percentage from 30% to over 90%.',
     author: 'GE Railcar Services Corporation',
-    logo: '/images/Edgebic/2022-07/GE-Rail-Services-Logoghj-161208-5849e6633a5d5-58e6958736b16.jpg',
+    logo: '/images/ge-healthcare-logo-custom.svg',
     href: '/success_stories/repair-shops-triple-on-time-shipping-percentage-from-30-to-90'
   },
   {
