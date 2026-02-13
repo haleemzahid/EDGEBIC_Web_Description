@@ -40,7 +40,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
           title="Production Planning and Scheduling Solutions"
           description={
             <>
-              Address your scheduling challenges and boost your company's efficiency, profitability, and competitiveness with a solution that fits, <strong className="italic">JUST RIGHT!</strong>
+              Address your scheduling challenges and boost your company's efficiency, profitability, and competitiveness with a solution that fits, <strong className="italic text-black text-2xl bg-yellow-300 px-2 py-1 rounded">JUST RIGHT!</strong>
             </>
           }
         />
