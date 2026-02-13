@@ -93,14 +93,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                 >
                   <div className="flex items-center">
                     <img
-                      src="/images/onefootprint-1.png"
+                      src="/images/twofootImage.png"
                       alt="left footprint"
-                      className="w-6 h-6 -translate-y-1"
-                    />
-                    <img
-                      src="/images/onefootprint-1.png"
-                      alt="right footprint"
-                      className="w-6 h-6 translate-y-1 scale-x-[-1]"
+                      className="w-10 h-10"
                     />
                   </div>
                   <span className="tracking-wide">NEXT STEPS</span>
