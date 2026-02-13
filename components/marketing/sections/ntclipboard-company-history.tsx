@@ -378,7 +378,19 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
                       <Button size="lg" className="bg-orange-600 text-white hover:bg-orange-700">
                         Join <strong className='italic mx-1'> Us </strong> in This Endeavor
                       </Button>
-                    </Link>
+                    </Link> <br />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const timelineElement = document.getElementById('history-timeline');
+                        if (timelineElement) {
+                          timelineElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                      }}
+                      className="mt-4 text-sm text-blue-700 italic transition-colors cursor-pointer"
+                    >
+                      ↓ Page down for more history
+                    </button>
                   </div>
                 </div>
 
@@ -397,7 +409,7 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
           </div>
 
           {/* Timeline */}
-          <div className="relative">
+          <div id="history-timeline" className="relative">
             {/* Timeline line */}
             <div className="absolute left-8 top-0 h-full w-px bg-gradient-to-b from-orange-300 via-orange-500 to-orange-700 md:left-1/2" />
 
