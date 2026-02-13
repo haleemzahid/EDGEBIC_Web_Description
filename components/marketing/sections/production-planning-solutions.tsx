@@ -91,7 +91,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                   className="gap-1 flex items-center m-auto bg-[#FAE74D] text-[#1e3a5f] hover:bg-[#e6d445] font-bold px-4 py-3 text-[16px] rounded-full shadow-lg"
                   onClick={() => router.push('/contact-us')}
                 >
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center">
                     <img
                       src="/images/onefootprint-1.png"
                       alt="left footprint"
