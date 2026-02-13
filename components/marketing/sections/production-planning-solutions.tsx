@@ -388,7 +388,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {[
-                    'Simple, familiar interface',
+                    'Familiar Excel Interface',
                     'Easy to configure and run',
                     'Finite Capacity - Only schedules to what is available',
                     'Customizable Workcenter Calendars and Daily Calendar',
@@ -396,13 +396,8 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     'Mixed Mode Scheduling - Forward based on start date or Reverse based on due date',
                     'Routings - Workcenter Set-up and Cycle Times',
                     'Queue / Move Times, Linear and non-Linear',
-                    'Color coded Graphics',
-                    'Import Data',
-                    'Resources management',
-                    'Orders tracking',
-                    'Reports generation',
-                    'Schedule module',
-                    'Export Data'
+                    'Custom Excel Formating',
+                    'Export Data Via Excel'
                   ].map((feature, i) => (
                     <div
                       key={i}
@@ -434,31 +429,23 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     'Routings - Workcenter Set-up and Cycle Times, Queue/Move Times',
                     'Tracking Actuals - Import Actuals or direct entry',
                     'Drag-and-drop to track WIP',
-                    'Bill of Materials - Quantity per, Parent-child, Sub-Assemblies',
-                    'Rev Control and much more',
+                    'Use the Bill Of Resources (BOR) not BOM and use description we used to have on home page',
+                    'Revision Control',
                     'Mixed Mode Scheduling - Time Fenced, Per job or group of orders',
                     'Prioritize at any level',
-                    'Rescheduling - Import Actuals and rescheduling on demand',
+                    'Rescheduling - Import Actuals and rescheduling on demand and/or autautomatically (say after ERP runs MRP)',
                     'MRP and Inventory Management - Low maintenance, Safety Stocks',
                     'Yield Factors, Purchasing UOM, ATP, Reporting',
                     'Material Planning Basic - What materials are required for what jobs and when',
                     'Materials Planning Advanced - MRP Calculations, Shortage Reports',
                     'Lot and Batch Sizing',
                     'Purchase Orders - Easy, fast, accurate based on scheduled demand',
-                    'Stock replenishment, Paperless option',
-                    'Drag and Drop - Visually change dates per job, per workcenter',
-                    'Drag job from one workcenter to another',
                     'Integration with other systems - Import/Export Excel, ODBC drivers',
                     'Integrates easily with most ERP and custom systems',
-                    'Customizable - We specialize in enhancing to meet your unique needs',
                     'What-if Analysis',
-                    'Purchasing and Receiving',
                     'Downtime Analysis and Reporting',
-                    'Costing and Estimating',
                     'Production Planning',
                     'Multi-Resource Scheduling',
-                    'LP Optimization (Optional)',
-                    'Customized Reports'
                   ].map((feature, i) => (
                     <div
                       key={i}
@@ -489,7 +476,6 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     'Business Intelligence Integration',
                     'Heat Map Report - View capacity loading for entire schedule at a glance',
                     'Schedule Key Dates - Run reports with export to Excel',
-                    'Live embedded Excel - Import and Export to Excel',
                     'Direct importing via ODBC drivers',
                     'Integrates easily with most ERP and custom systems',
                     'Advanced Drag and Drop - Alternate Routings, Multiple Constraints',
@@ -500,7 +486,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     'Capacity Utilization Graph',
                     'Custom Reporting - Customized per your requests',
                     'Advanced Security Options',
-                    'Interactive Schedule Management'
+                    'Interactive Schedule Management',
+                    'Drag and Drop - Visually change dates per job, per workcenter',
+                    'Drag job from one workcenter to another'
                   ].map((feature, i) => (
                     <div
                       key={i}
