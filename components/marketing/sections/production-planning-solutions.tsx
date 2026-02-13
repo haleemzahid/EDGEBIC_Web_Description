@@ -88,14 +88,21 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                 <p className="text-lg text-slate-700">Contact <strong><em>US</em></strong> today to discuss which product fits your budget and application.</p>
                 <Button
                   size="default"
-                  className="gap-1 flex m-auto bg-[#FAE74D] text-[#1e3a5f] hover:bg-[#e6d445] font-bold px-4 py-3 text-[16px] rounded-full shadow-lg"
+                  className="gap-1 flex items-center m-auto bg-[#FAE74D] text-[#1e3a5f] hover:bg-[#e6d445] font-bold px-4 py-3 text-[16px] rounded-full shadow-lg"
                   onClick={() => router.push('/contact-us')}
                 >
-                  <img
-                    src="/images/onefootprint-1.png"
-                    alt="footprint icon"
-                    className="w-10 h-10"
-                  />
+                  <div className="flex items-center gap-1">
+                    <img
+                      src="/images/onefootprint-1.png"
+                      alt="left footprint"
+                      className="w-6 h-6 -translate-y-1"
+                    />
+                    <img
+                      src="/images/onefootprint-1.png"
+                      alt="right footprint"
+                      className="w-6 h-6 translate-y-1 scale-x-[-1]"
+                    />
+                  </div>
                   <span className="tracking-wide">NEXT STEPS</span>
                 </Button>
               </div>
