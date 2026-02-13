@@ -61,7 +61,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               that help manufacturers solve challenges and boost efficiency—from a powerful Excel Add-On to advanced APS software that works either standalone or integrates with your ERP or any system.
             </p>
             <p className="mb-4 text-lg  text-muted-foreground">
-              We look forward to working with you to resolve your most pressing issues. Reduce/Eliminate late deliveries, reduce expediting costs, optimize labor and workcenter demands, improve customer service, minimize inventory costs, and so much, much more. Could you benefit from a system that gives you an end-to-end view of your entire supply chain? And gives you options to accommodate rush orders, and even deal with outside issues such as weather, hunting season, power outages, no shows on Labor, outside vendors for processing or material problems.
+              We look forward to working with you to resolve your most pressing issues. Reduce/Eliminate late deliveries, reduce expediting costs, optimize labor and workcenter demands, improve customer service, minimize inventory costs, and so much, much more. <br /> Could you benefit from a system that gives you an end-to-end view of your entire supply chain? And gives you options to accommodate rush orders, and even deal with outside issues such as weather, hunting season, power outages, no shows on Labor, outside vendors for processing or material problems.
             </p>
           </div>
 
