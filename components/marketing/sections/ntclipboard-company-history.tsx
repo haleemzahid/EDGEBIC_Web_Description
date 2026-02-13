@@ -388,7 +388,7 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
                   alt="Resource Manager DB with EDGE Overlay - Modern Production Scheduling"
                   width={1024}
                   height={483}
-                  className="h-[250px] w-full object-cover"
+                  className="h-[444px] w-full rounded-2xl object-cover"
                 />
               </div>
 
