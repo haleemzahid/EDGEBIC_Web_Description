@@ -437,8 +437,12 @@ export default function ContactUsPage() {
 
       {/* Schedule Meeting Modal */}
       <Dialog open={showScheduleModal} onOpenChange={(open) => {
-        // Only allow closing via the X button or buttons, not by clicking outside
-        if (!open) return;
+        // When closing (X button clicked), navigate to thank you page
+        if (!open) {
+          setShowScheduleModal(false);
+          router.push('/thankyou');
+          return;
+        }
         setShowScheduleModal(open);
       }}>
         <DialogContent className="sm:max-w-md">
