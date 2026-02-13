@@ -327,11 +327,15 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                           </details>
                         </td>
                         <td className="p-4 text-center">
-                          {row.jsl === true ? (
-                            <CheckCircle className="mx-auto size-5 text-green-500" />
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
+                          <div className="flex justify-center">
+                            <Image
+                              src="/Picture1.png"
+                              alt="Feature availability"
+                              width={120}
+                              height={80}
+                              className="object-contain"
+                            />
+                          </div>
                         </td>
                         <td className="p-4 text-center">
                           {row.rmdb === true ? (
