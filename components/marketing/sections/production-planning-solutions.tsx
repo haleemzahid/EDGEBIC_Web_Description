@@ -349,11 +349,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                           </div>
                         </td>
                         <td className="p-4 text-center">
-                          {row.edgebi === true ? (
-                            <CheckCircle className="mx-auto size-5 text-green-500" />
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
+                          <span className="font-semibold text-purple-600">RMDBDIEG</span>
                         </td>
                       </tr>
                     </React.Fragment>
