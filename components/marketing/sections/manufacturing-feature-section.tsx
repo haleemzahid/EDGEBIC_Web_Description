@@ -47,7 +47,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               Core Capabilities
             </h3>
             <p className="text-base text-slate-600">
-              Let's focus on the main challenges in scheduling by
+              It's the right time to focus on the main <br /> challenges in production scheduling by
             </p>
             <div className="flex gap-4">
               {/* Expandable Cards Column */}
@@ -91,7 +91,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
 
                 {/* Comprehensive Logic Expandable Card */}
-                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
                     type="button"
                     onClick={() =>
@@ -132,7 +132,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
 
                 {/* Strategic Flexibility Expandable Card */}
-                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
                     type="button"
                     onClick={() =>
@@ -174,7 +174,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
 
                 {/* Powerful, Flexible, Customizable Reporting Expandable Card */}
-                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
                     type="button"
                     onClick={() => setReportingExpanded(!reportingExpanded)}
@@ -204,7 +204,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          It's nearly impossible to create a perfect schedule due to the so many random events we encounter.   This is where the system shines - easily manually override current schedule and system will completely rebalance and alert.
+                          This is where the system shines - easily override schedule, at any time, and system will completely rebalance and alert if necessary.
                         </p>
                       </motion.div>
                     )}
@@ -212,7 +212,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
 
                 {/* Data Integration Expandable Card */}
-                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
+                <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
                     type="button"
                     onClick={() =>
@@ -262,7 +262,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                     alt="RMDB Core Capabilities dashboard"
                     width={500}
                     height={291}
-                    className="h-[261px] w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                    className="h-[230px] w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                     loading="lazy"
                   />
                 </Link>
