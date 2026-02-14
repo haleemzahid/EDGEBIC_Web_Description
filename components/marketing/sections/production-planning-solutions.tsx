@@ -108,11 +108,11 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
           <NTClipboardToolBox />
 
           {/* Feature Comparison Matrix */}
-          <div className="my-6">
-            <h2 className="mb-4 text-center text-3xl font-bold text-slate-900">
+          <div className="my-3">
+            <h2 className="mb-3 text-center text-3xl font-bold text-slate-900">
               Choose the Right Solution for Your Business
             </h2>
-            <p className="mb-4 text-center text-lg text-slate-600">
+            <p className="mb-3 text-center text-lg text-slate-600">
               Compare features across our product range to find the perfect fit.
             </p>
 
@@ -362,11 +362,11 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
           </div>
 
           {/* Production Scheduling Features Section */}
-          <div className="mb-6">
-            <h2 className="mb-6 text-center text-3xl font-bold text-slate-900">
+          <div className="mb-3">
+            <h2 className="text-center text-3xl font-bold text-slate-900">
               Production Scheduling Features
             </h2>
-            <p className="mb-6 text-center text-lg text-slate-600">
+            <p className="mb-3 text-center text-lg text-slate-600">
               Comprehensive production planning and scheduling capabilities
               designed to optimize your manufacturing operations.
             </p>
@@ -374,9 +374,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
             {/* Features Grid */}
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {/* Operations Manager Excel Features */}
-              <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-blue-700">
+              <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 ">
+                <CardHeader className='!pb-3'>
+                  <CardTitle className="flex  items-center gap-2 text-blue-700">
                     <Target className="size-5" />
                     Resource Manager For Excel
                   </CardTitle>
@@ -401,9 +401,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                   ].map((feature, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-2"
+                      className="flex items-start gap-2"
                     >
-                      <CheckCircle className="size-4 text-blue-600" />
+                      <CheckCircle className="text-blue-600 flex-shrink-0 mt-0.5" width={15} height={15} />
                       <span className="text-sm text-slate-700">{feature}</span>
                     </div>
                   ))}
@@ -412,7 +412,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
 
               {/* Resource Manager DB Features */}
               <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100">
-                <CardHeader>
+                <CardHeader className='pb-3'>
                   <CardTitle className="flex items-center gap-2 text-orange-700">
                     <Settings className="size-5" />
                     Resource Manager DB
@@ -449,9 +449,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                   ].map((feature, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-2"
+                      className="flex items-start gap-2"
                     >
-                      <CheckCircle className="size-4 text-orange-600" />
+                      <CheckCircle className="text-orange-600 flex-shrink-0 mt-0.5" width={15} height={15} />
                       <span className="text-sm text-slate-700">{feature}</span>
                     </div>
                   ))}
@@ -460,7 +460,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
 
               {/* EDGEBI Features */}
               <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100 md:col-span-2 lg:col-span-1">
-                <CardHeader>
+                <CardHeader className='pb-3'>
                   <CardTitle className="flex items-center gap-2 text-purple-700">
                     <Zap className="size-5" />
                     EDGEBI Suite
@@ -492,9 +492,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                   ].map((feature, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-2"
+                      className="flex items-start gap-2"
                     >
-                      <CheckCircle className="size-4 text-purple-600" />
+                      <CheckCircle className="text-purple-600 flex-shrink-0 mt-0.5" width={15} height={15} />
                       <span className="text-sm text-slate-700">{feature}</span>
                     </div>
                   ))}
@@ -504,8 +504,8 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
           </div>
 
           {/* Pricing Section */}
-          <div className="mb-6">
-            <h2 className="mb-6 text-center text-3xl font-bold text-slate-900">
+          <div className="mb-3">
+            <h2 className="text-center text-3xl font-bold text-slate-900">
               Pricing
             </h2>
 
