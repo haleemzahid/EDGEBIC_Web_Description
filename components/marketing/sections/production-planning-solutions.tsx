@@ -156,13 +156,13 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       Features
                     </th>
                     <th className="p-4 text-center font-semibold text-blue-600">
-                      Resource Manager/Excel
+                      Resource Manager/Excel <small>(RMX)</small>
                     </th>
                     <th className="p-4 text-center font-semibold text-orange-600">
-                      Resource Manager DB
+                      Resource Manager DB <small>(RMDB)</small>
                     </th>
                     <th className="p-4 text-center font-semibold text-purple-600">
-                      EDGEBI Suite
+                      EDGEBI Suite <small> (Requires RMDB) </small>
                     </th>
                   </tr>
                 </thead>
@@ -407,6 +407,22 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       <span className="text-sm text-slate-700">{feature}</span>
                     </div>
                   ))}
+                  <div className="mt-4 flex justify-center">
+                    <Button
+                      size="default"
+                      className="gap-1 flex items-center bg-[#FAE74D] text-[#1e3a5f] hover:bg-[#e6d445] font-bold px-4 py-3 text-[16px] rounded-full shadow-lg"
+                      onClick={() => router.push('/contact-us')}
+                    >
+                      <div className="flex items-center">
+                        <img
+                          src="/images/twofootImage.png"
+                          alt="left footprint"
+                          className="w-10 h-10"
+                        />
+                      </div>
+                      <span className="tracking-wide">NEXT STEPS</span>
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -455,6 +471,22 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       <span className="text-sm text-slate-700">{feature}</span>
                     </div>
                   ))}
+                  <div className="mt-4 flex justify-center">
+                    <Button
+                      size="default"
+                      className="gap-1 flex items-center bg-[#FAE74D] text-[#1e3a5f] hover:bg-[#e6d445] font-bold px-4 py-3 text-[16px] rounded-full shadow-lg"
+                      onClick={() => router.push('/contact-us')}
+                    >
+                      <div className="flex items-center">
+                        <img
+                          src="/images/twofootImage.png"
+                          alt="left footprint"
+                          className="w-10 h-10"
+                        />
+                      </div>
+                      <span className="tracking-wide">NEXT STEPS</span>
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -498,44 +530,24 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       <span className="text-sm text-slate-700">{feature}</span>
                     </div>
                   ))}
+                  <div className="mt-4 flex justify-center">
+                    <Button
+                      size="default"
+                      className="gap-1 flex items-center bg-[#FAE74D] text-[#1e3a5f] hover:bg-[#e6d445] font-bold px-4 py-3 text-[16px] rounded-full shadow-lg"
+                      onClick={() => router.push('/contact-us')}
+                    >
+                      <div className="flex items-center">
+                        <img
+                          src="/images/twofootImage.png"
+                          alt="left footprint"
+                          className="w-10 h-10"
+                        />
+                      </div>
+                      <span className="tracking-wide">NEXT STEPS</span>
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
-            </div>
-          </div>
-
-          {/* Pricing Section */}
-          <div className="mb-3">
-            <h2 className="text-center text-3xl font-bold text-slate-900">
-              Pricing
-            </h2>
-
-            <div className="grid gap-6 md:grid-cols-3">
-              <div className="text-center">
-                <p className="text-xl text-slate-700">
-                  <span className="font-semibold text-blue-700">
-                    Resource Manager For Excel
-                  </span>
-                </p>
-                <p className="text-2xl font-bold text-slate-900">Starting at $1,200</p>
-              </div>
-
-              <div className="text-center">
-                <p className="text-xl text-slate-700">
-                  <span className="font-semibold text-orange-700">
-                    Resource Manager DB
-                  </span>
-                </p>
-                <p className="text-2xl font-bold text-slate-900">Starting at $3K</p>
-              </div>
-
-              <div className="text-center">
-                <p className="text-xl text-slate-700">
-                  <span className="font-semibold text-purple-700">
-                    EDGEBI Suite
-                  </span>
-                </p>
-                <p className="text-2xl font-bold text-slate-900">Starting at $10K</p>
-              </div>
             </div>
           </div>
 
