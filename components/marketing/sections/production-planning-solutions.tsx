@@ -197,7 +197,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Workcenter Set-up and Cycle Times, Queue / Move Times, Linear and non-Linear.',
                       jsl: true,
                       rmdb: true,
-                      edgebi: true
+                      edgebi: false
                     },
                     {
                       feature: 'Finite Capacity',
@@ -205,7 +205,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Only schedules to what is available. Customizable Workcenter Calendars and Daily Calendar. Color coded. Graphics.',
                       jsl: true,
                       rmdb: true,
-                      edgebi: true
+                      edgebi: false
                     },
                     {
                       feature: 'Tracking Actuals',
@@ -213,7 +213,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Import Actuals. if available, or direct entry. Even drag-and-drop to track WIP.',
                       jsl: true,
                       rmdb: true,
-                      edgebi: true
+                      edgebi: false
                     },
                     {
                       feature: ' Bill-Of-Resources (BOR)',
@@ -221,7 +221,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'please use what we had for BOR on home page - I cant seem to readily find it - let me know if you need me to write new.',
                       jsl: true,
                       rmdb: true,
-                      edgebi: true
+                      edgebi: false
                     },
                     {
                       feature: 'Mixed Mode Scheduling',
@@ -229,7 +229,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Forward based on start date or Reverse based on due date or even Time Fenced. Per job or group of orders. Prioritize at any level.',
                       jsl: true,
                       rmdb: true,
-                      edgebi: true
+                      edgebi: false
                     },
                     {
                       feature: 'Rescheduling',
@@ -237,7 +237,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Import Actuals. if available, or direct entry. Even drag-and-drop to track WIP.',
                       jsl: true,
                       rmdb: true,
-                      edgebi: true
+                      edgebi: false
                     },
                     {
                       feature: 'Inventory Management',
@@ -245,7 +245,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Low maintenance. Safety Stocks, Yield Factors, Purchasing UOM, ATP, Reporting.',
                       jsl: true,
                       rmdb: true,
-                      edgebi: true
+                      edgebi: false
                     },
                     {
                       feature: 'Material Planning Basic',
@@ -253,7 +253,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'What materials are required for what jobs and when.',
                       jsl: true,
                       rmdb: true,
-                      edgebi: true
+                      edgebi: false
                     },
                     {
                       feature: 'Customizable',
@@ -261,7 +261,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'We specialize in enhancing any product, or combination, to meet your unique needs.',
                       jsl: true,
                       rmdb: true,
-                      edgebi: true
+                      edgebi: false
                     },
                     {
                       feature: 'Purchase Orders',
@@ -269,7 +269,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Easy, fast, accurate. Based on scheduled demand, stock replenishment, and more. Paperless option.',
                       jsl: true,
                       rmdb: true,
-                      edgebi: true
+                      edgebi: false
                     },
                     {
                       feature: 'Drag and Drop',
@@ -277,7 +277,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Visually change dates per job, per workcenter, or even drag job from one workcenter to another.',
                       jsl: false,
                       rmdb: true,
-                      edgebi: true
+                      edgebi: false
                     },
                     {
                       feature: 'Materials Planning Advanced',
@@ -285,7 +285,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'MRP Calculations, Shortage Reports, Lot and Batch Sizing, much more.',
                       jsl: false,
                       rmdb: true,
-                      edgebi: true
+                      edgebi: false
                     },
                     {
                       feature: 'Integration with other systems',
@@ -293,7 +293,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Import and Export to Excel and direct importing via ODBC drivers. Integrates easily with most ERP and custom systems.',
                       jsl: false,
                       rmdb: true,
-                      edgebi: true
+                      edgebi: false
                     },
                     {
                       feature: 'Advanced Planning & Scheduling',
@@ -301,7 +301,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Alternate Routings, Multiple Constraints, Multiple Priorities, Rescheduling on demand, much more.',
                       jsl: false,
                       rmdb: true,
-                      edgebi: true
+                      edgebi: false
                     },
                     {
                       feature: 'Heat Map Report',
@@ -309,7 +309,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Visual representation of capacity loading across your schedule.',
                       jsl: false,
                       rmdb: false,
-                      edgebi: false
+                      edgebi: true
                     },
                     {
                       feature: 'Schedule Key Dates',
@@ -317,7 +317,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Critical date tracking and reporting functionality.',
                       jsl: false,
                       rmdb: false,
-                      edgebi: false
+                      edgebi: true
                     },
 
                     {
@@ -326,7 +326,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Alternate Routings, Multiple Constraints, Multiple Priorities, Rescheduling on demand, much more.',
                       jsl: false,
                       rmdb: false,
-                      edgebi: false
+                      edgebi: true
                     }
                   ].map((row, i) => (
                     <React.Fragment key={i}>
