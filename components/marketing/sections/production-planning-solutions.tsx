@@ -309,7 +309,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Visual representation of capacity loading across your schedule.',
                       jsl: false,
                       rmdb: false,
-                      edgebi: true
+                      edgebi: false
                     },
                     {
                       feature: 'Schedule Key Dates',
@@ -317,7 +317,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Critical date tracking and reporting functionality.',
                       jsl: false,
                       rmdb: false,
-                      edgebi: true
+                      edgebi: false
                     },
 
                     {
@@ -326,7 +326,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Alternate Routings, Multiple Constraints, Multiple Priorities, Rescheduling on demand, much more.',
                       jsl: false,
                       rmdb: false,
-                      edgebi: true
+                      edgebi: false
                     }
                   ].map((row, i) => (
                     <React.Fragment key={i}>
