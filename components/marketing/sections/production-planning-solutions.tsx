@@ -340,7 +340,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         <td className="p-4 text-center">
                           <div className="flex justify-center">
                             <Image
-                              src="/Picture1.png"
+                              src="/images/rmdb-gauge.png"
                               alt="Feature availability"
                               width={120}
                               height={80}
