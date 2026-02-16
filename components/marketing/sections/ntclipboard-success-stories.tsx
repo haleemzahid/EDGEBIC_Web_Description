@@ -104,7 +104,7 @@ const successStories = [
       'GE Railcar Services Corporation, a unit of General Electric Corporation manages a fleet of over 180,000 railcars throughout North America and has successfully deployed Workcenter solutions.',
     quote: 'We tripled our on-time shipping percentage from 30% to over 90%.',
     author: 'GE Railcar Services Corporation',
-    logo: '/images/ge-healthcare-logo-custom.svg',
+    logo: '/images/ge-rail-services-logo.jpg',
     href: '/success_stories/repair-shops-triple-on-time-shipping-percentage-from-30-to-90'
   },
   {
