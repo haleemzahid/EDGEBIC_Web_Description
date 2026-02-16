@@ -211,7 +211,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       feature: 'Tracking Actuals',
                       description:
                         'Import Actuals. if available, or direct entry. Even drag-and-drop to track WIP.',
-                      jsl: false,
+                      jsl: true,
                       rmdb: true,
                       edgebi: true
                     },
@@ -219,7 +219,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       feature: ' Bill-Of-Resources (BOR)',
                       description:
                         'please use what we had for BOR on home page - I cant seem to readily find it - let me know if you need me to write new.',
-                      jsl: false,
+                      jsl: true,
                       rmdb: true,
                       edgebi: true
                     },
@@ -235,7 +235,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       feature: 'Rescheduling',
                       description:
                         'Import Actuals. if available, or direct entry. Even drag-and-drop to track WIP.',
-                      jsl: false,
+                      jsl: true,
                       rmdb: true,
                       edgebi: true
                     },
@@ -243,7 +243,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       feature: 'Inventory Management',
                       description:
                         'Low maintenance. Safety Stocks, Yield Factors, Purchasing UOM, ATP, Reporting.',
-                      jsl: false,
+                      jsl: true,
                       rmdb: true,
                       edgebi: true
                     },
@@ -251,7 +251,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       feature: 'Material Planning Basic',
                       description:
                         'What materials are required for what jobs and when.',
-                      jsl: false,
+                      jsl: true,
                       rmdb: true,
                       edgebi: true
                     },
@@ -259,7 +259,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       feature: 'Customizable',
                       description:
                         'We specialize in enhancing any product, or combination, to meet your unique needs.',
-                      jsl: false,
+                      jsl: true,
                       rmdb: true,
                       edgebi: true
                     },
@@ -267,7 +267,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       feature: 'Purchase Orders',
                       description:
                         'Easy, fast, accurate. Based on scheduled demand, stock replenishment, and more. Paperless option.',
-                      jsl: false,
+                      jsl: true,
                       rmdb: true,
                       edgebi: true
                     },
@@ -350,37 +350,49 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                           </details>
                         </td>
                         <td className="p-4 text-center">
-                          <div className="flex justify-center">
-                            <Image
-                              src="/images/rmx-gauge.png"
-                              alt="Feature availability"
-                              width={120}
-                              height={80}
-                              className="object-contain"
-                            />
-                          </div>
+                          {row.jsl ? (
+                            <div className="flex justify-center">
+                              <Image
+                                src="/images/rmx-gauge.png"
+                                alt="Feature availability"
+                                width={120}
+                                height={80}
+                                className="object-contain"
+                              />
+                            </div>
+                          ) : (
+                            <span className="text-xl text-slate-400">-</span>
+                          )}
                         </td>
                         <td className="p-4 text-center">
-                          <div className="flex justify-center">
-                            <Image
-                              src="/images/rmdb-gauge.png"
-                              alt="Feature availability"
-                              width={120}
-                              height={80}
-                              className="object-contain"
-                            />
-                          </div>
+                          {row.rmdb ? (
+                            <div className="flex justify-center">
+                              <Image
+                                src="/images/rmdb-gauge.png"
+                                alt="Feature availability"
+                                width={120}
+                                height={80}
+                                className="object-contain"
+                              />
+                            </div>
+                          ) : (
+                            <span className="text-xl text-slate-400">-</span>
+                          )}
                         </td>
                         <td className="p-4 text-center">
-                          <div className="flex justify-center">
-                            <Image
-                              src="/images/edge-gauge.png"
-                              alt="Feature availability"
-                              width={120}
-                              height={80}
-                              className="object-contain"
-                            />
-                          </div>
+                          {row.edgebi ? (
+                            <div className="flex justify-center">
+                              <Image
+                                src="/images/edge-gauge.png"
+                                alt="Feature availability"
+                                width={120}
+                                height={80}
+                                className="object-contain"
+                              />
+                            </div>
+                          ) : (
+                            <span className="text-xl text-slate-400">-</span>
+                          )}
                         </td>
                       </tr>
                     </React.Fragment>
