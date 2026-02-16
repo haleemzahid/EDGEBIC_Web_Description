@@ -40,7 +40,12 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
           title="Production Planning and Scheduling Solutions"
           description={
             <>
-              Address your scheduling challenges and boost your company's efficiency, profitability, and competitiveness with a solution that fits, <strong className="italic text-black text-2xl bg-yellow-300 px-2 py-1 rounded">JUST RIGHT!</strong>
+              Address your scheduling challenges and boost your company's
+              efficiency, profitability, and competitiveness with a solution
+              that fits,{' '}
+              <strong className="italic text-black text-2xl bg-yellow-300 px-2 py-1 rounded">
+                JUST RIGHT!
+              </strong>
             </>
           }
         />
@@ -58,10 +63,21 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               >
                 Production Planning and Scheduling Solutions
               </a>{' '}
-              that help manufacturers solve challenges and boost efficiency—from a powerful Excel Add-On to advanced APS software that works either standalone or integrates with your ERP or any system.
+              that help manufacturers solve challenges and boost efficiency—from
+              a powerful Excel Add-On to advanced APS software that works either
+              standalone or integrates with your ERP or any system.
             </p>
             <p className="mb-4 text-lg  text-muted-foreground">
-              We look forward to working with you to resolve your most pressing issues. Reduce or eliminate late deliveries, cut expediting costs, and optimize labor and workcenter demands to improve customer service, minimize inventory costs, and <span className='font-[600] text-black'>so much more</span>. <br /> Could you benefit from a system that gives you an end-to-end view of your entire supply chain? And gives you options to accommodate rush orders, and even deal with outside issues such as weather, hunting season, power outages, no shows on Labor, outside vendors for processing or material problems.
+              We look forward to working with you to resolve your most pressing
+              issues. Reduce or eliminate late deliveries, cut expediting costs,
+              and optimize labor and workcenter demands to improve customer
+              service, minimize inventory costs, and{' '}
+              <span className="font-[600] text-black">so much more</span>.{' '}
+              <br /> Could you benefit from a system that gives you an
+              end-to-end view of your entire supply chain? And gives you options
+              to accommodate rush orders, and even deal with outside issues such
+              as weather, hunting season, power outages, no shows on Labor,
+              outside vendors for processing or material problems.
             </p>
           </div>
 
@@ -81,11 +97,18 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               </div>
               {/* Text Content */}
               <div className="space-y-4">
-
                 <p className="text-lg text-slate-700">
-                  Let’s work together to solve the most pressing issues, as fast and easy as possible, then move on to next one!
+                  Let’s work together to solve the most pressing issues, as fast
+                  and easy as possible, then move on to next one!
                 </p>
-                <p className="text-lg text-slate-700">Contact <strong><em>US</em></strong> today to discuss which product fits your budget and application.</p>
+                <p className="text-lg text-slate-700">
+                  Contact{' '}
+                  <strong>
+                    <em>US</em>
+                  </strong>{' '}
+                  today to discuss which product fits your budget and
+                  application.
+                </p>
                 <Button
                   size="default"
                   className="gap-1 flex items-center m-auto bg-[#FAE74D] text-[#1e3a5f] hover:bg-[#e6d445] font-bold px-4 py-3 text-[16px] rounded-full shadow-lg"
@@ -349,7 +372,15 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                           </div>
                         </td>
                         <td className="p-4 text-center">
-                          <span className="font-semibold text-purple-600">RMDBDIEG</span>
+                          <div className="flex justify-center">
+                            <Image
+                              src="/images/edge-gauge.png"
+                              alt="Feature availability"
+                              width={120}
+                              height={80}
+                              className="object-contain"
+                            />
+                          </div>
                         </td>
                       </tr>
                     </React.Fragment>
@@ -375,7 +406,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {/* Operations Manager Excel Features */}
               <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 ">
-                <CardHeader className='!pb-3'>
+                <CardHeader className="!pb-3">
                   <CardTitle className="flex  items-center gap-2 text-blue-700">
                     <Target className="size-5" />
                     Resource Manager For Excel
@@ -403,7 +434,11 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       key={i}
                       className="flex items-start gap-2"
                     >
-                      <CheckCircle className="text-blue-600 flex-shrink-0 mt-0.5" width={15} height={15} />
+                      <CheckCircle
+                        className="text-blue-600 flex-shrink-0 mt-0.5"
+                        width={15}
+                        height={15}
+                      />
                       <span className="text-sm text-slate-700">{feature}</span>
                     </div>
                   ))}
@@ -428,7 +463,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
 
               {/* Resource Manager DB Features */}
               <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100">
-                <CardHeader className='pb-3'>
+                <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-orange-700">
                     <Settings className="size-5" />
                     Resource Manager DB
@@ -461,13 +496,17 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     'What-if Analysis',
                     'Downtime Analysis and Reporting',
                     'Production Planning',
-                    'Multi-Resource Scheduling',
+                    'Multi-Resource Scheduling'
                   ].map((feature, i) => (
                     <div
                       key={i}
                       className="flex items-start gap-2"
                     >
-                      <CheckCircle className="text-orange-600 flex-shrink-0 mt-0.5" width={15} height={15} />
+                      <CheckCircle
+                        className="text-orange-600 flex-shrink-0 mt-0.5"
+                        width={15}
+                        height={15}
+                      />
                       <span className="text-sm text-slate-700">{feature}</span>
                     </div>
                   ))}
@@ -492,7 +531,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
 
               {/* EDGEBI Features */}
               <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100 md:col-span-2 lg:col-span-1">
-                <CardHeader className='pb-3'>
+                <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-purple-700">
                     <Zap className="size-5" />
                     EDGEBI Suite
@@ -526,7 +565,11 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       key={i}
                       className="flex items-start gap-2"
                     >
-                      <CheckCircle className="text-purple-600 flex-shrink-0 mt-0.5" width={15} height={15} />
+                      <CheckCircle
+                        className="text-purple-600 flex-shrink-0 mt-0.5"
+                        width={15}
+                        height={15}
+                      />
                       <span className="text-sm text-slate-700">{feature}</span>
                     </div>
                   ))}
