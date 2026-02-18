@@ -468,14 +468,33 @@ export function RMDBInDepthContent() {
           <div className="grid items-center gap-8 md:grid-cols-2">
             <div>
               <h3 className="mb-2 text-lg font-bold">Routing Report</h3>
-              <p className="text-slate-600">
+              <p className="text-slate-600 mb-3">
                 Quickly generate your workcenter job lists in Excel, automatic
                 print macros to print out one page for every workcenter, or
                 simple export out to standalone Excel, update completions, and
                 import back in!
               </p>
+              <Image
+                src="/images/rmdb/reports/production-report.png"
+                alt="Production Report - Spreadsheet Output"
+                width={400}
+                height={300}
+                className="w-full rounded-lg"
+                loading="lazy"
+                quality={80}
+              />
             </div>
-            <div />
+            <div className="space-y-2">
+              <Image
+                src="/images/rmdb/reports/production-report-params.png"
+                alt="Production Report - Select Parameters"
+                width={400}
+                height={300}
+                className="w-full rounded-lg h-[400px]"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
           </div>
 
           {/* Calendar Report */}
