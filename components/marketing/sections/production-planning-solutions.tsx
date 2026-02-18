@@ -465,7 +465,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
             {/* Call to Action */}
           </div>
 
-          {/* Production Scheduling Features Section */}
+          {/* Production Scheduling Features Section - COMMENTED OUT
           <div className="mb-3">
             <h2 className="text-center text-3xl font-bold text-slate-900">
               Production Scheduling Features
@@ -475,9 +475,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               designed to optimize your manufacturing operations.
             </p>
 
-            {/* Features Grid */}
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {/* Operations Manager Excel Features */}
               <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100 ">
                 <CardHeader className="!pb-3">
                   <CardTitle className="flex  items-center gap-2 text-orange-700">
@@ -534,7 +532,6 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                 </CardContent>
               </Card>
 
-              {/* Resource Manager DB Features */}
               <Card className="border-green-200 bg-gradient-to-br from-green-50 to-green-100">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-green-600">
@@ -602,7 +599,6 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                 </CardContent>
               </Card>
 
-              {/* EDGEBI Features */}
               <Card className="border-emerald-300 bg-gradient-to-br from-emerald-50 to-emerald-100 md:col-span-2 lg:col-span-1">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-emerald-800">
@@ -666,8 +662,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               </Card>
             </div>
           </div>
+          END Production Scheduling Features Section */}
 
-          {/* Customer Testimonials */}
+          {/* What Our Customers Say - COMMENTED OUT
           <div className="my-6">
             <h2 className="mb-6 text-center text-2xl font-bold text-slate-900">
               What Our Customers Say
@@ -752,6 +749,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               </Card>
             </div>
           </div>
+          END What Our Customers Say */}
 
           {/* Key Benefits Section */}
           <div className="mb-6">
