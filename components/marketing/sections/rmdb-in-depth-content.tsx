@@ -368,6 +368,15 @@ export function RMDBInDepthContent() {
                 loading="lazy"
                 quality={80}
               />
+              <Image
+                src="/images/rmdb/reports/reports-menu.png"
+                alt="Reports Menu"
+                width={400}
+                height={300}
+                className="w-full rounded-lg"
+                loading="lazy"
+                quality={80}
+              />
             </div>
             <div className="space-y-2">
               <Image
