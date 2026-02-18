@@ -218,7 +218,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     {
                       feature: 'Mixed Mode Scheduling',
                       description:
-                        'Forward based on start date or Reverse based on due date or even Time Fenced. Per job or group of orders. Prioritize at any level.',
+                        'Forward based on start date or Reverse based on due date or even Time Fenced. Per job or group of orders. Prioritize at any level. Planned vs Actual for Powerful "What-If" analysis.',
                       jsl: true,
                       rmdb: true,
                       edgebi: true
