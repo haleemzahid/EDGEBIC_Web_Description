@@ -464,6 +464,20 @@ export function RMDBInDepthContent() {
             <div />
           </div>
 
+          {/* Routing Report */}
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <h3 className="mb-2 text-lg font-bold">Routing Report</h3>
+              <p className="text-slate-600">
+                Quickly generate your workcenter job lists in Excel, automatic
+                print macros to print out one page for every workcenter, or
+                simple export out to standalone Excel, update completions, and
+                import back in!
+              </p>
+            </div>
+            <div />
+          </div>
+
           {/* Calendar Report */}
           <div className="grid items-center gap-8 md:grid-cols-2">
             <div>
