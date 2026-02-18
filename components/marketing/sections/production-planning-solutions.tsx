@@ -258,7 +258,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     {
                       feature: 'Purchase Orders',
                       description:
-                        'Easy, fast, accurate. Based on scheduled demand, stock replenishment, and more. Paperless option.',
+                        'For those who need some help optimizing MRP, even if you have existing ERP or Accounting system, we can supplement such system with a Just In Time report to use to drive your ERP/Accounting Purchasing.',
                       jsl: true,
                       rmdb: true,
                       edgebi: true
