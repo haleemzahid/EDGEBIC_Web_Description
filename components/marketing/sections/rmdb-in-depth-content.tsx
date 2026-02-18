@@ -497,7 +497,7 @@ export function RMDBInDepthContent() {
             </div>
           </div>
 
-          {/* Wall Calendar Report */}
+          {/* Calendar Report */}
           <div className="grid items-center gap-8 md:grid-cols-2">
             <div>
               <h3 className="mb-2 text-lg font-bold">Wall Calendar Report</h3>
@@ -508,8 +508,8 @@ export function RMDBInDepthContent() {
             </div>
             <div>
               <Image
-                src="/images/rmdb/reports/wall-calendar-report.png"
-                alt="Wall Calendar Report"
+                src="/images/rmdb/reports/custom-production-calendar.png"
+                alt="Custom Production Calendar"
                 width={400}
                 height={300}
                 className="w-full rounded-lg"
@@ -580,8 +580,8 @@ export function RMDBInDepthContent() {
             </div>
             <div>
               <Image
-                src="/images/rmdb/reports/wall-calendar-report.png"
-                alt="Wall Calendar Report"
+                src="/images/rmdb/reports/custom-production-calendar.png"
+                alt="Custom Production Calendar"
                 width={400}
                 height={300}
                 className="w-full rounded-lg"
