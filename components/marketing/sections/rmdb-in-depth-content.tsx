@@ -309,13 +309,13 @@ export function RMDBInDepthContent() {
           </p>
         </div>
 
-        <div className="mb-8">
-          <h3 className="mb-2 text-xl font-bold">
-            I. Standard Reports off MAIN MENU
-          </h3>
-          <div className="grid items-start gap-8 md:grid-cols-2">
+        <div className="mb-6">
+          <div className="grid items-center gap-8 md:grid-cols-2">
             <div>
-              <p className="text-slate-600">
+              <h3 className="mb-4 text-xl font-bold">
+                I. Standard Reports off MAIN MENU
+              </h3>
+              <p className="text-slate-600 mb-3">
                 Full set of preformatted Excel reports stored in RMRPT.xlsx. As
                 the name implies, User Solutions seeks to provide exactly the
                 reports that will provide the most value for you. Over 35 years
