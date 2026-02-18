@@ -352,21 +352,40 @@ export function RMDBInDepthContent() {
           <div className="grid items-center gap-8 md:grid-cols-2">
             <div>
               <h3 className="mb-2 text-lg font-bold">Gantt Reports</h3>
-              <p className="text-slate-600">
+              <p className="text-slate-600 mb-3">
                 A great top level view of all job activity, what&apos;s early,
                 what&apos;s on time, what&apos;s late. Drill down for details on
                 any selected jobs. Choose the time buckets (Days, weeks, months,
                 even Hours). Choose planned jobs, actual jobs, or both. Final
                 user formats in Excel that sticks.
               </p>
-            </div>
-            <div>
               <Image
-                src="/images/Edgebic/2022-10/07b.jpg"
-                alt="Gantt Report"
+                src="/images/rmdb/reports/gantt-report-params.png"
+                alt="Gantt Report - Select Parameters"
+                width={400}
+                height={200}
+                className="w-full rounded-lg"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
+            <div className="space-y-2">
+              <Image
+                src="/images/rmdb/reports/reports-menu.png"
+                alt="Reports Menu - Gantt Reports"
                 width={400}
                 height={300}
-                className="w-full rounded-lg shadow-md"
+                className="w-full rounded-lg"
+                loading="lazy"
+                quality={80}
+              />
+
+              <Image
+                src="/images/rmdb/reports/gantt-report.png"
+                alt="Gantt Report - Spreadsheet Output"
+                width={400}
+                height={300}
+                className="w-full rounded-lg"
                 loading="lazy"
                 quality={80}
               />
