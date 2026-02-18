@@ -305,12 +305,13 @@ export function RMDBInDepthContent() {
           {/* Gantt Report */}
           <div className="grid items-center gap-8 md:grid-cols-2">
             <div>
-              <h3 className="mb-2 text-lg font-bold">Gantt Report</h3>
+              <h3 className="mb-2 text-lg font-bold">Gantt Reports</h3>
               <p className="text-slate-600">
-                A great top-level view of all activity with details only a click
-                away. Instantly check the due dates of all jobs in schedule,
-                drill down to find bottlenecks, adjust capacity and schedule to
-                meet critical dates.
+                A great top level view of all job activity, what&apos;s early,
+                what&apos;s on time, what&apos;s late. Drill down for details on
+                any selected jobs. Choose the time buckets (Days, weeks, months,
+                even Hours). Choose planned jobs, actual jobs, or both. Final
+                user formats in Excel that sticks.
               </p>
             </div>
             <div>
