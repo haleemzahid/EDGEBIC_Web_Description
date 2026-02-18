@@ -172,7 +172,13 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px] rounded-lg border border-slate-200 bg-white">
+              <table className="w-full min-w-[800px] table-fixed rounded-lg border border-slate-200 bg-white">
+                <colgroup>
+                  <col className="w-[40%]" />
+                  <col className="w-[20%]" />
+                  <col className="w-[20%]" />
+                  <col className="w-[20%]" />
+                </colgroup>
                 <thead>
                   <tr className="border-b border-slate-200">
                     <th className="p-4 text-left font-semibold text-slate-900">
@@ -333,7 +339,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       <tr
                         className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-slate-50' : ''}`}
                       >
-                        <td className="p-4">
+                        <td className="p-4 align-top">
                           <details
                             data-feature={`feature-${i}`}
                             className="group"
@@ -349,7 +355,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                             </div>
                           </details>
                         </td>
-                        <td className="p-4 text-center">
+                        <td className="p-4 text-center align-top">
                           {row.jsl ? (
                             <div className="flex justify-center">
                               <Image
@@ -372,7 +378,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                             <span className="text-xl text-slate-400">-</span>
                           )}
                         </td>
-                        <td className="p-4 text-center">
+                        <td className="p-4 text-center align-top">
                           {row.rmdbCustom ? (
                             <div className="text-sm text-slate-700 space-y-1">
                               <p className="font-semibold text-green-600">
@@ -394,7 +400,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                             <span className="text-xl text-slate-400">-</span>
                           )}
                         </td>
-                        <td className="p-4 text-center">
+                        <td className="p-4 text-center align-top">
                           {row.edgebiCustom ? (
                             <div className="text-sm text-slate-700 space-y-1">
                               <p className="font-semibold text-emerald-800">EDGEBI Pricing</p>
