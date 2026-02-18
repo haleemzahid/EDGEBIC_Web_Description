@@ -421,9 +421,10 @@ export function RMDBInDepthContent() {
             <div>
               <h3 className="mb-2 text-lg font-bold">Item Report</h3>
               <p className="text-slate-600">
-                Summarizes all requirements per part number. Ideal for
-                WorkCenter Loading, listing each job with start/completion times
-                and requirements.
+                Summarizes all requirements per part number for both materials
+                and finished goods as well as simple WorkCenter dispatch list
+                showing each job with start/completion times and requirements
+                in a simple block format.
               </p>
             </div>
             <div>
