@@ -396,20 +396,30 @@ export function RMDBInDepthContent() {
           <div className="grid items-center gap-8 md:grid-cols-2">
             <div>
               <h3 className="mb-2 text-lg font-bold">Summary Report</h3>
-              <p className="text-slate-600">
+              <p className="text-slate-600 mb-3">
                 The report will tell you what you need to buy or make, how much,
                 and when – all consolidated on a single sheet. An instant, top
-                level MRP Report for all products and workcenter loading. View
-                over any time horizon – by day, week, or month.
+                level Report for all products and workcenter loading. View
+                over any time horizon – by day, week, or month. Blends in any
+                actuals!
               </p>
             </div>
-            <div>
+            <div className="space-y-2">
               <Image
-                src="/images/Edgebic/2022-10/sumrpt.jpg"
-                alt="Summary Report"
+                src="/images/rmdb/reports/summary-report.png"
+                alt="Summary Report - Spreadsheet Output"
                 width={400}
                 height={300}
-                className="w-full rounded-lg shadow-md"
+                className="w-full rounded-lg"
+                loading="lazy"
+                quality={80}
+              />
+              <Image
+                src="/images/rmdb/reports/item-report.png"
+                alt="Item Report - Products and Workcenters"
+                width={400}
+                height={300}
+                className="w-full rounded-lg"
                 loading="lazy"
                 quality={80}
               />
