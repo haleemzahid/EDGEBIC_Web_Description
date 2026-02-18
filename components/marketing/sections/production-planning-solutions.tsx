@@ -287,7 +287,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Import and Export to Excel and direct importing via ODBC drivers. Integrates easily with most ERP and custom systems.',
                       jsl: false,
                       rmdb: true,
-                      edgebi: true
+                      edgebi: true,
+                      rmdbCustom:
+                        'RMDB Basic includes all the above for $4,000. Includes 4 hours of custom support.'
                     },
                     {
                       feature: 'Advanced Planning & Scheduling',
@@ -367,7 +369,13 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                           )}
                         </td>
                         <td className="p-4 text-center">
-                          {row.rmdb ? (
+                          {row.rmdbCustom ? (
+                            <div className="text-sm text-slate-700 space-y-1">
+                              <p className="font-semibold text-green-600">RMDB Basic Pricing</p>
+                              <p>RMDB Basic includes all the above for $4,000</p>
+                              <p className="text-xs text-slate-500">Includes 4 hours of custom support</p>
+                            </div>
+                          ) : row.rmdb ? (
                             <div className="flex justify-center">
                               <Image
                                 src="/images/rmdb-gauge.png"
