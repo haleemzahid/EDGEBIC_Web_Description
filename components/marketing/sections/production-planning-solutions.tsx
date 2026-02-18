@@ -390,6 +390,44 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     </React.Fragment>
                   ))}
                 </tbody>
+                <tfoot>
+                  <tr className="border-t border-slate-200">
+                    <td className="p-4"></td>
+                    <td className="p-4 text-center"></td>
+                    <td className="p-4 text-center">
+                      <Button
+                        size="default"
+                        className="gap-1 flex items-center m-auto bg-[#FAE74D] text-[#1e3a5f] hover:bg-[#e6d445] font-bold px-4 py-3 text-[16px] rounded-full shadow-lg"
+                        onClick={() => router.push('/contact-us')}
+                      >
+                        <div className="flex items-center">
+                          <img
+                            src="/images/twofootImage.png"
+                            alt="left footprint"
+                            className="w-10 h-10"
+                          />
+                        </div>
+                        <span className="tracking-wide">NEXT STEPS</span>
+                      </Button>
+                    </td>
+                    <td className="p-4 text-center">
+                      <Button
+                        size="default"
+                        className="gap-1 flex items-center m-auto bg-[#FAE74D] text-[#1e3a5f] hover:bg-[#e6d445] font-bold px-4 py-3 text-[16px] rounded-full shadow-lg"
+                        onClick={() => router.push('/contact-us')}
+                      >
+                        <div className="flex items-center">
+                          <img
+                            src="/images/twofootImage.png"
+                            alt="left footprint"
+                            className="w-10 h-10"
+                          />
+                        </div>
+                        <span className="tracking-wide">NEXT STEPS</span>
+                      </Button>
+                    </td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
 
