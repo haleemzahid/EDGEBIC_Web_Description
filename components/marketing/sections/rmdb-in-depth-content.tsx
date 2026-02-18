@@ -266,6 +266,15 @@ export function RMDBInDepthContent() {
           system.
         </p>
 
+        <div className="mb-8">
+          <h3 className="mb-2 text-xl font-bold">Flexible Reporting</h3>
+          <p className="text-slate-600">
+            Resource Manager-DB shines in its ability to present relevant data in
+            an easy and meaningful way. Using Excel as report writer, RMDB offers
+            3 different report output options: Call us for details.
+          </p>
+        </div>
+
         <div className="space-y-8">
           {/* Gantt Report */}
           <div className="grid items-center gap-8 md:grid-cols-2">
