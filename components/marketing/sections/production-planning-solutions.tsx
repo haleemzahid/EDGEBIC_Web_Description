@@ -67,17 +67,19 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               a powerful Excel Add-On to advanced APS software that works either
               standalone or integrates with your ERP or any system.
             </p>
-            <p className="mb-4 text-lg  text-muted-foreground">
+            <p className="mb-3 text-lg  text-muted-foreground">
               We look forward to working with you to resolve your most pressing
               issues. Reduce or eliminate late deliveries, cut expediting costs,
               and optimize labor and workcenter demands to improve customer
               service, minimize inventory costs, and{' '}
               <span className="font-[600] text-black">so much more</span>.{' '}
-              <br /> Could you benefit from a system that gives you an
-              end-to-end view of your entire supply chain? And gives you options
-              to accommodate rush orders, and even deal with outside issues such
-              as weather, hunting season, power outages, no shows on Labor,
-              outside vendors for processing or material problems.
+            </p>
+            <p className="mb-3 text-lg  text-muted-foreground">
+              Could you benefit from a system that gives you an end-to-end view
+              of your entire supply chain? And gives you options to accommodate
+              rush orders, and even deal with outside issues such as weather,
+              hunting season, power outages, no shows on Labor, outside vendors
+              for processing or material problems.
             </p>
           </div>
 
@@ -256,7 +258,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     {
                       feature: 'Customizable',
                       description:
-                        'For RMX and RMDB/EDGEBI, you can include all Excel features (formatting, reports, etc.) as a \'standard\' report for you. For RMDB/EDGEBI there is another level for customization by the many user fields available, as well as being able to customized Excel Output. Finally, we are open to including your ideas directly in system.',
+                        "For RMX and RMDB/EDGEBI, you can include all Excel features (formatting, reports, etc.) as a 'standard' report for you. For RMDB/EDGEBI there is another level for customization by the many user fields available, as well as being able to customized Excel Output. Finally, we are open to including your ideas directly in system.",
                       jsl: true,
                       rmdb: true,
                       edgebi: true
@@ -368,11 +370,18 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                             </div>
                           ) : row.jslCustom ? (
                             <div className="text-sm text-slate-700 space-y-1">
-                              <p className="font-semibold text-orange-600">RMX Pricing</p>
+                              <p className="font-semibold text-orange-600">
+                                RMX Pricing
+                              </p>
                               <p>Single User: $1,200</p>
                               <p>Multi-User: $2,400</p>
-                              <p className="text-xs text-slate-500">(one person live with edit control, other users view only)</p>
-                              <p className="text-xs text-slate-500">Includes 2 hours custom support</p>
+                              <p className="text-xs text-slate-500">
+                                (one person live with edit control, other users
+                                view only)
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                Includes 2 hours custom support
+                              </p>
                             </div>
                           ) : (
                             <span className="text-xl text-slate-400">-</span>
@@ -382,14 +391,20 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                           {row.rmdbCustom ? (
                             <div className="text-sm text-slate-700 space-y-1">
                               <p className="font-semibold text-green-600">
-                                {row.rmdbCustom.includes('Full') ? 'RMDB Full Pricing' : 'RMDB Basic Pricing'}
+                                {row.rmdbCustom.includes('Full')
+                                  ? 'RMDB Full Pricing'
+                                  : 'RMDB Basic Pricing'}
                               </p>
                               <p>{row.rmdbCustom}</p>
                             </div>
                           ) : row.rmdb ? (
                             <div className="flex justify-center">
                               <Image
-                                src={row.rmdbLow ? '/images/rmx-gauge.png' : '/images/rmdb-gauge.png'}
+                                src={
+                                  row.rmdbLow
+                                    ? '/images/rmx-gauge.png'
+                                    : '/images/rmdb-gauge.png'
+                                }
                                 alt="Feature availability"
                                 width={120}
                                 height={80}
@@ -403,11 +418,15 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         <td className="p-4 text-center align-top">
                           {row.edgebiCustom ? (
                             <div className="text-sm text-slate-700 space-y-1">
-                              <p className="font-semibold text-emerald-800">EDGEBI Pricing</p>
+                              <p className="font-semibold text-emerald-800">
+                                EDGEBI Pricing
+                              </p>
                               <p>5 Users: $5,000</p>
                               <p>10 Users: $10,000</p>
                               <p>20 Users: $15,000</p>
-                              <p className="text-xs text-slate-500">Includes 4 hours of custom support</p>
+                              <p className="text-xs text-slate-500">
+                                Includes 4 hours of custom support
+                              </p>
                             </div>
                           ) : row.edgebi ? (
                             <div className="flex justify-center">
