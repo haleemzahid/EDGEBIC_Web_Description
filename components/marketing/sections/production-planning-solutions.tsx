@@ -322,7 +322,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Alternate Routings, Multiple Constraints, Multiple Priorities, Rescheduling on demand, much more.',
                       jsl: false,
                       rmdb: false,
-                      edgebi: true
+                      edgebi: true,
+                      rmdbCustom:
+                        'RMDB Full includes all the above, plus EDGEBIC (single named user for both) for $9,500.'
                     }
                   ].map((row, i) => (
                     <React.Fragment key={i}>
@@ -371,9 +373,10 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         <td className="p-4 text-center">
                           {row.rmdbCustom ? (
                             <div className="text-sm text-slate-700 space-y-1">
-                              <p className="font-semibold text-green-600">RMDB Basic Pricing</p>
-                              <p>RMDB Basic includes all the above for $4,000</p>
-                              <p className="text-xs text-slate-500">Includes 4 hours of custom support</p>
+                              <p className="font-semibold text-green-600">
+                                {row.rmdbCustom.includes('Full') ? 'RMDB Full Pricing' : 'RMDB Basic Pricing'}
+                              </p>
+                              <p>{row.rmdbCustom}</p>
                             </div>
                           ) : row.rmdb ? (
                             <div className="flex justify-center">
