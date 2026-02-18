@@ -269,6 +269,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Besides using an easy, drag and drop graphical interface for initial system setup (Building BORs, etc.), we have worked on a drag and drop approach to easily and quickly update the planned schedule with reality. This includes updating any job any step with any dates (planned or actual), quantity produced or received (materials, workcenter hours and/or workcenter pieces, and complete workcenter replacements, even entire routing replacements. One button to rebalance entire schedule!',
                       jsl: false,
                       rmdb: true,
+                      rmdbLow: true,
                       edgebi: true,
                       jslCustom:
                         'RMX Single User: $1,200. Multi-User (one person live with edit control, other users view only): $2,400. Includes 2 hours custom support.'
@@ -381,7 +382,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                           ) : row.rmdb ? (
                             <div className="flex justify-center">
                               <Image
-                                src="/images/rmdb-gauge.png"
+                                src={row.rmdbLow ? '/images/rmx-gauge.png' : '/images/rmdb-gauge.png'}
                                 alt="Feature availability"
                                 width={120}
                                 height={80}
