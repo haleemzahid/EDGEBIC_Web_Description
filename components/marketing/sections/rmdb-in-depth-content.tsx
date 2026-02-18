@@ -497,10 +497,10 @@ export function RMDBInDepthContent() {
             </div>
           </div>
 
-          {/* Calendar Report */}
+          {/* Wall Calendar Report */}
           <div className="grid items-center gap-8 md:grid-cols-2">
             <div>
-              <h3 className="mb-2 text-lg font-bold">Calendar Report</h3>
+              <h3 className="mb-2 text-lg font-bold">Wall Calendar Report</h3>
               <p className="text-slate-600">
                 View and print the schedule in familiar &quot;wall
                 calendar&quot; format.
@@ -508,11 +508,11 @@ export function RMDBInDepthContent() {
             </div>
             <div>
               <Image
-                src="/images/Edgebic/2022-10/07b.jpg"
-                alt="Calendar Report"
+                src="/images/rmdb/reports/wall-calendar-report.png"
+                alt="Wall Calendar Report"
                 width={400}
                 height={300}
-                className="w-full rounded-lg shadow-md"
+                className="w-full rounded-lg"
                 loading="lazy"
                 quality={80}
               />
