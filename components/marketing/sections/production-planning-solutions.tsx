@@ -224,6 +224,14 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       edgebi: true
                     },
                     {
+                      feature: 'Rescheduling',
+                      description:
+                        'On all Jobs or user selectable. Lock key jobs in to deliver on-time. Adjust other variables to reflect reality including: Shop Calendar, Labor, Workcenter, even Outside Processing. In addition to all user direct interaction with rescheduling, you can also Import Actuals and complete rescheduling on demand and/or automatically (for example, at night after ERP runs MRP).',
+                      jsl: true,
+                      rmdb: true,
+                      edgebi: true
+                    },
+                    {
                       feature: 'Inventory Management',
                       description:
                         'Low maintenance. Safety Stocks, Yield Factors, Purchasing UOM, ATP, Reporting.',
