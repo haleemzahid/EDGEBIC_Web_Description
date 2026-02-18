@@ -178,13 +178,13 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     <th className="p-4 text-left font-semibold text-slate-900">
                       Features
                     </th>
-                    <th className="p-4 text-center font-semibold text-blue-600">
+                    <th className="p-4 text-center font-semibold text-orange-600">
                       Resource Manager/Excel <small>(RMX)</small>
                     </th>
-                    <th className="p-4 text-center font-semibold text-orange-600">
+                    <th className="p-4 text-center font-semibold text-green-600">
                       Resource Manager DB <small>(RMDB)</small>
                     </th>
-                    <th className="p-4 text-center font-semibold text-purple-600">
+                    <th className="p-4 text-center font-semibold text-emerald-800">
                       EDGEBI Suite <small> (Requires RMDB) </small>
                     </th>
                   </tr>
@@ -417,9 +417,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
             {/* Features Grid */}
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {/* Operations Manager Excel Features */}
-              <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 ">
+              <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100 ">
                 <CardHeader className="!pb-3">
-                  <CardTitle className="flex  items-center gap-2 text-blue-700">
+                  <CardTitle className="flex  items-center gap-2 text-orange-700">
                     <Target className="size-5" />
                     Resource Manager For Excel
                   </CardTitle>
@@ -447,7 +447,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       className="flex items-start gap-2"
                     >
                       <CheckCircle
-                        className="text-blue-600 flex-shrink-0 mt-0.5"
+                        className="text-orange-600 flex-shrink-0 mt-0.5"
                         width={15}
                         height={15}
                       />
@@ -474,9 +474,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               </Card>
 
               {/* Resource Manager DB Features */}
-              <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100">
+              <Card className="border-green-200 bg-gradient-to-br from-green-50 to-green-100">
                 <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-orange-700">
+                  <CardTitle className="flex items-center gap-2 text-green-600">
                     <Settings className="size-5" />
                     Resource Manager DB
                   </CardTitle>
@@ -515,7 +515,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       className="flex items-start gap-2"
                     >
                       <CheckCircle
-                        className="text-orange-600 flex-shrink-0 mt-0.5"
+                        className="text-green-600 flex-shrink-0 mt-0.5"
                         width={15}
                         height={15}
                       />
@@ -542,9 +542,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               </Card>
 
               {/* EDGEBI Features */}
-              <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100 md:col-span-2 lg:col-span-1">
+              <Card className="border-emerald-300 bg-gradient-to-br from-emerald-50 to-emerald-100 md:col-span-2 lg:col-span-1">
                 <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-purple-700">
+                  <CardTitle className="flex items-center gap-2 text-emerald-800">
                     <Zap className="size-5" />
                     EDGEBI Suite
                   </CardTitle>
@@ -578,7 +578,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       className="flex items-start gap-2"
                     >
                       <CheckCircle
-                        className="text-purple-600 flex-shrink-0 mt-0.5"
+                        className="text-emerald-700 flex-shrink-0 mt-0.5"
                         width={15}
                         height={15}
                       />
