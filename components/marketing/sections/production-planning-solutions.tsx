@@ -250,7 +250,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     {
                       feature: 'Customizable',
                       description:
-                        'We specialize in enhancing any product, or combination, to meet your unique needs.',
+                        'For RMX and RMDB/EDGEBI, you can include all Excel features (formatting, reports, etc.) as a \'standard\' report for you. For RMDB/EDGEBI there is another level for customization by the many user fields available, as well as being able to customized Excel Output. Finally, we are open to including your ideas directly in system.',
                       jsl: true,
                       rmdb: true,
                       edgebi: true
