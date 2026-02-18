@@ -628,6 +628,34 @@ export function RMDBInDepthContent() {
             </div>
           </div>
         </div>
+
+        <div className="mb-6 mt-8">
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <h3 className="mb-4 text-xl font-bold">
+                ii. Direct Reports off key screens
+              </h3>
+              <p className="text-slate-600">
+                Throughout the system, there are direct reports readily
+                available. For example, in the Resource Calendar there are 6
+                tabs with various valuable KPIs always visible and an extensive
+                selection of reports. So easy to use this for annual planning
+                and so much more!
+              </p>
+            </div>
+            <div>
+              <Image
+                src="/images/rmdb/reports/resource-calendar.png"
+                alt="Resource Calendar - Direct Reports off key screens"
+                width={400}
+                height={300}
+                className="w-full rounded-lg"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Special Services & Partners Section */}
