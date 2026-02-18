@@ -359,30 +359,11 @@ export function RMDBInDepthContent() {
                 even Hours). Choose planned jobs, actual jobs, or both. Final
                 user formats in Excel that sticks.
               </p>
-              <Image
-                src="/images/rmdb/reports/gantt-report-params.png"
-                alt="Gantt Report - Select Parameters"
-                width={400}
-                height={200}
-                className="w-full rounded-lg"
-                loading="lazy"
-                quality={80}
-              />
             </div>
             <div className="space-y-2">
               <Image
-                src="/images/rmdb/reports/reports-menu.png"
-                alt="Reports Menu - Gantt Reports"
-                width={400}
-                height={300}
-                className="w-full rounded-lg"
-                loading="lazy"
-                quality={80}
-              />
-
-              <Image
-                src="/images/rmdb/reports/gantt-report.png"
-                alt="Gantt Report - Spreadsheet Output"
+                src="/images/rmdb/reports/summary-report.png"
+                alt="Summary Report - Spreadsheet Output"
                 width={400}
                 height={300}
                 className="w-full rounded-lg"
@@ -399,21 +380,12 @@ export function RMDBInDepthContent() {
               <p className="text-slate-600 mb-3">
                 The report will tell you what you need to buy or make, how much,
                 and when – all consolidated on a single sheet. An instant, top
-                level Report for all products and workcenter loading. View
-                over any time horizon – by day, week, or month. Blends in any
+                level Report for all products and workcenter loading. View over
+                any time horizon – by day, week, or month. Blends in any
                 actuals!
               </p>
             </div>
             <div className="space-y-2">
-              <Image
-                src="/images/rmdb/reports/summary-report.png"
-                alt="Summary Report - Spreadsheet Output"
-                width={400}
-                height={300}
-                className="w-full rounded-lg"
-                loading="lazy"
-                quality={80}
-              />
               <Image
                 src="/images/rmdb/reports/item-report.png"
                 alt="Item Report - Products and Workcenters"
