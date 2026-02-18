@@ -580,11 +580,11 @@ export function RMDBInDepthContent() {
             </div>
             <div>
               <Image
-                src="/images/Edgebic/2022-10/prodrpt.jpg"
-                alt="Production Report"
+                src="/images/rmdb/reports/wall-calendar-report.png"
+                alt="Wall Calendar Report"
                 width={400}
                 height={300}
-                className="w-full rounded-lg shadow-md"
+                className="w-full rounded-lg"
                 loading="lazy"
                 quality={80}
               />
