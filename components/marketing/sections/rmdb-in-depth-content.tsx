@@ -268,10 +268,22 @@ export function RMDBInDepthContent() {
 
         <div className="mb-8">
           <h3 className="mb-2 text-xl font-bold">Flexible Reporting</h3>
-          <p className="text-slate-600">
+          <p className="mb-4 text-slate-600">
             Resource Manager-DB shines in its ability to present relevant data in
             an easy and meaningful way. Using Excel as report writer, RMDB offers
-            3 different report output options: Call us for details.
+            3 different report output options:
+          </p>
+          <ol className="mb-4 list-inside space-y-2 text-slate-800 font-semibold">
+            <li>i. Customized reports via Data Export</li>
+            <li>ii. Standard Reports off MAIN MENU</li>
+            <li>iii. Direct Reports off key screens</li>
+          </ol>
+          <p className="text-slate-600">
+            What is so very cool about using Excel as the report writer is all
+            the fantastic Graphs, powerful formatting (including conditional
+            formatting), Linking to other data sources, User custom formulas,
+            even sharing reports via Excel 365 in Cloud. All customization in
+            Excel becomes a permanent part of your system.
           </p>
         </div>
 
