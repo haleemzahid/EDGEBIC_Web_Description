@@ -665,6 +665,39 @@ export function RMDBInDepthContent() {
             </div>
           </div>
         </div>
+
+        <div className="mb-6 mt-8">
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <h3 className="mb-4 text-xl font-bold">
+                iii. Customized reports via Data Export
+              </h3>
+              <p className="text-slate-600">
+                The Data Export module is a most powerful and flexible report
+                generator. Most all of our &apos;custom&apos; reports for
+                Clients are housed here. You can create ANY custom report, using
+                data from ANY tables throughout system, and export to Excel. We
+                have seen a couple of powerful and interesting applications
+                therein. The first is for on-going, week to week, production KPI
+                analysis. By creating a Job Status Report (which jobs are early,
+                by how much, which ones are late, and by how much, etc.), then
+                appending each week Job Status report - it&apos;s a wonderful
+                way to track key KPIs throughout time.
+              </p>
+            </div>
+            <div>
+              <Image
+                src="/images/rmdb/reports/data-export-menu.png"
+                alt="Data Export - Processing Menu"
+                width={400}
+                height={300}
+                className="w-full rounded-lg"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Special Services & Partners Section */}
