@@ -242,7 +242,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     {
                       feature: 'Material Planning Basic',
                       description:
-                        'What materials are required for what jobs and when.',
+                        'With the unique BOR capabilities, know exactly what material is needed where and when. Can combine different orders for common material consolidations in whatever time frame is best.',
                       jsl: true,
                       rmdb: true,
                       edgebi: true
