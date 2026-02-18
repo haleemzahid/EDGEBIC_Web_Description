@@ -419,21 +419,30 @@ export function RMDBInDepthContent() {
           {/* Item Report */}
           <div className="grid items-center gap-8 md:grid-cols-2">
             <div>
-              <h3 className="mb-2 text-lg font-bold">Item Report</h3>
+              <h3 className="mb-3 text-lg font-bold">Item Report</h3>
               <p className="text-slate-600">
                 Summarizes all requirements per part number for both materials
                 and finished goods as well as simple WorkCenter dispatch list
-                showing each job with start/completion times and requirements
-                in a simple block format.
+                showing each job with start/completion times and requirements in
+                a simple block format.
               </p>
-            </div>
-            <div>
               <Image
-                src="/images/Edgebic/2022-10/item.jpg"
-                alt="Item Report"
+                src="/images/rmdb/reports/routing-report.png"
+                alt="Routing Report - Spreadsheet Output"
                 width={400}
                 height={300}
-                className="w-full rounded-lg shadow-md"
+                className="w-full rounded-lg"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
+            <div className="space-y-2">
+              <Image
+                src="/images/rmdb/reports/routing-report-options.png"
+                alt="Reports Menu - Routing Options"
+                width={400}
+                height={300}
+                className="w-full rounded-lg"
                 loading="lazy"
                 quality={80}
               />
