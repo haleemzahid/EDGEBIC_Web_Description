@@ -224,14 +224,6 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       edgebi: true
                     },
                     {
-                      feature: 'Rescheduling',
-                      description:
-                        'Import Actuals. if available, or direct entry. Even drag-and-drop to track WIP.',
-                      jsl: true,
-                      rmdb: true,
-                      edgebi: true
-                    },
-                    {
                       feature: 'Inventory Management',
                       description:
                         'Low maintenance. Safety Stocks, Yield Factors, Purchasing UOM, ATP, Reporting.',
