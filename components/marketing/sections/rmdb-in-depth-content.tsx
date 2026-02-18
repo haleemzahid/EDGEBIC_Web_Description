@@ -328,7 +328,7 @@ export function RMDBInDepthContent() {
                 alt="Gantt Report - Spreadsheet Output"
                 width={400}
                 height={300}
-                className="w-full rounded-lg"
+                className="w-full rounded-lg "
                 loading="lazy"
                 quality={80}
               />
@@ -339,7 +339,7 @@ export function RMDBInDepthContent() {
                 alt="Gantt Report - Select Parameters"
                 width={400}
                 height={200}
-                className="w-full rounded-lg"
+                className="w-full rounded-lg h-[400px]"
                 loading="lazy"
                 quality={80}
               />
@@ -364,7 +364,7 @@ export function RMDBInDepthContent() {
                 alt="Summary Report - Spreadsheet Output"
                 width={400}
                 height={300}
-                className="w-full rounded-lg"
+                className="w-full rounded-lg mb-3"
                 loading="lazy"
                 quality={80}
               />
@@ -372,8 +372,8 @@ export function RMDBInDepthContent() {
                 src="/images/rmdb/reports/reports-menu.png"
                 alt="Reports Menu"
                 width={400}
-                height={300}
-                className="w-full rounded-lg"
+                height={350}
+                className="w-full rounded-lg h-[300px]"
                 loading="lazy"
                 quality={80}
               />
@@ -384,16 +384,7 @@ export function RMDBInDepthContent() {
                 alt="Gantt Report - Select Parameters"
                 width={400}
                 height={300}
-                className="w-full rounded-lg"
-                loading="lazy"
-                quality={80}
-              />
-              <Image
-                src="/images/rmdb/reports/gantt-report.png"
-                alt="Gantt Report - Spreadsheet Output"
-                width={400}
-                height={300}
-                className="w-full rounded-lg"
+                className="w-full rounded-lg h-[670px]"
                 loading="lazy"
                 quality={80}
               />
