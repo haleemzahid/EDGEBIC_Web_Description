@@ -359,11 +359,29 @@ export function RMDBInDepthContent() {
                 even Hours). Choose planned jobs, actual jobs, or both. Final
                 user formats in Excel that sticks.
               </p>
-            </div>
-            <div className="space-y-2">
               <Image
                 src="/images/rmdb/reports/summary-report.png"
                 alt="Summary Report - Spreadsheet Output"
+                width={400}
+                height={300}
+                className="w-full rounded-lg"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
+            <div className="space-y-2">
+              <Image
+                src="/images/rmdb/reports/summary-report-params.png"
+                alt="Gantt Report - Select Parameters"
+                width={400}
+                height={300}
+                className="w-full rounded-lg"
+                loading="lazy"
+                quality={80}
+              />
+              <Image
+                src="/images/rmdb/reports/gantt-report.png"
+                alt="Gantt Report - Spreadsheet Output"
                 width={400}
                 height={300}
                 className="w-full rounded-lg"
