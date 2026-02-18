@@ -269,7 +269,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Besides using an easy, drag and drop graphical interface for initial system setup (Building BORs, etc.), we have worked on a drag and drop approach to easily and quickly update the planned schedule with reality. This includes updating any job any step with any dates (planned or actual), quantity produced or received (materials, workcenter hours and/or workcenter pieces, and complete workcenter replacements, even entire routing replacements. One button to rebalance entire schedule!',
                       jsl: false,
                       rmdb: true,
-                      edgebi: true
+                      edgebi: true,
+                      jslCustom:
+                        'RMX Single User: $1,200. Multi-User (one person live with edit control, other users view only): $2,400. Includes 2 hours custom support.'
                     },
                     {
                       feature: 'Materials Planning Advanced',
@@ -351,6 +353,14 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                                 height={80}
                                 className="object-contain"
                               />
+                            </div>
+                          ) : row.jslCustom ? (
+                            <div className="text-sm text-slate-700 space-y-1">
+                              <p className="font-semibold text-orange-600">RMX Pricing</p>
+                              <p>Single User: $1,200</p>
+                              <p>Multi-User: $2,400</p>
+                              <p className="text-xs text-slate-500">(one person live with edit control, other users view only)</p>
+                              <p className="text-xs text-slate-500">Includes 2 hours custom support</p>
                             </div>
                           ) : (
                             <span className="text-xl text-slate-400">-</span>
