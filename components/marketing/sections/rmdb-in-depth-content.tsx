@@ -291,14 +291,38 @@ export function RMDBInDepthContent() {
           <h3 className="mb-2 text-xl font-bold">
             I. Standard Reports off MAIN MENU
           </h3>
-          <p className="text-slate-600">
-            Full set of preformatted Excel reports stored in RMRPT.xlsx. As the
-            name implies, User Solutions seeks to provide exactly the reports
-            that will provide the most value for you. Over 35 years - we keep
-            adding YOUR good ideas as new, standard reports for all users. For
-            every one of these reports, there are several options on how you
-            might want it displayed, or printed out.
-          </p>
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <p className="text-slate-600">
+                Full set of preformatted Excel reports stored in RMRPT.xlsx. As
+                the name implies, User Solutions seeks to provide exactly the
+                reports that will provide the most value for you. Over 35 years
+                - we keep adding YOUR good ideas as new, standard reports for
+                all users. For every one of these reports, there are several
+                options on how you might want it displayed, or printed out.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Image
+                src="/images/rmdb/reports/gantt-report-params.png"
+                alt="Gantt Report - Select Parameters"
+                width={400}
+                height={200}
+                className="w-full max-h-[150px] object-contain rounded-lg"
+                loading="lazy"
+                quality={80}
+              />
+              <Image
+                src="/images/rmdb/reports/gantt-report.png"
+                alt="Gantt Report - Spreadsheet Output"
+                width={400}
+                height={200}
+                className="w-full max-h-[150px] object-contain rounded-lg"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="space-y-8">
