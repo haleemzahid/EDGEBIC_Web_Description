@@ -210,7 +210,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     {
                       feature: 'Tracking Actuals',
                       description:
-                        'Import Actuals. if available, or direct entry. Even drag-and-drop to track WIP.',
+                        'You can update as much detail as you want or not at all. We allow you to update any step in process, without updating any other step, and we will assume all predecessors are done and will simply rebalance the schedule.',
                       jsl: true,
                       rmdb: true,
                       edgebi: true
