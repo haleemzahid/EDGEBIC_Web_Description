@@ -591,6 +591,17 @@ export function RMDBInDepthContent() {
             </div>
           </div>
 
+          {/* Shipping Report */}
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <h3 className="mb-2 text-lg font-bold">Shipping Report</h3>
+              <p className="text-slate-600">
+                Quickly run by Customer full history of all shipments
+              </p>
+            </div>
+            <div />
+          </div>
+
           {/* Purchasing & Receiving */}
           <div className="grid items-center gap-8 md:grid-cols-2">
             <div>
