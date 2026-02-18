@@ -325,7 +325,8 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       rmdb: false,
                       edgebi: true,
                       rmdbCustom:
-                        'RMDB Full includes all the above, plus EDGEBIC (single named user for both) for $9,500.'
+                        'RMDB Full includes all the above, plus EDGEBIC (single named user for both) for $9,500.',
+                      edgebiCustom: true
                     }
                   ].map((row, i) => (
                     <React.Fragment key={i}>
@@ -394,7 +395,15 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                           )}
                         </td>
                         <td className="p-4 text-center">
-                          {row.edgebi ? (
+                          {row.edgebiCustom ? (
+                            <div className="text-sm text-slate-700 space-y-1">
+                              <p className="font-semibold text-emerald-800">EDGEBI Pricing</p>
+                              <p>5 Users: $5,000</p>
+                              <p>10 Users: $10,000</p>
+                              <p>20 Users: $15,000</p>
+                              <p className="text-xs text-slate-500">Includes 4 hours of custom support</p>
+                            </div>
+                          ) : row.edgebi ? (
                             <div className="flex justify-center">
                               <Image
                                 src="/images/edge-gauge.png"
