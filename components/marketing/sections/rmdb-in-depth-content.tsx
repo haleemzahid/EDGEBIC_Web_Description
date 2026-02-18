@@ -635,21 +635,30 @@ export function RMDBInDepthContent() {
               <h3 className="mb-4 text-xl font-bold">
                 ii. Direct Reports off key screens
               </h3>
-              <p className="text-slate-600">
+              <p className="text-slate-600 mb-3">
                 Throughout the system, there are direct reports readily
                 available. For example, in the Resource Calendar there are 6
                 tabs with various valuable KPIs always visible and an extensive
                 selection of reports. So easy to use this for annual planning
                 and so much more!
               </p>
-            </div>
-            <div>
               <Image
                 src="/images/rmdb/reports/resource-calendar.png"
-                alt="Resource Calendar - Direct Reports off key screens"
+                alt="Resource Calendar - Hours Assigned view with Utilization, Backlog, and Capacity tabs"
                 width={400}
                 height={300}
-                className="w-full rounded-lg"
+                className="w-full rounded-lg "
+                loading="lazy"
+                quality={80}
+              />
+            </div>
+            <div className="space-y-2">
+              <Image
+                src="/images/rmdb/reports/data-export-options.png"
+                alt="Choose an Option - Export, Interruptions, Utilization, Workcenter Status, Capacity Loaded, Efficiency, Downtime, WIP"
+                width={400}
+                height={300}
+                className="w-full rounded-lg h-[450px]"
                 loading="lazy"
                 quality={80}
               />
