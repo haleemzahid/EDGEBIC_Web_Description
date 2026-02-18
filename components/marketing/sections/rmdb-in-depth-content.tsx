@@ -266,163 +266,195 @@ export function RMDBInDepthContent() {
           system.
         </p>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-8">
           {/* Gantt Report */}
-          <div>
-            <Image
-              src="/images/Edgebic/2022-10/07b.jpg"
-              alt="Gantt Report"
-              width={400}
-              height={300}
-              className="mb-3 w-full rounded-lg"
-              loading="lazy"
-              quality={80}
-            />
-            <h3 className="mb-2 text-lg font-bold">Gantt Report</h3>
-            <p className="text-slate-600">
-              A great top-level view of all activity with details only a click
-              away. Instantly check the due dates of all jobs in schedule,
-              drill down to find bottlenecks, adjust capacity and schedule to
-              meet critical dates.
-            </p>
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <h3 className="mb-2 text-lg font-bold">Gantt Report</h3>
+              <p className="text-slate-600">
+                A great top-level view of all activity with details only a click
+                away. Instantly check the due dates of all jobs in schedule,
+                drill down to find bottlenecks, adjust capacity and schedule to
+                meet critical dates.
+              </p>
+            </div>
+            <div>
+              <Image
+                src="/images/Edgebic/2022-10/07b.jpg"
+                alt="Gantt Report"
+                width={400}
+                height={300}
+                className="w-full rounded-lg shadow-md"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
           </div>
 
           {/* Summary Report */}
-          <div>
-            <Image
-              src="/images/Edgebic/2022-10/sumrpt.jpg"
-              alt="Summary Report"
-              width={400}
-              height={300}
-              className="mb-3 w-full rounded-lg"
-              loading="lazy"
-              quality={80}
-            />
-            <h3 className="mb-2 text-lg font-bold">Summary Report</h3>
-            <p className="text-slate-600">
-              The report will tell you what you need to buy or make, how much,
-              and when – all consolidated on a single sheet. An instant, top
-              level MRP Report for all products and workcenter loading. View
-              over any time horizon – by day, week, or month.
-            </p>
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <h3 className="mb-2 text-lg font-bold">Summary Report</h3>
+              <p className="text-slate-600">
+                The report will tell you what you need to buy or make, how much,
+                and when – all consolidated on a single sheet. An instant, top
+                level MRP Report for all products and workcenter loading. View
+                over any time horizon – by day, week, or month.
+              </p>
+            </div>
+            <div>
+              <Image
+                src="/images/Edgebic/2022-10/sumrpt.jpg"
+                alt="Summary Report"
+                width={400}
+                height={300}
+                className="w-full rounded-lg shadow-md"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
           </div>
 
           {/* Item Report */}
-          <div>
-            <Image
-              src="/images/Edgebic/2022-10/item.jpg"
-              alt="Item Report"
-              width={400}
-              height={300}
-              className="mb-3 w-full rounded-lg"
-              loading="lazy"
-              quality={80}
-            />
-            <h3 className="mb-2 text-lg font-bold">Item Report</h3>
-            <p className="text-slate-600">
-              Summarizes all requirements per part number. Ideal for
-              WorkCenter Loading, listing each job with start/completion times
-              and requirements.
-            </p>
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <h3 className="mb-2 text-lg font-bold">Item Report</h3>
+              <p className="text-slate-600">
+                Summarizes all requirements per part number. Ideal for
+                WorkCenter Loading, listing each job with start/completion times
+                and requirements.
+              </p>
+            </div>
+            <div>
+              <Image
+                src="/images/Edgebic/2022-10/item.jpg"
+                alt="Item Report"
+                width={400}
+                height={300}
+                className="w-full rounded-lg shadow-md"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
           </div>
 
           {/* Calendar Report */}
-          <div>
-            <Image
-              src="/images/Edgebic/2022-10/07b.jpg"
-              alt="Calendar Report"
-              width={400}
-              height={300}
-              className="mb-3 w-full rounded-lg"
-              loading="lazy"
-              quality={80}
-            />
-            <h3 className="mb-2 text-lg font-bold">Calendar Report</h3>
-            <p className="text-slate-600">
-              View and print the schedule in familiar &quot;wall calendar&quot; format.
-            </p>
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <h3 className="mb-2 text-lg font-bold">Calendar Report</h3>
+              <p className="text-slate-600">
+                View and print the schedule in familiar &quot;wall calendar&quot; format.
+              </p>
+            </div>
+            <div>
+              <Image
+                src="/images/Edgebic/2022-10/07b.jpg"
+                alt="Calendar Report"
+                width={400}
+                height={300}
+                className="w-full rounded-lg shadow-md"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
           </div>
 
           {/* Workcenter Report */}
-          <div>
-            <Image
-              src="/images/Edgebic/2022-10/RPT-DD1-300x241-1.png"
-              alt="Workcenter Report"
-              width={300}
-              height={241}
-              className="mb-3 w-full rounded-lg"
-              loading="lazy"
-              quality={80}
-            />
-            <h3 className="mb-2 text-lg font-bold">Workcenter Report</h3>
-            <p className="text-slate-600">
-              Instant, real-time views of all critical workcenter activity by:
-              daily loading, backlog, % utilization, hours available and
-              bottlenecks. Allows for quick overtime scheduling and other
-              detailed adjustments for any workcenter on any day. Also
-              features a daily workcenter &quot;to-do&quot; list.
-            </p>
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <h3 className="mb-2 text-lg font-bold">Workcenter Report</h3>
+              <p className="text-slate-600">
+                Instant, real-time views of all critical workcenter activity by:
+                daily loading, backlog, % utilization, hours available and
+                bottlenecks. Allows for quick overtime scheduling and other
+                detailed adjustments for any workcenter on any day. Also
+                features a daily workcenter &quot;to-do&quot; list.
+              </p>
+            </div>
+            <div>
+              <Image
+                src="/images/Edgebic/2022-10/RPT-DD1-300x241-1.png"
+                alt="Workcenter Report"
+                width={300}
+                height={241}
+                className="w-full rounded-lg shadow-md"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
           </div>
 
           {/* Routing & Tree Report */}
-          <div>
-            <Image
-              src="/images/Edgebic/2022-10/tree.jpg"
-              alt="Routing & Tree Report"
-              width={400}
-              height={300}
-              className="mb-3 w-full rounded-lg"
-              loading="lazy"
-              quality={80}
-            />
-            <h3 className="mb-2 text-lg font-bold">Routing & Tree Report</h3>
-            <p className="text-slate-600">
-              Intuitive reports for visual bill-of-resource verification,
-              process flow and schedule feedback.
-            </p>
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <h3 className="mb-2 text-lg font-bold">Routing & Tree Report</h3>
+              <p className="text-slate-600">
+                Intuitive reports for visual bill-of-resource verification,
+                process flow and schedule feedback.
+              </p>
+            </div>
+            <div>
+              <Image
+                src="/images/Edgebic/2022-10/tree.jpg"
+                alt="Routing & Tree Report"
+                width={400}
+                height={300}
+                className="w-full rounded-lg shadow-md"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
           </div>
 
           {/* Production Report */}
-          <div>
-            <Image
-              src="/images/Edgebic/2022-10/prodrpt.jpg"
-              alt="Production Report"
-              width={400}
-              height={300}
-              className="mb-3 w-full rounded-lg"
-              loading="lazy"
-              quality={80}
-            />
-            <h3 className="mb-2 text-lg font-bold">Production Report</h3>
-            <p className="text-slate-600">
-              Perfect for traveler or work order printout. Automatically
-              reconciles inventory and capacity for a job and lists sequence
-              of operations and products to fulfill order on time. Includes
-              space for check off and actual feedback as well as job costing
-              and variance reporting.
-            </p>
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <h3 className="mb-2 text-lg font-bold">Production Report</h3>
+              <p className="text-slate-600">
+                Perfect for traveler or work order printout. Automatically
+                reconciles inventory and capacity for a job and lists sequence
+                of operations and products to fulfill order on time. Includes
+                space for check off and actual feedback as well as job costing
+                and variance reporting.
+              </p>
+            </div>
+            <div>
+              <Image
+                src="/images/Edgebic/2022-10/prodrpt.jpg"
+                alt="Production Report"
+                width={400}
+                height={300}
+                className="w-full rounded-lg shadow-md"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
           </div>
 
           {/* Purchasing & Receiving */}
-          <div>
-            <Image
-              src="/images/Edgebic/2022-10/porpt.jpg"
-              alt="Purchasing & Receiving Report"
-              width={400}
-              height={300}
-              className="mb-3 w-full rounded-lg"
-              loading="lazy"
-              quality={80}
-            />
-            <h3 className="mb-2 text-lg font-bold">Purchasing & Receiving</h3>
-            <p className="text-slate-600">
-              Resource Manager-DB excels with its integrated purchasing and
-              receiving module. Designed to meet the tough requirements for
-              Lean Manufacturing. Generate purchase orders via Kanban or
-              standard requirements with one click. Track received quantities,
-              open/closed status, and adjust inventory automatically. Auto-email
-              RFQs and POs to vendors.
-            </p>
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <h3 className="mb-2 text-lg font-bold">Purchasing & Receiving</h3>
+              <p className="text-slate-600">
+                Resource Manager-DB excels with its integrated purchasing and
+                receiving module. Designed to meet the tough requirements for
+                Lean Manufacturing. Generate purchase orders via Kanban or
+                standard requirements with one click. Track received quantities,
+                open/closed status, and adjust inventory automatically. Auto-email
+                RFQs and POs to vendors.
+              </p>
+            </div>
+            <div>
+              <Image
+                src="/images/Edgebic/2022-10/porpt.jpg"
+                alt="Purchasing & Receiving Report"
+                width={400}
+                height={300}
+                className="w-full rounded-lg shadow-md"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
           </div>
         </div>
       </div>
