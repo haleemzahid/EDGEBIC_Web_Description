@@ -192,9 +192,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                 <tbody>
                   {[
                     {
-                      feature: 'Routings',
+                      feature: 'Bill-Of-Resources (BOR)',
                       description:
-                        'Workcenter Set-up and Cycle Times, Queue / Move Times, Linear and non-Linear.',
+                        'Instead of a rigid routing and standalone Bill-Of-Material, our BOR feature allows the user to easily configure their complete Supply Chain with Materials, Workcenters, and even Outside Processes for an entire end-to-end scheduling.',
                       jsl: true,
                       rmdb: true,
                       edgebi: true
@@ -211,14 +211,6 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       feature: 'Tracking Actuals',
                       description:
                         'Import Actuals. if available, or direct entry. Even drag-and-drop to track WIP.',
-                      jsl: true,
-                      rmdb: true,
-                      edgebi: true
-                    },
-                    {
-                      feature: ' Bill-Of-Resources (BOR)',
-                      description:
-                        'please use what we had for BOR on home page - I cant seem to readily find it - let me know if you need me to write new.',
                       jsl: true,
                       rmdb: true,
                       edgebi: true
@@ -492,7 +484,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     'Routings - Workcenter Set-up and Cycle Times, Queue/Move Times',
                     'Tracking Actuals - Import Actuals or direct entry',
                     'Drag-and-drop to track WIP',
-                    'Use the Bill Of Resources (BOR) not BOM and use description we used to have on home page',
+                    'Bill-Of-Resources (BOR) - Configure your complete Supply Chain with Materials, Workcenters, and Outside Processes',
                     'Revision Control',
                     'Mixed Mode Scheduling - Time Fenced, Per job or group of orders',
                     'Prioritize at any level',
