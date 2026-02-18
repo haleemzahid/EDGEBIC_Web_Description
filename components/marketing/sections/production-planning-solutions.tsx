@@ -266,7 +266,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     {
                       feature: 'Drag and Drop',
                       description:
-                        'Visually change dates per job, per workcenter, or even drag job from one workcenter to another.',
+                        'Besides using an easy, drag and drop graphical interface for initial system setup (Building BORs, etc.), we have worked on a drag and drop approach to easily and quickly update the planned schedule with reality. This includes updating any job any step with any dates (planned or actual), quantity produced or received (materials, workcenter hours and/or workcenter pieces, and complete workcenter replacements, even entire routing replacements. One button to rebalance entire schedule!',
                       jsl: false,
                       rmdb: true,
                       edgebi: true
