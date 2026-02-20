@@ -269,7 +269,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'For those who need some help optimizing MRP, even if you have existing ERP or Accounting system, we can supplement such system with a Just In Time report to use to drive your ERP/Accounting Purchasing.',
                       jsl: true,
                       rmdb: true,
-                      edgebi: true
+                      edgebi: true,
+                      jslCustom:
+                        'RMX Single User: $1,200. Multi-User (one person live with edit control, other users view only): $2,400. Includes 2 hours custom support.'
                     },
                     {
                       feature: 'Drag and Drop',
@@ -278,9 +280,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       jsl: false,
                       rmdb: true,
                       rmdbLow: true,
-                      edgebi: true,
-                      jslCustom:
-                        'RMX Single User: $1,200. Multi-User (one person live with edit control, other users view only): $2,400. Includes 2 hours custom support.'
+                      edgebi: true
                     },
                     {
                       feature: 'Materials Planning Advanced',
@@ -296,9 +296,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Import and Export to Excel and direct importing via ODBC drivers. Integrates easily with most ERP and custom systems.',
                       jsl: false,
                       rmdb: true,
-                      edgebi: true,
-                      rmdbCustom:
-                        'RMDB Basic includes all the above for $4,000. Includes 4 hours of custom support.'
+                      edgebi: true
                     },
                     {
                       feature: 'Advanced Planning & Scheduling',
@@ -306,7 +304,9 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         'Alternate Routings, Multiple Constraints, Multiple Priorities, Rescheduling on demand, much more.',
                       jsl: false,
                       rmdb: true,
-                      edgebi: true
+                      edgebi: true,
+                      rmdbCustom:
+                        'RMDB Basic includes all the above for $4,000. Includes 4 hours of custom support.'
                     },
                     {
                       feature: 'Heat Map Report',
@@ -340,6 +340,75 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                     const hasPricing = row.jslCustom || row.rmdbCustom || (row as any).edgebiCustom;
                     return (
                     <React.Fragment key={i}>
+                      <tr
+                        className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-slate-50' : ''}`}
+                      >
+                        <td className="p-4 align-top">
+                          <details
+                            data-feature={`feature-${i}`}
+                            className="group"
+                          >
+                            <summary className="flex cursor-pointer items-center gap-2 font-medium text-slate-900 hover:text-blue-600">
+                              <span className="text-sm transition-transform group-open:rotate-90">
+                                ▶
+                              </span>
+                              {row.feature}
+                            </summary>
+                            <div className="mt-2 pl-6 text-sm text-slate-600">
+                              {row.description}
+                            </div>
+                          </details>
+                        </td>
+                        <td className="p-4 text-center align-top">
+                          {row.jsl ? (
+                            <div className="flex justify-center">
+                              <Image
+                                src="/images/rmx-gauge.png"
+                                alt="Feature availability"
+                                width={120}
+                                height={80}
+                                className="object-contain"
+                              />
+                            </div>
+                          ) : (
+                            <span className="text-xl text-slate-400">-</span>
+                          )}
+                        </td>
+                        <td className="p-4 text-center align-top">
+                          {row.rmdb ? (
+                            <div className="flex justify-center">
+                              <Image
+                                src={
+                                  row.rmdbLow
+                                    ? '/images/rmx-gauge.png'
+                                    : '/images/rmdb-gauge.png'
+                                }
+                                alt="Feature availability"
+                                width={120}
+                                height={80}
+                                className="object-contain"
+                              />
+                            </div>
+                          ) : (
+                            <span className="text-xl text-slate-400">-</span>
+                          )}
+                        </td>
+                        <td className="p-4 text-center align-top">
+                          {row.edgebi ? (
+                            <div className="flex justify-center">
+                              <Image
+                                src="/images/edge-gauge.png"
+                                alt="Feature availability"
+                                width={120}
+                                height={80}
+                                className="object-contain"
+                              />
+                            </div>
+                          ) : (
+                            <span className="text-xl text-slate-400">-</span>
+                          )}
+                        </td>
+                      </tr>
                       {hasPricing && (
                         <tr className="border-b-2 border-slate-200 bg-slate-100/60">
                           <td className="p-3 pl-8 text-sm font-semibold text-slate-500">
@@ -419,75 +488,6 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                           </td>
                         </tr>
                       )}
-                      <tr
-                        className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-slate-50' : ''}`}
-                      >
-                        <td className="p-4 align-top">
-                          <details
-                            data-feature={`feature-${i}`}
-                            className="group"
-                          >
-                            <summary className="flex cursor-pointer items-center gap-2 font-medium text-slate-900 hover:text-blue-600">
-                              <span className="text-sm transition-transform group-open:rotate-90">
-                                ▶
-                              </span>
-                              {row.feature}
-                            </summary>
-                            <div className="mt-2 pl-6 text-sm text-slate-600">
-                              {row.description}
-                            </div>
-                          </details>
-                        </td>
-                        <td className="p-4 text-center align-top">
-                          {row.jsl ? (
-                            <div className="flex justify-center">
-                              <Image
-                                src="/images/rmx-gauge.png"
-                                alt="Feature availability"
-                                width={120}
-                                height={80}
-                                className="object-contain"
-                              />
-                            </div>
-                          ) : (
-                            <span className="text-xl text-slate-400">-</span>
-                          )}
-                        </td>
-                        <td className="p-4 text-center align-top">
-                          {row.rmdb ? (
-                            <div className="flex justify-center">
-                              <Image
-                                src={
-                                  row.rmdbLow
-                                    ? '/images/rmx-gauge.png'
-                                    : '/images/rmdb-gauge.png'
-                                }
-                                alt="Feature availability"
-                                width={120}
-                                height={80}
-                                className="object-contain"
-                              />
-                            </div>
-                          ) : (
-                            <span className="text-xl text-slate-400">-</span>
-                          )}
-                        </td>
-                        <td className="p-4 text-center align-top">
-                          {row.edgebi ? (
-                            <div className="flex justify-center">
-                              <Image
-                                src="/images/edge-gauge.png"
-                                alt="Feature availability"
-                                width={120}
-                                height={80}
-                                className="object-contain"
-                              />
-                            </div>
-                          ) : (
-                            <span className="text-xl text-slate-400">-</span>
-                          )}
-                        </td>
-                      </tr>
                     </React.Fragment>
                     );
                   })}
