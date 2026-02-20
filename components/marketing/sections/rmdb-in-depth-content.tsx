@@ -714,6 +714,130 @@ export function RMDBInDepthContent() {
           solutions focused on unique needs.
         </p>
       </div>
+
+      {/* Excel 365 Cloud Production Sheets - FC Modular Case Study */}
+      <div>
+        <h2 className="mb-4 text-2xl font-bold">
+          Excel 365 Cloud Production Sheets
+        </h2>
+        <p className="mb-6 text-slate-600">
+          Another very cool aspect of using Excel and the RMDB Data Export is
+          being able to export out a custom production sheet to Excel 365 in
+          Cloud, then anyone with Excel 365 can view AND update the schedule
+          completely in Excel! RMDB exports out the schedule. Production
+          Supervisors update status — and even include other QC parameters — all
+          entered into Excel but stored permanently in RMDB.
+        </p>
+
+        <div className="mb-8">
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <Image
+                src="/images/rmdb/reports/rmdb-cloud-integration.png"
+                alt="RMDB to Excel 365 Cloud workflow - schedule data syncs between RMDB, Excel 365 Cloud, and factory floor tablets"
+                width={600}
+                height={400}
+                className="w-full rounded-lg shadow-md"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
+            <div>
+              <p className="mb-4 text-slate-600">
+                All we needed was <strong>ONE license</strong> for RMDB — even
+                though there were dozens of &apos;users&apos; — well, Excel
+                users. The power of Excel 365 in the Cloud means your entire
+                team can access and update production data from anywhere, on any
+                device.
+              </p>
+              <Image
+                src="/images/rmdb/reports/rmdb-cloud-integration.png"
+                alt="RMDB to Excel 365 Cloud workflow - schedule data syncs between RMDB, Excel 365 Cloud, and factory floor tablets"
+                width={600}
+                height={400}
+                className="w-full rounded-lg shadow-md"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-8">
+          <h3 className="mb-4 text-xl font-bold">
+            Case Study: FC Modular — Dean Street Project, Brooklyn
+          </h3>
+          <p className="mb-6 text-slate-600">
+            Check out what we did for FC Modular building the first high-rise,
+            residential living building using commercial modular construction —
+            this was for the Dean Street project abutting the Barclays Center in
+            Brooklyn.
+          </p>
+
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <p className="mb-4 text-slate-600">
+                We added a simple dashboard so each supervisor could quickly call
+                up their area and see which tasks are ready for them and at a
+                glance see what tasks are{' '}
+                <span className="font-semibold text-green-600">
+                  ON TIME (green)
+                </span>
+                , which are{' '}
+                <span className="font-semibold text-yellow-600">
+                  POTENTIALLY LATE (yellow
+                </span>{' '}
+                — the scheduled start date has passed and we don&apos;t have an
+                actual update), and finally which are{' '}
+                <span className="font-semibold text-red-600">
+                  LATE (red
+                </span>{' '}
+                — where actual finish dates exceed scheduled finish dates).
+              </p>
+            </div>
+            <div>
+              <Image
+                src="/images/rmdb/reports/factory-dashboard.png"
+                alt="FC Modular Dean Street Floor Dashboard - Supervisor task areas with percent complete tracking for each crew station"
+                width={800}
+                height={500}
+                className="w-full rounded-lg shadow-md"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-8">
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <h3 className="mb-4 text-xl font-bold">
+                QC/Inspection Steps for Commercial Building Codes
+              </h3>
+              <p className="text-slate-600">
+                And wait — there&apos;s more! We even added the QC/Inspection
+                steps to comply with Commercial Building Codes. Each process
+                step includes task status indicators, start and end status
+                tracking, shift assignments, and multiple QC checkpoints (QC1,
+                QC2, QC3 and QC Final) — all managed within Excel and stored
+                permanently in RMDB.
+              </p>
+            </div>
+            <div>
+              <Image
+                src="/images/rmdb/reports/custom-tracking.png"
+                alt="QC/Inspection tracking spreadsheet with green, yellow, and red status indicators for task status and multiple QC checkpoints"
+                width={800}
+                height={300}
+                className="w-full rounded-lg shadow-md"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
