@@ -732,24 +732,15 @@ export function RMDBInDepthContent() {
         <div className="mb-8">
           <div className="grid items-center gap-8 md:grid-cols-2">
             <div>
-              <Image
-                src="/images/rmdb/reports/rmdb-cloud-integration.png"
-                alt="RMDB to Excel 365 Cloud workflow - schedule data syncs between RMDB, Excel 365 Cloud, and factory floor tablets"
-                width={600}
-                height={400}
-                className="w-full rounded-lg shadow-md"
-                loading="lazy"
-                quality={80}
-              />
-            </div>
-            <div>
-              <p className="mb-4 text-slate-600">
+              <p className="text-slate-600">
                 All we needed was <strong>ONE license</strong> for RMDB — even
                 though there were dozens of &apos;users&apos; — well, Excel
                 users. The power of Excel 365 in the Cloud means your entire
                 team can access and update production data from anywhere, on any
                 device.
               </p>
+            </div>
+            <div>
               <Image
                 src="/images/rmdb/reports/rmdb-cloud-integration.png"
                 alt="RMDB to Excel 365 Cloud workflow - schedule data syncs between RMDB, Excel 365 Cloud, and factory floor tablets"
