@@ -369,34 +369,47 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                               />
                             </div>
                           ) : row.jslCustom ? (
-                            <div className="text-sm text-slate-700 space-y-1">
-                              <p className="font-semibold text-orange-600">
-                                RMX Pricing
-                              </p>
-                              <p>Single User: $1,200</p>
-                              <p>Multi-User: $2,400</p>
-                              <p className="text-xs text-slate-500">
-                                (one person live with edit control, other users
-                                view only)
-                              </p>
-                              <p className="text-xs text-slate-500">
-                                Includes 2 hours custom support
-                              </p>
-                            </div>
+                            <details className="group mx-auto max-w-[200px] rounded-lg border-2 border-orange-300 bg-gradient-to-b from-orange-50 to-white shadow-sm">
+                              <summary className="cursor-pointer list-none rounded-md bg-orange-500 px-3 py-1.5 text-sm font-bold text-white transition-colors hover:bg-orange-600">
+                                <span className="flex items-center justify-center gap-1">
+                                  <span className="text-[10px] transition-transform group-open:rotate-90">▶</span>
+                                  RMX Pricing
+                                </span>
+                              </summary>
+                              <div className="space-y-1 p-3 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-slate-600">Single User</span>
+                                  <span className="font-bold text-slate-900">$1,200</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-slate-600">Multi-User</span>
+                                  <span className="font-bold text-slate-900">$2,400</span>
+                                </div>
+                                <p className="mt-2 text-[11px] leading-tight text-slate-500">
+                                  (one person live with edit control, other users view only)
+                                </p>
+                                <p className="mt-1 text-[11px] font-medium text-orange-600">
+                                  Includes 2 hours custom support
+                                </p>
+                              </div>
+                            </details>
                           ) : (
                             <span className="text-xl text-slate-400">-</span>
                           )}
                         </td>
                         <td className="p-4 text-center align-top">
                           {row.rmdbCustom ? (
-                            <div className="text-sm text-slate-700 space-y-1">
-                              <p className="font-semibold text-green-600">
-                                {row.rmdbCustom.includes('Full')
-                                  ? 'RMDB Full Pricing'
-                                  : 'RMDB Basic Pricing'}
-                              </p>
-                              <p>{row.rmdbCustom}</p>
-                            </div>
+                            <details className="group mx-auto max-w-[200px] rounded-lg border-2 border-green-300 bg-gradient-to-b from-green-50 to-white shadow-sm">
+                              <summary className="cursor-pointer list-none rounded-md bg-green-600 px-3 py-1.5 text-sm font-bold text-white transition-colors hover:bg-green-700">
+                                <span className="flex items-center justify-center gap-1">
+                                  <span className="text-[10px] transition-transform group-open:rotate-90">▶</span>
+                                  {row.rmdbCustom.includes('Full')
+                                    ? 'RMDB Full Pricing'
+                                    : 'RMDB Basic Pricing'}
+                                </span>
+                              </summary>
+                              <p className="p-3 text-sm leading-snug text-slate-700">{row.rmdbCustom}</p>
+                            </details>
                           ) : row.rmdb ? (
                             <div className="flex justify-center">
                               <Image
@@ -417,17 +430,31 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                         </td>
                         <td className="p-4 text-center align-top">
                           {row.edgebiCustom ? (
-                            <div className="text-sm text-slate-700 space-y-1">
-                              <p className="font-semibold text-emerald-800">
-                                EDGEBI Pricing
-                              </p>
-                              <p>5 Users: $5,000</p>
-                              <p>10 Users: $10,000</p>
-                              <p>20 Users: $15,000</p>
-                              <p className="text-xs text-slate-500">
-                                Includes 4 hours of custom support
-                              </p>
-                            </div>
+                            <details className="group mx-auto max-w-[200px] rounded-lg border-2 border-emerald-300 bg-gradient-to-b from-emerald-50 to-white shadow-sm">
+                              <summary className="cursor-pointer list-none rounded-md bg-emerald-700 px-3 py-1.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800">
+                                <span className="flex items-center justify-center gap-1">
+                                  <span className="text-[10px] transition-transform group-open:rotate-90">▶</span>
+                                  EDGEBI Pricing
+                                </span>
+                              </summary>
+                              <div className="space-y-1 p-3 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-slate-600">5 Users</span>
+                                  <span className="font-bold text-slate-900">$5,000</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-slate-600">10 Users</span>
+                                  <span className="font-bold text-slate-900">$10,000</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-slate-600">20 Users</span>
+                                  <span className="font-bold text-slate-900">$15,000</span>
+                                </div>
+                                <p className="mt-2 text-[11px] font-medium text-emerald-700">
+                                  Includes 4 hours of custom support
+                                </p>
+                              </div>
+                            </details>
                           ) : row.edgebi ? (
                             <div className="flex justify-center">
                               <Image
