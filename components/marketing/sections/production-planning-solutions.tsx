@@ -343,7 +343,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       <tr
                         className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-slate-50' : ''}`}
                       >
-                        <td className="p-4 align-top">
+                        <td className="p-4 align-middle">
                           <details
                             data-feature={`feature-${i}`}
                             className="group"
@@ -359,7 +359,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                             </div>
                           </details>
                         </td>
-                        <td className="p-4 text-center align-top">
+                        <td className="p-4 text-center align-middle">
                           {row.jsl ? (
                             <div className="flex justify-center">
                               <Image
@@ -374,7 +374,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                             <span className="text-xl text-slate-400">-</span>
                           )}
                         </td>
-                        <td className="p-4 text-center align-top">
+                        <td className="p-4 text-center align-middle">
                           {row.rmdb ? (
                             <div className="flex justify-center">
                               <Image
@@ -393,7 +393,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                             <span className="text-xl text-slate-400">-</span>
                           )}
                         </td>
-                        <td className="p-4 text-center align-top">
+                        <td className="p-4 text-center align-middle">
                           {row.edgebi ? (
                             <div className="flex justify-center">
                               <Image
