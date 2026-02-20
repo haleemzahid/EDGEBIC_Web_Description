@@ -169,10 +169,15 @@ export function NTClipboardSuccessStories(): React.JSX.Element {
                 Customer Success Stories
               </h1>
               <p className="mt-6 text-lg text-muted-foreground leading-relaxed">
-                Click on logos or Read More to view just a sample of our customers' success stories. You too can realize great success by working with <strong className='italic'> US</strong> !
+                Click on logos or Read More to view just a sample of our
+                customers' success stories. You too can realize great success by
+                working with <strong className="italic"> US</strong> !
               </p>
               <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
-                Contact <strong className='italic'>US</strong> today to discover how easy and affordable it is to become even more competitive and profitable through efficient production planning, scheduling, tracking, combined with improved communications.
+                Contact <strong className="italic">US</strong> today to discover
+                how easy and affordable it is to become even more competitive
+                and profitable through efficient production planning,
+                scheduling, tracking, combined with improved communications.
               </p>
             </div>
 
@@ -194,17 +199,13 @@ export function NTClipboardSuccessStories(): React.JSX.Element {
       {/* Success Stories Grid */}
       <section className="pt-6">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-6 text-center">
-            <p className="text-[18px] text-muted-foreground">
-              To become even more competitive and profitable through efficient
-              production planning, scheduling, tracking, combined with improved
-              communications.
-            </p>
-          </div>
-
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {successStories.map((story) => (
-              <Link key={story.id} href={story.href} className="block">
+              <Link
+                key={story.id}
+                href={story.href}
+                className="block"
+              >
                 <Card className="group h-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer">
                   <div className="aspect-video overflow-hidden bg-muted">
                     <Image
