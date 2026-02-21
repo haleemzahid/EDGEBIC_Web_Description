@@ -61,7 +61,6 @@ export default function StudentsPage() {
         setFormData({ name: '', email: '', schoolName: '' });
         setCaptchaValue(null);
         recaptchaRef.current?.reset();
-        window.location.href = '/students-free-trial';
       } else {
         toast.error(result.error || 'Something went wrong. Please try again.');
       }
