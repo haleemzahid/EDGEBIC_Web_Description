@@ -360,31 +360,22 @@ export function RMDBInDepthContent() {
                 user formats in Excel that sticks.
               </p>
               <Image
-                src="/images/rmdb/reports/summary-report.png"
-                alt="Summary Report - Spreadsheet Output"
+                src="/images/rmdb/reports/gantt-report.png"
+                alt="Gantt Report - Spreadsheet Output"
                 width={400}
                 height={300}
                 className="w-full rounded-lg mb-3"
                 loading="lazy"
                 quality={80}
               />
-              <Image
-                src="/images/rmdb/reports/reports-menu.png"
-                alt="Reports Menu"
-                width={400}
-                height={350}
-                className="w-full rounded-lg h-[300px]"
-                loading="lazy"
-                quality={80}
-              />
             </div>
             <div className="space-y-2">
               <Image
-                src="/images/rmdb/reports/summary-report-params.png"
+                src="/images/rmdb/reports/gantt-report-params.png"
                 alt="Gantt Report - Select Parameters"
                 width={400}
                 height={300}
-                className="w-full rounded-lg h-[670px]"
+                className="w-full rounded-lg h-[270px]"
                 loading="lazy"
                 quality={80}
               />
@@ -405,8 +396,8 @@ export function RMDBInDepthContent() {
             </div>
             <div className="space-y-2">
               <Image
-                src="/images/rmdb/reports/item-report.png"
-                alt="Item Report - Products and Workcenters"
+                src="/images/rmdb/reports/summary-report.png"
+                alt="Summary Report - Products and Workcenters"
                 width={400}
                 height={300}
                 className="w-full rounded-lg"
@@ -427,8 +418,8 @@ export function RMDBInDepthContent() {
                 a simple block format.
               </p>
               <Image
-                src="/images/rmdb/reports/routing-report.png"
-                alt="Routing Report - Spreadsheet Output"
+                src="/images/rmdb/reports/item-report.png"
+                alt="Item Report - Spreadsheet Output"
                 width={400}
                 height={300}
                 className="w-full rounded-lg"
@@ -436,17 +427,7 @@ export function RMDBInDepthContent() {
                 quality={80}
               />
             </div>
-            <div className="space-y-2">
-              <Image
-                src="/images/rmdb/reports/routing-report-options.png"
-                alt="Reports Menu - Routing Options"
-                width={400}
-                height={300}
-                className="w-full rounded-lg"
-                loading="lazy"
-                quality={80}
-              />
-            </div>
+            <div />
           </div>
 
           {/* PickList and Open POs Report */}
@@ -475,8 +456,8 @@ export function RMDBInDepthContent() {
                 import back in!
               </p>
               <Image
-                src="/images/rmdb/reports/production-report.png"
-                alt="Production Report - Spreadsheet Output"
+                src="/images/rmdb/reports/routing-report.png"
+                alt="Routing Report - Spreadsheet Output"
                 width={400}
                 height={300}
                 className="w-full rounded-lg"
@@ -486,8 +467,8 @@ export function RMDBInDepthContent() {
             </div>
             <div className="space-y-2">
               <Image
-                src="/images/rmdb/reports/production-report-params.png"
-                alt="Production Report - Select Parameters"
+                src="/images/rmdb/reports/routing-report-options.png"
+                alt="Routing Report - Select Options"
                 width={400}
                 height={300}
                 className="w-full rounded-lg h-[400px]"
@@ -580,8 +561,8 @@ export function RMDBInDepthContent() {
             </div>
             <div>
               <Image
-                src="/images/rmdb/reports/wall-calendar-report.png"
-                alt="Wall Calendar Report"
+                src="/images/rmdb/reports/production-report.png"
+                alt="Production Report"
                 width={400}
                 height={300}
                 className="w-full rounded-lg"
@@ -768,9 +749,9 @@ export function RMDBInDepthContent() {
           <div className="grid items-center gap-8 md:grid-cols-2">
             <div>
               <p className="mb-4 text-slate-600">
-                We added a simple dashboard so each supervisor could quickly call
-                up their area and see which tasks are ready for them and at a
-                glance see what tasks are{' '}
+                We added a simple dashboard so each supervisor could quickly
+                call up their area and see which tasks are ready for them and at
+                a glance see what tasks are{' '}
                 <span className="font-semibold text-green-600">
                   ON TIME (green)
                 </span>
@@ -780,10 +761,8 @@ export function RMDBInDepthContent() {
                 </span>{' '}
                 — the scheduled start date has passed and we don&apos;t have an
                 actual update), and finally which are{' '}
-                <span className="font-semibold text-red-600">
-                  LATE (red
-                </span>{' '}
-                — where actual finish dates exceed scheduled finish dates).
+                <span className="font-semibold text-red-600">LATE (red</span> —
+                where actual finish dates exceed scheduled finish dates).
               </p>
             </div>
             <div>
