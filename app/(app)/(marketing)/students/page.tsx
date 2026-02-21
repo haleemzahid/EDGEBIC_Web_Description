@@ -315,55 +315,47 @@ export default function StudentsPage() {
               </div>
 
               {/* In-Depth: Overview */}
-              <div>
-                <h2 className="mb-4 text-2xl font-bold text-slate-900">
-                  Overview
-                </h2>
-                <p className="mb-4 leading-relaxed text-slate-700">
+              <div className="space-y-4">
+                <h2 className="text-2xl font-bold">Overview</h2>
+                <p className="leading-relaxed text-slate-700">
                   Resource Manager is the only low-cost, planning and scheduling
                   solution that works for all manufacturing enterprises. There
                   are two versions available, depending on your needs:
                 </p>
-                <div className="grid gap-8 lg:grid-cols-2">
-                  <div className="space-y-4">
-                    <h3 className="text-xl font-semibold text-slate-900">
-                      RM-X
-                    </h3>
-                    <p className="leading-relaxed text-slate-600">
-                      RM-X is an add-on to Excel (version 97 and greater) and is
-                      designed for single concurrent users who are familiar with
-                      Excel. A fully functional trial is available for immediate
-                      download.
-                    </p>
-                    <p className="leading-relaxed text-slate-600">
-                      By combining ease-of-use for small to medium sized
-                      manufacturing operations with powerful reporting and open
-                      integration for larger operations, Resource Manager
-                      guarantees the power and productivity of high-end systems
-                      without the complications and failure rate.
-                    </p>
-                  </div>
-                  <div className="space-y-4">
-                    <h3 className="text-xl font-semibold text-slate-900">
-                      Resource Manager-DB (RMDB)
-                    </h3>
-                    <p className="leading-relaxed text-slate-600">
-                      Also, Resource Manager-DB (RMDB), an elegant upgrade from
-                      RMX, written in Visual Basic, utilizes and includes a
-                      run-time version of Microsoft Access database and is also
-                      available with SQL Server compatibility. Resource Manager
-                      DB (RMDB) contains all the functionality of RM-X. Just
-                      like RM-X, Resource Manager DB leverages Excel for
-                      reporting.
-                    </p>
-                  </div>
-                </div>
-                <p className="mt-4 leading-relaxed text-slate-700">
-                  These combined offerings provide you unsurpassed flexibility
-                  for leveraging Excel on local PCs, and sharing data across a
+                <p className="leading-relaxed text-slate-700">
+                  <strong>Resource Manager for Excel (RM-X)</strong> RM-X is an
+                  add-on to Excel (version 97 and greater) and is designed for
+                  single concurrent users who are familiar with Excel. A fully
+                  functional trial is available for immediate download.
+                </p>
+                <p className="leading-relaxed text-slate-700">
+                  By combining ease-of-use for small to medium sized
+                  manufacturing operations with powerful reporting and open
+                  integration for larger operations, Resource Manager guarantees
+                  &ldquo;the power and productivity of high-end systems without
+                  the complications and failure rate.&rdquo;
+                </p>
+                <p className="leading-relaxed text-slate-700">
+                  Additionally, Resource Manager-DB (RMDB) represents an elegant
+                  upgrade from RMX, written in Visual Basic, utilizing and
+                  including a run-time version of Microsoft Access database and
+                  also available with SQL Server compatibility. Resource Manager
+                  DB (RMDB) contains all the functionality of RM-X. Like RM-X,
+                  Resource Manager DB leverages Excel for reporting.
+                </p>
+                <p className="leading-relaxed text-slate-700">
+                  These combined offerings provide unsurpassed flexibility for
+                  leveraging Excel on local PCs, and sharing data across a
                   network. Finally, you can achieve your goals of an affordable
                   planning and scheduling solution that quickly adapts to your
                   needs.
+                </p>
+                <p className="leading-relaxed text-slate-700">
+                  By combining ease-of-use for small to medium sized
+                  manufacturing operations with powerful reporting and open
+                  integration for larger operations, Resource Manager guarantees
+                  &ldquo;the power and productivity of high-end systems without
+                  the complications and failure rate.&rdquo;
                 </p>
               </div>
 
