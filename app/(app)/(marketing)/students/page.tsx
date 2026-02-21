@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Check, CheckCircle, Download } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { YouTubeFacade } from '@/components/ui/youtube-facade';
@@ -29,8 +29,7 @@ export default function StudentsPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '',
-    hearAbout: ''
+    schoolName: ''
   });
 
   const tabs = [
@@ -185,28 +184,39 @@ export default function StudentsPage() {
 
               {/* Features */}
               <div>
-                <h2 className="mb-4 text-xl font-bold text-slate-900">
+                <h2 className="mb-4 text-2xl font-semibold text-cyan-500">
                   Features
                 </h2>
-                <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                <ul className="grid gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
                   {features.map((feature, index) => (
                     <li
                       key={index}
                       className="flex items-center gap-2 text-slate-700"
                     >
-                      <Check className="size-4 shrink-0 text-green-600" />
-                      <span>{feature}</span>
+                      <span className="shrink-0 text-cyan-500">&#10148;</span>
+                      <span className="font-medium">{feature}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
-              {/* Student Free Trial Form */}
-              <div className="mx-auto max-w-2xl">
-                <h2 className="mb-6 text-center text-2xl font-bold text-slate-900">
-                  Student Free Trial
-                </h2>
-                <div className="rounded-2xl border bg-white p-8 shadow-lg">
+              {/* Video + Student Free Trial Form Side by Side */}
+              <div className="grid items-start gap-8 lg:grid-cols-2">
+                {/* Left - Video */}
+                <div className="aspect-video overflow-hidden rounded-lg shadow-lg">
+                  <YouTubeFacade
+                    videoId="74uO2H-eevc"
+                    title="Resource Manager for Excel Intro Part 1"
+                    className="size-full"
+                    useBluePlayButton
+                  />
+                </div>
+
+                {/* Right - Student Free Trial Form */}
+                <div>
+                  <h2 className="mb-6 text-2xl font-semibold">
+                    Student Free Trial
+                  </h2>
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
@@ -214,82 +224,33 @@ export default function StudentsPage() {
                     }}
                     className="space-y-4"
                   >
-                    <div>
-                      <label htmlFor="name" className="mb-1 block text-sm font-medium text-slate-700">
-                        Name
-                      </label>
-                      <input
-                        type="text"
-                        id="name"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full rounded-lg border border-slate-300 px-4 py-3 shadow-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                        placeholder="Your full name"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="email" className="mb-1 block text-sm font-medium text-slate-700">
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        id="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full rounded-lg border border-slate-300 px-4 py-3 shadow-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                        placeholder="your@email.com"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="phone" className="mb-1 block text-sm font-medium text-slate-700">
-                        Phone
-                      </label>
-                      <input
-                        type="tel"
-                        id="phone"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full rounded-lg border border-slate-300 px-4 py-3 shadow-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                        placeholder="Your phone number"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="hearAbout" className="mb-1 block text-sm font-medium text-slate-700">
-                        Where did you hear about <strong><em>US</em></strong>?
-                      </label>
-                      <select
-                        id="hearAbout"
-                        value={formData.hearAbout}
-                        onChange={(e) => setFormData({ ...formData, hearAbout: e.target.value })}
-                        className="w-full rounded-lg border border-slate-300 px-4 py-3 shadow-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                        required
-                      >
-                        <option value="">Select an option</option>
-                        <option value="google">Google Search</option>
-                        <option value="press">Press Release</option>
-                        <option value="referral">Referral</option>
-                        <option value="social">Social Media</option>
-                        <option value="others">Others</option>
-                      </select>
-                    </div>
-                    <Button type="submit" size="lg" className="w-full text-lg">
-                      Submit
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full border-b border-slate-300 px-2 py-3 transition-colors focus:border-cyan-500 focus:outline-none"
+                      placeholder="Name"
+                      required
+                    />
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full border-b border-slate-300 px-2 py-3 transition-colors focus:border-cyan-500 focus:outline-none"
+                      placeholder="Email"
+                      required
+                    />
+                    <input
+                      type="text"
+                      value={formData.schoolName}
+                      onChange={(e) => setFormData({ ...formData, schoolName: e.target.value })}
+                      className="w-full border-b border-slate-300 px-2 py-3 transition-colors focus:border-cyan-500 focus:outline-none"
+                      placeholder="School Name"
+                    />
+                    <Button type="submit" className="bg-cyan-500 px-8 text-white hover:bg-cyan-600">
+                      Send
                     </Button>
                   </form>
-                </div>
-              </div>
-
-              {/* Video */}
-              <div className="flex justify-center">
-                <div className="aspect-video w-full max-w-3xl overflow-hidden rounded-lg shadow-lg">
-                  <YouTubeFacade
-                    videoId="74uO2H-eevc"
-                    title="Resource Manager for Excel Demo Video"
-                    className="size-full"
-                    useBluePlayButton
-                  />
                 </div>
               </div>
 
