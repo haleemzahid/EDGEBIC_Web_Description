@@ -73,13 +73,14 @@ export default function StudentsPage() {
               </p>
             </div>
 
-            {/* Right Side - Video */}
-            <div className="aspect-video overflow-hidden rounded-lg shadow-lg">
-              <YouTubeFacade
-                videoId="DRWDNVq31l4"
-                title="Resource Manager For Excel Video"
-                className="size-full"
-                useBluePlayButton
+            {/* Right Side - Image */}
+            <div className="flex items-center justify-center">
+              <Image
+                src="/images/Edgebic/2022-07/ops-1024x768.png"
+                alt="Operations Management textbook with cruise ship photo"
+                width={1024}
+                height={768}
+                className="rounded-lg"
               />
             </div>
           </div>
