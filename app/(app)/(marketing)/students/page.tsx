@@ -35,7 +35,43 @@ export default function StudentsPage() {
     schoolName: ''
   });
   const [captchaValue, setCaptchaValue] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
+
+  const handleStudentFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!captchaValue) {
+      toast.error('Please complete the reCAPTCHA verification.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('/api/student-contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...formData, captcha: captchaValue })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success('Thank you! Your free trial request has been submitted.');
+        setFormData({ name: '', email: '', schoolName: '' });
+        setCaptchaValue(null);
+        recaptchaRef.current?.reset();
+        window.location.href = '/students-free-trial';
+      } else {
+        toast.error(result.error || 'Something went wrong. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error submitting student form:', error);
+      toast.error('Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const tabs = [
     { id: 'summary' as TabType, label: 'Summary' },
@@ -197,9 +233,7 @@ export default function StudentsPage() {
 
               {/* Features */}
               <div>
-                <h2 className="mb-4 text-2xl font-semibold text-cyan-500">
-                  Features
-                </h2>
+                <h2 className="mb-4 text-2xl font-semibold">Features</h2>
                 <ul className="grid gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
                   {features.map((feature, index) => (
                     <li
@@ -231,14 +265,7 @@ export default function StudentsPage() {
                     Student Free Trial
                   </h2>
                   <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      if (!captchaValue) {
-                        toast.error('Please complete the reCAPTCHA verification.');
-                        return;
-                      }
-                      window.location.href = '/students-free-trial';
-                    }}
+                    onSubmit={handleStudentFormSubmit}
                     className="space-y-4"
                   >
                     <input
@@ -279,10 +306,10 @@ export default function StudentsPage() {
                     </div>
                     <Button
                       type="submit"
-                      disabled={!captchaValue}
+                      disabled={isSubmitting || !captchaValue}
                       className="bg-cyan-500 px-8 text-white hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      Send
+                      {isSubmitting ? 'Submitting...' : 'Send'}
                     </Button>
                   </form>
                 </div>
@@ -464,14 +491,7 @@ export default function StudentsPage() {
                   Student Free Trial
                 </h2>
                 <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!captchaValue) {
-                      toast.error('Please complete the reCAPTCHA verification.');
-                      return;
-                    }
-                    window.location.href = '/students-free-trial';
-                  }}
+                  onSubmit={handleStudentFormSubmit}
                   className="space-y-4"
                 >
                   <input
@@ -512,10 +532,10 @@ export default function StudentsPage() {
                   </div>
                   <Button
                     type="submit"
-                    disabled={!captchaValue}
+                    disabled={isSubmitting || !captchaValue}
                     className="bg-cyan-500 px-8 text-white hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    Send
+                    {isSubmitting ? 'Submitting...' : 'Send'}
                   </Button>
                 </form>
               </div>
