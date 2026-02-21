@@ -310,22 +310,17 @@ export function RMDBInDepthContent() {
         </div>
 
         <div className="mb-6">
-          <div className="grid items-center gap-8 md:grid-cols-2">
-            <div>
-              <h3 className="mb-4 text-xl font-bold">
-                I. Standard Reports off MAIN MENU
-              </h3>
-              <p className="text-slate-600 mb-3">
-                Full set of preformatted Excel reports stored in RMRPT.xlsx. As
-                the name implies, User Solutions seeks to provide exactly the
-                reports that will provide the most value for you. Over 35 years
-                - we keep adding YOUR good ideas as new, standard reports for
-                all users. For every one of these reports, there are several
-                options on how you might want it displayed, or printed out.
-              </p>
-            </div>
-            <div className="space-y-2"></div>
-          </div>
+          <h3 className="mb-4 text-xl font-bold">
+            I. Standard Reports off MAIN MENU
+          </h3>
+          <p className="text-slate-600 mb-3">
+            Full set of preformatted Excel reports stored in RMRPT.xlsx. As
+            the name implies, User Solutions seeks to provide exactly the
+            reports that will provide the most value for you. Over 35 years
+            - we keep adding YOUR good ideas as new, standard reports for
+            all users. For every one of these reports, there are several
+            options on how you might want it displayed, or printed out.
+          </p>
         </div>
 
         <div className="space-y-8">
