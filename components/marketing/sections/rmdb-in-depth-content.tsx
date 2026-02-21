@@ -324,17 +324,7 @@ export function RMDBInDepthContent() {
                 options on how you might want it displayed, or printed out.
               </p>
             </div>
-            <div className="space-y-2">
-              <Image
-                src="/images/rmdb/reports/reports-menu.png"
-                alt="Reports Menu"
-                width={400}
-                height={300}
-                className="w-full rounded-lg"
-                loading="lazy"
-                quality={80}
-              />
-            </div>
+            <div className="space-y-2"></div>
           </div>
         </div>
 
@@ -600,6 +590,28 @@ export function RMDBInDepthContent() {
               </p>
             </div>
             <div />
+          </div>
+
+          {/* Production Calendar */}
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <h3 className="mb-2 text-lg font-bold">Production Calendar</h3>
+              <p className="text-slate-600">
+                A simple screen to see production requirements allow for an easy
+                manual update!
+              </p>
+            </div>
+            <div>
+              <Image
+                src="/images/rmdb/reports/custom-production-calendar.png"
+                alt="Custom Production Calendar"
+                width={400}
+                height={300}
+                className="w-full rounded-lg h-[300px]"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
           </div>
 
           {/* Purchasing & Receiving */}
