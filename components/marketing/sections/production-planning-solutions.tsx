@@ -329,8 +329,8 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       feature: 'Advanced Drag and Drop',
                       description:
                         'Alternate Routings, Multiple Constraints, Multiple Priorities, Rescheduling on demand, much more.',
-                      jsl: true,
-                      rmdb: true,
+                      jsl: false,
+                      rmdb: false,
                       edgebi: true,
                       rmdbCustom:
                         'RMDB Full includes all the above, plus EDGEBIC (single named user for both) for $9,500.',
