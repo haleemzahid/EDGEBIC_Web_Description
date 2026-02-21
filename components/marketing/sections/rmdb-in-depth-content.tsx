@@ -568,14 +568,23 @@ export function RMDBInDepthContent() {
                 space for check off and actual feedback as well as job costing
                 and variance reporting.
               </p>
-            </div>
-            <div>
               <Image
                 src="/images/rmdb/reports/production-report.png"
                 alt="Production Report"
                 width={400}
                 height={300}
-                className="w-full rounded-lg"
+                className="w-full rounded-lg mt-3"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
+            <div className="space-y-2">
+              <Image
+                src="/images/rmdb/reports/production-report-params.png"
+                alt="Production Report - Select Parameters"
+                width={400}
+                height={300}
+                className="w-full rounded-lg h-[400px]"
                 loading="lazy"
                 quality={80}
               />
