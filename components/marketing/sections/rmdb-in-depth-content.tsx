@@ -426,6 +426,8 @@ export function RMDBInDepthContent() {
                 showing each job with start/completion times and requirements in
                 a simple block format.
               </p>
+            </div>
+            <div>
               <Image
                 src="/images/rmdb/reports/item-report.png"
                 alt="Item Report - Spreadsheet Output"
@@ -436,7 +438,6 @@ export function RMDBInDepthContent() {
                 quality={80}
               />
             </div>
-            <div />
           </div>
 
           {/* PickList and Open POs Report */}
