@@ -4,6 +4,7 @@ import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { GraduationCap } from 'lucide-react';
 
 import { VideoModal } from '@/components/marketing/video-modal';
 
@@ -172,8 +173,9 @@ export function HeroContent(): React.JSX.Element {
           <div className="w-[30%] flex items-end justify-end p-6 pb-3">
             <Link
               href="/students"
-              className="inline-flex h-10 w-[170px] items-center justify-center gap-2 rounded-[10px] bg-white px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-gray-100"
+              className="inline-flex h-12 w-[170px] items-center justify-center gap-2 rounded-[10px] bg-white px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-gray-100"
             >
+              <GraduationCap className="size-6" />
               Students
             </Link>
           </div>
