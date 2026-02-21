@@ -1,12 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import ReCAPTCHA from 'react-google-recaptcha';
+import { toast } from 'sonner';
 
 import { RMXQuickStartContent } from '@/components/marketing/rmx-quick-start-content';
 import { Button } from '@/components/ui/button';
 import { YouTubeFacade } from '@/components/ui/youtube-facade';
+
+const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '';
 
 const features = [
   'Excel add-On',
@@ -30,6 +34,8 @@ export default function StudentsPage() {
     email: '',
     schoolName: ''
   });
+  const [captchaValue, setCaptchaValue] = useState<string | null>(null);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   const tabs = [
     { id: 'summary' as TabType, label: 'Summary' },
@@ -227,6 +233,10 @@ export default function StudentsPage() {
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
+                      if (!captchaValue) {
+                        toast.error('Please complete the reCAPTCHA verification.');
+                        return;
+                      }
                       window.location.href = '/students-free-trial';
                     }}
                     className="space-y-4"
@@ -260,9 +270,17 @@ export default function StudentsPage() {
                       className="w-full border-b border-slate-300 px-2 py-3 transition-colors focus:border-cyan-500 focus:outline-none"
                       placeholder="School Name"
                     />
+                    <div className="pt-2">
+                      <ReCAPTCHA
+                        ref={recaptchaRef}
+                        sitekey={RECAPTCHA_SITE_KEY}
+                        onChange={(value) => setCaptchaValue(value)}
+                      />
+                    </div>
                     <Button
                       type="submit"
-                      className="bg-cyan-500 px-8 text-white hover:bg-cyan-600"
+                      disabled={!captchaValue}
+                      className="bg-cyan-500 px-8 text-white hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Send
                     </Button>
@@ -448,6 +466,10 @@ export default function StudentsPage() {
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
+                    if (!captchaValue) {
+                      toast.error('Please complete the reCAPTCHA verification.');
+                      return;
+                    }
                     window.location.href = '/students-free-trial';
                   }}
                   className="space-y-4"
@@ -481,9 +503,17 @@ export default function StudentsPage() {
                     className="w-full border-b border-slate-300 px-2 py-3 transition-colors focus:border-cyan-500 focus:outline-none"
                     placeholder="School Name"
                   />
+                  <div className="pt-2">
+                    <ReCAPTCHA
+                      ref={recaptchaRef}
+                      sitekey={RECAPTCHA_SITE_KEY}
+                      onChange={(value) => setCaptchaValue(value)}
+                    />
+                  </div>
                   <Button
                     type="submit"
-                    className="bg-cyan-500 px-8 text-white hover:bg-cyan-600"
+                    disabled={!captchaValue}
+                    className="bg-cyan-500 px-8 text-white hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Send
                   </Button>
