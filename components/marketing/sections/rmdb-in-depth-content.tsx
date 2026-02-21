@@ -323,23 +323,14 @@ export function RMDBInDepthContent() {
                 all users. For every one of these reports, there are several
                 options on how you might want it displayed, or printed out.
               </p>
-              <Image
-                src="/images/rmdb/reports/gantt-report.png"
-                alt="Gantt Report - Spreadsheet Output"
-                width={400}
-                height={300}
-                className="w-full rounded-lg "
-                loading="lazy"
-                quality={80}
-              />
             </div>
             <div className="space-y-2">
               <Image
-                src="/images/rmdb/reports/gantt-report-params.png"
-                alt="Gantt Report - Select Parameters"
+                src="/images/rmdb/reports/reports-menu.png"
+                alt="Reports Menu"
                 width={400}
-                height={200}
-                className="w-full rounded-lg h-[400px]"
+                height={300}
+                className="w-full rounded-lg"
                 loading="lazy"
                 quality={80}
               />
@@ -393,14 +384,32 @@ export function RMDBInDepthContent() {
                 any time horizon – by day, week, or month. Blends in any
                 actuals!
               </p>
-            </div>
-            <div className="space-y-2">
               <Image
                 src="/images/rmdb/reports/summary-report.png"
                 alt="Summary Report - Products and Workcenters"
                 width={400}
                 height={300}
-                className="w-full rounded-lg"
+                className="w-full rounded-lg mb-3"
+                loading="lazy"
+                quality={80}
+              />
+              <Image
+                src="/images/rmdb/reports/summary-report-params.png"
+                alt="Summary Report - Select Parameters"
+                width={400}
+                height={300}
+                className="w-full rounded-lg h-[300px]"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
+            <div className="space-y-2">
+              <Image
+                src="/images/rmdb/reports/reports-menu.png"
+                alt="Reports Menu - Summary Report selected"
+                width={400}
+                height={300}
+                className="w-full rounded-lg h-[670px]"
                 loading="lazy"
                 quality={80}
               />
