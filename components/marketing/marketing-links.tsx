@@ -136,46 +136,62 @@ export const FOOTER_LINKS: Array<{
     external: boolean;
   }>;
 }> = [
-    {
-      title: 'Success Stories',
-      links: [
-        {
-          name: 'All Success Stories',
-          href: Routes.SuccessStories,
-          external: false
-        },
-        { name: 'Sleepmaster Ltd', href: Routes.SleepmasterLtd, external: false },
-        {
-          name: 'Cook Compression',
-          href: Routes.CookCompression,
-          external: false
-        },
-        {
-          name: 'Incon Incorporated',
-          href: Routes.InconIncorporated,
-          external: false
-        }
-      ]
-    },
-    {
-      title: 'Products',
-      links: [
-        { name: 'Resource Manager for Excel (RMX)', href: '/resource-manager-for-excel-2', external: false },
-        { name: 'Resource Manager DB (RMDB)', href: '/resource-manager-db-2', external: false },
-        { name: 'EDGEBI', href: Routes.Edgebi, external: false }
-      ]
-    },
-    {
-      title: 'Company',
-      links: [
-        { name: (<>About <strong className="italic">Us</strong></>), href: Routes.About, external: false },
-        { name: 'Mission Statement', href: Routes.Mission, external: false },
-        { name: 'Values', href: Routes.Values, external: false },
-        { name: 'Company History', href: Routes.History, external: false }
-        // { name: 'Partners', href: Routes.Partners, external: false }
-      ]
-    }
-  ];
+  {
+    title: 'Success Stories',
+    links: [
+      {
+        name: 'All Success Stories',
+        href: Routes.SuccessStories,
+        external: false
+      },
+      { name: 'Sleepmaster Ltd', href: Routes.SleepmasterLtd, external: false },
+      {
+        name: 'Cook Compression',
+        href: Routes.CookCompression,
+        external: false
+      },
+      {
+        name: 'Incon Incorporated',
+        href: Routes.InconIncorporated,
+        external: false
+      }
+    ]
+  },
+  {
+    title: 'Products',
+    links: [
+      {
+        name: 'Resource Manager for Excel (RMX)',
+        href: '/resource-manager-for-excel-2',
+        external: false
+      },
+      {
+        name: 'Resource Manager DB (RMDB)',
+        href: '/resource-manager-db-2',
+        external: false
+      },
+      { name: 'EDGEBI', href: Routes.Edgebi, external: false }
+    ]
+  },
+  {
+    title: 'Company',
+    links: [
+      {
+        name: (
+          <>
+            About <strong className="italic">US</strong>
+          </>
+        ),
+        href: Routes.About,
+        external: false
+      },
+      { name: 'Mission Statement', href: Routes.Mission, external: false },
+      { name: 'Values', href: Routes.Values, external: false },
+      { name: 'Company History', href: Routes.History, external: false }
+      // { name: 'Partners', href: Routes.Partners, external: false }
+    ]
+  }
+];
 export const SOCIAL_LINKS = [
   {
     name: 'X (formerly Twitter)',
