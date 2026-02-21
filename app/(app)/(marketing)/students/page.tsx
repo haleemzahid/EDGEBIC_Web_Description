@@ -173,13 +173,12 @@ export default function StudentsPage() {
                     </span>
                   </p>
                 </div>
-                <div className="flex justify-center">
-                  <Image
-                    src="/images/Edgebic/2022-07/RMX.png"
-                    alt="Resource Manager for Excel Screenshot"
-                    width={600}
-                    height={400}
-                    className="rounded-lg"
+                <div className="aspect-video overflow-hidden rounded-lg shadow-lg">
+                  <YouTubeFacade
+                    videoId="DRWDNVq31l4"
+                    title="Resource Manager For Excel Video"
+                    className="size-full"
+                    useBluePlayButton
                   />
                 </div>
               </div>
