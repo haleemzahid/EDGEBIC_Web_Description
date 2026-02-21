@@ -499,11 +499,11 @@ export function RMDBInDepthContent() {
             </div>
             <div>
               <Image
-                src="/images/rmdb/reports/custom-production-calendar.png"
-                alt="Custom Production Calendar"
+                src="/images/rmdb/reports/wall-calendar-report.png"
+                alt="Wall Calendar Report"
                 width={400}
                 height={300}
-                className="w-full rounded-lg"
+                className="w-full rounded-lg h-[300px]"
                 loading="lazy"
                 quality={80}
               />
