@@ -308,18 +308,47 @@ export function RMDBInDepthContent() {
             Excel becomes a permanent part of your system.
           </p>
         </div>
-
+        <div className="grid items-center gap-8 md:grid-cols-2">
+          <div>
+            <h3 className="mb-4 text-xl font-bold">
+              iii. Customized reports via Data Export
+            </h3>
+            <p className="text-slate-600">
+              The Data Export module is a most powerful and flexible report
+              generator. Most all of our &apos;custom&apos; reports for Clients
+              are housed here. You can create ANY custom report, using data from
+              ANY tables throughout system, and export to Excel. We have seen a
+              couple of powerful and interesting applications therein. The first
+              is for on-going, week to week, production KPI analysis. By
+              creating a Job Status Report (which jobs are early, by how much,
+              which ones are late, and by how much, etc.), then appending each
+              week Job Status report - it&apos;s a wonderful way to track key
+              KPIs throughout time.
+            </p>
+          </div>
+          <div>
+            <Image
+              src="/images/rmdb/reports/data-export-menu.png"
+              alt="Data Export - Processing Menu"
+              width={400}
+              height={300}
+              className="w-full rounded-lg h-[400px]"
+              loading="lazy"
+              quality={80}
+            />
+          </div>
+        </div>
         <div className="mb-6">
           <h3 className="mb-4 text-xl font-bold">
             I. Standard Reports off MAIN MENU
           </h3>
           <p className="text-slate-600 mb-3">
-            Full set of preformatted Excel reports stored in RMRPT.xlsx. As
-            the name implies, User Solutions seeks to provide exactly the
-            reports that will provide the most value for you. Over 35 years
-            - we keep adding YOUR good ideas as new, standard reports for
-            all users. For every one of these reports, there are several
-            options on how you might want it displayed, or printed out.
+            Full set of preformatted Excel reports stored in RMRPT.xlsx. As the
+            name implies, User Solutions seeks to provide exactly the reports
+            that will provide the most value for you. Over 35 years - we keep
+            adding YOUR good ideas as new, standard reports for all users. For
+            every one of these reports, there are several options on how you
+            might want it displayed, or printed out.
           </p>
         </div>
 
@@ -666,39 +695,6 @@ export function RMDBInDepthContent() {
                 width={400}
                 height={300}
                 className="w-full rounded-lg h-[450px]"
-                loading="lazy"
-                quality={80}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="mb-6 mt-8">
-          <div className="grid items-center gap-8 md:grid-cols-2">
-            <div>
-              <h3 className="mb-4 text-xl font-bold">
-                iii. Customized reports via Data Export
-              </h3>
-              <p className="text-slate-600">
-                The Data Export module is a most powerful and flexible report
-                generator. Most all of our &apos;custom&apos; reports for
-                Clients are housed here. You can create ANY custom report, using
-                data from ANY tables throughout system, and export to Excel. We
-                have seen a couple of powerful and interesting applications
-                therein. The first is for on-going, week to week, production KPI
-                analysis. By creating a Job Status Report (which jobs are early,
-                by how much, which ones are late, and by how much, etc.), then
-                appending each week Job Status report - it&apos;s a wonderful
-                way to track key KPIs throughout time.
-              </p>
-            </div>
-            <div>
-              <Image
-                src="/images/rmdb/reports/data-export-menu.png"
-                alt="Data Export - Processing Menu"
-                width={400}
-                height={300}
-                className="w-full rounded-lg"
                 loading="lazy"
                 quality={80}
               />
