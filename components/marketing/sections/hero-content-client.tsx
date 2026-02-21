@@ -76,7 +76,7 @@ export function HeroContent(): React.JSX.Element {
       </div>
 
       {/* Main Hero Content */}
-      <div className="relative z-10 mx-auto py-6">
+      <div className="relative z-10 mx-auto pt-6">
         <div className="flex w-full">
           {/* Left Side - Text Content */}
           <motion.div
@@ -109,7 +109,7 @@ export function HeroContent(): React.JSX.Element {
             </p> */}
 
             {/* Action Buttons */}
-            <div className="flex flex-row w-[732px] justify-center items-center gap-3 !mt-3">
+            <div className="flex flex-row w-[732px] pb-6 justify-center items-center gap-3 !mt-3">
               <button
                 onClick={handleFirstVideoButtonClick}
                 className="inline-flex h-10 w-[170px] items-center justify-center gap-2 rounded-[10px] bg-white px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-gray-100"
@@ -169,7 +169,7 @@ export function HeroContent(): React.JSX.Element {
           </motion.div>
 
           {/* Right Side - Students Button */}
-          <div className="w-[30%] flex items-end justify-end p-6">
+          <div className="w-[30%] flex items-end justify-end p-6 pb-3">
             <Link
               href="/students"
               className="inline-flex h-10 w-[170px] items-center justify-center gap-2 rounded-[10px] bg-white px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-gray-100"
