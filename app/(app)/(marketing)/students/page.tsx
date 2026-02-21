@@ -3,11 +3,10 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { CheckCircle } from 'lucide-react';
 
+import { RMXQuickStartContent } from '@/components/marketing/rmx-quick-start-content';
 import { Button } from '@/components/ui/button';
 import { YouTubeFacade } from '@/components/ui/youtube-facade';
-import { RMXQuickStartContent } from '@/components/marketing/rmx-quick-start-content';
 
 const features = [
   'Excel add-On',
@@ -50,25 +49,29 @@ export default function StudentsPage() {
             <div className="space-y-4">
               <h1 className="text-3xl font-bold">Resource Manager For Excel</h1>
               <p className="leading-relaxed text-slate-700">
-                Resource Manager for Excel (RMX) offers MRP and Shop
-                Scheduling on a flexible and powerful platform. Ambitious
-                Operations Management students can use RMX to gain valuable
-                hands-on experience in mastering important skills in many
-                areas of Manufacturing Planning, Scheduling, and Execution.
+                Resource Manager for Excel (RMX) offers MRP and Shop Scheduling
+                on a flexible and powerful platform. Ambitious Operations
+                Management students can use RMX to gain valuable hands-on
+                experience in mastering important skills in many areas of
+                Manufacturing Planning, Scheduling, and Execution.
               </p>
               <p className="leading-relaxed text-slate-700">
-                With RMX supporting up to a million rows of data, and with
-                Excel 360 fully cloud compatible, you can even tackle big data
+                With RMX supporting up to a million rows of data, and with Excel
+                360 fully cloud compatible, you can even tackle big data
                 applications and share results on the web. A fully functional
                 free trial is available for immediate download with access to
                 user manual, quick start tutorial, and a full set of training
                 videos.
               </p>
               <p className="leading-relaxed text-slate-700">
-                Keep <strong><em>US</em></strong> in mind when you are fully engaged at work and looking for
-                tools to improve your production scheduling. Resource Manager-DB
-                is a wonderful upgrade of RMX and is a strategic complement to
-                other plant systems for APS and MES applications.
+                Keep{' '}
+                <strong>
+                  <em>US</em>
+                </strong>{' '}
+                in mind when you are fully engaged at work and looking for tools
+                to improve your production scheduling. Resource Manager-DB is a
+                wonderful upgrade of RMX and is a strategic complement to other
+                plant systems for APS and MES applications.
               </p>
             </div>
 
@@ -107,10 +110,11 @@ export default function StudentsPage() {
                 aria-controls={`tabpanel-${tab.id}`}
                 tabIndex={activeTab === tab.id ? 0 : -1}
                 onClick={() => setActiveTab(tab.id)}
-                className={`transition-all duration-200 focus:outline-none px-8 py-4 text-[16px] font-semibold rounded-t-xl border-2 border-b-0 relative ${activeTab === tab.id
-                  ? 'bg-white text-blue-600 border-blue-500 z-10 -mb-[2px]'
-                  : 'bg-blue-500 text-white border-blue-500 shadow-sm hover:bg-blue-600 hover:border-blue-600'
-                  }`}
+                className={`transition-all duration-200 focus:outline-none px-8 py-4 text-[16px] font-semibold rounded-t-xl border-2 border-b-0 relative ${
+                  activeTab === tab.id
+                    ? 'bg-white text-blue-600 border-blue-500 z-10 -mb-[2px]'
+                    : 'bg-blue-500 text-white border-blue-500 shadow-sm hover:bg-blue-600 hover:border-blue-600'
+                }`}
               >
                 {tab.label}
               </button>
@@ -127,7 +131,10 @@ export default function StudentsPage() {
       </div>
 
       {/* Tab Content */}
-      <section className="pt-6" aria-label="Tab content">
+      <section
+        className="pt-6"
+        aria-label="Tab content"
+      >
         <div className="container mx-auto max-w-7xl px-4">
           {/* ==================== SUMMARY TAB ==================== */}
           {activeTab === 'summary' && (
@@ -167,8 +174,8 @@ export default function StudentsPage() {
                   </p>
                   <p className="mt-4 leading-relaxed text-slate-700">
                     <span className="italic">
-                      Mike Parks, Director of Georgia Tech&apos;s CMIT, an affiliate
-                      of the NIST Manufacturing Extension Partnership.
+                      Mike Parks, Director of Georgia Tech&apos;s CMIT, an
+                      affiliate of the NIST Manufacturing Extension Partnership.
                     </span>
                   </p>
                 </div>
@@ -227,7 +234,9 @@ export default function StudentsPage() {
                     <input
                       type="text"
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
                       className="w-full border-b border-slate-300 px-2 py-3 transition-colors focus:border-cyan-500 focus:outline-none"
                       placeholder="Name"
                       required
@@ -235,7 +244,9 @@ export default function StudentsPage() {
                     <input
                       type="email"
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
                       className="w-full border-b border-slate-300 px-2 py-3 transition-colors focus:border-cyan-500 focus:outline-none"
                       placeholder="Email"
                       required
@@ -243,11 +254,16 @@ export default function StudentsPage() {
                     <input
                       type="text"
                       value={formData.schoolName}
-                      onChange={(e) => setFormData({ ...formData, schoolName: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, schoolName: e.target.value })
+                      }
                       className="w-full border-b border-slate-300 px-2 py-3 transition-colors focus:border-cyan-500 focus:outline-none"
                       placeholder="School Name"
                     />
-                    <Button type="submit" className="bg-cyan-500 px-8 text-white hover:bg-cyan-600">
+                    <Button
+                      type="submit"
+                      className="bg-cyan-500 px-8 text-white hover:bg-cyan-600"
+                    >
                       Send
                     </Button>
                   </form>
@@ -256,15 +272,19 @@ export default function StudentsPage() {
 
               {/* In-Depth: Overview */}
               <div>
-                <h2 className="mb-4 text-2xl font-bold text-slate-900">Overview</h2>
+                <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                  Overview
+                </h2>
                 <p className="mb-4 leading-relaxed text-slate-700">
                   Resource Manager is the only low-cost, planning and scheduling
-                  solution that works for all manufacturing enterprises. There are
-                  two versions available, depending on your needs:
+                  solution that works for all manufacturing enterprises. There
+                  are two versions available, depending on your needs:
                 </p>
                 <div className="grid gap-8 lg:grid-cols-2">
                   <div className="space-y-4">
-                    <h3 className="text-xl font-semibold text-slate-900">RM-X</h3>
+                    <h3 className="text-xl font-semibold text-slate-900">
+                      RM-X
+                    </h3>
                     <p className="leading-relaxed text-slate-600">
                       RM-X is an add-on to Excel (version 97 and greater) and is
                       designed for single concurrent users who are familiar with
@@ -272,50 +292,58 @@ export default function StudentsPage() {
                       download.
                     </p>
                     <p className="leading-relaxed text-slate-600">
-                      By combining ease-of-use for small to medium sized manufacturing
-                      operations with powerful reporting and open integration for
-                      larger operations, Resource Manager guarantees the power and
-                      productivity of high-end systems without the complications and
-                      failure rate.
+                      By combining ease-of-use for small to medium sized
+                      manufacturing operations with powerful reporting and open
+                      integration for larger operations, Resource Manager
+                      guarantees the power and productivity of high-end systems
+                      without the complications and failure rate.
                     </p>
                   </div>
                   <div className="space-y-4">
-                    <h3 className="text-xl font-semibold text-slate-900">Resource Manager-DB (RMDB)</h3>
+                    <h3 className="text-xl font-semibold text-slate-900">
+                      Resource Manager-DB (RMDB)
+                    </h3>
                     <p className="leading-relaxed text-slate-600">
-                      Also, Resource Manager-DB (RMDB), an elegant upgrade from RMX,
-                      written in Visual Basic, utilizes and includes a run-time
-                      version of Microsoft Access database and is also available with
-                      SQL Server compatibility. Resource Manager DB (RMDB) contains
-                      all the functionality of RM-X. Just like RM-X, Resource Manager
-                      DB leverages Excel for reporting.
+                      Also, Resource Manager-DB (RMDB), an elegant upgrade from
+                      RMX, written in Visual Basic, utilizes and includes a
+                      run-time version of Microsoft Access database and is also
+                      available with SQL Server compatibility. Resource Manager
+                      DB (RMDB) contains all the functionality of RM-X. Just
+                      like RM-X, Resource Manager DB leverages Excel for
+                      reporting.
                     </p>
                   </div>
                 </div>
                 <p className="mt-4 leading-relaxed text-slate-700">
-                  These combined offerings provide you unsurpassed flexibility for
-                  leveraging Excel on local PCs, and sharing data across a network.
-                  Finally, you can achieve your goals of an affordable planning and
-                  scheduling solution that quickly adapts to your needs.
+                  These combined offerings provide you unsurpassed flexibility
+                  for leveraging Excel on local PCs, and sharing data across a
+                  network. Finally, you can achieve your goals of an affordable
+                  planning and scheduling solution that quickly adapts to your
+                  needs.
                 </p>
               </div>
 
               {/* Works The Way You Do */}
               <div>
-                <h2 className="mb-4 text-2xl font-bold text-slate-900">Works The Way You Do</h2>
+                <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                  Works The Way You Do
+                </h2>
                 <p className="leading-relaxed text-slate-700">
-                  Resource Manager is the only solution that is designed to adapt
-                  to your specific needs, addressing the key issues facing your
-                  operation.
+                  Resource Manager is the only solution that is designed to
+                  adapt to your specific needs, addressing the key issues facing
+                  your operation.
                 </p>
               </div>
 
               {/* Immediate, Guaranteed Benefits */}
               <div>
-                <h2 className="mb-4 text-2xl font-bold text-slate-900">Immediate, Guaranteed Benefits</h2>
+                <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                  Immediate, Guaranteed Benefits
+                </h2>
                 <p className="mb-4 leading-relaxed text-slate-700">
-                  Resource Manager delivers the help you need to effectively plan
-                  and schedule your company&apos;s resources, without the time, money
-                  and upkeep of traditional options.
+                  Resource Manager delivers the help you need to effectively
+                  plan and schedule your company&apos;s resources, without the
+                  time, money and upkeep of traditional options.
                 </p>
                 <p className="mb-4 leading-relaxed text-slate-700">
                   Finally, you can quit struggling with time consuming decisions
@@ -325,16 +353,20 @@ export default function StudentsPage() {
                 <p className="leading-relaxed text-slate-700">
                   Resource Manager adds powerful MRP scheduling, planning and/or
                   tracking capabilities to your existing system (be it manual or
-                  other), for less than any other option – satisfaction guaranteed.
+                  other), for less than any other option – satisfaction
+                  guaranteed.
                 </p>
               </div>
 
               {/* Best of All */}
               <div>
-                <h2 className="mb-4 text-2xl font-bold text-slate-900">Best of All</h2>
+                <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                  Best of All
+                </h2>
                 <p className="leading-relaxed text-slate-700">
-                  Resource Manager runs with Microsoft Office, so you are already
-                  familiar with entering data, printing reports, graphing, and more!
+                  Resource Manager runs with Microsoft Office, so you are
+                  already familiar with entering data, printing reports,
+                  graphing, and more!
                 </p>
               </div>
             </div>
@@ -350,8 +382,8 @@ export default function StudentsPage() {
                 Training Videos
               </h2>
               <p className="leading-relaxed text-slate-700">
-                Watch these videos to learn how to use Resource Manager for Excel
-                for manufacturing planning and scheduling.
+                Watch these videos to learn how to use Resource Manager for
+                Excel for manufacturing planning and scheduling.
               </p>
 
               <div className="grid gap-8 lg:grid-cols-2">
@@ -398,52 +430,64 @@ export default function StudentsPage() {
           {/* ==================== FREE TRIAL TAB ==================== */}
           {activeTab === 'free-trial' && (
             <div className="grid items-start gap-8 lg:grid-cols-2">
-              <div>
-                <h2 className="mb-4 text-2xl font-bold text-slate-900">
-                  Student Free Trial Download
-                </h2>
-                <div className="space-y-4 text-base leading-relaxed text-slate-600">
-                  <p>
-                    Gain valuable hands-on experience in Manufacturing Planning,
-                    Scheduling, and Execution with a free student copy of
-                    Resource Manager for Excel.
-                  </p>
-                  <div className="rounded-lg border bg-slate-50 p-4">
-                    <h3 className="mb-3 font-semibold text-slate-900">
-                      Sign up to download trials and start:
-                    </h3>
-                    <ul className="space-y-2">
-                      <li className="flex items-center gap-2">
-                        <CheckCircle className="size-4 shrink-0 text-green-500" />
-                        Improving on-time deliveries
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle className="size-4 shrink-0 text-green-500" />
-                        Increasing production efficiency
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle className="size-4 shrink-0 text-green-500" />
-                        Identifying and managing bottlenecks
-                      </li>
-                    </ul>
-                  </div>
-                  <p>
-                    Keep <strong><em>US</em></strong> in mind when you are fully engaged at work and looking
-                    for tools to improve your production scheduling. Resource Manager-DB
-                    is a wonderful upgrade of RMX and is a strategic complement to
-                    other plant systems for APS and MES applications.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center justify-center">
-                <Image
-                  src="/images/Edgebic/2022-07/ops-1024x768.png"
-                  alt="Operations Management textbook"
-                  width={800}
-                  height={500}
-                  className="h-auto max-w-full rounded-lg shadow-lg"
-                  loading="lazy"
+              {/* Left - Video */}
+              <div className="aspect-video overflow-hidden rounded-lg shadow-lg">
+                <YouTubeFacade
+                  videoId="74uO2H-eevc"
+                  title="Resource Manager for Excel Intro Part 1"
+                  className="size-full"
+                  useBluePlayButton
                 />
+              </div>
+
+              {/* Right - Student Free Trial Form */}
+              <div>
+                <h2 className="mb-6 text-2xl font-semibold">
+                  Student Free Trial
+                </h2>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    window.location.href = '/students-free-trial';
+                  }}
+                  className="space-y-4"
+                >
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    className="w-full border-b border-slate-300 px-2 py-3 transition-colors focus:border-cyan-500 focus:outline-none"
+                    placeholder="Name"
+                    required
+                  />
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    className="w-full border-b border-slate-300 px-2 py-3 transition-colors focus:border-cyan-500 focus:outline-none"
+                    placeholder="Email"
+                    required
+                  />
+                  <input
+                    type="text"
+                    value={formData.schoolName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, schoolName: e.target.value })
+                    }
+                    className="w-full border-b border-slate-300 px-2 py-3 transition-colors focus:border-cyan-500 focus:outline-none"
+                    placeholder="School Name"
+                  />
+                  <Button
+                    type="submit"
+                    className="bg-cyan-500 px-8 text-white hover:bg-cyan-600"
+                  >
+                    Send
+                  </Button>
+                </form>
               </div>
             </div>
           )}
