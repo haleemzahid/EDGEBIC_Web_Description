@@ -606,18 +606,15 @@ export function RMDBInDepthContent() {
           </div>
 
           {/* PickList and Open POs Report */}
-          <div className="grid items-center gap-8 md:grid-cols-2">
-            <div>
-              <h3 className="mb-2 text-lg font-bold">
-                PickList and Open POs Report
-              </h3>
-              <p className="text-slate-600">
-                For those who need help managing materials, RMDB can manage all
-                basic requirements for an MRP/Inventory system and/or simply
-                complement what you already have.
-              </p>
-            </div>
-            <div />
+          <div>
+            <h3 className="mb-2 text-lg font-bold">
+              PickList and Open POs Report
+            </h3>
+            <p className="text-slate-600">
+              For those who need help managing materials, RMDB can manage all
+              basic requirements for an MRP/Inventory system and/or simply
+              complement what you already have.
+            </p>
           </div>
 
           {/* Routing Report */}
