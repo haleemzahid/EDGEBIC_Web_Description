@@ -658,14 +658,24 @@ export function RMDBInDepthContent() {
                 View and print the schedule in familiar &quot;wall
                 calendar&quot; format.
               </p>
+
+              <Image
+                src="/images/rmdb/reports/custom-production-calendar.png"
+                alt="Custom Production Calendar"
+                width={400}
+                height={300}
+                className="w-full rounded-lg mt-3 h-[250px]"
+                loading="lazy"
+                quality={80}
+              />
             </div>
-            <div>
+            <div className="space-y-4">
               <Image
                 src="/images/rmdb/reports/wall-calendar-report.png"
                 alt="Wall Calendar Report"
                 width={400}
                 height={300}
-                className="w-full rounded-lg h-[300px]"
+                className="w-full rounded-lg h-[330px]"
                 loading="lazy"
                 quality={80}
               />
