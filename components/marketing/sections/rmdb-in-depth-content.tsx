@@ -349,8 +349,8 @@ export function RMDBInDepthContent() {
             being able to export out a custom production sheet to Excel 365 in
             Cloud, then anyone with Excel 365 can view AND update the schedule
             completely in Excel! RMDB exports out the schedule. Production
-            Supervisors update status — and even include other QC parameters — all
-            entered into Excel but stored permanently in RMDB.
+            Supervisors update status — and even include other QC parameters —
+            all entered into Excel but stored permanently in RMDB.
           </p>
 
           <div className="mb-8">
@@ -360,8 +360,8 @@ export function RMDBInDepthContent() {
                   All we needed was <strong>ONE license</strong> for RMDB — even
                   though there were dozens of &apos;users&apos; — well, Excel
                   users. The power of Excel 365 in the Cloud means your entire
-                  team can access and update production data from anywhere, on any
-                  device.
+                  team can access and update production data from anywhere, on
+                  any device.
                 </p>
               </div>
               <div>
@@ -384,17 +384,17 @@ export function RMDBInDepthContent() {
             </h4>
             <p className="mb-6 text-slate-600">
               Check out what we did for FC Modular building the first high-rise,
-              residential living building using commercial modular construction —
-              this was for the Dean Street project abutting the Barclays Center in
-              Brooklyn.
+              residential living building using commercial modular construction
+              — this was for the Dean Street project abutting the Barclays
+              Center in Brooklyn.
             </p>
 
             <div className="grid items-center gap-8 md:grid-cols-2">
               <div>
                 <p className="mb-4 text-slate-600">
                   We added a simple dashboard so each supervisor could quickly
-                  call up their area and see which tasks are ready for them and at
-                  a glance see what tasks are{' '}
+                  call up their area and see which tasks are ready for them and
+                  at a glance see what tasks are{' '}
                   <span className="font-semibold text-green-600">
                     ON TIME (green)
                   </span>
@@ -402,10 +402,10 @@ export function RMDBInDepthContent() {
                   <span className="font-semibold text-yellow-600">
                     POTENTIALLY LATE (yellow
                   </span>{' '}
-                  — the scheduled start date has passed and we don&apos;t have an
-                  actual update), and finally which are{' '}
-                  <span className="font-semibold text-red-600">LATE (red</span> —
-                  where actual finish dates exceed scheduled finish dates).
+                  — the scheduled start date has passed and we don&apos;t have
+                  an actual update), and finally which are{' '}
+                  <span className="font-semibold text-red-600">LATE (red</span>{' '}
+                  — where actual finish dates exceed scheduled finish dates).
                 </p>
               </div>
               <div>
@@ -454,7 +454,7 @@ export function RMDBInDepthContent() {
 
         <div className="mb-6">
           <h3 className="mb-4 text-xl font-bold">
-            I. Standard Reports off MAIN MENU
+            ii. Standard Reports off MAIN MENU
           </h3>
           <p className="text-slate-600 mb-3">
             Full set of preformatted Excel reports stored in RMRPT.xlsx. As the
@@ -464,6 +464,43 @@ export function RMDBInDepthContent() {
             every one of these reports, there are several options on how you
             might want it displayed, or printed out.
           </p>
+        </div>
+
+        <div className="mb-6 mt-8">
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <h3 className="mb-4 text-xl font-bold">
+                iii. Direct Reports off key screens
+              </h3>
+              <p className="text-slate-600 mb-3">
+                Throughout the system, there are direct reports readily
+                available. For example, in the Resource Calendar there are 6
+                tabs with various valuable KPIs always visible and an extensive
+                selection of reports. So easy to use this for annual planning
+                and so much more!
+              </p>
+              <Image
+                src="/images/rmdb/reports/resource-calendar.png"
+                alt="Resource Calendar - Hours Assigned view with Utilization, Backlog, and Capacity tabs"
+                width={400}
+                height={300}
+                className="w-full rounded-lg "
+                loading="lazy"
+                quality={80}
+              />
+            </div>
+            <div className="space-y-2">
+              <Image
+                src="/images/rmdb/reports/data-export-options.png"
+                alt="Choose an Option - Export, Interruptions, Utilization, Workcenter Status, Capacity Loaded, Efficiency, Downtime, WIP"
+                width={400}
+                height={300}
+                className="w-full rounded-lg h-[450px]"
+                loading="lazy"
+                quality={80}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="space-y-8">
@@ -778,43 +815,6 @@ export function RMDBInDepthContent() {
             </div>
           </div>
         </div>
-
-        <div className="mb-6 mt-8">
-          <div className="grid items-center gap-8 md:grid-cols-2">
-            <div>
-              <h3 className="mb-4 text-xl font-bold">
-                ii. Direct Reports off key screens
-              </h3>
-              <p className="text-slate-600 mb-3">
-                Throughout the system, there are direct reports readily
-                available. For example, in the Resource Calendar there are 6
-                tabs with various valuable KPIs always visible and an extensive
-                selection of reports. So easy to use this for annual planning
-                and so much more!
-              </p>
-              <Image
-                src="/images/rmdb/reports/resource-calendar.png"
-                alt="Resource Calendar - Hours Assigned view with Utilization, Backlog, and Capacity tabs"
-                width={400}
-                height={300}
-                className="w-full rounded-lg "
-                loading="lazy"
-                quality={80}
-              />
-            </div>
-            <div className="space-y-2">
-              <Image
-                src="/images/rmdb/reports/data-export-options.png"
-                alt="Choose an Option - Export, Interruptions, Utilization, Workcenter Status, Capacity Loaded, Efficiency, Downtime, WIP"
-                width={400}
-                height={300}
-                className="w-full rounded-lg h-[450px]"
-                loading="lazy"
-                quality={80}
-              />
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Special Services & Partners Section */}
@@ -831,7 +831,6 @@ export function RMDBInDepthContent() {
           solutions focused on unique needs.
         </p>
       </div>
-
     </div>
   );
 }
