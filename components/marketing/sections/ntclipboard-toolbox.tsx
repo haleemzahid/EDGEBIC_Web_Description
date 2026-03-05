@@ -105,7 +105,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                   <div className="mt-auto">
                     <Button
                       variant="outline"
-                      className="mb-4 w-full border-green-200 text-green-700 hover:bg-green-50"
+                      className="mb-4 w-full border-green-200 text-lg font-bold text-green-700 hover:bg-green-50"
                       asChild
                     >
                       <Link href="/resource-manager-for-excel-2">
@@ -203,7 +203,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                   <div className="mt-auto">
                     <Button
                       variant="outline"
-                      className="mb-4 w-full border-green-200 text-green-700 hover:bg-green-50"
+                      className="mb-4 w-full border-green-200 text-lg font-bold text-green-700 hover:bg-green-50"
                       asChild
                     >
                       <Link href="/resource-manager-db-2">View Details</Link>
@@ -295,7 +295,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
                   <div className="mt-auto">
                     <Button
                       variant="outline"
-                      className="mb-4 w-full border-green-200 text-green-700 hover:bg-green-50"
+                      className="mb-4 w-full border-green-200 text-lg font-bold text-green-700 hover:bg-green-50"
                       asChild
                     >
                       <Link href="/edgebi">View Details</Link>
