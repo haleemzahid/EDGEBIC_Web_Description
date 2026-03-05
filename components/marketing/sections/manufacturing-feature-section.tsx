@@ -47,7 +47,8 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               Core Capabilities
             </h3>
             <p className="text-base text-slate-600">
-              It's the right time to focus on the main <br /> challenges in production scheduling by:
+              It's the right time to focus on the main <br /> challenges in
+              production scheduling by:
             </p>
             <div className="flex gap-4">
               {/* Expandable Cards Column */}
@@ -83,7 +84,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          Would an END-END, near realtime view of your entire supply chain be useful?  How about adding Finite-Capacty scheduling to your existing ERP?
+                          Would an END-END, near realtime view of your entire
+                          supply chain be useful? How about adding
+                          Finite-Capacty scheduling to your existing ERP?
                         </p>
                       </motion.div>
                     )}
@@ -104,7 +107,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         <Brain className="size-4 text-cyan-600" />
                       </div>
                       <h3 className="text-[16px] font-semibold text-gray-900">
-                        Reconfigure on Demand
+                        Reconfiguring on Demand
                       </h3>
                     </div>
                     {comprehensiveLogicExpanded ? (
@@ -123,8 +126,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          With a method to completely reconfigure system upon demand, its suprisingly
-                          easy to try various models to achieve maximum efficiency.
+                          With a method to completely reconfigure system upon
+                          demand, its suprisingly easy to try various models to
+                          achieve maximum efficiency.
                         </p>
                       </motion.div>
                     )}
@@ -147,7 +151,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         <Shuffle className="size-4 text-amber-600" />
                       </div>
                       <h3 className="text-[16px] font-semibold text-gray-900">
-                        Provides Good Schedule
+                        Providing Viable Schedules
                       </h3>
                     </div>
                     {strategicFlexibilityExpanded ? (
@@ -166,7 +170,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          By identifying constaints and other business rules, the system quickly and easily generates a reasonable schedule.
+                          By identifying constaints and other business rules,
+                          the system quickly and easily generates a reasonable
+                          schedule.
                         </p>
                       </motion.div>
                     )}
@@ -185,7 +191,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         <FileText className="size-4 text-blue-600" />
                       </div>
                       <h3 className="text-[16px] font-semibold text-gray-900">
-                        Instant User Overides
+                        Allowing Instant User Overides
                       </h3>
                     </div>
                     {reportingExpanded ? (
@@ -204,7 +210,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         className="overflow-hidden px-5 pb-5"
                       >
                         <p className="text-md text-gray-600">
-                          This is where the system shines - easily override schedule, at any time, and system will completely rebalance and alert if necessary.
+                          This is where the system shines - easily override
+                          schedule, at any time, and system will completely
+                          rebalance and alert if necessary.
                         </p>
                       </motion.div>
                     )}
@@ -225,7 +233,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                         <GitMerge className="size-4 text-emerald-600" />
                       </div>
                       <h3 className="text-[16px] font-semibold text-gray-900">
-                        Data Integration
+                        Enabling Data Integrations
                       </h3>
                     </div>
                     {dataIntegrationExpanded ? (
