@@ -104,14 +104,15 @@ export function EDGEBIContent() {
       {/* Video and Hero Image Section */}
       <div className="grid items-center gap-8 lg:grid-cols-2">
         <div className="flex justify-center">
-          <div className="aspect-video w-full overflow-hidden rounded-lg shadow-lg">
-            <YouTubeFacade
-              videoId="6B4A-acolGk"
-              title="EDGE BI User Solutions demonstration video"
-              className="size-full"
-              useBluePlayButton
-            />
-          </div>
+          <Image
+            src="/images/Edgebic/Picture1.png"
+            alt="EDGEBI Overview"
+            width={800}
+            height={500}
+            className="h-auto max-w-full rounded-lg shadow-lg"
+            loading="lazy"
+            quality={85}
+          />
         </div>
         <div className="flex items-center justify-center">
           <Image
