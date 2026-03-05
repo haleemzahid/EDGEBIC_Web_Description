@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { YouTubeFacade } from '@/components/ui/youtube-facade';
+import { EDGEBIPageContent } from '@/components/marketing/sections/edgebi-page-content';
 
 type TabType = 'summary' | 'rmdb' | 'live-demo';
 
@@ -165,6 +166,9 @@ export default function EDGEBIPage(): React.JSX.Element {
                   </p>
                 </div>
               </div>
+
+              {/* EDGEBI Page Content */}
+              <EDGEBIPageContent />
             </div>
           )}
 
