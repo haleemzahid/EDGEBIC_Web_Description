@@ -164,13 +164,13 @@ function SummaryContent() {
         </div>
         <div className="space-y-4">
           <div className="flex items-center justify-center">
-            <div className="aspect-video w-full max-w-[600px] overflow-hidden rounded-lg shadow-lg">
+            <div className="aspect-video w-full max-w-[600px] overflow-hidden rounded-lg">
               <Image
                 src="/images/Edgebic/Picture1.png"
                 alt="EDGEBI Overview"
                 width={800}
                 height={500}
-                className="h-auto max-w-full rounded-lg shadow-lg"
+                className="h-auto max-w-full rounded-lg"
                 loading="lazy"
                 quality={85}
               />
@@ -182,7 +182,7 @@ function SummaryContent() {
               alt="EDGEBI Schedule Management Interface"
               width={600}
               height={400}
-              className="rounded-lg shadow-lg"
+              className="rounded-lg"
               loading="lazy"
               quality={80}
             />

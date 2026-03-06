@@ -170,7 +170,7 @@ export function EDGEBIContentEdgebiPage() {
           {edgebiFeatures.map((feature, index) => (
             <li
               key={index}
-              className="flex items-start gap-2"
+              className="flex items-center gap-2"
             >
               <CheckCircle
                 className="mt-0.5 size-4 shrink-0 text-green-600"
