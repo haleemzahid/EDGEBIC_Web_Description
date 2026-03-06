@@ -197,39 +197,43 @@ function SummaryContent() {
 // Quick Start tab content - rendered server-side
 function QuickStartContent() {
   return (
-    <div className="grid items-start gap-8 lg:grid-cols-2">
-      <div>
-        <h2 className="mb-4 text-2xl font-bold text-slate-900">Quick Start</h2>
-        <div className="space-y-4 text-base leading-relaxed text-slate-600">
-          <p>
-            Get started with Resource Manager-DB quickly and easily. Our Quick
-            Start guide provides step-by-step instructions to help you set up
-            and configure RMDB for your specific needs.
-          </p>
-          <p>
-            Download the comprehensive Quick Start PDF guide to begin your
-            journey with RMDB.
-          </p>
-          <a
-            href="/pdf/rmdbquickstart23.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
-          >
-            Download Quick Start Guide (PDF)
-          </a>
+    <div>
+      <div className="grid items-start gap-8 lg:grid-cols-2">
+        <div>
+          <h2 className="mb-4 text-2xl font-bold text-slate-900">
+            Quick Start
+          </h2>
+          <div className="space-y-4 text-base leading-relaxed text-slate-600">
+            <p>
+              Get started with Resource Manager-DB quickly and easily. Our Quick
+              Start guide provides step-by-step instructions to help you set up
+              and configure RMDB for your specific needs.
+            </p>
+            <p>
+              Download the comprehensive Quick Start PDF guide to begin your
+              journey with RMDB.
+            </p>
+            <a
+              href="/pdf/rmdbquickstart23.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
+            >
+              Download Quick Start Guide (PDF)
+            </a>
+          </div>
         </div>
-      </div>
-      <div className="flex items-center justify-center">
-        <Image
-          src={IMAGES.dataImportImage}
-          alt="RMDB Data Import dialog showing Excel integration"
-          width={600}
-          height={400}
-          className="h-auto max-w-full rounded-lg shadow-lg"
-          loading="lazy"
-          quality={85}
-        />
+        <div className="flex items-center justify-center">
+          <Image
+            src={IMAGES.dataImportImage}
+            alt="RMDB Data Import dialog showing Excel integration"
+            width={600}
+            height={400}
+            className="h-auto max-w-full rounded-lg shadow-lg"
+            loading="lazy"
+            quality={85}
+          />
+        </div>
       </div>
       <RMDBFeatureList />
     </div>
@@ -239,37 +243,39 @@ function QuickStartContent() {
 // Live Demo tab content - rendered server-side with client interactivity
 function LiveDemoContent() {
   return (
-    <div className="grid items-start gap-8 lg:grid-cols-2">
-      <div>
-        <h2 className="mb-4 text-2xl font-bold text-slate-900">Live Demo</h2>
-        <div className="space-y-4 text-base leading-relaxed text-slate-600">
-          <p>
-            See Resource Manager-DB in action! Schedule a live demo with our
-            team to experience how RMDB can transform your production planning
-            and scheduling processes.
-          </p>
-          <p>
-            We can even use your data in its current form to show you exactly
-            how RMDB will work for your specific operations – RISK FREE!
-          </p>
-          <a
-            href="/contact-us"
-            className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
-          >
-            Schedule a Live Demo
-          </a>
+    <div>
+      <div className="grid items-start gap-8 lg:grid-cols-2">
+        <div>
+          <h2 className="mb-4 text-2xl font-bold text-slate-900">Live Demo</h2>
+          <div className="space-y-4 text-base leading-relaxed text-slate-600">
+            <p>
+              See Resource Manager-DB in action! Schedule a live demo with our
+              team to experience how RMDB can transform your production planning
+              and scheduling processes.
+            </p>
+            <p>
+              We can even use your data in its current form to show you exactly
+              how RMDB will work for your specific operations – RISK FREE!
+            </p>
+            <a
+              href="/contact-us"
+              className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
+            >
+              Schedule a Live Demo
+            </a>
+          </div>
         </div>
-      </div>
-      <div className="flex items-center justify-center">
-        <Image
-          src={IMAGES.heroImage}
-          alt="Resource Manager DB EDGE interface preview for live demo"
-          width={1024}
-          height={483}
-          className="h-auto max-w-full rounded-lg shadow-lg"
-          loading="lazy"
-          quality={85}
-        />
+        <div className="flex items-center justify-center">
+          <Image
+            src={IMAGES.heroImage}
+            alt="Resource Manager DB EDGE interface preview for live demo"
+            width={1024}
+            height={483}
+            className="h-auto max-w-full rounded-lg shadow-lg"
+            loading="lazy"
+            quality={85}
+          />
+        </div>
       </div>
       <RMDBFeatureList />
     </div>
