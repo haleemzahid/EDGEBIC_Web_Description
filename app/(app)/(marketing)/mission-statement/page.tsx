@@ -1,14 +1,14 @@
 import * as React from 'react';
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { Metadata } from 'next';
 
 import { Routes } from '@/constants/routes';
 
 export const metadata: Metadata = {
   title: 'Mission Statement',
   description:
-    'Empower manufacturers to become more competitive and profitable through efficient resource management tools that are affordable, adaptable, and easily implemented.',
+    'Empower manufacturers to become more competitive and profitable through efficient resource management tools that are affordable, adaptable, and easily implemented.'
 };
 
 export default function MissionPage(): React.JSX.Element {
@@ -22,43 +22,45 @@ export default function MissionPage(): React.JSX.Element {
               Make Manufacturing Great Again!
             </h1>
             <p className="text-lg text-gray-700">
-              Empowering manufacturers since 1991 with solutions that fit like
-              a glove.
+              Empowering manufacturers since 1991 with solutions that fit like a
+              glove.
             </p>
           </div>
         </div>
       </section>
 
       {/* Main Content */}
-      <section className="py-6">
+      <section className="pt-6">
         <div className="mx-auto px-4">
           <div className="mx-auto max-w-7xl">
             {/* Two Column Layout */}
             <div>
               {/* Left Column - Text Content */}
               <div className="space-y-6">
-                <div className='flex'>
+                <div className="flex">
                   <div>
-
-                    <h2 className="text-2xl font-bold text-slate-900">
+                    <h2 className="text-2xl mb-3 font-bold text-slate-900">
                       Mission Statement
                     </h2>
-                    <blockquote className="text-xl font-bold leading-relaxed text-slate-900">
+                    <blockquote className="text-xl mb-3 font-bold leading-relaxed text-slate-900">
                       &quot;Empower manufacturers to become more competitive and
-                      profitable through efficient resource management tools that are
-                      affordable, adaptable, and easily implemented.&quot;
+                      profitable through efficient resource management tools
+                      that are affordable, adaptable, and easily
+                      implemented.&quot;
                     </blockquote>
 
-                    <p className="text-lg leading-relaxed text-slate-700">
-                      Since 1991, what makes <em>US</em> unique is we work with you to solve
-                      production planning, scheduling, and tracking challenges{' '}
-                      <em>your way</em>.
+                    <p className="text-lg mb-3 leading-relaxed text-slate-700">
+                      Since 1991, what makes <em>US</em> unique is we work with
+                      you to solve production planning, scheduling, and tracking
+                      challenges <em>your way</em>.
                     </p>
 
                     <p className="text-lg leading-relaxed text-slate-700">
-                      <strong>User Solutions: LISTEN and DELIVER. LISTEN</strong> to the customer,
-                      understand <em>their</em> needs, and <strong>DELIVER</strong> a
-                      solution.
+                      <strong>
+                        User Solutions: LISTEN and DELIVER. LISTEN
+                      </strong>{' '}
+                      to the customer, understand <em>their</em> needs, and{' '}
+                      <strong>DELIVER</strong> a solution.
                     </p>
                   </div>
                   <div>
@@ -92,24 +94,32 @@ export default function MissionPage(): React.JSX.Element {
                     </p>
 
                     <p className="text-lg leading-relaxed text-slate-700">
-                      From adding a Finite Capacity Scheduling capability to any ERP
-                      system, or providing Material Requirements Planning for smaller
-                      operations who only have a simple accounting solution, or
-                      delivering simple Job Shop Scheduling Solutions, or even
-                      providing educational templates for Production and Operations
-                      Management, we are grateful for the opportunity to work with
-                      you to Make Manufacturing Great Again!
+                      From adding a Finite Capacity Scheduling capability to any
+                      ERP system, or providing Material Requirements Planning
+                      for smaller operations who only have a simple accounting
+                      solution, or delivering simple Job Shop Scheduling
+                      Solutions, or even providing educational templates for
+                      Production and Operations Management, we are grateful for
+                      the opportunity to work with you to Make Manufacturing
+                      Great Again!
                     </p>
                   </div>
                 </div>
 
                 <p className="text-lg leading-relaxed text-slate-700">
-                  <Link href={Routes.Contact} className="text-blue-600 hover:underline">
-                    Contact <strong className='italic'>US</strong>
-                  </Link> Today!
+                  <Link
+                    href={Routes.Contact}
+                    className="text-blue-600 hover:underline"
+                  >
+                    Contact <strong className="italic">US</strong>
+                  </Link>{' '}
+                  Today!
                 </p>
-                <p className='!mt-0'>
-                  <Link href={Routes.History} className="text-blue-600 hover:underline">
+                <p className="!mt-0">
+                  <Link
+                    href={Routes.History}
+                    className="text-blue-600 hover:underline"
+                  >
                     View User Solution History
                   </Link>
                 </p>
