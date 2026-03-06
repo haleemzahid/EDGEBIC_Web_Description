@@ -4,8 +4,9 @@ import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { YouTubeFacade } from '@/components/ui/youtube-facade';
+import { EDGEBIContentEdgebiPage } from '@/components/marketing/sections/edgebi-content-edgebi-page';
 import { EDGEBIPageContent } from '@/components/marketing/sections/edgebi-page-content';
+import { YouTubeFacade } from '@/components/ui/youtube-facade';
 
 type TabType = 'summary' | 'rmdb' | 'live-demo';
 
@@ -30,18 +31,25 @@ export default function EDGEBIPage(): React.JSX.Element {
                 Welcome to EDGEBI
               </h1>
               <p className="mb-6 text-md leading-relaxed text-slate-600">
-                EDGEBI can be installed and configured per user preferences. EDGEBI installs
-                separately from RMDB but they share the same database with advanced security
-                options, its easy to configure view only users or power users who can make
-                direct changes to schedule. Such as: Change length of any job segment, block
-                out capacity due to any event either planned or unplanned, create custom
-                reporting, add notes to any job, at any workcenter, as desired, and so much
-                more. Contact <em className="font-semibold">US</em> for a demo focused on your operations.
+                EDGEBI can be installed and configured per user preferences.
+                EDGEBI installs separately from RMDB but they share the same
+                database with advanced security options, its easy to configure
+                view only users or power users who can make direct changes to
+                schedule. Such as: Change length of any job segment, block out
+                capacity due to any event either planned or unplanned, create
+                custom reporting, add notes to any job, at any workcenter, as
+                desired, and so much more. Contact{' '}
+                <em className="font-semibold">US</em> for a demo focused on your
+                operations.
               </p>
 
               {/* Navigation Tabs */}
               <div className="pt-4 bg-gradient-to-b from-slate-50 to-white">
-                <div className="flex flex-wrap gap-2" role="tablist" aria-label="EDGEBI sections">
+                <div
+                  className="flex flex-wrap gap-2"
+                  role="tablist"
+                  aria-label="EDGEBI sections"
+                >
                   {tabs.map((tab, index) => (
                     <button
                       key={tab.id}
@@ -50,10 +58,11 @@ export default function EDGEBIPage(): React.JSX.Element {
                       aria-selected={activeTab === tab.id}
                       tabIndex={activeTab === tab.id ? 0 : -1}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`transition-all duration-200 focus:outline-none px-8 py-4 text-[16px] font-semibold rounded-t-xl border-2 border-b-0 relative ${activeTab === tab.id
-                        ? 'bg-white text-blue-600 border-blue-500 z-10 -mb-[2px]'
-                        : 'bg-blue-500 text-white border-blue-500 shadow-sm hover:bg-blue-600 hover:border-blue-600'
-                        }`}
+                      className={`transition-all duration-200 focus:outline-none px-8 py-4 text-[16px] font-semibold rounded-t-xl border-2 border-b-0 relative ${
+                        activeTab === tab.id
+                          ? 'bg-white text-blue-600 border-blue-500 z-10 -mb-[2px]'
+                          : 'bg-blue-500 text-white border-blue-500 shadow-sm hover:bg-blue-600 hover:border-blue-600'
+                      }`}
                     >
                       {tab.label}
                     </button>
@@ -86,31 +95,46 @@ export default function EDGEBIPage(): React.JSX.Element {
       <section className="py-6">
         <div className="container mx-auto max-w-7xl px-4">
           {/* Summary Tab */}
-          {activeTab === 'summary' && (
-            <EDGEBIPageContent />
-          )}
+          {activeTab === 'summary' && <EDGEBIContentEdgebiPage />}
 
           {/* RMDB Tab */}
           {activeTab === 'rmdb' && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold ">RESOURCE MANAGER DB: SUMMARY</h2>
+              <h2 className="text-2xl font-bold ">
+                RESOURCE MANAGER DB: SUMMARY
+              </h2>
               <div className="grid items-start gap-8 lg:grid-cols-2">
                 <div>
                   <div className="space-y-4 text-base leading-relaxed text-slate-700">
                     <p>
-                      If you have tried to use your ERP for creating a viable Production Schedule, and still end up with a tangle of custom Excel Reports, messy whiteboard or worse yet, late shipments, we can help.
+                      If you have tried to use your ERP for creating a viable
+                      Production Schedule, and still end up with a tangle of
+                      custom Excel Reports, messy whiteboard or worse yet, late
+                      shipments, we can help.
                     </p>
                     <p>
-                      RMDB was specifically architected to easily adapt to the way you work, using your existing data. It can be easily configured, and/or reconfigured, on the fly to address your most pressing issues.
+                      RMDB was specifically architected to easily adapt to the
+                      way you work, using your existing data. It can be easily
+                      configured, and/or reconfigured, on the fly to address
+                      your most pressing issues.
                     </p>
                     <p>
-                      We can focus and resolve your most pressing issues quickly — letting you reap immediate ROI. Then, delve deeper without having to spend more!
+                      We can focus and resolve your most pressing issues quickly
+                      — letting you reap immediate ROI. Then, delve deeper
+                      without having to spend more!
                     </p>
                     <p>
-                      Schedule a live demo, even using your data in its current form – RISK FREE!!
+                      Schedule a live demo, even using your data in its current
+                      form – RISK FREE!!
                     </p>
                     <p>
-                      RMDB contains deep functionality to address a multitude of challenges for production planning and scheduling: alternate workcenters, complex routings & processes, discrete and/or batch, multiple constraints (labor, machines, materials, etc.), advanced drag and drop graphical calendar screens, downtime management, sub-assemblies, optimization, and much more.
+                      RMDB contains deep functionality to address a multitude of
+                      challenges for production planning and scheduling:
+                      alternate workcenters, complex routings & processes,
+                      discrete and/or batch, multiple constraints (labor,
+                      machines, materials, etc.), advanced drag and drop
+                      graphical calendar screens, downtime management,
+                      sub-assemblies, optimization, and much more.
                     </p>
                   </div>
                 </div>
@@ -159,10 +183,14 @@ export default function EDGEBIPage(): React.JSX.Element {
                 <h2 className="mb-4 text-2xl font-bold">Live Demo</h2>
                 <div className="space-y-4 text-base leading-relaxed text-slate-600">
                   <p>
-                    See EDGEBI and Resource Manager-DB in action! Schedule a live demo with our team to experience how our solutions can transform your production planning and scheduling processes.
+                    See EDGEBI and Resource Manager-DB in action! Schedule a
+                    live demo with our team to experience how our solutions can
+                    transform your production planning and scheduling processes.
                   </p>
                   <p>
-                    We can even use your data in its current form to show you exactly how EDGEBI and RMDB will work for your specific operations – RISK FREE!
+                    We can even use your data in its current form to show you
+                    exactly how EDGEBI and RMDB will work for your specific
+                    operations – RISK FREE!
                   </p>
                   <Link
                     href="/contact-us"
