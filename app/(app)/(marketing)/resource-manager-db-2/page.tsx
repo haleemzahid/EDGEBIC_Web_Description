@@ -189,6 +189,7 @@ function SummaryContent() {
           </div>
         </div>
       </div>
+      <RMDBFeatureList />
     </div>
   );
 }
@@ -230,6 +231,7 @@ function QuickStartContent() {
           quality={85}
         />
       </div>
+      <RMDBFeatureList />
     </div>
   );
 }
@@ -269,6 +271,7 @@ function LiveDemoContent() {
           quality={85}
         />
       </div>
+      <RMDBFeatureList />
     </div>
   );
 }
@@ -339,9 +342,6 @@ export default function ResourceManagerDBPage() {
             liveDemoContent={<LiveDemoContent />}
           />
         </Suspense>
-
-        {/* Features Section */}
-        <RMDBFeatureList />
       </main>
     </>
   );

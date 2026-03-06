@@ -1,5 +1,7 @@
 import Image from 'next/image';
 
+import { RMDBFeatureList } from './rmdb-feature-list';
+
 export function RMDBInDepthContent() {
   return (
     <div className="space-y-12">
@@ -838,6 +840,7 @@ export function RMDBInDepthContent() {
           solutions focused on unique needs.
         </p>
       </div>
+      <RMDBFeatureList />
     </div>
   );
 }
