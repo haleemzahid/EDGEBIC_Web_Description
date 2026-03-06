@@ -127,7 +127,7 @@ export function EDGEBIContentEdgebiPage() {
             videoId="6B4A-acolGk"
             title="Resource Manager DB Summary"
             className="aspect-video w-full"
-            hidePlayButton={false}
+            useBluePlayButton
           />
         </div>
         <div className="flex items-center justify-center">
