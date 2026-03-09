@@ -78,54 +78,45 @@ export function HeroContent(): React.JSX.Element {
 
       {/* Main Hero Content */}
       <div className="relative z-10 mx-auto pt-6">
-        <div className="flex w-full">
+        <div className="flex flex-col lg:flex-row w-full">
           {/* Left Side - Text Content */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
-            className="space-y-8 text-left w-[70%] p-6 pe-0"
+            className="space-y-8 text-left w-full lg:w-[70%] p-4 md:p-6 pe-0"
           >
-            {/* Main Title */}
-            {/* <h1 className="text-2xl leading-tight text-white md:text-4xl lg:text-5xl">
-              Production Planning and Scheduling Software
-            </h1> */}
             {/* Description */}
-            <div className="text-white w-[732px]">
-              <p className="text-3xl text-center leading-tight">
+            <div className="text-white w-full max-w-[732px]">
+              <p className="text-xl md:text-3xl text-left lg:text-center leading-tight">
                 Your Partner for Solving
               </p>
-              <h1 className="text-3xl leading-tight">
+              <h1 className="text-xl md:text-3xl leading-tight text-left">
                 Production Planning and Scheduling Challenges
               </h1>
 
-              <p className="text-3xl font-bold leading-tight italic text-center mt-2">
+              <p className="text-xl md:text-3xl font-bold leading-tight italic text-center mt-2">
                 Your Way!
               </p>
             </div>
 
-            {/* Solution Approach */}
-            {/* <p className="text-md font-semibold tracking-wide text-white">
-              LESS TRAINING | QUICKER IMPLEMENTATION | FASTER RETURN
-            </p> */}
-
             {/* Action Buttons */}
-            <div className="flex flex-row w-[732px] pb-6 justify-center items-center gap-3 !mt-3">
+            <div className="flex flex-wrap w-full max-w-[732px] pb-6 justify-center items-center gap-3 !mt-3">
               <button
                 onClick={handleFirstVideoButtonClick}
-                className="inline-flex h-10 w-[170px] items-center justify-center gap-2 rounded-[10px] bg-white px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-gray-100"
+                className="inline-flex h-10 w-[140px] md:w-[170px] items-center justify-center gap-2 rounded-[10px] bg-white px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-gray-100"
               >
                 Introduction
               </button>
               <button
                 onClick={handleSecondVideoButtonClick}
-                className="inline-flex h-10 w-[170px] items-center justify-center rounded-[10px] bg-white px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-gray-100"
+                className="inline-flex h-10 w-[140px] md:w-[170px] items-center justify-center rounded-[10px] bg-white px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-gray-100"
               >
                 Welcome
               </button>
               <Link
                 href="/contact-us"
-                className="inline-flex h-10 w-[170px] items-center justify-center gap-2 rounded-[10px] bg-[#FAE74D] px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-[#e6d445]"
+                className="inline-flex h-10 w-[calc(280px+0.75rem)] sm:w-[140px] md:w-[170px] items-center justify-center gap-2 rounded-[10px] bg-[#FAE74D] px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-[#e6d445]"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -170,7 +161,7 @@ export function HeroContent(): React.JSX.Element {
           </motion.div>
 
           {/* Right Side - Students Button */}
-          <div className="w-[30%] flex items-end justify-end p-6 pb-3">
+          <div className="w-full lg:w-[30%] flex items-end justify-end p-4 md:p-6 pb-3">
             <Link
               href="/students"
               className="inline-flex h-12 w-[170px] items-center justify-center gap-2 rounded-[10px] bg-white px-3 py-2 text-sm font-semibold text-[#1e3a5f] transition-colors hover:bg-gray-100"

@@ -50,9 +50,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               It's the right time to focus on the main <br /> challenges in
               production scheduling by:
             </p>
-            <div className="flex gap-4">
+            <div className="flex flex-col lg:flex-row gap-4">
               {/* Expandable Cards Column */}
-              <div className="w-1/2 flex flex-col">
+              <div className="w-full lg:w-1/2 flex flex-col">
                 {/* Dynamic BOR Expandable Card */}
                 <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
@@ -263,7 +263,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
               </div>
               {/* RMDB Image */}
-              <div className="w-1/2 flex justify-center">
+              <div className="w-full lg:w-1/2 flex justify-center">
                 <Link href="/resource-manager-db-2">
                   <Image
                     src="/images/Edgebic/2022-07/rmdb11.png"
@@ -287,9 +287,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               We guide you through a structured five-step path to move from raw
               data to an Optimal Schedule that reflects shop-floor reality.
             </p>
-            <div className="flex gap-4">
+            <div className="flex flex-col lg:flex-row gap-4">
               {/* Expandable Cards Column */}
-              <div className="w-1/2 flex flex-col">
+              <div className="w-full lg:w-1/2 flex flex-col">
                 {/* Strategic Alignment Expandable Card */}
                 <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)]">
                   <button
@@ -500,7 +500,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 </div>
               </div>
               {/* Scheduling Process Image */}
-              <div className="w-1/2">
+              <div className="w-full lg:w-1/2">
                 <Image
                   src="/images/Edgebic/2022-09/homeimage.png"
                   alt="Scheduling step process diagram showing optimal scheduling workflow"
