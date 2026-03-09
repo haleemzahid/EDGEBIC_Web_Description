@@ -37,8 +37,8 @@ export default function MissionPage(): React.JSX.Element {
             <div>
               {/* Left Column - Text Content */}
               <div className="space-y-6">
-                <div className="flex">
-                  <div>
+                <div className="flex flex-col lg:flex-row lg:gap-8">
+                  <div className="lg:flex-1">
                     <h2 className="text-2xl mb-3 font-bold text-slate-900">
                       Mission Statement
                     </h2>
@@ -63,13 +63,13 @@ export default function MissionPage(): React.JSX.Element {
                       <strong>DELIVER</strong> a solution.
                     </p>
                   </div>
-                  <div>
+                  <div className="w-full lg:w-[500px] lg:flex-shrink-0">
                     <Image
                       src="/images/make-manufacturing-great-again.jpg"
                       alt="Make Manufacturing Great Again - Vintage car and factory"
                       width={650}
                       height={750}
-                      className="rounded-lg"
+                      className="rounded-lg w-full h-auto"
                       priority
                     />
                   </div>
