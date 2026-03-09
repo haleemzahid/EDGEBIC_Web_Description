@@ -135,34 +135,6 @@ function MainMobileMenu({
   return (
     <div className="fixed inset-0 z-50 mt-[69px] overflow-y-auto bg-background animate-in fade-in-0">
       <div className="flex size-full flex-col items-start space-y-3 p-4">
-        <div className="flex w-full flex-col gap-2">
-          <Link
-            href={Routes.SignUp}
-            className={cn(
-              buttonVariants({
-                variant: 'default',
-                size: 'lg'
-              }),
-              'w-full rounded-xl'
-            )}
-            onClick={onLinkClicked}
-          >
-            Start for free
-          </Link>
-          <Link
-            href={Routes.Login}
-            onClick={onLinkClicked}
-            className={cn(
-              buttonVariants({
-                variant: 'outline',
-                size: 'lg'
-              }),
-              'w-full rounded-xl'
-            )}
-          >
-            Log in
-          </Link>
-        </div>
         <ul className="w-full">
           {MENU_LINKS.map((item) => (
             <li
@@ -252,6 +224,21 @@ function MainMobileMenu({
             </li>
           ))}
         </ul>
+        <div className="flex w-full flex-col gap-2 mt-auto pb-4">
+          <Link
+            href={Routes.Login}
+            onClick={onLinkClicked}
+            className={cn(
+              buttonVariants({
+                variant: 'outline',
+                size: 'lg'
+              }),
+              'w-full rounded-xl'
+            )}
+          >
+            Log in
+          </Link>
+        </div>
       </div>
     </div>
   );
