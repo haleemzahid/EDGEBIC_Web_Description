@@ -34,7 +34,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
 
   return (
     <GridSection hideVerticalGridLines>
-      <div className="pt-6">
+      <div className="pt-6 overflow-x-hidden">
         {/* Hero Section */}
         <SiteHeading
           title="Production Planning and Scheduling Solutions"
@@ -50,7 +50,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
           }
         />
 
-        <div className="mx-auto max-w-7xl px-4 lg:px-0 overflow-x-hidden">
+        <div className="mx-auto max-w-7xl px-4 lg:px-0">
           {/* Introduction */}
           <div className="mb-[17px]">
             <p className=" text-lg mb-3 text-muted-foreground">
