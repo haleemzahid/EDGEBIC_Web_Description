@@ -224,7 +224,7 @@ function MainMobileMenu({
             </li>
           ))}
         </ul>
-        <div className="flex w-full flex-col gap-2 mt-auto pb-4">
+        <div className="flex w-full flex-col gap-2">
           <Link
             href={Routes.Login}
             onClick={onLinkClicked}
