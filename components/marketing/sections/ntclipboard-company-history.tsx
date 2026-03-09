@@ -230,7 +230,7 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
 
   return (
     <GridSection hideVerticalGridLines>
-      <div className="container pt-6">
+      <div className="container pt-6 px-2 sm:px-4">
         <SiteHeading
           title="Providing Production Planning and Scheduling Solutions since 1991"
           description="Over three decades of innovation in manufacturing resource planning and production scheduling."
@@ -411,7 +411,7 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
           {/* Timeline */}
           <div id="history-timeline" className="relative">
             {/* Timeline line */}
-            <div className="absolute left-8 top-0 h-full w-px bg-gradient-to-b from-orange-300 via-orange-500 to-orange-700 md:left-1/2" />
+            <div className="absolute left-8 top-0 h-full w-px bg-gradient-to-b from-orange-300 via-orange-500 to-orange-700 hidden md:block md:left-1/2" />
 
             {milestones.map((milestone, index) => (
               <div
@@ -420,11 +420,11 @@ export function NTClipboardCompanyHistory(): React.JSX.Element {
                   } flex-col md:justify-between`}
               >
                 {/* Timeline dot */}
-                <div className="absolute left-8 top-1/2 z-10 flex size-4 -translate-y-1/2 items-center justify-center rounded-full bg-orange-500 ring-4 ring-white md:left-1/2 md:-translate-x-1/2" />
+                <div className="absolute left-8 top-1/2 z-10 flex size-4 -translate-y-1/2 items-center justify-center rounded-full bg-orange-500 ring-4 ring-white hidden md:flex md:left-1/2 md:-translate-x-1/2" />
 
                 {/* Content */}
                 <div
-                  className={`ml-20 w-full md:ml-0 md:w-5/12 ${index % 2 === 0 ? 'md:pr-8' : 'md:pl-8'
+                  className={`w-full md:w-5/12 ${index % 2 === 0 ? 'md:pr-8' : 'md:pl-8'
                     }`}
                 >
                   <div className="rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-6">
