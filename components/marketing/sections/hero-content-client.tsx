@@ -88,10 +88,10 @@ export function HeroContent(): React.JSX.Element {
           >
             {/* Description */}
             <div className="text-white w-full max-w-[732px]">
-              <p className="text-xl md:text-3xl text-left lg:text-center leading-tight">
+              <p className="text-xl md:text-3xl text-center leading-tight">
                 Your Partner for Solving
               </p>
-              <h1 className="text-xl md:text-3xl leading-tight text-left">
+              <h1 className="text-xl md:text-3xl leading-tight text-center">
                 Production Planning and Scheduling Challenges
               </h1>
 
