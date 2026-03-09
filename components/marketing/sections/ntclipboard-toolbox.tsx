@@ -9,7 +9,7 @@ import { YouTubeFacade } from '@/components/ui/youtube-facade';
 
 export function NTClipboardToolBox(): React.JSX.Element {
   return (
-    <GridSection hideVerticalGridLines>
+    <GridSection hideVerticalGridLines containerProps={{ className: 'px-0 sm:container' }}>
       <div>
         {/* Solutions for Every Business Size */}
         <div className="">
@@ -23,7 +23,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
               </p>
             </div> */}
 
-          <div className="mt-6 grid gap-6 grid-cols-1 lg:grid-cols-3">
+          <div className="mt-6 grid gap-4 lg:gap-6 grid-cols-1 lg:grid-cols-3 px-2 sm:px-0">
             {/* Excel Templates - Operations Manager */}
             <div className="flex flex-col">
               {/* Option Label above card */}

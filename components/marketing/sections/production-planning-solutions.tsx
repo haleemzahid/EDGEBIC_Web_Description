@@ -50,7 +50,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
           }
         />
 
-        <div className="mx-auto max-w-7xl px-4 lg:px-0">
+        <div className="mx-auto max-w-7xl  lg:px-0">
           {/* Introduction */}
           <div className="mb-[17px]">
             <p className=" text-lg mb-3 text-muted-foreground">
@@ -337,158 +337,190 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
                       edgebiCustom: true
                     }
                   ].map((row, i) => {
-                    const hasPricing = row.jslCustom || row.rmdbCustom || (row as any).edgebiCustom;
+                    const hasPricing =
+                      row.jslCustom ||
+                      row.rmdbCustom ||
+                      (row as any).edgebiCustom;
                     return (
-                    <React.Fragment key={i}>
-                      <tr
-                        className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-slate-50' : ''}`}
-                      >
-                        <td className="p-4 align-middle">
-                          <details
-                            data-feature={`feature-${i}`}
-                            className="group"
-                          >
-                            <summary className="flex cursor-pointer items-center gap-2 font-medium text-slate-900 hover:text-blue-600">
-                              <span className="text-sm transition-transform group-open:rotate-90">
-                                ▶
-                              </span>
-                              {row.feature}
-                            </summary>
-                            <div className="mt-2 pl-6 text-sm text-slate-600">
-                              {row.description}
-                            </div>
-                          </details>
-                        </td>
-                        <td className="p-4 text-center align-middle">
-                          {row.jsl ? (
-                            <div className="flex justify-center">
-                              <Image
-                                src="/images/rmx-gauge.png"
-                                alt="Feature availability"
-                                width={120}
-                                height={80}
-                                className="object-contain"
-                              />
-                            </div>
-                          ) : (
-                            <span className="text-xl text-slate-400">-</span>
-                          )}
-                        </td>
-                        <td className="p-4 text-center align-middle">
-                          {row.rmdb ? (
-                            <div className="flex justify-center">
-                              <Image
-                                src={
-                                  row.rmdbLow
-                                    ? '/images/rmx-gauge.png'
-                                    : '/images/rmdb-gauge.png'
-                                }
-                                alt="Feature availability"
-                                width={120}
-                                height={80}
-                                className="object-contain"
-                              />
-                            </div>
-                          ) : (
-                            <span className="text-xl text-slate-400">-</span>
-                          )}
-                        </td>
-                        <td className="p-4 text-center align-middle">
-                          {row.edgebi ? (
-                            <div className="flex justify-center">
-                              <Image
-                                src="/images/edge-gauge.png"
-                                alt="Feature availability"
-                                width={120}
-                                height={80}
-                                className="object-contain"
-                              />
-                            </div>
-                          ) : (
-                            <span className="text-xl text-slate-400">-</span>
-                          )}
-                        </td>
-                      </tr>
-                      {hasPricing && (
-                        <tr className="border-b-2 border-slate-200 bg-slate-100/60">
-                          <td className="p-3 pl-8 text-sm font-semibold text-slate-500">
-                            Pricing
+                      <React.Fragment key={i}>
+                        <tr
+                          className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-slate-50' : ''}`}
+                        >
+                          <td className="p-4 align-middle">
+                            <details
+                              data-feature={`feature-${i}`}
+                              className="group"
+                            >
+                              <summary className="flex cursor-pointer items-center gap-2 font-medium text-slate-900 hover:text-blue-600">
+                                <span className="text-sm transition-transform group-open:rotate-90">
+                                  ▶
+                                </span>
+                                {row.feature}
+                              </summary>
+                              <div className="mt-2 pl-6 text-sm text-slate-600">
+                                {row.description}
+                              </div>
+                            </details>
                           </td>
-                          <td className="p-3 text-center">
-                            {row.jslCustom && (
-                              <details className="group mx-auto w-full rounded-lg border-2 border-orange-300 bg-gradient-to-b from-orange-50 to-white shadow-sm">
-                                <summary className="cursor-pointer list-none rounded-md bg-orange-500 px-4 py-1.5 text-sm font-bold text-white transition-colors hover:bg-orange-600">
-                                  <span className="flex items-center justify-center gap-1">
-                                    <span className="text-[10px] transition-transform group-open:rotate-90">▶</span>
-                                    RMX Pricing
-                                  </span>
-                                </summary>
-                                <div className="space-y-1 p-3 text-sm">
-                                  <div className="flex justify-between gap-3">
-                                    <span className="text-slate-600">Single User</span>
-                                    <span className="font-bold text-slate-900">$1,200</span>
-                                  </div>
-                                  <div className="flex justify-between gap-3">
-                                    <span className="text-slate-600">Multi-User</span>
-                                    <span className="font-bold text-slate-900">$2,400</span>
-                                  </div>
-                                  <p className="mt-2 text-[11px] leading-tight text-slate-500">
-                                    (one person live with edit control, other users view only)
-                                  </p>
-                                  <p className="mt-1 text-[11px] font-medium text-orange-600">
-                                    Includes 2 hours custom support
-                                  </p>
-                                </div>
-                              </details>
+                          <td className="p-4 text-center align-middle">
+                            {row.jsl ? (
+                              <div className="flex justify-center">
+                                <Image
+                                  src="/images/rmx-gauge.png"
+                                  alt="Feature availability"
+                                  width={120}
+                                  height={80}
+                                  className="object-contain"
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-xl text-slate-400">-</span>
                             )}
                           </td>
-                          <td className="p-3 text-center">
-                            {row.rmdbCustom && (
-                              <details className="group mx-auto w-full rounded-lg border-2 border-green-300 bg-gradient-to-b from-green-50 to-white shadow-sm">
-                                <summary className="cursor-pointer list-none rounded-md bg-green-600 px-4 py-1.5 text-sm font-bold text-white transition-colors hover:bg-green-700">
-                                  <span className="flex items-center justify-center gap-1">
-                                    <span className="text-[10px] transition-transform group-open:rotate-90">▶</span>
-                                    {row.rmdbCustom.includes('Full')
-                                      ? 'RMDB Full Pricing'
-                                      : 'RMDB Basic Pricing'}
-                                  </span>
-                                </summary>
-                                <p className="p-3 text-sm leading-snug text-slate-700">{row.rmdbCustom}</p>
-                              </details>
+                          <td className="p-4 text-center align-middle">
+                            {row.rmdb ? (
+                              <div className="flex justify-center">
+                                <Image
+                                  src={
+                                    row.rmdbLow
+                                      ? '/images/rmx-gauge.png'
+                                      : '/images/rmdb-gauge.png'
+                                  }
+                                  alt="Feature availability"
+                                  width={120}
+                                  height={80}
+                                  className="object-contain"
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-xl text-slate-400">-</span>
                             )}
                           </td>
-                          <td className="p-3 text-center">
-                            {(row as any).edgebiCustom && (
-                              <details className="group mx-auto w-full rounded-lg border-2 border-emerald-300 bg-gradient-to-b from-emerald-50 to-white shadow-sm">
-                                <summary className="cursor-pointer list-none rounded-md bg-emerald-700 px-4 py-1.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800">
-                                  <span className="flex items-center justify-center gap-1">
-                                    <span className="text-[10px] transition-transform group-open:rotate-90">▶</span>
-                                    EDGEBI Pricing
-                                  </span>
-                                </summary>
-                                <div className="space-y-1 p-3 text-sm">
-                                  <div className="flex justify-between gap-3">
-                                    <span className="text-slate-600">5 Users</span>
-                                    <span className="font-bold text-slate-900">$5,000</span>
-                                  </div>
-                                  <div className="flex justify-between gap-3">
-                                    <span className="text-slate-600">10 Users</span>
-                                    <span className="font-bold text-slate-900">$10,000</span>
-                                  </div>
-                                  <div className="flex justify-between gap-3">
-                                    <span className="text-slate-600">20 Users</span>
-                                    <span className="font-bold text-slate-900">$15,000</span>
-                                  </div>
-                                  <p className="mt-2 text-[11px] font-medium text-emerald-700">
-                                    Includes 4 hours of custom support
-                                  </p>
-                                </div>
-                              </details>
+                          <td className="p-4 text-center align-middle">
+                            {row.edgebi ? (
+                              <div className="flex justify-center">
+                                <Image
+                                  src="/images/edge-gauge.png"
+                                  alt="Feature availability"
+                                  width={120}
+                                  height={80}
+                                  className="object-contain"
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-xl text-slate-400">-</span>
                             )}
                           </td>
                         </tr>
-                      )}
-                    </React.Fragment>
+                        {hasPricing && (
+                          <tr className="border-b-2 border-slate-200 bg-slate-100/60">
+                            <td className="p-3 pl-8 text-sm font-semibold text-slate-500">
+                              Pricing
+                            </td>
+                            <td className="p-3 text-center">
+                              {row.jslCustom && (
+                                <details className="group mx-auto w-full rounded-lg border-2 border-orange-300 bg-gradient-to-b from-orange-50 to-white shadow-sm">
+                                  <summary className="cursor-pointer list-none rounded-md bg-orange-500 px-4 py-1.5 text-sm font-bold text-white transition-colors hover:bg-orange-600">
+                                    <span className="flex items-center justify-center gap-1">
+                                      <span className="text-[10px] transition-transform group-open:rotate-90">
+                                        ▶
+                                      </span>
+                                      RMX Pricing
+                                    </span>
+                                  </summary>
+                                  <div className="space-y-1 p-3 text-sm">
+                                    <div className="flex justify-between gap-3">
+                                      <span className="text-slate-600">
+                                        Single User
+                                      </span>
+                                      <span className="font-bold text-slate-900">
+                                        $1,200
+                                      </span>
+                                    </div>
+                                    <div className="flex justify-between gap-3">
+                                      <span className="text-slate-600">
+                                        Multi-User
+                                      </span>
+                                      <span className="font-bold text-slate-900">
+                                        $2,400
+                                      </span>
+                                    </div>
+                                    <p className="mt-2 text-[11px] leading-tight text-slate-500">
+                                      (one person live with edit control, other
+                                      users view only)
+                                    </p>
+                                    <p className="mt-1 text-[11px] font-medium text-orange-600">
+                                      Includes 2 hours custom support
+                                    </p>
+                                  </div>
+                                </details>
+                              )}
+                            </td>
+                            <td className="p-3 text-center">
+                              {row.rmdbCustom && (
+                                <details className="group mx-auto w-full rounded-lg border-2 border-green-300 bg-gradient-to-b from-green-50 to-white shadow-sm">
+                                  <summary className="cursor-pointer list-none rounded-md bg-green-600 px-4 py-1.5 text-sm font-bold text-white transition-colors hover:bg-green-700">
+                                    <span className="flex items-center justify-center gap-1">
+                                      <span className="text-[10px] transition-transform group-open:rotate-90">
+                                        ▶
+                                      </span>
+                                      {row.rmdbCustom.includes('Full')
+                                        ? 'RMDB Full Pricing'
+                                        : 'RMDB Basic Pricing'}
+                                    </span>
+                                  </summary>
+                                  <p className="p-3 text-sm leading-snug text-slate-700">
+                                    {row.rmdbCustom}
+                                  </p>
+                                </details>
+                              )}
+                            </td>
+                            <td className="p-3 text-center">
+                              {(row as any).edgebiCustom && (
+                                <details className="group mx-auto w-full rounded-lg border-2 border-emerald-300 bg-gradient-to-b from-emerald-50 to-white shadow-sm">
+                                  <summary className="cursor-pointer list-none rounded-md bg-emerald-700 px-4 py-1.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800">
+                                    <span className="flex items-center justify-center gap-1">
+                                      <span className="text-[10px] transition-transform group-open:rotate-90">
+                                        ▶
+                                      </span>
+                                      EDGEBI Pricing
+                                    </span>
+                                  </summary>
+                                  <div className="space-y-1 p-3 text-sm">
+                                    <div className="flex justify-between gap-3">
+                                      <span className="text-slate-600">
+                                        5 Users
+                                      </span>
+                                      <span className="font-bold text-slate-900">
+                                        $5,000
+                                      </span>
+                                    </div>
+                                    <div className="flex justify-between gap-3">
+                                      <span className="text-slate-600">
+                                        10 Users
+                                      </span>
+                                      <span className="font-bold text-slate-900">
+                                        $10,000
+                                      </span>
+                                    </div>
+                                    <div className="flex justify-between gap-3">
+                                      <span className="text-slate-600">
+                                        20 Users
+                                      </span>
+                                      <span className="font-bold text-slate-900">
+                                        $15,000
+                                      </span>
+                                    </div>
+                                    <p className="mt-2 text-[11px] font-medium text-emerald-700">
+                                      Includes 4 hours of custom support
+                                    </p>
+                                  </div>
+                                </details>
+                              )}
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                     );
                   })}
                 </tbody>
