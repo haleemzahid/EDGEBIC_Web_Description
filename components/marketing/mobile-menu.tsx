@@ -25,7 +25,11 @@ function formatTitle(title: string | React.ReactNode): React.ReactNode {
   if (typeof title !== 'string') return title;
 
   if (title === 'Contact US') {
-    return <>Contact <strong className="italic"> US</strong></>;
+    return (
+      <>
+        Contact <strong className="italic"> US</strong>
+      </>
+    );
   }
 
   return title;
@@ -70,7 +74,7 @@ export function MobileMenu({
   return (
     <>
       <div
-        className={cn('flex items-center justify-between', className)}
+        className={cn('flex py-4 items-center justify-between', className)}
         {...other}
       >
         <Link href={Routes.Root}>
@@ -133,7 +137,7 @@ function MainMobileMenu({
 }: MainMobileMenuProps): React.JSX.Element {
   const [expanded, setExpanded] = React.useState<Record<string, boolean>>({});
   return (
-    <div className="fixed inset-0 z-50 mt-[69px] overflow-y-auto bg-background animate-in fade-in-0">
+    <div className="fixed inset-0 z-50 mt-[80px] overflow-y-auto bg-background animate-in fade-in-0">
       <div className="flex size-full flex-col items-start space-y-3 p-4">
         <ul className="w-full">
           {MENU_LINKS.map((item) => (
@@ -253,7 +257,7 @@ function DocsMobileMenu({
 }: DocsMobileMenuProps): React.JSX.Element {
   const [expanded, setExpanded] = React.useState<Record<string, boolean>>({});
   return (
-    <div className="fixed inset-0 z-50 mt-[69px] overflow-y-auto bg-background animate-in fade-in-0">
+    <div className="fixed inset-0 z-50 mt-[90px] overflow-y-auto bg-background animate-in fade-in-0">
       <div className="flex size-full flex-col items-start space-y-3 p-4">
         <ul className="w-full">
           {DOCS_LINKS.map((item) => (
