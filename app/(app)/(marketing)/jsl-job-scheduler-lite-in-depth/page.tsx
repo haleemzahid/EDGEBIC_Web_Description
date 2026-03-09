@@ -25,16 +25,25 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
           <h1 className="mb-4 text-center text-3xl font-bold text-slate-900 md:text-4xl">
             Job Scheduler Lite (JSL)
           </h1>
-          <p className="mx-auto max-w-4xl text-center text-lg leading-relaxed text-slate-600">
-            An entry level production scheduling offering that allows users to quickly create routing steps and schedule according to capacity limitations, direction (Forward or Reverse), and Priorities.
+          <p className="mx-auto max-w-7xl text-center text-lg leading-relaxed text-slate-600">
+            An entry level production scheduling offering that allows users to
+            quickly create routing steps and schedule according to capacity
+            limitations, direction (Forward or Reverse), and Priorities.
           </p>
         </div>
       </section>
 
       {/* Navigation Tabs */}
-      <nav className="pt-8 bg-gradient-to-b from-slate-50 to-white" aria-label="Product information tabs">
+      <nav
+        className="pt-8 bg-gradient-to-b from-slate-50 to-white"
+        aria-label="Product information tabs"
+      >
         <div className="container mx-auto max-w-7xl px-4">
-          <div className="flex flex-wrap justify-start gap-2" role="tablist" aria-label="Job Scheduler Lite sections">
+          <div
+            className="flex flex-wrap justify-start gap-2"
+            role="tablist"
+            aria-label="Job Scheduler Lite sections"
+          >
             {tabs.map((tab) => (
               <button
                 type="button"
@@ -42,10 +51,11 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
                 role="tab"
                 aria-selected={activeTab === tab.id ? 'true' : 'false'}
                 onClick={() => setActiveTab(tab.id)}
-                className={`transition-all duration-200 focus:outline-none px-8 py-4 text-[16px] font-semibold rounded-t-xl border-2 border-b-0 relative ${activeTab === tab.id
-                  ? 'bg-white text-blue-600 border-blue-500 z-10 -mb-[2px]'
-                  : 'bg-blue-500 text-white border-blue-500 shadow-sm hover:bg-blue-600 hover:border-blue-600'
-                  }`}
+                className={`transition-all duration-200 focus:outline-none px-8 py-4 text-[16px] font-semibold rounded-t-xl border-2 border-b-0 relative ${
+                  activeTab === tab.id
+                    ? 'bg-white text-blue-600 border-blue-500 z-10 -mb-[2px]'
+                    : 'bg-blue-500 text-white border-blue-500 shadow-sm hover:bg-blue-600 hover:border-blue-600'
+                }`}
               >
                 {tab.label}
               </button>
@@ -70,13 +80,23 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
               {/* Overview */}
               <div className="grid items-start gap-8 lg:grid-cols-2">
                 <div>
-                  <h3 className="mb-4 text-xl font-bold text-slate-900">Overview</h3>
+                  <h3 className="mb-4 text-xl font-bold text-slate-900">
+                    Overview
+                  </h3>
                   <div className="space-y-4 text-base leading-relaxed text-slate-700">
                     <p>
-                      Welcome to Job Scheduler Lite (JSL). Designed as an entry level production scheduling offering that allows users to quickly create a series of routing steps then schedule according to capacity limitations, direction (Forward or Reverse), and Priorities.
+                      Welcome to Job Scheduler Lite (JSL). Designed as an entry
+                      level production scheduling offering that allows users to
+                      quickly create a series of routing steps then schedule
+                      according to capacity limitations, direction (Forward or
+                      Reverse), and Priorities.
                     </p>
                     <p>
-                      It also offers a quick method to load data either directly or importing from an Excel sheet. If you have more complex routings (non linear, or non batch, etc.) then consider Resource Manager-DB (RMDB) as it can model scheduling most any manufacturing flow.
+                      It also offers a quick method to load data either directly
+                      or importing from an Excel sheet. If you have more complex
+                      routings (non linear, or non batch, etc.) then consider
+                      Resource Manager-DB (RMDB) as it can model scheduling most
+                      any manufacturing flow.
                     </p>
                   </div>
                 </div>
@@ -94,24 +114,36 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
               {/* Features */}
               <div className="grid items-start gap-8 lg:grid-cols-2">
                 <div>
-                  <h3 className="mb-4 text-xl font-bold text-slate-900">Features</h3>
+                  <h3 className="mb-4 text-xl font-bold text-slate-900">
+                    Features
+                  </h3>
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-semibold text-slate-900">Simple, familiar interface</h4>
+                      <h4 className="font-semibold text-slate-900">
+                        Simple, familiar interface
+                      </h4>
                       <p className="text-slate-700">
-                        One step menus, on-screen buttons, or sheet tabs make navigation a snap.
+                        One step menus, on-screen buttons, or sheet tabs make
+                        navigation a snap.
                       </p>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-slate-900">Easy to configure and run</h4>
+                      <h4 className="font-semibold text-slate-900">
+                        Easy to configure and run
+                      </h4>
                       <p className="text-slate-700">
-                        Quick, intuitive layout and prompts allow you to focus on your business, instead of learning another software product.
+                        Quick, intuitive layout and prompts allow you to focus
+                        on your business, instead of learning another software
+                        product.
                       </p>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-slate-900">Finite capacity planning and forward/Reverse scheduling</h4>
+                      <h4 className="font-semibold text-slate-900">
+                        Finite capacity planning and forward/Reverse scheduling
+                      </h4>
                       <p className="text-slate-700">
-                        Global and/or detailed workcenter configuration can be made and applied instantly.
+                        Global and/or detailed workcenter configuration can be
+                        made and applied instantly.
                       </p>
                     </div>
                   </div>
@@ -138,13 +170,23 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
               {/* Overview */}
               <div className="grid items-start gap-8 lg:grid-cols-2">
                 <div>
-                  <h2 className="mb-4 text-2xl font-bold text-slate-900">Overview</h2>
+                  <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                    Overview
+                  </h2>
                   <div className="space-y-4 text-base leading-relaxed text-slate-600">
                     <p>
-                      Welcome to Job Scheduler Lite (JSL). Designed as an entry level production scheduling offering that allows users to quickly create a series of routing steps then schedule according to capacity limitations, direction (Forward or Reverse), and Priorities.
+                      Welcome to Job Scheduler Lite (JSL). Designed as an entry
+                      level production scheduling offering that allows users to
+                      quickly create a series of routing steps then schedule
+                      according to capacity limitations, direction (Forward or
+                      Reverse), and Priorities.
                     </p>
                     <p>
-                      It also offers a quick method to load data either directly or importing from an Excel sheet. If you have more complex routings (non linear, or non batch, etc.) then consider Resource Manager-DB (RMDB) as it can model scheduling most any manufacturing flow.
+                      It also offers a quick method to load data either directly
+                      or importing from an Excel sheet. If you have more complex
+                      routings (non linear, or non batch, etc.) then consider
+                      Resource Manager-DB (RMDB) as it can model scheduling most
+                      any manufacturing flow.
                     </p>
                   </div>
                 </div>
@@ -161,19 +203,37 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
 
               {/* Features */}
               <div>
-                <h2 className="mb-4 text-2xl font-bold text-slate-900">Features</h2>
+                <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                  Features
+                </h2>
                 <div className="space-y-4 text-base leading-relaxed text-slate-600">
                   <div>
-                    <h3 className="font-semibold text-slate-900">Simple, familiar interface</h3>
-                    <p>One step menus, on-screen buttons, or sheet tabs make navigation a snap.</p>
+                    <h3 className="font-semibold text-slate-900">
+                      Simple, familiar interface
+                    </h3>
+                    <p>
+                      One step menus, on-screen buttons, or sheet tabs make
+                      navigation a snap.
+                    </p>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-900">Easy to configure and run</h3>
-                    <p>Quick, intuitive layout and prompts allows you to focus on your business, instead of learning another software product.</p>
+                    <h3 className="font-semibold text-slate-900">
+                      Easy to configure and run
+                    </h3>
+                    <p>
+                      Quick, intuitive layout and prompts allows you to focus on
+                      your business, instead of learning another software
+                      product.
+                    </p>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-900">Finite capacity planning and forward scheduling</h3>
-                    <p>Global and/or detailed workcenter configuration can be made and applied instantly.</p>
+                    <h3 className="font-semibold text-slate-900">
+                      Finite capacity planning and forward scheduling
+                    </h3>
+                    <p>
+                      Global and/or detailed workcenter configuration can be
+                      made and applied instantly.
+                    </p>
                   </div>
                 </div>
                 <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -196,10 +256,28 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
 
               {/* Modules */}
               <div>
-                <h2 className="mb-4 text-2xl font-bold text-slate-900">Modules</h2>
+                <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                  Modules
+                </h2>
                 <div className="grid grid-cols-3 gap-3 md:grid-cols-6">
-                  {['Import Data', 'Daily Hours', 'Holidays', 'Configure', 'Resources', 'Orders', 'FG / RL', 'Reports', 'Schedule', 'InSight', 'Export Data', 'Exit'].map((module) => (
-                    <div key={module} className="rounded bg-blue-50 p-2 text-center text-sm font-medium">
+                  {[
+                    'Import Data',
+                    'Daily Hours',
+                    'Holidays',
+                    'Configure',
+                    'Resources',
+                    'Orders',
+                    'FG / RL',
+                    'Reports',
+                    'Schedule',
+                    'InSight',
+                    'Export Data',
+                    'Exit'
+                  ].map((module) => (
+                    <div
+                      key={module}
+                      className="rounded bg-blue-50 p-2 text-center text-sm font-medium"
+                    >
                       {module}
                     </div>
                   ))}
@@ -209,9 +287,14 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
               {/* Import Data */}
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div>
-                  <h2 className="mb-4 text-2xl font-bold text-slate-900">Import Data</h2>
+                  <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                    Import Data
+                  </h2>
                   <p className="text-base leading-relaxed text-slate-600">
-                    We recommend you review JSL with currently loaded demo data then consider using Import Data to load your application specific data. Just edit the importsback.xlsx to represent your data.
+                    We recommend you review JSL with currently loaded demo data
+                    then consider using Import Data to load your application
+                    specific data. Just edit the importsback.xlsx to represent
+                    your data.
                   </p>
                 </div>
                 <div className="flex items-center justify-center">
@@ -237,9 +320,14 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
                   />
                 </div>
                 <div className="lg:order-2">
-                  <h2 className="mb-4 text-2xl font-bold text-slate-900">Daily Hours</h2>
+                  <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                    Daily Hours
+                  </h2>
                   <p className="text-base leading-relaxed text-slate-600">
-                    Daily Hours is normal operating hours for your business. You might consider entering net hours (subtract breaks, lunch, efficiencies). Simply click on a day and enter start and end times.
+                    Daily Hours is normal operating hours for your business. You
+                    might consider entering net hours (subtract breaks, lunch,
+                    efficiencies). Simply click on a day and enter start and end
+                    times.
                   </p>
                 </div>
               </div>
@@ -247,9 +335,13 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
               {/* Holidays */}
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div>
-                  <h2 className="mb-4 text-2xl font-bold text-slate-900">Holidays</h2>
+                  <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                    Holidays
+                  </h2>
                   <p className="text-base leading-relaxed text-slate-600">
-                    Holidays can be a partial shutdown event for company, repeating holiday (like Christmas), or varies each year according to calendar (for example Thanksgiving).
+                    Holidays can be a partial shutdown event for company,
+                    repeating holiday (like Christmas), or varies each year
+                    according to calendar (for example Thanksgiving).
                   </p>
                 </div>
                 <div className="flex items-center justify-center">
@@ -275,9 +367,15 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
                   />
                 </div>
                 <div className="lg:order-2">
-                  <h2 className="mb-4 text-2xl font-bold text-slate-900">Resources</h2>
+                  <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                    Resources
+                  </h2>
                   <p className="text-base leading-relaxed text-slate-600">
-                    To add a new resource simply clear input table, enter in Name, description, and number of resources. Then Save. The Num of Res is how many of that workcenter/resource you have. It is multiplied by daily hours to calculate gross hours available.
+                    To add a new resource simply clear input table, enter in
+                    Name, description, and number of resources. Then Save. The
+                    Num of Res is how many of that workcenter/resource you have.
+                    It is multiplied by daily hours to calculate gross hours
+                    available.
                   </p>
                 </div>
               </div>
@@ -285,9 +383,15 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
               {/* Finish Goods */}
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div>
-                  <h2 className="mb-4 text-2xl font-bold text-slate-900">Finish Goods</h2>
+                  <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                    Finish Goods
+                  </h2>
                   <p className="text-base leading-relaxed text-slate-600">
-                    Finished Goods/Routing List (FG/RL) is what will be scheduled. You can enter a new name, then list the workcenters and timing in the order they are worked, then save. JSL schedules in a linear mode, meaning all parts are completed at one workcenter before moving on to next.
+                    Finished Goods/Routing List (FG/RL) is what will be
+                    scheduled. You can enter a new name, then list the
+                    workcenters and timing in the order they are worked, then
+                    save. JSL schedules in a linear mode, meaning all parts are
+                    completed at one workcenter before moving on to next.
                   </p>
                 </div>
                 <div className="flex items-center justify-center">
@@ -313,9 +417,15 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
                   />
                 </div>
                 <div className="lg:order-2">
-                  <h2 className="mb-4 text-2xl font-bold text-slate-900">Orders</h2>
+                  <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                    Orders
+                  </h2>
                   <p className="text-base leading-relaxed text-slate-600">
-                    Orders is what will be scheduled. You can enter a new name, then list the workcenters and timing in the order they are worked, then save. If you have routings that don&apos;t fit this simple model, please call and we can discuss other options.
+                    Orders is what will be scheduled. You can enter a new name,
+                    then list the workcenters and timing in the order they are
+                    worked, then save. If you have routings that don&apos;t fit
+                    this simple model, please call and we can discuss other
+                    options.
                   </p>
                 </div>
               </div>
@@ -323,10 +433,16 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
               {/* Schedule */}
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div>
-                  <h2 className="mb-4 text-2xl font-bold text-slate-900">Schedule</h2>
+                  <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                    Schedule
+                  </h2>
                   <div className="space-y-4 text-base leading-relaxed text-slate-600">
                     <p>
-                      The Schedule module is the primary scheduling interface where you can run and manage your production schedules. Configure scheduling direction (Forward or Reverse), set priorities, and apply capacity constraints to generate optimal schedules.
+                      The Schedule module is the primary scheduling interface
+                      where you can run and manage your production schedules.
+                      Configure scheduling direction (Forward or Reverse), set
+                      priorities, and apply capacity constraints to generate
+                      optimal schedules.
                     </p>
                     <ul className="list-inside list-disc space-y-2">
                       <li>Forward and Reverse scheduling options</li>
@@ -359,13 +475,21 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
                   />
                 </div>
                 <div className="lg:order-2">
-                  <h2 className="mb-4 text-2xl font-bold text-slate-900">InSight</h2>
+                  <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                    InSight
+                  </h2>
                   <div className="space-y-4 text-base leading-relaxed text-slate-600">
                     <p>
-                      InSight is the most comprehensive and feature rich module in JSL. Check out the schedule calendar Legend to see at a glance how selected month is scheduled. The time scale can be 15 minutes to a week. Right click on Workcenter ID to display color coded efficiency.
+                      InSight is the most comprehensive and feature rich module
+                      in JSL. Check out the schedule calendar Legend to see at a
+                      glance how selected month is scheduled. The time scale can
+                      be 15 minutes to a week. Right click on Workcenter ID to
+                      display color coded efficiency.
                     </p>
                     <div>
-                      <h4 className="mb-2 font-semibold text-slate-900">Calendar Legend:</h4>
+                      <h4 className="mb-2 font-semibold text-slate-900">
+                        Calendar Legend:
+                      </h4>
                       <ul className="list-inside list-disc space-y-1 text-sm">
                         <li>Work days with no late jobs</li>
                         <li>Days with at least one late job</li>
@@ -375,11 +499,20 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
                       </ul>
                     </div>
                     <div>
-                      <h4 className="mb-2 font-semibold text-slate-900">Key Features:</h4>
+                      <h4 className="mb-2 font-semibold text-slate-900">
+                        Key Features:
+                      </h4>
                       <ul className="list-inside list-disc space-y-1 text-sm">
-                        <li>Cross-hatched bar segments in Gantt Chart indicate Late Jobs</li>
-                        <li>Click any job segment to reposition it on the display</li>
-                        <li>Adjustable time scale from 15 minutes to one week</li>
+                        <li>
+                          Cross-hatched bar segments in Gantt Chart indicate
+                          Late Jobs
+                        </li>
+                        <li>
+                          Click any job segment to reposition it on the display
+                        </li>
+                        <li>
+                          Adjustable time scale from 15 minutes to one week
+                        </li>
                         <li>Color-coded efficiency visualization</li>
                       </ul>
                     </div>
@@ -390,9 +523,13 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
               {/* Export Data */}
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div>
-                  <h2 className="mb-4 text-2xl font-bold text-slate-900">Export Data</h2>
+                  <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                    Export Data
+                  </h2>
                   <p className="text-base leading-relaxed text-slate-600">
-                    Export data however you wish. Sometimes its quicker to export out data to Excel, make big changes as needed, then just import in.
+                    Export data however you wish. Sometimes its quicker to
+                    export out data to Excel, make big changes as needed, then
+                    just import in.
                   </p>
                 </div>
                 <div className="flex items-center justify-center">
@@ -418,9 +555,13 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
                   />
                 </div>
                 <div className="lg:order-2">
-                  <h2 className="mb-4 text-2xl font-bold text-slate-900">Configure</h2>
+                  <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                    Configure
+                  </h2>
                   <p className="text-base leading-relaxed text-slate-600">
-                    Configure allows you to try different themes, back up and restore database, and also register the JSL for customer use.
+                    Configure allows you to try different themes, back up and
+                    restore database, and also register the JSL for customer
+                    use.
                   </p>
                 </div>
               </div>
@@ -428,9 +569,12 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
               {/* Reports */}
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 <div>
-                  <h2 className="mb-4 text-2xl font-bold text-slate-900">Reports</h2>
+                  <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                    Reports
+                  </h2>
                   <p className="text-base leading-relaxed text-slate-600">
-                    There are a variety of reports available to help you analyze your production schedule and make informed decisions.
+                    There are a variety of reports available to help you analyze
+                    your production schedule and make informed decisions.
                   </p>
                 </div>
                 <div className="flex items-center justify-center">
@@ -450,13 +594,18 @@ export default function JSLJobSchedulerLiteInDepthPage(): React.JSX.Element {
           {activeTab === 'download' && (
             <div className="grid items-start gap-8 lg:grid-cols-2">
               <div>
-                <h2 className="mb-4 text-2xl font-bold text-slate-900">Download Now</h2>
+                <h2 className="mb-4 text-2xl font-bold text-slate-900">
+                  Download Now
+                </h2>
                 <div className="space-y-4 text-base leading-relaxed text-slate-600">
                   <p>
-                    Ready to try Job Scheduler Lite? Download our free trial and experience the power of finite capacity scheduling for your production environment.
+                    Ready to try Job Scheduler Lite? Download our free trial and
+                    experience the power of finite capacity scheduling for your
+                    production environment.
                   </p>
                   <p>
-                    The trial includes full functionality so you can evaluate all features before purchasing.
+                    The trial includes full functionality so you can evaluate
+                    all features before purchasing.
                   </p>
                   <a
                     href="https://www.usersolutions.com/wp-content/uploads/2022/10/JSLsetup.zip"

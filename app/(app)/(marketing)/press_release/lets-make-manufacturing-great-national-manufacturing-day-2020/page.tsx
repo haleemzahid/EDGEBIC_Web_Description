@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function ManufacturingDayPressReleasePage() {
@@ -21,7 +20,7 @@ export default function ManufacturingDayPressReleasePage() {
 
       {/* Press Release Content */}
       <div className="container mx-auto px-4 pt-6">
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto max-w-7xl">
           <article className="prose prose-lg max-w-none">
             <header className="mb-6">
               <p className="text-lg font-semibold text-gray-700">
@@ -299,9 +298,12 @@ export default function ManufacturingDayPressReleasePage() {
                 In celebration of National Manufacturing Day, User Solutions is
                 offering complimentary scheduling assessments to help
                 manufacturers identify opportunities to improve their production
-                planning processes. Contact <strong><em>us</em></strong> to schedule a consultation and
-                learn how advanced scheduling technology can benefit your
-                operation.
+                planning processes. Contact{' '}
+                <strong>
+                  <em>us</em>
+                </strong>{' '}
+                to schedule a consultation and learn how advanced scheduling
+                technology can benefit your operation.
               </p>
 
               <div className="mt-8 rounded-lg border border-gray-200 p-6">

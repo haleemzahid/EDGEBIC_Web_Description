@@ -191,7 +191,7 @@ export function NTClipboardVideo({
               Demo/Training videos for our manufacturing software solutions
             </p>
 
-            <div className="mx-auto max-w-4xl">
+            <div className="mx-auto max-w-7xl">
               {/* Video Selection - Now above the video */}
               <div className="relative mb-6">
                 <div className="flex items-center">

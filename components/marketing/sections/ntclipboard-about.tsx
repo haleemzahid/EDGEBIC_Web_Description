@@ -99,7 +99,7 @@ export function NTClipboardAbout(): React.JSX.Element {
 
   return (
     <GridSection hideVerticalGridLines>
-      <div className="container pt-6">
+      <div className="pt-6 px-2 sm:container">
         <SiteHeading
           title="Meet Our Team"
           description="The folks behind 35+ years of delivering manufacturing software excellence"
@@ -111,12 +111,12 @@ export function NTClipboardAbout(): React.JSX.Element {
             {teamMembers.map((member, index) => (
               <div
                 key={index}
-                className={`!mt-5 flex flex-col items-center gap-8 ${index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'
+                className={`!mt-5 flex flex-col items-center gap-4 sm:gap-8 ${index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'
                   }`}
               >
                 {/* Profile Image */}
                 <div className="w-full lg:w-1/3">
-                  <div className="mx-auto size-80 overflow-hidden rounded-full">
+                  <div className="mx-auto size-52 sm:size-80 overflow-hidden rounded-full">
                     <div className="flex size-full items-center justify-center rounded-full bg-slate-200">
                       {member.image && (member.image.startsWith('http') || member.image.startsWith('/')) ? (
                         <Image
@@ -136,7 +136,7 @@ export function NTClipboardAbout(): React.JSX.Element {
 
                 {/* Profile Content */}
                 <div className="w-full text-center lg:w-2/3 lg:text-left">
-                  <div className="rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-8">
+                  <div className="rounded-3xl border bg-gradient-to-br from-slate-50 to-slate-100 p-4 sm:p-8">
                     <h3 className="mb-2 text-2xl font-bold text-slate-900">
                       {member.name}
                     </h3>

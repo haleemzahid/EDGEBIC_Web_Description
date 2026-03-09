@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 
-
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
@@ -41,7 +40,7 @@ export default function ErpVendorManufacturerPage() {
       <section className="pt-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
-            <div className="mx-auto max-w-4xl">
+            <div className="mx-auto max-w-7xl">
               <div className="space-y-6">
                 <p className="text-[18px] leading-relaxed text-gray-700">
                   User Solutions has announced another successful manufacturing
@@ -50,25 +49,25 @@ export default function ErpVendorManufacturerPage() {
                   packing solutions to companies shipping perishable and fragile
                   products across the United States. Their containers are now
                   routinely used in transporting everything from Omaha Steaks to
-                  pies to vaccines and even biological materials, and the list of
-                  uses keeps growing.
+                  pies to vaccines and even biological materials, and the list
+                  of uses keeps growing.
                 </p>
 
                 <p className="text-[18px] leading-relaxed text-gray-700">
                   In order to continue their growth and improve manufacturing
                   competitiveness, Plastilite decided to implement a new ERP
                   System this year. Part of Plastilite's requirements was to
-                  improve their manual planning and scheduling system which, up to
-                  that point, was basically one person's hands-on experience of
-                  running operations.
+                  improve their manual planning and scheduling system which, up
+                  to that point, was basically one person's hands-on experience
+                  of running operations.
                 </p>
 
                 <p className="text-[18px] leading-relaxed text-gray-700">
                   Fourth Shift, an ERP system from Softbrands, Inc., was the
                   frontrunner for addressing most of their accounting and
-                  inventory needs, however the scheduling module was not flexible
-                  or advanced enough to manage the complexities of Plastitlite's
-                  scheduling needs.
+                  inventory needs, however the scheduling module was not
+                  flexible or advanced enough to manage the complexities of
+                  Plastitlite's scheduling needs.
                 </p>
 
                 <p className="text-[18px] leading-relaxed text-gray-700">
@@ -85,12 +84,12 @@ export default function ErpVendorManufacturerPage() {
 
                 <blockquote className="border-l-4 border-green-600 pl-4 italic">
                   <p className="text-[18px] leading-relaxed text-gray-700">
-                    "We made the decision to go live with both systems in the same
-                    week – a process I would not necessarily recommend for the
-                    faint of heart. We had started the ERP Training and
+                    "We made the decision to go live with both systems in the
+                    same week – a process I would not necessarily recommend for
+                    the faint of heart. We had started the ERP Training and
                     Implementation months ago then called User Solutions to come
-                    on site to help us with the scheduling module. They arrived on
-                    Monday and by Friday we had a complete optimized schedule
+                    on site to help us with the scheduling module. They arrived
+                    on Monday and by Friday we had a complete optimized schedule
                     generated with full integration with our ERP System."
                   </p>
                   <footer className="mt-2 text-sm font-medium text-gray-900">
@@ -107,25 +106,31 @@ export default function ErpVendorManufacturerPage() {
                   <li>Entering routings with alternate workcenters</li>
                   <li>Managing variable chest and tool sizes</li>
                   <li>Importing open orders from the ERP system</li>
-                  <li>Generating an optimized, finite capacity constrained schedule</li>
-                  <li>Exporting updated dates back to synchronize with MRP and Inventory</li>
+                  <li>
+                    Generating an optimized, finite capacity constrained
+                    schedule
+                  </li>
+                  <li>
+                    Exporting updated dates back to synchronize with MRP and
+                    Inventory
+                  </li>
                 </ul>
 
                 <p className="text-[18px] leading-relaxed text-gray-700">
-                  User Solutions proactively added functionality to select optimal
-                  workcenters and corresponding chests and molds without additional
-                  charges.
+                  User Solutions proactively added functionality to select
+                  optimal workcenters and corresponding chests and molds without
+                  additional charges.
                 </p>
 
                 <p className="text-[18px] leading-relaxed text-gray-700">
                   Jon concludes, "It was refreshing to work with a vendor who
-                  absolutely delivered on their promise. Initially, they expected
-                  to have a prototype of the process implemented in one week.
-                  Instead, they were able to fully load the schedule and integrate
-                  with our ERP system – all in one week. We strongly recommend for
-                  other manufacturing companies, who are struggling with manual
-                  scheduling techniques, to give User Solutions and Resource
-                  Manager-DB a try."
+                  absolutely delivered on their promise. Initially, they
+                  expected to have a prototype of the process implemented in one
+                  week. Instead, they were able to fully load the schedule and
+                  integrate with our ERP system – all in one week. We strongly
+                  recommend for other manufacturing companies, who are
+                  struggling with manual scheduling techniques, to give User
+                  Solutions and Resource Manager-DB a try."
                 </p>
               </div>
             </div>

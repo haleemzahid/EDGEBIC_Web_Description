@@ -22,7 +22,7 @@ export default function NavigationDemoPage(): React.JSX.Element {
 
       {/* Main Content */}
       <section className="container mx-auto px-4 py-6">
-        <div className="mx-auto max-w-4xl space-y-8">
+        <div className="mx-auto max-w-7xl space-y-8">
           <Card>
             <CardHeader>
               <CardTitle>✨ Navigation Features Implemented</CardTitle>

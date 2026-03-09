@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function SkillsGapPressReleasePage() {
@@ -25,7 +24,7 @@ export default function SkillsGapPressReleasePage() {
 
       {/* Press Release Content */}
       <div className="container mx-auto px-4 pt-6">
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto max-w-7xl">
           <article className="prose prose-lg max-w-none">
             <header className="mb-6">
               <p className="text-lg font-semibold text-gray-700">
@@ -188,9 +187,7 @@ export default function SkillsGapPressReleasePage() {
 
           {/* Related Links */}
           <div className="mt-6 rounded-lg border bg-slate-50 p-6">
-            <h3 className="mb-4 text-lg font-bold">
-              Related Resources
-            </h3>
+            <h3 className="mb-4 text-lg font-bold">Related Resources</h3>
             <div className="space-y-2">
               <Link
                 href="/resource-manager-db-2"

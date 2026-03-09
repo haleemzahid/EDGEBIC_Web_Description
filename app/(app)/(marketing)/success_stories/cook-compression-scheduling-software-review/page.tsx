@@ -32,7 +32,7 @@ export default function CookCompressionPage() {
       {/* Main Content */}
       <section className="pt-6">
         <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-4xl">
+          <div className="mx-auto max-w-7xl">
             {/* Logo */}
             <div className="mb-8 flex justify-center">
               <Image

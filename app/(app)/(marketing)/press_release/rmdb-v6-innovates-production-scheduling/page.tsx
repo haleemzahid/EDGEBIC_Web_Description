@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function RMDBv6PressReleasePage() {
@@ -26,7 +25,7 @@ export default function RMDBv6PressReleasePage() {
 
       {/* Press Release Content */}
       <div className="container mx-auto px-4 pt-6">
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto max-w-7xl">
           <article className="prose prose-lg max-w-none">
             <header className="mb-6">
               <p className="text-lg font-semibold text-gray-700">
@@ -102,21 +101,15 @@ export default function RMDBv6PressReleasePage() {
 
               <ul className="my-6 space-y-3 text-gray-700">
                 <li className="flex items-start">
-                  <span className="mr-2 text-blue-600">
-                    •
-                  </span>
+                  <span className="mr-2 text-blue-600">•</span>
                   <span>
-                    <strong className="text-gray-900">
-                      Deep BOM Support
-                    </strong>{' '}
+                    <strong className="text-gray-900">Deep BOM Support</strong>{' '}
                     - Handles complex, multi-level bill of materials up to 10
                     levels deep
                   </span>
                 </li>
                 <li className="flex items-start">
-                  <span className="mr-2 text-blue-600">
-                    •
-                  </span>
+                  <span className="mr-2 text-blue-600">•</span>
                   <span>
                     <strong className="text-gray-900">
                       Flexible Configuration
@@ -126,9 +119,7 @@ export default function RMDBv6PressReleasePage() {
                   </span>
                 </li>
                 <li className="flex items-start">
-                  <span className="mr-2 text-blue-600">
-                    •
-                  </span>
+                  <span className="mr-2 text-blue-600">•</span>
                   <span>
                     <strong className="text-gray-900">
                       Complete Visibility
@@ -138,26 +129,18 @@ export default function RMDBv6PressReleasePage() {
                   </span>
                 </li>
                 <li className="flex items-start">
-                  <span className="mr-2 text-blue-600">
-                    •
-                  </span>
+                  <span className="mr-2 text-blue-600">•</span>
                   <span>
-                    <strong className="text-gray-900">
-                      Quality Focus
-                    </strong>{' '}
-                    - Supports the precise tracking required for high-tech
+                    <strong className="text-gray-900">Quality Focus</strong> -
+                    Supports the precise tracking required for high-tech
                     manufacturing
                   </span>
                 </li>
                 <li className="flex items-start">
-                  <span className="mr-2 text-blue-600">
-                    •
-                  </span>
+                  <span className="mr-2 text-blue-600">•</span>
                   <span>
-                    <strong className="text-gray-900">
-                      Scalability
-                    </strong>{' '}
-                    - Designed to grow with the business as production ramps up
+                    <strong className="text-gray-900">Scalability</strong> -
+                    Designed to grow with the business as production ramps up
                   </span>
                 </li>
               </ul>

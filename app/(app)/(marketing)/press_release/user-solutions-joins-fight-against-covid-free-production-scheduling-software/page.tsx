@@ -21,7 +21,7 @@ export default function CovidPressReleasePage() {
 
       {/* Press Release Content */}
       <div className="container mx-auto px-4 pt-6">
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto max-w-7xl">
           <article className="prose prose-lg max-w-none">
             <header className="mb-6">
               <p className="text-lg font-semibold text-gray-700">
