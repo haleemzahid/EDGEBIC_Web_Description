@@ -89,7 +89,7 @@ export default function ValuesPage(): React.JSX.Element {
               </div>
 
               {/* Right Column - Success Stories Image */}
-              <div className="relative  h-full w-full overflow-hidden rounded-lg shadow-lg lg:min-h-[500px]">
+              <div className="relative min-h-[300px] h-full w-full overflow-hidden rounded-lg shadow-lg lg:min-h-[500px]">
                 <Image
                   src="/value.jpeg"
                   alt="Success Stories - Our Values in Action"
