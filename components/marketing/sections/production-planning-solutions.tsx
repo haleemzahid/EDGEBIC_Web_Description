@@ -50,7 +50,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
           }
         />
 
-        <div className="mx-auto  max-w-7xl">
+        <div className="mx-auto max-w-7xl px-4 lg:px-0 overflow-x-hidden">
           {/* Introduction */}
           <div className="mb-[17px]">
             <p className=" text-lg mb-3 text-muted-foreground">
@@ -85,10 +85,10 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
 
           {/* Video Section - Side by Side Layout */}
           <div className="">
-            <div className="grid items-center gap-8 md:grid-cols-2">
+            <div className="grid items-center gap-4 lg:gap-8 grid-cols-1 lg:grid-cols-2">
               {/* Video */}
               <div className="relative overflow-hidden rounded-xl border bg-slate-100 shadow-lg max-h-[280px]">
-                <div className="relative aspect-video w-full  max-h-[220px]">
+                <div className="relative aspect-video w-full max-h-[220px]">
                   <YouTubeFacade
                     videoId="IR8NhOlV_zM"
                     title="Production Planning and Scheduling Solutions Demo"
@@ -824,7 +824,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
 
           {/* Key Benefits Section */}
           <div className="mb-6">
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
               <div className="text-center">
                 <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-blue-100">
                   <Clock className="size-8 text-blue-600" />
