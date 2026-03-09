@@ -72,59 +72,6 @@ export default function EDGEBIPage(): React.JSX.Element {
                 <em className="font-semibold">US</em> for a demo focused on your
                 operations.
               </p>
-
-              {/* Navigation Tabs */}
-              <div className="pt-4 bg-gradient-to-b from-slate-50 to-white">
-                <div className="relative flex items-end">
-                  {canScrollLeft && (
-                    <button
-                      onClick={() => scrollTabs('left')}
-                      className="lg:hidden absolute left-0 z-20 flex size-8 items-center justify-center rounded-full bg-yellow-400 text-slate-900 shadow-md -translate-y-1/2 top-1/2"
-                      aria-label="Scroll tabs left"
-                    >
-                      <ChevronLeft className="size-4" />
-                    </button>
-                  )}
-                  <div
-                    ref={tabsRef}
-                    className="flex overflow-x-auto lg:overflow-visible lg:flex-wrap gap-2 scrollbar-hide"
-                    role="tablist"
-                    aria-label="EDGEBI sections"
-                  >
-                    {tabs.map((tab) => (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        role="tab"
-                        aria-selected={activeTab === tab.id ? 'true' : 'false'}
-                        tabIndex={activeTab === tab.id ? 0 : -1}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`transition-all duration-200 focus:outline-none px-8 py-4 text-[16px] font-semibold rounded-t-xl border-2 border-b-0 relative whitespace-nowrap flex-shrink-0 ${
-                          activeTab === tab.id
-                            ? 'bg-white text-blue-600 border-blue-500 z-10 -mb-[2px]'
-                            : 'bg-blue-500 text-white border-blue-500 shadow-sm hover:bg-blue-600 hover:border-blue-600'
-                        }`}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
-                  {canScrollRight && (
-                    <button
-                      onClick={() => scrollTabs('right')}
-                      className="lg:hidden absolute right-0 z-20 flex size-8 items-center justify-center rounded-full bg-yellow-400 text-slate-900 shadow-md -translate-y-1/2 top-1/2"
-                      aria-label="Scroll tabs right"
-                    >
-                      <ChevronRight className="size-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Tab Content Container with Border */}
-              <div className="border-t-2 border-blue-500 bg-white">
-                <div className="h-2 bg-gradient-to-b from-blue-50 to-transparent"></div>
-              </div>
             </div>
 
             {/* Right - Video */}
@@ -141,6 +88,66 @@ export default function EDGEBIPage(): React.JSX.Element {
           </div>
         </div>
       </section>
+
+      {/* Navigation Tabs */}
+      <nav
+        className="pt-8 bg-gradient-to-b from-slate-50 to-white"
+        aria-label="Product information tabs"
+      >
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="relative flex items-end">
+            {canScrollLeft && (
+              <button
+                onClick={() => scrollTabs('left')}
+                className="lg:hidden absolute left-0 z-20 flex size-8 items-center justify-center rounded-full bg-yellow-400 text-slate-900 shadow-md -translate-y-1/2 top-1/2"
+                aria-label="Scroll tabs left"
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+            )}
+            <div
+              ref={tabsRef}
+              className="flex overflow-x-auto lg:overflow-visible lg:flex-wrap justify-start gap-2 scrollbar-hide"
+              role="tablist"
+              aria-label="EDGEBI sections"
+            >
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab.id ? 'true' : 'false'}
+                  tabIndex={activeTab === tab.id ? 0 : -1}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`transition-all duration-200 focus:outline-none px-8 py-4 text-[16px] font-semibold rounded-t-xl border-2 border-b-0 relative whitespace-nowrap flex-shrink-0 ${
+                    activeTab === tab.id
+                      ? 'bg-white text-blue-600 border-blue-500 z-10 -mb-[2px]'
+                      : 'bg-blue-500 text-white border-blue-500 shadow-sm hover:bg-blue-600 hover:border-blue-600'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            {canScrollRight && (
+              <button
+                onClick={() => scrollTabs('right')}
+                className="lg:hidden absolute right-0 z-20 flex size-8 items-center justify-center rounded-full bg-yellow-400 text-slate-900 shadow-md -translate-y-1/2 top-1/2"
+                aria-label="Scroll tabs right"
+              >
+                <ChevronRight className="size-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* Tab Content Container with Border */}
+      <div className="border-t-2 border-blue-500 bg-white">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="h-2 bg-gradient-to-b from-blue-50 to-transparent"></div>
+        </div>
+      </div>
 
       {/* Tab Content */}
       <section className="py-6">
