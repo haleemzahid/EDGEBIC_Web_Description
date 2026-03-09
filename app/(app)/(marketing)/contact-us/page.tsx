@@ -302,9 +302,9 @@ export default function ContactUsPage() {
                     </div>
 
                     {/* What we WILL do / WON'T do cards */}
-                    <div className="flex items-start gap-3">
+                    <div className="flex flex-col sm:flex-row items-stretch gap-3">
                       {/* What we WILL do */}
-                      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)] transition-all duration-300 flex-1">
+                      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)] transition-all duration-300 w-full sm:flex-1">
                         <button
                           type="button"
                           onClick={() => setWillDoExpanded(!willDoExpanded)}
@@ -349,7 +349,7 @@ export default function ContactUsPage() {
                       </div>
 
                       {/* What we WON'T do */}
-                      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)] transition-all duration-300 flex-1">
+                      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)] transition-all duration-300 w-full sm:flex-1">
                         <button
                           type="button"
                           onClick={() => setWontDoExpanded(!wontDoExpanded)}
