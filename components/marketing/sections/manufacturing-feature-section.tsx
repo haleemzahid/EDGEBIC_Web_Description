@@ -36,6 +36,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
     useState(false);
   const [reportingExpanded, setReportingExpanded] = useState(false);
   const [dataIntegrationExpanded, setDataIntegrationExpanded] = useState(false);
+  const [imagePopupOpen, setImagePopupOpen] = useState(false);
 
   return (
     <section className="bg-white pt-3">
@@ -501,18 +502,63 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
               </div>
               {/* Scheduling Process Image */}
               <div className="w-full lg:w-1/2">
-                <Image
-                  src="/images/Edgebic/2022-09/homeimage.png"
-                  alt="Scheduling step process diagram showing optimal scheduling workflow"
-                  width={500}
-                  height={280}
-                  className="w-full h-[230px] object-cover xl:object-fill  rounded-lg"
-                  loading="lazy"
-                />
+                <button
+                  type="button"
+                  title="View full size image"
+                  onClick={() => setImagePopupOpen(true)}
+                  className="w-full cursor-pointer border-0 bg-transparent p-0"
+                >
+                  <Image
+                    src="/images/Edgebic/2022-09/homeimagewithtext.png"
+                    alt="Scheduling step process diagram showing optimal scheduling workflow"
+                    width={500}
+                    height={280}
+                    className="w-full h-[230px] object-cover xl:object-fill rounded-lg hover:opacity-90 transition-opacity"
+                    loading="lazy"
+                  />
+                </button>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Image Popup Modal */}
+        <AnimatePresence>
+          {imagePopupOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+              onClick={() => setImagePopupOpen(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="relative max-h-[90vh] max-w-[90vw]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  onClick={() => setImagePopupOpen(false)}
+                  className="absolute -right-3 -top-3 z-10 flex size-8 items-center justify-center rounded-full bg-white text-gray-700 shadow-lg hover:bg-gray-100 transition-colors"
+                >
+                  ✕
+                </button>
+                <Image
+                  src="/images/Edgebic/2022-09/homeimagewithtext.png"
+                  alt="Scheduling step process diagram showing optimal scheduling workflow"
+                  width={1200}
+                  height={700}
+                  className="rounded-lg object-contain"
+                />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* RMDB Integrate MRP and capacity planning - Moved to resource-management page */}
         {/* <div className="lg:grid lg:grid-cols-3 lg:items-center lg:gap-8">
