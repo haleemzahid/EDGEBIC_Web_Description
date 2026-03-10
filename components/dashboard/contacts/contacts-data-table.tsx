@@ -149,7 +149,8 @@ export function ContactsDataTable({
 
     enableRowSelection: true,
     manualPagination: true,
-    manualFiltering: true
+    manualFiltering: true,
+    manualSorting: true
   });
 
   const hasSelectedRows = table.getSelectedRowModel().rows.length > 0;
