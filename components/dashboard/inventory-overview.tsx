@@ -10,6 +10,14 @@ import { LicenseStatusChart } from '@/components/dashboard/license-status-chart'
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
+  Page,
+  PageActions,
+  PageBody,
+  PageHeader,
+  PagePrimaryBar,
+  PageTitle
+} from '@/components/ui/page';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -64,26 +72,31 @@ export function InventoryOverview({
   };
 
   return (
-    <div className="space-y-8 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Real-Time Inventory Overview
-          </h1>
-          <p className="text-muted-foreground">
-            Monitor software licenses, activations, and product distribution in
-            real-time
-          </p>
-        </div>
-        <Button
-          onClick={handleRefresh}
-          variant="outline"
-        >
-          <RefreshCwIcon className="mr-2 size-4" />
-          Refresh Data
-        </Button>
-      </div>
+    <Page>
+      <PageHeader>
+        <PagePrimaryBar>
+          <PageTitle>Real-Time Inventory Overview</PageTitle>
+          <PageActions>
+            <Button
+              onClick={handleRefresh}
+              variant="outline"
+            >
+              <RefreshCwIcon className="mr-2 size-4" />
+              Refresh Data
+            </Button>
+          </PageActions>
+        </PagePrimaryBar>
+      </PageHeader>
+
+      <PageBody disableScroll>
+        <div className="space-y-8 overflow-auto p-6">
+          {/* Header */}
+          <div>
+            <p className="text-muted-foreground">
+              Monitor software licenses, activations, and product distribution in
+              real-time
+            </p>
+          </div>
 
       {/* Stats Grid */}
       <InventoryStatsGrid inventoryStats={inventoryStats} />
@@ -128,6 +141,8 @@ export function InventoryOverview({
         </div>
         <LicenseInventoryTable licenses={filteredLicenses} />
       </div>
-    </div>
+        </div>
+      </PageBody>
+    </Page>
   );
 }

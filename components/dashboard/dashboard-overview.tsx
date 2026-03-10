@@ -15,6 +15,13 @@ import { StatsGrid } from '@/components/dashboard/stats-grid';
 import { YouTubeVideo } from '@/components/dashboard/youtube-video';
 // import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Page,
+  PageBody,
+  PageHeader,
+  PagePrimaryBar,
+  PageTitle
+} from '@/components/ui/page';
 import type { PurchaseStats } from '@/data/purchases/get-purchases';
 
 interface DashboardOverviewProps {
@@ -29,14 +36,21 @@ export function DashboardOverview({
   const [searchTerm, setSearchTerm] = React.useState('');
 
   return (
-    <div className="space-y-8 p-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Edgebi Dashboard</h1>
-        <p className="text-muted-foreground">
-          Overview of your Edgebi sales, customers, and performance metrics
-        </p>
-      </div>
+    <Page>
+      <PageHeader>
+        <PagePrimaryBar>
+          <PageTitle>Edgebi Dashboard</PageTitle>
+        </PagePrimaryBar>
+      </PageHeader>
+
+      <PageBody disableScroll>
+        <div className="space-y-8 overflow-auto p-6">
+          {/* Header */}
+          <div>
+            <p className="text-muted-foreground">
+              Overview of your Edgebi sales, customers, and performance metrics
+            </p>
+          </div>
 
       {/* Quick Actions */}
       {/* <div className="flex flex-wrap gap-4">
@@ -96,6 +110,8 @@ export function DashboardOverview({
         </div>
         <CustomersTable searchTerm={searchTerm} />
       </div>
-    </div>
+        </div>
+      </PageBody>
+    </Page>
   );
 }
