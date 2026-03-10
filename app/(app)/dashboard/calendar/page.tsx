@@ -6,6 +6,15 @@ import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { RefreshCw } from 'lucide-react';
 
+import {
+  Page,
+  PageActions,
+  PageBody,
+  PageHeader,
+  PagePrimaryBar,
+  PageTitle
+} from '@/components/ui/page';
+
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 // Setup the localizer for react-big-calendar
@@ -168,114 +177,120 @@ export default function CalendarPage() {
   }, []);
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Calendar</h1>
-          <p className="mt-2 text-muted-foreground">
+    <Page>
+      <PageHeader>
+        <PagePrimaryBar>
+          <PageTitle>Calendar</PageTitle>
+          <PageActions>
+            <button
+              type="button"
+              onClick={loadEvents}
+              disabled={isLoading}
+              className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+          </PageActions>
+        </PagePrimaryBar>
+      </PageHeader>
+
+      <PageBody disableScroll>
+        <div className="flex flex-1 flex-col gap-6 overflow-auto p-6">
+          <p className="text-muted-foreground">
             View your scheduled meetings and events from Google Calendar
           </p>
-        </div>
-        <button
-          type="button"
-          onClick={loadEvents}
-          disabled={isLoading}
-          className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-        >
-          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
-      </div>
 
-      {/* Error message */}
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-          {error}. Make sure your Google Calendar is set to public.
-        </div>
-      )}
+          {/* Error message */}
+          {error && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+              {error}. Make sure your Google Calendar is set to public.
+            </div>
+          )}
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4">
-        <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded bg-[#8b5cf6]" />
-          <span className="text-sm text-muted-foreground">Meetings</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded bg-[#10b981]" />
-          <span className="text-sm text-muted-foreground">Demos</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded bg-[#f59e0b]" />
-          <span className="text-sm text-muted-foreground">Calls</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded bg-[#3b82f6]" />
-          <span className="text-sm text-muted-foreground">Other Events</span>
-        </div>
-      </div>
-
-      {/* Calendar */}
-      <div className="rounded-lg border bg-card p-4 shadow-sm">
-        {isLoading ? (
-          <div className="flex h-[600px] items-center justify-center">
-            <div className="flex flex-col items-center gap-2">
-              <RefreshCw className="h-8 w-8 animate-spin text-blue-600" />
-              <p className="text-muted-foreground">Loading calendar...</p>
+          {/* Legend */}
+          <div className="flex flex-wrap gap-4">
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded bg-[#8b5cf6]" />
+              <span className="text-sm text-muted-foreground">Meetings</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded bg-[#10b981]" />
+              <span className="text-sm text-muted-foreground">Demos</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded bg-[#f59e0b]" />
+              <span className="text-sm text-muted-foreground">Calls</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded bg-[#3b82f6]" />
+              <span className="text-sm text-muted-foreground">Other Events</span>
             </div>
           </div>
-        ) : (
-          <Calendar
-            localizer={localizer}
-            events={events}
-            startAccessor="start"
-            endAccessor="end"
-            style={{ height: 600 }}
-            view={currentView}
-            onView={setCurrentView}
-            date={currentDate}
-            onNavigate={setCurrentDate}
-            onSelectEvent={handleSelectEvent}
-            eventPropGetter={eventStyleGetter}
-            views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
-            popup
-            step={30}
-            timeslots={2}
-          />
-        )}
-      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
-          <h3 className="text-sm font-medium text-muted-foreground">
-            Total Events
-          </h3>
-          <p className="mt-1 text-2xl font-bold text-foreground">
-            {events.length}
-          </p>
+          {/* Calendar */}
+          <div className="rounded-lg border bg-card p-4 shadow-sm">
+            {isLoading ? (
+              <div className="flex h-[600px] items-center justify-center">
+                <div className="flex flex-col items-center gap-2">
+                  <RefreshCw className="h-8 w-8 animate-spin text-blue-600" />
+                  <p className="text-muted-foreground">Loading calendar...</p>
+                </div>
+              </div>
+            ) : (
+              <Calendar
+                localizer={localizer}
+                events={events}
+                startAccessor="start"
+                endAccessor="end"
+                style={{ height: 600 }}
+                view={currentView}
+                onView={setCurrentView}
+                date={currentDate}
+                onNavigate={setCurrentDate}
+                onSelectEvent={handleSelectEvent}
+                eventPropGetter={eventStyleGetter}
+                views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
+                popup
+                step={30}
+                timeslots={2}
+              />
+            )}
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-lg border bg-card p-4 shadow-sm">
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Total Events
+              </h3>
+              <p className="mt-1 text-2xl font-bold text-foreground">
+                {events.length}
+              </p>
+            </div>
+            <div className="rounded-lg border bg-card p-4 shadow-sm">
+              <h3 className="text-sm font-medium text-muted-foreground">
+                This Month
+              </h3>
+              <p className="mt-1 text-2xl font-bold text-foreground">
+                {
+                  events.filter(
+                    (e) => e.start.getMonth() === new Date().getMonth()
+                  ).length
+                }
+              </p>
+            </div>
+            <div className="rounded-lg border bg-card p-4 shadow-sm">
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Upcoming
+              </h3>
+              <p className="mt-1 text-2xl font-bold text-foreground">
+                {events.filter((e) => e.start > new Date()).length}
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
-          <h3 className="text-sm font-medium text-muted-foreground">
-            This Month
-          </h3>
-          <p className="mt-1 text-2xl font-bold text-foreground">
-            {
-              events.filter(
-                (e) => e.start.getMonth() === new Date().getMonth()
-              ).length
-            }
-          </p>
-        </div>
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
-          <h3 className="text-sm font-medium text-muted-foreground">
-            Upcoming
-          </h3>
-          <p className="mt-1 text-2xl font-bold text-foreground">
-            {events.filter((e) => e.start > new Date()).length}
-          </p>
-        </div>
-      </div>
-    </div>
+      </PageBody>
+    </Page>
   );
 }
