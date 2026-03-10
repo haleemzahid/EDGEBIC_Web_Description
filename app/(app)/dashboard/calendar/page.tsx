@@ -195,8 +195,8 @@ export default function CalendarPage() {
         </PagePrimaryBar>
       </PageHeader>
 
-      <PageBody disableScroll>
-        <div className="flex flex-1 flex-col gap-6 overflow-auto p-6">
+      <PageBody>
+        <div className="flex flex-1 flex-col gap-6 p-6">
           <p className="text-muted-foreground">
             View your scheduled meetings and events from Google Calendar
           </p>
