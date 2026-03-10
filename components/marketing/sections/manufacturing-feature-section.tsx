@@ -538,13 +538,13 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.8, opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="relative max-h-[90vh] max-w-[90vw]"
+                className="relative inline-block"
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
                   type="button"
                   onClick={() => setImagePopupOpen(false)}
-                  className="absolute -right-3 -top-3 z-10 flex size-8 items-center justify-center rounded-full bg-white text-gray-700 shadow-lg hover:bg-gray-100 transition-colors"
+                  className="absolute right-2 top-2 z-10 flex size-8 items-center justify-center rounded-full bg-white text-gray-700 shadow-lg hover:bg-gray-100 transition-colors"
                 >
                   ✕
                 </button>
@@ -553,7 +553,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   alt="Scheduling step process diagram showing optimal scheduling workflow"
                   width={1200}
                   height={700}
-                  className="rounded-lg object-contain"
+                  className="block rounded-lg max-h-[85vh] max-w-[90vw] h-auto w-auto"
                 />
               </motion.div>
             </motion.div>
