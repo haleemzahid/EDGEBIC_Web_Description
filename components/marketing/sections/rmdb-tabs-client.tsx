@@ -1,7 +1,9 @@
 'use client';
 
 import * as React from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Lazy load tab content components
 const RMDBInDepthContent = dynamic(
@@ -28,6 +30,39 @@ export function RMDBTabsClient({
   liveDemoContent,
 }: RMDBTabsClientProps) {
   const [activeTab, setActiveTab] = React.useState<TabType>('summary');
+  const tabsContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const container = tabsContainerRef.current;
+    if (container) {
+      setCanScrollLeft(container.scrollLeft > 0);
+      setCanScrollRight(
+        container.scrollLeft < container.scrollWidth - container.clientWidth - 1
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    checkScroll();
+    const container = tabsContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', checkScroll);
+      window.addEventListener('resize', checkScroll);
+      return () => {
+        container.removeEventListener('scroll', checkScroll);
+        window.removeEventListener('resize', checkScroll);
+      };
+    }
+  }, [checkScroll]);
+
+  const scroll = (direction: 'left' | 'right') => {
+    tabsContainerRef.current?.scrollBy({
+      left: direction === 'left' ? -150 : 150,
+      behavior: 'smooth',
+    });
+  };
 
   const tabs = [
     { id: 'summary' as TabType, label: 'Summary' },
@@ -64,29 +99,57 @@ export function RMDBTabsClient({
       {/* Navigation Tabs */}
       <nav className="pt-8 bg-gradient-to-b from-slate-50 to-white" aria-label="Product information tabs">
         <div className="container mx-auto max-w-7xl px-4">
-          <div
-            className="flex flex-wrap justify-start gap-2"
-            role="tablist"
-            aria-label="Resource Manager DB sections"
-          >
-            {tabs.map((tab, index) => (
+          <div className="relative flex items-end">
+            {/* Left scroll button - mobile only */}
+            {canScrollLeft && (
               <button
-                key={tab.id}
-                id={`tab-${tab.id}`}
-                role="tab"
-                aria-selected={activeTab === tab.id ? 'true' : 'false'}
-                aria-controls={`tabpanel-${tab.id}`}
-                tabIndex={activeTab === tab.id ? 0 : -1}
-                onClick={() => setActiveTab(tab.id)}
-                onKeyDown={(e) => handleKeyDown(e, index)}
-                className={`transition-all duration-200 focus:outline-none px-8 py-4 text-[16px] font-semibold rounded-t-xl border-2 border-b-0 relative ${activeTab === tab.id
-                    ? 'bg-white text-blue-600 border-blue-500 z-10 -mb-[2px]'
-                    : 'bg-blue-500 text-white border-blue-500 shadow-sm hover:bg-blue-600 hover:border-blue-600'
-                  }`}
+                type="button"
+                title="Scroll tabs left"
+                onClick={() => scroll('left')}
+                className="absolute left-0 z-20 flex size-8 items-center justify-center rounded-full bg-[#FFC107] shadow-md text-[#003d5c] hover:bg-[#FFD54F] transition-colors lg:hidden"
               >
-                {tab.label}
+                <ChevronLeft className="size-5" />
               </button>
-            ))}
+            )}
+
+            <div
+              ref={tabsContainerRef}
+              className="flex overflow-x-auto lg:overflow-visible lg:flex-wrap justify-start gap-2 scrollbar-hide"
+              role="tablist"
+              aria-label="Resource Manager DB sections"
+            >
+              {tabs.map((tab, index) => (
+                <button
+                  type="button"
+                  key={tab.id}
+                  id={`tab-${tab.id}`}
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
+                  aria-controls={`tabpanel-${tab.id}`}
+                  tabIndex={activeTab === tab.id ? 0 : -1}
+                  onClick={() => setActiveTab(tab.id)}
+                  onKeyDown={(e) => handleKeyDown(e, index)}
+                  className={`flex-shrink-0 whitespace-nowrap transition-all duration-200 focus:outline-none px-8 py-4 text-[16px] font-semibold rounded-t-xl border-2 border-b-0 relative ${activeTab === tab.id
+                      ? 'bg-white text-blue-600 border-blue-500 z-10 -mb-[2px]'
+                      : 'bg-blue-500 text-white border-blue-500 shadow-sm hover:bg-blue-600 hover:border-blue-600'
+                    }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Right scroll button - mobile only */}
+            {canScrollRight && (
+              <button
+                type="button"
+                title="Scroll tabs right"
+                onClick={() => scroll('right')}
+                className="absolute right-0 z-20 flex size-8 items-center justify-center rounded-full bg-[#FFC107] shadow-md text-[#003d5c] hover:bg-[#FFD54F] transition-colors lg:hidden"
+              >
+                <ChevronRight className="size-5" />
+              </button>
+            )}
           </div>
         </div>
       </nav>
