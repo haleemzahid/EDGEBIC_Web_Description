@@ -43,8 +43,8 @@ export function DashboardOverview({
         </PagePrimaryBar>
       </PageHeader>
 
-      <PageBody disableScroll>
-        <div className="space-y-8 overflow-auto p-6">
+      <PageBody>
+        <div className="space-y-8 p-6">
           {/* Header */}
           <div>
             <p className="text-muted-foreground">
