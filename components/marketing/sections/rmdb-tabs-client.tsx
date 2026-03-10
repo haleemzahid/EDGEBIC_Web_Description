@@ -99,7 +99,7 @@ export function RMDBTabsClient({
       {/* Navigation Tabs */}
       <nav className="pt-8 bg-gradient-to-b from-slate-50 to-white" aria-label="Product information tabs">
         <div className="container mx-auto max-w-7xl px-4">
-          <div className="relative flex items-end">
+          <div className="relative flex items-center">
             {/* Left scroll button - mobile only */}
             {canScrollLeft && (
               <button
