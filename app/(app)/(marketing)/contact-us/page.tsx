@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckCircle2, Check, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Check, CheckCircle2, ChevronDown, ChevronUp, X } from 'lucide-react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { motion, AnimatePresence } from 'framer-motion';
 
 import {
   Dialog,
@@ -101,7 +101,10 @@ export default function ContactUsPage() {
         try {
           await fetch('/api/revalidate-contacts');
         } catch (revalidateError) {
-          console.log('Cache revalidation failed (non-critical):', revalidateError);
+          console.log(
+            'Cache revalidation failed (non-critical):',
+            revalidateError
+          );
         }
       }
     } catch (error) {
@@ -131,44 +134,78 @@ export default function ContactUsPage() {
                 {/* Description */}
                 <div className="mb-3">
                   <p className="text-gray-700 leading-relaxed text-[17px] mb-2">
-                    Instead of a one size fits all approach, lets discuss YOUR processes and challenges and explore situations to fit YOUR WAY. We can even use your data during a live demo meeting. Contact <span className="font-bold italic">US</span> by filling out the form below and we will be in touch to prepare custom demo.
+                    Instead of a one size fits all approach, lets discuss YOUR
+                    processes and challenges and explore situations to fit YOUR
+                    WAY. We can even use your data during a live demo meeting.
+                    Contact <span className="font-bold italic">US</span> by
+                    filling out the form below and we will be in touch to
+                    prepare custom demo.
                   </p>
 
                   <div className="space-y-2">
                     <div className="flex items-start gap-2">
-                      <svg className="w-5 h-5 text-cyan-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      <svg
+                        className="w-5 h-5 text-cyan-500 mt-0.5 flex-shrink-0"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                       <div className="flex items-center gap-3 flex-wrap">
-                        <span className="text-gray-700 text-[17px]">Schedule a  call now to discuss your application.</span>
+                        <span className="text-gray-700 text-[17px]">
+                          Schedule a call now to discuss your application.
+                        </span>
                         <a
                           href="https://calendly.com/jc-123/new-meeting"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
                         >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
                           </svg>
                           Schedule Now
                         </a>
                       </div>
                     </div>
                     <div className="flex items-start gap-2">
-                      <svg className="w-5 h-5 text-cyan-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      <svg
+                        className="w-5 h-5 text-cyan-500 mt-0.5 flex-shrink-0"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
                       </svg>
-                      <span className="text-gray-700 text-[17px]">Schedule a live, custom demo (We will be in contact to understand your application and obtain your actual data/reports).</span>
+                      <span className="text-gray-700 text-[17px]">
+                        Schedule a live, custom demo (We will be in contact to
+                        understand your application and obtain your actual
+                        data/reports).
+                      </span>
                     </div>
                   </div>
-
                 </div>
 
                 {/* Contact Form */}
                 <div>
-                  <form
-                    onSubmit={handleSubmit(onSubmit)}
-                  >
+                  <form onSubmit={handleSubmit(onSubmit)}>
                     {/* First Name & Last Name */}
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div>
@@ -252,8 +289,18 @@ export default function ContactUsPage() {
                           </option>
                           <option value="all-above">All the Above</option>
                         </select>
-                        <svg className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        <svg
+                          className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
                         </svg>
                         {errors.productInterest && (
                           <p className="mt-1 text-sm text-destructive">
@@ -267,15 +314,27 @@ export default function ContactUsPage() {
                           {...register('hearAboutUs')}
                           className="w-full border-b border-input bg-transparent px-2 py-3 pr-8 text-muted-foreground focus:border-primary focus:outline-none appearance-none cursor-pointer"
                         >
-                          <option value="where-did-you-hear">Where did you hear about US?</option>
+                          <option value="where-did-you-hear">
+                            Where did you hear about US?
+                          </option>
                           <option value="google">Google Search</option>
                           <option value="press-release">Press Release</option>
                           <option value="referral">Referral</option>
                           <option value="social-media">Social Media</option>
                           <option value="other">Others</option>
                         </select>
-                        <svg className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        <svg
+                          className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
                         </svg>
                         {errors.hearAboutUs && (
                           <p className="mt-1 text-sm text-destructive">
@@ -302,7 +361,7 @@ export default function ContactUsPage() {
                     </div>
 
                     {/* What we WILL do / WON'T do cards */}
-                    <div className="flex flex-col sm:flex-row items-stretch gap-3">
+                    <div className="flex flex-col sm:flex-row items-start  gap-3">
                       {/* What we WILL do */}
                       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(30,58,95,0.15)] transition-all duration-300 w-full sm:flex-1">
                         <button
@@ -314,7 +373,9 @@ export default function ContactUsPage() {
                             <div className="flex size-10 items-center justify-center rounded-full bg-green-100">
                               <Check className="size-6 text-green-600" />
                             </div>
-                            <h3 className="text-md font-semibold text-gray-900">What we WILL do</h3>
+                            <h3 className="text-md font-semibold text-gray-900">
+                              What we WILL do
+                            </h3>
                           </div>
                           {willDoExpanded ? (
                             <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -336,7 +397,10 @@ export default function ContactUsPage() {
                                   key={index}
                                   initial={{ x: -20, opacity: 0 }}
                                   animate={{ x: 0, opacity: 1 }}
-                                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                                  transition={{
+                                    duration: 0.3,
+                                    delay: index * 0.05
+                                  }}
                                   className="flex gap-3"
                                 >
                                   <Check className="mt-0.5 size-4 shrink-0 text-green-500" />
@@ -359,7 +423,9 @@ export default function ContactUsPage() {
                             <div className="flex size-10 items-center justify-center rounded-full bg-red-100">
                               <X className="size-6 text-red-600" />
                             </div>
-                            <h3 className="text-md font-semibold text-gray-900">What we WON&apos;T do</h3>
+                            <h3 className="text-md font-semibold text-gray-900">
+                              What we WON&apos;T do
+                            </h3>
                           </div>
                           {wontDoExpanded ? (
                             <ChevronUp className="size-5 text-[#1e3a5f]" />
@@ -381,7 +447,10 @@ export default function ContactUsPage() {
                                   key={index}
                                   initial={{ x: -20, opacity: 0 }}
                                   animate={{ x: 0, opacity: 1 }}
-                                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                                  transition={{
+                                    duration: 0.3,
+                                    delay: index * 0.05
+                                  }}
                                   className="flex gap-3"
                                 >
                                   <X className="mt-0.5 size-4 shrink-0 text-red-500" />
@@ -426,7 +495,15 @@ export default function ContactUsPage() {
                 {/* Perfect Complement Text */}
                 <div className="p-3 rounded-lg text-center mt-4 text-sm">
                   <p className="font-medium">
-                    The perfect complement for companies of any size... from <span className="text-blue-600">Job Shops</span> to <span className="text-blue-600">Small-Medium Manufacturers</span> to <span className="text-blue-600">Global Multi-Nationals</span>
+                    The perfect complement for companies of any size... from{' '}
+                    <span className="text-blue-600">Job Shops</span> to{' '}
+                    <span className="text-blue-600">
+                      Small-Medium Manufacturers
+                    </span>{' '}
+                    to{' '}
+                    <span className="text-blue-600">
+                      Global Multi-Nationals
+                    </span>
                   </p>
                 </div>
               </div>
@@ -436,15 +513,18 @@ export default function ContactUsPage() {
       </section>
 
       {/* Schedule Meeting Modal */}
-      <Dialog open={showScheduleModal} onOpenChange={(open) => {
-        // When closing (X button clicked), navigate to thank you page
-        if (!open) {
-          setShowScheduleModal(false);
-          router.push('/thankyou');
-          return;
-        }
-        setShowScheduleModal(open);
-      }}>
+      <Dialog
+        open={showScheduleModal}
+        onOpenChange={(open) => {
+          // When closing (X button clicked), navigate to thank you page
+          if (!open) {
+            setShowScheduleModal(false);
+            router.push('/thankyou');
+            return;
+          }
+          setShowScheduleModal(open);
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
@@ -454,8 +534,8 @@ export default function ContactUsPage() {
               Thank You for Contacting Us!
             </DialogTitle>
             <DialogDescription className="text-center">
-              We&apos;ve received your message and will get back to you within 24
-              hours. Would you like to schedule a meeting with us now?
+              We&apos;ve received your message and will get back to you within
+              24 hours. Would you like to schedule a meeting with us now?
             </DialogDescription>
           </DialogHeader>
           <div className="mt-6 flex flex-col gap-3">
@@ -465,7 +545,10 @@ export default function ContactUsPage() {
                 setShowScheduleModal(false);
                 // Small delay to let modal close before opening Calendly
                 setTimeout(() => {
-                  window.open('https://calendly.com/jc-123/new-meeting', '_blank');
+                  window.open(
+                    'https://calendly.com/jc-123/new-meeting',
+                    '_blank'
+                  );
                 }, 100);
               }}
               className="flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700"
