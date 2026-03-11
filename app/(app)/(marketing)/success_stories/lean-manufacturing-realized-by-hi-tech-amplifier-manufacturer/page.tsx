@@ -1,22 +1,17 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 
 import { Card, CardContent } from '@/components/ui/card';
 
-export const metadata: Metadata = {
+export const metadata = createArticleMetadata({
   title:
     'Lean Manufacturing Realized by Hi-Tech Amplifier Manufacturer',
   description:
     'See how a high-tech amplifier manufacturer achieved lean manufacturing excellence with advanced production scheduling.',
-  openGraph: {
-    title:
-      'Lean Manufacturing Realized by Hi-Tech Amplifier Manufacturer',
-    description:
-      'See how a high-tech amplifier manufacturer achieved lean manufacturing excellence with advanced production scheduling.',
-    url: 'https://www.usersolutions.com/success-stories/lean-manufacturing-realized-by-hi-tech-amplifier-manufacturer'
-  }
-};
+  path: '/success_stories/lean-manufacturing-realized-by-hi-tech-amplifier-manufacturer',
+  keywords: 'lean manufacturing, hi-tech amplifier, production efficiency, RMDB case study',
+});
 
 export default function LeanManufacturingAmplifierPage() {
   return (

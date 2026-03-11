@@ -1,21 +1,19 @@
-import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
+  path: '/tag/production-efficiency',
   title: 'Production Efficiency',
   description:
     'Discover articles about production efficiency and lean manufacturing principles.',
-  openGraph: {
-    title: 'Production Efficiency',
-    description:
-      'Discover articles about production efficiency and lean manufacturing principles.',
-    url: 'https://www.usersolutions.com/tag/production-efficiency'
-  }
-};
+  keywords:
+    'production efficiency, lean manufacturing, manufacturing optimization',
+  noIndex: true
+});
 
 export default function ProductionEfficiencyTagPage() {
   return (

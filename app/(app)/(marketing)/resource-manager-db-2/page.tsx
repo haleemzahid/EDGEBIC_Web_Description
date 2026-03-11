@@ -8,7 +8,10 @@ import { RMDBTabsClient } from '@/components/marketing/sections/rmdb-tabs-client
 import { Card, CardContent } from '@/components/ui/card';
 import { YouTubeFacade } from '@/components/ui/youtube-facade';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://edgebic.com';
+import { RelatedSuccessStories } from '@/components/marketing/sections/related-success-stories';
+import { getBaseUrl } from '@/lib/urls/get-base-url';
+
+const BASE_URL = getBaseUrl();
 
 // Local image paths for faster loading
 const IMAGES = {
@@ -46,7 +49,7 @@ export const metadata: Metadata = {
     description:
       'Flexible and affordable production planning, scheduling, and tracking solution. Features finite capacity planning, MRP, and drag-and-drop scheduling.',
     url: `${BASE_URL}/resource-manager-db-2`,
-    siteName: 'EDGEBI',
+    siteName: 'User Solutions',
     images: [
       {
         url: `${BASE_URL}/images/rmdb/rmdb-edge-hero.png`,
@@ -60,6 +63,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
+    site: '@UserSolutionsUS',
+    creator: '@UserSolutionsUS',
     title: 'Resource Manager DB - Production Planning & Scheduling Software',
     description:
       'Flexible and affordable production planning, scheduling, and tracking solution designed to adapt to your operations.',
@@ -348,6 +353,7 @@ export default function ResourceManagerDBPage() {
             liveDemoContent={<LiveDemoContent />}
           />
         </Suspense>
+        <RelatedSuccessStories productKey="rmdb" />
       </main>
     </>
   );

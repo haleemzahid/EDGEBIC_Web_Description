@@ -1,22 +1,18 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 
 import { Card, CardContent } from '@/components/ui/card';
+import { RelatedProducts } from '@/components/marketing/sections/related-products';
 
-export const metadata: Metadata = {
+export const metadata = createArticleMetadata({
   title:
     'Production What-If Scenario Gantt Chart Secures Largest Customer Order',
   description:
     'Learn how Turner Suspension Bicycles used Resource Manager for Excel to handle their largest customer order with what-if scenario planning.',
-  openGraph: {
-    title:
-      'Production What-If Scenario Gantt Chart Secures Largest Customer Order',
-    description:
-      'Learn how Turner Suspension Bicycles used Resource Manager for Excel to handle their largest customer order with what-if scenario planning.',
-    url: 'https://www.usersolutions.com/success-stories/production-what-if-scenario-gantt-chart-secures-largest-customer-order'
-  }
-};
+  path: '/success_stories/production-what-if-scenario-gantt-chart-secures-largest-customer-order',
+  keywords: 'what-if scenario, Gantt chart, Turner Suspension Bicycles, production planning, RMDB',
+});
 
 export default function ProductionWhatIfScenarioPage() {
   return (
@@ -209,6 +205,7 @@ export default function ProductionWhatIfScenarioPage() {
           </div>
         </div>
       </section>
+      <RelatedProducts storySlug="/success_stories/production-what-if-scenario-gantt-chart-secures-largest-customer-order" />
     </div>
   );
 }

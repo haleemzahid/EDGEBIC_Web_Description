@@ -1,22 +1,17 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
-export const metadata: Metadata = {
-  title:
-    'Top ERP Solutions 2016',
+export const metadata = createArticleMetadata({
+  title: 'Top ERP Solutions 2016',
   description:
     'User Solutions Inc. recognized as one of the top ERP solutions transforming business in 2016 by CIO Applications as they celebrate 25 years in business.',
-  openGraph: {
-    title: 'Top ERP Solutions 2016 - User Solutions',
-    description:
-      'Recognized by CIO Applications as top ERP solution transforming business',
-    url: 'https://www.usersolutions.com/user-solutions-inc-named-as-one-of-top-erp-solutions-transforming-business-2016-by-cio-applications-as-they-celebrate-25-years-in-business'
-  }
-};
+  path: '/user-solutions-inc-named-as-one-of-top-erp-solutions-transforming-business-2016-by-cio-applications-as-they-celebrate-25-years-in-business',
+  keywords: 'Top ERP solutions 2016, CIO Applications, User Solutions award, ERP transforming business'
+});
 
 export default function TopERPSolutions2016Page() {
   return (

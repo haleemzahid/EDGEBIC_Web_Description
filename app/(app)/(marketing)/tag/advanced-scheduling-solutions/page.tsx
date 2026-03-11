@@ -1,14 +1,18 @@
-import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
+  path: '/tag/advanced-scheduling-solutions',
   title: 'Advanced Scheduling Solutions',
   description:
-    'Explore articles about advanced scheduling solutions for modern manufacturing and supply chain management.'
-};
+    'Explore articles about advanced scheduling solutions for modern manufacturing and supply chain management.',
+  keywords:
+    'advanced scheduling solutions, manufacturing scheduling, supply chain management',
+  noIndex: true
+});
 
 export default function AdvancedSchedulingSolutionsTagPage() {
   return (

@@ -1,22 +1,17 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 
 import { Card, CardContent } from '@/components/ui/card';
 
-export const metadata: Metadata = {
+export const metadata = createArticleMetadata({
   title:
     'Hi-Tech Connector Mfr Accurately Schedules Labor with MRP Add-On',
   description:
     'Discover how a hi-tech connector manufacturer improved labor scheduling accuracy with MRP add-on solutions.',
-  openGraph: {
-    title:
-      'Hi-Tech Connector Mfr Accurately Schedules Labor with MRP Add-On',
-    description:
-      'Discover how a hi-tech connector manufacturer improved labor scheduling accuracy with MRP add-on solutions.',
-    url: 'https://www.usersolutions.com/success-stories/hi-tech-connector-mfr-accurately-schedules-labor-with-mrp-add-on'
-  }
-};
+  path: '/success_stories/hi-tech-connector-mfr-accurately-schedules-labor-with-mrp-add-on',
+  keywords: 'hi-tech connector, labor scheduling, MRP add-on, INCON, manufacturing scheduling',
+});
 
 export default function HiTechConnectorMfrPage() {
   return (

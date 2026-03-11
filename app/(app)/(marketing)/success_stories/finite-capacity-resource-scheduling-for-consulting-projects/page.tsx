@@ -1,22 +1,17 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 
 import { Card, CardContent } from '@/components/ui/card';
 
-export const metadata: Metadata = {
+export const metadata = createArticleMetadata({
   title:
     'Finite Capacity Resource Scheduling for Consulting Projects',
   description:
     'GEMS Healthcare Solutions uses   to manage multiple consulting projects with shared resources.',
-  openGraph: {
-    title:
-      'Finite Capacity Resource Scheduling for Consulting Projects',
-    description:
-      'GEMS Healthcare Solutions uses   to manage multiple consulting projects with shared resources.',
-    url: 'https://www.usersolutions.com/success-stories/finite-capacity-resource-scheduling-for-consulting-projects'
-  }
-};
+  path: '/success_stories/finite-capacity-resource-scheduling-for-consulting-projects',
+  keywords: 'finite capacity scheduling, consulting projects, GEMS Healthcare, resource scheduling, RMDB',
+});
 
 export default function ConsultingProjectsSchedulingPage() {
   return (

@@ -1,9 +1,11 @@
-import type { Metadata } from 'next';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
   title: 'Resource Manager for Excel - 12 Steps to Success | User Solutions',
   description: 'Complete quick start guide for Resource Manager for Excel - the MS Excel based planning and scheduling software solution for all manufacturing enterprises.',
-};
+  path: '/rmx-quick-start',
+  keywords: 'Resource Manager Excel, RMX quick start, Excel planning software, manufacturing scheduling Excel'
+});
 
 export default function RMXQuickStartPage() {
   return (

@@ -1,20 +1,16 @@
-import type { Metadata } from 'next';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
-  title:
-    'Small Manufacturer Success Story',
+export const metadata = createArticleMetadata({
+  path: '/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive',
+  title: 'Small Manufacturer Success Story',
   description:
     'Success story: How Lue Manufacturing used Resource Manager tools from User Solutions to improve scheduling efficiency and competitiveness in custom cabinetry.',
-  openGraph: {
-    title: 'Small Manufacturer Success Story - User Solutions',
-    description:
-      'Planning, scheduling and tracking tools drive efficiency and competitiveness',
-    url: 'https://www.usersolutions.com/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive'
-  }
-};
+  keywords:
+    'small manufacturer, job shop, production scheduling, User Solutions, manufacturing efficiency'
+});
 
 export default function SmallManufacturerSuccessStoryPage() {
   return (

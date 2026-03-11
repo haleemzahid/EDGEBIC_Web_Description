@@ -6,12 +6,12 @@ import { NTClipboardPricing } from '@/components/marketing/sections/ntclipboard-
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Pricing',
+  title: 'Pricing - RMDB Production Planning Software',
   description:
-    'View pricing plans for EDGEBI production planning and scheduling software. Affordable solutions for manufacturers of all sizes with no subscription fees.',
+    'View pricing plans for RMDB and EDGEBI production planning and scheduling software. Affordable solutions for manufacturers of all sizes.',
   path: '/pricing',
   keywords:
-    'production planning pricing, scheduling software cost, manufacturing software pricing, EDGEBI pricing'
+    'RMDB pricing, production planning pricing, scheduling software cost, manufacturing software pricing, EDGEBI pricing, Resource Manager DB cost'
 });
 
 const faqData = [

@@ -1,20 +1,16 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 
 import { Card, CardContent } from '@/components/ui/card';
 
-export const metadata: Metadata = {
+export const metadata = createArticleMetadata({
   title: "Let's Make Manufacturing Great Again",
   description:
     'Celebrating National Manufacturing Day 2017 - Learn how User Solutions helps manufacturers achieve operational excellence through partnerships with MEP and educational institutions.',
-  openGraph: {
-    title:
-      "Let's Make Manufacturing Great Again - National Manufacturing Day 2017",
-    description: '25 years of award-winning manufacturing software solutions',
-    url: 'https://www.usersolutions.com/lets-make-manufacturing-great-again'
-  }
-};
+  path: '/lets-make-manufacturing-great-again',
+  keywords: 'National Manufacturing Day, manufacturing excellence, MEP partnership, manufacturing software'
+});
 
 export default function LetsMakeManufacturingGreatAgainPage() {
   return (

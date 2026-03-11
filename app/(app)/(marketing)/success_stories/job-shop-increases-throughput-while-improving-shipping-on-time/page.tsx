@@ -1,22 +1,18 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 
 import { Card, CardContent } from '@/components/ui/card';
+import { RelatedProducts } from '@/components/marketing/sections/related-products';
 
-export const metadata: Metadata = {
+export const metadata = createArticleMetadata({
   title:
     'Job Shop Increases Throughput While Improving Shipping On-Time',
   description:
     'Learn how Technical Glass Products increased throughput and improved on-time shipping with advanced scheduling.',
-  openGraph: {
-    title:
-      'Job Shop Increases Throughput While Improving Shipping On-Time',
-    description:
-      'Learn how Technical Glass Products increased throughput and improved on-time shipping with advanced scheduling.',
-    url: 'https://www.usersolutions.com/success-stories/job-shop-increases-throughput-while-improving-shipping-on-time'
-  }
-};
+  path: '/success_stories/job-shop-increases-throughput-while-improving-shipping-on-time',
+  keywords: 'job shop throughput, on-time shipping, Technical Glass Products, production scheduling',
+});
 
 export default function JobShopThroughputPage() {
   return (
@@ -146,6 +142,7 @@ export default function JobShopThroughputPage() {
           </div>
         </div>
       </section>
+      <RelatedProducts storySlug="/success_stories/job-shop-increases-throughput-while-improving-shipping-on-time" />
     </div>
   );
 }

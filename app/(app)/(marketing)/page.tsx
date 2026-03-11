@@ -1,5 +1,4 @@
 import * as React from 'react';
-import type { Metadata } from 'next';
 
 import { ChallengesBenefitsSection } from '@/components/marketing/sections/challenges-benefits-section';
 // import { AwardsSection } from '@/components/marketing/sections/awards-section';
@@ -8,12 +7,16 @@ import { NTClipboardHero } from '@/components/marketing/sections/ntclipboard-her
 import { NTClipboardSummary } from '@/components/marketing/sections/ntclipboard-summary';
 import { NTClipboardTestimonials } from '@/components/marketing/sections/ntclipboard-testimonials';
 import { NTClipboardToolBox } from '@/components/marketing/sections/ntclipboard-toolbox';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
-  title: 'Home',
+export const metadata = createPageMetadata({
+  title: 'Production Planning & Scheduling Software | RMDB by User Solutions',
   description:
-    'EDGEBI production planning and scheduling software. Flexible, affordable solutions that adapt to your operations.'
-};
+    'Resource Manager DB (RMDB) - flexible, affordable production planning, scheduling, and tracking software. Trusted by manufacturers worldwide for 35+ years. Finite capacity planning, MRP, drag-and-drop scheduling.',
+  path: '/',
+  keywords:
+    'production planning software, production scheduling software, RMDB, Resource Manager DB, manufacturing scheduling, finite capacity planning, MRP software, production tracking, manufacturing software, EDGEBI'
+});
 
 export default function IndexPage(): React.JSX.Element {
   return (

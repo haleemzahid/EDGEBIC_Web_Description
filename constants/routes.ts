@@ -90,5 +90,6 @@ export enum Routes {
   InvitationRevoked = '/invitations/revoked',
   InvitationLogOutToAccept = '/invitations/log-out-to-accept',
 
-  Onboarding = '/onboarding'
+  Onboarding = '/onboarding',
+  FAQ = '/faq'
 }

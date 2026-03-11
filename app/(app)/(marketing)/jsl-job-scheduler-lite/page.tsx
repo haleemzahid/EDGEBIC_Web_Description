@@ -1,6 +1,7 @@
 import * as React from 'react';
 import Image from 'next/image';
 
+import { RelatedSuccessStories } from '@/components/marketing/sections/related-success-stories';
 import { SoftwareApplicationJsonLd } from '@/components/seo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -277,6 +278,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
           </div>
         </div>
       </div>
+      <RelatedSuccessStories productKey="jsl" />
     </div>
   );
 }

@@ -1,22 +1,18 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 
 import { Card, CardContent } from '@/components/ui/card';
+import { RelatedProducts } from '@/components/marketing/sections/related-products';
 
-export const metadata: Metadata = {
+export const metadata = createArticleMetadata({
   title:
     'Scheduling Labor Out Several Months Increases Customer Satisfaction',
   description:
     'Learn how Cummins Engine improved customer satisfaction by scheduling labor and resources several months in advance.',
-  openGraph: {
-    title:
-      'Scheduling Labor Out Several Months Increases Customer Satisfaction',
-    description:
-      'Learn how Cummins Engine improved customer satisfaction by scheduling labor and resources several months in advance.',
-    url: 'https://www.usersolutions.com/success-stories/scheduling-labor-out-several-months-increases-customer-satisfaction'
-  }
-};
+  path: '/success_stories/scheduling-labor-out-several-months-increases-customer-satisfaction',
+  keywords: 'Cummins Engine, labor scheduling, customer satisfaction, long-range scheduling, RMDB',
+});
 
 export default function SchedulingLaborPage() {
   return (
@@ -115,6 +111,7 @@ export default function SchedulingLaborPage() {
           </div>
         </div>
       </section>
+      <RelatedProducts storySlug="/success_stories/scheduling-labor-out-several-months-increases-customer-satisfaction" />
     </div>
   );
 }

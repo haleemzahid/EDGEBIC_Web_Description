@@ -1,22 +1,18 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
- 
-import { Card, CardContent } from '@/components/ui/card';
 
-export const metadata: Metadata = {
+import { Card, CardContent } from '@/components/ui/card';
+import { RelatedProducts } from '@/components/marketing/sections/related-products';
+
+export const metadata = createArticleMetadata({
   title:
     'Quick and Easy Production Scheduling Replaces Complex Custom Excel Program',
   description:
     'Kyocera Industrial Ceramics replaced a complex custom Excel program with User Solutions scheduling software.',
-  openGraph: {
-    title:
-      'Quick and Easy Production Scheduling Replaces Complex Custom Excel Program',
-    description:
-      'Kyocera Industrial Ceramics replaced a complex custom Excel program with User Solutions scheduling software.',
-    url: 'https://www.usersolutions.com/success-stories/quick-and-easy-production-scheduling-replaces-complex-custom-excel-program'
-  }
-};
+  path: '/success_stories/quick-and-easy-production-scheduling-replaces-complex-custom-excel-program',
+  keywords: 'Kyocera Industrial Ceramics, Excel replacement, production scheduling, easy scheduling, RMDB',
+});
 
 export default function QuickSchedulingExcelReplacementPage() {
   return (
@@ -97,6 +93,7 @@ export default function QuickSchedulingExcelReplacementPage() {
           </div>
         </div>
       </section>
+      <RelatedProducts storySlug="/success_stories/quick-and-easy-production-scheduling-replaces-complex-custom-excel-program" />
     </div>
   );
 }

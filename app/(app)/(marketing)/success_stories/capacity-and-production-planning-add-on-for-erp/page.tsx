@@ -1,22 +1,17 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 
 import { Card, CardContent } from '@/components/ui/card';
 
-export const metadata: Metadata = {
+export const metadata = createArticleMetadata({
   title:
     'Capacity and Production Planning Reduce Outsourcing Costs, Backlog',
   description:
     'Discover how effective capacity and production planning strategies reduced outsourcing costs and eliminated backlog.',
-  openGraph: {
-    title:
-      'Capacity and Production Planning Reduce Outsourcing Costs, Backlog',
-    description:
-      'Discover how effective capacity and production planning strategies reduced outsourcing costs and eliminated backlog.',
-    url: 'https://www.usersolutions.com/success-stories/capacity-and-production-planning-add-on-for-erp'
-  }
-};
+  path: '/success_stories/capacity-and-production-planning-add-on-for-erp',
+  keywords: 'ERP add-on, capacity planning, production planning, reduce outsourcing, backlog reduction',
+});
 
 export default function CapacityProductionPlanningPage() {
   return (

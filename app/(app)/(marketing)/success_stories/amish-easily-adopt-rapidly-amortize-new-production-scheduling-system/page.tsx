@@ -1,22 +1,17 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 
 import { Card, CardContent } from '@/components/ui/card';
 
-export const metadata: Metadata = {
+export const metadata = createArticleMetadata({
   title:
     'Amish Easily Adopt, Rapidly Amortize New Production Scheduling System',
   description:
     'See how Homestead Furniture successfully implemented modern production scheduling while honoring traditional Amish values.',
-  openGraph: {
-    title:
-      'Amish Easily Adopt, Rapidly Amortize New Production Scheduling System',
-    description:
-      'See how Homestead Furniture successfully implemented modern production scheduling while honoring traditional Amish values.',
-    url: 'https://www.usersolutions.com/success-stories/amish-easily-adopt-rapidly-amortize-new-production-scheduling-system'
-  }
-};
+  path: '/success_stories/amish-easily-adopt-rapidly-amortize-new-production-scheduling-system',
+  keywords: 'Amish manufacturer, Homestead Furniture, production scheduling, quick ROI, RMDB case study',
+});
 
 export default function AmishProductionPage() {
   return (

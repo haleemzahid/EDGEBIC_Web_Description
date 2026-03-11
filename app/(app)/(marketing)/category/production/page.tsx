@@ -1,19 +1,17 @@
-import type { Metadata } from 'next';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
-  title: 'Production ',
+export const metadata = createPageMetadata({
+  path: '/category/production',
+  title: 'Production',
   description:
     'Explore production planning and scheduling solutions for modern manufacturers.',
-  openGraph: {
-    title: 'Production ',
-    description:
-      'Explore production planning and scheduling solutions for modern manufacturers.',
-    url: 'https://www.usersolutions.com/category/production'
-  }
-};
+  keywords:
+    'production planning, production scheduling, manufacturing solutions',
+  noIndex: true
+});
 
 export default function ProductionCategoryPage() {
   return (

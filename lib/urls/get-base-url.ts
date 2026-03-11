@@ -21,6 +21,6 @@ export function shouldAppendLocale(locale?: string | null): boolean {
 }
 
 export function getBaseUrl(locale?: string | null): string {
-  const baseUrl = resolveBaseUrl();
+  const baseUrl = resolveBaseUrl().replace(/\/+$/, '');
   return shouldAppendLocale(locale) ? `${baseUrl}/${locale}` : baseUrl;
 }

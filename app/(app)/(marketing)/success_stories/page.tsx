@@ -1,22 +1,18 @@
-import type { Metadata } from 'next';
+import { createPageMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 import Link from 'next/link';
 
 
 import { Card, CardContent } from '@/components/ui/card';
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
   title: 'Success Stories',
   description:
     'Read how manufacturers across industries have improved on-time delivery, increased throughput, and optimized production scheduling with User Solutions software.',
-  openGraph: {
-    title:
-      'Success Stories - User Solutions',
-    description:
-      'Read how manufacturers across industries have improved on-time delivery, increased throughput, and optimized production scheduling with User Solutions software.',
-    url: 'https://www.usersolutions.com/success_stories'
-  }
-};
+  path: '/success_stories',
+  keywords: 'RMDB success stories, production planning case studies, manufacturing software testimonials',
+  noIndex: true,
+});
 
 const successStories = [
   {

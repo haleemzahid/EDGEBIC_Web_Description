@@ -5,6 +5,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 
 import { Toaster } from '@/components/ui/sonner';
+import { OrganizationJsonLd, WebSiteJsonLd } from '@/components/seo';
 import { AppInfo } from '@/constants/app-info';
 import { getBaseUrl } from '@/lib/urls/get-base-url';
 
@@ -14,7 +15,9 @@ import { Providers } from './providers';
 const preconnectUrls = [
   'https://www.usersolutions.com',
   'https://www.youtube.com',
-  'https://i.ytimg.com'
+  'https://i.ytimg.com',
+  'https://www.googletagmanager.com',
+  'https://www.google-analytics.com'
 ];
 
 export const viewport: Viewport = {
@@ -28,12 +31,12 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseUrl()),
   title: {
-    template: '%s - User Solutions',
-    default: 'Production Planning Software'
+    template: '%s | RMDB by User Solutions',
+    default: 'Production Planning & Scheduling Software | RMDB by User Solutions'
   },
   description: AppInfo.APP_DESCRIPTION,
   keywords:
-    'production planning, scheduling, manufacturing, operations, tracking, workflow, automation, planning software, scheduling solution',
+    'production planning, scheduling, manufacturing, RMDB, Resource Manager DB, EDGEBI, operations, tracking, workflow, automation, planning software, scheduling solution',
   authors: [{ name: AppInfo.COMPANY_NAME }],
   icons: {
     icon: '/logos/edgebic-logo.png',
@@ -43,25 +46,41 @@ export const metadata: Metadata = {
   manifest: `${getBaseUrl()}/manifest`,
   robots: {
     index: true,
-    follow: true
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1
+    }
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+    yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION,
+    other: {
+      'msvalidate.01': process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION || ''
+    }
   },
   openGraph: {
-    title: AppInfo.APP_NAME,
+    title: 'RMDB - Production Planning & Scheduling Software | User Solutions',
     description: AppInfo.APP_DESCRIPTION,
     type: 'website',
-    siteName: AppInfo.APP_NAME,
+    siteName: 'User Solutions',
     images: [
       {
         url: '/og.jpg',
         width: 1200,
         height: 630,
-        alt: 'EDGEBI - Production Planning Solution'
+        alt: 'RMDB by User Solutions - Production Planning & Scheduling Software'
       }
     ]
   },
   twitter: {
     card: 'summary_large_image',
-    title: AppInfo.APP_NAME,
+    site: '@UserSolutionsUS',
+    creator: '@UserSolutionsUS',
+    title: 'RMDB - Production Planning & Scheduling Software',
     description: AppInfo.APP_DESCRIPTION,
     images: ['/og.jpg']
   }
@@ -92,6 +111,8 @@ export default async function RootLayout({
             />
           </React.Fragment>
         ))}
+        <OrganizationJsonLd />
+        <WebSiteJsonLd />
       </head>
       <body className={`${inter.className} size-full`}>
         <Providers>

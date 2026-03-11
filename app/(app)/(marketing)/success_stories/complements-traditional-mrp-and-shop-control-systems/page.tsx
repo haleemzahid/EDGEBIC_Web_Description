@@ -1,22 +1,17 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 
 import { Card, CardContent } from '@/components/ui/card';
 
-export const metadata: Metadata = {
+export const metadata = createArticleMetadata({
   title:
     'Complements Traditional MRP for Job Shop Scheduling and Efficiency',
   description:
     'Explore how complementary scheduling solutions enhance traditional MRP systems in job shop environments.',
-  openGraph: {
-    title:
-      'Complements Traditional MRP for Job Shop Scheduling and Efficiency',
-    description:
-      'Explore how complementary scheduling solutions enhance traditional MRP systems in job shop environments.',
-    url: 'https://www.usersolutions.com/success-stories/complements-traditional-mrp-and-shop-control-systems'
-  }
-};
+  path: '/success_stories/complements-traditional-mrp-and-shop-control-systems',
+  keywords: 'MRP complement, job shop scheduling, shop control, manufacturing efficiency, RMDB',
+});
 
 export default function ComplementsTraditionalMrpPage() {
   return (

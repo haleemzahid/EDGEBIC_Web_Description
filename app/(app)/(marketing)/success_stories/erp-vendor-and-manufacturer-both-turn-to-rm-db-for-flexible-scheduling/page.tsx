@@ -1,21 +1,16 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
 
-export const metadata: Metadata = {
+export const metadata = createArticleMetadata({
   title:
     'ERP Vendor and Manufacturer Both Turn to RM-DB for Flexible Scheduling',
   description:
     'Learn how both an ERP vendor and manufacturer chose Resource Manager-DB for advanced production planning and scheduling.',
-  openGraph: {
-    title:
-      'ERP Vendor and Manufacturer Both Turn to RM-DB for Flexible Scheduling',
-    description:
-      'Learn how both an ERP vendor and manufacturer chose Resource Manager-DB for advanced production planning and scheduling.',
-    url: 'https://www.usersolutions.com/success-stories/erp-vendor-and-manufacturer-both-turn-to-rm-db-for-flexible-scheduling'
-  }
-};
+  path: '/success_stories/erp-vendor-and-manufacturer-both-turn-to-rm-db-for-flexible-scheduling',
+  keywords: 'ERP vendor, RMDB, flexible scheduling, Resource Manager DB, manufacturing scheduling',
+});
 
 export default function ErpVendorManufacturerPage() {
   return (

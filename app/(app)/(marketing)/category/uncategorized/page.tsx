@@ -1,19 +1,15 @@
-import type { Metadata } from 'next';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
+  path: '/category/uncategorized',
   title: 'Uncategorized',
   description:
     'Explore articles and resources about manufacturing solutions and industry insights.',
-  openGraph: {
-    title: 'Uncategorized',
-    description:
-      'Explore articles and resources about manufacturing solutions and industry insights.',
-    url: 'https://www.usersolutions.com/category/uncategorized'
-  }
-};
+  noIndex: true
+});
 
 export default function UncategorizedCategoryPage() {
   return (

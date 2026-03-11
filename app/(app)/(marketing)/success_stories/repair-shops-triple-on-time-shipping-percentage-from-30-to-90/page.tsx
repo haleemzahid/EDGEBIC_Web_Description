@@ -1,22 +1,18 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 
 import { Card, CardContent } from '@/components/ui/card';
+import { RelatedProducts } from '@/components/marketing/sections/related-products';
 
-export const metadata: Metadata = {
+export const metadata = createArticleMetadata({
   title:
     'Repair Shops Triple On-Time Shipping Percentage from 30% to 90%',
   description:
     'See how GE Railcar Services improved on-time shipping from 30% to over 90% using Workcenter SchedulerXL.',
-  openGraph: {
-    title:
-      'Repair Shops Triple On-Time Shipping Percentage from 30% to 90%',
-    description:
-      'See how GE Railcar Services improved on-time shipping from 30% to over 90% using Workcenter SchedulerXL.',
-    url: 'https://www.usersolutions.com/success-stories/repair-shops-triple-on-time-shipping-percentage-from-30-to-90'
-  }
-};
+  path: '/success_stories/repair-shops-triple-on-time-shipping-percentage-from-30-to-90',
+  keywords: 'GE Railcar Services, on-time shipping, repair shop scheduling, 30 to 90 percent, RMDB',
+});
 
 export default function RepairShopsTriplePage() {
   return (
@@ -95,6 +91,7 @@ export default function RepairShopsTriplePage() {
           </div>
         </div>
       </section>
+      <RelatedProducts storySlug="/success_stories/repair-shops-triple-on-time-shipping-percentage-from-30-to-90" />
     </div>
   );
 }

@@ -1,22 +1,17 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 
 import { Card, CardContent } from '@/components/ui/card';
 
-export const metadata: Metadata = {
+export const metadata = createArticleMetadata({
   title:
     'Simplifying Complexities Increased On-Time Deliveries User Adoption for Large Sawmills',
   description:
     'Learn how large sawmill operations simplified complex processes to improve on-time deliveries and user adoption.',
-  openGraph: {
-    title:
-      'Simplifying Complexities Increased On-Time Deliveries User Adoption for Large Sawmills',
-    description:
-      'Learn how large sawmill operations simplified complex processes to improve on-time deliveries and user adoption.',
-    url: 'https://www.usersolutions.com/success-stories/simplifying-complexities-increased-on-time-deliveries-user-adoption-for-large-sawmills'
-  }
-};
+  path: '/success_stories/simplifying-complexities-increased-on-time-deliveries-user-adoption-for-large-sawmills',
+  keywords: 'sawmill scheduling, on-time deliveries, complexity reduction, user adoption, RMDB',
+});
 
 export default function SimplifyingComplexitiesSawmillsPage() {
   return (

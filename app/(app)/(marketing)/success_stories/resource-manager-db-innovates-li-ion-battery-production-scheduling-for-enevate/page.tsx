@@ -1,22 +1,18 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 
 import { Card, CardContent } from '@/components/ui/card';
+import { RelatedProducts } from '@/components/marketing/sections/related-products';
 
-export const metadata: Metadata = {
+export const metadata = createArticleMetadata({
   title:
     'Resource Manager DB Innovates Li-Ion Battery Production Scheduling for Enevate',
   description:
     'Learn how Enevate Corporation uses Resource Manager-DB for innovative Li-ion battery production scheduling.',
-  openGraph: {
-    title:
-      'Resource Manager DB Innovates Li-Ion Battery Production Scheduling for Enevate',
-    description:
-      'Learn how Enevate Corporation uses Resource Manager-DB for innovative Li-ion battery production scheduling.',
-    url: 'https://www.usersolutions.com/success-stories/resource-manager-db-innovates-li-ion-battery-production-scheduling-for-enevate'
-  }
-};
+  path: '/success_stories/resource-manager-db-innovates-li-ion-battery-production-scheduling-for-enevate',
+  keywords: 'Enevate, Li-Ion battery, battery production scheduling, RMDB innovation, manufacturing',
+});
 
 export default function EnevatePage() {
   return (
@@ -129,6 +125,7 @@ export default function EnevatePage() {
           </div>
         </div>
       </section>
+      <RelatedProducts storySlug="/success_stories/resource-manager-db-innovates-li-ion-battery-production-scheduling-for-enevate" />
     </div>
   );
 }

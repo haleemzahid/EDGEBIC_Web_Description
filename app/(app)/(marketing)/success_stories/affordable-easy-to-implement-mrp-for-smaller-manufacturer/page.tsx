@@ -1,22 +1,17 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 
 import { Card, CardContent } from '@/components/ui/card';
 
-export const metadata: Metadata = {
+export const metadata = createArticleMetadata({
   title:
     'Affordable, Easy to Implement MRP for Smaller Manufacturer',
   description:
     'Sleepmaster LTD successfully implemented an affordable, flexible MRP system for their Australian and Chinese operations.',
-  openGraph: {
-    title:
-      'Affordable, Easy to Implement MRP for Smaller Manufacturer',
-    description:
-      'Sleepmaster LTD successfully implemented an affordable, flexible MRP system for their Australian and Chinese operations.',
-    url: 'https://www.usersolutions.com/success-stories/affordable-easy-to-implement-mrp-for-smaller-manufacturer'
-  }
-};
+  path: '/success_stories/affordable-easy-to-implement-mrp-for-smaller-manufacturer',
+  keywords: 'affordable MRP, small manufacturer, Sleepmaster, production scheduling case study, RMDB',
+});
 
 export default function AffordableEasyMRPPage() {
   return (

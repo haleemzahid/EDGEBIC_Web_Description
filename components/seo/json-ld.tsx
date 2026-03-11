@@ -103,11 +103,20 @@ function JsonLdScript({ data }: { data: object }) {
 }
 
 export function OrganizationJsonLd({
-  socialLinks = []
+  socialLinks
 }: {
   socialLinks?: string[];
-}) {
+} = {}) {
   const baseUrl = getBaseUrl();
+
+  const defaultSocialLinks = [
+    AppInfo.SOCIAL_LINKS.LINKEDIN,
+    AppInfo.SOCIAL_LINKS.FACEBOOK,
+    AppInfo.SOCIAL_LINKS.X,
+    AppInfo.SOCIAL_LINKS.YOUTUBE
+  ];
+
+  const links = socialLinks && socialLinks.length > 0 ? socialLinks : defaultSocialLinks;
 
   const schema: OrganizationSchema = {
     '@context': 'https://schema.org',
@@ -117,7 +126,7 @@ export function OrganizationJsonLd({
     logo: `${baseUrl}/logos/edgebic-logo.png`,
     description: AppInfo.APP_DESCRIPTION,
     email: AppInfo.CONTACT_EMAIL,
-    ...(socialLinks.length > 0 && { sameAs: socialLinks })
+    sameAs: links
   };
 
   return <JsonLdScript data={schema} />;

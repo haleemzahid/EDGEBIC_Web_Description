@@ -1,19 +1,17 @@
-import type { Metadata } from 'next';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
-  title: 'Scheduling Solutions ',
+export const metadata = createPageMetadata({
+  path: '/category/scheduling-solutions',
+  title: 'Scheduling Solutions',
   description:
     'Explore advanced scheduling solutions for supply chain and manufacturing optimization.',
-  openGraph: {
-    title: 'Scheduling Solutions ',
-    description:
-      'Explore advanced scheduling solutions for supply chain and manufacturing optimization.',
-    url: 'https://www.usersolutions.com/category/scheduling-solutions'
-  }
-};
+  keywords:
+    'scheduling solutions, supply chain optimization, manufacturing scheduling',
+  noIndex: true
+});
 
 export default function SchedulingSolutionsCategoryPage() {
   return (

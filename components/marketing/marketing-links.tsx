@@ -20,8 +20,10 @@ import {
   InstagramIcon,
   LinkedInIcon,
   TikTokIcon,
-  XIcon
+  XIcon,
+  YouTubeIcon
 } from '@/components/ui/brand-icons';
+import { AppInfo } from '@/constants/app-info';
 import { Routes } from '@/constants/routes';
 
 export const MENU_LINKS = [
@@ -44,6 +46,13 @@ export const MENU_LINKS = [
     description: 'Customer testimonials and case studies',
     icon: <ZapIcon className="size-5 shrink-0" />,
     href: Routes.SuccessStories,
+    external: false
+  },
+  {
+    title: 'FAQ',
+    description: 'Frequently asked questions about RMDB',
+    icon: <BookIcon className="size-5 shrink-0" />,
+    href: Routes.FAQ,
     external: false
   },
   // {
@@ -187,36 +196,32 @@ export const FOOTER_LINKS: Array<{
       },
       { name: 'Mission Statement', href: Routes.Mission, external: false },
       { name: 'Values', href: Routes.Values, external: false },
-      { name: 'Company History', href: Routes.History, external: false }
+      { name: 'Company History', href: Routes.History, external: false },
+      { name: 'FAQ', href: Routes.FAQ, external: false }
       // { name: 'Partners', href: Routes.Partners, external: false }
     ]
   }
 ];
 export const SOCIAL_LINKS = [
   {
-    name: 'X (formerly Twitter)',
-    href: '#',
-    icon: <XIcon className="size-4 shrink-0" />
-  },
-  {
     name: 'LinkedIn',
-    href: '#',
+    href: AppInfo.SOCIAL_LINKS.LINKEDIN,
     icon: <LinkedInIcon className="size-4 shrink-0" />
   },
   {
     name: 'Facebook',
-    href: '#',
+    href: AppInfo.SOCIAL_LINKS.FACEBOOK,
     icon: <FacebookIcon className="size-4 shrink-0" />
   },
   {
-    name: 'Instagram',
-    href: '#',
-    icon: <InstagramIcon className="size-4 shrink-0" />
+    name: 'X (formerly Twitter)',
+    href: AppInfo.SOCIAL_LINKS.X,
+    icon: <XIcon className="size-4 shrink-0" />
   },
   {
-    name: 'TikTok',
-    href: '#',
-    icon: <TikTokIcon className="size-4 shrink-0" />
+    name: 'YouTube',
+    href: AppInfo.SOCIAL_LINKS.YOUTUBE,
+    icon: <YouTubeIcon className="size-4 shrink-0" />
   }
 ];
 

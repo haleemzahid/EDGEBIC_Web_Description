@@ -1,22 +1,17 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 
 import { Card, CardContent } from '@/components/ui/card';
 
-export const metadata: Metadata = {
+export const metadata = createArticleMetadata({
   title:
     'Smart Coffee Machines Get Smarter Purchasing with ERP Add-On',
   description:
     'See how smart coffee machine manufacturers optimized purchasing decisions with integrated ERP add-on solutions.',
-  openGraph: {
-    title:
-      'Smart Coffee Machines Get Smarter Purchasing with ERP Add-On',
-    description:
-      'See how smart coffee machine manufacturers optimized purchasing decisions with integrated ERP add-on solutions.',
-    url: 'https://www.usersolutions.com/success-stories/smart-coffee-machines-get-smarter-purchasing-with-erp-add-on'
-  }
-};
+  path: '/success_stories/smart-coffee-machines-get-smarter-purchasing-with-erp-add-on',
+  keywords: 'smart coffee machines, ERP add-on, purchasing optimization, RMDB, manufacturing',
+});
 
 export default function SmartCoffeeMachinesPage() {
   return (

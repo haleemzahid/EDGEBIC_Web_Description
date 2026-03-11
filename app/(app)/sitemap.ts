@@ -4,6 +4,48 @@ import { MetadataRoute } from 'next';
 import { allDocs, allPosts } from 'content-collections';
 import { getBaseUrl } from '@/lib/urls/get-base-url';
 
+// High-priority pages that should be crawled more frequently
+const HIGH_PRIORITY_PAGES = new Set([
+  'resource-manager-db-2',
+  'production-planning-scheduling-solutions',
+  'features',
+  'pricing',
+  'success-stories',
+  'faq',
+  'about'
+]);
+
+const MEDIUM_PRIORITY_PAGES = new Set([
+  'contact-us',
+  'consulting',
+  'edgebi',
+  'resource-manager-for-excel-2',
+  'excel-applications',
+  'jsl-job-scheduler-lite',
+  'operations-manager',
+  'videos',
+  'company-history',
+  'mission-statement',
+  'partners'
+]);
+
+function getPagePriority(urlPath: string): number {
+  const slug = urlPath.split('/').pop() || '';
+  if (HIGH_PRIORITY_PAGES.has(slug)) return 0.9;
+  if (MEDIUM_PRIORITY_PAGES.has(slug)) return 0.7;
+  if (urlPath.includes('success_stories/') || urlPath.includes('success-stories/')) return 0.6;
+  if (urlPath.includes('operations-manager-')) return 0.5;
+  if (urlPath.includes('buy-now')) return 0.4;
+  return 0.5;
+}
+
+function getChangeFreq(urlPath: string): 'weekly' | 'monthly' | 'yearly' {
+  const slug = urlPath.split('/').pop() || '';
+  if (HIGH_PRIORITY_PAGES.has(slug)) return 'weekly';
+  if (MEDIUM_PRIORITY_PAGES.has(slug)) return 'monthly';
+  return 'monthly';
+}
+
 async function getMarketingPages(baseUrl: string): Promise<MetadataRoute.Sitemap> {
   const marketingPath = path.join(process.cwd(), 'app', '(app)', '(marketing)');
   const routes: MetadataRoute.Sitemap = [];
@@ -72,7 +114,9 @@ async function getMarketingPages(baseUrl: string): Promise<MetadataRoute.Sitemap
         const pageStats = await fs.stat(path.join(fullPath, 'page.tsx'));
         routes.push({
           url: `${baseUrl}/${urlPath}`,
-          lastModified: pageStats.mtime
+          lastModified: pageStats.mtime,
+          changeFrequency: getChangeFreq(urlPath),
+          priority: getPagePriority(urlPath)
         });
       } catch {
         // No page.tsx found at this level
@@ -94,16 +138,22 @@ export default async function Sitemap(): Promise<MetadataRoute.Sitemap> {
   const sitemap: MetadataRoute.Sitemap = [
     {
       url: `${baseUrl}/`,
-      lastModified: new Date()
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 1.0
     },
     ...marketingPages,
     ...allDocs.map((doc) => ({
       url: `${baseUrl}${doc.slug}`,
-      lastModified: new Date()
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.5
     })),
     ...allPosts.map((post) => ({
       url: `${baseUrl}${post.slug}`,
-      lastModified: post.published
+      lastModified: post.published,
+      changeFrequency: 'monthly' as const,
+      priority: 0.6
     }))
   ];
 

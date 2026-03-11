@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { getBaseUrl } from '@/lib/urls/get-base-url';
-import { AppInfo } from '@/constants/app-info';
+
+const TWITTER_HANDLE = '@UserSolutionsUS';
+const SITE_NAME = 'User Solutions';
 
 type PageMetadataOptions = {
   title: string;
@@ -33,7 +35,7 @@ export function createPageMetadata({
       title,
       description,
       url,
-      siteName: AppInfo.APP_NAME,
+      siteName: SITE_NAME,
       type: 'website',
       images: [
         {
@@ -46,16 +48,32 @@ export function createPageMetadata({
     },
     twitter: {
       card: 'summary_large_image',
+      site: TWITTER_HANDLE,
+      creator: TWITTER_HANDLE,
       title,
       description,
       images: [image]
     },
-    ...(noIndex && {
-      robots: {
-        index: false,
-        follow: false
-      }
-    })
+    ...(noIndex
+      ? {
+          robots: {
+            index: false,
+            follow: false
+          }
+        }
+      : {
+          robots: {
+            index: true,
+            follow: true,
+            googleBot: {
+              index: true,
+              follow: true,
+              'max-video-preview': -1,
+              'max-image-preview': 'large' as const,
+              'max-snippet': -1
+            }
+          }
+        })
   };
 }
 
@@ -76,7 +94,7 @@ export function createProductMetadata({
     path,
     keywords:
       keywords ||
-      `${name}, production planning, scheduling software, manufacturing`
+      `${name}, production planning, scheduling software, manufacturing, RMDB`
   });
 }
 
@@ -84,12 +102,14 @@ export function createArticleMetadata({
   title,
   description,
   path,
+  keywords,
   publishedTime,
   modifiedTime
 }: {
   title: string;
   description: string;
   path: string;
+  keywords?: string;
   publishedTime?: string;
   modifiedTime?: string;
 }): Metadata {
@@ -99,6 +119,7 @@ export function createArticleMetadata({
   return {
     title,
     description,
+    keywords,
     alternates: {
       canonical: url
     },
@@ -106,7 +127,7 @@ export function createArticleMetadata({
       title,
       description,
       url,
-      siteName: AppInfo.APP_NAME,
+      siteName: SITE_NAME,
       type: 'article',
       ...(publishedTime && { publishedTime }),
       ...(modifiedTime && { modifiedTime }),
@@ -121,9 +142,22 @@ export function createArticleMetadata({
     },
     twitter: {
       card: 'summary_large_image',
+      site: TWITTER_HANDLE,
+      creator: TWITTER_HANDLE,
       title,
       description,
       images: ['/og.jpg']
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large' as const,
+        'max-snippet': -1
+      }
     }
   };
 }

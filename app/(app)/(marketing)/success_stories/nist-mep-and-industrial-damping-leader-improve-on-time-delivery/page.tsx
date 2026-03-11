@@ -1,22 +1,17 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 
 import { Card, CardContent } from '@/components/ui/card';
 
-export const metadata: Metadata = {
+export const metadata = createArticleMetadata({
   title:
     'NIST MEP and Industrial Damping Leader Improve On-Time Delivery',
   description:
     'Discover how NIST MEP collaboration helped an industrial damping manufacturer achieve better on-time delivery performance.',
-  openGraph: {
-    title:
-      'NIST MEP and Industrial Damping Leader Improve On-Time Delivery',
-    description:
-      'Discover how NIST MEP collaboration helped an industrial damping manufacturer achieve better on-time delivery performance.',
-    url: 'https://www.usersolutions.com/success-stories/nist-mep-and-industrial-damping-leader-improve-on-time-delivery'
-  }
-};
+  path: '/success_stories/nist-mep-and-industrial-damping-leader-improve-on-time-delivery',
+  keywords: 'NIST MEP, on-time delivery, industrial damping, manufacturing improvement, RMDB',
+});
 
 export default function NistMepIndustrialDampingPage() {
   return (

@@ -1,22 +1,18 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 
 import { Card, CardContent } from '@/components/ui/card';
+import { RelatedProducts } from '@/components/marketing/sections/related-products';
 
-export const metadata: Metadata = {
+export const metadata = createArticleMetadata({
   title:
     "Finite Capacity Scheduling of World's Largest Aircraft Carrier Nimitz",
   description:
     "See how finite capacity scheduling was implemented for the USS Nimitz aircraft carrier's complex maintenance operations.",
-  openGraph: {
-    title:
-      "Finite Capacity Scheduling of World's Largest Aircraft Carrier Nimitz",
-    description:
-      "See how finite capacity scheduling was implemented for the USS Nimitz aircraft carrier's complex maintenance operations.",
-    url: 'https://www.usersolutions.com/success-stories/finite-capacity-scheduling-of-worlds-largest-aircraft-carrier-nimitz'
-  }
-};
+  path: '/success_stories/finite-capacity-scheduling-of-worlds-largest-aircraft-carrier-nimitz',
+  keywords: 'USS Nimitz, aircraft carrier scheduling, finite capacity, Navy scheduling, RMDB defense',
+});
 
 export default function AircraftCarrierNimitzPage() {
   return (
@@ -199,6 +195,7 @@ export default function AircraftCarrierNimitzPage() {
           </div>
         </div>
       </section>
+      <RelatedProducts storySlug="/success_stories/finite-capacity-scheduling-of-worlds-largest-aircraft-carrier-nimitz" />
     </div>
   );
 }

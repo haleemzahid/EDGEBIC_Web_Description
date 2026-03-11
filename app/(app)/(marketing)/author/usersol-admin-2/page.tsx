@@ -1,14 +1,16 @@
-import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
+  path: '/author/usersol-admin-2',
   title: 'usersol-admin-2',
   description:
-    'Articles by usersol-admin-2 covering manufacturing solutions, production scheduling, and supply chain management.'
-};
+    'Articles by usersol-admin-2 covering manufacturing solutions, production scheduling, and supply chain management.',
+  noIndex: true
+});
 
 export default function UsersolAdmin2AuthorPage() {
   const articles = [

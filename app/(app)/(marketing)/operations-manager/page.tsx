@@ -1,17 +1,20 @@
 import * as React from 'react';
-import type { Metadata } from 'next';
+import { createPageMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 import Link from 'next/link';
 
+import { RelatedSuccessStories } from '@/components/marketing/sections/related-success-stories';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
   title: 'Operations Manager',
   description:
-    'Production and Operations Management Templates for forecasting, inventory management, MRP, production planning, and quality control.'
-};
+    'Production and Operations Management Templates for forecasting, inventory management, MRP, production planning, and quality control.',
+  path: '/operations-manager',
+  keywords: 'Operations Manager, production management templates, forecasting, inventory management, MRP, quality control'
+});
 
 export default function OperationsManagerPage(): React.JSX.Element {
   const categories = [
@@ -347,6 +350,7 @@ export default function OperationsManagerPage(): React.JSX.Element {
           ))}
         </div>
       </div>
+      <RelatedSuccessStories productKey="om" />
     </div>
   );
 }
