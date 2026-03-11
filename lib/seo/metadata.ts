@@ -11,6 +11,8 @@ type PageMetadataOptions = {
   keywords?: string;
   image?: string;
   noIndex?: boolean;
+  /** Use absolute title (skip layout template suffix) */
+  absoluteTitle?: boolean;
 };
 
 export function createPageMetadata({
@@ -19,13 +21,14 @@ export function createPageMetadata({
   path,
   keywords,
   image = '/og.jpg',
-  noIndex = false
+  noIndex = false,
+  absoluteTitle = false
 }: PageMetadataOptions): Metadata {
   const baseUrl = getBaseUrl();
   const url = `${baseUrl}${path}`;
 
   return {
-    title,
+    title: absoluteTitle ? { absolute: title } : title,
     description,
     keywords,
     alternates: {

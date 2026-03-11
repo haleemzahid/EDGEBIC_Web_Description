@@ -10,12 +10,13 @@ import { NTClipboardToolBox } from '@/components/marketing/sections/ntclipboard-
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Production Planning & Scheduling Software | RMDB by User Solutions',
+  title: 'Production Planning & Scheduling Software | RMDB',
   description:
-    'Resource Manager DB (RMDB) - flexible, affordable production planning, scheduling, and tracking software. Trusted by manufacturers worldwide for 35+ years. Finite capacity planning, MRP, drag-and-drop scheduling.',
+    'RMDB by User Solutions - flexible, affordable production planning & scheduling software. Trusted by manufacturers worldwide for 35+ years.',
   path: '/',
   keywords:
-    'production planning software, production scheduling software, RMDB, Resource Manager DB, manufacturing scheduling, finite capacity planning, MRP software, production tracking, manufacturing software, EDGEBI'
+    'production planning software, production scheduling software, RMDB, Resource Manager DB, manufacturing scheduling, finite capacity planning, MRP software, production tracking, manufacturing software, EDGEBI',
+  absoluteTitle: true
 });
 
 export default function IndexPage(): React.JSX.Element {
