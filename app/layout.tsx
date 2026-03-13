@@ -96,22 +96,6 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-PVSG7NPJL5"
-          strategy="afterInteractive"
-        />
-        <Script
-          id="google-analytics"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-PVSG7NPJL5');
-            `
-          }}
-        />
         {preconnectUrls.map((url) => (
           <React.Fragment key={url}>
             <link
@@ -128,6 +112,22 @@ export default async function RootLayout({
         <WebSiteJsonLd />
       </head>
       <body className={`${inter.className} size-full`}>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-PVSG7NPJL5"
+          strategy="lazyOnload"
+        />
+        <Script
+          id="google-analytics"
+          strategy="lazyOnload"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-PVSG7NPJL5');
+            `
+          }}
+        />
         <Providers>
           {children}
           <React.Suspense>

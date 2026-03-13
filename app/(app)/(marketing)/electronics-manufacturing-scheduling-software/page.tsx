@@ -4,6 +4,7 @@ import { CheckCircle } from 'lucide-react';
 
 import { IndustryPageJsonLd, FAQJsonLd } from '@/components/seo';
 import { IndustrySuccessStories } from '@/components/marketing/sections/industry-success-stories';
+import { RelatedSolutions } from '@/components/marketing/sections/related-solutions';
 import {
   Accordion,
   AccordionContent,
@@ -250,6 +251,8 @@ export default function ElectronicsManufacturingPage(): React.JSX.Element {
         title="Electronics & Hi-Tech Success Stories"
         subtitle="See how electronics manufacturers transformed their production scheduling with RMDB."
       />
+
+      <RelatedSolutions currentPath={Routes.ElectronicsManufacturing} />
 
       {/* CTA Section */}
       <section className="bg-gradient-to-r from-cyan-50 to-slate-50 py-10">

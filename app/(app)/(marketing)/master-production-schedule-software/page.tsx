@@ -4,6 +4,7 @@ import { CheckCircle, Quote } from 'lucide-react';
 
 import { FeaturePageJsonLd, FAQJsonLd } from '@/components/seo';
 import { IndustrySuccessStories } from '@/components/marketing/sections/industry-success-stories';
+import { RelatedSolutions } from '@/components/marketing/sections/related-solutions';
 import {
   Accordion,
   AccordionContent,
@@ -273,6 +274,8 @@ export default function MasterProductionSchedulePage(): React.JSX.Element {
         subtitle="See how manufacturers built achievable master production schedules with RMDB."
         limit={6}
       />
+
+      <RelatedSolutions currentPath={Routes.MasterProductionSchedule} />
 
       <section className="bg-gradient-to-r from-cyan-50 to-slate-50 py-10">
         <div className="container mx-auto max-w-4xl px-4 text-center">

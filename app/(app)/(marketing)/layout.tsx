@@ -1,13 +1,18 @@
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 
 import { Footer } from '@/components/marketing/footer';
-import { CookieBanner } from '@/components/marketing/fragments/cookie-banner';
 import { Navbar } from '@/components/marketing/navbar';
 import { DynamicBreadcrumbJsonLd } from '@/components/seo';
 // import { AnnouncementBar } from '@/components/ui/announcement-bar';
 // import { BackToTop } from '@/components/ui/back-to-top';
 import { FloatingCTA } from '@/components/ui/floating-cta';
-import { PageTransition } from '@/components/ui/page-transition';
+
+const CookieBanner = dynamic(() =>
+  import('@/components/marketing/fragments/cookie-banner').then(
+    (mod) => mod.CookieBanner
+  )
+);
 
 export default function MarketingLayout(
   props: React.PropsWithChildren
@@ -19,7 +24,7 @@ export default function MarketingLayout(
       {/* <AnnouncementBar /> */}
       <Navbar />
       <main id="main-content">
-        <PageTransition>{props.children}</PageTransition>
+        <div className="page-enter">{props.children}</div>
       </main>
       <Footer />
       <CookieBanner />

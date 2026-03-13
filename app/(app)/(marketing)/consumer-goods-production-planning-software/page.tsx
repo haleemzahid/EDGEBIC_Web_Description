@@ -4,6 +4,7 @@ import { CheckCircle } from 'lucide-react';
 
 import { IndustryPageJsonLd, FAQJsonLd } from '@/components/seo';
 import { IndustrySuccessStories } from '@/components/marketing/sections/industry-success-stories';
+import { RelatedSolutions } from '@/components/marketing/sections/related-solutions';
 import {
   Accordion,
   AccordionContent,
@@ -242,6 +243,8 @@ export default function ConsumerGoodsPage(): React.JSX.Element {
         title="Consumer Goods Success Stories"
         subtitle="See how consumer goods manufacturers scaled their operations with RMDB."
       />
+
+      <RelatedSolutions currentPath={Routes.ConsumerGoods} />
 
       {/* CTA Section */}
       <section className="bg-gradient-to-r from-cyan-50 to-slate-50 py-10">

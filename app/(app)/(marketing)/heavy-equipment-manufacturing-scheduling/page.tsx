@@ -4,6 +4,7 @@ import { CheckCircle } from 'lucide-react';
 
 import { IndustryPageJsonLd, FAQJsonLd } from '@/components/seo';
 import { IndustrySuccessStories } from '@/components/marketing/sections/industry-success-stories';
+import { RelatedSolutions } from '@/components/marketing/sections/related-solutions';
 import {
   Accordion,
   AccordionContent,
@@ -246,6 +247,8 @@ export default function HeavyEquipmentPage(): React.JSX.Element {
         title="Heavy Industry Success Stories"
         subtitle="See how heavy equipment and industrial manufacturers transformed their operations with RMDB."
       />
+
+      <RelatedSolutions currentPath={Routes.HeavyEquipment} />
 
       {/* CTA Section */}
       <section className="bg-gradient-to-r from-cyan-50 to-slate-50 py-10">

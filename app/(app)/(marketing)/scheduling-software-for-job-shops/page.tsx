@@ -4,6 +4,7 @@ import { CheckCircle } from 'lucide-react';
 
 import { IndustryPageJsonLd, FAQJsonLd } from '@/components/seo';
 import { IndustrySuccessStories } from '@/components/marketing/sections/industry-success-stories';
+import { RelatedSolutions } from '@/components/marketing/sections/related-solutions';
 import {
   Accordion,
   AccordionContent,
@@ -243,6 +244,8 @@ export default function JobShopSchedulingPage(): React.JSX.Element {
         title="Job Shop Success Stories"
         subtitle="See how job shops transformed their production scheduling with RMDB."
       />
+
+      <RelatedSolutions currentPath={Routes.JobShopScheduling} />
 
       {/* CTA Section */}
       <section className="bg-gradient-to-r from-cyan-50 to-slate-50 py-10">

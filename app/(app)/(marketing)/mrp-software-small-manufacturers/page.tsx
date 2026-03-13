@@ -4,6 +4,7 @@ import { CheckCircle, Quote } from 'lucide-react';
 
 import { FeaturePageJsonLd, FAQJsonLd } from '@/components/seo';
 import { IndustrySuccessStories } from '@/components/marketing/sections/industry-success-stories';
+import { RelatedSolutions } from '@/components/marketing/sections/related-solutions';
 import {
   Accordion,
   AccordionContent,
@@ -302,6 +303,8 @@ export default function MrpSoftwareSmallManufacturersPage(): React.JSX.Element {
         subtitle="See how small and mid-size manufacturers achieved enterprise-grade MRP with RMDB."
         limit={6}
       />
+
+      <RelatedSolutions currentPath={Routes.MrpSoftwareSmallManufacturers} />
 
       {/* CTA Section */}
       <section className="bg-gradient-to-r from-cyan-50 to-slate-50 py-10">

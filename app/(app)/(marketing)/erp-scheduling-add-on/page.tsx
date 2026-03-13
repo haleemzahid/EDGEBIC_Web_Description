@@ -4,6 +4,7 @@ import { CheckCircle, Quote } from 'lucide-react';
 
 import { FeaturePageJsonLd, FAQJsonLd } from '@/components/seo';
 import { IndustrySuccessStories } from '@/components/marketing/sections/industry-success-stories';
+import { RelatedSolutions } from '@/components/marketing/sections/related-solutions';
 import {
   Accordion,
   AccordionContent,
@@ -359,6 +360,8 @@ export default function ErpSchedulingAddOnPage(): React.JSX.Element {
         subtitle="See how manufacturers added powerful scheduling to their existing ERP systems with RMDB."
         limit={6}
       />
+
+      <RelatedSolutions currentPath={Routes.ErpSchedulingAddOn} />
 
       {/* CTA Section */}
       <section className="bg-gradient-to-r from-cyan-50 to-slate-50 py-10">

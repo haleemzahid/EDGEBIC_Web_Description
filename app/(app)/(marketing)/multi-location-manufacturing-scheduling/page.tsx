@@ -4,6 +4,7 @@ import { CheckCircle, Quote } from 'lucide-react';
 
 import { FeaturePageJsonLd, FAQJsonLd } from '@/components/seo';
 import { IndustrySuccessStories } from '@/components/marketing/sections/industry-success-stories';
+import { RelatedSolutions } from '@/components/marketing/sections/related-solutions';
 import {
   Accordion,
   AccordionContent,
@@ -323,6 +324,8 @@ export default function MultiLocationSchedulingPage(): React.JSX.Element {
         subtitle="See how multi-site manufacturers achieved unified scheduling across their operations."
         limit={6}
       />
+
+      <RelatedSolutions currentPath={Routes.MultiLocationScheduling} />
 
       {/* CTA Section */}
       <section className="bg-gradient-to-r from-cyan-50 to-slate-50 py-10">
