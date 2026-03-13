@@ -4,6 +4,7 @@ import * as React from 'react';
 import { RefreshCwIcon } from 'lucide-react';
 
 import { AnalyticsStatsGrid } from '@/components/dashboard/analytics-stats-grid';
+import { CountryBreakdownChart } from '@/components/dashboard/country-breakdown-chart';
 import { DeviceBreakdownChart } from '@/components/dashboard/device-breakdown-chart';
 import { TopPagesTable } from '@/components/dashboard/top-pages-table';
 import { TrafficChart } from '@/components/dashboard/traffic-chart';
@@ -19,6 +20,7 @@ import {
 } from '@/components/ui/page';
 import type {
   AnalyticsOverview as AnalyticsOverviewData,
+  CountryBreakdown,
   DeviceCategory,
   TopPage,
   TrafficDataPoint,
@@ -31,6 +33,7 @@ interface AnalyticsOverviewProps {
   topPages: TopPage[];
   trafficSources: TrafficSource[];
   deviceBreakdown: DeviceCategory[];
+  countryBreakdown: CountryBreakdown[];
 }
 
 export function AnalyticsOverview({
@@ -38,7 +41,8 @@ export function AnalyticsOverview({
   trafficData,
   topPages,
   trafficSources,
-  deviceBreakdown
+  deviceBreakdown,
+  countryBreakdown
 }: AnalyticsOverviewProps): React.JSX.Element {
   const handleRefresh = () => {
     window.location.reload();
@@ -82,6 +86,11 @@ export function AnalyticsOverview({
           <div className="!mt-3 grid gap-4 lg:grid-cols-2">
             <TrafficSourcesChart data={trafficSources} />
             <DeviceBreakdownChart data={deviceBreakdown} />
+          </div>
+
+          {/* Country Breakdown */}
+          <div className="!mt-3">
+            <CountryBreakdownChart data={countryBreakdown} />
           </div>
 
           {/* Top Pages Table */}

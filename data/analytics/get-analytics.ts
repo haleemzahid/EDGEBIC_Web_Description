@@ -58,6 +58,12 @@ export interface DeviceCategory {
   percentage: number;
 }
 
+export interface CountryBreakdown {
+  name: string;
+  value: number;
+  percentage: number;
+}
+
 export async function getAnalyticsOverview(): Promise<AnalyticsOverview> {
   if (!propertyId) {
     return {
@@ -214,6 +220,36 @@ export async function getDeviceBreakdown(): Promise<DeviceCategory[]> {
     const rawName = row.dimensionValues?.[0]?.value ?? 'Unknown';
     return {
       name: rawName.charAt(0).toUpperCase() + rawName.slice(1),
+      value,
+      percentage: total > 0 ? (value / total) * 100 : 0
+    };
+  });
+}
+
+export async function getCountryBreakdown(): Promise<CountryBreakdown[]> {
+  if (!propertyId) return [];
+
+  const client = getAnalyticsClient();
+
+  const [response] = await client.runReport({
+    property: `properties/${propertyId}`,
+    dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+    dimensions: [{ name: 'country' }],
+    metrics: [{ name: 'totalUsers' }],
+    orderBys: [{ metric: { metricName: 'totalUsers' }, desc: true }],
+    limit: 10
+  });
+
+  const rows = response.rows ?? [];
+  const total = rows.reduce(
+    (sum, row) => sum + Number(row.metricValues?.[0]?.value ?? 0),
+    0
+  );
+
+  return rows.map((row) => {
+    const value = Number(row.metricValues?.[0]?.value ?? 0);
+    return {
+      name: row.dimensionValues?.[0]?.value ?? 'Unknown',
       value,
       percentage: total > 0 ? (value / total) * 100 : 0
     };
