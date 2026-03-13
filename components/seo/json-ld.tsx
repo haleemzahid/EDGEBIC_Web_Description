@@ -22,6 +22,14 @@ type WebSiteSchema = {
     '@type': 'Organization';
     name: string;
   };
+  potentialAction: {
+    '@type': 'SearchAction';
+    target: {
+      '@type': 'EntryPoint';
+      urlTemplate: string;
+    };
+    'query-input': string;
+  };
 };
 
 type SoftwareApplicationSchema = {
@@ -78,6 +86,27 @@ type ArticleSchema = {
     '@type': 'WebPage';
     '@id': string;
   };
+};
+
+type IndustryPageSchema = {
+  '@context': 'https://schema.org';
+  '@type': 'WebPage';
+  name: string;
+  description: string;
+  url: string;
+  about: {
+    '@type': 'Thing';
+    name: string;
+    description: string;
+  };
+  provider: {
+    '@type': 'Organization';
+    name: string;
+  };
+  mentions?: {
+    '@type': 'Organization';
+    name: string;
+  }[];
 };
 
 type FAQSchema = {
@@ -144,6 +173,14 @@ export function WebSiteJsonLd() {
     publisher: {
       '@type': 'Organization',
       name: AppInfo.COMPANY_NAME
+    },
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${baseUrl}/search?q={search_term_string}`
+      },
+      'query-input': 'required name=search_term_string'
     }
   };
 
@@ -257,6 +294,50 @@ export function FAQJsonLd({
         text: q.answer
       }
     }))
+  };
+
+  return <JsonLdScript data={schema} />;
+}
+
+export function IndustryPageJsonLd({
+  title,
+  description,
+  url,
+  industryName,
+  industryDescription,
+  customerNames
+}: {
+  title: string;
+  description: string;
+  url: string;
+  industryName: string;
+  industryDescription: string;
+  customerNames?: string[];
+}) {
+  const baseUrl = getBaseUrl();
+
+  const schema: IndustryPageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: title,
+    description,
+    url: `${baseUrl}${url}`,
+    about: {
+      '@type': 'Thing',
+      name: industryName,
+      description: industryDescription
+    },
+    provider: {
+      '@type': 'Organization',
+      name: AppInfo.COMPANY_NAME
+    },
+    ...(customerNames &&
+      customerNames.length > 0 && {
+        mentions: customerNames.map((name) => ({
+          '@type': 'Organization' as const,
+          name
+        }))
+      })
   };
 
   return <JsonLdScript data={schema} />;

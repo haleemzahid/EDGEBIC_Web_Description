@@ -4,7 +4,8 @@ export {
   SoftwareApplicationJsonLd,
   BreadcrumbJsonLd,
   ArticleJsonLd,
-  FAQJsonLd
+  FAQJsonLd,
+  IndustryPageJsonLd
 } from './json-ld';
 
 export { DynamicBreadcrumbJsonLd } from './breadcrumb-schema';

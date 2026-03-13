@@ -92,5 +92,12 @@ export enum Routes {
   InvitationLogOutToAccept = '/invitations/log-out-to-accept',
 
   Onboarding = '/onboarding',
-  FAQ = '/faq'
+  FAQ = '/faq',
+
+  // Industry landing pages
+  JobShopScheduling = '/scheduling-software-for-job-shops',
+  DefenseAerospace = '/defense-aerospace-manufacturing-scheduling',
+  ElectronicsManufacturing = '/electronics-manufacturing-scheduling-software',
+  HeavyEquipment = '/heavy-equipment-manufacturing-scheduling',
+  ConsumerGoods = '/consumer-goods-production-planning-software'
 }

@@ -16,6 +16,7 @@ export type SuccessStory = {
   company: string;
   productUsed: string[];
   industry: string;
+  industryTags?: string[];
 };
 
 // ─── Product Catalog ─────────────────────────────────────────────
@@ -85,84 +86,96 @@ export const SUCCESS_STORIES: SuccessStory[] = [
     slug: '/success_stories/repair-shops-triple-on-time-shipping-percentage-from-30-to-90',
     company: 'GE Railcar Services',
     productUsed: ['rmdb'],
-    industry: 'Transportation'
+    industry: 'Transportation',
+    industryTags: ['Heavy Industry']
   },
   {
     title: 'Finite Capacity Scheduling of USS Nimitz Aircraft Carrier',
     slug: '/success_stories/finite-capacity-scheduling-of-worlds-largest-aircraft-carrier-nimitz',
     company: 'US Navy',
     productUsed: ['rmdb'],
-    industry: 'Defense'
+    industry: 'Defense',
+    industryTags: ['Defense', 'Aerospace']
   },
   {
     title: 'Li-Ion Battery Production Scheduling for Enevate',
     slug: '/success_stories/resource-manager-db-innovates-li-ion-battery-production-scheduling-for-enevate',
     company: 'Enevate Corporation',
     productUsed: ['rmdb', 'edgebi'],
-    industry: 'Electronics'
+    industry: 'Electronics',
+    industryTags: ['Electronics', 'Hi-Tech']
   },
   {
     title: 'Affordable MRP for Smaller Manufacturer',
     slug: '/success_stories/affordable-easy-to-implement-mrp-for-smaller-manufacturer',
     company: 'Sleepmaster Ltd',
     productUsed: ['rmdb'],
-    industry: 'Consumer Products'
+    industry: 'Consumer Products',
+    industryTags: ['Consumer Goods']
   },
   {
     title: 'Amish Manufacturer Rapidly Amortizes Scheduling System',
     slug: '/success_stories/amish-easily-adopt-rapidly-amortize-new-production-scheduling-system',
     company: 'Homestead Furniture',
     productUsed: ['rmdb'],
-    industry: 'Woodworking'
+    industry: 'Woodworking',
+    industryTags: ['Job Shop']
   },
   {
     title: 'Job Shop Increases Throughput and On-Time Shipping',
     slug: '/success_stories/job-shop-increases-throughput-while-improving-shipping-on-time',
     company: 'Technical Glass Products',
     productUsed: ['rmdb'],
-    industry: 'Glass Manufacturing'
+    industry: 'Glass Manufacturing',
+    industryTags: ['Job Shop']
   },
   {
     title: 'ERP Vendor and Manufacturer Turn to RMDB',
     slug: '/success_stories/erp-vendor-and-manufacturer-both-turn-to-rm-db-for-flexible-scheduling',
     company: 'ERP Partners',
     productUsed: ['rmdb'],
-    industry: 'Software / Manufacturing'
+    industry: 'Software / Manufacturing',
+    industryTags: ['Consumer Goods']
   },
   {
     title: 'Capacity and Production Planning Add-On for ERP',
     slug: '/success_stories/capacity-and-production-planning-add-on-for-erp',
-    company: 'Manufacturing Enterprise',
+    company: 'BAE Systems',
     productUsed: ['rmdb'],
-    industry: 'General Manufacturing'
+    industry: 'Defense',
+    industryTags: ['Defense', 'Aerospace']
   },
   {
     title: 'Production What-If Scenario Secures Largest Customer Order',
     slug: '/success_stories/production-what-if-scenario-gantt-chart-secures-largest-customer-order',
     company: 'Turner Suspension Bicycles',
     productUsed: ['rmdb', 'edgebi'],
-    industry: 'Consumer Products'
+    industry: 'Consumer Products',
+    industryTags: ['Job Shop', 'Consumer Goods']
   },
   {
     title: 'Quick Scheduling Replaces Complex Custom Excel Program',
     slug: '/success_stories/quick-and-easy-production-scheduling-replaces-complex-custom-excel-program',
     company: 'Kyocera Industrial Ceramics',
     productUsed: ['rmdb'],
-    industry: 'Electronics'
+    industry: 'Electronics',
+    industryTags: ['Electronics', 'Hi-Tech']
   },
   {
     title: 'Hi-Tech Connector Mfr Schedules Labor with MRP Add-On',
     slug: '/success_stories/hi-tech-connector-mfr-accurately-schedules-labor-with-mrp-add-on',
     company: 'INCON Incorporated',
     productUsed: ['rmdb'],
-    industry: 'Electronics'
+    industry: 'Electronics',
+    industryTags: ['Electronics', 'Hi-Tech']
   },
   {
     title: 'Scheduling Labor Increases Customer Satisfaction',
     slug: '/success_stories/scheduling-labor-out-several-months-increases-customer-satisfaction',
     company: 'Cummins Engine',
     productUsed: ['rmdb'],
-    industry: 'Automotive'
+    industry: 'Automotive',
+    industryTags: ['Heavy Industry']
   },
   {
     title: 'Finite Capacity Scheduling for Consulting Projects',
@@ -174,37 +187,42 @@ export const SUCCESS_STORIES: SuccessStory[] = [
   {
     title: 'Lean Manufacturing for Hi-Tech Amplifier Manufacturer',
     slug: '/success_stories/lean-manufacturing-realized-by-hi-tech-amplifier-manufacturer',
-    company: 'Hi-Tech Amplifier',
+    company: 'Instruments For Industry',
     productUsed: ['rmdb'],
-    industry: 'Electronics'
+    industry: 'Electronics',
+    industryTags: ['Electronics', 'Hi-Tech']
   },
   {
     title: 'NIST MEP Improves On-Time Delivery',
     slug: '/success_stories/nist-mep-and-industrial-damping-leader-improve-on-time-delivery',
-    company: 'Industrial Damping Leader',
+    company: 'ACE Controls',
     productUsed: ['rmdb'],
-    industry: 'Industrial'
+    industry: 'Industrial',
+    industryTags: ['Job Shop']
   },
   {
     title: 'Simplified Scheduling for Large Sawmills',
     slug: '/success_stories/simplifying-complexities-increased-on-time-deliveries-user-adoption-for-large-sawmills',
     company: 'Large Sawmill',
     productUsed: ['rmdb'],
-    industry: 'Woodworking'
+    industry: 'Woodworking',
+    industryTags: ['Heavy Industry']
   },
   {
     title: 'Smart Coffee Machines Get Smarter Purchasing',
     slug: '/success_stories/smart-coffee-machines-get-smarter-purchasing-with-erp-add-on',
     company: 'Smart Coffee',
     productUsed: ['rmdb'],
-    industry: 'Consumer Products'
+    industry: 'Consumer Products',
+    industryTags: ['Consumer Goods']
   },
   {
     title: 'Job Shop Gains Control of Volatile Schedule',
     slug: '/success_stories/job-shop-gains-control-of-highly-volatile-schedule-and-inventory-needs',
     company: 'Job Shop',
     productUsed: ['rmdb'],
-    industry: 'General Manufacturing'
+    industry: 'General Manufacturing',
+    industryTags: ['Job Shop']
   },
   {
     title: 'Complements Traditional MRP and Shop Control',
@@ -258,6 +276,19 @@ export function getProductsForStory(storySlug: string): Product[] {
   return story.productUsed
     .map((key) => PRODUCTS[key])
     .filter(Boolean);
+}
+
+/** Get success stories for a specific industry */
+export function getStoriesForIndustry(
+  industries: string[],
+  limit = 3
+): SuccessStory[] {
+  return SUCCESS_STORIES.filter((story) => {
+    const allTags = [story.industry, ...(story.industryTags || [])];
+    return industries.some((ind) =>
+      allTags.some((tag) => tag.toLowerCase().includes(ind.toLowerCase()))
+    );
+  }).slice(0, limit);
 }
 
 /** Get related stories (same industry or same product, different story) */

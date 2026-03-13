@@ -26,7 +26,12 @@ const MEDIUM_PRIORITY_PAGES = new Set([
   'videos',
   'company-history',
   'mission-statement',
-  'partners'
+  'partners',
+  'scheduling-software-for-job-shops',
+  'defense-aerospace-manufacturing-scheduling',
+  'electronics-manufacturing-scheduling-software',
+  'heavy-equipment-manufacturing-scheduling',
+  'consumer-goods-production-planning-software'
 ]);
 
 function getPagePriority(urlPath: string): number {
