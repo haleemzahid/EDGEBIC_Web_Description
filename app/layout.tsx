@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     shortcut: '/logos/edgebic-logo.png',
     apple: '/logos/edgebic-logo.png'
   },
-  manifest: `${getBaseUrl()}/manifest`,
+  manifest: '/manifest',
   robots: {
     index: true,
     follow: true,

@@ -148,7 +148,7 @@ const nextConfig = {
               "font-src 'self' https://fonts.gstatic.com",
               "connect-src 'self' https://www.google-analytics.com https://vitals.vercel-insights.com https://*.vercel.app https://www.google.com https://www.googleapis.com",
               "media-src 'self' https://www.usersolutions.com",
-              "frame-src 'self' https://calendly.com https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://www.google.com",
+              "frame-src 'self' https://calendly.com https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://www.google.com https://recaptcha.google.com",
               "manifest-src 'self'",
               "object-src 'none'",
               "base-uri 'self'",
