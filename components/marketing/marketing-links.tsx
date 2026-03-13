@@ -5,6 +5,7 @@ import {
   CalendarIcon,
   // BookOpenIcon,
   DownloadIcon,
+  FactoryIcon,
   FileTextIcon,
   // GraduationCapIcon,
   // MapIcon,
@@ -40,6 +41,46 @@ export const MENU_LINKS = [
     icon: <PackageIcon className="size-5 shrink-0" />,
     href: Routes.ProductionPlanning,
     external: false
+  },
+  {
+    title: 'Industries',
+    items: [
+      {
+        title: 'Job Shops',
+        description: 'Scheduling for high-mix, low-volume manufacturers',
+        icon: <FactoryIcon className="size-5 shrink-0" />,
+        href: Routes.JobShopScheduling,
+        external: false
+      },
+      {
+        title: 'Defense & Aerospace',
+        description: 'Mission-critical scheduling at scale',
+        icon: <FactoryIcon className="size-5 shrink-0" />,
+        href: Routes.DefenseAerospace,
+        external: false
+      },
+      {
+        title: 'Electronics & Hi-Tech',
+        description: 'Multi-level sub-assembly and lean scheduling',
+        icon: <FactoryIcon className="size-5 shrink-0" />,
+        href: Routes.ElectronicsManufacturing,
+        external: false
+      },
+      {
+        title: 'Heavy Equipment',
+        description: 'Multi-location industrial scheduling',
+        icon: <FactoryIcon className="size-5 shrink-0" />,
+        href: Routes.HeavyEquipment,
+        external: false
+      },
+      {
+        title: 'Consumer Goods',
+        description: 'Assembly and packaging production planning',
+        icon: <FactoryIcon className="size-5 shrink-0" />,
+        href: Routes.ConsumerGoods,
+        external: false
+      }
+    ]
   },
   {
     title: 'Success Stories',
@@ -180,6 +221,36 @@ export const FOOTER_LINKS: Array<{
         external: false
       },
       { name: 'EDGEBI', href: Routes.Edgebi, external: false }
+    ]
+  },
+  {
+    title: 'Industries',
+    links: [
+      {
+        name: 'Job Shops',
+        href: Routes.JobShopScheduling,
+        external: false
+      },
+      {
+        name: 'Defense & Aerospace',
+        href: Routes.DefenseAerospace,
+        external: false
+      },
+      {
+        name: 'Electronics & Hi-Tech',
+        href: Routes.ElectronicsManufacturing,
+        external: false
+      },
+      {
+        name: 'Heavy Equipment',
+        href: Routes.HeavyEquipment,
+        external: false
+      },
+      {
+        name: 'Consumer Goods',
+        href: Routes.ConsumerGoods,
+        external: false
+      }
     ]
   },
   {
