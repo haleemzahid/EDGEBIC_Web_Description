@@ -3,6 +3,7 @@ import '../app/(app)/globals.css';
 import * as React from 'react';
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
+import Script from 'next/script';
 
 import { Toaster } from '@/components/ui/sonner';
 import { OrganizationJsonLd, WebSiteJsonLd } from '@/components/seo';
@@ -95,6 +96,22 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-PVSG7NPJL5"
+          strategy="afterInteractive"
+        />
+        <Script
+          id="google-analytics"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-PVSG7NPJL5');
+            `
+          }}
+        />
         {preconnectUrls.map((url) => (
           <React.Fragment key={url}>
             <link
