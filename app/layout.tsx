@@ -13,7 +13,7 @@ import { getBaseUrl } from '@/lib/urls/get-base-url';
 import { Providers } from './(app)/providers';
 
 const preconnectUrls = [
-  'https://www.usersolutions.com',
+  'https://usersolutions.com',
   'https://www.youtube.com',
   'https://i.ytimg.com',
   'https://www.googletagmanager.com',
@@ -37,8 +37,12 @@ export const metadata: Metadata = {
     'production planning, scheduling, manufacturing, RMDB, Resource Manager DB, EDGEBI, operations, tracking, workflow, automation, planning software, scheduling solution',
   authors: [{ name: AppInfo.COMPANY_NAME }],
   icons: {
-    icon: '/logos/edgebic-logo.png',
-    shortcut: '/logos/edgebic-logo.png',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' }
+    ],
+    shortcut: '/favicon.ico',
     apple: '/logos/edgebic-logo.png'
   },
   manifest: '/manifest',
@@ -58,6 +62,13 @@ export const metadata: Metadata = {
     yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION,
     other: {
       'msvalidate.01': process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION || ''
+    }
+  },
+  alternates: {
+    canonical: '/',
+    languages: {
+      'x-default': '/',
+      en: '/'
     }
   },
   openGraph: {

@@ -13,7 +13,7 @@ import { Providers } from './providers';
 
 // Preconnect hints for external resources
 const preconnectUrls = [
-  'https://www.usersolutions.com',
+  'https://usersolutions.com',
   'https://www.youtube.com',
   'https://i.ytimg.com',
   'https://www.googletagmanager.com',
@@ -39,8 +39,12 @@ export const metadata: Metadata = {
     'production planning, scheduling, manufacturing, RMDB, Resource Manager DB, EDGEBI, operations, tracking, workflow, automation, planning software, scheduling solution',
   authors: [{ name: AppInfo.COMPANY_NAME }],
   icons: {
-    icon: '/logos/edgebic-logo.png',
-    shortcut: '/logos/edgebic-logo.png',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' }
+    ],
+    shortcut: '/favicon.ico',
     apple: '/logos/edgebic-logo.png'
   },
   manifest: `${getBaseUrl()}/manifest`,

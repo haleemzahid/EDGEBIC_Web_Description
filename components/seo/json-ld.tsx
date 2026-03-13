@@ -18,17 +18,10 @@ type WebSiteSchema = {
   name: string;
   url: string;
   description: string;
+  inLanguage: string;
   publisher: {
     '@type': 'Organization';
     name: string;
-  };
-  potentialAction: {
-    '@type': 'SearchAction';
-    target: {
-      '@type': 'EntryPoint';
-      urlTemplate: string;
-    };
-    'query-input': string;
   };
 };
 
@@ -170,17 +163,10 @@ export function WebSiteJsonLd() {
     name: AppInfo.APP_NAME,
     url: baseUrl,
     description: AppInfo.APP_DESCRIPTION,
+    inLanguage: 'en-US',
     publisher: {
       '@type': 'Organization',
       name: AppInfo.COMPANY_NAME
-    },
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: {
-        '@type': 'EntryPoint',
-        urlTemplate: `${baseUrl}/search?q={search_term_string}`
-      },
-      'query-input': 'required name=search_term_string'
     }
   };
 

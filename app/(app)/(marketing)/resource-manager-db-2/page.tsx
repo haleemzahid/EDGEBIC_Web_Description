@@ -126,7 +126,7 @@ const jsonLd = {
   publisher: {
     '@type': 'Organization',
     name: 'User Solutions',
-    url: 'https://www.usersolutions.com'
+    url: BASE_URL
   }
 };
 
