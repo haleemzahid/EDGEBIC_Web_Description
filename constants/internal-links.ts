@@ -230,6 +230,14 @@ export const SUCCESS_STORIES: SuccessStory[] = [
     company: 'Manufacturing Enterprise',
     productUsed: ['rmdb'],
     industry: 'General Manufacturing'
+  },
+  {
+    title: 'Cook Compression Scheduling Software Review',
+    slug: '/success_stories/cook-compression-scheduling-software-review',
+    company: 'Cook Compression',
+    productUsed: ['rmdb'],
+    industry: 'Industrial',
+    industryTags: ['Heavy Industry']
   }
 ];
 
