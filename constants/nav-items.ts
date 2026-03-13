@@ -1,4 +1,5 @@
 import {
+  BarChart3Icon,
   // BellIcon,
   CalendarIcon,
   // CodeIcon,
@@ -22,6 +23,11 @@ export const mainNavItems: NavItem[] = [
     title: 'Home',
     href: Routes.Home,
     icon: HomeIcon
+  },
+  {
+    title: 'Analytics',
+    href: Routes.Analytics,
+    icon: BarChart3Icon
   },
   {
     title: 'CRM',

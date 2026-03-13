@@ -71,6 +71,7 @@ export enum Routes {
   VerifyEmailSuccess = '/auth/verify-email/success',
 
   Home = '/dashboard',
+  Analytics = '/dashboard/analytics',
   Contacts = '/dashboard/contacts',
   Inventory = '/dashboard/inventory',
   Settings = '/dashboard/settings',
