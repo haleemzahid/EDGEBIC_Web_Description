@@ -299,6 +299,60 @@ export function FAQJsonLd({
   return <JsonLdScript data={schema} />;
 }
 
+export function FeaturePageJsonLd({
+  title,
+  description,
+  url,
+  featureDescription,
+  featureList,
+  customerNames
+}: {
+  title: string;
+  description: string;
+  url: string;
+  featureDescription: string;
+  featureList?: string[];
+  customerNames?: string[];
+}) {
+  const baseUrl = getBaseUrl();
+
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: title,
+    description,
+    url: `${baseUrl}${url}`,
+    about: {
+      '@type': 'SoftwareApplication',
+      name: 'RMDB - Resource Manager DB',
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Windows',
+      description: featureDescription,
+      ...(featureList &&
+        featureList.length > 0 && {
+          featureList: featureList.join(', ')
+        }),
+      provider: {
+        '@type': 'Organization',
+        name: AppInfo.COMPANY_NAME
+      }
+    },
+    provider: {
+      '@type': 'Organization',
+      name: AppInfo.COMPANY_NAME
+    },
+    ...(customerNames &&
+      customerNames.length > 0 && {
+        mentions: customerNames.map((name) => ({
+          '@type': 'Organization' as const,
+          name
+        }))
+      })
+  };
+
+  return <JsonLdScript data={schema} />;
+}
+
 export function IndustryPageJsonLd({
   title,
   description,

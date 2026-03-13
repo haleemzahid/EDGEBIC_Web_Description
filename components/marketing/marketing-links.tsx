@@ -254,6 +254,36 @@ export const FOOTER_LINKS: Array<{
     ]
   },
   {
+    title: 'Solutions',
+    links: [
+      {
+        name: 'Production Scheduling',
+        href: Routes.ProductionSchedulingSoftware,
+        external: false
+      },
+      {
+        name: 'Finite Capacity Scheduling',
+        href: Routes.FiniteCapacityScheduling,
+        external: false
+      },
+      {
+        name: 'ERP Scheduling Add-On',
+        href: Routes.ErpSchedulingAddOn,
+        external: false
+      },
+      {
+        name: 'What-If Analysis',
+        href: Routes.WhatIfAnalysis,
+        external: false
+      },
+      {
+        name: 'MRP for Small Manufacturers',
+        href: Routes.MrpSoftwareSmallManufacturers,
+        external: false
+      }
+    ]
+  },
+  {
     title: 'Company',
     links: [
       {

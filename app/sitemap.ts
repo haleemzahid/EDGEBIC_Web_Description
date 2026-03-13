@@ -31,7 +31,20 @@ const MEDIUM_PRIORITY_PAGES = new Set([
   'defense-aerospace-manufacturing-scheduling',
   'electronics-manufacturing-scheduling-software',
   'heavy-equipment-manufacturing-scheduling',
-  'consumer-goods-production-planning-software'
+  'consumer-goods-production-planning-software',
+  'production-scheduling-software',
+  'finite-capacity-scheduling-software',
+  'manufacturing-scheduling-software',
+  'mrp-software-small-manufacturers',
+  'erp-scheduling-add-on',
+  'what-if-analysis-manufacturing',
+  'multi-location-manufacturing-scheduling',
+  'bill-of-materials-bom-software',
+  'master-production-schedule-software',
+  'labor-scheduling-manufacturing',
+  'excel-to-scheduling-software',
+  'on-time-delivery-manufacturing',
+  'erp-integration-production-scheduling'
 ]);
 
 function getPagePriority(urlPath: string): number {

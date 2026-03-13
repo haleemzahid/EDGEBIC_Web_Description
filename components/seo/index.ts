@@ -5,6 +5,7 @@ export {
   BreadcrumbJsonLd,
   ArticleJsonLd,
   FAQJsonLd,
+  FeaturePageJsonLd,
   IndustryPageJsonLd
 } from './json-ld';
 

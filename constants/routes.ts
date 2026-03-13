@@ -99,5 +99,20 @@ export enum Routes {
   DefenseAerospace = '/defense-aerospace-manufacturing-scheduling',
   ElectronicsManufacturing = '/electronics-manufacturing-scheduling-software',
   HeavyEquipment = '/heavy-equipment-manufacturing-scheduling',
-  ConsumerGoods = '/consumer-goods-production-planning-software'
+  ConsumerGoods = '/consumer-goods-production-planning-software',
+
+  // Feature landing pages
+  ProductionSchedulingSoftware = '/production-scheduling-software',
+  FiniteCapacityScheduling = '/finite-capacity-scheduling-software',
+  ManufacturingSchedulingSoftware = '/manufacturing-scheduling-software',
+  MrpSoftwareSmallManufacturers = '/mrp-software-small-manufacturers',
+  ErpSchedulingAddOn = '/erp-scheduling-add-on',
+  WhatIfAnalysis = '/what-if-analysis-manufacturing',
+  MultiLocationScheduling = '/multi-location-manufacturing-scheduling',
+  BomSoftware = '/bill-of-materials-bom-software',
+  MasterProductionSchedule = '/master-production-schedule-software',
+  LaborScheduling = '/labor-scheduling-manufacturing',
+  ExcelToScheduling = '/excel-to-scheduling-software',
+  OnTimeDelivery = '/on-time-delivery-manufacturing',
+  ErpIntegration = '/erp-integration-production-scheduling'
 }
