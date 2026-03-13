@@ -95,6 +95,7 @@ export function Footer(): React.JSX.Element {
                 href={award.link}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label={award.alt}
                 className="flex shrink-0 items-center justify-center transition-transform hover:scale-105"
               >
                 {award.image.startsWith('<svg') ? (

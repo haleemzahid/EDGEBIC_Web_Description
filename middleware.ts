@@ -8,6 +8,8 @@ export function middleware(request: NextRequest) {
   if (hostname.startsWith('www.')) {
     const newUrl = new URL(request.url);
     newUrl.hostname = hostname.replace('www.', '');
+    // Remove internal port that can leak through reverse proxies
+    newUrl.port = '';
     return NextResponse.redirect(newUrl, 301);
   }
 
