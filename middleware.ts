@@ -41,6 +41,7 @@ const LEGACY_REDIRECTS: Record<string, string> = {
   '/story/incon-incorporate': '/incon-incorporated',
   '/success-story/incon-incorporate': '/incon-incorporated',
   '/incon-inc': '/incon-incorporated',
+  '/incon-incorporate': '/incon-incorporated',
   '/story/sleepmaster-ltd': '/success-stories',
   '/success-story/resource-manager-db-innovates-li-ion-battery-production-scheduling-for-enevate': '/success_stories/resource-manager-db-innovates-li-ion-battery-production-scheduling-for-enevate',
 
@@ -75,9 +76,19 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(newUrl, 301);
   }
 
+  const { pathname } = request.nextUrl;
+
+  // Strip trailing slashes (except root /) to prevent duplicate URLs
+  if (pathname !== '/' && pathname.endsWith('/')) {
+    const cleanPath = pathname.replace(/\/+$/, '');
+    const newUrl = new URL(cleanPath, request.url);
+    newUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(newUrl, 301);
+  }
+
   // Redirect legacy WordPress URLs
-  const pathname = request.nextUrl.pathname.replace(/\/+$/, '');
-  const redirectTo = LEGACY_REDIRECTS[pathname];
+  const normalizedPath = pathname.replace(/\/+$/, '');
+  const redirectTo = LEGACY_REDIRECTS[normalizedPath];
   if (redirectTo) {
     return NextResponse.redirect(new URL(redirectTo, request.url), 301);
   }
