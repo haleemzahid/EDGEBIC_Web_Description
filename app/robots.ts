@@ -35,7 +35,6 @@ export default function robots(): MetadataRoute.Robots {
           '/product-downloads-3',
           // Duplicate pages (canonical versions exist)
           '/aboutus',
-          '/success_stories',
           '/mission',
           // Hidden sections
           '/author/',
