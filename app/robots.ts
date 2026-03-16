@@ -17,6 +17,14 @@ export default function robots(): MetadataRoute.Robots {
           '/api/',
           '/auth/',
           '/dashboard/',
+          // Block old WordPress spam/junk paths
+          '/wp-content/',
+          '/wp-admin/',
+          '/wp-includes/',
+          '/wp-login.php',
+          '/wp-json/',
+          '/?mitra=',
+          '/*?mitra=',
           // Test/demo pages
           '/test',
           '/test-home',

@@ -76,7 +76,27 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(newUrl, 301);
   }
 
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
+
+  // Block spam/junk WordPress URLs with 410 Gone (tells Google to permanently remove)
+  const isSpamWpPath = pathname.startsWith('/wp-content') ||
+    pathname.startsWith('/wp-admin') ||
+    pathname.startsWith('/wp-includes') ||
+    pathname.startsWith('/wp-login') ||
+    pathname.startsWith('/wp-json') ||
+    pathname.startsWith('/xmlrpc');
+  const isSpamParam = searchParams.has('mitra') ||
+    searchParams.has('s') && pathname === '/';
+
+  if (isSpamWpPath || isSpamParam) {
+    // Check if this specific path has a legitimate redirect first
+    const normalizedSpamPath = pathname.replace(/\/+$/, '');
+    if (LEGACY_REDIRECTS[normalizedSpamPath] && !isSpamParam) {
+      return NextResponse.redirect(new URL(LEGACY_REDIRECTS[normalizedSpamPath], request.url), 301);
+    }
+    // Otherwise return 410 Gone — permanently removed
+    return new NextResponse(null, { status: 410, statusText: 'Gone' });
+  }
 
   // Strip trailing slashes (except root /) to prevent duplicate URLs
   if (pathname !== '/' && pathname.endsWith('/')) {
