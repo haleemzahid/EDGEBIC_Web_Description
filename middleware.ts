@@ -84,7 +84,10 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/wp-includes') ||
     pathname.startsWith('/wp-login') ||
     pathname.startsWith('/wp-json') ||
-    pathname.startsWith('/xmlrpc');
+    pathname.startsWith('/xmlrpc') ||
+    pathname === '/page-sitemap.xml' ||
+    pathname === '/post-sitemap.xml' ||
+    pathname === '/category-sitemap.xml';
   const isSpamParam = searchParams.has('mitra') ||
     searchParams.has('s') && pathname === '/';
 
