@@ -15,7 +15,7 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'ERP Integration for Production Scheduling | SAP, Oracle, Epicor & More',
+  title: 'ERP Integration for Production Scheduling',
   description:
     'Production scheduling software that integrates with SAP, Oracle, Epicor, Fourth Shift, Macola, Sage, and more. Full ERP integration in 5 days. Fourth Shift ERP vendor recommended RMDB. Bi-directional data sync via Excel, CSV, or database.',
   path: '/erp-integration-production-scheduling',

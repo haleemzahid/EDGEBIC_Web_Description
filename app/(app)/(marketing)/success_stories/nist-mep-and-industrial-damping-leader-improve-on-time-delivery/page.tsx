@@ -48,25 +48,59 @@ export default function NistMepIndustrialDampingPage() {
             </div>
 
             <div className="prose prose-lg mx-auto">
-              <p className="lead text-gray-700">
-                ACE Controls, Inc., located in Farmington MI, had a requirement
-                to improve their current system, to immediately implement a
-                solution for the day-to-day scheduling challenges of the machine
-                shop. Supported by the NIST/Michigan Manufacturing Technology
-                Center, Resource Manager was selected both for its benefit/cost
-                ratio and for compatibility on the company's existing Excel
-                platform, already used to communicate manufacturing reports.
+              <h2 className="text-2xl font-bold text-gray-900">The Challenge</h2>
+              <p className="text-gray-700">
+                ACE Controls, Inc., a leader in industrial damping and motion
+                control solutions located in Farmington, Michigan, faced growing
+                challenges with production scheduling in their machine shop. The
+                company needed to immediately improve their day-to-day scheduling
+                capabilities to meet increasing customer demand and maintain their
+                reputation for reliable delivery. Without adequate visibility into
+                workcenter loading and production capacity, the team struggled to
+                provide accurate promise dates and optimize their manufacturing
+                throughput.
+              </p>
+
+              <h2 className="text-2xl font-bold text-gray-900">The Solution</h2>
+              <p className="text-gray-700">
+                Supported by the NIST Manufacturing Extension Partnership (MEP)
+                through the Michigan Manufacturing Technology Center, ACE Controls
+                evaluated scheduling solutions that could deliver immediate results.
+                Resource Manager was selected both for its strong benefit-to-cost
+                ratio and for its compatibility with the company&apos;s existing Excel
+                platform, already used to communicate manufacturing reports across
+                the organization. This meant minimal disruption to existing workflows
+                while adding powerful scheduling and capacity planning capabilities.
+              </p>
+
+              <h2 className="text-2xl font-bold text-gray-900">Key Results</h2>
+              <p className="text-gray-700">
+                The implementation was fast and straightforward, allowing ACE Controls
+                to start seeing benefits almost immediately. The scheduling team gained
+                the ability to model different production scenarios, visualize workcenter
+                loading, and evaluate the impact of schedule changes before committing
+                to them.
               </p>
 
               <p className="text-gray-700">
-                According to Dave Teumer, Buyer and Scheduling Manager, "What I
-                especially like about the Resource Manager is that is was simple
+                According to Dave Teumer, Buyer and Scheduling Manager, &ldquo;What I
+                especially like about the Resource Manager is that it was simple
                 to get installed and up and running. We have improved our
                 on-time delivery by being able to view the impact of different
                 production schedules and workcenter loading. The product is so
                 flexible and adaptable, it is quite easy to model different
                 scenarios to determine if a certain method or schedule can
-                actually benefit our bottom line."
+                actually benefit our bottom line.&rdquo;
+              </p>
+
+              <p className="text-gray-700">
+                With Resource Manager in place, ACE Controls transformed their
+                scheduling process from reactive to proactive, resulting in measurable
+                improvements to on-time delivery and overall production efficiency.
+              </p>
+
+              <p className="text-gray-700">
+                <strong>&mdash; Dave Teumer, Buyer and Scheduling Manager, ACE Controls, Inc.</strong>
               </p>
             </div>
           </div>

@@ -15,7 +15,7 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Excel to Scheduling Software | Replace Spreadsheet Production Planning',
+  title: 'Excel to Scheduling Software',
   description:
     'Upgrade from Excel spreadsheet scheduling to production scheduling software without losing Excel familiarity. Kyocera replaced their complex custom Excel program. USS Nimitz replaced 10 Excel master files. Works with your existing Excel data.',
   path: '/excel-to-scheduling-software',

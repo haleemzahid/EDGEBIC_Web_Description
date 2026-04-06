@@ -15,7 +15,7 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Finite Capacity Scheduling Software | Real Constraint-Based Planning',
+  title: 'Finite Capacity Scheduling Software',
   description:
     'Finite capacity scheduling software that schedules against real machine, labor, material, and tooling constraints simultaneously. Used by USS Nimitz (26,000+ tasks), GE Railcar (30%→90% on-time), and Cummins Engine (33 locations). 35+ years proven.',
   path: '/finite-capacity-scheduling-software',

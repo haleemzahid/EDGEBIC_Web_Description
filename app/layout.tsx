@@ -29,8 +29,8 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseUrl()),
   title: {
-    template: '%s | RMDB by User Solutions',
-    default: 'Production Planning & Scheduling Software | RMDB by User Solutions'
+    template: '%s | User Solutions',
+    default: 'RMDB - Production Planning & Scheduling Software | User Solutions'
   },
   description: AppInfo.APP_DESCRIPTION,
   keywords:

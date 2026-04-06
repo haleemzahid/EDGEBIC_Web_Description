@@ -15,7 +15,7 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Consumer Goods Production Planning Software | Assembly & Packaging',
+  title: 'Consumer Goods Production Planning Software',
   description:
     'Production planning software for consumer goods manufacturers. Affordable MRP for smaller manufacturers, ERP add-on for purchasing optimization, and international scaling. Trusted by Sleepmaster Ltd, Plastilite Corporation, and more.',
   path: '/consumer-goods-production-planning-software',

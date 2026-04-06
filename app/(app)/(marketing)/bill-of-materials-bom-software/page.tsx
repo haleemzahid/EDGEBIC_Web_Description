@@ -15,7 +15,7 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Bill of Materials (BOM) Software | Multi-Level Sub-Assembly Management',
+  title: 'Bill of Materials (BOM) Software',
   description:
     'BOM software with multi-level sub-assembly support up to 10 levels deep. Lot traceability, inventory valuation, costed BOMs, and scheduling integration. Proven by Enevate (Li-ion batteries), Turner Bicycles, and Cummins Engine.',
   path: '/bill-of-materials-bom-software',

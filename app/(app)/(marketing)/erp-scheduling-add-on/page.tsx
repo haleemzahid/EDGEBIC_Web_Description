@@ -15,7 +15,7 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'ERP Scheduling Add-On | Fill the Scheduling Gap in Your ERP',
+  title: 'ERP Scheduling Add-On',
   description:
     'Production scheduling add-on for ERP systems including SAP, Oracle, Epicor, Fourth Shift, and Macola. BAE Systems discontinued their ERP scheduling in favor of RMDB. Full ERP integration achieved in 5 days. Finite capacity scheduling your ERP cannot provide.',
   path: '/erp-scheduling-add-on',
