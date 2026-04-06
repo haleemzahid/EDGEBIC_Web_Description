@@ -43,7 +43,7 @@ const LEGACY_REDIRECTS: Record<string, string> = {
   '/incon-inc': '/incon-incorporated',
   '/incon-incorporate': '/incon-incorporated',
   '/story/sleepmaster-ltd': '/success-stories',
-  '/success-story/resource-manager-db-innovates-li-ion-battery-production-scheduling-for-enevate': '/success_stories/resource-manager-db-innovates-li-ion-battery-production-scheduling-for-enevate',
+  '/success-story/resource-manager-db-innovates-li-ion-battery-production-scheduling-for-enevate': '/success-stories/resource-manager-db-innovates-li-ion-battery-production-scheduling-for-enevate',
 
   // Press releases
   '/press_release/user-solutions-joins-fight-against-covid-free-production-scheduling-software': '/press_release',
@@ -114,6 +114,12 @@ export function middleware(request: NextRequest) {
   const redirectTo = LEGACY_REDIRECTS[normalizedPath];
   if (redirectTo) {
     return NextResponse.redirect(new URL(redirectTo, request.url), 301);
+  }
+
+  // Redirect old /success_stories paths to /success-stories (underscore → hyphen)
+  if (normalizedPath.startsWith('/success_stories')) {
+    const newPath = normalizedPath.replace('/success_stories', '/success-stories');
+    return NextResponse.redirect(new URL(newPath, request.url), 301);
   }
 
   return NextResponse.next();

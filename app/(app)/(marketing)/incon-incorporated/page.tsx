@@ -60,7 +60,7 @@ export default function InconIncorporatedPage() {
           </div>
         </div>
       </section>
-      <RelatedProducts storySlug="/success_stories/hi-tech-connector-mfr-accurately-schedules-labor-with-mrp-add-on" />
+      <RelatedProducts storySlug="/success-stories/hi-tech-connector-mfr-accurately-schedules-labor-with-mrp-add-on" />
     </div>
   );
 }

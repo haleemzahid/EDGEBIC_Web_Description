@@ -1,23 +1,24 @@
 import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
-import { RelatedProducts } from '@/components/marketing/sections/related-products';
+
+import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata = createArticleMetadata({
   title: 'Cook Compression',
   description:
     'Cook Compression shares their exceptional experience with User Solutions world-class support and service.',
-  path: '/cook-compression',
-  keywords: 'Cook Compression, scheduling software review, production planning case study, User Solutions support'
+  path: '/success-stories/cook-compression-scheduling-software-review',
+  keywords: 'Cook Compression, scheduling software review, production planning, RMDB case study',
 });
 
 export default function CookCompressionPage() {
   return (
-    <div>
+    <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="pt-6">
+      <section className="py-6">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl text-center">
-            <h1 className="text-3xl font-bold text-foreground md:text-4xl lg:text-5xl">
+            <h1 className="mb-6 text-3xl font-bold text-foreground md:text-4xl lg:text-5xl">
               Cook Compression
             </h1>
           </div>
@@ -29,7 +30,7 @@ export default function CookCompressionPage() {
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-7xl">
             {/* Logo */}
-            <div className="mb-6 flex justify-center">
+            <div className="mb-8 flex justify-center">
               <Image
                 src="/images/Edgebic/2022-07/cook.jpg"
                 alt="Cook Compression"
@@ -60,7 +61,31 @@ export default function CookCompressionPage() {
           </div>
         </div>
       </section>
-      <RelatedProducts storySlug="/success-stories/cook-compression-scheduling-software-review" />
+
+      {/* Awards Banner */}
+      <section className="py-6">
+        <div className="container mx-auto px-4">
+          <div className="mx-auto max-w-7xl">
+            <Card className="rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 text-card-foreground shadow">
+              <CardContent className="p-8 text-center">
+                <h2 className="mb-6 text-2xl font-bold text-slate-900">
+                  Celebrating 25 Years of Award Winning Software!
+                </h2>
+                <div className="relative mx-auto h-auto w-full max-w-4xl">
+                  <Image
+                    src="/images/Edgebic/2022-07/banner-logoso-sm-58c9a28d237d6-1024x128.jpg"
+                    alt="Collection of industry and business awards logos"
+                    width={1024}
+                    height={128}
+                    className="mx-auto h-auto max-w-full"
+                    unoptimized
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

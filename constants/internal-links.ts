@@ -83,7 +83,7 @@ export const PRODUCTS: Record<string, Product> = {
 export const SUCCESS_STORIES: SuccessStory[] = [
   {
     title: 'Repair Shops Triple On-Time Shipping from 30% to 90%',
-    slug: '/success_stories/repair-shops-triple-on-time-shipping-percentage-from-30-to-90',
+    slug: '/success-stories/repair-shops-triple-on-time-shipping-percentage-from-30-to-90',
     company: 'GE Railcar Services',
     productUsed: ['rmdb'],
     industry: 'Transportation',
@@ -91,7 +91,7 @@ export const SUCCESS_STORIES: SuccessStory[] = [
   },
   {
     title: 'Finite Capacity Scheduling of USS Nimitz Aircraft Carrier',
-    slug: '/success_stories/finite-capacity-scheduling-of-worlds-largest-aircraft-carrier-nimitz',
+    slug: '/success-stories/finite-capacity-scheduling-of-worlds-largest-aircraft-carrier-nimitz',
     company: 'US Navy',
     productUsed: ['rmdb'],
     industry: 'Defense',
@@ -99,7 +99,7 @@ export const SUCCESS_STORIES: SuccessStory[] = [
   },
   {
     title: 'Li-Ion Battery Production Scheduling for Enevate',
-    slug: '/success_stories/resource-manager-db-innovates-li-ion-battery-production-scheduling-for-enevate',
+    slug: '/success-stories/resource-manager-db-innovates-li-ion-battery-production-scheduling-for-enevate',
     company: 'Enevate Corporation',
     productUsed: ['rmdb', 'edgebi'],
     industry: 'Electronics',
@@ -107,7 +107,7 @@ export const SUCCESS_STORIES: SuccessStory[] = [
   },
   {
     title: 'Affordable MRP for Smaller Manufacturer',
-    slug: '/success_stories/affordable-easy-to-implement-mrp-for-smaller-manufacturer',
+    slug: '/success-stories/affordable-easy-to-implement-mrp-for-smaller-manufacturer',
     company: 'Sleepmaster Ltd',
     productUsed: ['rmdb'],
     industry: 'Consumer Products',
@@ -115,7 +115,7 @@ export const SUCCESS_STORIES: SuccessStory[] = [
   },
   {
     title: 'Amish Manufacturer Rapidly Amortizes Scheduling System',
-    slug: '/success_stories/amish-easily-adopt-rapidly-amortize-new-production-scheduling-system',
+    slug: '/success-stories/amish-easily-adopt-rapidly-amortize-new-production-scheduling-system',
     company: 'Homestead Furniture',
     productUsed: ['rmdb'],
     industry: 'Woodworking',
@@ -123,7 +123,7 @@ export const SUCCESS_STORIES: SuccessStory[] = [
   },
   {
     title: 'Job Shop Increases Throughput and On-Time Shipping',
-    slug: '/success_stories/job-shop-increases-throughput-while-improving-shipping-on-time',
+    slug: '/success-stories/job-shop-increases-throughput-while-improving-shipping-on-time',
     company: 'Technical Glass Products',
     productUsed: ['rmdb'],
     industry: 'Glass Manufacturing',
@@ -131,7 +131,7 @@ export const SUCCESS_STORIES: SuccessStory[] = [
   },
   {
     title: 'ERP Vendor and Manufacturer Turn to RMDB',
-    slug: '/success_stories/erp-vendor-and-manufacturer-both-turn-to-rm-db-for-flexible-scheduling',
+    slug: '/success-stories/erp-vendor-and-manufacturer-both-turn-to-rm-db-for-flexible-scheduling',
     company: 'ERP Partners',
     productUsed: ['rmdb'],
     industry: 'Software / Manufacturing',
@@ -139,7 +139,7 @@ export const SUCCESS_STORIES: SuccessStory[] = [
   },
   {
     title: 'Capacity and Production Planning Add-On for ERP',
-    slug: '/success_stories/capacity-and-production-planning-add-on-for-erp',
+    slug: '/success-stories/capacity-and-production-planning-add-on-for-erp',
     company: 'BAE Systems',
     productUsed: ['rmdb'],
     industry: 'Defense',
@@ -147,7 +147,7 @@ export const SUCCESS_STORIES: SuccessStory[] = [
   },
   {
     title: 'Production What-If Scenario Secures Largest Customer Order',
-    slug: '/success_stories/production-what-if-scenario-gantt-chart-secures-largest-customer-order',
+    slug: '/success-stories/production-what-if-scenario-gantt-chart-secures-largest-customer-order',
     company: 'Turner Suspension Bicycles',
     productUsed: ['rmdb', 'edgebi'],
     industry: 'Consumer Products',
@@ -155,7 +155,7 @@ export const SUCCESS_STORIES: SuccessStory[] = [
   },
   {
     title: 'Quick Scheduling Replaces Complex Custom Excel Program',
-    slug: '/success_stories/quick-and-easy-production-scheduling-replaces-complex-custom-excel-program',
+    slug: '/success-stories/quick-and-easy-production-scheduling-replaces-complex-custom-excel-program',
     company: 'Kyocera Industrial Ceramics',
     productUsed: ['rmdb'],
     industry: 'Electronics',
@@ -163,7 +163,7 @@ export const SUCCESS_STORIES: SuccessStory[] = [
   },
   {
     title: 'Hi-Tech Connector Mfr Schedules Labor with MRP Add-On',
-    slug: '/success_stories/hi-tech-connector-mfr-accurately-schedules-labor-with-mrp-add-on',
+    slug: '/success-stories/hi-tech-connector-mfr-accurately-schedules-labor-with-mrp-add-on',
     company: 'INCON Incorporated',
     productUsed: ['rmdb'],
     industry: 'Electronics',
@@ -171,7 +171,7 @@ export const SUCCESS_STORIES: SuccessStory[] = [
   },
   {
     title: 'Scheduling Labor Increases Customer Satisfaction',
-    slug: '/success_stories/scheduling-labor-out-several-months-increases-customer-satisfaction',
+    slug: '/success-stories/scheduling-labor-out-several-months-increases-customer-satisfaction',
     company: 'Cummins Engine',
     productUsed: ['rmdb'],
     industry: 'Automotive',
@@ -179,14 +179,14 @@ export const SUCCESS_STORIES: SuccessStory[] = [
   },
   {
     title: 'Finite Capacity Scheduling for Consulting Projects',
-    slug: '/success_stories/finite-capacity-resource-scheduling-for-consulting-projects',
+    slug: '/success-stories/finite-capacity-resource-scheduling-for-consulting-projects',
     company: 'GEMS Healthcare Solutions',
     productUsed: ['rmdb'],
     industry: 'Healthcare'
   },
   {
     title: 'Lean Manufacturing for Hi-Tech Amplifier Manufacturer',
-    slug: '/success_stories/lean-manufacturing-realized-by-hi-tech-amplifier-manufacturer',
+    slug: '/success-stories/lean-manufacturing-realized-by-hi-tech-amplifier-manufacturer',
     company: 'Instruments For Industry',
     productUsed: ['rmdb'],
     industry: 'Electronics',
@@ -194,7 +194,7 @@ export const SUCCESS_STORIES: SuccessStory[] = [
   },
   {
     title: 'NIST MEP Improves On-Time Delivery',
-    slug: '/success_stories/nist-mep-and-industrial-damping-leader-improve-on-time-delivery',
+    slug: '/success-stories/nist-mep-and-industrial-damping-leader-improve-on-time-delivery',
     company: 'ACE Controls',
     productUsed: ['rmdb'],
     industry: 'Industrial',
@@ -202,7 +202,7 @@ export const SUCCESS_STORIES: SuccessStory[] = [
   },
   {
     title: 'Simplified Scheduling for Large Sawmills',
-    slug: '/success_stories/simplifying-complexities-increased-on-time-deliveries-user-adoption-for-large-sawmills',
+    slug: '/success-stories/simplifying-complexities-increased-on-time-deliveries-user-adoption-for-large-sawmills',
     company: 'Large Sawmill',
     productUsed: ['rmdb'],
     industry: 'Woodworking',
@@ -210,7 +210,7 @@ export const SUCCESS_STORIES: SuccessStory[] = [
   },
   {
     title: 'Smart Coffee Machines Get Smarter Purchasing',
-    slug: '/success_stories/smart-coffee-machines-get-smarter-purchasing-with-erp-add-on',
+    slug: '/success-stories/smart-coffee-machines-get-smarter-purchasing-with-erp-add-on',
     company: 'Smart Coffee',
     productUsed: ['rmdb'],
     industry: 'Consumer Products',
@@ -218,7 +218,7 @@ export const SUCCESS_STORIES: SuccessStory[] = [
   },
   {
     title: 'Job Shop Gains Control of Volatile Schedule',
-    slug: '/success_stories/job-shop-gains-control-of-highly-volatile-schedule-and-inventory-needs',
+    slug: '/success-stories/job-shop-gains-control-of-highly-volatile-schedule-and-inventory-needs',
     company: 'Job Shop',
     productUsed: ['rmdb'],
     industry: 'General Manufacturing',
@@ -226,14 +226,14 @@ export const SUCCESS_STORIES: SuccessStory[] = [
   },
   {
     title: 'Complements Traditional MRP and Shop Control',
-    slug: '/success_stories/complements-traditional-mrp-and-shop-control-systems',
+    slug: '/success-stories/complements-traditional-mrp-and-shop-control-systems',
     company: 'Manufacturing Enterprise',
     productUsed: ['rmdb'],
     industry: 'General Manufacturing'
   },
   {
     title: 'Cook Compression Scheduling Software Review',
-    slug: '/success_stories/cook-compression-scheduling-software-review',
+    slug: '/success-stories/cook-compression-scheduling-software-review',
     company: 'Cook Compression',
     productUsed: ['rmdb'],
     industry: 'Industrial',

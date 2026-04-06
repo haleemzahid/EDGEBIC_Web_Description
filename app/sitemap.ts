@@ -46,14 +46,22 @@ const MEDIUM_PRIORITY_PAGES = new Set([
   'labor-scheduling-manufacturing',
   'excel-to-scheduling-software',
   'on-time-delivery-manufacturing',
-  'erp-integration-production-scheduling'
+  'erp-integration-production-scheduling',
+  'resource-manager-db-in-depth',
+  'resource-manager-for-excel-in-depth',
+  'workcell-planner',
+  'workcenter-schedulerxl',
+  'spreadsheet-scheduler',
+  'spreadsheet-qc',
+  'compare-products',
+  'production-scheduling-products'
 ]);
 
 function getPagePriority(urlPath: string): number {
   const slug = urlPath.split('/').pop() || '';
   if (HIGH_PRIORITY_PAGES.has(slug)) return 0.9;
   if (MEDIUM_PRIORITY_PAGES.has(slug)) return 0.7;
-  if (urlPath.includes('success_stories/') || urlPath.includes('success-stories/')) return 0.6;
+  if (urlPath.includes('success-stories/')) return 0.6;
   if (urlPath.includes('operations-manager-')) return 0.5;
   if (urlPath.includes('buy-now')) return 0.4;
   return 0.5;
@@ -71,7 +79,7 @@ async function getMarketingPages(baseUrl: string): Promise<MetadataRoute.Sitemap
   const routes: MetadataRoute.Sitemap = [];
 
   // Directories to skip (handled separately or should not be indexed)
-  const skipDirs = ['home', 'docs', 'author', 'category', 'press_release', 'products'];
+  const skipDirs = ['home', 'docs', 'author', 'category', 'press_release', 'products', 'tag'];
 
   // Pages to exclude from sitemap for SEO best practices
   const excludePages = [
@@ -108,7 +116,7 @@ async function getMarketingPages(baseUrl: string): Promise<MetadataRoute.Sitemap
     'product-downloads-3',
     // Duplicate content pages - use canonical instead
     'aboutus', // use /about instead
-    'success_stories', // use /success-stories instead
+    'success_stories', // use /success-stories (hyphen) instead
     'mission' // use /mission-statement instead
   ];
 

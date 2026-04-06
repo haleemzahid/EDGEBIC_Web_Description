@@ -143,7 +143,7 @@ export default function SleepmasterLtdPage() {
           </div>
         </div>
       </section>
-      <RelatedProducts storySlug="/success_stories/affordable-easy-to-implement-mrp-for-smaller-manufacturer" />
+      <RelatedProducts storySlug="/success-stories/affordable-easy-to-implement-mrp-for-smaller-manufacturer" />
     </div>
   );
 }

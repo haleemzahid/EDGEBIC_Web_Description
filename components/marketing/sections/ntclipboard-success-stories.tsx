@@ -26,7 +26,7 @@ const successStories = [
       'Resource Manager-DB product provided a unique combination of planning, scheduling, and tracking functionality within a single, yet flexible system.',
     author: 'Scott Bennett, Enevate',
     logo: '/images/Edgebic/2022-07/01-300x300.png',
-    href: '/success_stories/resource-manager-db-innovates-li-ion-battery-production-scheduling-for-enevate'
+    href: '/success-stories/resource-manager-db-innovates-li-ion-battery-production-scheduling-for-enevate'
   },
   {
     id: 2,
@@ -38,7 +38,7 @@ const successStories = [
       'The system was incredibly easy to adopt and we saw immediate returns on our investment.',
     author: 'Ohio Furniture Manufacturer',
     logo: '/images/Edgebic/2022-07/02-300x300.png',
-    href: '/success_stories/amish-easily-adopt-rapidly-amortize-new-production-scheduling-system'
+    href: '/success-stories/amish-easily-adopt-rapidly-amortize-new-production-scheduling-system'
   },
   {
     id: 3,
@@ -49,7 +49,7 @@ const successStories = [
       'This solution enabled us to systematically identify and resolve bottlenecks in our production process.',
     author: 'BAE Systems/Ordinance Systems Inc.',
     logo: '/images/Edgebic/2022-07/03-300x300.png',
-    href: '/success_stories/capacity-and-production-planning-add-on-for-erp'
+    href: '/success-stories/capacity-and-production-planning-add-on-for-erp'
   },
   {
     id: 4,
@@ -61,7 +61,7 @@ const successStories = [
       'Perfect solution for smaller manufacturers looking for affordable, flexible MRP systems.',
     author: 'Sleepmasters',
     logo: '/images/Edgebic/2022-07/04-300x300.png',
-    href: '/success_stories/affordable-easy-to-implement-mrp-for-smaller-manufacturer'
+    href: '/success-stories/affordable-easy-to-implement-mrp-for-smaller-manufacturer'
   },
   {
     id: 5,
@@ -72,7 +72,7 @@ const successStories = [
       'We have found these products complement traditional MRP and Shop Control systems perfectly.',
     author: 'A.G. Raymond & Company',
     logo: '/images/Edgebic/2022-07/AGRaymond33f-161208-5849d765f1422.jpg',
-    href: '/success_stories/complements-traditional-mrp-and-shop-control-systems'
+    href: '/success-stories/complements-traditional-mrp-and-shop-control-systems'
   },
   {
     id: 6,
@@ -83,7 +83,7 @@ const successStories = [
       'Integrated scheduling solutions have transformed our consulting project delivery capabilities.',
     author: 'GEMS Healthcare Solutions',
     logo: '/images/ge-healthcare-logo-custom.svg',
-    href: '/success_stories/finite-capacity-resource-scheduling-for-consulting-projects'
+    href: '/success-stories/finite-capacity-resource-scheduling-for-consulting-projects'
   },
   {
     id: 7,
@@ -95,7 +95,7 @@ const successStories = [
       'The new scheduling system replaced our complex Excel program with an intuitive, coordinated solution.',
     author: 'Kyocera Corporation',
     logo: '/images/Edgebic/2022-07/06-300x300.png',
-    href: '/success_stories/quick-and-easy-production-scheduling-replaces-complex-custom-excel-program'
+    href: '/success-stories/quick-and-easy-production-scheduling-replaces-complex-custom-excel-program'
   },
   {
     id: 8,
@@ -105,7 +105,7 @@ const successStories = [
     quote: 'We tripled our on-time shipping percentage from 30% to over 90%.',
     author: 'GE Railcar Services Corporation',
     logo: '/images/ge-rail-services-logo.jpg',
-    href: '/success_stories/repair-shops-triple-on-time-shipping-percentage-from-30-to-90'
+    href: '/success-stories/repair-shops-triple-on-time-shipping-percentage-from-30-to-90'
   },
   {
     id: 9,
@@ -116,7 +116,7 @@ const successStories = [
       'We significantly increased throughput while improving our on-time shipping performance.',
     author: 'Technical Glass Products',
     logo: '/images/Edgebic/2022-07/logo-tgpa-blue0-161208-5849d3ed255df.jpg',
-    href: '/success_stories/job-shop-increases-throughput-while-improving-shipping-on-time'
+    href: '/success-stories/job-shop-increases-throughput-while-improving-shipping-on-time'
   },
   {
     id: 10,
@@ -128,7 +128,7 @@ const successStories = [
       "Successfully implemented finite capacity scheduling for one of the world's most complex manufacturing environments.",
     author: 'US Navy',
     logo: '/images/Edgebic/2022-07/GrayAmNavy-Taglogo00-1634-58c6b882c5bd7.jpg',
-    href: '/success_stories/finite-capacity-scheduling-of-worlds-largest-aircraft-carrier-nimitz'
+    href: '/success-stories/finite-capacity-scheduling-of-worlds-largest-aircraft-carrier-nimitz'
   },
   {
     id: 11,
@@ -140,7 +140,7 @@ const successStories = [
       'RM-DB provides the flexible scheduling solution we needed for our complex manufacturing processes.',
     author: 'Plastilite Corporation',
     logo: '/images/Edgebic/2022-07/Plastilite-161208-5849e7913fd3c.jpg',
-    href: '/success_stories/erp-vendor-and-manufacturer-both-turn-to-rm-db-for-flexible-scheduling'
+    href: '/success-stories/erp-vendor-and-manufacturer-both-turn-to-rm-db-for-flexible-scheduling'
   },
   {
     id: 12,
@@ -152,7 +152,7 @@ const successStories = [
       'We are now able to schedule labor resources several months in advance, greatly increasing customer satisfaction.',
     author: 'Joe Van Wagner, Cummins Engine',
     logo: '/images/Edgebic/2022-07/cumminslogo-59492683dd7a2.png',
-    href: '/success_stories/scheduling-labor-out-several-months-increases-customer-satisfaction'
+    href: '/success-stories/scheduling-labor-out-several-months-increases-customer-satisfaction'
   }
 ];
 

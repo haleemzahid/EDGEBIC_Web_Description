@@ -229,7 +229,7 @@ export default function RMDBv6PressReleasePage() {
                 → Download Free Trial
               </Link>
               <Link
-                href="/success_stories"
+                href="/success-stories"
                 className="block text-blue-600 hover:underline"
               >
                 → Read Customer Success Stories
