@@ -1,7 +1,17 @@
 import * as React from 'react';
 import Image from 'next/image';
 
+import { createPageMetadata } from '@/lib/seo/metadata';
 import { Card, CardContent } from '@/components/ui/card';
+
+export const metadata = createPageMetadata({
+  title: 'Our Values - What Drives Us Forward',
+  description:
+    'Discover the core values that have guided User Solutions product development for over three decades. Customer-centric, innovative, and reliable manufacturing software solutions.',
+  path: '/values',
+  keywords:
+    'User Solutions values, manufacturing software company values, production planning values, company principles'
+});
 
 export default function ValuesPage(): React.JSX.Element {
   return (

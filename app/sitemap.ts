@@ -26,6 +26,8 @@ const MEDIUM_PRIORITY_PAGES = new Set([
   'videos',
   'company-history',
   'mission-statement',
+  'values',
+  'students',
   'partners',
   'scheduling-software-for-job-shops',
   'defense-aerospace-manufacturing-scheduling',

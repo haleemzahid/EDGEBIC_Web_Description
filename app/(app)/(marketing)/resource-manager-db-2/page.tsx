@@ -94,14 +94,9 @@ const jsonLd = {
     'Resource Manager-DB (RMDB) is a flexible and affordable production planning, scheduling, and tracking solution designed to adapt to your operations.',
   offers: {
     '@type': 'Offer',
-    price: '0',
+    price: '4000',
     priceCurrency: 'USD',
     availability: 'https://schema.org/InStock'
-  },
-  aggregateRating: {
-    '@type': 'AggregateRating',
-    ratingValue: '4.8',
-    ratingCount: '150'
   },
   featureList: [
     'Finite Capacity Planning & Scheduling',

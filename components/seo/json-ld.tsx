@@ -318,6 +318,12 @@ export function FeaturePageJsonLd({
         featureList.length > 0 && {
           featureList: featureList.join(', ')
         }),
+      offers: {
+        '@type': 'Offer',
+        price: '4000',
+        priceCurrency: 'USD',
+        availability: 'https://schema.org/InStock'
+      },
       provider: {
         '@type': 'Organization',
         name: AppInfo.COMPANY_NAME

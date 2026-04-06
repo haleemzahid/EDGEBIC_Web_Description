@@ -15,6 +15,7 @@ export default function RMXLayout({ children }: { children: React.ReactNode }) {
         name="Resource Manager for Excel (RMX)"
         description="Excel-based production planning and scheduling solution with powerful scheduling algorithms."
         url="/resource-manager-for-excel-2"
+        price="1200"
       />
       {children}
     </>

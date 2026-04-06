@@ -15,6 +15,7 @@ export default function EdgebiLayout({ children }: { children: React.ReactNode }
         name="EDGEBI"
         description="Advanced graphical extension for RMDB with interactive Gantt charts, visual drag-and-drop scheduling, and browser-based dashboards."
         url="/edgebi"
+        price="49"
       />
       {children}
     </>

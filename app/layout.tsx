@@ -65,11 +65,7 @@ export const metadata: Metadata = {
     }
   },
   alternates: {
-    canonical: '/',
-    languages: {
-      'x-default': '/',
-      en: '/'
-    }
+    canonical: '/'
   },
   openGraph: {
     title: 'RMDB - Production Planning & Scheduling Software | User Solutions',
