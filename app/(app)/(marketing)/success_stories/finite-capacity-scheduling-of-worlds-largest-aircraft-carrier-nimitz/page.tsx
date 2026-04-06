@@ -6,12 +6,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { RelatedProducts } from '@/components/marketing/sections/related-products';
 
 export const metadata = createArticleMetadata({
-  title:
-    "Finite Capacity Scheduling of World's Largest Aircraft Carrier Nimitz",
+  title: 'Scheduling USS Nimitz Aircraft Carrier',
   description:
-    "See how finite capacity scheduling was implemented for the USS Nimitz aircraft carrier's complex maintenance operations.",
+    "See how finite capacity scheduling managed 31,000+ maintenance tasks across 4 nuclear plants on the USS Nimitz aircraft carrier using RMX by User Solutions.",
   path: '/success_stories/finite-capacity-scheduling-of-worlds-largest-aircraft-carrier-nimitz',
-  keywords: 'USS Nimitz, aircraft carrier scheduling, finite capacity, Navy scheduling, RMDB defense',
+  keywords: 'USS Nimitz, aircraft carrier scheduling, finite capacity, Navy scheduling, RMDB defense, production scheduling',
 });
 
 export default function AircraftCarrierNimitzPage() {
@@ -170,6 +169,55 @@ export default function AircraftCarrierNimitzPage() {
                   backfill feature is a major contributor to not only fast
                   implementation, but also minimal on-going system upkeep.
                 </p>
+
+                <h2 className="text-2xl font-bold text-gray-900">
+                  The Results
+                </h2>
+
+                <p className="text-[18px] leading-relaxed text-gray-700">
+                  With Resource Manager for Excel in place, Chris was able to
+                  consolidate the scheduling of over 31,000 maintenance tasks
+                  across all four nuclear plants into a single, unified system.
+                  The level loading and finite capacity scheduling capabilities
+                  allowed him to balance the 26,000 preventive maintenance tasks
+                  alongside 5,000 corrective maintenance jobs, ensuring that
+                  common resources were allocated according to priority without
+                  exceeding capacity constraints.
+                </p>
+
+                <p className="text-[18px] leading-relaxed text-gray-700">
+                  The solution replaced the 10 separate master Excel files that
+                  Chris had been managing manually, eliminating the constant
+                  importing and exporting of data between disparate systems.
+                  RMX's Bill-of-Resource backfill feature dramatically reduced
+                  both implementation time and ongoing system maintenance,
+                  critical factors for a vessel whose schedule changes by the
+                  hour while at sea.
+                </p>
+
+                <p className="text-[18px] leading-relaxed text-gray-700">
+                  Because RMX runs entirely within Excel, it met the Navy's
+                  requirement for a non-proprietary software platform, avoiding
+                  the lengthy military quarantine and security testing process.
+                  The familiarity of the Excel environment enabled rapid adoption
+                  by the 400+ sailors who interact with the scheduling system.
+                  Additionally, the solution fit within discretionary fund budget
+                  limits, removing the need for lengthy budget approval processes
+                  that would have delayed implementation.
+                </p>
+
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Key Takeaways
+                </h2>
+
+                <ul className="list-disc space-y-2 pl-6 text-[18px] leading-relaxed text-gray-700">
+                  <li>Consolidated 31,000+ maintenance tasks from multiple disparate databases into one finite capacity scheduling system</li>
+                  <li>Replaced 10 separate master Excel files with a single Bill-of-Resource driven workflow</li>
+                  <li>Enabled level loading across 26,000 preventive and 5,000 corrective maintenance jobs sharing common resources</li>
+                  <li>Achieved rapid adoption by 400+ sailors through Excel-based familiarity</li>
+                  <li>Met Navy security requirements without proprietary software quarantine</li>
+                  <li>Supported 2-year scheduling horizon including dry dock cycles and 4-10 month at-sea deployments</li>
+                </ul>
               </div>
 
               {/* Image Column */}

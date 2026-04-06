@@ -7,7 +7,7 @@ import { RelatedProducts } from '@/components/marketing/sections/related-product
 
 export const metadata = createArticleMetadata({
   title:
-    'Scheduling Labor Out Several Months Increases Customer Satisfaction',
+    'Labor Scheduling Months Ahead Pays Off',
   description:
     'Learn how Cummins Engine improved customer satisfaction by scheduling labor and resources several months in advance.',
   path: '/success_stories/scheduling-labor-out-several-months-increases-customer-satisfaction',

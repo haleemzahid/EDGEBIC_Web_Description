@@ -15,7 +15,7 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Multi-Location Manufacturing Scheduling | Multi-Site Production Planning',
+  title: 'Multi-Location Manufacturing Scheduling',
   description:
     'Multi-location manufacturing scheduling software proven at Cummins Engine (33 U.S. sites), GE Railcar (all U.S. and Canada repair shops), and Sleepmaster (Australia + China). Schedule across multiple sites with unified capacity visibility.',
   path: '/multi-location-manufacturing-scheduling',

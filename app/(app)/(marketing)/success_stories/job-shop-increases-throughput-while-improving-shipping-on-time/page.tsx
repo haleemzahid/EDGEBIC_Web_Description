@@ -7,7 +7,7 @@ import { RelatedProducts } from '@/components/marketing/sections/related-product
 
 export const metadata = createArticleMetadata({
   title:
-    'Job Shop Increases Throughput While Improving Shipping On-Time',
+    'Job Shop Boosts Throughput and On-Time',
   description:
     'Learn how Technical Glass Products increased throughput and improved on-time shipping with advanced scheduling.',
   path: '/success_stories/job-shop-increases-throughput-while-improving-shipping-on-time',

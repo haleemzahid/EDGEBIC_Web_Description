@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata = createArticleMetadata({
   title:
-    'Job Shop Gains Control of Highly Volatile Schedule and Inventory Needs',
+    'Job Shop Controls Volatile Schedule',
   description:
     'See how a job shop manufacturing company gained control over volatile scheduling and complex inventory management.',
   path: '/success_stories/job-shop-gains-control-of-highly-volatile-schedule-and-inventory-needs',

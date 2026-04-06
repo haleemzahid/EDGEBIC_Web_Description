@@ -15,7 +15,7 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Manufacturing Scheduling Software | Shop Floor Planning & Control',
+  title: 'Manufacturing Scheduling Software',
   description:
     'Manufacturing scheduling software for job shops, defense, electronics, and heavy equipment manufacturers. Finite capacity scheduling, Gantt charts, ERP integration. Scheduling reduced from 40 hours to 2 hours per week.',
   path: '/manufacturing-scheduling-software',

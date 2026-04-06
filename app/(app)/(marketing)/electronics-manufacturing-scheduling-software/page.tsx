@@ -15,8 +15,7 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title:
-    'Electronics Manufacturing Scheduling Software | Hi-Tech Production Planning',
+  title: 'Electronics Manufacturing Scheduling',
   description:
     'Production scheduling software for electronics and hi-tech manufacturers. Handle multi-level sub-assemblies, lean manufacturing, and precision labor scheduling. Trusted by Enevate, INCON, Kyocera, and Instruments For Industry.',
   path: '/electronics-manufacturing-scheduling-software',

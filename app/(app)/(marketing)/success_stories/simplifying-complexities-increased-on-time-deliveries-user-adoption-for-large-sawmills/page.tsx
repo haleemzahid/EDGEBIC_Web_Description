@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata = createArticleMetadata({
   title:
-    'Simplifying Complexities Increased On-Time Deliveries User Adoption for Large Sawmills',
+    'Sawmills Boost On-Time Deliveries',
   description:
     'Learn how large sawmill operations simplified complex processes to improve on-time deliveries and user adoption.',
   path: '/success_stories/simplifying-complexities-increased-on-time-deliveries-user-adoption-for-large-sawmills',

@@ -15,7 +15,7 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'What-If Analysis for Manufacturing | Scenario Planning Software',
+  title: 'What-If Analysis for Manufacturing',
   description:
     'Manufacturing what-if analysis software for capacity scenario planning, new order evaluation, and production optimization. Turner Bicycles secured their largest customer order ever using what-if analysis. Test scheduling scenarios before committing.',
   path: '/what-if-analysis-manufacturing',

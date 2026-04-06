@@ -3,7 +3,7 @@ import { Page } from '@/components/ui/page';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Customer Success Stories - RMDB Production Planning Software',
+  title: 'Customer Success Stories',
   description:
     'Discover how manufacturers worldwide use RMDB to solve production planning challenges. Real case studies: tripled on-time shipping, ERP integration, finite capacity scheduling success.',
   path: '/success-stories',

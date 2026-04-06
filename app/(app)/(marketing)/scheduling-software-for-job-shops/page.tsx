@@ -15,8 +15,7 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title:
-    'Job Shop Scheduling Software | Finite Capacity Planning for Custom Manufacturers',
+  title: 'Job Shop Scheduling Software',
   description:
     'Purpose-built scheduling software for job shops. Handle high-mix, low-volume production with finite capacity scheduling, what-if analysis, and real-time capacity visibility. Trusted by Technical Glass Products, Turner Bicycles, and more.',
   path: '/scheduling-software-for-job-shops',

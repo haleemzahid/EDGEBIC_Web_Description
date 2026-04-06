@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata = createArticleMetadata({
   title:
-    'Capacity and Production Planning Reduce Outsourcing Costs, Backlog',
+    'Capacity Planning Cuts Outsourcing Costs',
   description:
     'Discover how effective capacity and production planning strategies reduced outsourcing costs and eliminated backlog.',
   path: '/success_stories/capacity-and-production-planning-add-on-for-erp',

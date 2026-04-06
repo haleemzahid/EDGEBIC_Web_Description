@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata = createArticleMetadata({
   title:
-    'Hi-Tech Connector Mfr Accurately Schedules Labor with MRP Add-On',
+    'Hi-Tech Connector Mfr Schedules Labor',
   description:
     'Discover how a hi-tech connector manufacturer improved labor scheduling accuracy with MRP add-on solutions.',
   path: '/success_stories/hi-tech-connector-mfr-accurately-schedules-labor-with-mrp-add-on',

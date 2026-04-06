@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata = createArticleMetadata({
   title:
-    'Smart Coffee Machines Get Smarter Purchasing with ERP Add-On',
+    'Smart Coffee Machines and ERP Add-On',
   description:
     'See how smart coffee machine manufacturers optimized purchasing decisions with integrated ERP add-on solutions.',
   path: '/success_stories/smart-coffee-machines-get-smarter-purchasing-with-erp-add-on',

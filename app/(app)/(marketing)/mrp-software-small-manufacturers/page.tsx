@@ -15,7 +15,7 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'MRP Software for Small Manufacturers | Affordable Material Planning',
+  title: 'MRP Software for Small Manufacturers',
   description:
     'Affordable MRP software designed for small to mid-size manufacturers. Bills of Materials, inventory management, purchasing, and finite capacity scheduling. Used by Sleepmaster (AUD$50M), Turner Bicycles, and more. Implement in days, not months.',
   path: '/mrp-software-small-manufacturers',

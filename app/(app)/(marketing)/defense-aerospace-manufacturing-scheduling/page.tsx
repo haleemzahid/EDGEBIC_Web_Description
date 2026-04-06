@@ -15,7 +15,7 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Defense & Aerospace Manufacturing Scheduling Software',
+  title: 'Defense & Aerospace Scheduling',
   description:
     'Production scheduling software for defense and aerospace manufacturers. Handle 26,000+ maintenance tasks, multi-year planning horizons, and complex compliance requirements. Trusted by the US Navy and BAE Systems.',
   path: '/defense-aerospace-manufacturing-scheduling',

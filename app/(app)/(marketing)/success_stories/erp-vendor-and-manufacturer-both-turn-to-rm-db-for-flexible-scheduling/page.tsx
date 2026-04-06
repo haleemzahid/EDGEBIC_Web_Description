@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata = createArticleMetadata({
   title:
-    'ERP Vendor and Manufacturer Both Turn to RM-DB for Flexible Scheduling',
+    'ERP Vendor and Mfr Choose RM-DB',
   description:
     'Learn how both an ERP vendor and manufacturer chose Resource Manager-DB for advanced production planning and scheduling.',
   path: '/success_stories/erp-vendor-and-manufacturer-both-turn-to-rm-db-for-flexible-scheduling',

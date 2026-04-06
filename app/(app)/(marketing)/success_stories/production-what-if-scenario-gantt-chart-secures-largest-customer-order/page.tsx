@@ -7,7 +7,7 @@ import { RelatedProducts } from '@/components/marketing/sections/related-product
 
 export const metadata = createArticleMetadata({
   title:
-    'Production What-If Scenario Gantt Chart Secures Largest Customer Order',
+    'What-If Gantt Chart Wins Largest Order',
   description:
     'Learn how Turner Suspension Bicycles used Resource Manager for Excel to handle their largest customer order with what-if scenario planning.',
   path: '/success_stories/production-what-if-scenario-gantt-chart-secures-largest-customer-order',

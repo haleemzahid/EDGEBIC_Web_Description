@@ -7,7 +7,7 @@ import { RelatedProducts } from '@/components/marketing/sections/related-product
 
 export const metadata = createArticleMetadata({
   title:
-    'Resource Manager DB Innovates Li-Ion Battery Production Scheduling for Enevate',
+    'Enevate Li-Ion Battery Scheduling',
   description:
     'Learn how Enevate Corporation uses Resource Manager-DB for innovative Li-ion battery production scheduling.',
   path: '/success_stories/resource-manager-db-innovates-li-ion-battery-production-scheduling-for-enevate',

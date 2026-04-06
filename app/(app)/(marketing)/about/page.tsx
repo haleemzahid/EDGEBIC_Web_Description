@@ -4,7 +4,7 @@ import { NTClipboardAbout } from '@/components/marketing/sections/ntclipboard-ab
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'About User Solutions - Manufacturing Software Since 1991',
+  title: 'About Us - Manufacturing Software',
   description:
     'Learn about User Solutions, the company behind RMDB and EDGEBI - providing award-winning production planning and scheduling software to manufacturers worldwide for over 35 years.',
   path: '/about',

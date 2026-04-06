@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata = createArticleMetadata({
   title:
-    'Complements Traditional MRP for Job Shop Scheduling and Efficiency',
+    'Complements MRP for Job Shop Efficiency',
   description:
     'Explore how complementary scheduling solutions enhance traditional MRP systems in job shop environments.',
   path: '/success_stories/complements-traditional-mrp-and-shop-control-systems',

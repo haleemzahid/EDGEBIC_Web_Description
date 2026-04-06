@@ -7,7 +7,7 @@ import { RelatedProducts } from '@/components/marketing/sections/related-product
 
 export const metadata = createArticleMetadata({
   title:
-    'Repair Shops Triple On-Time Shipping Percentage from 30% to 90%',
+    'Repair Shops Triple On-Time Shipping',
   description:
     'See how GE Railcar Services improved on-time shipping from 30% to over 90% using Workcenter SchedulerXL.',
   path: '/success_stories/repair-shops-triple-on-time-shipping-percentage-from-30-to-90',

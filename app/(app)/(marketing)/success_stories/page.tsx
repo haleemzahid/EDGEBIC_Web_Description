@@ -2,11 +2,8 @@ import { createPageMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 import Link from 'next/link';
 
-
-import { Card, CardContent } from '@/components/ui/card';
-
 export const metadata = createPageMetadata({
-  title: 'Success Stories',
+  title: 'Customer Success Stories',
   description:
     'Read how manufacturers across industries have improved on-time delivery, increased throughput, and optimized production scheduling with User Solutions software.',
   path: '/success_stories',
@@ -289,55 +286,59 @@ export default function SuccessStoriesPage() {
       </section>
 
       {/* Success Stories Grid */}
-      <section>
-        <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-7xl">
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-2">
-              {successStories.map((story, index) => (
-                <Link
-                  key={story.slug}
-                  href={`/success_stories/${story.slug}`}
-                  className="group"
-                >
-                  <Card className="h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                    <CardContent className="p-6">
-                      <div className="mb-4 overflow-hidden rounded-lg">
-                        <Image
-                          src={story.image}
-                          alt={story.alt}
-                          width={600}
-                          height={400}
-                          className="h-48 w-full object-contain transition-transform duration-300 group-hover:scale-105"
-                          unoptimized
+      <section className="container mx-auto px-4">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-8 md:grid-cols-2">
+            {successStories.map((story) => (
+              <article key={story.slug} className="group rounded-lg border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                <div className="mb-4 overflow-hidden rounded-t-lg">
+                  <Image
+                    src={story.image}
+                    alt={story.alt}
+                    width={600}
+                    height={400}
+                    className="h-48 w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                    unoptimized
+                  />
+                </div>
+                <div className="px-6 pb-6">
+                  <h2 className="mb-3 text-xl font-bold text-gray-900">
+                    <Link
+                      href={`/success_stories/${story.slug}`}
+                      className="transition-colors hover:text-blue-600"
+                    >
+                      {story.title}
+                    </Link>
+                  </h2>
+                  <p className="line-clamp-4 text-gray-600">
+                    {story.excerpt}
+                  </p>
+                  <div className="mt-4">
+                    <Link
+                      href={`/success_stories/${story.slug}`}
+                      aria-label={`Read more about ${story.title}`}
+                      className="inline-flex items-center text-sm font-semibold text-blue-600 transition-colors hover:text-blue-800"
+                    >
+                      Read More
+                      <svg
+                        className="ml-2 size-4 transition-transform group-hover:translate-x-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
                         />
-                      </div>
-                      <h2 className="mb-3 text-xl font-bold text-gray-900 transition-colors group-hover:text-blue-600">
-                        {story.title}
-                      </h2>
-                      <p className="line-clamp-4 text-gray-600">
-                        {story.excerpt}
-                      </p>
-                      <div className="mt-4 flex items-center text-blue-600">
-                        <span className="text-sm font-semibold">Read More</span>
-                        <svg
-                          className="ml-2 size-4 transition-transform group-hover:translate-x-1"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 5l7 7-7 7"
-                          />
-                        </svg>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
+                      </svg>
+                    </Link>
+                  </div>
+                </div>
+              </article>
+            ))}
           </div>
         </div>
       </section>

@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata = createArticleMetadata({
   title:
-    'NIST MEP and Industrial Damping Leader Improve On-Time Delivery',
+    'NIST MEP Improves On-Time Delivery',
   description:
     'Discover how NIST MEP collaboration helped an industrial damping manufacturer achieve better on-time delivery performance.',
   path: '/success_stories/nist-mep-and-industrial-damping-leader-improve-on-time-delivery',

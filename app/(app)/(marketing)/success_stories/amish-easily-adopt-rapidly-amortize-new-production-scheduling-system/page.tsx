@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata = createArticleMetadata({
   title:
-    'Amish Easily Adopt, Rapidly Amortize New Production Scheduling System',
+    'Amish Adopt Scheduling System Quickly',
   description:
     'See how Homestead Furniture successfully implemented modern production scheduling while honoring traditional Amish values.',
   path: '/success_stories/amish-easily-adopt-rapidly-amortize-new-production-scheduling-system',

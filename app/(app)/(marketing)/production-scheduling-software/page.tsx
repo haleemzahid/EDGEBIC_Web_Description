@@ -15,7 +15,7 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Production Scheduling Software | Finite Capacity Planning & MRP',
+  title: 'Production Scheduling Software',
   description:
     'Production scheduling software trusted by GE, Cummins, BAE Systems, and the US Navy. Finite capacity scheduling, what-if analysis, MRP, and ERP integration. On-time shipping improved from 30% to 90%. 35+ years of manufacturing expertise.',
   path: '/production-scheduling-software',

@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata = createArticleMetadata({
   title:
-    'Lean Manufacturing Realized by Hi-Tech Amplifier Manufacturer',
+    'Hi-Tech Amplifier Mfr Achieves Lean',
   description:
     'See how a high-tech amplifier manufacturer achieved lean manufacturing excellence with advanced production scheduling.',
   path: '/success_stories/lean-manufacturing-realized-by-hi-tech-amplifier-manufacturer',

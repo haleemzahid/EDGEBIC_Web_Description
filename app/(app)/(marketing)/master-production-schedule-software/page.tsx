@@ -15,7 +15,7 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Master Production Schedule Software | MPS Planning & Optimization',
+  title: 'Master Production Schedule (MPS) Software',
   description:
     'Master production schedule (MPS) software that builds realistic schedules based on finite capacity. 6-month planning horizons, what-if scenario analysis, and automatic schedule optimization. Used by Cummins, GE Railcar, and Technical Glass Products.',
   path: '/master-production-schedule-software',

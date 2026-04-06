@@ -10,7 +10,7 @@ import { NTClipboardToolBox } from '@/components/marketing/sections/ntclipboard-
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Production Planning & Scheduling Software | Resource Manager DB (RMDB) by User Solutions',
+  title: 'Production Planning & Scheduling Software',
   description:
     'Resource Manager DB (RMDB) by User Solutions — production planning & scheduling software with finite capacity scheduling, MRP, and ERP integration. Trusted by GE, Cummins, BAE Systems, and the US Navy for 35+ years.',
   path: '/',

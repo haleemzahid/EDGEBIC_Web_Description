@@ -12,7 +12,7 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Frequently Asked Questions About RMDB Production Planning Software',
+  title: 'Frequently Asked Questions',
   description:
     'Get answers to common questions about Resource Manager DB (RMDB) production planning and scheduling software. Learn about features, pricing, implementation, ERP integration, and more.',
   path: '/faq',

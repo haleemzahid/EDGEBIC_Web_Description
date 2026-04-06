@@ -15,7 +15,7 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Heavy Equipment & Industrial Manufacturing Scheduling Software',
+  title: 'Heavy Equipment Scheduling Software',
   description:
     'Production scheduling for heavy equipment and industrial manufacturers. Multi-location scheduling, 6-month labor planning, and on-time shipping improvement from 30% to 90%. Trusted by Cummins Engine, GE Railcar Services, and more.',
   path: '/heavy-equipment-manufacturing-scheduling',

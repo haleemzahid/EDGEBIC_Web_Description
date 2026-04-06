@@ -15,7 +15,7 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Labor Scheduling for Manufacturing | Workforce Capacity Planning',
+  title: 'Labor Scheduling for Manufacturing',
   description:
     'Manufacturing labor scheduling software that plans workforce capacity alongside machines and materials. Cummins Engine schedules labor months ahead across 33 locations. INCON achieves accurate labor scheduling with realistic promise dates.',
   path: '/labor-scheduling-manufacturing',

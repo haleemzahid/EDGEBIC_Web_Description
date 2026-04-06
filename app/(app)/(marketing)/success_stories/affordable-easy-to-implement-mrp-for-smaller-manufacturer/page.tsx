@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata = createArticleMetadata({
   title:
-    'Affordable, Easy to Implement MRP for Smaller Manufacturer',
+    'Affordable MRP for Small Manufacturers',
   description:
     'Sleepmaster LTD successfully implemented an affordable, flexible MRP system for their Australian and Chinese operations.',
   path: '/success_stories/affordable-easy-to-implement-mrp-for-smaller-manufacturer',

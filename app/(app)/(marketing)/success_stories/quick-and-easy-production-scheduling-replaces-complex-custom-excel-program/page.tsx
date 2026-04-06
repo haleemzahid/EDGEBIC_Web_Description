@@ -7,7 +7,7 @@ import { RelatedProducts } from '@/components/marketing/sections/related-product
 
 export const metadata = createArticleMetadata({
   title:
-    'Quick and Easy Production Scheduling Replaces Complex Custom Excel Program',
+    'Easy Scheduling Replaces Custom Excel',
   description:
     'Kyocera Industrial Ceramics replaced a complex custom Excel program with User Solutions scheduling software.',
   path: '/success_stories/quick-and-easy-production-scheduling-replaces-complex-custom-excel-program',

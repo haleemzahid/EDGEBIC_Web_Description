@@ -15,7 +15,7 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'On-Time Delivery Improvement | Manufacturing OTD Software',
+  title: 'On-Time Delivery Manufacturing Software',
   description:
     'Improve manufacturing on-time delivery from 30% to 90%+ with finite capacity scheduling. GE Railcar tripled on-time shipping. Technical Glass Products cut lead times by 2 weeks. Realistic promise dates based on actual capacity.',
   path: '/on-time-delivery-manufacturing',

@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata = createArticleMetadata({
   title:
-    'Finite Capacity Resource Scheduling for Consulting Projects',
+    'Resource Scheduling for Consulting',
   description:
     'GEMS Healthcare Solutions uses   to manage multiple consulting projects with shared resources.',
   path: '/success_stories/finite-capacity-resource-scheduling-for-consulting-projects',
