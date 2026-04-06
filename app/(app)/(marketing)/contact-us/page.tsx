@@ -131,16 +131,6 @@ export default function ContactUsPage() {
             <h1 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl lg:text-5xl">
               Contact Us
             </h1>
-            <p className="mx-auto max-w-3xl text-lg text-gray-700">
-              Ready to improve your production scheduling and manufacturing
-              operations? Get in touch with User Solutions to discover how
-              Resource Manager-DB can streamline your planning, optimize
-              capacity, and boost on-time delivery. Our team specializes in
-              affordable, easy-to-implement scheduling solutions that integrate
-              with your existing ERP system. Whether you run a job shop, a
-              mid-size manufacturer, or a global operation, we tailor our
-              approach to fit your unique processes and challenges.
-            </p>
           </div>
         </div>
       </section>
