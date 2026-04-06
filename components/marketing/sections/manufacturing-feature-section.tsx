@@ -1115,7 +1115,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   rel="noopener noreferrer"
                   className="inline-flex items-center text-sm font-medium text-[#2FB8DE] transition-colors hover:text-[#1da8ce] hover:underline"
                 >
-                  Read More
+                  Read Review on Capterra
                   <svg
                     className="ml-1 size-4"
                     fill="none"
@@ -1210,7 +1210,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   rel="noopener noreferrer"
                   className="inline-flex items-center text-sm font-medium text-[#2FB8DE] transition-colors hover:text-[#1da8ce] hover:underline"
                 >
-                  Read More
+                  Read Review on Capterra
                   <svg
                     className="ml-1 size-4"
                     fill="none"
@@ -1304,7 +1304,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   rel="noopener noreferrer"
                   className="inline-flex items-center text-sm font-medium text-[#2FB8DE] transition-colors hover:text-[#1da8ce] hover:underline"
                 >
-                  Read More
+                  Read Review on Capterra
                   <svg
                     className="ml-1 size-4"
                     fill="none"
