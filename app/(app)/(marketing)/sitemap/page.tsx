@@ -52,7 +52,7 @@ export default function SitemapPage() {
                 </li>
                 <li>
                   <Link
-                    href="/aboutus"
+                    href="/about"
                     className="text-blue-600 hover:underline"
                   >
                     About Us
@@ -108,14 +108,6 @@ export default function SitemapPage() {
                     className="text-blue-600 hover:underline"
                   >
                     Company History
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/mission"
-                    className="text-blue-600 hover:underline"
-                  >
-                    Mission
                   </Link>
                 </li>
                 <li>
@@ -204,10 +196,10 @@ export default function SitemapPage() {
                 </li>
                 <li>
                   <Link
-                    href="/rmdb-quick-start"
+                    href="/rmx-quick-start"
                     className="text-blue-600 hover:underline"
                   >
-                    RMDB Quick Start
+                    RMX Quick Start
                   </Link>
                 </li>
                 <li>
