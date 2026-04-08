@@ -1,0 +1,233 @@
+---
+title: "Multi-Level BOM in MRP: Structure, Explosion & Low-Level Codes"
+description: "Master multi-level bills of materials in MRP. Learn BOM explosion, low-level coding, parent-child relationships, and how MRP processes complex product structures across multiple assembly levels."
+published: 2026-04-16T08:00:00.000Z
+modified: 2026-04-16T08:00:00.000Z
+category: MRP
+author: user-solutions
+cluster: mrp
+pillarSlug: mrp-material-requirements-planning-guide
+keywords:
+  - multi-level BOM MRP
+  - BOM explosion process
+  - low-level coding MRP
+  - indented bill of materials
+  - BOM levels manufacturing
+targetPhrase: "multi-level BOM in MRP systems"
+wordCount: 2000
+readingTime: 10
+heroImage: "/marketing/blog/multi-level-bom-mrp/hero.webp"
+heroAlt: "Multi-level product structure tree diagram showing parent-child component relationships"
+faqQuestions:
+  - question: "What is a multi-level BOM?"
+    answer: "A multi-level BOM (also called an indented BOM) is a bill of materials that shows the complete product structure across all assembly levels, from the finished product down through sub-assemblies to the lowest-level raw materials. It reveals every parent-child relationship and the quantity required at each level."
+  - question: "What is BOM explosion in MRP?"
+    answer: "BOM explosion is the process where MRP takes demand for a finished product and calculates requirements for every component at every BOM level. Starting at the top level, MRP multiplies demand by BOM quantities to determine gross requirements for each child item, then repeats the process at each lower level."
+  - question: "What is low-level coding in MRP?"
+    answer: "Low-level coding assigns each item the lowest BOM level at which it appears anywhere in the product structure. If a component appears at both Level 2 and Level 4, it is assigned low-level code 4. MRP processes items by low-level code to ensure all demand sources are accumulated before calculating net requirements."
+  - question: "How many BOM levels is typical in manufacturing?"
+    answer: "Simple products may have 2-3 levels. Complex assembled products typically have 4-8 levels. Highly complex products like aircraft or heavy equipment can have 10-15+ levels. The number of levels depends on the product's complexity and how sub-assemblies are organized."
+  - question: "What is the difference between a single-level and multi-level BOM?"
+    answer: "A single-level BOM shows only the immediate children of one parent item. A multi-level BOM shows the entire product structure from top to bottom. MRP needs the multi-level view to calculate requirements at every level and offset lead times correctly through the entire product structure."
+qaQuestions:
+  - question: "What is the most common problem you see with multi-level BOMs in manufacturing software?"
+    answer: "The most common problem is BOMs that do not match how the product is actually built. Engineering creates the BOM based on the design structure, but manufacturing builds it differently. For example, engineering might define a sub-assembly that production never actually builds as a separate unit. They just go straight from components to the final assembly. When MRP sees that phantom sub-assembly in the BOM, it generates a production order for it, but nobody on the floor knows what to do with it. The fix is using phantom BOM designations for sub-assemblies that are not stocked. MRP blows through the phantom level and plans the components directly. In RMDB, we review every BOM during implementation and flag items where the engineering structure does not match the manufacturing reality."
+  - question: "How do you handle shared components that appear in many different products?"
+    answer: "Shared components are both an opportunity and a challenge. The opportunity is that common parts allow you to consolidate purchasing and maintain stock that serves multiple products. The challenge is that MRP must accumulate all demand from every parent before planning the shared component. This is exactly what low-level coding solves. If a bearing is used in Product A at Level 3 and Product B at Level 2, MRP assigns it low-level code 3 and does not calculate its net requirements until all Level 2 and Level 3 parent demands have been processed. Without proper low-level coding, MRP might plan the bearing based on Product B's demand alone and miss the demand from Product A. In RMDB, low-level codes are calculated automatically whenever the BOM structure changes, so this is handled transparently."
+---
+
+<Image
+  src="/marketing/blog/multi-level-bom-mrp/hero.webp"
+  alt="Multi-level product structure tree diagram showing parent-child component relationships"
+  width="1200"
+  height="630"
+  className="w-full rounded-lg"
+/>
+
+A **multi-level BOM in MRP** is the structural backbone that allows material requirements planning to work for complex products. While a simple product might have a flat list of components, most manufactured products have multiple assembly levels where sub-assemblies contain their own components, which may contain further sub-assemblies. MRP must process this entire structure systematically to calculate correct material requirements at every level.
+
+This guide covers multi-level BOM structure, the BOM explosion process, low-level coding, and practical considerations for managing complex product structures. For BOM fundamentals, see our [bill of materials guide](/blog/bill-of-materials-guide) and our [complete MRP guide](/blog/mrp-material-requirements-planning-guide).
+
+## Understanding Multi-Level BOM Structure
+
+A multi-level (indented) BOM represents the complete product hierarchy. Each level represents one stage of assembly:
+
+```
+Level 0: Finished Product (Electric Motor Assembly)
+│
+├── Level 1: Stator Assembly (qty: 1)
+│   ├── Level 2: Stator Core (qty: 1)
+│   │   ├── Level 3: Silicon Steel Laminations (qty: 48)
+│   │   └── Level 3: Insulation Paper (qty: 0.5 m)
+│   ├── Level 2: Copper Wire (qty: 200 ft)
+│   └── Level 2: Terminal Block (qty: 1)
+│
+├── Level 1: Rotor Assembly (qty: 1)
+│   ├── Level 2: Rotor Core (qty: 1)
+│   │   ├── Level 3: Silicon Steel Laminations (qty: 36)
+│   │   └── Level 3: Aluminum Bars (qty: 36)
+│   ├── Level 2: Shaft (qty: 1)
+│   └── Level 2: Bearings (qty: 2)
+│
+├── Level 1: Housing (qty: 1)
+│   ├── Level 2: Cast Iron Body (qty: 1)
+│   ├── Level 2: End Shields (qty: 2)
+│   └── Level 2: Gaskets (qty: 2)
+│
+└── Level 1: Hardware Kit (qty: 1)
+    ├── Level 2: Mounting Bolts (qty: 4)
+    ├── Level 2: Terminal Screws (qty: 6)
+    └── Level 2: Bearings (qty: 0) ← NOT here, already in Rotor
+```
+
+Key observations:
+- **Silicon Steel Laminations** appear at Level 3 under both Stator Core (qty 48) and Rotor Core (qty 36). Total requirement per motor: 84 laminations.
+- **Bearings** appear once under Rotor Assembly. MRP must capture this correctly.
+- The deepest level (Level 3) represents purchased raw materials. Levels 1-2 are manufactured sub-assemblies.
+
+## The BOM Explosion Process
+
+BOM explosion is how MRP converts finished goods demand into component requirements at every level.
+
+### Step-by-Step Example
+
+**Given:** Master Production Schedule calls for 100 Electric Motor Assemblies in Week 8.
+
+**Level 0 to Level 1 explosion:**
+
+| Level 1 Component | Qty Per | Gross Requirement |
+|---|---|---|
+| Stator Assembly | 1 | 100 |
+| Rotor Assembly | 1 | 100 |
+| Housing | 1 | 100 |
+| Hardware Kit | 1 | 100 |
+
+**Level 1 to Level 2 explosion (Stator Assembly only):**
+
+| Level 2 Component | Qty Per Stator | Stator Demand | Gross Requirement |
+|---|---|---|---|
+| Stator Core | 1 | 100 | 100 |
+| Copper Wire | 200 ft | 100 | 20,000 ft |
+| Terminal Block | 1 | 100 | 100 |
+
+**Level 2 to Level 3 explosion (Stator Core):**
+
+| Level 3 Component | Qty Per Core | Core Demand | Gross Requirement |
+|---|---|---|---|
+| Silicon Steel Laminations | 48 | 100 | 4,800 |
+| Insulation Paper | 0.5 m | 100 | 50 m |
+
+MRP repeats this for every branch of the BOM tree. After all explosions are complete for Level 3, the total Silicon Steel Laminations requirement is:
+
+- From Stator Core: 48 x 100 = 4,800
+- From Rotor Core: 36 x 100 = 3,600
+- **Total gross requirement: 8,400 laminations**
+
+## Low-Level Coding: Why It Matters
+
+Low-level coding solves a critical problem in multi-level MRP processing. Consider Silicon Steel Laminations, which appears under both Stator Core and Rotor Core. If MRP processed the BOM top-down, it might calculate [net requirements](/blog/mrp-net-requirements-calculation) for laminations when it processes the Stator Core path, and then find additional demand when it processes the Rotor Core path.
+
+**The problem:** MRP might place an order based on partial demand (Stator only) and then need to place a second order when the Rotor demand is discovered. This defeats the purpose of consolidated ordering and optimal [lot sizing](/blog/mrp-lot-sizing-methods).
+
+**The solution:** Low-level coding assigns each item the **lowest** level at which it appears anywhere in the BOM. MRP then processes items level by level, starting at Level 0, ensuring all parent demands are calculated before processing any child item.
+
+| Item | Appears at Levels | Low-Level Code |
+|---|---|---|
+| Electric Motor Assembly | 0 | 0 |
+| Stator Assembly | 1 | 1 |
+| Rotor Assembly | 1 | 1 |
+| Stator Core | 2 | 2 |
+| Shaft | 2 | 2 |
+| Bearings | 2 | 2 |
+| Silicon Steel Laminations | 3 (under Stator), 3 (under Rotor) | 3 |
+| Copper Wire | 2 | 2 |
+
+MRP processes all Level 0 items first, then Level 1, then Level 2, and finally Level 3. By the time it reaches Silicon Steel Laminations at Level 3, all parent demands (from both Stator Core and Rotor Core) have been calculated, so the net requirements calculation uses the complete demand picture.
+
+## Lead Time Offsetting Across Levels
+
+Multi-level BOMs require MRP to offset lead times at each level to determine when orders must be released. Working backward from the finished goods due date:
+
+| Level | Item | Lead Time | Must Complete By | Must Start By |
+|---|---|---|---|---|
+| 0 | Motor Assembly | 1 week | Week 8 | Week 7 |
+| 1 | Stator Assembly | 2 weeks | Week 7 | Week 5 |
+| 2 | Stator Core | 1 week | Week 5 | Week 4 |
+| 3 | Silicon Steel Laminations | 3 weeks (purchased) | Week 4 | **Week 1** |
+
+This means that to deliver motors in Week 8, the silicon steel must be ordered in Week 1, giving a total cumulative lead time of 7 weeks. MRP automatically calculates these offsets through the entire BOM structure.
+
+The **critical path** through the BOM determines the minimum cumulative lead time. In this example, the path through Stator Assembly > Stator Core > Silicon Steel (7 weeks total) is longer than other paths and constrains how quickly the motor can be produced.
+
+## Phantom BOMs in Multi-Level Structures
+
+Some sub-assemblies in the BOM exist for engineering documentation but are not actually stocked or scheduled as separate production orders. These are designated as **phantom** (or transient) items.
+
+When MRP encounters a phantom item during BOM explosion, it:
+1. Passes through the phantom level without generating a production order
+2. Adds the phantom's lead time of zero (since it is not built separately)
+3. Explodes directly to the phantom's components
+
+This is useful for sub-assemblies that are immediately consumed in the next assembly step without going to inventory. For example, if the Hardware Kit is just a grouping of parts that are taken directly from stock during final assembly, designating it as a phantom prevents MRP from generating unnecessary kit-building production orders.
+
+## Managing Multi-Level BOM Complexity
+
+### Modular BOMs
+
+For products with many options, modular BOMs break the product into standard modules that can be combined in different configurations. Instead of maintaining a separate BOM for every possible configuration, you maintain BOMs for each module and assemble them based on the customer order.
+
+### Where-Used Analysis
+
+Before changing any component in a multi-level BOM, run a where-used analysis to identify every parent assembly affected. A change to a Level 3 raw material might impact multiple Level 2 sub-assemblies, which impact multiple Level 1 assemblies, which impact multiple Level 0 products.
+
+### BOM Accuracy at Every Level
+
+[BOM accuracy](/blog/bill-of-materials-guide) must be maintained at every level, not just the top. A missing component at Level 4 will cause a stockout just as surely as a missing component at Level 1. Regular audits should cover all active BOM levels. Refer to our [common MRP mistakes](/blog/common-mrp-mistakes) guide for more accuracy pitfalls.
+
+### Reducing BOM Levels
+
+Unnecessary BOM levels add complexity and lead time. If a sub-assembly exists in the BOM but is never built as a separate item, consider:
+- Converting it to a phantom BOM level
+- Flattening the BOM by moving components up one level
+- Combining sequential operations into a single routing
+
+Fewer levels means faster MRP processing, shorter cumulative lead times, and simpler management.
+
+## Tools for Managing Multi-Level BOMs
+
+Managing multi-level BOMs effectively requires software that handles:
+- Automatic low-level code calculation
+- Visual BOM tree display
+- Where-used reporting
+- Phantom BOM support
+- [Safety stock](/blog/safety-stock-mrp) at any BOM level
+
+[RMDB from User Solutions](/resource-manager-db-2) provides multi-level BOM management integrated with finite capacity scheduling, so your material plans reflect both the product structure and your shop floor reality.
+
+## Frequently Asked Questions
+
+<Accordion title="What is a multi-level BOM?">
+A multi-level BOM (also called an indented BOM) is a bill of materials that shows the complete product structure across all assembly levels, from the finished product down through sub-assemblies to the lowest-level raw materials. It reveals every parent-child relationship and the quantity required at each level.
+</Accordion>
+
+<Accordion title="What is BOM explosion in MRP?">
+BOM explosion is the process where MRP takes demand for a finished product and calculates requirements for every component at every BOM level. Starting at the top level, MRP multiplies demand by BOM quantities to determine gross requirements for each child item, then repeats the process at each lower level.
+</Accordion>
+
+<Accordion title="What is low-level coding in MRP?">
+Low-level coding assigns each item the lowest BOM level at which it appears anywhere in the product structure. If a component appears at both Level 2 and Level 4, it is assigned low-level code 4. MRP processes items by low-level code to ensure all demand sources are accumulated before calculating net requirements.
+</Accordion>
+
+<Accordion title="How many BOM levels is typical in manufacturing?">
+Simple products may have 2-3 levels. Complex assembled products typically have 4-8 levels. Highly complex products like aircraft or heavy equipment can have 10-15+ levels. The number of levels depends on the product's complexity and how sub-assemblies are organized.
+</Accordion>
+
+<Accordion title="What is the difference between a single-level and multi-level BOM?">
+A single-level BOM shows only the immediate children of one parent item. A multi-level BOM shows the entire product structure from top to bottom. MRP needs the multi-level view to calculate requirements at every level and offset lead times correctly through the entire product structure.
+</Accordion>
+
+## Master Your Product Structure
+
+Complex products require multi-level BOM management that works. [RMDB from User Solutions](/resource-manager-db-2) handles multi-level BOMs with automatic low-level coding, phantom BOM support, and lead time offsetting across every assembly level.
+
+[Schedule a free demo](/contact) to see how RMDB manages complex product structures for your manufacturing operation.

@@ -3,6 +3,7 @@ import path from 'path';
 import { MetadataRoute } from 'next';
 import { allDocs, allPosts } from 'content-collections';
 import { getBaseUrl } from '@/lib/urls/get-base-url';
+import { states } from '@/data/states';
 
 // High-priority pages that should be crawled more frequently
 const HIGH_PRIORITY_PAGES = new Set([
@@ -177,11 +178,25 @@ export default async function Sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly' as const,
       priority: 0.5
     })),
-    ...allPosts.map((post) => ({
-      url: `${baseUrl}${post.slug}`,
-      lastModified: post.published,
+    ...allPosts.map((post) => {
+      // Pillar pages get highest blog priority
+      const isPillar = post.pillarSlug && post.slugAsParams === post.pillarSlug;
+      // Glossary terms get lowest blog priority
+      const isGlossary = post.category === 'Glossary';
+
+      return {
+        url: `${baseUrl}/blog/${post.slugAsParams}`,
+        lastModified: post.modified || post.published,
+        changeFrequency: isPillar ? 'weekly' as const : 'monthly' as const,
+        priority: isPillar ? 0.8 : isGlossary ? 0.5 : 0.7
+      };
+    }),
+    // State/geo landing pages
+    ...states.map((state) => ({
+      url: `${baseUrl}/production-scheduling-software/${state.slug}`,
+      lastModified: new Date(),
       changeFrequency: 'monthly' as const,
-      priority: 0.6
+      priority: state.tier === 1 ? 0.7 : state.tier === 2 ? 0.5 : 0.4
     }))
   ];
 
