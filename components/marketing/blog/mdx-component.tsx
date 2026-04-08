@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useMDXComponent } from '@content-collections/mdx/react';
 
 import { Callout } from '@/components/marketing/blog/callout';
+import { FaqSection } from '@/components/marketing/blog/faq-section';
 import {
   Accordion,
   AccordionContent,
@@ -245,7 +246,11 @@ const components = {
       )}
       {...props}
     />
-  )
+  ),
+  FAQ: ({ items }: { items?: { question: string; answer: string }[] }) => {
+    if (!items || items.length === 0) return null;
+    return <FaqSection questions={items} />;
+  }
 };
 
 type MdxProps = {
