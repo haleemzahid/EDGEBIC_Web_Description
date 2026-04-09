@@ -70,6 +70,7 @@ const LEGACY_REDIRECTS: Record<string, string> = {
   '/part-iii-combining-level-loading-with-finite-capacity-scheduling': '/blogs',
   '/our-privacy-policy': '/privacy-policy',
   '/ws': '/',
+  '/workcenter-scheduler-xl': '/workcenter-schedulerxl',
 };
 
 export function middleware(request: NextRequest) {
