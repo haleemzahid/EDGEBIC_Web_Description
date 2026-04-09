@@ -388,3 +388,32 @@ export function IndustryPageJsonLd({
 
   return <JsonLdScript data={schema} />;
 }
+
+export function VideoObjectJsonLd({
+  name,
+  description,
+  thumbnailUrl,
+  uploadDate,
+  embedUrl,
+  contentUrl
+}: {
+  name: string;
+  description: string;
+  thumbnailUrl: string;
+  uploadDate: string;
+  embedUrl?: string;
+  contentUrl?: string;
+}) {
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name,
+    description,
+    thumbnailUrl,
+    uploadDate,
+    ...(embedUrl && { embedUrl }),
+    ...(contentUrl && { contentUrl })
+  };
+
+  return <JsonLdScript data={schema} />;
+}

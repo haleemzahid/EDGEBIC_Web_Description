@@ -1,5 +1,5 @@
 import { createProductMetadata } from '@/lib/seo/metadata';
-import { SoftwareApplicationJsonLd } from '@/components/seo';
+import { SoftwareApplicationJsonLd, VideoObjectJsonLd } from '@/components/seo';
 
 export const metadata = createProductMetadata({
   name: 'EDGEBI - Graphical Extension for RMDB',
@@ -16,6 +16,13 @@ export default function EdgebiLayout({ children }: { children: React.ReactNode }
         description="Advanced graphical extension for RMDB with interactive Gantt charts, visual drag-and-drop scheduling, and browser-based dashboards."
         url="/edgebi"
         price="49"
+      />
+      <VideoObjectJsonLd
+        name="EDGEBI Demo — Interactive Gantt Chart Scheduling"
+        description="See how EDGEBI adds interactive Gantt charts, drag-and-drop scheduling, and browser-based dashboards to Resource Manager DB (RMDB) for visual production planning."
+        thumbnailUrl="https://img.youtube.com/vi/_0LjI9MY8zo/maxresdefault.jpg"
+        uploadDate="2022-12-01"
+        embedUrl="https://www.youtube.com/embed/_0LjI9MY8zo"
       />
       {children}
     </>

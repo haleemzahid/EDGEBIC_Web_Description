@@ -6,7 +6,8 @@ export {
   ArticleJsonLd,
   FAQJsonLd,
   FeaturePageJsonLd,
-  IndustryPageJsonLd
+  IndustryPageJsonLd,
+  VideoObjectJsonLd
 } from './json-ld';
 
 export { DynamicBreadcrumbJsonLd } from './breadcrumb-schema';

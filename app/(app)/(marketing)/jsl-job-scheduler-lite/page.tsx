@@ -2,7 +2,7 @@ import * as React from 'react';
 import Image from 'next/image';
 
 import { RelatedSuccessStories } from '@/components/marketing/sections/related-success-stories';
-import { SoftwareApplicationJsonLd } from '@/components/seo';
+import { SoftwareApplicationJsonLd, VideoObjectJsonLd } from '@/components/seo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { YouTubeFacade } from '@/components/ui/youtube-facade';
@@ -27,6 +27,13 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
         description="Entry-level production scheduling solution designed for job shops and small manufacturers"
         url={`${baseUrl}/jsl-job-scheduler-lite`}
         price="0"
+      />
+      <VideoObjectJsonLd
+        name="Job Scheduler Lite (JSL) — Production Scheduling Demo"
+        description="Watch how Job Scheduler Lite helps job shops and small manufacturers schedule production with an easy-to-use, entry-level scheduling tool."
+        thumbnailUrl="https://img.youtube.com/vi/snltXMHeojU/maxresdefault.jpg"
+        uploadDate="2022-10-01"
+        embedUrl="https://www.youtube.com/embed/snltXMHeojU"
       />
       {/* Hero Section */}
       <section className="py-6">
