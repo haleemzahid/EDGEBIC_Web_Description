@@ -62,6 +62,14 @@ const LEGACY_REDIRECTS: Record<string, string> = {
   '/optimization-production-scheduling-techniques': '/production-scheduling-software',
   '/production-scheduling-software-trials': '/production-scheduling-products',
   '/production-scheduling-products-1': '/production-scheduling-products',
+
+  // 404 fixes — April 2026
+  '/production-scheduling-products/resource-manager-db': '/resource-manager-db-2',
+  '/my-account': '/auth/login',
+  '/press_release/user-solutions-inc-announces-resource-manager-for-excel-v-2013-production-scheduling-made-easy': '/press_release',
+  '/part-iii-combining-level-loading-with-finite-capacity-scheduling': '/blogs',
+  '/our-privacy-policy': '/privacy-policy',
+  '/ws': '/',
 };
 
 export function middleware(request: NextRequest) {
