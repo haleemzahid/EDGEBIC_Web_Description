@@ -31,7 +31,6 @@ export const metadata: Metadata = {
   keywords: [
     'Resource Manager DB',
     'RMDB',
-    'production planning software',
     'production scheduling',
     'manufacturing scheduling',
     'finite capacity planning',
@@ -39,7 +38,9 @@ export const metadata: Metadata = {
     'inventory management',
     'drag and drop scheduling',
     'Excel integration',
-    'manufacturing software'
+    'manufacturing software',
+    'mid-sized manufacturer software',
+    'mid sized manufacturer scheduling software'
   ],
   alternates: {
     canonical: `${BASE_URL}/resource-manager-db-2`

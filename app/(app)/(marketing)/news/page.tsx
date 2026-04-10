@@ -15,11 +15,11 @@ export const metadata = createPageMetadata({
 
 const mediaCoverage = [
   {
-    title: 'Top 10 Manufacturing KPIs in 2024',
+    title: 'Top 10 Manufacturing KPIs Every Factory Should Track',
     image: '/images/Edgebic/2024-02/sdf.jpg',
-    link: '/top-10-manufacturing-kpis-in-2024',
+    link: '/top-10-manufacturing-kpis',
     sources: [
-      { name: 'What is a manufacturing KPI?', url: '/top-10-manufacturing-kpis-in-2024' }
+      { name: 'What is a manufacturing KPI?', url: '/top-10-manufacturing-kpis' }
     ]
   },
   {

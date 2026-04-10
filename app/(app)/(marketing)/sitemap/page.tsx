@@ -644,7 +644,7 @@ export default function SitemapPage() {
                 </li>
                 <li>
                   <Link
-                    href="/top-10-manufacturing-kpis-in-2024"
+                    href="/top-10-manufacturing-kpis"
                     className="text-blue-600 hover:underline"
                   >
                     Top 10 Manufacturing KPIs

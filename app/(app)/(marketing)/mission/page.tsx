@@ -9,7 +9,10 @@ export const metadata = createPageMetadata({
     'Our mission is to provide flexible and affordable production planning solutions that adapt to your operations and help manufacturers achieve better scheduling.',
   path: '/mission',
   keywords:
-    'company mission, manufacturing mission, production planning mission, EDGEBI mission'
+    'company mission, manufacturing mission, production planning mission, EDGEBI mission',
+  // Deduped: /mission-statement is the canonical mission page (more substantive content).
+  // /mission is kept accessible but not indexed to prevent cannibalization.
+  noIndex: true
 });
 
 export default function MissionPage(): React.JSX.Element {

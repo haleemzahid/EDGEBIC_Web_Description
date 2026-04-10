@@ -17,7 +17,8 @@ const preconnectUrls = [
   'https://www.youtube.com',
   'https://i.ytimg.com',
   'https://www.googletagmanager.com',
-  'https://www.google-analytics.com'
+  'https://www.google-analytics.com',
+  'https://analytics.ahrefs.com'
 ];
 
 export const viewport: Viewport = {
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
   },
   description: AppInfo.APP_DESCRIPTION,
   keywords:
-    'production planning, scheduling, manufacturing, RMDB, Resource Manager DB, EDGEBI, operations, tracking, workflow, automation, planning software, scheduling solution',
+    'production planning, scheduling, manufacturing, RMDB, Resource Manager DB, EDGEBI, operations, tracking, workflow, automation, planning software, scheduling solution, User Solutions, usersolutions.com, User Solutions Inc',
   authors: [{ name: AppInfo.COMPANY_NAME }],
   icons: {
     icon: [
@@ -134,6 +135,12 @@ export default async function RootLayout({
               gtag('config', 'G-PVSG7NPJL5');
             `
           }}
+        />
+        <Script
+          id="ahrefs-analytics"
+          src="https://analytics.ahrefs.com/analytics.js"
+          data-key="LgOgti8k7VEb8DaU1B/4nQ"
+          strategy="afterInteractive"
         />
         <Providers>
           {children}

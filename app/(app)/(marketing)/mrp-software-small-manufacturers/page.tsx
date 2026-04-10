@@ -20,7 +20,7 @@ export const metadata = createPageMetadata({
     'Affordable MRP software designed for small to mid-size manufacturers. Bills of Materials, inventory management, purchasing, and finite capacity scheduling. Used by Sleepmaster (AUD$50M), Turner Bicycles, and more. Implement in days, not months.',
   path: '/mrp-software-small-manufacturers',
   keywords:
-    'MRP software small manufacturers, MRP system small business, affordable MRP software, material requirements planning small manufacturer, MRP for small business, small manufacturer production planning, MRP software affordable, material planning software SMB'
+    'MRP software small manufacturers, MRP system small business, affordable MRP software, material requirements planning small manufacturer, MRP for small business, small manufacturer production planning, MRP software affordable, material planning software SMB, small factory management software, small manufacturer scheduling software'
 });
 
 const FAQS = [

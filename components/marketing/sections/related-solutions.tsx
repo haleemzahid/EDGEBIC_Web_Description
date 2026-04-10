@@ -36,6 +36,56 @@ const ALL_SOLUTIONS: Record<string, RelatedLink> = {
     description: 'Assembly and packaging production planning',
     href: Routes.ConsumerGoods
   },
+  [Routes.MachineShopScheduling]: {
+    title: 'Machine Shop Scheduling',
+    description: 'CNC and high-mix machine shop scheduling and management',
+    href: Routes.MachineShopScheduling
+  },
+  [Routes.MetalFabricationScheduling]: {
+    title: 'Metal Fabrication',
+    description: 'Cut, form, weld, and finish scheduling for fab shops',
+    href: Routes.MetalFabricationScheduling
+  },
+  [Routes.PrintShopScheduling]: {
+    title: 'Print Shop Scheduling',
+    description: 'Press scheduling, bindery, and on-time delivery for print shops',
+    href: Routes.PrintShopScheduling
+  },
+  [Routes.FoodManufacturingScheduling]: {
+    title: 'Food Manufacturing Scheduling',
+    description: 'Batch, allergen, and shelf-life-aware production scheduling',
+    href: Routes.FoodManufacturingScheduling
+  },
+  [Routes.MedicalDeviceManufacturing]: {
+    title: 'Medical Device Manufacturing',
+    description: 'FDA-compliant scheduling with traceability for medical device producers',
+    href: Routes.MedicalDeviceManufacturing
+  },
+  [Routes.CncShopScheduling]: {
+    title: 'CNC Shop Scheduling',
+    description: 'Setup-aware finite capacity scheduling for CNC machine shops',
+    href: Routes.CncShopScheduling
+  },
+  [Routes.PlasticManufacturing]: {
+    title: 'Plastic Manufacturing',
+    description: 'Injection molding and plastics production scheduling with mold capacity constraints',
+    href: Routes.PlasticManufacturing
+  },
+  [Routes.FurnitureManufacturing]: {
+    title: 'Furniture Manufacturing',
+    description: 'Multi-stage furniture production scheduling with finishing and assembly',
+    href: Routes.FurnitureManufacturing
+  },
+  [Routes.TextileGarmentManufacturing]: {
+    title: 'Textile & Garment Manufacturing',
+    description: 'Cut, sew, and finish scheduling for textile and apparel producers',
+    href: Routes.TextileGarmentManufacturing
+  },
+  [Routes.PackagingManufacturing]: {
+    title: 'Packaging Manufacturing',
+    description: 'Converting, printing, and finishing scheduling for packaging producers',
+    href: Routes.PackagingManufacturing
+  },
   // Feature pages
   [Routes.ProductionSchedulingSoftware]: {
     title: 'Production Scheduling',
@@ -141,6 +191,76 @@ const CROSS_LINK_MAP: Record<string, string[]> = {
     Routes.ErpIntegration,
     Routes.MultiLocationScheduling,
     Routes.ProductionSchedulingSoftware
+  ],
+  [Routes.MachineShopScheduling]: [
+    Routes.JobShopScheduling,
+    Routes.FiniteCapacityScheduling,
+    Routes.ExcelToScheduling,
+    Routes.OnTimeDelivery,
+    Routes.ProductionSchedulingSoftware
+  ],
+  [Routes.MetalFabricationScheduling]: [
+    Routes.JobShopScheduling,
+    Routes.FiniteCapacityScheduling,
+    Routes.OnTimeDelivery,
+    Routes.ErpSchedulingAddOn,
+    Routes.MasterProductionSchedule
+  ],
+  [Routes.PrintShopScheduling]: [
+    Routes.JobShopScheduling,
+    Routes.OnTimeDelivery,
+    Routes.LaborScheduling,
+    Routes.ProductionSchedulingSoftware,
+    Routes.ErpSchedulingAddOn
+  ],
+  [Routes.FoodManufacturingScheduling]: [
+    Routes.MrpSoftwareSmallManufacturers,
+    Routes.BomSoftware,
+    Routes.OnTimeDelivery,
+    Routes.MasterProductionSchedule,
+    Routes.ErpIntegration
+  ],
+  [Routes.MedicalDeviceManufacturing]: [
+    Routes.BomSoftware,
+    Routes.FiniteCapacityScheduling,
+    Routes.ErpIntegration,
+    Routes.MasterProductionSchedule,
+    Routes.LaborScheduling
+  ],
+  [Routes.CncShopScheduling]: [
+    Routes.MachineShopScheduling,
+    Routes.JobShopScheduling,
+    Routes.FiniteCapacityScheduling,
+    Routes.ExcelToScheduling,
+    Routes.OnTimeDelivery
+  ],
+  [Routes.PlasticManufacturing]: [
+    Routes.FiniteCapacityScheduling,
+    Routes.MasterProductionSchedule,
+    Routes.ConsumerGoods,
+    Routes.OnTimeDelivery,
+    Routes.ProductionSchedulingSoftware
+  ],
+  [Routes.FurnitureManufacturing]: [
+    Routes.JobShopScheduling,
+    Routes.MasterProductionSchedule,
+    Routes.LaborScheduling,
+    Routes.OnTimeDelivery,
+    Routes.MrpSoftwareSmallManufacturers
+  ],
+  [Routes.TextileGarmentManufacturing]: [
+    Routes.LaborScheduling,
+    Routes.JobShopScheduling,
+    Routes.OnTimeDelivery,
+    Routes.MasterProductionSchedule,
+    Routes.ProductionSchedulingSoftware
+  ],
+  [Routes.PackagingManufacturing]: [
+    Routes.PrintShopScheduling,
+    Routes.ConsumerGoods,
+    Routes.OnTimeDelivery,
+    Routes.MasterProductionSchedule,
+    Routes.MrpSoftwareSmallManufacturers
   ],
 
   // === Feature pages → link to features + industries ===

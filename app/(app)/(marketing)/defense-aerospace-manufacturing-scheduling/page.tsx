@@ -20,7 +20,7 @@ export const metadata = createPageMetadata({
     'Production scheduling software for defense and aerospace manufacturers. Handle 26,000+ maintenance tasks, multi-year planning horizons, and complex compliance requirements. Trusted by the US Navy and BAE Systems.',
   path: '/defense-aerospace-manufacturing-scheduling',
   keywords:
-    'defense manufacturing scheduling software, aerospace production planning, military maintenance scheduling, aircraft maintenance scheduling software, finite capacity planning defense, defense production scheduling'
+    'defense manufacturing scheduling software, aerospace manufacturing software, aerospace production planning, aerospace production scheduling, military maintenance scheduling, aircraft maintenance scheduling software, finite capacity planning defense, defense production scheduling, ITAR compliant scheduling software'
 });
 
 const FAQS = [

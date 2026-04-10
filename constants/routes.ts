@@ -98,6 +98,16 @@ export enum Routes {
   ElectronicsManufacturing = '/electronics-manufacturing-scheduling-software',
   HeavyEquipment = '/heavy-equipment-manufacturing-scheduling',
   ConsumerGoods = '/consumer-goods-production-planning-software',
+  MachineShopScheduling = '/machine-shop-scheduling-software',
+  MetalFabricationScheduling = '/metal-fabrication-scheduling-software',
+  PrintShopScheduling = '/print-shop-scheduling-software',
+  FoodManufacturingScheduling = '/food-manufacturing-scheduling-software',
+  MedicalDeviceManufacturing = '/medical-device-manufacturing-software',
+  CncShopScheduling = '/cnc-shop-scheduling-software',
+  PlasticManufacturing = '/plastic-manufacturing-software',
+  FurnitureManufacturing = '/furniture-manufacturing-software',
+  TextileGarmentManufacturing = '/textile-garment-manufacturing-software',
+  PackagingManufacturing = '/packaging-manufacturing-software',
 
   // Feature landing pages
   ProductionSchedulingSoftware = '/production-scheduling-software',

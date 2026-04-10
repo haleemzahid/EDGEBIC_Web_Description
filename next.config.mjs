@@ -169,6 +169,21 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        // /blog (singular, listing) is a duplicate of /blogs (plural, listing).
+        // Detail pages live at /blog/[slug] and are NOT affected by this exact-match
+        // redirect — Next.js source matching is strict unless wildcards are used.
+        source: '/blog',
+        destination: '/blogs',
+        permanent: true
+      },
+      {
+        // Evergreen URL refresh: year-locked URL → evergreen slug so the post
+        // can be refreshed annually without losing backlinks or SERP equity.
+        source: '/top-10-manufacturing-kpis-in-2024',
+        destination: '/top-10-manufacturing-kpis',
+        permanent: true
+      },
+      {
         source: '/contact',
         destination: '/contact-us',
         permanent: true

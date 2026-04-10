@@ -20,7 +20,7 @@ export const metadata = createPageMetadata({
     'Production scheduling software trusted by GE, Cummins, BAE Systems, and the US Navy. Finite capacity scheduling, what-if analysis, MRP, and ERP integration. On-time shipping improved from 30% to 90%. 35+ years of manufacturing expertise.',
   path: '/production-scheduling-software',
   keywords:
-    'production scheduling software, production planning software, manufacturing scheduling, finite capacity scheduling, production scheduling system, production schedule optimization, shop floor scheduling software, manufacturing production planning'
+    'production scheduling software, production planning software, production scheduling tool, production scheduler software, manufacturing scheduling, finite capacity scheduling, production scheduling system, production schedule optimization, shop floor scheduling software, manufacturing production planning, advanced planning and scheduling software, APS software'
 });
 
 const FAQS = [

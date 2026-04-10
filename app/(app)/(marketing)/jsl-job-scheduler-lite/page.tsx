@@ -12,10 +12,10 @@ import { getBaseUrl } from '@/lib/urls/get-base-url';
 export const metadata = createPageMetadata({
   title: 'Job Scheduler Lite (JSL)',
   description:
-    'Entry-level production scheduling solution designed for job shops and small manufacturers. Free download with powerful scheduling features.',
+    'Entry-level production scheduling solution designed for job shops and small manufacturers. Free download with powerful scheduling features. Job scheduler software for high-mix small shops.',
   path: '/jsl-job-scheduler-lite',
   keywords:
-    'job scheduler, production scheduling, manufacturing software, job shop scheduling, free scheduling software'
+    'job scheduler, job scheduler software, job scheduling tool, job scheduling software, production scheduling, manufacturing software, job shop scheduling, free scheduling software, simple scheduling software, affordable scheduling software, small business scheduling software'
 });
 
 export default function JobSchedulerLitePage(): React.JSX.Element {
