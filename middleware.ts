@@ -20,12 +20,6 @@ const LEGACY_REDIRECTS: Record<string, string> = {
   // Contact typo
   '/contact-': '/contact-us',
 
-  // Blog/news paths
-  '/resource-management-blog': '/blogs',
-  '/category/scheduling-solutions': '/blogs',
-  '/the-role-of-technology-in-modern-production-planning-and-scheduling': '/blogs',
-  '/blame-random-events-and-covariance': '/random-events-and-covariance',
-
   // Product pages
   '/product': '/production-scheduling-products',
   '/product-2': '/production-scheduling-products',
@@ -67,7 +61,6 @@ const LEGACY_REDIRECTS: Record<string, string> = {
   '/production-scheduling-products/resource-manager-db': '/resource-manager-db-2',
   '/my-account': '/auth/login',
   '/press_release/user-solutions-inc-announces-resource-manager-for-excel-v-2013-production-scheduling-made-easy': '/press_release',
-  '/part-iii-combining-level-loading-with-finite-capacity-scheduling': '/blogs',
   '/our-privacy-policy': '/privacy-policy',
   '/ws': '/',
   '/workcenter-scheduler-xl': '/workcenter-schedulerxl',
