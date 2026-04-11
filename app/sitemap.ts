@@ -183,9 +183,16 @@ export default async function Sitemap(): Promise<MetadataRoute.Sitemap> {
       const isPillar = post.pillarSlug && post.slugAsParams === post.pillarSlug;
       // Glossary terms get lowest blog priority
       const isGlossary = post.category === 'Glossary';
+      // Glossary term posts live at /blog/glossary/{term}, not /blog/glossary-{term}.
+      // The hub (manufacturing-glossary) has category=Glossary but its slug does NOT
+      // start with "glossary-", so it stays at /blog/manufacturing-glossary.
+      const isGlossaryTerm = isGlossary && post.slugAsParams.startsWith('glossary-');
+      const urlPath = isGlossaryTerm
+        ? `/blog/glossary/${post.slugAsParams.replace(/^glossary-/, '')}`
+        : `/blog/${post.slugAsParams}`;
 
       return {
-        url: `${baseUrl}/blog/${post.slugAsParams}`,
+        url: `${baseUrl}${urlPath}`,
         lastModified: post.modified || post.published,
         changeFrequency: isPillar ? 'weekly' as const : 'monthly' as const,
         priority: isPillar ? 0.8 : isGlossary ? 0.5 : 0.7

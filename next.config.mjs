@@ -184,6 +184,15 @@ const nextConfig = {
         permanent: true
       },
       {
+        // Glossary URL canonicalization: old flat hyphen format
+        // (/blog/glossary-queue-time) redirects to the new nested slash
+        // format (/blog/glossary/queue-time). Preserves indexed SEO equity
+        // on glossary terms Google already discovered at the old URLs.
+        source: '/blog/glossary-:slug',
+        destination: '/blog/glossary/:slug',
+        permanent: true
+      },
+      {
         source: '/contact',
         destination: '/contact-us',
         permanent: true

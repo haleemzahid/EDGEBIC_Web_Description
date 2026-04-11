@@ -24,16 +24,17 @@ import { getBaseUrl } from '@/lib/urls/get-base-url';
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+// Glossary posts live at content/blog/glossary-{slug}.mdx, so slugAsParams is
+// "glossary-{slug}". This route exposes them at /blog/glossary/{slug}, so we
+// prepend the "glossary-" prefix when looking up the post.
 function getPostBySlug(slug: string) {
-  // Glossary term posts are served from /blog/glossary/[slug], not this route.
-  if (slug.startsWith('glossary-')) return undefined;
-  return allPosts.find((post) => post.slugAsParams === slug);
+  return allPosts.find((post) => post.slugAsParams === `glossary-${slug}`);
 }
 
 function getRelatedPosts(currentSlug: string, category: string, cluster?: string) {
   return allPosts
     .filter((post) => {
-      if (post.slugAsParams === currentSlug) return false;
+      if (post.slugAsParams === `glossary-${currentSlug}`) return false;
       if (cluster && post.cluster === cluster) return true;
       return post.category === category;
     })
@@ -61,11 +62,10 @@ function formatDate(dateString: string): string {
 // Static params
 // ---------------------------------------------------------------------------
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
-  // Glossary term posts are served from /blog/glossary/[slug] instead.
   return allPosts
-    .filter((post) => !post.slugAsParams.startsWith('glossary-'))
+    .filter((post) => post.slugAsParams.startsWith('glossary-'))
     .map((post) => ({
-      slug: post.slugAsParams
+      slug: post.slugAsParams.replace(/^glossary-/, '')
     }));
 }
 
@@ -82,7 +82,7 @@ export async function generateMetadata(props: {
   return createArticleMetadata({
     title: post.title,
     description: post.description,
-    path: `/blog/${slug}`,
+    path: `/blog/glossary/${slug}`,
     keywords: post.keywords?.join(', '),
     publishedTime: post.published,
     modifiedTime: post.modified
@@ -92,7 +92,7 @@ export async function generateMetadata(props: {
 // ---------------------------------------------------------------------------
 // Page component
 // ---------------------------------------------------------------------------
-export default async function BlogPostPage(props: {
+export default async function GlossaryTermPage(props: {
   params: Promise<{ slug: string }>;
 }): Promise<React.JSX.Element> {
   const { slug } = await props.params;
@@ -103,7 +103,7 @@ export default async function BlogPostPage(props: {
   const readingTime = post.readingTime || calculateReadingTime(post.body.raw);
   const relatedPosts = getRelatedPosts(slug, post.category, post.cluster);
   const baseUrl = getBaseUrl();
-  const postUrl = `${baseUrl}/blog/${slug}`;
+  const postUrl = `${baseUrl}/blog/glossary/${slug}`;
 
   return (
     <>
@@ -111,7 +111,7 @@ export default async function BlogPostPage(props: {
       <BlogPostSchema
         title={post.title}
         description={post.description}
-        url={`/blog/${slug}`}
+        url={`/blog/glossary/${slug}`}
         datePublished={post.published}
         dateModified={post.modified}
         heroImage={post.heroImage}
