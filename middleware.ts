@@ -124,12 +124,41 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(newPath, request.url), 301);
   }
 
+  // Belt-and-suspenders: block indexing of authenticated/transactional routes
+  // even if a page-level metadata export is missing. This closes the gap we
+  // saw in GA where dashboard/contacts/profile pages were leaking into
+  // public search impressions.
+  const NOINDEX_PREFIXES = [
+    '/dashboard',
+    '/admin',
+    '/onboarding',
+    '/auth',
+    '/invitations',
+    '/purchase',
+    '/api',
+    '/checkout',
+    '/cart'
+  ];
+  if (NOINDEX_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
+    const response = NextResponse.next();
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    return response;
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    // Match all paths except Next.js internals and static files
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
-  ],
+    // Match all paths except Next.js internals and static files.
+    // EXCEPT: always run middleware on /wp-content/*, /wp-admin/*, /wp-*
+    // paths (even image extensions). Bots probe these and without this,
+    // requests to e.g. /wp-content/uploads/old.jpg bypass middleware and
+    // hit Next.js's default 404 ("404: This page could not be found"),
+    // inflating our 404 count in analytics. Now those hit middleware and
+    // get a proper 410 Gone response.
+    '/wp-:path*',
+    '/xmlrpc:path*',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|eot|css|js|map|txt|xml)$).*)'
+  ]
 };

@@ -14,7 +14,20 @@ import { prisma } from '@/lib/db/prisma';
 import { createTitle } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: createTitle('Dashboard')
+  title: createTitle('Dashboard'),
+  // Dashboard is an authenticated CRM surface — never index or follow it.
+  // Prevents user profile pages, contact lists, and internal analytics
+  // from leaking into Google/Bing search results.
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noimageindex: true
+    }
+  }
 };
 
 export default async function DashboardLayout({
