@@ -150,15 +150,19 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Match all paths except Next.js internals and static files.
-    // EXCEPT: always run middleware on /wp-content/*, /wp-admin/*, /wp-*
-    // paths (even image extensions). Bots probe these and without this,
-    // requests to e.g. /wp-content/uploads/old.jpg bypass middleware and
-    // hit Next.js's default 404 ("404: This page could not be found"),
-    // inflating our 404 count in analytics. Now those hit middleware and
-    // get a proper 410 Gone response.
-    '/wp-:path*',
-    '/xmlrpc:path*',
+    // Always run middleware on known WordPress probe paths — even when the
+    // request is for an image/asset extension (.jpg, .png, .js). Bots probe
+    // these URLs constantly, and without this catch, requests like
+    // /wp-content/uploads/old.jpg bypass middleware and fall through to the
+    // Next.js default 404 ("404: This page could not be found"), inflating
+    // our GA 404 count. Now those return 410 Gone.
+    '/wp-content/:path*',
+    '/wp-admin/:path*',
+    '/wp-includes/:path*',
+    '/wp-json/:path*',
+    '/wp-login.php',
+    '/xmlrpc.php',
+    // Match all other paths except Next.js internals and legitimate static files.
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|eot|css|js|map|txt|xml)$).*)'
   ]
 };
