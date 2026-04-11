@@ -169,6 +169,13 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        // Evergreen URL refresh: year-locked URL → evergreen slug so the post
+        // can be refreshed annually without losing backlinks or SERP equity.
+        source: '/top-10-manufacturing-kpis-in-2024',
+        destination: '/top-10-manufacturing-kpis',
+        permanent: true
+      },
+      {
         source: '/contact',
         destination: '/contact-us',
         permanent: true
