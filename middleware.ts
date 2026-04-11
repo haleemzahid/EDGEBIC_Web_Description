@@ -118,12 +118,6 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(redirectTo, request.url), 301);
   }
 
-  // Redirect /blogs/slug → /blog/slug (plural → singular for blog detail pages)
-  if (normalizedPath.startsWith('/blogs/') && normalizedPath.length > '/blogs/'.length) {
-    const slug = normalizedPath.slice('/blogs/'.length);
-    return NextResponse.redirect(new URL(`/blog/${slug}`, request.url), 301);
-  }
-
   // Redirect old /success_stories paths to /success-stories (underscore → hyphen)
   if (normalizedPath.startsWith('/success_stories')) {
     const newPath = normalizedPath.replace('/success_stories', '/success-stories');
