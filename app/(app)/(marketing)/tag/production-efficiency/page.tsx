@@ -12,7 +12,7 @@ export const metadata = createPageMetadata({
     'Discover articles about production efficiency and lean manufacturing principles.',
   keywords:
     'production efficiency, lean manufacturing, manufacturing optimization',
-  noIndex: true
+
 });
 
 export default function ProductionEfficiencyTagPage() {

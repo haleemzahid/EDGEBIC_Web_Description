@@ -14,7 +14,7 @@ export const metadata = createPageMetadata({
   title: 'Test Home',
   description:
     'EDGEBI production planning and scheduling software. Flexible, affordable solutions that adapt to your operations.',
-  noIndex: true
+
 });
 
 export default function TestHomePage(): React.JSX.Element {

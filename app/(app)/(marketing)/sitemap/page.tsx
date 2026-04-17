@@ -188,7 +188,7 @@ export default function SitemapPage() {
                 </li>
                 <li>
                   <Link
-                    href="/resource-manager-db-in-depth"
+                    href="/resource-manager-db-2"
                     className="text-blue-600 hover:underline"
                   >
                     Resource Manager DB In-Depth
@@ -212,7 +212,7 @@ export default function SitemapPage() {
                 </li>
                 <li>
                   <Link
-                    href="/resource-manager-for-excel-in-depth"
+                    href="/resource-manager-for-excel-2"
                     className="text-blue-600 hover:underline"
                   >
                     Resource Manager For Excel In-Depth

@@ -158,7 +158,7 @@ const blogArticles = [
     title: 'Small Manufacturer and Job Shop Uses Planning, Scheduling, and Tracking Tools',
     date: 'September 8, 2022',
     image: '/images/Edgebic/2022-09/image06-1-300x163.png',
-    link: '/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive/'
+    link: '/success-stories'
   },
   {
     title: 'User Solutions, Inc. Named as One of Top ERP Solutions Transforming Business 2016',

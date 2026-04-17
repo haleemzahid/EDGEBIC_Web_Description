@@ -317,7 +317,7 @@ export default function ExcelApplicationsPage() {
                   <p className="mb-4 text-gray-600">
                     – Incon Incorporated
                   </p>
-                  <Link href="/incon-incorporate">
+                  <Link href="/incon-incorporated">
                     <Button variant="outline">Read More</Button>
                   </Link>
                 </CardContent>

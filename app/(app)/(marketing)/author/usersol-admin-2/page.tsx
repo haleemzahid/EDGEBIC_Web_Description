@@ -9,7 +9,7 @@ export const metadata = createPageMetadata({
   title: 'usersol-admin-2',
   description:
     'Articles by usersol-admin-2 covering manufacturing solutions, production scheduling, and supply chain management.',
-  noIndex: true
+
 });
 
 export default function UsersolAdmin2AuthorPage() {
@@ -64,7 +64,7 @@ export default function UsersolAdmin2AuthorPage() {
     {
       title:
         'Small Manufacturer and Job Shop Uses Planning, Scheduling, and Tracking Tools from User Solutions, Inc. to Become More Efficient and Competitive',
-      href: '/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive',
+      href: '/success-stories',
       image:
         '/images/Edgebic/2022-09/image06-1.png',
       alt: 'Business professionals analyzing financial charts and data.',

@@ -17,6 +17,16 @@ export const metadata = createPageMetadata({
 
 const POSTS_PER_PAGE = 12;
 
+/** Convert a slugAsParams value to the correct blog URL path. Glossary posts
+ *  are stored as flat files (`glossary-abc-analysis.mdx`) but routed under
+ *  `/blog/glossary/abc-analysis`, so we need to swap the first hyphen for a slash. */
+function getBlogHref(slugAsParams: string): string {
+  if (slugAsParams.startsWith('glossary-')) {
+    return `/blog/glossary/${slugAsParams.slice('glossary-'.length)}`;
+  }
+  return `/blog/${slugAsParams}`;
+}
+
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -155,7 +165,7 @@ export default async function BlogsPage(props: {
               {pillarPosts.map((post) => (
                 <Link
                   key={post.slugAsParams}
-                  href={`/blog/${post.slugAsParams}`}
+                  href={getBlogHref(post.slugAsParams)}
                   className="group flex overflow-hidden rounded-xl border-2 border-cyan-200 bg-white shadow-sm transition-shadow hover:shadow-md"
                 >
                   {/* Image or gradient */}
@@ -233,7 +243,7 @@ export default async function BlogsPage(props: {
             {paginatedPosts.map((post) => (
               <Link
                 key={post.slugAsParams}
-                href={`/blog/${post.slugAsParams}`}
+                href={getBlogHref(post.slugAsParams)}
                 className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md"
               >
                 {/* Card Image */}

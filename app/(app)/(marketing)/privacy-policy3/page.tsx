@@ -9,7 +9,7 @@ export const metadata = createPageMetadata({
   description:
     'User Solutions, Inc. privacy policy.',
   path: '/privacy-policy3',
-  noIndex: true
+
 });
 
 export default function PrivacyPolicy3Page() {

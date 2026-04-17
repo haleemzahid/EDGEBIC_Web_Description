@@ -119,7 +119,7 @@ export default function CompareProductsPage(): React.JSX.Element {
     {
       quote: 'Easy ERP add-on for manufacturing resource planning',
       company: 'Incon Incorporated',
-      link: '/incon-incorporate'
+      link: '/incon-incorporated'
     }
   ];
 

@@ -4,13 +4,7 @@ import type { Metadata } from 'next';
 import { createTitle } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: createTitle('Invitations'),
-  robots: {
-    index: false,
-    follow: false,
-    nocache: true,
-    googleBot: { index: false, follow: false }
-  }
+  title: createTitle('Invitations')
 };
 
 export default async function InvitationsLayout({

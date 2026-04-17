@@ -12,6 +12,14 @@ type RelatedPost = {
   heroImage?: string;
 };
 
+/** Convert a raw slugAsParams into the correct blog URL path. */
+function blogPostHref(slug: string): string {
+  if (slug.startsWith('glossary-')) {
+    return `/blog/glossary/${slug.replace(/^glossary-/, '')}`;
+  }
+  return `/blog/${slug}`;
+}
+
 type RelatedPostsProps = {
   posts: RelatedPost[];
 };
@@ -36,7 +44,7 @@ export function RelatedPosts({ posts }: RelatedPostsProps) {
         {posts.slice(0, 3).map((post) => (
           <Link
             key={post.slug}
-            href={`/blog/${post.slug}`}
+            href={blogPostHref(post.slug)}
             className={cn(
               "group overflow-hidden rounded-lg border border-slate-200",
               "transition-shadow duration-200 hover:shadow-lg"

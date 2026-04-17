@@ -8,13 +8,7 @@ import { getPathname } from '@/lib/network/get-pathname';
 import { createTitle } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: createTitle('Auth'),
-  robots: {
-    index: false,
-    follow: false,
-    nocache: true,
-    googleBot: { index: false, follow: false }
-  }
+  title: createTitle('Auth')
 };
 
 function isChangeEmailRoute(): boolean {

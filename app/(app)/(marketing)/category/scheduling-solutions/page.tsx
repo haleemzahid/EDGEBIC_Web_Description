@@ -10,7 +10,7 @@ export const metadata = createPageMetadata({
     'Explore advanced scheduling solutions for supply chain and manufacturing optimization.',
   keywords:
     'scheduling solutions, supply chain optimization, manufacturing scheduling',
-  noIndex: true
+
 });
 
 export default function SchedulingSolutionsCategoryPage() {

@@ -9,7 +9,6 @@ export const metadata = createPageMetadata({
   title: 'About Us',
   description:
     'Learn about User Solutions, Inc. - providers of production planning and scheduling software solutions since 1991.',
-  noIndex: true
 });
 
 export default function AboutUsPage() {

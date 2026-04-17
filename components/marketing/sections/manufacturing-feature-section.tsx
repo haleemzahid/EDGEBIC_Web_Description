@@ -637,7 +637,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             </ul>
             <div className="mt-6">
               <Link
-                href="/resource-manager-db-in-depth"
+                href="/resource-manager-db-2"
                 className="inline-flex items-center justify-center rounded-md border-2 border-[#003d5c] bg-transparent px-5 py-2 text-sm font-medium text-[#003d5c] transition-all duration-200 hover:bg-[#003d5c] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#003d5c] focus:ring-offset-2]"
               >
                 View Details

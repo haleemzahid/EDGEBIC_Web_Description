@@ -10,7 +10,7 @@ export const metadata = createPageMetadata({
     'Explore production planning and scheduling solutions for modern manufacturers.',
   keywords:
     'production planning, production scheduling, manufacturing solutions',
-  noIndex: true
+
 });
 
 export default function ProductionCategoryPage() {

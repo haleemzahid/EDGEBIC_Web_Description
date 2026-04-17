@@ -79,6 +79,76 @@ export const MENU_LINKS = [
         icon: <FactoryIcon className="size-5 shrink-0" />,
         href: Routes.ConsumerGoods,
         external: false
+      },
+      {
+        title: 'Machine Shops',
+        description: 'High-mix scheduling for precision machining',
+        icon: <FactoryIcon className="size-5 shrink-0" />,
+        href: Routes.MachineShopScheduling,
+        external: false
+      },
+      {
+        title: 'CNC Shops',
+        description: 'CNC machine scheduling and optimization',
+        icon: <FactoryIcon className="size-5 shrink-0" />,
+        href: Routes.CncShopScheduling,
+        external: false
+      },
+      {
+        title: 'Metal Fabrication',
+        description: 'Fabrication and welding shop scheduling',
+        icon: <FactoryIcon className="size-5 shrink-0" />,
+        href: Routes.MetalFabricationScheduling,
+        external: false
+      },
+      {
+        title: 'Medical Devices',
+        description: 'FDA-compliant production scheduling',
+        icon: <FactoryIcon className="size-5 shrink-0" />,
+        href: Routes.MedicalDeviceManufacturing,
+        external: false
+      },
+      {
+        title: 'Food Manufacturing',
+        description: 'Batch scheduling for food and beverage',
+        icon: <FactoryIcon className="size-5 shrink-0" />,
+        href: Routes.FoodManufacturingScheduling,
+        external: false
+      },
+      {
+        title: 'Plastics',
+        description: 'Injection molding and extrusion scheduling',
+        icon: <FactoryIcon className="size-5 shrink-0" />,
+        href: Routes.PlasticManufacturing,
+        external: false
+      },
+      {
+        title: 'Packaging',
+        description: 'Packaging line scheduling and optimization',
+        icon: <FactoryIcon className="size-5 shrink-0" />,
+        href: Routes.PackagingManufacturing,
+        external: false
+      },
+      {
+        title: 'Furniture',
+        description: 'Custom and batch furniture production scheduling',
+        icon: <FactoryIcon className="size-5 shrink-0" />,
+        href: Routes.FurnitureManufacturing,
+        external: false
+      },
+      {
+        title: 'Textiles & Garments',
+        description: 'Apparel and textile production planning',
+        icon: <FactoryIcon className="size-5 shrink-0" />,
+        href: Routes.TextileGarmentManufacturing,
+        external: false
+      },
+      {
+        title: 'Print Shops',
+        description: 'Print production scheduling and job tracking',
+        icon: <FactoryIcon className="size-5 shrink-0" />,
+        href: Routes.PrintShopScheduling,
+        external: false
       }
     ]
   },
@@ -220,7 +290,14 @@ export const FOOTER_LINKS: Array<{
         href: '/resource-manager-db-2',
         external: false
       },
-      { name: 'EDGEBI', href: Routes.Edgebi, external: false }
+      { name: 'EDGEBI', href: Routes.Edgebi, external: false },
+      { name: 'All Products', href: '/production-scheduling-products', external: false },
+      { name: 'ProModel', href: '/promodel', external: false },
+      { name: 'MedModel', href: '/medmodel', external: false },
+      { name: 'ServiceModel', href: '/servicemodel', external: false },
+      { name: 'SimRunner', href: '/simrunner', external: false },
+      { name: 'Stat::Fit', href: '/stat-fit', external: false },
+      { name: 'Product Videos', href: '/product-video', external: false }
     ]
   },
   {
@@ -250,7 +327,17 @@ export const FOOTER_LINKS: Array<{
         name: 'Consumer Goods',
         href: Routes.ConsumerGoods,
         external: false
-      }
+      },
+      { name: 'Machine Shops', href: Routes.MachineShopScheduling, external: false },
+      { name: 'CNC Shops', href: Routes.CncShopScheduling, external: false },
+      { name: 'Metal Fabrication', href: Routes.MetalFabricationScheduling, external: false },
+      { name: 'Medical Devices', href: Routes.MedicalDeviceManufacturing, external: false },
+      { name: 'Food Manufacturing', href: Routes.FoodManufacturingScheduling, external: false },
+      { name: 'Plastics', href: Routes.PlasticManufacturing, external: false },
+      { name: 'Packaging', href: Routes.PackagingManufacturing, external: false },
+      { name: 'Furniture', href: Routes.FurnitureManufacturing, external: false },
+      { name: 'Textiles & Garments', href: Routes.TextileGarmentManufacturing, external: false },
+      { name: 'Print Shops', href: Routes.PrintShopScheduling, external: false }
     ]
   },
   {
@@ -298,8 +385,25 @@ export const FOOTER_LINKS: Array<{
       { name: 'Mission Statement', href: Routes.Mission, external: false },
       { name: 'Values', href: Routes.Values, external: false },
       { name: 'Company History', href: Routes.History, external: false },
-      { name: 'FAQ', href: Routes.FAQ, external: false }
-      // { name: 'Partners', href: Routes.Partners, external: false }
+      { name: 'FAQ', href: Routes.FAQ, external: false },
+      { name: 'Partners', href: '/partners', external: false },
+      { name: 'Consulting', href: '/consulting', external: false },
+      { name: 'Training', href: '/training', external: false },
+      { name: 'News', href: '/news', external: false },
+      { name: 'Why User Solutions', href: '/why-user-solutions', external: false }
+    ]
+  },
+  {
+    title: 'Resources',
+    links: [
+      { name: 'Blog', href: '/blogs', external: false },
+      { name: 'Excel Templates', href: '/excel-templates', external: false },
+      { name: 'Compare Products', href: '/compare-products', external: false },
+      { name: 'Product Downloads', href: '/product-downloads', external: false },
+      { name: 'Contact Us', href: Routes.Contact, external: false },
+      { name: 'Privacy Policy', href: '/privacy-policy', external: false },
+      { name: 'Cookie Policy', href: '/cookie-policy', external: false },
+      { name: 'Terms of Use', href: '/terms-of-use', external: false }
     ]
   }
 ];

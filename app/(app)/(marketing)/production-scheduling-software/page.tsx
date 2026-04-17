@@ -357,6 +357,41 @@ export default function ProductionSchedulingSoftwarePage(): React.JSX.Element {
       <RelatedSolutions currentPath={Routes.ProductionSchedulingSoftware} />
 
       {/* CTA Section */}
+      {/* State Directory */}
+      <section className="border-t border-slate-200 bg-white py-12">
+        <div className="container mx-auto max-w-6xl px-4">
+          <h2 className="mb-2 text-center text-2xl font-bold text-slate-900">
+            Production Scheduling Software by State
+          </h2>
+          <p className="mb-8 text-center text-slate-600">
+            RMDB serves manufacturers in all 50 states. Find local manufacturing insights for your state.
+          </p>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {[
+              'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California',
+              'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia',
+              'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa',
+              'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland',
+              'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri',
+              'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey',
+              'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio',
+              'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina',
+              'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont',
+              'Virginia', 'Washington', 'Washington DC', 'West Virginia', 'Wisconsin',
+              'Wyoming'
+            ].map((state) => (
+              <Link
+                key={state}
+                href={`/production-scheduling-software/${state.toLowerCase().replace(/ /g, '-')}`}
+                className="rounded px-2 py-1 text-slate-600 transition-colors hover:bg-cyan-50 hover:text-cyan-700"
+              >
+                {state}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="bg-gradient-to-r from-cyan-50 to-slate-50 py-10">
         <div className="container mx-auto max-w-4xl px-4 text-center">
           <h2 className="mb-3 text-2xl font-bold text-slate-900">
