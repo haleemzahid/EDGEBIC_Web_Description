@@ -11,6 +11,7 @@ export class NodeMailer implements Mailer {
     return nodemailer.createTransport(nodeMailerOptions.transport).sendMail({
       from: nodeMailerOptions.from,
       to: payload.recipient,
+      ...(payload.cc ? { cc: payload.cc } : {}),
       subject: payload.subject,
       html: payload.html,
       text: payload.text

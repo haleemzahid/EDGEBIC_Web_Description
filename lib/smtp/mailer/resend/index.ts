@@ -10,6 +10,7 @@ export class ResendMailer implements Mailer {
     const response = await resend.emails.send({
       from: resendOptions.from,
       to: payload.recipient,
+      ...(payload.cc ? { cc: payload.cc } : {}),
       subject: payload.subject,
       html: payload.html,
       text: payload.text

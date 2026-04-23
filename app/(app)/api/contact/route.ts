@@ -161,11 +161,18 @@ export async function POST(request: NextRequest) {
       .map((email) => email.trim())
       .filter((email) => email.length > 0);
 
+    const ccList = (process.env.EMAIL_CONTACT_CC || '')
+      .split(',')
+      .map((email) => email.trim())
+      .filter((email) => email.length > 0);
+
     console.log(
       'EMAIL_CONTACT_RECIPIENTS env:',
       process.env.EMAIL_CONTACT_RECIPIENTS
     );
+    console.log('EMAIL_CONTACT_CC env:', process.env.EMAIL_CONTACT_CC);
     console.log('Sending emails to recipients:', recipients);
+    console.log('CC recipients:', ccList);
 
     const emailResults: {
       recipient: string;
@@ -178,6 +185,7 @@ export async function POST(request: NextRequest) {
         console.log(`Attempting to send email to: ${recipient}`);
         await sendContactFormEmail({
           recipient,
+          cc: ccList.length > 0 ? ccList : undefined,
           firstName,
           lastName,
           email,

@@ -7,7 +7,7 @@ import {
 import { sendEmail } from '@/lib/smtp/mailer/send-email';
 
 export async function sendContactFormEmail(
-  data: ContactFormEmailData
+  data: ContactFormEmailData & { cc?: string | string[] }
 ): Promise<void> {
   const component = ContactFormEmail(data);
   const html = await render(component);
@@ -15,6 +15,7 @@ export async function sendContactFormEmail(
 
   await sendEmail({
     recipient: data.recipient,
+    cc: data.cc,
     subject: `New Contact Form Submission from ${data.firstName} ${data.lastName}`,
     html,
     text
