@@ -10,7 +10,8 @@ export const metadata = createPageMetadata({
   description:
     'Complete operations management toolkit including forecasting, inventory control, quality management, and process analysis.',
   path: '/buy-now-operations-manager',
-  keywords: 'operations manager, purchase, forecasting, inventory control, quality management, process analysis'
+  keywords: 'operations manager, purchase, forecasting, inventory control, quality management, process analysis',
+  noIndex: true
 });
 
 export default function BuyNowOperationsManagerPage() {

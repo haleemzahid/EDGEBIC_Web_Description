@@ -9,7 +9,8 @@ export const metadata = createPageMetadata({
   description:
     'SKED2A for flow shops with 2 work stations in series. Minimize total time to complete job batches with optimal sequencing.',
   path: '/operations-manager-sked2a',
-  keywords: 'job sequencing, flow shop, 2 work stations, batch scheduling, makespan optimization'
+  keywords: 'job sequencing, flow shop, 2 work stations, batch scheduling, makespan optimization',
+  noIndex: true
 });
 
 export default function OperationsManagerSked2aPage(): React.JSX.Element {

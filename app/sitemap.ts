@@ -118,7 +118,11 @@ async function getMarketingPages(baseUrl: string): Promise<MetadataRoute.Sitemap
     // Duplicate content pages - use canonical instead
     'aboutus', // use /about instead
     'success_stories', // use /success-stories (hyphen) instead
-    'mission' // use /mission-statement instead
+    'mission', // use /mission-statement instead
+    // Thin utility/stub pages - noindex, exclude from sitemap
+    'cookie-policy',
+    'buy-now-operations-manager',
+    'operations-manager-sked2a'
   ];
 
   async function scanDirectory(dirPath: string, urlPrefix: string): Promise<void> {
