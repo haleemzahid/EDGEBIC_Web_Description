@@ -42,7 +42,10 @@ export const authors = defineCollection({
   schema: (z) => ({
     ref: z.string(),
     name: z.string().default('Anonymous'),
-    avatar: z.string().default('')
+    avatar: z.string().default(''),
+    role: z.string().optional(),
+    linkedin: z.string().optional(),
+    bio: z.string().optional()
   })
 });
 
@@ -55,7 +58,25 @@ export const posts = defineCollection({
     description: z.string(),
     published: z.string().datetime(),
     category: z.string().default('Miscellaneous'),
-    author: z.string()
+    author: z.string(),
+    modified: z.string().datetime().optional(),
+    cluster: z.string().default('uncategorized'),
+    pillarSlug: z.string().optional(),
+    keywords: z.array(z.string()).default([]),
+    targetPhrase: z.string().optional(),
+    wordCount: z.number().optional(),
+    readingTime: z.number().optional(),
+    faqQuestions: z.array(z.object({
+      question: z.string(),
+      answer: z.string()
+    })).default([]),
+    qaQuestions: z.array(z.object({
+      question: z.string(),
+      answer: z.string()
+    })).default([]),
+    heroImage: z.string().optional(),
+    heroAlt: z.string().optional(),
+    ogImage: z.string().optional()
   }),
   transform: async (data, context) => {
     const body = await compileMDX(context, data, {

@@ -1,11 +1,14 @@
 import * as React from 'react';
-import type { Metadata } from 'next';
 
 import { CookiePolicy } from '@/components/marketing/sections/cookie-policy';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
-  title: 'Cookie Policy'
-};
+export const metadata = createPageMetadata({
+  title: 'Cookie Policy',
+  description: 'Cookie policy for User Solutions and RMDB production planning software website.',
+  path: '/cookie-policy',
+  noIndex: true
+});
 
 export default function CookiePolicyPage(): React.JSX.Element {
   return <CookiePolicy />;

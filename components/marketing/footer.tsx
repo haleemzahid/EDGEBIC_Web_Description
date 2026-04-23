@@ -95,6 +95,7 @@ export function Footer(): React.JSX.Element {
                 href={award.link}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label={award.alt}
                 className="flex shrink-0 items-center justify-center transition-transform hover:scale-105"
               >
                 {award.image.startsWith('<svg') ? (
@@ -201,30 +202,17 @@ export function Footer(): React.JSX.Element {
                 reserved.
               </p>
               <div className="flex items-center gap-4">
-                <Link
-                  href="#"
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  LinkedIn
-                </Link>
-                <Link
-                  href="#"
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Facebook
-                </Link>
-                <Link
-                  href="#"
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  X
-                </Link>
-                <Link
-                  href="#"
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  YouTube
-                </Link>
+                {SOCIAL_LINKS.map((link) => (
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {link.name}
+                  </Link>
+                ))}
               </div>
             </div>
           </div>

@@ -1,7 +1,8 @@
 import * as React from 'react';
 import Image from 'next/image';
 
-import { SoftwareApplicationJsonLd } from '@/components/seo';
+import { RelatedSuccessStories } from '@/components/marketing/sections/related-success-stories';
+import { SoftwareApplicationJsonLd, VideoObjectJsonLd } from '@/components/seo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { YouTubeFacade } from '@/components/ui/youtube-facade';
@@ -11,10 +12,10 @@ import { getBaseUrl } from '@/lib/urls/get-base-url';
 export const metadata = createPageMetadata({
   title: 'Job Scheduler Lite (JSL)',
   description:
-    'Entry-level production scheduling solution designed for job shops and small manufacturers. Free download with powerful scheduling features.',
+    'Entry-level production scheduling solution designed for job shops and small manufacturers. Free download with powerful scheduling features. Job scheduler software for high-mix small shops.',
   path: '/jsl-job-scheduler-lite',
   keywords:
-    'job scheduler, production scheduling, manufacturing software, job shop scheduling, free scheduling software'
+    'job scheduler, job scheduler software, job scheduling tool, job scheduling software, production scheduling, manufacturing software, job shop scheduling, free scheduling software, simple scheduling software, affordable scheduling software, small business scheduling software'
 });
 
 export default function JobSchedulerLitePage(): React.JSX.Element {
@@ -26,6 +27,13 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
         description="Entry-level production scheduling solution designed for job shops and small manufacturers"
         url={`${baseUrl}/jsl-job-scheduler-lite`}
         price="0"
+      />
+      <VideoObjectJsonLd
+        name="Job Scheduler Lite (JSL) — Production Scheduling Demo"
+        description="Watch how Job Scheduler Lite helps job shops and small manufacturers schedule production with an easy-to-use, entry-level scheduling tool."
+        thumbnailUrl="https://img.youtube.com/vi/snltXMHeojU/maxresdefault.jpg"
+        uploadDate="2022-10-01"
+        embedUrl="https://www.youtube.com/embed/snltXMHeojU"
       />
       {/* Hero Section */}
       <section className="py-6">
@@ -277,6 +285,7 @@ export default function JobSchedulerLitePage(): React.JSX.Element {
           </div>
         </div>
       </div>
+      <RelatedSuccessStories productKey="jsl" />
     </div>
   );
 }

@@ -8,7 +8,10 @@ import { RMDBTabsClient } from '@/components/marketing/sections/rmdb-tabs-client
 import { Card, CardContent } from '@/components/ui/card';
 import { YouTubeFacade } from '@/components/ui/youtube-facade';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://edgebic.com';
+import { RelatedSuccessStories } from '@/components/marketing/sections/related-success-stories';
+import { getBaseUrl } from '@/lib/urls/get-base-url';
+
+const BASE_URL = getBaseUrl();
 
 // Local image paths for faster loading
 const IMAGES = {
@@ -28,7 +31,6 @@ export const metadata: Metadata = {
   keywords: [
     'Resource Manager DB',
     'RMDB',
-    'production planning software',
     'production scheduling',
     'manufacturing scheduling',
     'finite capacity planning',
@@ -36,7 +38,9 @@ export const metadata: Metadata = {
     'inventory management',
     'drag and drop scheduling',
     'Excel integration',
-    'manufacturing software'
+    'manufacturing software',
+    'mid-sized manufacturer software',
+    'mid sized manufacturer scheduling software'
   ],
   alternates: {
     canonical: `${BASE_URL}/resource-manager-db-2`
@@ -46,7 +50,7 @@ export const metadata: Metadata = {
     description:
       'Flexible and affordable production planning, scheduling, and tracking solution. Features finite capacity planning, MRP, and drag-and-drop scheduling.',
     url: `${BASE_URL}/resource-manager-db-2`,
-    siteName: 'EDGEBI',
+    siteName: 'User Solutions',
     images: [
       {
         url: `${BASE_URL}/images/rmdb/rmdb-edge-hero.png`,
@@ -60,6 +64,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
+    site: '@UserSolutionsUS',
+    creator: '@UserSolutionsUS',
     title: 'Resource Manager DB - Production Planning & Scheduling Software',
     description:
       'Flexible and affordable production planning, scheduling, and tracking solution designed to adapt to your operations.',
@@ -89,14 +95,9 @@ const jsonLd = {
     'Resource Manager-DB (RMDB) is a flexible and affordable production planning, scheduling, and tracking solution designed to adapt to your operations.',
   offers: {
     '@type': 'Offer',
-    price: '0',
+    price: '4000',
     priceCurrency: 'USD',
     availability: 'https://schema.org/InStock'
-  },
-  aggregateRating: {
-    '@type': 'AggregateRating',
-    ratingValue: '4.8',
-    ratingCount: '150'
   },
   featureList: [
     'Finite Capacity Planning & Scheduling',
@@ -121,7 +122,7 @@ const jsonLd = {
   publisher: {
     '@type': 'Organization',
     name: 'User Solutions',
-    url: 'https://www.usersolutions.com'
+    url: BASE_URL
   }
 };
 
@@ -348,6 +349,7 @@ export default function ResourceManagerDBPage() {
             liveDemoContent={<LiveDemoContent />}
           />
         </Suspense>
+        <RelatedSuccessStories productKey="rmdb" />
       </main>
     </>
   );

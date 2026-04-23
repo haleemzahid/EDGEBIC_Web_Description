@@ -12,7 +12,7 @@ export const metadata = createPageMetadata({
     'Explore our comprehensive range of production planning and scheduling solutions. Find the perfect fit for your manufacturing application and budget.',
   path: '/production-scheduling-products',
   keywords:
-    'production scheduling software, manufacturing planning tools, scheduling solutions, production planning products'
+    'production scheduling products, manufacturing planning tools, scheduling solutions, production planning products, RMDB EDGEBI RMX comparison'
 });
 
 export default function ProductionSchedulingProductsPage() {

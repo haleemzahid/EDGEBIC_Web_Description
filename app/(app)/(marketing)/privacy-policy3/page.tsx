@@ -2,6 +2,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Privacy Policy',
+  description:
+    'User Solutions, Inc. privacy policy.',
+  path: '/privacy-policy3',
+
+});
 
 export default function PrivacyPolicy3Page() {
   return (

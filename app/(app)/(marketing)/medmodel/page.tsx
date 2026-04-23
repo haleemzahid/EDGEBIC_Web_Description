@@ -1,13 +1,26 @@
 import * as React from 'react';
 import Image from 'next/image';
 
-
+import { SoftwareApplicationJsonLd } from '@/components/seo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createProductMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createProductMetadata({
+  name: 'MedModel Healthcare Simulation',
+  description: 'MedModel simulation software for healthcare facility planning, patient flow optimization, and resource scheduling.',
+  path: '/medmodel',
+  keywords: 'MedModel, healthcare simulation, hospital planning, patient flow, medical facility optimization',
+});
 
 export default function MedModelPage(): React.JSX.Element {
   return (
     <div className="min-h-screen bg-background">
+      <SoftwareApplicationJsonLd
+        name="MedModel"
+        description="MedModel simulation software for healthcare facility planning and patient flow optimization."
+        url="/medmodel"
+      />
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-blue-600 to-blue-800 py-6 text-white">
         <div className="container mx-auto px-4">

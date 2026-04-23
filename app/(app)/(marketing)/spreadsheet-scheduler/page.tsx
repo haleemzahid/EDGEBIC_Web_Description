@@ -1,12 +1,27 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
+import { RelatedSuccessStories } from '@/components/marketing/sections/related-success-stories';
+import { SoftwareApplicationJsonLd } from '@/components/seo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { createProductMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createProductMetadata({
+  name: 'Spreadsheet Scheduler',
+  description: 'Excel-based production scheduling tool for small manufacturers. Easy-to-use scheduling with familiar spreadsheet interface.',
+  path: '/spreadsheet-scheduler',
+  keywords: 'Spreadsheet Scheduler, Excel scheduling, production scheduling, small manufacturer, scheduling template',
+});
 
 export default function SpreadsheetSchedulerPage() {
   return (
     <div className="min-h-screen text-[18px]">
+      <SoftwareApplicationJsonLd
+        name="Spreadsheet Scheduler"
+        description="Excel-based production scheduling tool for small manufacturers."
+        url="/spreadsheet-scheduler"
+      />
       {/* Hero Section */}
       <section className="py-6">
         <div className="container mx-auto px-4">
@@ -232,6 +247,7 @@ export default function SpreadsheetSchedulerPage() {
           </div>
         </div>
       </section>
+      <RelatedSuccessStories productKey="ss" />
     </div>
   );
 }

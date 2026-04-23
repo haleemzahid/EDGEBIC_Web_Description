@@ -119,7 +119,7 @@ export default function CompareProductsPage(): React.JSX.Element {
     {
       quote: 'Easy ERP add-on for manufacturing resource planning',
       company: 'Incon Incorporated',
-      link: '/incon-incorporate'
+      link: '/incon-incorporated'
     }
   ];
 
@@ -287,6 +287,138 @@ export default function CompareProductsPage(): React.JSX.Element {
                   </Button>
                 </footer>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Compare RMDB to other vendors */}
+      <section className="py-10">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="mb-8 text-center">
+            <h2 className="mb-3 text-3xl font-bold md:text-4xl">
+              Compare RMDB to other manufacturing software
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Honest, side-by-side comparisons against the tools buyers most often
+              evaluate alongside RMDB.
+            </p>
+          </div>
+
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {[
+              // 9 long-form blog comparisons (part of the competitor-comparisons cluster
+              // with pillar /blog/production-scheduling-software-comparison) — these are
+              // 2,000+ word posts with FAQ schema, hero images, and full sidebar treatment.
+              {
+                href: '/blog/rmdb-vs-mrpeasy',
+                title: 'RMDB vs MRPeasy',
+                description:
+                  'Cloud MRP for very small shops vs. finite-capacity APS for real production floors.'
+              },
+              {
+                href: '/blog/rmdb-vs-katana',
+                title: 'RMDB vs Katana',
+                description:
+                  'Ecommerce-led product brands vs. multi-step manufacturing with bottlenecks.'
+              },
+              {
+                href: '/blog/rmdb-vs-planettogether',
+                title: 'RMDB vs PlanetTogether',
+                description:
+                  'Enterprise APS with long deployments vs. one-week implementation and one-time licensing.'
+              },
+              {
+                href: '/blog/rmdb-vs-jobboss',
+                title: 'RMDB vs JobBOSS',
+                description:
+                  'Job-shop ERP with light scheduling vs. dedicated finite-capacity APS.'
+              },
+              {
+                href: '/blog/rmdb-vs-asprova',
+                title: 'RMDB vs Asprova',
+                description:
+                  'High-end Japanese APS vs. mid-market manufacturer-friendly scheduling.'
+              },
+              {
+                href: '/blog/rmdb-vs-siemens-opcenter',
+                title: 'RMDB vs Siemens Opcenter',
+                description:
+                  'Enterprise MES/APS suite vs. focused finite-capacity scheduling.'
+              },
+              {
+                href: '/blog/rmdb-vs-delmia-ortems',
+                title: 'RMDB vs DELMIA Ortems',
+                description:
+                  'Dassault enterprise APS vs. SMB-friendly scheduling and ERP integration.'
+              },
+              {
+                href: '/blog/rmdb-vs-epicor-aps',
+                title: 'RMDB vs Epicor APS',
+                description:
+                  'Epicor scheduling add-on vs. ERP-agnostic scheduling that works with any backend.'
+              },
+              {
+                href: '/blog/rmdb-vs-infor-aps',
+                title: 'RMDB vs Infor APS',
+                description:
+                  'Infor enterprise scheduling vs. focused finite-capacity APS for SMB manufacturers.'
+              },
+              // Marketing-page comparisons — competitors without blog posts use the
+              // shared comparison-page.tsx component for full schema + UX treatment.
+              {
+                href: '/compare-products/rmdb-vs-fishbowl',
+                title: 'RMDB vs Fishbowl',
+                description:
+                  'Inventory-first software with QuickBooks vs. dedicated production scheduling.'
+              },
+              {
+                href: '/compare-products/rmdb-vs-preactor',
+                title: 'RMDB vs Preactor',
+                description:
+                  'Enterprise APS inside Siemens Opcenter vs. focused mid-market scheduling.'
+              },
+              {
+                href: '/compare-products/rmdb-vs-proshop',
+                title: 'RMDB vs ProShop ERP',
+                description:
+                  'Paperless ERP for AS9100 shops vs. dedicated finite-capacity scheduler.'
+              },
+              {
+                href: '/compare-products/rmdb-vs-netsuite',
+                title: 'RMDB vs NetSuite Manufacturing',
+                description:
+                  'Enterprise cloud ERP suite vs. focused finite-capacity scheduling layer.'
+              },
+              {
+                href: '/compare-products/rmdb-vs-odoo',
+                title: 'RMDB vs Odoo Manufacturing',
+                description:
+                  'Open-source modular ERP vs. dedicated finite-capacity scheduling.'
+              },
+              {
+                href: '/compare-products/rmdb-vs-quickbooks',
+                title: 'RMDB vs QuickBooks for Manufacturing',
+                description:
+                  'Accounting-first software vs. dedicated production scheduling — most shops keep both.'
+              }
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="group flex flex-col rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-cyan-300 hover:shadow-md"
+              >
+                <h3 className="mb-2 text-xl font-bold text-slate-900 group-hover:text-cyan-700">
+                  {item.title}
+                </h3>
+                <p className="mb-4 flex-1 text-sm text-slate-600">
+                  {item.description}
+                </p>
+                <span className="inline-flex items-center text-sm font-semibold text-cyan-700">
+                  Read the comparison
+                  <ExternalLink className="ml-1.5 size-3.5" />
+                </span>
+              </Link>
             ))}
           </div>
         </div>

@@ -44,9 +44,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
         <div className="mb-6 grid grid-cols-1 items-start gap-8  lg:grid-cols-2">
           {/* Left Section */}
           <div className="text-left">
-            <h3 className="text-xl font-bold text-[#003d5c]">
+            <h2 className="text-xl font-bold text-[#003d5c]">
               Core Capabilities
-            </h3>
+            </h2>
             <p className="text-base text-slate-600">
               It's the right time to focus on the main <br /> challenges in
               production scheduling by:
@@ -281,9 +281,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
 
           {/* Right Section */}
           <div className="text-left">
-            <h3 className="text-xl font-bold text-[#003d5c]">
+            <h2 className="text-xl font-bold text-[#003d5c]">
               Implementation & Optimization Process
-            </h3>
+            </h2>
             <p className="text-md text-slate-600">
               We guide you through a structured five-step path to move from raw
               data to an Optimal Schedule that reflects shop-floor reality.
@@ -637,7 +637,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
             </ul>
             <div className="mt-6">
               <Link
-                href="/resource-manager-db-in-depth"
+                href="/resource-manager-db-2"
                 className="inline-flex items-center justify-center rounded-md border-2 border-[#003d5c] bg-transparent px-5 py-2 text-sm font-medium text-[#003d5c] transition-all duration-200 hover:bg-[#003d5c] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#003d5c] focus:ring-offset-2]"
               >
                 View Details
@@ -1079,7 +1079,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   </div>
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="mb-1 font-bold text-[#003d5c]">Joel K.</h3>
+                  <p className="mb-1 font-bold text-[#003d5c]">Joel K.</p>
                   <p className="text-sm text-slate-600">Lean Facilitator</p>
                   <p className="text-xs text-slate-500">Furniture</p>
                 </div>
@@ -1097,9 +1097,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 ))}
               </div>
 
-              <h4 className="text-left text-lg font-semibold text-[#003d5c]">
+              <h3 className="text-left text-lg font-semibold text-[#003d5c]">
                 "Flexible MRP with great ongoing support"
-              </h4>
+              </h3>
 
               <p className="mb-4 line-clamp-3 flex-1 text-left text-sm leading-relaxed text-slate-700">
                 A unique scheduling system with the flexibility we need for
@@ -1115,7 +1115,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   rel="noopener noreferrer"
                   className="inline-flex items-center text-sm font-medium text-[#2FB8DE] transition-colors hover:text-[#1da8ce] hover:underline"
                 >
-                  Read More
+                  Read Review on Capterra
                   <svg
                     className="ml-1 size-4"
                     fill="none"
@@ -1150,7 +1150,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   </div>
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="mb-1 font-bold text-[#003d5c]">Robert K.</h3>
+                  <p className="mb-1 font-bold text-[#003d5c]">Robert K.</p>
                   <p className="text-sm text-slate-600">
                     Epicor ERP Consultant
                   </p>
@@ -1172,9 +1172,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 ))}
               </div>
 
-              <h4 className="mb-3 text-left text-lg font-semibold text-[#003d5c]">
+              <h3 className="mb-3 text-left text-lg font-semibold text-[#003d5c]">
                 "Resource Manager DB Review"
-              </h4>
+              </h3>
 
               <div className="mb-2 text-left">
                 <span className="inline-flex items-center text-xs font-medium text-green-700">
@@ -1210,7 +1210,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   rel="noopener noreferrer"
                   className="inline-flex items-center text-sm font-medium text-[#2FB8DE] transition-colors hover:text-[#1da8ce] hover:underline"
                 >
-                  Read More
+                  Read Review on Capterra
                   <svg
                     className="ml-1 size-4"
                     fill="none"
@@ -1245,7 +1245,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   </div>
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="mb-1 font-bold text-[#003d5c]">Mike W.</h3>
+                  <p className="mb-1 font-bold text-[#003d5c]">Mike W.</p>
                   <p className="text-sm text-slate-600">Regional Manager</p>
                   <p className="text-xs text-slate-500">
                     Management Consulting
@@ -1265,9 +1265,9 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                 ))}
               </div>
 
-              <h4 className="mb-3 text-left text-lg font-semibold text-[#003d5c]">
+              <h3 className="mb-3 text-left text-lg font-semibold text-[#003d5c]">
                 "Resource Manager Capabilities"
-              </h4>
+              </h3>
 
               <div className="mb-2 text-left">
                 <span className="inline-flex items-center text-xs font-medium text-green-700">
@@ -1304,7 +1304,7 @@ export function ManufacturingFeatureSection(): React.JSX.Element {
                   rel="noopener noreferrer"
                   className="inline-flex items-center text-sm font-medium text-[#2FB8DE] transition-colors hover:text-[#1da8ce] hover:underline"
                 >
-                  Read More
+                  Read Review on Capterra
                   <svg
                     className="ml-1 size-4"
                     fill="none"

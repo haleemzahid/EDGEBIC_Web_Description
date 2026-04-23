@@ -18,7 +18,7 @@ export function DynamicBreadcrumbJsonLd() {
 
   const segments = pathname.split('/').filter(Boolean);
   const breadcrumbItems = [
-    { name: 'Home', url: baseUrl }
+    { name: 'Home', url: `${baseUrl}/` }
   ];
 
   let currentPath = '';

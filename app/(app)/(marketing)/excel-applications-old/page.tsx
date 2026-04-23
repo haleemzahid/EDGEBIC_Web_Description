@@ -178,7 +178,7 @@ export default function ExcelApplicationsOldPage() {
                   <p className="mb-4 text-muted-foreground">
                     – Incon Incorporated
                   </p>
-                  <Link href="/incon-incorporate">
+                  <Link href="/incon-incorporated">
                     <Button variant="outline">Read More</Button>
                   </Link>
                 </CardContent>

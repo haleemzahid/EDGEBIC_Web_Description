@@ -1,9 +1,17 @@
 import * as React from 'react';
 import Image from 'next/image';
 
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createProductMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createProductMetadata({
+  name: 'ProModel AutoCAD Edition — CAD-Integrated Simulation Software',
+  description:
+    'ProModel AutoCAD Edition integrates simulation directly into AutoCAD layouts. Model material flow, staffing, and throughput inside your existing CAD drawings.',
+  path: '/promodel-autocad-edition',
+  keywords: 'ProModel AutoCAD, CAD simulation, factory layout simulation, AutoCAD simulation software'
+});
 
 export default function ProModelAutoCADEditionPage(): React.JSX.Element {
   return (

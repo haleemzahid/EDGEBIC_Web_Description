@@ -2,13 +2,26 @@ import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-
+import { SoftwareApplicationJsonLd } from '@/components/seo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createProductMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createProductMetadata({
+  name: 'Stat::Fit Statistical Distribution Fitting',
+  description: 'Stat::Fit software for automated statistical distribution fitting and data analysis for simulation input modeling.',
+  path: '/stat-fit',
+  keywords: 'StatFit, statistical distribution fitting, data analysis, simulation input, statistical modeling',
+});
 
 export default function StatFitPage(): React.JSX.Element {
   return (
     <div className="min-h-screen bg-background">
+      <SoftwareApplicationJsonLd
+        name="Stat::Fit"
+        description="Stat::Fit software for automated statistical distribution fitting and simulation input modeling."
+        url="/stat-fit"
+      />
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-blue-600 to-blue-800 py-6 text-white">
         <div className="container mx-auto px-4">

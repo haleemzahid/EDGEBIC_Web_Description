@@ -29,7 +29,6 @@ export enum Routes {
   Students = '/students',
   Product2 = '/product-2',
   Story = '/story',
-  Careers = '/careers',
   SleepmasterLtd = '/sleepmaster-ltd',
   CookCompression = '/cook-compression',
   InconIncorporated = '/incon-incorporated',
@@ -41,7 +40,6 @@ export enum Routes {
   Shop = '/shop',
   Cart = '/cart',
   Checkout = '/checkout',
-  Team = '/team',
   Blogs = '/blogs',
   PressRelease = '/press_release',
   ThankYouSpreadsheetScheduler = '/thankyou-for-downloading-spreadsheet-scheduler',
@@ -71,6 +69,7 @@ export enum Routes {
   VerifyEmailSuccess = '/auth/verify-email/success',
 
   Home = '/dashboard',
+  Analytics = '/dashboard/analytics',
   Contacts = '/dashboard/contacts',
   Inventory = '/dashboard/inventory',
   Settings = '/dashboard/settings',
@@ -90,5 +89,38 @@ export enum Routes {
   InvitationRevoked = '/invitations/revoked',
   InvitationLogOutToAccept = '/invitations/log-out-to-accept',
 
-  Onboarding = '/onboarding'
+  Onboarding = '/onboarding',
+  FAQ = '/faq',
+
+  // Industry landing pages
+  JobShopScheduling = '/scheduling-software-for-job-shops',
+  DefenseAerospace = '/defense-aerospace-manufacturing-scheduling',
+  ElectronicsManufacturing = '/electronics-manufacturing-scheduling-software',
+  HeavyEquipment = '/heavy-equipment-manufacturing-scheduling',
+  ConsumerGoods = '/consumer-goods-production-planning-software',
+  MachineShopScheduling = '/machine-shop-scheduling-software',
+  MetalFabricationScheduling = '/metal-fabrication-scheduling-software',
+  PrintShopScheduling = '/print-shop-scheduling-software',
+  FoodManufacturingScheduling = '/food-manufacturing-scheduling-software',
+  MedicalDeviceManufacturing = '/medical-device-manufacturing-software',
+  CncShopScheduling = '/cnc-shop-scheduling-software',
+  PlasticManufacturing = '/plastic-manufacturing-software',
+  FurnitureManufacturing = '/furniture-manufacturing-software',
+  TextileGarmentManufacturing = '/textile-garment-manufacturing-software',
+  PackagingManufacturing = '/packaging-manufacturing-software',
+
+  // Feature landing pages
+  ProductionSchedulingSoftware = '/production-scheduling-software',
+  FiniteCapacityScheduling = '/finite-capacity-scheduling-software',
+  ManufacturingSchedulingSoftware = '/manufacturing-scheduling-software',
+  MrpSoftwareSmallManufacturers = '/mrp-software-small-manufacturers',
+  ErpSchedulingAddOn = '/erp-scheduling-add-on',
+  WhatIfAnalysis = '/what-if-analysis-manufacturing',
+  MultiLocationScheduling = '/multi-location-manufacturing-scheduling',
+  BomSoftware = '/bill-of-materials-bom-software',
+  MasterProductionSchedule = '/master-production-schedule-software',
+  LaborScheduling = '/labor-scheduling-manufacturing',
+  ExcelToScheduling = '/excel-to-scheduling-software',
+  OnTimeDelivery = '/on-time-delivery-manufacturing',
+  ErpIntegration = '/erp-integration-production-scheduling'
 }

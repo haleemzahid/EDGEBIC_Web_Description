@@ -1,10 +1,25 @@
 import Image from 'next/image';
 
+import { RelatedSuccessStories } from '@/components/marketing/sections/related-success-stories';
+import { SoftwareApplicationJsonLd } from '@/components/seo';
 import { Card, CardContent } from '@/components/ui/card';
+import { createProductMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createProductMetadata({
+  name: 'Spreadsheet QC',
+  description: 'Excel-based quality control tool for statistical process control, control charts, and quality monitoring.',
+  path: '/spreadsheet-qc',
+  keywords: 'Spreadsheet QC, quality control, SPC, control charts, statistical process control, Excel quality',
+});
 
 export default function SpreadsheetQCPage() {
   return (
     <div className="min-h-screen text-[18px]">
+      <SoftwareApplicationJsonLd
+        name="Spreadsheet QC"
+        description="Excel-based quality control tool for statistical process control and quality monitoring."
+        url="/spreadsheet-qc"
+      />
       {/* Hero Section */}
       <section className="py-6">
         <div className="container mx-auto px-4">
@@ -129,6 +144,7 @@ export default function SpreadsheetQCPage() {
           </div>
         </div>
       </section>
+      <RelatedSuccessStories productKey="sqc" />
     </div>
   );
 }

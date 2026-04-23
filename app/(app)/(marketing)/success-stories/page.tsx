@@ -1,13 +1,15 @@
-import type { Metadata } from 'next';
-
 import { NTClipboardSuccessStories } from '@/components/marketing/sections/ntclipboard-success-stories';
 import { Page } from '@/components/ui/page';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
   title: 'Customer Success Stories',
   description:
-    'Discover how our customers have achieved great success with our resource management and production planning solutions. Real customer testimonials and case studies.'
-};
+    'Discover how manufacturers worldwide use RMDB to solve production planning challenges. Real case studies: tripled on-time shipping, ERP integration, finite capacity scheduling success.',
+  path: '/success-stories',
+  keywords:
+    'RMDB success stories, production planning case studies, manufacturing software testimonials, scheduling software reviews, User Solutions customers'
+});
 
 export default function SuccessStoriesPage(): React.JSX.Element {
   return (

@@ -1,19 +1,15 @@
-import type { Metadata } from 'next';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
+  path: '/category/uncategorized',
   title: 'Uncategorized',
   description:
     'Explore articles and resources about manufacturing solutions and industry insights.',
-  openGraph: {
-    title: 'Uncategorized',
-    description:
-      'Explore articles and resources about manufacturing solutions and industry insights.',
-    url: 'https://www.usersolutions.com/category/uncategorized'
-  }
-};
+
+});
 
 export default function UncategorizedCategoryPage() {
   return (
@@ -124,7 +120,7 @@ export default function UncategorizedCategoryPage() {
                 </div>
                 <CardContent className="flex flex-1 flex-col p-6">
                   <h2 className="mb-3 text-xl font-bold text-gray-900 hover:text-purple-600">
-                    <a href="/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive">
+                    <a href="/success-stories">
                       Small Manufacturer and Job Shop Uses Planning, Scheduling,
                       and Tracking Tools
                     </a>
@@ -139,7 +135,7 @@ export default function UncategorizedCategoryPage() {
                     deliver on time and on budget. South Lyon, […]
                   </p>
                   <a
-                    href="/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive"
+                    href="/success-stories"
                     className="text-sm font-semibold text-purple-600 hover:text-purple-800"
                   >
                     Read More →

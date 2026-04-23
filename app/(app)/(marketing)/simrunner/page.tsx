@@ -1,13 +1,26 @@
 import * as React from 'react';
 import Image from 'next/image';
 
-
+import { SoftwareApplicationJsonLd } from '@/components/seo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createProductMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createProductMetadata({
+  name: 'SimRunner Optimization Software',
+  description: 'SimRunner optimization software for automated simulation optimization and scenario analysis.',
+  path: '/simrunner',
+  keywords: 'SimRunner, simulation optimization, automated optimization, scenario analysis, manufacturing optimization',
+});
 
 export default function SimRunnerPage(): React.JSX.Element {
   return (
     <div className="min-h-screen bg-background">
+      <SoftwareApplicationJsonLd
+        name="SimRunner"
+        description="SimRunner optimization software for automated simulation optimization and scenario analysis."
+        url="/simrunner"
+      />
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-blue-600 to-blue-800 py-6 text-white">
         <div className="container mx-auto px-4">

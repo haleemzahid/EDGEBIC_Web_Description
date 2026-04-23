@@ -1,17 +1,14 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
+import { RelatedProducts } from '@/components/marketing/sections/related-products';
 
-export const metadata: Metadata = {
+export const metadata = createArticleMetadata({
   title: 'Cook Compression',
   description:
     'Cook Compression shares their exceptional experience with User Solutions world-class support and service.',
-  openGraph: {
-    title: 'Cook Compression',
-    description:
-      'Cook Compression shares their exceptional experience with User Solutions world-class support and service.',
-    url: 'https://www.usersolutions.com/cook-compression/'
-  }
-};
+  path: '/cook-compression',
+  keywords: 'Cook Compression, scheduling software review, production planning case study, User Solutions support'
+});
 
 export default function CookCompressionPage() {
   return (
@@ -63,6 +60,7 @@ export default function CookCompressionPage() {
           </div>
         </div>
       </section>
+      <RelatedProducts storySlug="/success-stories/cook-compression-scheduling-software-review" />
     </div>
   );
 }

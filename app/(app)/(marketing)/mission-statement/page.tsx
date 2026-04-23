@@ -1,15 +1,17 @@
 import * as React from 'react';
-import type { Metadata } from 'next';
+import { createPageMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 import Link from 'next/link';
 
 import { Routes } from '@/constants/routes';
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
   title: 'Mission Statement',
   description:
-    'Empower manufacturers to become more competitive and profitable through efficient resource management tools that are affordable, adaptable, and easily implemented.'
-};
+    'Empower manufacturers to become more competitive and profitable through efficient resource management tools that are affordable, adaptable, and easily implemented.',
+  path: '/mission-statement',
+  keywords: 'mission statement, User Solutions mission, manufacturing software mission, RMDB mission'
+});
 
 export default function MissionPage(): React.JSX.Element {
   return (

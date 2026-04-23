@@ -175,7 +175,7 @@ export default function ShopPage() {
               </h3>
               <p className="mb-4 text-gray-600">– Incon Incorporated</p>
               <Link
-                href="/incon-incorporate"
+                href="/incon-incorporated"
                 className="text-blue-600 hover:underline"
               >
                 Read More

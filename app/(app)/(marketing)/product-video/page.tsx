@@ -208,7 +208,7 @@ export default function ProductVideoPage() {
                   <Link href="/resource-manager-for-excel-2">
                     <Button variant="outline">Summary</Button>
                   </Link>
-                  <Link href="/resource-manager-for-excel-in-depth">
+                  <Link href="/resource-manager-for-excel-2">
                     <Button variant="outline">In Depth</Button>
                   </Link>
                   <Link href="/pdf/RMXQuickStart.pdf">

@@ -1,5 +1,7 @@
 import Image from 'next/image';
 
+import { RelatedSuccessStories } from '@/components/marketing/sections/related-success-stories';
+import { SoftwareApplicationJsonLd } from '@/components/seo';
 import { Card, CardContent } from '@/components/ui/card';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
@@ -14,6 +16,11 @@ export const metadata = createPageMetadata({
 export default function WorkcellPlannerPage() {
   return (
     <div className="min-h-screen text-[18px]">
+      <SoftwareApplicationJsonLd
+        name="Workcell Planner"
+        description="Capacity planning tool for determining machine and manpower requirements and optimizing resource utilization."
+        url="/workcell-planner"
+      />
       {/* Hero Section */}
       <section className="py-6">
         <div className="container mx-auto px-4">
@@ -128,6 +135,7 @@ export default function WorkcellPlannerPage() {
           </div>
         </div>
       </section>
+      <RelatedSuccessStories productKey="wp" />
     </div>
   );
 }

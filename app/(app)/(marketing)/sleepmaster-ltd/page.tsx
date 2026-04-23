@@ -1,22 +1,17 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 
 import { Card, CardContent } from '@/components/ui/card';
+import { RelatedProducts } from '@/components/marketing/sections/related-products';
 
-export const metadata: Metadata = {
-  title:
-    'SleepMaster Ltd',
+export const metadata = createArticleMetadata({
+  title: 'SleepMaster Ltd',
   description:
     'Discover how SleepMaster implemented an affordable MRP for small manufacturers to simplify operations and improve global scalability.',
-  openGraph: {
-    title:
-      'SleepMaster Ltd - User Solutions',
-    description:
-      'Discover how SleepMaster implemented an affordable MRP for small manufacturers to simplify operations and improve global scalability.',
-    url: 'https://www.usersolutions.com/sleepmaster-ltd/'
-  }
-};
+  path: '/sleepmaster-ltd',
+  keywords: 'Sleepmaster Ltd, MRP small manufacturer, affordable MRP, production scheduling case study'
+});
 
 export default function SleepmasterLtdPage() {
   return (
@@ -148,6 +143,7 @@ export default function SleepmasterLtdPage() {
           </div>
         </div>
       </section>
+      <RelatedProducts storySlug="/success-stories/affordable-easy-to-implement-mrp-for-smaller-manufacturer" />
     </div>
   );
 }

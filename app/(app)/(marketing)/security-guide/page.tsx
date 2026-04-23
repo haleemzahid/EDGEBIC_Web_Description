@@ -1,15 +1,17 @@
 import * as React from 'react';
-import type { Metadata } from 'next';
+import { createPageMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
   title: 'Security Guide',
   description:
-    'Step-by-step guide to improve security for windows, anti-virus programs and excel macros. Know how to unblock files and enable VBA Macros now.'
-};
+    'Step-by-step guide to improve security for windows, anti-virus programs and excel macros. Know how to unblock files and enable VBA Macros now.',
+  path: '/security-guide',
+  keywords: 'security guide, Windows security, antivirus, Excel macros, VBA macros, file unblock'
+});
 
 export default function SecurityGuidePage(): React.JSX.Element {
   return (

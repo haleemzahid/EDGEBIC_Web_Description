@@ -5,6 +5,16 @@ import { Download } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createPageMetadata({
+  title: 'Job Scheduler Lite (JSL) Free Download',
+  description:
+    'Download a fully functional 60-day trial of Job Scheduler Lite (JSL), the free Excel-based production scheduling tool from User Solutions. Perfect for small manufacturers and job shops getting started with capacity planning.',
+  path: '/job-scheduler-lite-download',
+  keywords:
+    'Job Scheduler Lite download, JSL download, free production scheduling software, free job shop scheduling, Excel scheduling trial, manufacturing scheduling download, User Solutions free trial'
+});
 
 export default function JobSchedulerLiteDownloadPage() {
   return (

@@ -1,13 +1,26 @@
 import * as React from 'react';
 import Image from 'next/image';
 
-
+import { SoftwareApplicationJsonLd } from '@/components/seo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createProductMetadata } from '@/lib/seo/metadata';
+
+export const metadata = createProductMetadata({
+  name: 'ServiceModel Simulation Software',
+  description: 'ServiceModel simulation software for service industry process improvement and optimization.',
+  path: '/servicemodel',
+  keywords: 'ServiceModel, service simulation, process improvement, service optimization',
+});
 
 export default function ServiceModelPage(): React.JSX.Element {
   return (
     <div className="min-h-screen bg-background">
+      <SoftwareApplicationJsonLd
+        name="ServiceModel"
+        description="ServiceModel simulation software for service industry process improvement and optimization."
+        url="/servicemodel"
+      />
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-blue-600 to-blue-800 py-6 text-white">
         <div className="container mx-auto px-4">

@@ -3,6 +3,7 @@ import '../app/(app)/globals.css';
 import * as React from 'react';
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
+import Script from 'next/script';
 
 import { Toaster } from '@/components/ui/sonner';
 import { OrganizationJsonLd, WebSiteJsonLd } from '@/components/seo';
@@ -12,9 +13,12 @@ import { getBaseUrl } from '@/lib/urls/get-base-url';
 import { Providers } from './(app)/providers';
 
 const preconnectUrls = [
-  'https://www.usersolutions.com',
+  'https://usersolutions.com',
   'https://www.youtube.com',
-  'https://i.ytimg.com'
+  'https://i.ytimg.com',
+  'https://www.googletagmanager.com',
+  'https://www.google-analytics.com',
+  'https://analytics.ahrefs.com'
 ];
 
 export const viewport: Viewport = {
@@ -26,22 +30,33 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseUrl()),
   title: {
-    template: '%s - User Solutions',
-    default: 'Production Planning Software'
+    template: '%s | RMDB by User Solutions',
+    default: 'RMDB - Production Planning & Scheduling Software | User Solutions'
   },
   description: AppInfo.APP_DESCRIPTION,
   keywords:
-    'production planning, scheduling, manufacturing, operations, tracking, workflow, automation, planning software, scheduling solution',
+    'production planning, scheduling, manufacturing, RMDB, Resource Manager DB, EDGEBI, operations, tracking, workflow, automation, planning software, scheduling solution, User Solutions, usersolutions.com, User Solutions Inc',
   authors: [{ name: AppInfo.COMPANY_NAME }],
   icons: {
-    icon: '/logos/edgebic-logo.png',
-    shortcut: '/logos/edgebic-logo.png',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' }
+    ],
+    shortcut: '/favicon.ico',
     apple: '/logos/edgebic-logo.png'
   },
-  manifest: `${getBaseUrl()}/manifest`,
+  manifest: '/manifest',
   robots: {
     index: true,
-    follow: true
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1
+    }
   },
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
@@ -50,23 +65,28 @@ export const metadata: Metadata = {
       'msvalidate.01': process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION || ''
     }
   },
+  alternates: {
+    canonical: '/'
+  },
   openGraph: {
-    title: AppInfo.APP_NAME,
+    title: 'RMDB - Production Planning & Scheduling Software | User Solutions',
     description: AppInfo.APP_DESCRIPTION,
     type: 'website',
-    siteName: AppInfo.APP_NAME,
+    siteName: 'User Solutions',
     images: [
       {
         url: '/og.jpg',
         width: 1200,
         height: 630,
-        alt: 'EDGEBI - Production Planning Solution'
+        alt: 'RMDB by User Solutions - Production Planning & Scheduling Software'
       }
     ]
   },
   twitter: {
     card: 'summary_large_image',
-    title: AppInfo.APP_NAME,
+    site: '@UserSolutionsUS',
+    creator: '@UserSolutionsUS',
+    title: 'RMDB - Production Planning & Scheduling Software',
     description: AppInfo.APP_DESCRIPTION,
     images: ['/og.jpg']
   }
@@ -100,6 +120,28 @@ export default async function RootLayout({
         <WebSiteJsonLd />
       </head>
       <body className={`${inter.className} size-full`}>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-PVSG7NPJL5"
+          strategy="lazyOnload"
+        />
+        <Script
+          id="google-analytics"
+          strategy="lazyOnload"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-PVSG7NPJL5');
+            `
+          }}
+        />
+        <Script
+          id="ahrefs-analytics"
+          src="https://analytics.ahrefs.com/analytics.js"
+          data-key="LgOgti8k7VEb8DaU1B/4nQ"
+          strategy="afterInteractive"
+        />
         <Providers>
           {children}
           <React.Suspense>

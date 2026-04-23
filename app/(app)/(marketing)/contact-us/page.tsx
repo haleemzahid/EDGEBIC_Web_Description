@@ -124,6 +124,17 @@ export default function ContactUsPage() {
 
   return (
     <div className="min-h-screen">
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-blue-50 via-white to-cyan-50 py-6">
+        <div className="container mx-auto px-4">
+          <div className="mx-auto max-w-7xl text-center">
+            <h1 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl lg:text-5xl">
+              Contact Us
+            </h1>
+          </div>
+        </div>
+      </section>
+
       {/* Main Content */}
       <section className="pt-6">
         <div className="container mx-auto px-4">

@@ -1,19 +1,16 @@
-import type { Metadata } from 'next';
+import { createArticleMetadata } from '@/lib/seo/metadata';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { RelatedProducts } from '@/components/marketing/sections/related-products';
 
-export const metadata: Metadata = {
+export const metadata = createArticleMetadata({
   title: 'INCON Incorporated',
   description:
     'Hi-tech Connector Mfr Accurately Schedules Labor with MRP Add-On.',
-  openGraph: {
-    title: 'INCON Incorporated',
-    description:
-      'Hi-tech Connector Mfr Accurately Schedules Labor with MRP Add-On.',
-    url: 'https://www.usersolutions.com/incon-incorporate/'
-  }
-};
+  path: '/incon-incorporated',
+  keywords: 'INCON Incorporated, hi-tech connector, MRP add-on, labor scheduling, production scheduling case study'
+});
 
 export default function InconIncorporatedPage() {
   return (
@@ -63,6 +60,7 @@ export default function InconIncorporatedPage() {
           </div>
         </div>
       </section>
+      <RelatedProducts storySlug="/success-stories/hi-tech-connector-mfr-accurately-schedules-labor-with-mrp-add-on" />
     </div>
   );
 }

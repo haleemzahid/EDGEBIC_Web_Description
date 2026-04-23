@@ -1,19 +1,17 @@
-import type { Metadata } from 'next';
 import Image from 'next/image';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
+  path: '/tag/modern-production-planning-and-scheduling',
   title: 'Modern Production Planning and Scheduling',
   description:
     'Explore articles about modern production planning and scheduling solutions.',
-  openGraph: {
-    title: 'Modern Production Planning and Scheduling',
-    description:
-      'Explore articles about modern production planning and scheduling solutions.',
-    url: 'https://www.usersolutions.com/tag/modern-production-planning-and-scheduling'
-  }
-};
+  keywords:
+    'modern production planning, scheduling solutions, manufacturing planning',
+
+});
 
 export default function ModernProductionPlanningTagPage() {
   return (

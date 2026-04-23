@@ -109,7 +109,7 @@ export function NTClipboardSummary(): React.JSX.Element {
                 variant="outline"
                 asChild
               >
-                <Link href="/product-2">See Feature List</Link>
+                <Link href="/production-scheduling-products">See Feature List</Link>
               </Button>
             </div>
           </div>

@@ -44,7 +44,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'www.usersolutions.com'
+        hostname: 'usersolutions.com'
       },
       {
         protocol: 'https',
@@ -87,6 +87,32 @@ const nextConfig = {
   async headers() {
     return [
       {
+        source: '/llms.txt',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'text/plain; charset=utf-8'
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400'
+          }
+        ]
+      },
+      {
+        source: '/llms-full.txt',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'text/plain; charset=utf-8'
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400'
+          }
+        ]
+      },
+      {
         locale: false,
         source: '/(.*)',
         headers: [
@@ -121,8 +147,8 @@ const nextConfig = {
               "img-src 'self' data: blob: https: http:",
               "font-src 'self' https://fonts.gstatic.com",
               "connect-src 'self' https://www.google-analytics.com https://vitals.vercel-insights.com https://*.vercel.app https://www.google.com https://www.googleapis.com",
-              "media-src 'self' https://www.usersolutions.com",
-              "frame-src 'self' https://calendly.com https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://www.google.com",
+              "media-src 'self' https://usersolutions.com",
+              "frame-src 'self' https://calendly.com https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://www.google.com https://recaptcha.google.com",
               "manifest-src 'self'",
               "object-src 'none'",
               "base-uri 'self'",
@@ -142,6 +168,13 @@ const nextConfig = {
   },
   async redirects() {
     return [
+      {
+        // Evergreen URL refresh: year-locked URL → evergreen slug so the post
+        // can be refreshed annually without losing backlinks or SERP equity.
+        source: '/top-10-manufacturing-kpis-in-2024',
+        destination: '/top-10-manufacturing-kpis',
+        permanent: true
+      },
       {
         source: '/contact',
         destination: '/contact-us',

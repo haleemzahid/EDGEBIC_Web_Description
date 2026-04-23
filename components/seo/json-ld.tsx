@@ -18,6 +18,7 @@ type WebSiteSchema = {
   name: string;
   url: string;
   description: string;
+  inLanguage: string;
   publisher: {
     '@type': 'Organization';
     name: string;
@@ -80,6 +81,27 @@ type ArticleSchema = {
   };
 };
 
+type IndustryPageSchema = {
+  '@context': 'https://schema.org';
+  '@type': 'WebPage';
+  name: string;
+  description: string;
+  url: string;
+  about: {
+    '@type': 'Thing';
+    name: string;
+    description: string;
+  };
+  provider: {
+    '@type': 'Organization';
+    name: string;
+  };
+  mentions?: {
+    '@type': 'Organization';
+    name: string;
+  }[];
+};
+
 type FAQSchema = {
   '@context': 'https://schema.org';
   '@type': 'FAQPage';
@@ -103,11 +125,20 @@ function JsonLdScript({ data }: { data: object }) {
 }
 
 export function OrganizationJsonLd({
-  socialLinks = []
+  socialLinks
 }: {
   socialLinks?: string[];
-}) {
+} = {}) {
   const baseUrl = getBaseUrl();
+
+  const defaultSocialLinks = [
+    AppInfo.SOCIAL_LINKS.LINKEDIN,
+    AppInfo.SOCIAL_LINKS.FACEBOOK,
+    AppInfo.SOCIAL_LINKS.X,
+    AppInfo.SOCIAL_LINKS.YOUTUBE
+  ];
+
+  const links = socialLinks && socialLinks.length > 0 ? socialLinks : defaultSocialLinks;
 
   const schema: OrganizationSchema = {
     '@context': 'https://schema.org',
@@ -117,7 +148,7 @@ export function OrganizationJsonLd({
     logo: `${baseUrl}/logos/edgebic-logo.png`,
     description: AppInfo.APP_DESCRIPTION,
     email: AppInfo.CONTACT_EMAIL,
-    ...(socialLinks.length > 0 && { sameAs: socialLinks })
+    sameAs: links
   };
 
   return <JsonLdScript data={schema} />;
@@ -132,6 +163,7 @@ export function WebSiteJsonLd() {
     name: AppInfo.APP_NAME,
     url: baseUrl,
     description: AppInfo.APP_DESCRIPTION,
+    inLanguage: 'en-US',
     publisher: {
       '@type': 'Organization',
       name: AppInfo.COMPANY_NAME
@@ -248,6 +280,139 @@ export function FAQJsonLd({
         text: q.answer
       }
     }))
+  };
+
+  return <JsonLdScript data={schema} />;
+}
+
+export function FeaturePageJsonLd({
+  title,
+  description,
+  url,
+  featureDescription,
+  featureList,
+  customerNames
+}: {
+  title: string;
+  description: string;
+  url: string;
+  featureDescription: string;
+  featureList?: string[];
+  customerNames?: string[];
+}) {
+  const baseUrl = getBaseUrl();
+
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: title,
+    description,
+    url: `${baseUrl}${url}`,
+    about: {
+      '@type': 'SoftwareApplication',
+      name: 'RMDB - Resource Manager DB',
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Windows',
+      description: featureDescription,
+      ...(featureList &&
+        featureList.length > 0 && {
+          featureList: featureList.join(', ')
+        }),
+      offers: {
+        '@type': 'Offer',
+        price: '4000',
+        priceCurrency: 'USD',
+        availability: 'https://schema.org/InStock'
+      },
+      provider: {
+        '@type': 'Organization',
+        name: AppInfo.COMPANY_NAME
+      }
+    },
+    provider: {
+      '@type': 'Organization',
+      name: AppInfo.COMPANY_NAME
+    },
+    ...(customerNames &&
+      customerNames.length > 0 && {
+        mentions: customerNames.map((name) => ({
+          '@type': 'Organization' as const,
+          name
+        }))
+      })
+  };
+
+  return <JsonLdScript data={schema} />;
+}
+
+export function IndustryPageJsonLd({
+  title,
+  description,
+  url,
+  industryName,
+  industryDescription,
+  customerNames
+}: {
+  title: string;
+  description: string;
+  url: string;
+  industryName: string;
+  industryDescription: string;
+  customerNames?: string[];
+}) {
+  const baseUrl = getBaseUrl();
+
+  const schema: IndustryPageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: title,
+    description,
+    url: `${baseUrl}${url}`,
+    about: {
+      '@type': 'Thing',
+      name: industryName,
+      description: industryDescription
+    },
+    provider: {
+      '@type': 'Organization',
+      name: AppInfo.COMPANY_NAME
+    },
+    ...(customerNames &&
+      customerNames.length > 0 && {
+        mentions: customerNames.map((name) => ({
+          '@type': 'Organization' as const,
+          name
+        }))
+      })
+  };
+
+  return <JsonLdScript data={schema} />;
+}
+
+export function VideoObjectJsonLd({
+  name,
+  description,
+  thumbnailUrl,
+  uploadDate,
+  embedUrl,
+  contentUrl
+}: {
+  name: string;
+  description: string;
+  thumbnailUrl: string;
+  uploadDate: string;
+  embedUrl?: string;
+  contentUrl?: string;
+}) {
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name,
+    description,
+    thumbnailUrl,
+    uploadDate,
+    ...(embedUrl && { embedUrl }),
+    ...(contentUrl && { contentUrl })
   };
 
   return <JsonLdScript data={schema} />;

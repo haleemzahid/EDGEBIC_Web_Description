@@ -1,14 +1,16 @@
-import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
+  path: '/author/usersol-admin-2',
   title: 'usersol-admin-2',
   description:
-    'Articles by usersol-admin-2 covering manufacturing solutions, production scheduling, and supply chain management.'
-};
+    'Articles by usersol-admin-2 covering manufacturing solutions, production scheduling, and supply chain management.',
+
+});
 
 export default function UsersolAdmin2AuthorPage() {
   const articles = [
@@ -62,7 +64,7 @@ export default function UsersolAdmin2AuthorPage() {
     {
       title:
         'Small Manufacturer and Job Shop Uses Planning, Scheduling, and Tracking Tools from User Solutions, Inc. to Become More Efficient and Competitive',
-      href: '/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive',
+      href: '/success-stories',
       image:
         '/images/Edgebic/2022-09/image06-1.png',
       alt: 'Business professionals analyzing financial charts and data.',

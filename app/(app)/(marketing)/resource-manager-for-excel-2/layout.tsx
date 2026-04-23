@@ -1,26 +1,21 @@
-import { createPageMetadata } from '@/lib/seo/metadata';
+import { createProductMetadata } from '@/lib/seo/metadata';
 import { SoftwareApplicationJsonLd } from '@/components/seo';
 
-export const metadata = createPageMetadata({
-  title: 'Resource Manager for Excel',
-  description:
-    'Resource Manager for Excel (RMX) offers basic MRP and Shop Scheduling that is quick to implement and very affordable. Excel add-on for production planning.',
+export const metadata = createProductMetadata({
+  name: 'Resource Manager for Excel (RMX)',
+  description: 'Resource Manager for Excel (RMX) is an Excel-based production planning and scheduling solution. Plan and schedule production using familiar Microsoft Excel interface with powerful finite-capacity scheduling, Gantt charts, and BOM management.',
   path: '/resource-manager-for-excel-2',
-  keywords: 'Resource Manager Excel, RMX, MRP, shop scheduling, finite capacity, production planning, Excel add-on'
+  keywords: 'Resource Manager Excel, RMX, Excel scheduling, Excel scheduling software, Excel production planning, Excel production scheduling, manufacturing Excel, spreadsheet scheduling software, excel gantt chart software, production planning excel tool, excel based scheduling, excel capacity planning'
 });
 
-export default function ResourceManagerForExcelLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RMXLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <SoftwareApplicationJsonLd
         name="Resource Manager for Excel (RMX)"
-        description="Resource Manager for Excel (RMX) offers basic MRP and Shop Scheduling that is quick to implement and very affordable. Excel add-on for production planning."
+        description="Excel-based production planning and scheduling solution with powerful scheduling algorithms."
         url="/resource-manager-for-excel-2"
-        price="Contact for pricing"
+        price="1200"
       />
       {children}
     </>

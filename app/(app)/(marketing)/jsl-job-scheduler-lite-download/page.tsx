@@ -1,16 +1,18 @@
 import * as React from 'react';
-import type { Metadata } from 'next';
 import Image from 'next/image';
 
 import { JSLDownloadForm } from '@/components/marketing/sections/jsl-download-form';
 import { Card, CardContent } from '@/components/ui/card';
-import { createTitle } from '@/lib/utils';
+import { createPageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
-  title: createTitle('EDGEBI   Download'),
+export const metadata = createPageMetadata({
+  path: '/jsl-job-scheduler-lite-download',
+  title: 'Download Job Scheduler Lite - Free 60 Day Trial',
   description:
-    'Download EDGEBI   - 60 day fully functional trial. Production scheduling software with Excel integration and .NET framework support.'
-};
+    'Download Job Scheduler Lite - 60 day fully functional trial. Production scheduling software with Excel integration and .NET framework support.',
+  keywords:
+    'Job Scheduler Lite download, production scheduling trial, free scheduling software, Excel scheduling'
+});
 
 export default function JSLDownloadPage(): React.JSX.Element {
   return (

@@ -14,7 +14,7 @@ import { prisma } from '@/lib/db/prisma';
 import { createTitle } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: createTitle('Dashboard')
+  title: createTitle('Dashboard'),
 };
 
 export default async function DashboardLayout({
