@@ -148,7 +148,9 @@ export async function POST(request: NextRequest) {
           where: { id: existing.id },
           data: {
             name,
-            description: submittedDescription ?? existing.description,
+            // Preserve the FIRST description ever captured for this contact;
+            // only fill it in if no description is on file yet.
+            description: existing.description ?? submittedDescription,
             isRead: false,
             createdAt: now,
             tags: hasStudentTag
