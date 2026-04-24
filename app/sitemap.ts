@@ -169,6 +169,12 @@ async function getMarketingPages(baseUrl: string): Promise<MetadataRoute.Sitemap
   return routes;
 }
 
+const TODAY = new Date();
+function capDate(d: Date | string): Date {
+  const date = new Date(d);
+  return date > TODAY ? TODAY : date;
+}
+
 export default async function Sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getBaseUrl();
   const marketingPages = await getMarketingPages(baseUrl);
@@ -202,7 +208,7 @@ export default async function Sitemap(): Promise<MetadataRoute.Sitemap> {
 
       return {
         url: `${baseUrl}${urlPath}`,
-        lastModified: post.modified || post.published,
+        lastModified: capDate(post.modified || post.published),
         changeFrequency: isPillar ? 'weekly' as const : 'monthly' as const,
         priority: isPillar ? 0.8 : isGlossary ? 0.5 : 0.7
       };
