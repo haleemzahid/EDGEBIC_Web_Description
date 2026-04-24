@@ -48,7 +48,6 @@ const MEDIUM_PRIORITY_PAGES = new Set([
   'excel-to-scheduling-software',
   'on-time-delivery-manufacturing',
   'erp-integration-production-scheduling',
-  'resource-manager-db-in-depth',
   'resource-manager-for-excel-in-depth',
   'workcell-planner',
   'workcenter-schedulerxl',
@@ -122,7 +121,13 @@ async function getMarketingPages(baseUrl: string): Promise<MetadataRoute.Sitemap
     // Thin utility/stub pages - noindex, exclude from sitemap
     'cookie-policy',
     'buy-now-operations-manager',
-    'operations-manager-sked2a'
+    'operations-manager-sked2a',
+    // Redirect pages — these 301 to other URLs; submitting redirects wastes crawl budget
+    'privacy-policy',           // broken redirect (no destination)
+    'product-2',                // → /production-scheduling-products
+    'resource-manager-db-in-depth', // → /resource-manager-db-2
+    'workcenter-scheduler-xl-in-depth', // → /workcenter-schedulerxl
+    'small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive' // → /success-stories
   ];
 
   async function scanDirectory(dirPath: string, urlPrefix: string): Promise<void> {

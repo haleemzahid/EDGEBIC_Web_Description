@@ -214,6 +214,79 @@ const nextConfig = {
         source: '/dashboard/settings/organization',
         destination: '/dashboard/settings/organization/information',
         permanent: false
+      },
+      // Fix redirect pages that were incorrectly in sitemap
+      {
+        source: '/privacy-policy',
+        destination: '/privacy-policy3',
+        permanent: true
+      },
+      {
+        source: '/product-2',
+        destination: '/production-scheduling-products',
+        permanent: true
+      },
+      {
+        source: '/resource-manager-db-in-depth',
+        destination: '/resource-manager-db-2',
+        permanent: true
+      },
+      {
+        source: '/workcenter-scheduler-xl-in-depth',
+        destination: '/workcenter-schedulerxl',
+        permanent: true
+      },
+      {
+        source: '/small-manufacturer-and-job-shop-uses-planning-scheduling-and-tracking-tools-from-user-solutions-inc-to-become-more-efficient-and-competitive',
+        destination: '/success-stories',
+        permanent: true
+      },
+      // Fix glossary canonical conflicts: Google chose /blog/glossary-X over /blog/glossary/X
+      // Redirect hyphen form → slash form so Google consolidates to the sitemap canonical
+      {
+        source: '/blog/glossary-engineer-to-order',
+        destination: '/blog/glossary/engineer-to-order',
+        permanent: true
+      },
+      {
+        source: '/blog/glossary-inbound-logistics',
+        destination: '/blog/glossary/inbound-logistics',
+        permanent: true
+      },
+      {
+        source: '/blog/glossary-preventive-action',
+        destination: '/blog/glossary/preventive-action',
+        permanent: true
+      },
+      {
+        source: '/blog/glossary-priority-rules',
+        destination: '/blog/glossary/priority-rules',
+        permanent: true
+      },
+      {
+        source: '/blog/glossary-pull-system',
+        destination: '/blog/glossary/pull-system',
+        permanent: true
+      },
+      {
+        source: '/blog/glossary-r-chart',
+        destination: '/blog/glossary/r-chart',
+        permanent: true
+      },
+      {
+        source: '/blog/glossary-split-operations',
+        destination: '/blog/glossary/split-operations',
+        permanent: true
+      },
+      {
+        source: '/blog/glossary-time-phased-order',
+        destination: '/blog/glossary/time-phased-order',
+        permanent: true
+      },
+      {
+        source: '/blog/glossary-unplanned-downtime',
+        destination: '/blog/glossary/unplanned-downtime',
+        permanent: true
       }
     ];
   },
