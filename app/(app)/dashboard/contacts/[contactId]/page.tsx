@@ -20,6 +20,10 @@ import { getContact } from '@/data/contacts/get-contact';
 import { createTitle } from '@/lib/utils';
 import type { NextPageProps } from '@/types/next-page-props';
 
+// Force dynamic rendering so newly recorded activities show without manual reload
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const paramsCache = createSearchParamsCache({
   contactId: parseAsString.withDefault('')
 });

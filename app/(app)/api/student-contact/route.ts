@@ -136,6 +136,12 @@ export async function POST(request: NextRequest) {
 
       const now = new Date();
 
+      const submissionMetadata = {
+        name: { old: '', new: name },
+        email: { old: '', new: email },
+        message: { old: '', new: submittedDescription ?? '' }
+      };
+
       if (existing) {
         const hasStudentTag = existing.tags.some((t) => t.id === studentTag.id);
         const updated = await tx.contact.update({
@@ -151,32 +157,13 @@ export async function POST(request: NextRequest) {
           }
         });
 
-        const changes: Record<string, { old: string; new: string }> = {};
-        if ((existing.name ?? '') !== name) {
-          changes.name = { old: existing.name ?? '', new: name };
-        }
-        if ((existing.description ?? '') !== (submittedDescription ?? '')) {
-          changes.message = {
-            old: existing.description ?? '',
-            new: submittedDescription ?? ''
-          };
-        }
-
         await tx.contactActivity.create({
           data: {
             contactId: updated.id,
-            actionType: ActionType.UPDATE,
+            actionType: ActionType.CREATE,
             actorId: 'public-student-form',
             actorType: ActorType.API,
-            metadata:
-              Object.keys(changes).length > 0
-                ? changes
-                : {
-                    submission: {
-                      old: '',
-                      new: 'Re-submitted student free trial form'
-                    }
-                  },
+            metadata: submissionMetadata,
             occurredAt: now
           }
         });
@@ -205,11 +192,7 @@ export async function POST(request: NextRequest) {
           actionType: ActionType.CREATE,
           actorId: 'public-student-form',
           actorType: ActorType.API,
-          metadata: {
-            name: { old: '', new: name },
-            email: { old: '', new: email },
-            message: { old: '', new: submittedDescription ?? '' }
-          },
+          metadata: submissionMetadata,
           occurredAt: created.createdAt
         }
       });

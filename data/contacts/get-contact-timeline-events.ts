@@ -154,7 +154,8 @@ export async function getContactTimelineEvents(
         const dateB = (
           b.type === 'activity' ? b.occurredAt : b.createdAt
         ).getTime();
-        return dateB - dateA;
+        if (dateB !== dateA) return dateB - dateA;
+        return b.id.localeCompare(a.id);
       });
 
       return sorted;

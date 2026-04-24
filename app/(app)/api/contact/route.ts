@@ -147,6 +147,15 @@ export async function POST(request: NextRequest) {
 
       const now = new Date();
 
+      const submissionMetadata = {
+        name: { old: '', new: submittedName },
+        email: { old: '', new: email },
+        phone: { old: '', new: submittedPhone ?? '' },
+        productInterest: { old: '', new: productInterest },
+        hearAboutUs: { old: '', new: hearAboutUs },
+        message: { old: '', new: submittedDescription ?? '' }
+      };
+
       if (existing) {
         const updated = await tx.contact.update({
           where: { id: existing.id },
@@ -161,34 +170,13 @@ export async function POST(request: NextRequest) {
           }
         });
 
-        const changes: Record<string, { old: string; new: string }> = {};
-        const trackField = (
-          key: string,
-          oldValue: string | null | undefined,
-          newValue: string | null | undefined
-        ) => {
-          const oldStr = oldValue ?? '';
-          const newStr = newValue ?? '';
-          if (oldStr !== newStr) {
-            changes[key] = { old: oldStr, new: newStr };
-          }
-        };
-        trackField('name', existing.name, submittedName);
-        trackField('phone', existing.phone, submittedPhone);
-        trackField('productInterest', existing.productInterest, productInterest);
-        trackField('hearAboutUs', existing.hearAboutUs, hearAboutUs);
-        trackField('message', existing.description, submittedDescription);
-
         await tx.contactActivity.create({
           data: {
             contactId: updated.id,
-            actionType: ActionType.UPDATE,
+            actionType: ActionType.CREATE,
             actorId: 'public-contact-form',
             actorType: ActorType.API,
-            metadata:
-              Object.keys(changes).length > 0
-                ? changes
-                : { submission: { old: '', new: 'Re-submitted contact form' } },
+            metadata: submissionMetadata,
             occurredAt: now
           }
         });
@@ -217,14 +205,7 @@ export async function POST(request: NextRequest) {
           actionType: ActionType.CREATE,
           actorId: 'public-contact-form',
           actorType: ActorType.API,
-          metadata: {
-            name: { old: '', new: submittedName },
-            email: { old: '', new: email },
-            phone: { old: '', new: submittedPhone ?? '' },
-            productInterest: { old: '', new: productInterest },
-            hearAboutUs: { old: '', new: hearAboutUs },
-            message: { old: '', new: submittedDescription ?? '' }
-          },
+          metadata: submissionMetadata,
           occurredAt: created.createdAt
         }
       });
