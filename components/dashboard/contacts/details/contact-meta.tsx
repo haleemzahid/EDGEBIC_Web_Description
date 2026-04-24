@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 
-import { ContactDescriptionSection } from '@/components/dashboard/contacts/details/contact-description-section';
 import { ContactDetailsSection } from '@/components/dashboard/contacts/details/contact-details-section';
 import { ContactStageSection } from '@/components/dashboard/contacts/details/contact-stage-section';
 import { ContactTagsSection } from '@/components/dashboard/contacts/details/contact-tags-section';
@@ -23,7 +22,6 @@ export function ContactMeta({ contact }: ContactMetaProps): React.JSX.Element {
     >
       <div className="size-full divide-y border-b md:w-[360px] md:min-w-[360px]">
         <ContactDetailsSection contact={contact} />
-        <ContactDescriptionSection contact={contact} />
         <ContactStageSection contact={contact} />
         <ContactTagsSection contact={contact} />
       </div>
