@@ -9,6 +9,7 @@
 
 import { revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
+import { ActionType, ActorType } from '@prisma/client';
 import { z } from 'zod';
 
 import { Caching, OrganizationCacheKey } from '@/data/caching';
@@ -129,27 +130,127 @@ export async function POST(request: NextRequest) {
     // Get or create organization
     const organization = await getOrCreateOrganization();
 
-    // Save to Contact table
-    const contact = await prisma.contact.create({
-      data: {
-        organizationId: organization.id,
-        name: `${firstName} ${lastName}`,
-        email,
-        phone: phone || null,
-        record: 'PERSON',
-        stage: 'LEAD',
-        productInterest,
-        hearAboutUs,
-        description: message || null,
-        isRead: false
+    const submittedName = `${firstName} ${lastName}`;
+    const submittedPhone = phone || null;
+    const submittedDescription = message || null;
+
+    // Upsert by email so repeat submissions don't create duplicate CRM rows.
+    // Each submission records a ContactActivity and bumps createdAt so the
+    // contact moves to the top of the default (createdAt desc) CRM sort.
+    const contact = await prisma.$transaction(async (tx) => {
+      const existing = await tx.contact.findFirst({
+        where: {
+          organizationId: organization.id,
+          email: { equals: email, mode: 'insensitive' }
+        }
+      });
+
+      const now = new Date();
+
+      if (existing) {
+        const updated = await tx.contact.update({
+          where: { id: existing.id },
+          data: {
+            name: submittedName,
+            phone: submittedPhone ?? existing.phone,
+            productInterest,
+            hearAboutUs,
+            description: submittedDescription ?? existing.description,
+            isRead: false,
+            createdAt: now
+          }
+        });
+
+        const changes: Record<string, { old: string; new: string }> = {};
+        const trackField = (
+          key: string,
+          oldValue: string | null | undefined,
+          newValue: string | null | undefined
+        ) => {
+          const oldStr = oldValue ?? '';
+          const newStr = newValue ?? '';
+          if (oldStr !== newStr) {
+            changes[key] = { old: oldStr, new: newStr };
+          }
+        };
+        trackField('name', existing.name, submittedName);
+        trackField('phone', existing.phone, submittedPhone);
+        trackField('productInterest', existing.productInterest, productInterest);
+        trackField('hearAboutUs', existing.hearAboutUs, hearAboutUs);
+        trackField('message', existing.description, submittedDescription);
+
+        await tx.contactActivity.create({
+          data: {
+            contactId: updated.id,
+            actionType: ActionType.UPDATE,
+            actorId: 'public-contact-form',
+            actorType: ActorType.API,
+            metadata:
+              Object.keys(changes).length > 0
+                ? changes
+                : { submission: { old: '', new: 'Re-submitted contact form' } },
+            occurredAt: now
+          }
+        });
+
+        return updated;
       }
+
+      const created = await tx.contact.create({
+        data: {
+          organizationId: organization.id,
+          name: submittedName,
+          email,
+          phone: submittedPhone,
+          record: 'PERSON',
+          stage: 'LEAD',
+          productInterest,
+          hearAboutUs,
+          description: submittedDescription,
+          isRead: false
+        }
+      });
+
+      await tx.contactActivity.create({
+        data: {
+          contactId: created.id,
+          actionType: ActionType.CREATE,
+          actorId: 'public-contact-form',
+          actorType: ActorType.API,
+          metadata: {
+            name: { old: '', new: submittedName },
+            email: { old: '', new: email },
+            phone: { old: '', new: submittedPhone ?? '' },
+            productInterest: { old: '', new: productInterest },
+            hearAboutUs: { old: '', new: hearAboutUs },
+            message: { old: '', new: submittedDescription ?? '' }
+          },
+          occurredAt: created.createdAt
+        }
+      });
+
+      return created;
     });
 
-    // Revalidate contacts cache so new contact shows immediately in CRM
+    // Revalidate contacts cache so new/updated contact shows immediately in CRM
     revalidateTag(
       Caching.createOrganizationTag(
         OrganizationCacheKey.Contacts,
         organization.id
+      )
+    );
+    revalidateTag(
+      Caching.createOrganizationTag(
+        OrganizationCacheKey.Contact,
+        organization.id,
+        contact.id
+      )
+    );
+    revalidateTag(
+      Caching.createOrganizationTag(
+        OrganizationCacheKey.ContactTimelineEvents,
+        organization.id,
+        contact.id
       )
     );
 

@@ -9,6 +9,7 @@
 
 import { revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
+import { ActionType, ActorType } from '@prisma/client';
 import { z } from 'zod';
 
 import { Caching, OrganizationCacheKey } from '@/data/caching';
@@ -119,27 +120,122 @@ export async function POST(request: NextRequest) {
       create: { text: 'Student' }
     });
 
-    // Save to Contact table with "Student" tag
-    const contact = await prisma.contact.create({
-      data: {
-        organizationId: organization.id,
-        name,
-        email,
-        record: 'PERSON',
-        stage: 'LEAD',
-        description: schoolName ? `School: ${schoolName}` : null,
-        isRead: false,
-        tags: {
-          connect: { id: studentTag.id }
+    const submittedDescription = schoolName ? `School: ${schoolName}` : null;
+
+    // Upsert by email so repeat submissions don't create duplicate CRM rows.
+    // Each submission records a ContactActivity and bumps createdAt so the
+    // contact moves to the top of the default (createdAt desc) CRM sort.
+    const contact = await prisma.$transaction(async (tx) => {
+      const existing = await tx.contact.findFirst({
+        where: {
+          organizationId: organization.id,
+          email: { equals: email, mode: 'insensitive' }
+        },
+        include: { tags: { select: { id: true } } }
+      });
+
+      const now = new Date();
+
+      if (existing) {
+        const hasStudentTag = existing.tags.some((t) => t.id === studentTag.id);
+        const updated = await tx.contact.update({
+          where: { id: existing.id },
+          data: {
+            name,
+            description: submittedDescription ?? existing.description,
+            isRead: false,
+            createdAt: now,
+            tags: hasStudentTag
+              ? undefined
+              : { connect: { id: studentTag.id } }
+          }
+        });
+
+        const changes: Record<string, { old: string; new: string }> = {};
+        if ((existing.name ?? '') !== name) {
+          changes.name = { old: existing.name ?? '', new: name };
         }
+        if ((existing.description ?? '') !== (submittedDescription ?? '')) {
+          changes.message = {
+            old: existing.description ?? '',
+            new: submittedDescription ?? ''
+          };
+        }
+
+        await tx.contactActivity.create({
+          data: {
+            contactId: updated.id,
+            actionType: ActionType.UPDATE,
+            actorId: 'public-student-form',
+            actorType: ActorType.API,
+            metadata:
+              Object.keys(changes).length > 0
+                ? changes
+                : {
+                    submission: {
+                      old: '',
+                      new: 'Re-submitted student free trial form'
+                    }
+                  },
+            occurredAt: now
+          }
+        });
+
+        return updated;
       }
+
+      const created = await tx.contact.create({
+        data: {
+          organizationId: organization.id,
+          name,
+          email,
+          record: 'PERSON',
+          stage: 'LEAD',
+          description: submittedDescription,
+          isRead: false,
+          tags: {
+            connect: { id: studentTag.id }
+          }
+        }
+      });
+
+      await tx.contactActivity.create({
+        data: {
+          contactId: created.id,
+          actionType: ActionType.CREATE,
+          actorId: 'public-student-form',
+          actorType: ActorType.API,
+          metadata: {
+            name: { old: '', new: name },
+            email: { old: '', new: email },
+            message: { old: '', new: submittedDescription ?? '' }
+          },
+          occurredAt: created.createdAt
+        }
+      });
+
+      return created;
     });
 
-    // Revalidate contacts cache so new contact shows immediately in CRM
+    // Revalidate contacts cache so new/updated contact shows immediately in CRM
     revalidateTag(
       Caching.createOrganizationTag(
         OrganizationCacheKey.Contacts,
         organization.id
+      )
+    );
+    revalidateTag(
+      Caching.createOrganizationTag(
+        OrganizationCacheKey.Contact,
+        organization.id,
+        contact.id
+      )
+    );
+    revalidateTag(
+      Caching.createOrganizationTag(
+        OrganizationCacheKey.ContactTimelineEvents,
+        organization.id,
+        contact.id
       )
     );
 
