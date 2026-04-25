@@ -15,9 +15,9 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Job Shop Scheduling Software',
+  title: 'Job Shop Scheduling Software That Cuts Scheduling From 40 Hours to 2 Hours/Week',
   description:
-    'Purpose-built scheduling software for job shops. Handle high-mix, low-volume production with finite capacity scheduling, what-if analysis, and real-time capacity visibility. Trusted by Technical Glass Products, Turner Bicycles, and more.',
+    'Stop spending 40 hours a week on scheduling. RMDB job shop scheduling software delivers finite capacity scheduling for high-mix, low-volume manufacturers. Trusted by Technical Glass Products, Turner Bicycles, and 100+ job shops for 35 years.',
   path: '/scheduling-software-for-job-shops',
   keywords:
     'job shop scheduling software, job shop management software, job shop software, shop scheduling software, job shop production planning, custom manufacturing scheduling, high-mix low-volume scheduling, finite capacity scheduling job shop, make-to-order scheduling software, job shop capacity planning'
@@ -85,7 +85,7 @@ export default function JobShopSchedulingPage(): React.JSX.Element {
           <div className="container mx-auto px-4">
             <div className="mx-auto max-w-7xl text-center">
               <h1 className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl">
-                Job Shop Scheduling Software That Actually Works
+                Job Shop &amp; Shop Scheduling Software That Cuts Planning From 40 Hours to 2
               </h1>
               <p className="mx-auto max-w-3xl text-[18px] text-gray-700">
                 Stop firefighting. Start planning. Purpose-built finite capacity
