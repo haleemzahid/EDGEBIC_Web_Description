@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { Role } from '@prisma/client';
 import { ChevronLeftIcon } from 'lucide-react';
 
 import { NavAccount } from '@/components/dashboard/settings/nav-account';
@@ -17,7 +18,13 @@ import {
 import { Routes } from '@/constants/routes';
 import { cn } from '@/lib/utils';
 
-export function SettingsSidebar(): React.JSX.Element {
+export type SettingsSidebarProps = {
+  role: Role;
+};
+
+export function SettingsSidebar({
+  role
+}: SettingsSidebarProps): React.JSX.Element {
   const sidebar = useSidebar();
   return (
     <Sidebar
@@ -49,7 +56,7 @@ export function SettingsSidebar(): React.JSX.Element {
           className="h-full"
         >
           <NavAccount className="pt-0" />
-          <NavOrganization />
+          {role !== Role.CLIENT && <NavOrganization />}
         </ScrollArea>
       </SidebarContent>
     </Sidebar>

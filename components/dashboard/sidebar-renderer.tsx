@@ -22,7 +22,7 @@ export function SidebarRenderer(
   const pathname = usePathname();
 
   if (sidebar.isMobile && pathname.startsWith(Routes.Settings)) {
-    return <SettingsSidebar />;
+    return <SettingsSidebar role={props.profile.role} />;
   }
 
   return <AppSidebar {...props} />;

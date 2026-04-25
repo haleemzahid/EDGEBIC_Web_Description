@@ -51,6 +51,19 @@ export const mainNavItems: NavItem[] = [
   }
 ];
 
+export const clientNavItems: NavItem[] = [
+  {
+    title: 'Home',
+    href: Routes.Welcome,
+    icon: HomeIcon
+  },
+  {
+    title: 'Profile',
+    href: Routes.Profile,
+    icon: UserIcon
+  }
+];
+
 export const accountNavItems: NavItem[] = [
   {
     title: 'Profile',

@@ -13,7 +13,21 @@ import { dedupedAuth } from '@/lib/auth';
 import { getLoginRedirect } from '@/lib/auth/redirect';
 import { checkSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/db/prisma';
+import { getPathname } from '@/lib/network/get-pathname';
 import { createTitle } from '@/lib/utils';
+
+const CLIENT_ALLOWED_PREFIXES = [
+  Routes.Welcome,
+  Routes.Profile,
+  Routes.Security,
+  Routes.Account
+];
+
+function isClientAllowedPath(pathname: string): boolean {
+  return CLIENT_ALLOWED_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
 
 export const metadata: Metadata = {
   title: createTitle('Dashboard'),
@@ -39,10 +53,13 @@ export default async function DashboardLayout({
       }
     }
   });
-  if (userFromDb!.role === Role.CLIENT) {
-    return redirect(Routes.Welcome);
-  }
-  if (
+  const isClient = userFromDb!.role === Role.CLIENT;
+  if (isClient) {
+    const pathname = (getPathname() ?? '').split('?')[0];
+    if (!isClientAllowedPath(pathname)) {
+      return redirect(Routes.Welcome);
+    }
+  } else if (
     !userFromDb!.completedOnboarding ||
     !userFromDb!.organization!.completedOnboarding
   ) {

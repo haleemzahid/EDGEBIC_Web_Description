@@ -3,8 +3,13 @@ import { type Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Role } from '@prisma/client';
 
-import { LogOutButton } from '@/components/ui/onboarding/log-out-button';
-import { Logo } from '@/components/ui/logo';
+import {
+  Page,
+  PageBody,
+  PageHeader,
+  PagePrimaryBar,
+  PageTitle
+} from '@/components/ui/page';
 import { Routes } from '@/constants/routes';
 import { dedupedAuth } from '@/lib/auth';
 import { getLoginRedirect } from '@/lib/auth/redirect';
@@ -40,25 +45,30 @@ export default async function WelcomePage(): Promise<React.JSX.Element> {
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center bg-background px-6 py-16">
-      <LogOutButton className="fixed top-4 right-4" />
-      <div className="flex w-full max-w-xl flex-col items-center text-center">
-        <Logo className="mb-8" />
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          Welcome, {userFromDb.name}
-        </h1>
-        {userFromDb.organization?.name && (
-          <p className="mt-3 text-base text-muted-foreground">
-            You&apos;ve been invited to {userFromDb.organization.name} as a
-            client.
+    <Page>
+      <PageHeader>
+        <PagePrimaryBar>
+          <PageTitle>Welcome</PageTitle>
+        </PagePrimaryBar>
+      </PageHeader>
+      <PageBody>
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-6">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Welcome, {userFromDb.name}
+          </h1>
+          {userFromDb.organization?.name && (
+            <p className="text-base text-muted-foreground">
+              You&apos;ve been invited to {userFromDb.organization.name} as a
+              client.
+            </p>
+          )}
+          <p className="text-sm text-muted-foreground">
+            Your client account is active. Your team will share project
+            updates and resources with you here. If you need anything, please
+            reach out to your project contact.
           </p>
-        )}
-        <p className="mt-6 max-w-md text-sm text-muted-foreground">
-          Your client account is active. Your team will share project updates
-          and resources with you here. If you need anything, please reach out
-          to your project contact.
-        </p>
-      </div>
-    </div>
+        </div>
+      </PageBody>
+    </Page>
   );
 }

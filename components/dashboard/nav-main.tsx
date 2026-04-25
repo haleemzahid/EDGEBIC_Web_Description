@@ -3,6 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Role } from '@prisma/client';
 
 import {
   SidebarGroup,
@@ -11,16 +12,25 @@ import {
   SidebarMenuItem,
   type SidebarGroupProps
 } from '@/components/ui/sidebar';
-import { mainNavItems } from '@/constants/nav-items';
+import { clientNavItems, mainNavItems } from '@/constants/nav-items';
+import { Routes } from '@/constants/routes';
 import { cn } from '@/lib/utils';
+import type { NavItem } from '@/types/nav-item';
 
-export function NavMain(props: SidebarGroupProps): React.JSX.Element {
+export type NavMainProps = SidebarGroupProps & {
+  role: Role;
+};
+
+export function NavMain({ role, ...props }: NavMainProps): React.JSX.Element {
   const pathname = usePathname();
+  const navItems: NavItem[] =
+    role === Role.CLIENT ? clientNavItems : mainNavItems;
 
-  // Check if item is active - exact match for /dashboard (Home), startsWith for others
+  // Check if item is active - exact match for Home (admin) and Welcome (client),
+  // startsWith for others
   const isItemActive = (href: string): boolean => {
-    if (href === '/dashboard') {
-      return pathname === '/dashboard';
+    if (href === Routes.Home || href === Routes.Welcome) {
+      return pathname === href;
     }
     return pathname.startsWith(href);
   };
@@ -28,7 +38,7 @@ export function NavMain(props: SidebarGroupProps): React.JSX.Element {
   return (
     <SidebarGroup {...props}>
       <SidebarMenu>
-        {mainNavItems.map((item, index) => (
+        {navItems.map((item, index) => (
           <SidebarMenuItem key={index}>
             <SidebarMenuButton
               asChild

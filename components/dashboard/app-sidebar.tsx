@@ -68,7 +68,7 @@ export function AppSidebar({
           /* Overriding the hardcoded { disply:table } to get full flex height */
           className="h-full [&>[data-radix-scroll-area-viewport]>div]:!flex [&>[data-radix-scroll-area-viewport]>div]:h-full [&>[data-radix-scroll-area-viewport]>div]:flex-col"
         >
-          <NavMain />
+          <NavMain role={profile.role} />
           {/* <NavFavorites favorites={favorites} />
           <NavSupport
             profile={profile}
