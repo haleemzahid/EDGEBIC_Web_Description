@@ -26,3 +26,15 @@ export async function isMember(userId: string): Promise<boolean> {
 
   return user.role === Role.MEMBER;
 }
+
+export async function isClient(userId: string): Promise<boolean> {
+  const user = await prisma.user.findFirst({
+    where: { id: userId },
+    select: { role: true }
+  });
+  if (!user) {
+    throw new NotFoundError('User not found');
+  }
+
+  return user.role === Role.CLIENT;
+}

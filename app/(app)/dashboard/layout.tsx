@@ -2,6 +2,8 @@ import * as React from 'react';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
+import { Role } from '@prisma/client';
+
 import { SidebarRenderer } from '@/components/dashboard/sidebar-renderer';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { Routes } from '@/constants/routes';
@@ -28,6 +30,7 @@ export default async function DashboardLayout({
   const userFromDb = await prisma.user.findFirst({
     where: { id: session.user.id },
     select: {
+      role: true,
       completedOnboarding: true,
       organization: {
         select: {
@@ -36,6 +39,9 @@ export default async function DashboardLayout({
       }
     }
   });
+  if (userFromDb!.role === Role.CLIENT) {
+    return redirect(Routes.Welcome);
+  }
   if (
     !userFromDb!.completedOnboarding ||
     !userFromDb!.organization!.completedOnboarding

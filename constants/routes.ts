@@ -68,6 +68,7 @@ export enum Routes {
   VerifyEmailExpired = '/auth/verify-email/expired',
   VerifyEmailSuccess = '/auth/verify-email/success',
 
+  Welcome = '/welcome',
   Home = '/dashboard',
   Analytics = '/dashboard/analytics',
   Contacts = '/dashboard/contacts',
