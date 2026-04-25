@@ -12,7 +12,7 @@ export const metadata = createPageMetadata({
     'Fishbowl is strong on inventory and QuickBooks. RMDB is strong on finite-capacity scheduling and APS. Honest comparison, pricing, features, migration.',
   path: '/compare-products/rmdb-vs-fishbowl',
   keywords:
-    'rmdb vs fishbowl, fishbowl alternative, alternatives to fishbowl, fishbowl manufacturing comparison, fishbowl competitors'
+    'rmdb vs fishbowl, fishbowl alternative, alternatives to fishbowl, fishbowl manufacturing comparison, fishbowl competitors, fishbowl inventory alternative, fishbowl inventory software alternative'
 });
 
 const data: ComparisonPageData = {

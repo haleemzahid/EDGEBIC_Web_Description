@@ -9,7 +9,7 @@ export const metadata = createPageMetadata({
     'Learn about User Solutions, the company behind RMDB and EDGEBI - providing award-winning production planning and scheduling software to manufacturers worldwide for over 35 years.',
   path: '/about',
   keywords:
-    'User Solutions, manufacturing software company, RMDB developer, production planning company, EDGEBI, about us'
+    'User Solutions, manufacturing software company, RMDB developer, production planning company, EDGEBI, about us, manufacturing software Michigan, Michigan manufacturing software'
 });
 
 export default function AboutPage(): React.JSX.Element {
