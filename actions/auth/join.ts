@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidateTag } from 'next/cache';
-import { InvitationStatus } from '@prisma/client';
+import { InvitationStatus, Role } from '@prisma/client';
 
 import { actionClient } from '@/actions/safe-action';
 import { Routes } from '@/constants/routes';
@@ -75,10 +75,13 @@ export const join = actionClient
       )
     );
 
+    const redirectTo =
+      invitation.role === Role.CLIENT ? Routes.Welcome : Routes.Onboarding;
+
     return await signIn(IdentityProvider.Credentials, {
       email: parsedInput.email,
       password: parsedInput.password,
       redirect: true,
-      redirectTo: Routes.Onboarding
+      redirectTo
     });
   });
