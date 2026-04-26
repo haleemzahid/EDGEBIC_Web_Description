@@ -10,6 +10,7 @@ import { OrganizationJsonLd, WebSiteJsonLd } from '@/components/seo';
 import { AppInfo } from '@/constants/app-info';
 import { getBaseUrl } from '@/lib/urls/get-base-url';
 
+import { ClarityAnalytics } from '@/components/analytics/clarity-analytics';
 import { Providers } from './(app)/providers';
 
 const preconnectUrls = [
@@ -142,6 +143,7 @@ export default async function RootLayout({
           data-key="LgOgti8k7VEb8DaU1B/4nQ"
           strategy="afterInteractive"
         />
+        <ClarityAnalytics />
         <Providers>
           {children}
           <React.Suspense>
