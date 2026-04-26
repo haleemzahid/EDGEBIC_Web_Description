@@ -15,9 +15,9 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Food Manufacturing Scheduling Software (2026) — Batch, Allergen, Shelf-Life',
+  title: 'Food Manufacturing Scheduling Software — Allergen & Batch Control',
   description:
-    'Production scheduling software for food and beverage manufacturers. Batch scheduling with allergen sequencing, shelf-life awareness, lot traceability, and SQF/HACCP support. Used by manufacturers since 1991.',
+    'Schedule food production with allergen sequencing, FEFO shelf-life, and batch traceability built in. SQF/HACCP-ready. Trusted by food manufacturers since 1991. Free trial.',
   path: '/food-manufacturing-scheduling-software',
   keywords:
     'food manufacturing scheduling software, food production planning software, beverage manufacturing software, bakery production planning software, food and beverage scheduling, food production scheduling, allergen-aware scheduling, batch scheduling food manufacturing, SQF compliant scheduling'

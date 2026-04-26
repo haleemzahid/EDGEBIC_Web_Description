@@ -25,12 +25,14 @@ const IMAGES = {
 };
 
 export const metadata: Metadata = {
-  title: 'Resource Manager DB',
+  title: 'RMDB | Resource Manager for Excel — Production Scheduling Software',
   description:
     'Resource Manager-DB (RMDB) is a flexible and affordable production planning, scheduling, and tracking solution designed to adapt to your operations. Features finite capacity planning, MRP, drag-and-drop scheduling, and Excel integration.',
   keywords: [
-    'Resource Manager DB',
     'RMDB',
+    'resource manager for excel',
+    'RMDB scheduling software',
+    'Resource Manager DB',
     'production scheduling',
     'manufacturing scheduling',
     'finite capacity planning',

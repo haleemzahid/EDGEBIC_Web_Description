@@ -8,10 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { createProductMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createProductMetadata({
-  name: 'Stat::Fit Statistical Distribution Fitting',
-  description: 'Stat::Fit software for automated statistical distribution fitting and data analysis for simulation input modeling.',
+  name: 'Stat::Fit (StatFit) — Statistical Distribution Fitting Software',
+  description: 'Stat::Fit (StatFit) software for automated statistical distribution fitting and data analysis for simulation input modeling.',
   path: '/stat-fit',
-  keywords: 'StatFit, statistical distribution fitting, data analysis, simulation input, statistical modeling',
+  keywords: 'stat fit, stat::fit, StatFit, statistical distribution fitting, data analysis, simulation input, statistical modeling',
 });
 
 export default function StatFitPage(): React.JSX.Element {
@@ -28,7 +28,7 @@ export default function StatFitPage(): React.JSX.Element {
           <div className="mx-auto max-w-7xl text-center">
             <div className="mb-6">
             </div>
-            <h1 className="mb-6 text-4xl font-bold md:text-6xl">Stat::Fit</h1>
+            <h1 className="mb-6 text-4xl font-bold md:text-6xl">Stat::Fit (StatFit)</h1>
             <p className="mb-6 text-xl md:text-2xl">
               Statistical distribution fitting and data analysis for accurate
               modeling

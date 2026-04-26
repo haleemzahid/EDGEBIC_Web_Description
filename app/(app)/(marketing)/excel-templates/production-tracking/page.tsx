@@ -12,7 +12,7 @@ export const metadata = createPageMetadata({
     'Download a free production tracking Excel template to monitor work orders, job status, and shop-floor progress in real time — with an honest upgrade path for growing shops.',
   path: '/excel-templates/production-tracking',
   keywords:
-    'production tracking excel template, work order tracking excel, job tracking excel template manufacturing, production progress tracker excel, manufacturing job tracker spreadsheet, shop floor tracking excel template, work in progress tracking excel'
+    'production tracking software pricing, production tracking software cost, how much does production tracking software cost, production tracking excel template, work order tracking excel, job tracking excel template manufacturing, production progress tracker excel, manufacturing job tracker spreadsheet, shop floor tracking excel template, work in progress tracking excel'
 });
 
 const data: ExcelTemplatePageData = {

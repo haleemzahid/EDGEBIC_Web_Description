@@ -15,12 +15,12 @@ import { Routes } from '@/constants/routes';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Finite Capacity Scheduling Software',
+  title: 'Best Finite Capacity Scheduling Software 2026 for Manufacturers',
   description:
     'Finite capacity scheduling software that schedules against real machine, labor, material, and tooling constraints simultaneously. Used by USS Nimitz (26,000+ tasks), GE Railcar (30%→90% on-time), and Cummins Engine (33 locations). 35+ years proven.',
   path: '/finite-capacity-scheduling-software',
   keywords:
-    'finite capacity scheduling software, finite capacity planning, constraint-based scheduling, finite scheduling software, capacity planning software manufacturing, finite capacity scheduling system, resource constrained scheduling, real capacity planning'
+    'finite capacity scheduling software, best finite capacity scheduling solutions for manufacturing 2026, finite capacity planning, constraint-based scheduling, finite scheduling software, capacity planning software manufacturing, finite capacity scheduling system, resource constrained scheduling, real capacity planning'
 });
 
 const FAQS = [
@@ -85,7 +85,7 @@ export default function FiniteCapacitySchedulingPage(): React.JSX.Element {
           <div className="container mx-auto px-4">
             <div className="mx-auto max-w-7xl text-center">
               <h1 className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl lg:text-5xl">
-                Finite Capacity Scheduling Software
+                Best Finite Capacity Scheduling Software 2026
               </h1>
               <p className="mx-auto max-w-3xl text-[18px] text-gray-700">
                 Schedule against real constraints — machines, labor, materials,
