@@ -58,12 +58,21 @@ function formatDate(dateString: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Static params
+// ISR — revalidate cached pages every 24 hours; unvisited slugs render on demand
+// ---------------------------------------------------------------------------
+export const revalidate = 86400;
+export const dynamicParams = true;
+
+// ---------------------------------------------------------------------------
+// Static params — pre-render only the 80 most-recently published posts.
+// All other slugs are generated on first request and cached via ISR.
 // ---------------------------------------------------------------------------
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
   // Glossary term posts are served from /blog/glossary/[slug] instead.
   return allPosts
     .filter((post) => !post.slugAsParams.startsWith('glossary-'))
+    .sort((a, b) => new Date(b.published).getTime() - new Date(a.published).getTime())
+    .slice(0, 80)
     .map((post) => ({
       slug: post.slugAsParams
     }));
