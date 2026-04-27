@@ -1,0 +1,191 @@
+---
+title: "One-Piece Flow Scheduling: What a Batch Size of 1 Does to Your Lead Time and Schedule"
+description: "One-piece flow eliminates queue time between operations and compresses lead times dramatically. Learn the math, when OPF is feasible, and how it changes your scheduling logic."
+published: 2026-04-27T08:00:00.000Z
+modified: 2026-04-27T08:00:00.000Z
+category: Lean Manufacturing
+author: user-solutions
+cluster: lean-manufacturing
+pillarSlug: glossary-lean-manufacturing
+keywords:
+  - one piece flow scheduling manufacturing
+  - one piece flow production
+  - batch size reduction lead time
+  - single piece flow manufacturing
+  - OPF vs batch production scheduling
+  - lean scheduling batch size
+  - queue time manufacturing
+targetPhrase: "one piece flow scheduling manufacturing"
+wordCount: 2350
+readingTime: 12
+heroImage: "/marketing/blog/one-piece-flow-scheduling/hero.webp"
+heroAlt: "Assembly line with sequential production flow showing individual parts moving through stations"
+faqQuestions:
+  - question: "What is one-piece flow and why does it reduce lead time so dramatically?"
+    answer: "One-piece flow (OPF) means processing one unit at a time between operations, eliminating the wait time a batch sits after the first unit is done while the rest of the batch completes. In a batch of 100 parts with a 3-minute cycle time, the first part completes Operation 1 in 3 minutes but waits 297 minutes for the rest of the batch before moving to Operation 2. In OPF, that part moves to Operation 2 after 3 minutes. The queue time reduction — not the processing time — is where the lead time compression comes from."
+  - question: "When is one-piece flow not economically justified?"
+    answer: "OPF is not justified when setup costs are high relative to unit cycle time. If a CNC setup takes 90 minutes and cycle time is 2 minutes per part, running a batch of 1 means 98% of machine time is setup. The math forces batching. As SMED reduces setup time, the economically viable batch size shrinks — so SMED and OPF are complementary. OPF is also impractical when operations have very different cycle times and no balancing mechanism (like cross-trained operators) exists to prevent downstream starvation."
+  - question: "How does the scheduling algorithm differ for one-piece flow vs. batch production?"
+    answer: "Batch production scheduling minimizes total weighted tardiness across a queue of jobs, each with a setup, run, and transfer quantity. OPF scheduling focuses on operator balance and takt compliance — ensuring each station completes its operation within takt time so the unit flows continuously without waiting. The scheduling decision in OPF is not 'which job runs next on this machine' but 'is this station balanced at or below takt, and where is the bottleneck station that limits flow?'"
+  - question: "What is the relationship between batch size and queue time?"
+    answer: "Queue time scales almost linearly with batch size when operations are sequential. Doubling batch size roughly doubles the time a unit spends waiting in queue between operations. This is why cutting batch size by 90% (from 100 to 10) reduces lead time by roughly 85–90% — not the 10% most managers intuitively expect. The processing time per unit doesn't change; it's the wait time that collapses. Little's Law captures this: lead time = WIP ÷ throughput rate. Lower WIP (smaller batches) = shorter lead time at the same throughput."
+qaQuestions:
+  - question: "We make custom parts in batches of 50–200. Our customers love our lead times now. Why should we move toward smaller batches?"
+    answer: "If your customers are satisfied and you're winning business, the urgency is low — but the opportunity is real. The question to ask is: what percentage of your quoted lead time is actual processing time vs. queue time? For most batch manufacturers, the answer is 5–15% processing and 85–95% waiting. If you could cut lead time by 60% by halving batch sizes, you could quote faster delivery, handle rush orders without disruption, and reduce the WIP tying up your floor space and cash. The customers satisfied with current lead times would become more satisfied — and you'd likely win business from customers currently choosing a faster competitor."
+  - question: "How does RMDB model the transition from batch to smaller batches in its scheduling engine?"
+    answer: "RMDB models transfer batch size (how many units move between operations) independently from the production batch size (the total order quantity). This allows planners to simulate 'what if I move parts in transfers of 10 instead of completing the full order quantity before moving them' without changing order quantities in the ERP system. You can see the projected lead time impact of different transfer batch sizes before changing anything on the floor. In shops that have used this analysis, the typical finding is that halving the transfer batch size cuts projected lead time by 40–55% for multi-operation jobs — far more than most managers expect before they see the numbers."
+---
+
+<Image
+  src="/marketing/blog/one-piece-flow-scheduling/hero.webp"
+  alt="Assembly line with sequential production flow showing individual parts moving through stations"
+  width="768"
+  height="432"
+  className="w-full rounded-lg"
+/>
+
+Ask a production manager why they batch parts in quantities of 100, and the answer is usually some version of "because setups are expensive." It's a reasonable answer. It's also, in most cases, a significantly incomplete one — and the incompleteness is costing manufacturers months of lead time they don't realize they're losing.
+
+One-piece flow (OPF) — processing one unit at a time and moving it immediately to the next operation — is the lean ideal that eliminates the hidden lead time embedded in every batch. The math of what batching does to lead time is counterintuitive until you see it clearly. Once you see it, it's difficult to look at a batch of 100 parts waiting in queue without calculating the waste.
+
+This post covers the lead time math of batch size, when one-piece flow is genuinely feasible vs. when batching is economically required, how OPF changes the scheduling algorithm, and what the practical path toward smaller batches looks like for a manufacturer starting from a batch-dominant environment.
+
+## The Lead Time Math of Batch Size
+
+Start with a simple example. A job requires three operations: turning (Op 10), milling (Op 20), and grinding (Op 30). Each operation takes 3 minutes per part. The order quantity is 100 parts.
+
+**In batch production** (batch of 100 moves together):
+- Op 10: 100 × 3 min = 300 minutes to complete the batch
+- Transfer to Op 20: batch waits until Op 10 is 100% complete
+- Op 20: 300 minutes
+- Transfer to Op 30: waits again
+- Op 30: 300 minutes
+- **Total lead time: 900 minutes (15 hours)**
+
+**In one-piece flow** (each part moves to Op 20 immediately after completing Op 10):
+- Op 10, part 1: 3 minutes → immediately moves to Op 20
+- Op 20, part 1: 3 minutes → immediately moves to Op 30
+- By the time the last part completes Op 10 (minute 300), Op 20 has been running for 297 minutes and Op 30 for 294 minutes
+- **Total lead time: 308 minutes (5.1 hours)** — the time for the last part to complete all three operations
+
+The lead time drops from 900 minutes to 308 minutes — a **66% reduction** — without changing cycle times, adding capacity, or improving setup time. The only change is eliminating the batch queue wait between operations.
+
+Now run the same math with a batch of 10 instead of 1:
+
+**Batch of 10 (transfer quantity = 10):**
+- Op 10 completes first sub-batch of 10: 30 minutes, transferred to Op 20
+- Op 20 starts immediately, completing its first sub-batch when Op 10 is on its 3rd sub-batch
+- Lead time for the 100th part: 30 + 300 + 30 = 360 minutes
+
+Cutting from a batch of 100 to a batch of 10 (a 90% reduction in batch size) cuts lead time from 900 minutes to 360 minutes — a **60% reduction**. This is the key insight: a 90% reduction in batch size produces roughly a 60–70% reduction in lead time, not 10%.
+
+Most managers' intuition about batch-to-lead-time relationships is wrong by an order of magnitude. This is why the question "why do we need smaller batches?" deserves a quantitative answer — the payoff is far larger than it looks.
+
+## Why the Effect Is So Large: Little's Law
+
+The math above is a specific case of **Little's Law**, one of the foundational relationships in operations management:
+
+> **Lead time = WIP ÷ Throughput rate**
+
+If throughput rate (units completed per hour) stays constant and you reduce WIP (work-in-process units on the floor), lead time falls proportionally. Batch size directly drives WIP: a batch of 100 puts 100 units into the WIP queue at each operation. A batch of 10 puts 10.
+
+Lower WIP means shorter lead time at the same throughput. This is not a lean slogan — it's a mathematical consequence of queuing theory that holds across manufacturing environments from semiconductor fabs to furniture factories.
+
+The practical implication: if you want to reduce lead time without adding capacity, reduce batch size. It is the single most powerful lever available that doesn't require capital investment. The constraint is setup economics — which brings us to when OPF is and isn't feasible.
+
+## When One-Piece Flow Is Feasible
+
+One-piece flow works when the setup cost per unit is negligible compared to the cycle time per unit. Specifically, OPF is feasible when:
+
+**1. Setup time is short relative to cycle time.** If setup takes 5 minutes and cycle time is 3 minutes, a batch of 10 amortizes 0.5 minutes of setup per part — the economic penalty is minimal. If setup takes 90 minutes and cycle time is 3 minutes, a batch of 1 means 97% of machine time is setup. The machine runs at 3% efficiency.
+
+**2. Operations are balanced.** OPF requires that each operation takes approximately the same time per unit. If Op 10 takes 3 minutes and Op 20 takes 9 minutes, a single unit emerging from Op 10 must wait 6 minutes for Op 20 to become available. You've eliminated the batch queue but created a starvation/blocking cycle between operations.
+
+**3. Physical flow is possible.** Operations must be close enough that transferring a single unit makes handling sense. Transferring one bracket from a lathe 200 feet away to a mill makes no sense — by the time you've walked the part over, you've lost the time advantage. [Cellular manufacturing](/blog/cellular-manufacturing-scheduling) solves this by co-locating the operations.
+
+**4. Quality defects are rare.** OPF exposes defects immediately — the next operation sees a bad part within minutes. This is actually a feature, not a bug: fast defect detection. But it requires that processes are stable enough that a defect doesn't shut down the entire flow every few cycles.
+
+## When Batching Is Genuinely Required
+
+Batching is economically justified — and OPF is impractical — in these situations:
+
+**High setup cost relative to unit volume.** A heat treatment oven that takes 4 hours to reach temperature must run full loads. A powder coating line with 30-minute color changes must run minimum color batch sizes. These setup constraints are physical, not organizational.
+
+**Process requirements that bundle units.** Plating tanks, annealing ovens, and injection molds often process multiple units simultaneously as a physical requirement of the process. OPF doesn't apply.
+
+**Highly unbalanced operations.** When one operation takes 10x longer than adjacent operations, you cannot balance the line for single-piece flow without either adding parallel machines at the bottleneck or accepting that the bottleneck gates the entire flow. In this case, mini-batches — not OPF — are the practical target.
+
+**Very long individual cycle times.** A 6-hour machining cycle for a complex aerospace housing cannot practically flow one piece at a time through subsequent operations because the queue at each operation is governed by 6-hour intervals between unit completions. The inter-operation buffer is inherently larger.
+
+## SMED as the Enabler of Batch Size Reduction
+
+The single biggest reason manufacturers batch in high quantities is setup cost. The solution to this constraint is not accepting large batches — it is reducing setup cost through [SMED](/blog/smed-quick-changeover).
+
+SMED (Single-Minute Exchange of Die) is the systematic reduction of setup time. As setup time falls, the economically viable batch size falls with it. The relationship is direct: economic batch size scales with the square root of setup time (from the classic EOQ formula adapted for production). Cutting setup time by 75% cuts the economic batch size by roughly 50%.
+
+More importantly, SMED eliminates the organizational reason for batching — the need to amortize a painful setup over as many parts as possible. When a setup takes 8 minutes instead of 80 minutes, operators no longer resist small batches. The culture shifts from "we need to run big batches to justify the setup" to "we can run what the customer needs."
+
+User Solutions has worked with manufacturers who reduced setup times from 90 minutes to 18 minutes through SMED and then reduced batch sizes from 200 to 30 — compressing lead times from 3 weeks to 4 days on the same equipment with the same workforce.
+
+## How Scheduling Logic Changes for OPF
+
+The scheduling algorithm for one-piece flow is fundamentally different from batch production scheduling.
+
+**Batch production scheduling** asks: given a queue of jobs, each with a setup time, run quantity, and due date, what sequence minimizes total weighted tardiness? The scheduler optimizes across jobs competing for machines.
+
+**OPF scheduling** asks: is every station in the flow operating at or below takt time? Where is the bottleneck station, and how do we address it? The scheduler optimizes within a balanced line, not across a queue of competing jobs.
+
+In OPF, the relevant scheduling metrics are:
+- **Cycle time per station** vs. takt time (is the station keeping pace?)
+- **WIP between stations** (is buffer accumulating, signaling a bottleneck?)
+- **Operator utilization** (are cross-trained operators needed at specific stations?)
+- **First-unit completion time** (when does the first good unit emerge from the flow?)
+
+The scheduler's job in OPF is closer to line balancing than job sequencing. This is why [cellular manufacturing scheduling](/blog/cellular-manufacturing-scheduling) — which co-locates operations and enables OPF — requires a different modeling approach than traditional shop floor control.
+
+## Operator Balance in One-Piece Flow
+
+One of the least-discussed challenges of OPF is operator balance. In a batch system, each operator runs their machine at whatever pace the machine dictates. In OPF, operators must pace together — the slowest operator governs the flow rate.
+
+**Cross-training** is the practical solution. When operators are qualified on multiple stations, they can flex their positioning in response to where the flow is constrained. If Station 3 is running 20% over takt while Station 2 runs under, a cross-trained operator shifts from Station 2 to support Station 3 without management intervention.
+
+This flexibility is also why OPF environments often have lower total headcount requirements than batch environments at the same output rate. The variability in individual station pace is absorbed by operator flexibility rather than WIP buffer accumulation.
+
+## Practical Path from Batch to Smaller Batches
+
+For a plant manager starting from batch production, the realistic path toward OPF or near-OPF is:
+
+**Step 1: Measure current lead time composition.** Track 20 representative jobs: what fraction of their quoted lead time is actual processing vs. waiting in queue? This gives you the baseline and the potential. Most manufacturers are shocked to find that 90% of lead time is queue.
+
+**Step 2: Run SMED on the highest-frequency setups.** You cannot reduce batch sizes without reducing setup costs. Target the 3–5 setup types that occur most often and apply SMED methodology. A 50% setup reduction enables a meaningful batch size reduction.
+
+**Step 3: Pilot mini-batches on a single product family.** Don't change the whole shop at once. Pick a high-volume product family, reduce the transfer batch size by 70%, and measure lead time impact over 4–6 weeks. The lead time improvement will be larger than anyone predicted.
+
+**Step 4: Build cellular layout for the pilot family.** Once mini-batches prove the lead time benefit, convert the pilot family to a cell to enable physical OPF — co-located machines, short material travel, operator cross-training. This captures the full lead time reduction potential.
+
+**Step 5: Expand based on ROI.** Use the pilot data to calculate the lead time and WIP reduction for other product families. Prioritize conversions by the business impact of lead time reduction — families where faster delivery wins or retains customers.
+
+The full transition from batch to near-OPF typically takes 18–36 months for a 50-person shop. But the lead time and WIP benefits begin accumulating from the first SMED event and the first mini-batch pilot — you don't have to wait for the full transformation to see results.
+
+---
+
+<Accordion title="Frequently Asked Questions About One-Piece Flow Scheduling" id="faq">
+  <Accordion title="What is one-piece flow and why does it reduce lead time so dramatically?">
+    One-piece flow (OPF) means processing one unit at a time between operations, eliminating the wait time a batch sits after the first unit is done while the rest of the batch completes. In a batch of 100 parts with a 3-minute cycle time, the first part completes Operation 1 in 3 minutes but waits 297 minutes for the rest of the batch before moving to Operation 2. In OPF, that part moves to Operation 2 after 3 minutes. The queue time reduction — not the processing time — is where the lead time compression comes from.
+  </Accordion>
+  <Accordion title="When is one-piece flow not economically justified?">
+    OPF is not justified when setup costs are high relative to unit cycle time. If a CNC setup takes 90 minutes and cycle time is 2 minutes per part, running a batch of 1 means 98% of machine time is setup. The math forces batching. As SMED reduces setup time, the economically viable batch size shrinks — so SMED and OPF are complementary. OPF is also impractical when operations have very different cycle times and no balancing mechanism (like cross-trained operators) exists to prevent downstream starvation.
+  </Accordion>
+  <Accordion title="How does the scheduling algorithm differ for one-piece flow vs. batch production?">
+    Batch production scheduling minimizes total weighted tardiness across a queue of jobs, each with a setup, run, and transfer quantity. OPF scheduling focuses on operator balance and takt compliance — ensuring each station completes its operation within takt time so the unit flows continuously without waiting. The scheduling decision in OPF is not "which job runs next on this machine" but "is this station balanced at or below takt, and where is the bottleneck station that limits flow?"
+  </Accordion>
+  <Accordion title="What is the relationship between batch size and queue time?">
+    Queue time scales almost linearly with batch size when operations are sequential. Doubling batch size roughly doubles the time a unit spends waiting in queue between operations. This is why cutting batch size by 90% (from 100 to 10) reduces lead time by roughly 85–90% — not the 10% most managers intuitively expect. The processing time per unit doesn't change; it's the wait time that collapses. Little's Law captures this: lead time = WIP ÷ throughput rate. Lower WIP (smaller batches) = shorter lead time at the same throughput.
+  </Accordion>
+</Accordion>
+
+---
+
+**Want to see the batch-to-lead-time math applied to your own orders?** [Contact User Solutions](/contact-us) to see how [RMDB](/resource-manager-db-2) models transfer batch sizes and projects lead time impact before you change anything on the floor. Trusted by GE, Cummins, BAE Systems, and leading manufacturers for 35+ years.
+
+*For related lean manufacturing concepts, see our guides on [just-in-time manufacturing](/blog/just-in-time-manufacturing), [SMED quick changeover](/blog/smed-quick-changeover), and [cellular manufacturing scheduling](/blog/cellular-manufacturing-scheduling).*
