@@ -192,12 +192,12 @@ export default async function GlossaryTermPage(props: {
 
           {/* Hero Image */}
           {post.heroImage && (
-            <div className="mx-auto max-w-4xl overflow-hidden rounded-lg">
+            <div className="overflow-hidden rounded-lg">
               <Image
                 src={post.heroImage}
                 alt={post.heroAlt || post.title}
-                width={1200}
-                height={630}
+                width={1600}
+                height={840}
                 className="h-auto w-full object-cover"
                 priority
               />
