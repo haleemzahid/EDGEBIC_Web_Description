@@ -44,6 +44,13 @@ export const KEYWORDS = [
   { id: 27, keyword: 'affordable scheduling software', vol: 320, kd: 35, intent: 'T', tier: 1, priority: 'q3-q4', suggestedUrl: '/jsl-job-scheduler-lite' },
   { id: 28, keyword: 'job scheduling tool', vol: 480, kd: 38, intent: 'T', tier: 1, priority: 'q3-q4', suggestedUrl: '/jsl-job-scheduler-lite' },
 
+  // High-volume MRP/inventory/manufacturing head terms (added to close MRPeasy gap)
+  { id: 206, keyword: 'manufacturing software', vol: 1600, kd: 60, intent: 'T', tier: 1, priority: 'now', suggestedUrl: '/manufacturing-software' },
+  { id: 207, keyword: 'mrp software', vol: 2400, kd: 60, intent: 'T', tier: 1, priority: 'now', suggestedUrl: '/mrp-system' },
+  { id: 208, keyword: 'mrp system', vol: 3400, kd: 60, intent: 'T', tier: 1, priority: 'now', suggestedUrl: '/mrp-system' },
+  { id: 209, keyword: 'inventory management software', vol: 2000, kd: 65, intent: 'T', tier: 1, priority: 'now', suggestedUrl: '/inventory-management-software' },
+  { id: 210, keyword: 'warehouse management software', vol: 1400, kd: 60, intent: 'T', tier: 1, priority: 'now', suggestedUrl: '/warehouse-management-software' },
+
   // ─────────────── TIER 2 — ALTERNATIVES / COMPARISONS ───────────────
   { id: 29, keyword: 'MRPeasy alternative', vol: 140, kd: 15, intent: 'C', tier: 2, priority: 'now', suggestedUrl: '/compare-products/rmdb-vs-mrpeasy' },
   { id: 30, keyword: 'MRPeasy alternatives', vol: 170, kd: 18, intent: 'C', tier: 2, priority: 'now', suggestedUrl: '/compare-products/rmdb-vs-mrpeasy' },

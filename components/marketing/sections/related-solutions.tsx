@@ -151,6 +151,27 @@ const ALL_SOLUTIONS: Record<string, RelatedLink> = {
     title: 'ERP Integration',
     description: 'Bi-directional data sync with SAP, Oracle, Epicor, and more',
     href: Routes.ErpIntegration
+  },
+  // Head-term category hubs
+  [Routes.ManufacturingSoftware]: {
+    title: 'Manufacturing Software',
+    description: 'Integrated platform for scheduling, MRP, inventory, BOMs, and analytics',
+    href: Routes.ManufacturingSoftware
+  },
+  [Routes.MrpSystem]: {
+    title: 'MRP System',
+    description: 'Closed-loop MRP with BOMs, inventory, purchasing, and capacity scheduling',
+    href: Routes.MrpSystem
+  },
+  [Routes.InventoryManagementSoftware]: {
+    title: 'Inventory Management Software',
+    description: 'Manufacturer-built inventory with lot traceability and live MRP integration',
+    href: Routes.InventoryManagementSoftware
+  },
+  [Routes.WarehouseManagementSoftware]: {
+    title: 'Warehouse Management Software',
+    description: 'Multi-location WMS that understands BOMs, work orders, and shop-floor flow',
+    href: Routes.WarehouseManagementSoftware
   }
 };
 
@@ -286,11 +307,11 @@ const CROSS_LINK_MAP: Record<string, string[]> = {
     Routes.ElectronicsManufacturing
   ],
   [Routes.MrpSoftwareSmallManufacturers]: [
+    Routes.MrpSystem,
     Routes.BomSoftware,
+    Routes.InventoryManagementSoftware,
     Routes.ProductionSchedulingSoftware,
-    Routes.ExcelToScheduling,
-    Routes.ConsumerGoods,
-    Routes.ErpIntegration
+    Routes.ConsumerGoods
   ],
   [Routes.ErpSchedulingAddOn]: [
     Routes.ErpIntegration,
@@ -314,11 +335,11 @@ const CROSS_LINK_MAP: Record<string, string[]> = {
     Routes.DefenseAerospace
   ],
   [Routes.BomSoftware]: [
+    Routes.MrpSystem,
     Routes.MrpSoftwareSmallManufacturers,
+    Routes.InventoryManagementSoftware,
     Routes.ProductionSchedulingSoftware,
-    Routes.ErpIntegration,
-    Routes.ElectronicsManufacturing,
-    Routes.ConsumerGoods
+    Routes.ElectronicsManufacturing
   ],
   [Routes.MasterProductionSchedule]: [
     Routes.FiniteCapacityScheduling,
@@ -354,6 +375,36 @@ const CROSS_LINK_MAP: Record<string, string[]> = {
     Routes.ExcelToScheduling,
     Routes.MrpSoftwareSmallManufacturers,
     Routes.ConsumerGoods
+  ],
+
+  // === Head-term category hubs ===
+  [Routes.ManufacturingSoftware]: [
+    Routes.MrpSystem,
+    Routes.InventoryManagementSoftware,
+    Routes.WarehouseManagementSoftware,
+    Routes.ProductionSchedulingSoftware,
+    Routes.Edgebi
+  ],
+  [Routes.MrpSystem]: [
+    Routes.MrpSoftwareSmallManufacturers,
+    Routes.BomSoftware,
+    Routes.InventoryManagementSoftware,
+    Routes.MasterProductionSchedule,
+    Routes.ManufacturingSoftware
+  ],
+  [Routes.InventoryManagementSoftware]: [
+    Routes.WarehouseManagementSoftware,
+    Routes.MrpSystem,
+    Routes.BomSoftware,
+    Routes.MrpSoftwareSmallManufacturers,
+    Routes.ManufacturingSoftware
+  ],
+  [Routes.WarehouseManagementSoftware]: [
+    Routes.InventoryManagementSoftware,
+    Routes.MrpSystem,
+    Routes.MultiLocationScheduling,
+    Routes.BomSoftware,
+    Routes.ManufacturingSoftware
   ]
 };
 

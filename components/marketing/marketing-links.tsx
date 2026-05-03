@@ -43,6 +43,53 @@ export const MENU_LINKS = [
     external: false
   },
   {
+    title: 'Software',
+    items: [
+      {
+        title: 'Manufacturing Software',
+        description: 'Integrated platform for scheduling, MRP, inventory, BOMs, and analytics',
+        icon: <PackageIcon className="size-5 shrink-0" />,
+        href: Routes.ManufacturingSoftware,
+        external: false
+      },
+      {
+        title: 'Production Scheduling',
+        description: 'Finite capacity scheduling for machines, labor, and materials',
+        icon: <PackageIcon className="size-5 shrink-0" />,
+        href: Routes.ProductionSchedulingSoftware,
+        external: false
+      },
+      {
+        title: 'MRP System',
+        description: 'Material requirements planning, BOMs, and capacity scheduling',
+        icon: <PackageIcon className="size-5 shrink-0" />,
+        href: Routes.MrpSystem,
+        external: false
+      },
+      {
+        title: 'Inventory Management',
+        description: 'Manufacturer-built inventory with lot traceability',
+        icon: <PackageIcon className="size-5 shrink-0" />,
+        href: Routes.InventoryManagementSoftware,
+        external: false
+      },
+      {
+        title: 'Warehouse Management',
+        description: 'Multi-location WMS that understands BOMs and shop-floor flow',
+        icon: <PackageIcon className="size-5 shrink-0" />,
+        href: Routes.WarehouseManagementSoftware,
+        external: false
+      },
+      {
+        title: 'Manufacturing Analytics',
+        description: 'EDGEBI real-time KPI dashboards and shop-floor BI',
+        icon: <PackageIcon className="size-5 shrink-0" />,
+        href: Routes.Edgebi,
+        external: false
+      }
+    ]
+  },
+  {
     title: 'Industries',
     items: [
       {
@@ -343,6 +390,26 @@ export const FOOTER_LINKS: Array<{
   {
     title: 'Solutions',
     links: [
+      {
+        name: 'Manufacturing Software',
+        href: Routes.ManufacturingSoftware,
+        external: false
+      },
+      {
+        name: 'MRP System',
+        href: Routes.MrpSystem,
+        external: false
+      },
+      {
+        name: 'Inventory Management Software',
+        href: Routes.InventoryManagementSoftware,
+        external: false
+      },
+      {
+        name: 'Warehouse Management Software',
+        href: Routes.WarehouseManagementSoftware,
+        external: false
+      },
       {
         name: 'Production Scheduling',
         href: Routes.ProductionSchedulingSoftware,
