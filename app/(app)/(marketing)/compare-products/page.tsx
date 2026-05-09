@@ -242,6 +242,48 @@ export default function CompareProductsPage(): React.JSX.Element {
         </div>
       </section>
 
+      {/* Free vs Paid Section */}
+      <section className="border-t bg-white py-12">
+        <div className="container mx-auto max-w-5xl px-4">
+          <h2 className="mb-4 text-2xl font-bold text-slate-900">
+            Free vs Paid Production Scheduling Software: What&apos;s the Difference?
+          </h2>
+          <p className="mb-6 text-gray-600">
+            Not sure whether to upgrade from spreadsheets? Here&apos;s what changes when you move to dedicated scheduling software.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="bg-cyan-600 text-white">
+                  <th className="px-4 py-3 text-left font-semibold">Feature</th>
+                  <th className="px-4 py-3 text-center font-semibold">Free / Spreadsheet</th>
+                  <th className="px-4 py-3 text-center font-semibold">RMDB (Paid)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ['Finite capacity scheduling', 'Manual only', 'Automated'],
+                  ['Real-time rescheduling', 'Rebuild from scratch', 'Drag-and-drop'],
+                  ['Workcenter loading visibility', 'None', 'Visual Gantt + heat map'],
+                  ['ERP integration', 'Copy-paste', 'Direct data link'],
+                  ['Setup time optimization', 'Manual grouping', 'Automatic sequencing'],
+                  ['Multi-user access', 'File conflicts', 'Concurrent users'],
+                ].map(([feature, free, paid], i) => (
+                  <tr key={feature} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
+                    <td className="px-4 py-3 font-medium text-slate-900">{feature}</td>
+                    <td className="px-4 py-3 text-center text-slate-500">{free}</td>
+                    <td className="px-4 py-3 text-center font-medium text-emerald-700">{paid}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-4 text-sm text-slate-600">
+            <strong>RMX Free Trial:</strong> Download RMX — our Excel-based scheduling tool — free. It handles basic production scheduling for shops with fewer than 20 active jobs. For larger operations, RMDB adds finite capacity, multi-workcenter scheduling, and ERP integration.
+          </p>
+        </div>
+      </section>
+
       {/* Customer Testimonials */}
       <section className="bg-slate-50 py-6">
         <div className="container mx-auto max-w-7xl px-4">

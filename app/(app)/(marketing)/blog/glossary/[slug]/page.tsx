@@ -59,11 +59,20 @@ function formatDate(dateString: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Static params
+// ISR — revalidate cached pages every 24 hours; unvisited slugs render on demand
+// ---------------------------------------------------------------------------
+export const revalidate = 86400;
+export const dynamicParams = true;
+
+// ---------------------------------------------------------------------------
+// Static params — pre-render only the 60 most-recently published glossary posts.
+// All other slugs are generated on first request and cached via ISR.
 // ---------------------------------------------------------------------------
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
   return allPosts
     .filter((post) => post.slugAsParams.startsWith('glossary-'))
+    .sort((a, b) => new Date(b.published).getTime() - new Date(a.published).getTime())
+    .slice(0, 60)
     .map((post) => ({
       slug: post.slugAsParams.replace(/^glossary-/, '')
     }));
@@ -183,12 +192,12 @@ export default async function GlossaryTermPage(props: {
 
           {/* Hero Image */}
           {post.heroImage && (
-            <div className="mx-auto max-w-4xl overflow-hidden rounded-lg">
+            <div className="overflow-hidden rounded-lg">
               <Image
                 src={post.heroImage}
                 alt={post.heroAlt || post.title}
-                width={1200}
-                height={630}
+                width={1600}
+                height={840}
                 className="h-auto w-full object-cover"
                 priority
               />

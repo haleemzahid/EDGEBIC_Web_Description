@@ -10,9 +10,9 @@ import { NTClipboardToolBox } from '@/components/marketing/sections/ntclipboard-
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
-  title: 'Production Planning & Scheduling Software',
+  title: 'RMDB — Job Shop & Manufacturing Scheduling Software | User Solutions',
   description:
-    'Resource Manager DB (RMDB) by User Solutions — production planning & scheduling software with finite capacity scheduling, MRP, and ERP integration. Trusted by GE, Cummins, BAE Systems, and the US Navy for 35+ years.',
+    'Excel-native finite capacity scheduling trusted by GE, Cummins, BAE Systems & the US Navy for 35+ years. No ERP replacement needed. Works with SAP, QuickBooks, Epicor. Free trial.',
   path: '/',
   keywords:
     'production planning software, production scheduling software, RMDB, Resource Manager DB, manufacturing scheduling, finite capacity planning, MRP software, production tracking, manufacturing software, EDGEBI, User Solutions',

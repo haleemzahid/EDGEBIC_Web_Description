@@ -34,7 +34,9 @@ const nextConfig = {
           as: '*.js'
         }
       }
-    }
+    },
+    staticGenerationMaxConcurrency: 4,
+    staticGenerationMinPagesPerWorker: 1
   },
   images: {
     remotePatterns: [

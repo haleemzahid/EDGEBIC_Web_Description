@@ -70,6 +70,27 @@ const FREE_TEMPLATES = [
     description:
       'Priority sequencing, machine assignment, due-date risk flags, and a daily reschedule workflow for high-mix job shops.',
     keyword: 'job scheduling excel template'
+  },
+  {
+    href: '/excel-templates/oee-calculation',
+    title: 'OEE Calculation Excel Template',
+    description:
+      'Availability × Performance × Quality formulas pre-built — collect shift data, calculate OEE per machine, and identify which loss category is stealing the most throughput.',
+    keyword: 'OEE calculation excel template'
+  },
+  {
+    href: '/excel-templates/machine-scheduling',
+    title: 'Machine Scheduling Excel Template',
+    description:
+      'Assign jobs to specific machines and workcenters, balance CNC load, and sequence operations — built for machine shops and discrete manufacturers running multi-machine floors.',
+    keyword: 'machine scheduling excel template'
+  },
+  {
+    href: '/excel-templates/takt-time-calculator',
+    title: 'Takt Time Calculator Excel Template',
+    description:
+      'Calculate takt time from available production time and customer demand rate, compare station cycle times, and surface line balance bottlenecks — essential for lean floor design.',
+    keyword: 'takt time calculator excel'
   }
 ];
 

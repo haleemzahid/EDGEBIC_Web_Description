@@ -123,5 +123,11 @@ export enum Routes {
   LaborScheduling = '/labor-scheduling-manufacturing',
   ExcelToScheduling = '/excel-to-scheduling-software',
   OnTimeDelivery = '/on-time-delivery-manufacturing',
-  ErpIntegration = '/erp-integration-production-scheduling'
+  ErpIntegration = '/erp-integration-production-scheduling',
+
+  // Head-term category hubs (MRPeasy gap closure)
+  ManufacturingSoftware = '/manufacturing-software',
+  MrpSystem = '/mrp-system',
+  InventoryManagementSoftware = '/inventory-management-software',
+  WarehouseManagementSoftware = '/warehouse-management-software'
 }

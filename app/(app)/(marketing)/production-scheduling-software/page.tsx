@@ -20,7 +20,7 @@ export const metadata = createPageMetadata({
     'Production scheduling software trusted by GE, Cummins, BAE Systems, and the US Navy. Finite capacity scheduling, what-if analysis, MRP, and ERP integration. On-time shipping improved from 30% to 90%. 35+ years of manufacturing expertise.',
   path: '/production-scheduling-software',
   keywords:
-    'production scheduling software, production planning software, production scheduling tool, production scheduler software, manufacturing scheduling, finite capacity scheduling, production scheduling system, production schedule optimization, shop floor scheduling software, manufacturing production planning, advanced planning and scheduling software, APS software'
+    'production scheduling software, production planning software, production scheduling tool, production scheduler software, manufacturing scheduling, finite capacity scheduling, production scheduling system, production schedule optimization, shop floor scheduling software, manufacturing production planning, advanced planning and scheduling software, APS software, fast implementation scheduling software, quick go-live production scheduling, scheduling software implementation timeline, production scheduling system with fast implementation'
 });
 
 const FAQS = [
@@ -310,6 +310,36 @@ export default function ProductionSchedulingSoftwarePage(): React.JSX.Element {
                     <p className="text-sm leading-relaxed text-gray-600">
                       {step.description}
                     </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Implementation Timeline Section */}
+        <section className="border-t bg-slate-50 py-12">
+          <div className="container mx-auto px-4">
+            <div className="mx-auto max-w-7xl">
+              <h2 className="mb-8 text-center text-2xl font-bold text-slate-900">
+                Fast Implementation — Go Live in Days, Not Months
+              </h2>
+              <p className="mx-auto mb-8 max-w-3xl text-center text-gray-600">
+                Unlike ERP implementations that take 6–18 months, RMDB is designed for rapid deployment. Plastilite Corporation achieved a complete optimized schedule with full ERP integration in just 5 days.
+              </p>
+              <div className="grid gap-4 md:grid-cols-4">
+                {[
+                  { step: '1', title: 'Week 1: Data Import', description: 'Connect your existing Excel, CSV, or ERP data. No migration or reformatting required.' },
+                  { step: '2', title: 'Week 2: Configuration', description: 'Set up workcenters, shift patterns, and priority rules to match your operation.' },
+                  { step: '3', title: 'Week 3: Training', description: 'Your schedulers learn the system in 2–4 hours. No IT department required.' },
+                  { step: '4', title: 'Day 21+: Go Live', description: 'Start scheduling with real production data. Support included through go-live.' }
+                ].map((step) => (
+                  <div key={step.step} className="rounded-lg border bg-white p-6">
+                    <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-cyan-500 text-lg font-bold text-white">
+                      {step.step}
+                    </div>
+                    <h3 className="mb-2 text-lg font-semibold text-slate-900">{step.title}</h3>
+                    <p className="text-sm leading-relaxed text-gray-600">{step.description}</p>
                   </div>
                 ))}
               </div>

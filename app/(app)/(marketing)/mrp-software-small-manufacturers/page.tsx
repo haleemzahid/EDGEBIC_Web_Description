@@ -20,7 +20,7 @@ export const metadata = createPageMetadata({
     'Affordable MRP software designed for small to mid-size manufacturers. Bills of Materials, inventory management, purchasing, and finite capacity scheduling. Used by Sleepmaster (AUD$50M), Turner Bicycles, and more. Implement in days, not months.',
   path: '/mrp-software-small-manufacturers',
   keywords:
-    'MRP software small manufacturers, MRP system small business, affordable MRP software, material requirements planning small manufacturer, MRP for small business, small manufacturer production planning, MRP software affordable, material planning software SMB, small factory management software, small manufacturer scheduling software'
+    'MRP software small manufacturers, MRP system small business, affordable MRP software, material requirements planning small manufacturer, MRP for small business, small manufacturer production planning, MRP software affordable, material planning software SMB, small factory management software, small manufacturer scheduling software, closed loop MRP, closed-loop MRP, what is closed loop MRP'
 });
 
 const FAQS = [
@@ -189,6 +189,37 @@ export default function MrpSoftwareSmallManufacturersPage(): React.JSX.Element {
                   </li>
                 ))}
               </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* Closed-Loop MRP Section */}
+        <section className="border-t bg-white py-12">
+          <div className="container mx-auto px-4">
+            <div className="mx-auto max-w-7xl">
+              <h2 className="mb-6 text-2xl font-bold text-slate-900">
+                What Is Closed-Loop MRP?
+              </h2>
+              <p className="mb-6 text-gray-600">
+                Closed-loop MRP extends basic Material Requirements Planning by feeding actual production execution data back into the planning system. Unlike open-loop MRP that only plans forward, closed-loop MRP continuously reconciles plan vs. actuals.
+              </p>
+              <ul className="mb-6 space-y-3">
+                {[
+                  'Captures actual production completion vs. planned schedule',
+                  'Updates future requirements based on real shop floor performance',
+                  'Reconciles inventory differences automatically when jobs complete early or late',
+                  'Feeds capacity utilization data back to the master production schedule',
+                  'Flags material shortages before they delay scheduled jobs'
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-gray-700">
+                    <CheckCircle className="size-4 shrink-0 text-green-600" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-gray-600">
+                RMDB implements closed-loop MRP logic by connecting your planned schedule to actual work order completions — automatically adjusting downstream material requirements when upstream jobs are late or early. This is the difference between an MRP system that plans once and gets stale versus one that stays synchronized with your shop floor in real time.
+              </p>
             </div>
           </div>
         </section>
