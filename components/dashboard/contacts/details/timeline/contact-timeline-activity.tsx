@@ -255,14 +255,18 @@ function SubmissionDetailsCard({
                     </p>
                     <p className="break-words text-sm text-foreground">
                       {displayValue(key, newValue) || (
-                        <span className="text-muted-foreground opacity-65">Empty</span>
+                        <span className="text-muted-foreground opacity-65">
+                          Empty
+                        </span>
                       )}
                     </p>
                   </>
                 ) : (
                   <p className="break-words text-sm text-foreground">
                     {displayValue(key, newValue) || (
-                      <span className="text-muted-foreground opacity-65">Empty</span>
+                      <span className="text-muted-foreground opacity-65">
+                        Empty
+                      </span>
                     )}
                   </p>
                 )}
@@ -273,10 +277,16 @@ function SubmissionDetailsCard({
       ) : (
         /* CREATE — horizontal column grid: label on top, value below, right border between */
         <div
-          className="grid text-sm"
-          style={{
-            gridTemplateColumns: `repeat(${Math.min(fields.length, 6)}, minmax(0, 1fr))`
-          }}
+          className={`grid text-sm ${
+            {
+              1: 'grid-cols-1',
+              2: 'grid-cols-2',
+              3: 'grid-cols-3',
+              4: 'grid-cols-4',
+              5: 'grid-cols-5',
+              6: 'grid-cols-6'
+            }[Math.min(fields.length, 6)] ?? 'grid-cols-6'
+          }`}
         >
           {fields.map(({ key, label, newValue }, index) => (
             <div
