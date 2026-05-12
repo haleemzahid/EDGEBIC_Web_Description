@@ -37,7 +37,7 @@ export async function getContactEmails(
   }
   const parsedInput = result.data;
 
-  return cache(
+  const raw = await cache(
     async () => {
       const threads = await prisma.contactEmailThread.findMany({
         where: {
@@ -133,4 +133,15 @@ export async function getContactEmails(
       ]
     }
   )();
+
+  // unstable_cache JSON-serializes; re-hydrate Date fields.
+  return raw.map((t) => ({
+    ...t,
+    createdAt: new Date(t.createdAt),
+    updatedAt: new Date(t.updatedAt),
+    messages: t.messages.map((m) => ({
+      ...m,
+      createdAt: new Date(m.createdAt)
+    }))
+  }));
 }

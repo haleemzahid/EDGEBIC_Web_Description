@@ -34,7 +34,7 @@ export async function getContactTicket(
   }
   const parsedInput = result.data;
 
-  return cache(
+  const raw = await cache(
     async () => {
       const ticket = await prisma.contactTicket.findFirst({
         where: {
@@ -149,4 +149,19 @@ export async function getContactTicket(
       ]
     }
   )();
+
+  // unstable_cache JSON-serializes; re-hydrate Date fields.
+  return {
+    ...raw,
+    createdAt: new Date(raw.createdAt),
+    updatedAt: new Date(raw.updatedAt),
+    messages: raw.messages.map((m) => ({
+      ...m,
+      createdAt: new Date(m.createdAt)
+    })),
+    activities: raw.activities.map((a) => ({
+      ...a,
+      createdAt: new Date(a.createdAt)
+    }))
+  };
 }

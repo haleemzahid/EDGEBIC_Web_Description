@@ -33,7 +33,7 @@ export async function getContactMeeting(
   }
   const parsedInput = result.data;
 
-  return cache(
+  const raw = await cache(
     async () => {
       const meeting = await prisma.contactMeeting.findFirst({
         where: {
@@ -89,4 +89,14 @@ export async function getContactMeeting(
       ]
     }
   )();
+
+  // unstable_cache JSON-serializes the result, so Date objects become ISO
+  // strings on cache hits. Re-hydrate them so consumers get real Date instances.
+  return {
+    ...raw,
+    startsAt: new Date(raw.startsAt),
+    endsAt: new Date(raw.endsAt),
+    createdAt: new Date(raw.createdAt),
+    updatedAt: new Date(raw.updatedAt)
+  };
 }
