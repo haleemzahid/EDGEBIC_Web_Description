@@ -1,4 +1,4 @@
-import { ContactTaskStatus } from '@prisma/client';
+import { ContactPriority, ContactTaskStatus } from '@prisma/client';
 import { z } from 'zod';
 
 export const updateContactTaskSchema = z.object({
@@ -31,6 +31,9 @@ export const updateContactTaskSchema = z.object({
   status: z.nativeEnum(ContactTaskStatus, {
     required_error: 'Status is required',
     invalid_type_error: 'Status must be a string'
+  }),
+  priority: z.nativeEnum(ContactPriority, {
+    invalid_type_error: 'Priority must be a valid value'
   })
 });
 

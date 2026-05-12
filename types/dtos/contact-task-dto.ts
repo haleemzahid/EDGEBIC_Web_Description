@@ -1,4 +1,4 @@
-import { ContactTaskStatus } from '@prisma/client';
+import { ContactPriority, ContactTaskStatus } from '@prisma/client';
 
 export type ContactTaskDto = {
   id: string;
@@ -6,6 +6,7 @@ export type ContactTaskDto = {
   title: string;
   description?: string;
   status: ContactTaskStatus;
+  priority: ContactPriority;
   dueDate?: Date;
   createdAt: Date;
 };

@@ -2,30 +2,19 @@
 
 import * as React from 'react';
 import NiceModal from '@ebay/nice-modal-react';
-import { format } from 'date-fns';
-import { ClockIcon, MoreHorizontalIcon } from 'lucide-react';
+import { ContactPriority } from '@prisma/client';
+import { formatDistanceToNow } from 'date-fns';
+import { PencilIcon, TrashIcon } from 'lucide-react';
 
 import { DeleteContactNoteModal } from '@/components/dashboard/contacts/details/notes/delete-contact-note-modal';
 import { EditContactNoteModal } from '@/components/dashboard/contacts/details/notes/edit-contact-note-modal';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardFooter,
-  CardHeader,
-  type CardProps
-} from '@/components/ui/card';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
+import { Card, type CardProps } from '@/components/ui/card';
 import { EmptyText } from '@/components/ui/empty-text';
-import { Separator } from '@/components/ui/separator';
 import { convertMarkdownToHtml } from '@/lib/markdown/convert-markdown-to-html';
-import { getInitials } from '@/lib/utils';
+import { cn, getInitials } from '@/lib/utils';
 import type { ContactNoteDto } from '@/types/dtos/contact-note-dto';
 
 type ContactNoteCardProps = CardProps & {
@@ -34,6 +23,7 @@ type ContactNoteCardProps = CardProps & {
 
 export function ContactNoteCard({
   note,
+  className,
   ...others
 }: ContactNoteCardProps): React.JSX.Element {
   const handleShowEditContactNoteModal = (): void => {
@@ -43,72 +33,75 @@ export function ContactNoteCard({
     NiceModal.show(DeleteContactNoteModal, { note });
   };
   return (
-    <Card {...others}>
-      <CardHeader className="flex flex-row justify-between space-y-0 py-3">
+    <Card
+      className={cn('p-4', className)}
+      {...others}
+    >
+      <div className="mb-3 flex flex-row items-start justify-between gap-2">
         <div className="flex flex-row items-center gap-2">
-          <Avatar className="relative size-6 flex-none rounded-full">
+          <Avatar className="size-7 shrink-0 rounded-full">
             <AvatarImage
               src={note.sender.image}
-              alt="avatar"
+              alt={note.sender.name}
             />
-            <AvatarFallback className="size-6 text-[10px]">
+            <AvatarFallback className="text-[11px] font-semibold">
               {getInitials(note.sender.name)}
             </AvatarFallback>
           </Avatar>
-          <p className="text-sm">{note.sender.name}</p>
+          <div className="leading-tight">
+            <div className="text-xs font-semibold">{note.sender.name}</div>
+            <div className="text-[11px] text-muted-foreground">
+              {formatDistanceToNow(note.createdAt, { addSuffix: true })}
+              {note.edited && ' · edited'}
+            </div>
+          </div>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        <div className="flex items-center gap-2">
+          {note.priority === ContactPriority.HIGH && (
+            <Badge
+              variant="secondary"
+              className="border-transparent bg-amber-100 text-[11px] text-amber-800 hover:bg-amber-100"
+            >
+              Important
+            </Badge>
+          )}
+          <div className="flex items-center gap-1">
             <Button
               type="button"
               variant="ghost"
-              className="size-9"
-              title="Open menu"
+              size="icon"
+              className="size-7"
+              title="Edit note"
+              onClick={handleShowEditContactNoteModal}
             >
-              <MoreHorizontalIcon className="size-4 shrink-0" />
-              <span className="sr-only">Open menu</span>
+              <PencilIcon className="size-3.5 shrink-0" />
+              <span className="sr-only">Edit note</span>
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={handleShowEditContactNoteModal}>
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="!text-destructive"
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-7 text-destructive hover:text-destructive"
+              title="Delete note"
               onClick={handleShowDeleteContactNoteModal}
             >
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </CardHeader>
-      <Separator />
-      <Button
-        type="button"
-        className="h-[calc(100%-60px-48px)] w-full items-start justify-start overflow-y-auto overflow-x-hidden !bg-transparent p-6 text-left text-sm font-normal"
-        variant="ghost"
-        onClick={handleShowEditContactNoteModal}
-      >
-        {note.text ? (
-          <div className="text-wrap break-all [&_h1]:mb-5 [&_h1]:text-[25px] [&_h1]:font-bold [&_h2]:mb-5 [&_h2]:text-xl [&_h2]:font-bold [&_li]:mx-8 [&_li]:my-0 [&_ol]:mb-3 [&_p:last-child]:mb-0 [&_p]:relative [&_p]:m-0 [&_ul]:mb-3">
-            <div
-              dangerouslySetInnerHTML={{
-                __html: convertMarkdownToHtml(note.text)
-              }}
-            />
+              <TrashIcon className="size-3.5 shrink-0" />
+              <span className="sr-only">Delete note</span>
+            </Button>
           </div>
-        ) : (
-          <EmptyText className="opacity-65">Empty</EmptyText>
-        )}
-      </Button>
-      <Separator />
-      <CardFooter className="flex h-12 flex-row items-center justify-between py-0">
-        <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-          <ClockIcon className="size-3 shrink-0" />
-          <time>{format(note.createdAt, 'MMM dd, yyyy')}</time>
         </div>
-      </CardFooter>
+      </div>
+      {note.text ? (
+        <div className="text-wrap break-words text-sm leading-relaxed text-foreground/90 [&_h1]:mb-3 [&_h1]:text-base [&_h1]:font-bold [&_h2]:mb-2 [&_h2]:text-sm [&_h2]:font-bold [&_li]:mx-5 [&_li]:my-0 [&_ol]:mb-2 [&_p:last-child]:mb-0 [&_p]:m-0 [&_p]:mb-2 [&_ul]:mb-2">
+          <div
+            dangerouslySetInnerHTML={{
+              __html: convertMarkdownToHtml(note.text)
+            }}
+          />
+        </div>
+      ) : (
+        <EmptyText className="text-sm opacity-65">Empty</EmptyText>
+      )}
     </Card>
   );
 }

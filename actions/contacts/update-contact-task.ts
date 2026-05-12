@@ -22,6 +22,7 @@ export const updateContactTask = authActionClient
         title: parsedInput.title,
         description: parsedInput.description,
         status: parsedInput.status,
+        priority: parsedInput.priority,
         dueDate: parsedInput.dueDate ? parsedInput.dueDate : null
       },
       select: { contactId: true }

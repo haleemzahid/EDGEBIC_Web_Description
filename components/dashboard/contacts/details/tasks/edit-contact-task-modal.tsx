@@ -1,7 +1,7 @@
 'use client';
 
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
-import { ContactTaskStatus } from '@prisma/client';
+import { ContactPriority, ContactTaskStatus } from '@prisma/client';
 import { type SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -68,6 +68,7 @@ export const EditContactTaskModal = NiceModal.create<EditContactTaskModalProps>(
         title: task.title,
         dueDate: task.dueDate,
         status: task.status,
+        priority: task.priority,
         description: task.description ?? ''
       }
     });
@@ -82,7 +83,7 @@ export const EditContactTaskModal = NiceModal.create<EditContactTaskModalProps>(
       }
       const result = await updateContactTask(values);
       if (!result?.serverError && !result?.validationErrors) {
-        toast.success('Task udpated');
+        toast.success('Task updated');
         modal.handleClose();
       } else {
         toast.error("Couldn't update task");
@@ -98,13 +99,14 @@ export const EditContactTaskModal = NiceModal.create<EditContactTaskModalProps>(
           name="title"
           render={({ field }) => (
             <FormItem className="flex w-full flex-col">
-              <FormLabel required>Title</FormLabel>
+              <FormLabel required>Task</FormLabel>
               <FormControl>
                 <Input
                   {...field}
                   type="text"
                   maxLength={64}
                   required
+                  placeholder="e.g. Send proposal v3"
                   disabled={methods.formState.isSubmitting}
                 />
               </FormControl>
@@ -150,16 +152,27 @@ export const EditContactTaskModal = NiceModal.create<EditContactTaskModalProps>(
           />
           <FormField
             control={methods.control}
-            name="dueDate"
+            name="priority"
             render={({ field }) => (
               <FormItem className="flex w-full flex-col">
-                <FormLabel>Due date</FormLabel>
+                <FormLabel>Priority</FormLabel>
                 <FormControl>
-                  <DatePicker
-                    date={field.value}
-                    onDateChange={field.onChange}
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
                     disabled={methods.formState.isSubmitting}
-                  />
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ContactPriority.LOW}>Low</SelectItem>
+                      <SelectItem value={ContactPriority.MEDIUM}>
+                        Medium
+                      </SelectItem>
+                      <SelectItem value={ContactPriority.HIGH}>High</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -168,16 +181,33 @@ export const EditContactTaskModal = NiceModal.create<EditContactTaskModalProps>(
         </div>
         <FormField
           control={methods.control}
+          name="dueDate"
+          render={({ field }) => (
+            <FormItem className="flex w-full flex-col">
+              <FormLabel>Due date</FormLabel>
+              <FormControl>
+                <DatePicker
+                  date={field.value}
+                  onDateChange={field.onChange}
+                  disabled={methods.formState.isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={methods.control}
           name="description"
           render={({ field }) => (
             <FormItem className="flex w-full flex-col">
-              <FormLabel>Description</FormLabel>
+              <FormLabel>Description (optional)</FormLabel>
               <FormControl>
                 <Textarea
                   {...field}
                   maxLength={8000}
-                  required
                   rows={4}
+                  placeholder="Add context for the task…"
                   disabled={methods.formState.isSubmitting}
                 />
               </FormControl>

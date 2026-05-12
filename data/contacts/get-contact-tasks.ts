@@ -49,6 +49,7 @@ export async function getContactTasks(
           title: true,
           description: true,
           status: true,
+          priority: true,
           dueDate: true,
           createdAt: true
         },
@@ -63,6 +64,7 @@ export async function getContactTasks(
         title: task.title,
         description: task.description ?? undefined,
         status: task.status,
+        priority: task.priority,
         dueDate: task.dueDate ?? undefined,
         createdAt: task.createdAt
       }));

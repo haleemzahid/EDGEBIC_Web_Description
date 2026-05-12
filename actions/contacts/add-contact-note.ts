@@ -15,6 +15,7 @@ export const addContactNote = authActionClient
       data: {
         contactId: parsedInput.contactId,
         text: parsedInput.text ? parsedInput.text : undefined,
+        priority: parsedInput.priority,
         userId: session.user.id
       },
       select: {

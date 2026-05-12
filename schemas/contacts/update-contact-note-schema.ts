@@ -1,3 +1,4 @@
+import { ContactPriority } from '@prisma/client';
 import { z } from 'zod';
 
 export const updateContactNoteSchema = z.object({
@@ -17,7 +18,10 @@ export const updateContactNoteSchema = z.object({
     })
     .trim()
     .min(1, 'Text is required.')
-    .max(8000, 'Maximum 8000 characters allowed.')
+    .max(8000, 'Maximum 8000 characters allowed.'),
+  priority: z.nativeEnum(ContactPriority, {
+    invalid_type_error: 'Priority must be a valid value'
+  })
 });
 
 export type UpdateContactNoteSchema = z.infer<typeof updateContactNoteSchema>;

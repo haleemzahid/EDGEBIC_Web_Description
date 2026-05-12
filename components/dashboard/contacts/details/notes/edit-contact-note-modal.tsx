@@ -1,6 +1,7 @@
 'use client';
 
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
+import { ContactPriority } from '@prisma/client';
 import { type SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -26,9 +27,17 @@ import {
   FormControl,
   FormField,
   FormItem,
+  FormLabel,
   FormMessage,
   FormProvider
 } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 import { TextEditor } from '@/components/ui/text-editor';
 import { MediaQueries } from '@/constants/media-queries';
 import { useEnhancedModal } from '@/hooks/use-enhanced-modal';
@@ -56,7 +65,8 @@ export const EditContactNoteModal = NiceModal.create<EditContactNoteModalProps>(
       mode: 'onSubmit',
       defaultValues: {
         id: note.id,
-        text: note.text
+        text: note.text,
+        priority: note.priority
       }
     });
     const title = 'Edit note';
@@ -92,14 +102,48 @@ export const EditContactNoteModal = NiceModal.create<EditContactNoteModalProps>(
           name="text"
           render={({ field }) => (
             <FormItem className="flex w-full flex-col">
+              <FormLabel>Note</FormLabel>
               <FormControl>
                 <TextEditor
                   getText={() => convertMarkdownToHtml(field.value || '')}
                   setText={(value: string) =>
                     field.onChange(convertHtmlToMarkdown(value))
                   }
-                  height="300px"
+                  height="240px"
                 />
+              </FormControl>
+              <p className="text-xs text-muted-foreground">
+                Tip: type @ to mention a teammate.
+              </p>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={methods.control}
+          name="priority"
+          render={({ field }) => (
+            <FormItem className="flex w-full flex-col">
+              <FormLabel>Priority</FormLabel>
+              <FormControl>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  disabled={methods.formState.isSubmitting}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ContactPriority.LOW}>Low</SelectItem>
+                    <SelectItem value={ContactPriority.MEDIUM}>
+                      Normal
+                    </SelectItem>
+                    <SelectItem value={ContactPriority.HIGH}>
+                      Important
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </FormControl>
               <FormMessage />
             </FormItem>

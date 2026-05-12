@@ -47,6 +47,7 @@ export async function getContactNotes(
           id: true,
           contactId: true,
           text: true,
+          priority: true,
           createdAt: true,
           updatedAt: true,
           user: {
@@ -66,6 +67,7 @@ export async function getContactNotes(
         id: note.id,
         contactId: note.contactId,
         text: note.text ?? undefined,
+        priority: note.priority,
         edited: note.createdAt.getTime() !== note.updatedAt.getTime(),
         createdAt: note.createdAt,
         updatedAt: note.updatedAt,

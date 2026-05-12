@@ -1,7 +1,7 @@
 'use client';
 
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
-import { ContactTaskStatus } from '@prisma/client';
+import { ContactPriority, ContactTaskStatus } from '@prisma/client';
 import { type SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -67,6 +67,7 @@ export const AddContactTaskModal = NiceModal.create<AddContactTaskModalProps>(
         contactId: contactId,
         dueDate: undefined,
         status: ContactTaskStatus.OPEN,
+        priority: ContactPriority.MEDIUM,
         description: ''
       }
     });
@@ -97,13 +98,14 @@ export const AddContactTaskModal = NiceModal.create<AddContactTaskModalProps>(
           name="title"
           render={({ field }) => (
             <FormItem className="flex w-full flex-col">
-              <FormLabel required>Title</FormLabel>
+              <FormLabel required>Task</FormLabel>
               <FormControl>
                 <Input
                   {...field}
                   type="text"
                   maxLength={64}
                   required
+                  placeholder="e.g. Send proposal v3"
                   disabled={methods.formState.isSubmitting}
                 />
               </FormControl>
@@ -114,10 +116,10 @@ export const AddContactTaskModal = NiceModal.create<AddContactTaskModalProps>(
         <div className="flex flex-row space-x-4">
           <FormField
             control={methods.control}
-            name="status"
+            name="priority"
             render={({ field }) => (
               <FormItem className="flex w-full flex-col">
-                <FormLabel>Status</FormLabel>
+                <FormLabel>Priority</FormLabel>
                 <FormControl>
                   <Select
                     value={field.value}
@@ -128,17 +130,14 @@ export const AddContactTaskModal = NiceModal.create<AddContactTaskModalProps>(
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={ContactTaskStatus.OPEN}>
-                        <div className="flex flex-row items-center gap-1.5">
-                          <div className="size-2 shrink-0 rounded-full bg-red-600" />
-                          <span>Open</span>
-                        </div>
+                      <SelectItem value={ContactPriority.LOW}>
+                        <span>Low</span>
                       </SelectItem>
-                      <SelectItem value={ContactTaskStatus.COMPLETED}>
-                        <div className="flex flex-row items-center gap-1.5">
-                          <div className="size-2 shrink-0 rounded-full bg-green-600" />
-                          <span>Completed</span>
-                        </div>
+                      <SelectItem value={ContactPriority.MEDIUM}>
+                        <span>Medium</span>
+                      </SelectItem>
+                      <SelectItem value={ContactPriority.HIGH}>
+                        <span>High</span>
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -170,13 +169,13 @@ export const AddContactTaskModal = NiceModal.create<AddContactTaskModalProps>(
           name="description"
           render={({ field }) => (
             <FormItem className="flex w-full flex-col">
-              <FormLabel>Description</FormLabel>
+              <FormLabel>Description (optional)</FormLabel>
               <FormControl>
                 <Textarea
                   {...field}
                   maxLength={8000}
-                  required
                   rows={4}
+                  placeholder="Add context for the task…"
                   disabled={methods.formState.isSubmitting}
                 />
               </FormControl>
@@ -202,7 +201,7 @@ export const AddContactTaskModal = NiceModal.create<AddContactTaskModalProps>(
           loading={methods.formState.isSubmitting}
           onClick={methods.handleSubmit(onSubmit)}
         >
-          Save
+          Create task
         </Button>
       </>
     );

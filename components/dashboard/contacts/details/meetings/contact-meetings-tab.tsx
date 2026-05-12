@@ -1,93 +1,123 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useEffect } from 'react';
-import { format } from 'date-fns';
-import { CalendarIcon, ClockIcon, MapPinIcon, RefreshCwIcon } from 'lucide-react';
+import { addDays, format, subDays } from 'date-fns';
+import { CalendarPlusIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ResponsiveScrollArea } from '@/components/ui/scroll-area';
+import { MediaQueries } from '@/constants/media-queries';
+import { cn, getInitials } from '@/lib/utils';
 import type { ContactDto } from '@/types/dtos/contact-dto';
 
-interface CalendarEvent {
+type MeetingStatus = 'CONFIRMED' | 'PENDING' | 'COMPLETED';
+
+type MeetingAttendee = {
+  initials: string;
+  className: string;
+};
+
+type Meeting = {
   id: string;
   title: string;
-  start: Date;
-  end: Date;
-  description?: string;
-  location?: string;
-  type?: 'meeting' | 'demo' | 'call' | 'event';
-}
+  date: Date;
+  startTime: string;
+  endTime: string;
+  location: string;
+  attendees: MeetingAttendee[];
+  attendeesLabel: string;
+  status: MeetingStatus;
+};
 
-const GOOGLE_CALENDAR_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_API_KEY;
-const GOOGLE_CALENDAR_ID = process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_ID;
-
-async function fetchGoogleCalendarEvents(): Promise<CalendarEvent[]> {
-  if (!GOOGLE_CALENDAR_API_KEY || !GOOGLE_CALENDAR_ID) {
-    console.error('Google Calendar API key or Calendar ID not configured');
-    return [];
-  }
-
-  const timeMin = new Date();
-  timeMin.setMonth(timeMin.getMonth() - 1);
-  const timeMax = new Date();
-  timeMax.setMonth(timeMax.getMonth() + 3);
-
-  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(
-    GOOGLE_CALENDAR_ID
-  )}/events?key=${GOOGLE_CALENDAR_API_KEY}&timeMin=${timeMin.toISOString()}&timeMax=${timeMax.toISOString()}&singleEvents=true&orderBy=startTime`;
-
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error?.message || `HTTP error! status: ${response.status}`);
+function buildSampleMeetings(contact: ContactDto): Meeting[] {
+  const contactInitials = getInitials(contact.name || 'Contact') || 'CN';
+  const meAvatar: MeetingAttendee = {
+    initials: 'AB',
+    className: 'bg-amber-200 text-amber-900'
+  };
+  const teamAvatar: MeetingAttendee = {
+    initials: 'BB',
+    className: 'bg-blue-100 text-blue-800'
+  };
+  const contactAvatar: MeetingAttendee = {
+    initials: contactInitials,
+    className: 'bg-teal-700 text-white'
+  };
+  const now = new Date();
+  return [
+    {
+      id: 'm-demo',
+      title: 'EDGEBI demo — heat-map & drag-drop scheduling',
+      date: addDays(now, 5),
+      startTime: '10:00',
+      endTime: '10:45 AM (PKT)',
+      location: 'Google Meet',
+      attendees: [meAvatar, teamAvatar, contactAvatar],
+      attendeesLabel: `Alice, Bob, ${contact.name || 'Contact'}`,
+      status: 'CONFIRMED'
+    },
+    {
+      id: 'm-training',
+      title: 'Training session (5 users)',
+      date: addDays(now, 9),
+      startTime: '2:00',
+      endTime: '4:00 PM (PKT)',
+      location: 'On-site visit',
+      attendees: [teamAvatar, contactAvatar],
+      attendeesLabel: `Bob + 5 from ${contact.company || contact.name || 'team'}`,
+      status: 'PENDING'
+    },
+    {
+      id: 'm-discovery',
+      title: 'Discovery call — production-planning needs',
+      date: subDays(now, 6),
+      startTime: '11:00',
+      endTime: '11:30 AM (PKT)',
+      location: 'Zoom',
+      attendees: [meAvatar, contactAvatar],
+      attendeesLabel: `Alice, ${contact.name || 'Contact'}`,
+      status: 'COMPLETED'
     }
+  ];
+}
 
-    return (data.items || []).map(
-      (event: {
-        id: string;
-        summary?: string;
-        description?: string;
-        location?: string;
-        start: { dateTime?: string; date?: string };
-        end: { dateTime?: string; date?: string };
-      }) => {
-        let type: 'meeting' | 'demo' | 'call' | 'event' = 'event';
-        const title = (event.summary || 'Untitled Event').toLowerCase();
-        if (title.includes('demo')) type = 'demo';
-        else if (title.includes('call') || title.includes('phone')) type = 'call';
-        else if (title.includes('meeting') || title.includes('meet')) type = 'meeting';
-
-        return {
-          id: event.id,
-          title: event.summary || 'Untitled Event',
-          start: new Date(event.start.dateTime || event.start.date || ''),
-          end: new Date(event.end.dateTime || event.end.date || ''),
-          description: event.description,
-          location: event.location,
-          type
-        };
-      }
-    );
-  } catch (error) {
-    console.error('Error fetching Google Calendar events:', error);
-    return [];
+function statusBadge(status: MeetingStatus): {
+  label: string;
+  className: string;
+} {
+  switch (status) {
+    case 'CONFIRMED':
+      return {
+        label: 'Confirmed',
+        className:
+          'border-transparent bg-blue-100 text-blue-800 hover:bg-blue-100'
+      };
+    case 'PENDING':
+      return {
+        label: 'Pending',
+        className:
+          'border-transparent bg-amber-100 text-amber-800 hover:bg-amber-100'
+      };
+    case 'COMPLETED':
+      return {
+        label: 'Completed',
+        className:
+          'border-transparent bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
+      };
   }
 }
 
-function getEventTypeColor(type?: string): string {
-  switch (type) {
-    case 'demo':
-      return 'bg-green-100 text-green-800 border-green-200';
-    case 'call':
-      return 'bg-orange-100 text-orange-800 border-orange-200';
-    case 'meeting':
-      return 'bg-purple-100 text-purple-800 border-purple-200';
-    default:
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+function primaryAction(status: MeetingStatus): string {
+  switch (status) {
+    case 'CONFIRMED':
+      return 'Join';
+    case 'PENDING':
+      return 'Confirm';
+    case 'COMPLETED':
+      return 'Notes';
   }
 }
 
@@ -95,152 +125,165 @@ export type ContactMeetingsTabProps = {
   contact: ContactDto;
 };
 
-export function ContactMeetingsTab({ contact }: ContactMeetingsTabProps): React.JSX.Element {
-  const [meetings, setMeetings] = useState<CalendarEvent[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function ContactMeetingsTab({
+  contact
+}: ContactMeetingsTabProps): React.JSX.Element {
+  const meetings = React.useMemo(
+    () => buildSampleMeetings(contact),
+    [contact]
+  );
+  const now = new Date();
+  const upcoming = meetings
+    .filter((m) => m.date.getTime() >= now.getTime())
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
+  const past = meetings
+    .filter((m) => m.date.getTime() < now.getTime())
+    .sort((a, b) => b.date.getTime() - a.date.getTime());
 
-  const loadMeetings = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const events = await fetchGoogleCalendarEvents();
-      // Filter meetings that might be related to this contact (by name or email in title/description)
-      const contactMeetings = events.filter((event) => {
-        const searchText = `${event.title} ${event.description || ''}`.toLowerCase();
-        const contactName = contact.name.toLowerCase();
-        const contactEmail = contact.email?.toLowerCase() || '';
-        return searchText.includes(contactName) || (contactEmail && searchText.includes(contactEmail));
-      });
-      setMeetings(contactMeetings.length > 0 ? contactMeetings : events);
-    } catch (err) {
-      setError('Failed to load meetings');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleSchedule = (): void => {
+    toast.info('Schedule meeting — coming soon');
   };
 
-  useEffect(() => {
-    loadMeetings();
-  }, [contact]);
-
-  const upcomingMeetings = meetings.filter((m) => m.start > new Date());
-  const pastMeetings = meetings.filter((m) => m.start <= new Date());
-
   return (
-    <div className="flex h-full flex-col overflow-hidden">
-      <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
-        <h3 className="text-sm font-medium">Meetings</h3>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={loadMeetings}
-          disabled={isLoading}
+    <ResponsiveScrollArea
+      breakpoint={MediaQueries.MdUp}
+      mediaQueryOptions={{ ssr: true }}
+      className="h-full"
+    >
+      <div className="border-b">
+        <div className="flex flex-row items-center justify-between gap-2 px-6 pb-2 pt-4">
+          <div>
+            <h1 className="text-base font-semibold">Meetings</h1>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Calls and on-site visits with this contact.
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleSchedule}
+          >
+            <CalendarPlusIcon className="mr-1 size-3.5 shrink-0" />
+            Schedule
+          </Button>
+        </div>
+
+        <SectionHeading>Upcoming · {upcoming.length}</SectionHeading>
+        {upcoming.length > 0 ? (
+          <ul className="divide-y">
+            {upcoming.map((meeting) => (
+              <MeetingRow
+                key={meeting.id}
+                meeting={meeting}
+              />
+            ))}
+          </ul>
+        ) : (
+          <p className="px-6 py-4 text-sm text-muted-foreground">
+            No upcoming meetings.
+          </p>
+        )}
+
+        <SectionHeading>Past · {past.length}</SectionHeading>
+        {past.length > 0 ? (
+          <ul className="divide-y">
+            {past.map((meeting) => (
+              <MeetingRow
+                key={meeting.id}
+                meeting={meeting}
+                muted
+              />
+            ))}
+          </ul>
+        ) : (
+          <p className="px-6 py-4 text-sm text-muted-foreground">
+            No past meetings.
+          </p>
+        )}
+      </div>
+    </ResponsiveScrollArea>
+  );
+}
+
+function SectionHeading(
+  props: React.PropsWithChildren
+): React.JSX.Element {
+  return (
+    <h4 className="border-y bg-muted/40 px-6 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      {props.children}
+    </h4>
+  );
+}
+
+type MeetingRowProps = {
+  meeting: Meeting;
+  muted?: boolean;
+};
+
+function MeetingRow({ meeting, muted }: MeetingRowProps): React.JSX.Element {
+  const badge = statusBadge(meeting.status);
+  const action = primaryAction(meeting.status);
+  return (
+    <li
+      className={cn(
+        'flex flex-row items-center gap-4 px-6 py-3 transition-colors hover:bg-accent/40',
+        muted && 'opacity-75'
+      )}
+    >
+      <div className="flex size-12 shrink-0 flex-col items-center justify-center rounded-md border bg-background">
+        <div className="text-[10px] font-semibold uppercase text-muted-foreground">
+          {format(meeting.date, 'MMM')}
+        </div>
+        <div className="text-base font-bold leading-none">
+          {format(meeting.date, 'dd')}
+        </div>
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-medium">{meeting.title}</div>
+        <div className="mt-0.5 truncate text-xs text-muted-foreground">
+          {format(meeting.date, 'EEE')} · {meeting.startTime} – {meeting.endTime}{' '}
+          · {meeting.location}
+        </div>
+        <div className="mt-1 flex items-center gap-1.5">
+          <div className="flex -space-x-1.5">
+            {meeting.attendees.map((attendee, idx) => (
+              <Avatar
+                key={idx}
+                className="size-5 rounded-full ring-2 ring-background"
+              >
+                <AvatarFallback
+                  className={cn(
+                    'text-[9px] font-semibold',
+                    attendee.className
+                  )}
+                >
+                  {attendee.initials}
+                </AvatarFallback>
+              </Avatar>
+            ))}
+          </div>
+          <span className="truncate text-[11px] text-muted-foreground">
+            {meeting.attendeesLabel}
+          </span>
+        </div>
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-2">
+        <Badge
+          variant="secondary"
+          className={cn('text-[11px]', badge.className)}
         >
-          <RefreshCwIcon className={`size-4 ${isLoading ? 'animate-spin' : ''}`} />
+          {badge.label}
+        </Badge>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-7 text-xs"
+          onClick={() => toast.info(`${action} — coming soon`)}
+        >
+          {action}
         </Button>
       </div>
-
-      <ScrollArea className="h-0 min-h-0 flex-1">
-        <div className="space-y-4 p-4">
-          {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              {error}
-            </div>
-          )}
-
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <RefreshCwIcon className="size-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : meetings.length === 0 ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">
-              No meetings found
-            </div>
-          ) : (
-            <>
-              {upcomingMeetings.length > 0 && (
-                <div>
-                  <h4 className="mb-3 text-xs font-semibold uppercase text-muted-foreground">
-                    Upcoming ({upcomingMeetings.length})
-                  </h4>
-                  <div className="space-y-2">
-                    {upcomingMeetings.map((meeting) => (
-                      <Card key={meeting.id} className="overflow-hidden">
-                        <CardContent className="p-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className={`rounded px-2 py-0.5 text-xs font-medium ${getEventTypeColor(meeting.type)}`}>
-                                  {meeting.type || 'event'}
-                                </span>
-                              </div>
-                              <h5 className="mt-1 truncate font-medium">{meeting.title}</h5>
-                              <div className="mt-2 flex flex-col gap-1 text-xs text-muted-foreground">
-                                <div className="flex items-center gap-1">
-                                  <CalendarIcon className="size-3" />
-                                  {format(meeting.start, 'MMM d, yyyy')}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <ClockIcon className="size-3" />
-                                  {format(meeting.start, 'h:mm a')} - {format(meeting.end, 'h:mm a')}
-                                </div>
-                                {meeting.location && (
-                                  <div className="flex items-center gap-1">
-                                    <MapPinIcon className="size-3" />
-                                    <span className="truncate">{meeting.location}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {pastMeetings.length > 0 && (
-                <div>
-                  <h4 className="mb-3 text-xs font-semibold uppercase text-muted-foreground">
-                    Past ({pastMeetings.length})
-                  </h4>
-                  <div className="space-y-2">
-                    {pastMeetings.slice(0, 10).map((meeting) => (
-                      <Card key={meeting.id} className="overflow-hidden opacity-75">
-                        <CardContent className="p-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className={`rounded px-2 py-0.5 text-xs font-medium ${getEventTypeColor(meeting.type)}`}>
-                                  {meeting.type || 'event'}
-                                </span>
-                              </div>
-                              <h5 className="mt-1 truncate font-medium">{meeting.title}</h5>
-                              <div className="mt-2 flex flex-col gap-1 text-xs text-muted-foreground">
-                                <div className="flex items-center gap-1">
-                                  <CalendarIcon className="size-3" />
-                                  {format(meeting.start, 'MMM d, yyyy')}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <ClockIcon className="size-3" />
-                                  {format(meeting.start, 'h:mm a')} - {format(meeting.end, 'h:mm a')}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </ScrollArea>
-    </div>
+    </li>
   );
 }

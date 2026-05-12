@@ -6,11 +6,11 @@ import { authActionClient } from '@/actions/safe-action';
 import { Caching, OrganizationCacheKey } from '@/data/caching';
 import { prisma } from '@/lib/db/prisma';
 import { NotFoundError } from '@/lib/validation/exceptions';
-import { updateContactCommentSchema } from '@/schemas/contacts/update-contact-comment-schema';
+import { updateContactNoteSchema } from '@/schemas/contacts/update-contact-note-schema';
 
 export const updateContactNote = authActionClient
   .metadata({ actionName: 'updateContactNote' })
-  .schema(updateContactCommentSchema)
+  .schema(updateContactNoteSchema)
   .action(async ({ parsedInput, ctx: { session } }) => {
     const count = await prisma.contactNote.count({
       where: {
@@ -21,12 +21,15 @@ export const updateContactNote = authActionClient
       }
     });
     if (count < 1) {
-      throw new NotFoundError('Contact not not found');
+      throw new NotFoundError('Contact note not found');
     }
 
     const note = await prisma.contactNote.update({
       where: { id: parsedInput.id },
-      data: { text: parsedInput.text },
+      data: {
+        text: parsedInput.text,
+        priority: parsedInput.priority
+      },
       select: { contactId: true }
     });
 
