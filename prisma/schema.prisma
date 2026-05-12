@@ -84,6 +84,16 @@ enum WebhookTrigger {
   CONTACT_DELETED @map("contactDeleted")
 }
 
+enum EmailFolder {
+  INBOX @map("inbox")
+  SENT  @map("sent")
+}
+
+enum EmailSenderType {
+  USER    @map("user")
+  CONTACT @map("contact")
+}
+
 // ---- Models ---- //
 
 model Account {
@@ -189,6 +199,7 @@ model Contact {
   favorites         Favorite[]
   tasks             ContactTask[]
   software          ContactSoftware[]
+  emailThreads      ContactEmailThread[]
 
   @@index([organizationId], map: "IX_Contact_organizationId")
 }
@@ -300,6 +311,40 @@ model ContactSoftware {
   contact          Contact        @relation(fields: [contactId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([contactId], map: "IX_ContactSoftware_contactId")
+}
+
+model ContactEmailThread {
+  id        String                @id(map: "PK_ContactEmailThread") @default(uuid()) @db.Uuid
+  contactId String                @db.Uuid
+  folder    EmailFolder
+  subject   String                @db.VarChar(500)
+  preview   String                @db.VarChar(500)
+  unread    Boolean               @default(false)
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+  contact   Contact               @relation(fields: [contactId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  messages  ContactEmailMessage[]
+
+  @@index([contactId], map: "IX_ContactEmailThread_contactId")
+  @@index([updatedAt], map: "IX_ContactEmailThread_updatedAt")
+}
+
+model ContactEmailMessage {
+  id            String             @id(map: "PK_ContactEmailMessage") @default(uuid()) @db.Uuid
+  threadId      String             @db.Uuid
+  senderType    EmailSenderType
+  senderUserId  String?            @db.Uuid
+  senderName    String             @db.VarChar(255)
+  senderEmail   String?            @db.VarChar(255)
+  recipientName String?            @db.VarChar(255)
+  recipientEmail String?           @db.VarChar(255)
+  body          String             @db.VarChar(20000)
+  createdAt     DateTime           @default(now())
+  thread        ContactEmailThread @relation(fields: [threadId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  senderUser    User?              @relation(fields: [senderUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([threadId], map: "IX_ContactEmailMessage_threadId")
+  @@index([senderUserId], map: "IX_ContactEmailMessage_senderUserId")
 }
 
 model Favorite {
@@ -489,6 +534,7 @@ model User {
   organization                 Organization?        @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   pageVisits                   ContactPageVisit[]
   sessions                     Session[]
+  emailMessages                ContactEmailMessage[]
 
   @@index([organizationId], map: "IX_User_organizationId")
 }

@@ -21,6 +21,7 @@ export enum OrganizationCacheKey {
   ContactNotes,
   ContactTasks,
   ContactSoftware,
+  ContactEmails,
   OrganizationDetails,
   BusinessHours,
   SocialMedia,
