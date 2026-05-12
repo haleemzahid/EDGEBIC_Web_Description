@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  ContactPriority,
   ContactTicketActivityType,
   ContactTicketStatus,
   TicketMessageSender
@@ -11,14 +10,15 @@ import {
 import { format, formatDistanceToNow } from 'date-fns';
 import {
   AlertCircleIcon,
+  CheckCircle2Icon,
   MessageSquareIcon,
   StickyNoteIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { addContactTicketMessage } from '@/actions/contacts/add-contact-ticket-message';
+import { updateContactTicket } from '@/actions/contacts/update-contact-ticket';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
@@ -34,62 +34,6 @@ export type ContactTicketDetailProps = {
   contact: ContactDto;
   ticket: ContactTicketWithDetailsDto;
 };
-
-function statusBadge(status: ContactTicketStatus): {
-  label: string;
-  className: string;
-} {
-  switch (status) {
-    case ContactTicketStatus.OPEN:
-      return {
-        label: 'Open',
-        className:
-          'border-transparent bg-rose-100 text-rose-800 hover:bg-rose-100'
-      };
-    case ContactTicketStatus.PENDING:
-      return {
-        label: 'Pending',
-        className:
-          'border-transparent bg-amber-100 text-amber-800 hover:bg-amber-100'
-      };
-    case ContactTicketStatus.RESOLVED:
-      return {
-        label: 'Resolved',
-        className:
-          'border-transparent bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
-      };
-    case ContactTicketStatus.CLOSED:
-      return {
-        label: 'Closed',
-        className: 'border-transparent bg-muted text-muted-foreground'
-      };
-  }
-}
-
-function priorityBadge(priority: ContactPriority): {
-  label: string;
-  className: string;
-} {
-  switch (priority) {
-    case ContactPriority.HIGH:
-      return {
-        label: 'High',
-        className:
-          'border-transparent bg-amber-100 text-amber-800 hover:bg-amber-100'
-      };
-    case ContactPriority.MEDIUM:
-      return {
-        label: 'Medium',
-        className:
-          'border-transparent bg-yellow-100 text-yellow-800 hover:bg-yellow-100'
-      };
-    case ContactPriority.LOW:
-      return {
-        label: 'Low',
-        className: 'border-transparent bg-muted text-foreground hover:bg-muted'
-      };
-  }
-}
 
 function activityIcon(
   type: ContactTicketActivityType
@@ -115,36 +59,18 @@ export function ContactTicketDetail({
   ticket
 }: ContactTicketDetailProps): React.JSX.Element {
   const router = useRouter();
-  const status = statusBadge(ticket.status);
-  const priority = priorityBadge(ticket.priority);
   const conversationMessages = ticket.messages.filter((m) => !m.isInternalNote);
   const internalNotes = ticket.messages.filter((m) => m.isInternalNote);
 
   return (
     <div className="space-y-6 p-6">
-      <header className="flex flex-row flex-wrap items-center gap-2">
-        <Badge
-          variant="secondary"
-          className={cn('text-[11px]', status.className)}
-        >
-          {status.label}
-        </Badge>
-        <Badge
-          variant="secondary"
-          className={cn('text-[11px]', priority.className)}
-        >
-          {priority.label}
-        </Badge>
-        <span className="text-xs text-muted-foreground">
-          Created {format(ticket.createdAt, 'MMM d, yyyy · h:mm a')}
-        </span>
-        <span className="text-xs text-muted-foreground">
-          ·{' '}
-          {ticket.assigneeName
-            ? `Assigned to ${ticket.assigneeName}`
-            : 'Unassigned'}
-        </span>
-      </header>
+      <p className="text-xs text-muted-foreground">
+        Created {format(ticket.createdAt, 'MMM d, yyyy · h:mm a')}
+        {' · '}
+        {ticket.assigneeName
+          ? `Assigned to ${ticket.assigneeName}`
+          : 'Unassigned'}
+      </p>
 
       {ticket.description && (
         <section className="rounded-lg border bg-muted/30 p-4">
@@ -199,7 +125,7 @@ export function ContactTicketDetail({
           className="mt-4 space-y-4"
         >
           <ConversationPanel
-            ticketId={ticket.id}
+            ticket={ticket}
             contact={contact}
             messages={conversationMessages}
             onSent={() => router.refresh()}
@@ -229,27 +155,28 @@ export function ContactTicketDetail({
 }
 
 type ConversationPanelProps = {
-  ticketId: string;
+  ticket: ContactTicketWithDetailsDto;
   contact: ContactDto;
   messages: ContactTicketMessageDto[];
   onSent: () => void;
 };
 
 function ConversationPanel({
-  ticketId,
+  ticket,
   contact,
   messages,
   onSent
 }: ConversationPanelProps): React.JSX.Element {
   const [text, setText] = React.useState('');
   const [pending, startTransition] = React.useTransition();
+  const [resolving, startResolving] = React.useTransition();
 
   const handleSend = (): void => {
     const body = text.trim();
     if (!body) return;
     startTransition(async () => {
       const result = await addContactTicketMessage({
-        ticketId,
+        ticketId: ticket.id,
         body,
         isInternalNote: false
       });
@@ -263,9 +190,49 @@ function ConversationPanel({
     });
   };
 
+  const handleMarkResolved = (): void => {
+    startResolving(async () => {
+      const result = await updateContactTicket({
+        id: ticket.id,
+        title: ticket.title,
+        description: ticket.description ?? '',
+        status: ContactTicketStatus.RESOLVED,
+        priority: ticket.priority,
+        assigneeUserId: ticket.assigneeUserId ?? null
+      });
+      if (result?.serverError) {
+        toast.error("Couldn't mark resolved");
+        return;
+      }
+      toast.success('Ticket marked resolved');
+      onSent();
+    });
+  };
+
+  const alreadyResolved =
+    ticket.status === ContactTicketStatus.RESOLVED ||
+    ticket.status === ContactTicketStatus.CLOSED;
+
   return (
     <div className="rounded-lg border">
-      <div className="border-b bg-muted/30 px-4 py-2 text-xs text-muted-foreground">
+      <header className="flex flex-row items-center justify-between gap-2 border-b px-4 py-3">
+        <h2 className="text-sm font-semibold">
+          Conversation with {contact.name}
+        </h2>
+        {!alreadyResolved && (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={handleMarkResolved}
+            disabled={resolving}
+          >
+            <CheckCircle2Icon className="mr-1 size-3.5 shrink-0" />
+            Mark resolved
+          </Button>
+        )}
+      </header>
+      <div className="bg-muted/30 px-4 py-2 text-xs text-muted-foreground">
         👁️ The customer can see everything in this tab.
       </div>
       <ul className="space-y-3 px-4 py-4">
@@ -372,9 +339,12 @@ function NotesPanel({
 
   return (
     <div className="rounded-lg border">
-      <div className="border-b bg-amber-50 px-4 py-2 text-xs text-amber-800">
-        🔒 Only your team can see these. Customer never sees them.
-      </div>
+      <header className="flex flex-row items-center justify-between gap-2 border-b px-4 py-3">
+        <h2 className="text-sm font-semibold">🔒 Internal notes</h2>
+        <span className="text-xs text-muted-foreground">
+          Only your team can see these. Customer never sees them.
+        </span>
+      </header>
       <div className="space-y-3 px-4 py-4">
         {notes.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">
@@ -445,9 +415,12 @@ function ActivityPanel({
 }): React.JSX.Element {
   return (
     <div className="rounded-lg border">
-      <div className="border-b bg-muted/30 px-4 py-2 text-xs text-muted-foreground">
-        Auto-recorded · cannot be edited
-      </div>
+      <header className="flex flex-row items-center justify-between gap-2 border-b px-4 py-3">
+        <h2 className="text-sm font-semibold">⚡ Activity log</h2>
+        <span className="text-xs text-muted-foreground">
+          Auto-recorded · cannot be edited
+        </span>
+      </header>
       {activities.length === 0 ? (
         <p className="px-4 py-6 text-center text-sm text-muted-foreground">
           No activity yet.

@@ -1,9 +1,15 @@
 import * as React from 'react';
 import { type Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createSearchParamsCache, parseAsString } from 'nuqs/server';
 
 import { ContactTicketDetail } from '@/components/dashboard/contacts/details/tickets/contact-ticket-detail';
+import { ContactTicketDetailMenu } from '@/components/dashboard/contacts/details/tickets/contact-ticket-detail-menu';
+import {
+  ContactTicketPriorityBadge,
+  ContactTicketStatusBadge
+} from '@/components/dashboard/contacts/details/tickets/contact-ticket-status-pills';
 import {
   Page,
   PageBack,
@@ -59,11 +65,41 @@ export default async function ContactTicketPage({
     <Page>
       <PageHeader>
         <PagePrimaryBar>
-          <div className="flex flex-row items-center gap-4">
-            <PageBack href={`/dashboard/contacts/${contactId}`} />
-            <PageTitle>
-              #{ticket.number} · {ticket.title}
-            </PageTitle>
+          <div className="flex w-full flex-row items-center justify-between gap-4">
+            <div className="flex min-w-0 flex-row items-center gap-4">
+              <PageBack href={`/dashboard/contacts/${contactId}`} />
+              <div className="min-w-0">
+                <nav className="mb-1 truncate text-xs text-muted-foreground">
+                  <Link
+                    href="/dashboard/contacts"
+                    className="hover:underline"
+                  >
+                    CRM
+                  </Link>
+                  {' · '}
+                  <Link
+                    href={`/dashboard/contacts/${contactId}`}
+                    className="hover:underline"
+                  >
+                    {contact.name}
+                  </Link>
+                  {' · '}
+                  Tickets
+                  {' · '}
+                  <span className="font-semibold text-foreground">
+                    #{ticket.number}
+                  </span>
+                </nav>
+                <PageTitle className="truncate">
+                  🎫 #{ticket.number} · {ticket.title}
+                </PageTitle>
+              </div>
+            </div>
+            <div className="flex shrink-0 flex-row items-center gap-2">
+              <ContactTicketStatusBadge status={ticket.status} />
+              <ContactTicketPriorityBadge priority={ticket.priority} />
+              <ContactTicketDetailMenu ticket={ticket} />
+            </div>
           </div>
         </PagePrimaryBar>
       </PageHeader>
