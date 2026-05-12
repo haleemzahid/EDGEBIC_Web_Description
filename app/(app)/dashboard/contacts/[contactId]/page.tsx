@@ -4,7 +4,6 @@ import { notFound } from 'next/navigation';
 import { createSearchParamsCache, parseAsString } from 'nuqs/server';
 
 import { ContactActions } from '@/components/dashboard/contacts/details/contact-actions';
-import { ContactMeta } from '@/components/dashboard/contacts/details/contact-meta';
 import { ContactPageVisit } from '@/components/dashboard/contacts/details/contact-page-visit';
 import { ContactTabs } from '@/components/dashboard/contacts/details/contact-tabs';
 import {
@@ -70,10 +69,9 @@ export default async function ContactPage({
       </PageHeader>
       <PageBody
         disableScroll
-        className="flex h-full flex-col overflow-auto md:flex-row md:divide-x md:overflow-hidden"
+        className="flex h-full overflow-hidden"
       >
         <ContactPageVisit contact={contact} />
-        <ContactMeta contact={contact} />
         <ContactTabs contact={contact} />
       </PageBody>
     </Page>
