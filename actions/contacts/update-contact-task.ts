@@ -23,6 +23,23 @@ export const updateContactTask = authActionClient
         description: parsedInput.description,
         status: parsedInput.status,
         priority: parsedInput.priority,
+        category:
+          parsedInput.category === undefined
+            ? undefined
+            : (parsedInput.category ?? null),
+        assigneeUserId:
+          parsedInput.assigneeUserId === undefined
+            ? undefined
+            : parsedInput.assigneeUserId === '' ||
+                parsedInput.assigneeUserId === null
+              ? null
+              : parsedInput.assigneeUserId,
+        meetingId:
+          parsedInput.meetingId === undefined
+            ? undefined
+            : parsedInput.meetingId === '' || parsedInput.meetingId === null
+              ? null
+              : parsedInput.meetingId,
         dueDate: parsedInput.dueDate ? parsedInput.dueDate : null
       },
       select: { contactId: true }

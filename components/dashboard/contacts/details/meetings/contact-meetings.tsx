@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import NiceModal from '@ebay/nice-modal-react';
 import { ContactMeetingStatus } from '@prisma/client';
 import { format } from 'date-fns';
@@ -43,7 +44,10 @@ export function ContactMeetings({
     .sort((a, b) => b.startsAt.getTime() - a.startsAt.getTime());
 
   const handleSchedule = (): void => {
-    NiceModal.show(AddContactMeetingModal, { contactId: contact.id });
+    NiceModal.show(AddContactMeetingModal, {
+      contactId: contact.id,
+      contactName: contact.name
+    });
   };
 
   return (
@@ -168,6 +172,7 @@ function MeetingRow({
   const handleDelete = (): void => {
     NiceModal.show(DeleteContactMeetingModal, { meeting });
   };
+  const detailHref = `/dashboard/contacts/${contact.id}/meetings/${meeting.id}`;
   return (
     <li
       className={cn(
@@ -175,32 +180,38 @@ function MeetingRow({
         muted && 'opacity-75'
       )}
     >
-      <div className="flex size-12 shrink-0 flex-col items-center justify-center rounded-md border bg-background">
-        <div className="text-[10px] font-semibold uppercase text-muted-foreground">
-          {format(meeting.startsAt, 'MMM')}
+      <Link
+        href={detailHref}
+        className="flex min-w-0 flex-1 flex-row items-center gap-4 text-left"
+      >
+        <div className="flex size-12 shrink-0 flex-col items-center justify-center rounded-md border bg-background">
+          <div className="text-[10px] font-semibold uppercase text-muted-foreground">
+            {format(meeting.startsAt, 'MMM')}
+          </div>
+          <div className="text-base font-bold leading-none">
+            {format(meeting.startsAt, 'dd')}
+          </div>
         </div>
-        <div className="text-base font-bold leading-none">
-          {format(meeting.startsAt, 'dd')}
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-medium">{meeting.title}</div>
+          <div className="mt-0.5 truncate text-xs text-muted-foreground">
+            {format(meeting.startsAt, 'EEE')} ·{' '}
+            {format(meeting.startsAt, 'h:mm a')} –{' '}
+            {format(meeting.endsAt, 'h:mm a')}
+            {meeting.location ? ` · ${meeting.location}` : ''}
+          </div>
+          <div className="mt-1 flex items-center gap-1.5">
+            <Avatar className="size-5 rounded-full">
+              <AvatarFallback className="bg-teal-700 text-[9px] font-semibold text-white">
+                {getInitials(contact.name || 'CN')}
+              </AvatarFallback>
+            </Avatar>
+            <span className="truncate text-[11px] text-muted-foreground">
+              {contact.name || 'Contact'}
+            </span>
+          </div>
         </div>
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium">{meeting.title}</div>
-        <div className="mt-0.5 truncate text-xs text-muted-foreground">
-          {format(meeting.startsAt, 'EEE')} · {format(meeting.startsAt, 'h:mm a')}{' '}
-          – {format(meeting.endsAt, 'h:mm a')}
-          {meeting.location ? ` · ${meeting.location}` : ''}
-        </div>
-        <div className="mt-1 flex items-center gap-1.5">
-          <Avatar className="size-5 rounded-full">
-            <AvatarFallback className="bg-teal-700 text-[9px] font-semibold text-white">
-              {getInitials(contact.name || 'CN')}
-            </AvatarFallback>
-          </Avatar>
-          <span className="truncate text-[11px] text-muted-foreground">
-            {contact.name || 'Contact'}
-          </span>
-        </div>
-      </div>
+      </Link>
       <div className="flex shrink-0 items-center gap-2">
         <Badge
           variant="secondary"

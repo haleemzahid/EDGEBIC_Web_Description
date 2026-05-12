@@ -2,9 +2,13 @@
 
 import * as React from 'react';
 import NiceModal from '@ebay/nice-modal-react';
-import { ContactPriority, ContactTaskStatus } from '@prisma/client';
+import {
+  ContactPriority,
+  ContactTaskCategory,
+  ContactTaskStatus
+} from '@prisma/client';
 import { format } from 'date-fns';
-import { MoreHorizontalIcon } from 'lucide-react';
+import { CalendarIcon, MoreHorizontalIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { updateContactTask } from '@/actions/contacts/update-contact-task';
@@ -22,15 +26,28 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import type { ContactMeetingDto } from '@/types/dtos/contact-meeting-dto';
 import type { ContactTaskDto } from '@/types/dtos/contact-task-dto';
+import type { MemberDto } from '@/types/dtos/member-dto';
 
 export type ContactTaskListProps =
   React.HtmlHTMLAttributes<HTMLUListElement> & {
     tasks: ContactTaskDto[];
+    meetings?: ContactMeetingDto[];
+    members?: MemberDto[];
   };
+
+const categoryLabel: Record<ContactTaskCategory, string> = {
+  [ContactTaskCategory.SALES]: 'Sales',
+  [ContactTaskCategory.ONBOARDING]: 'Onboarding',
+  [ContactTaskCategory.SUPPORT]: 'Support',
+  [ContactTaskCategory.FOLLOW_UP]: 'Follow-up'
+};
 
 export function ContactTaskList({
   tasks,
+  meetings = [],
+  members = [],
   className,
   ...other
 }: ContactTaskListProps): React.JSX.Element {
@@ -51,7 +68,7 @@ export function ContactTaskList({
   const handleShowEditTaskModal = (taskId: string) => {
     const task = tasks.find((task) => task.id === taskId);
     if (task) {
-      NiceModal.show(EditContactTaskModal, { task });
+      NiceModal.show(EditContactTaskModal, { task, meetings, members });
     }
   };
   const handleShowDeleteTaskModal = (taskId: string) => {
@@ -130,8 +147,12 @@ function ContactTaskListItem({
   id,
   status,
   priority,
+  category,
+  assigneeName,
+  meetingId,
+  meetingTitle,
+  meetingStartsAt,
   title,
-  description,
   dueDate,
   createdAt,
   onStatusChange,
@@ -140,15 +161,18 @@ function ContactTaskListItem({
 }: ContactTaskListItemProps): React.JSX.Element {
   const isDone = status === ContactTaskStatus.COMPLETED;
   const metaParts: string[] = [];
+  if (category) {
+    metaParts.push(categoryLabel[category]);
+  }
+  if (assigneeName) {
+    metaParts.push(assigneeName);
+  }
   if (dueDate) {
     metaParts.push(formatDueDateLabel(dueDate));
   } else if (isDone) {
     metaParts.push(`Completed ${format(createdAt, 'MMM d, yyyy')}`);
   } else {
     metaParts.push(`Created ${format(createdAt, 'MMM d, yyyy')}`);
-  }
-  if (description) {
-    metaParts.push(description);
   }
   const pill = isDone
     ? {
@@ -184,8 +208,20 @@ function ContactTaskListItem({
         >
           {title}
         </Label>
-        <div className="mt-0.5 truncate text-xs text-muted-foreground">
-          {metaParts.join(' · ')}
+        <div className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
+          <span className="truncate">{metaParts.join(' · ')}</span>
+          {meetingId && meetingTitle && (
+            <>
+              <span>·</span>
+              <span className="flex items-center gap-0.5 truncate text-foreground/80">
+                <CalendarIcon className="size-3 shrink-0" />
+                {meetingStartsAt
+                  ? `${format(meetingStartsAt, 'MMM d')} · `
+                  : ''}
+                {meetingTitle}
+              </span>
+            </>
+          )}
         </div>
       </div>
       <Badge

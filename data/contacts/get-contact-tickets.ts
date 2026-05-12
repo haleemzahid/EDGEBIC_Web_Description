@@ -14,21 +14,21 @@ import { checkSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/db/prisma';
 import { ValidationError } from '@/lib/validation/exceptions';
 import {
-  getContactTasksSchema,
-  type GetContactTasksSchema
-} from '@/schemas/contacts/get-contact-tasks-schema';
-import type { ContactTaskDto } from '@/types/dtos/contact-task-dto';
+  getContactTicketsSchema,
+  type GetContactTicketsSchema
+} from '@/schemas/contacts/get-contact-tickets-schema';
+import type { ContactTicketDto } from '@/types/dtos/contact-ticket-dto';
 import { SortDirection } from '@/types/sort-direction';
 
-export async function getContactTasks(
-  input: GetContactTasksSchema
-): Promise<ContactTaskDto[]> {
+export async function getContactTickets(
+  input: GetContactTicketsSchema
+): Promise<ContactTicketDto[]> {
   const session = await dedupedAuth();
   if (!checkSession(session)) {
     return redirect(getLoginRedirect());
   }
 
-  const result = getContactTasksSchema.safeParse(input);
+  const result = getContactTicketsSchema.safeParse(input);
   if (!result.success) {
     throw new ValidationError(JSON.stringify(result.error.flatten()));
   }
@@ -36,7 +36,7 @@ export async function getContactTasks(
 
   return cache(
     async () => {
-      const tasks = await prisma.contactTask.findMany({
+      const tickets = await prisma.contactTicket.findMany({
         where: {
           contactId: parsedInput.contactId,
           contact: {
@@ -45,58 +45,47 @@ export async function getContactTasks(
         },
         select: {
           id: true,
+          number: true,
           contactId: true,
           title: true,
           description: true,
           status: true,
           priority: true,
-          category: true,
           assigneeUserId: true,
-          meetingId: true,
-          dueDate: true,
           createdAt: true,
+          updatedAt: true,
           assignee: {
             select: {
               id: true,
               name: true,
               image: true
             }
-          },
-          meeting: {
-            select: {
-              id: true,
-              title: true,
-              startsAt: true
-            }
           }
         },
         orderBy: {
-          createdAt: SortDirection.Asc
+          createdAt: SortDirection.Desc
         }
       });
 
-      const mapped: ContactTaskDto[] = tasks.map((task) => ({
-        id: task.id,
-        contactId: task.contactId ?? undefined,
-        title: task.title,
-        description: task.description ?? undefined,
-        status: task.status,
-        priority: task.priority,
-        category: task.category ?? undefined,
-        assigneeUserId: task.assigneeUserId ?? undefined,
-        assigneeName: task.assignee?.name,
-        assigneeImage: task.assignee?.image ?? undefined,
-        meetingId: task.meetingId ?? undefined,
-        meetingTitle: task.meeting?.title,
-        meetingStartsAt: task.meeting?.startsAt,
-        dueDate: task.dueDate ?? undefined,
-        createdAt: task.createdAt
+      const mapped: ContactTicketDto[] = tickets.map((t) => ({
+        id: t.id,
+        number: t.number,
+        contactId: t.contactId,
+        title: t.title,
+        description: t.description ?? undefined,
+        status: t.status,
+        priority: t.priority,
+        assigneeUserId: t.assigneeUserId ?? undefined,
+        assigneeName: t.assignee?.name,
+        assigneeImage: t.assignee?.image ?? undefined,
+        createdAt: t.createdAt,
+        updatedAt: t.updatedAt
       }));
 
       return mapped;
     },
     Caching.createOrganizationKeyParts(
-      OrganizationCacheKey.ContactTasks,
+      OrganizationCacheKey.ContactTickets,
       session.user.organizationId,
       parsedInput.contactId
     ),
@@ -104,7 +93,7 @@ export async function getContactTasks(
       revalidate: defaultRevalidateTimeInSeconds,
       tags: [
         Caching.createOrganizationTag(
-          OrganizationCacheKey.ContactTasks,
+          OrganizationCacheKey.ContactTickets,
           session.user.organizationId,
           parsedInput.contactId
         )

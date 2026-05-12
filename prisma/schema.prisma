@@ -107,6 +107,34 @@ enum ContactMeetingStatus {
   CANCELLED @map("cancelled")
 }
 
+enum ContactTaskCategory {
+  SALES      @map("sales")
+  ONBOARDING @map("onboarding")
+  SUPPORT    @map("support")
+  FOLLOW_UP  @map("followUp")
+}
+
+enum ContactTicketStatus {
+  OPEN     @map("open")
+  PENDING  @map("pending")
+  RESOLVED @map("resolved")
+  CLOSED   @map("closed")
+}
+
+enum ContactTicketActivityType {
+  CREATED          @map("created")
+  ASSIGNED         @map("assigned")
+  STATUS_CHANGED   @map("statusChanged")
+  PRIORITY_CHANGED @map("priorityChanged")
+  REPLIED          @map("replied")
+  NOTE_ADDED       @map("noteAdded")
+}
+
+enum TicketMessageSender {
+  USER    @map("user")
+  CONTACT @map("contact")
+}
+
 // ---- Models ---- //
 
 model Account {
@@ -214,6 +242,7 @@ model Contact {
   software          ContactSoftware[]
   emailThreads      ContactEmailThread[]
   meetings          ContactMeeting[]
+  tickets           ContactTicket[]
 
   @@index([organizationId], map: "IX_Contact_organizationId")
 }
@@ -294,18 +323,25 @@ model ContactTag {
 }
 
 model ContactTask {
-  id          String            @id(map: "PK_ContactTask") @default(uuid()) @db.Uuid
-  contactId   String            @db.Uuid
-  title       String            @db.VarChar(255)
-  description String?           @db.VarChar(8000)
-  status      ContactTaskStatus @default(OPEN)
-  priority    ContactPriority   @default(MEDIUM)
-  dueDate     DateTime?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  contact     Contact           @relation(fields: [contactId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id             String               @id(map: "PK_ContactTask") @default(uuid()) @db.Uuid
+  contactId      String               @db.Uuid
+  title          String               @db.VarChar(255)
+  description    String?              @db.VarChar(8000)
+  status         ContactTaskStatus    @default(OPEN)
+  priority       ContactPriority      @default(MEDIUM)
+  category       ContactTaskCategory?
+  assigneeUserId String?              @db.Uuid
+  meetingId      String?              @db.Uuid
+  dueDate        DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  contact        Contact              @relation(fields: [contactId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  assignee       User?                @relation(fields: [assigneeUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  meeting        ContactMeeting?      @relation(fields: [meetingId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@index([contactId], map: "IX_ContactTask_contactId")
+  @@index([assigneeUserId], map: "IX_ContactTask_assigneeUserId")
+  @@index([meetingId], map: "IX_ContactTask_meetingId")
 }
 
 model ContactSoftware {
@@ -380,9 +416,61 @@ model ContactMeeting {
   updatedAt   DateTime             @updatedAt
   contact     Contact              @relation(fields: [contactId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   notes       ContactNote[]
+  tasks       ContactTask[]
 
   @@index([contactId], map: "IX_ContactMeeting_contactId")
   @@index([startsAt], map: "IX_ContactMeeting_startsAt")
+}
+
+model ContactTicket {
+  id             String                  @id(map: "PK_ContactTicket") @default(uuid()) @db.Uuid
+  number         Int                     @default(autoincrement())
+  contactId      String                  @db.Uuid
+  title          String                  @db.VarChar(255)
+  description    String?                 @db.VarChar(8000)
+  status         ContactTicketStatus     @default(OPEN)
+  priority       ContactPriority         @default(MEDIUM)
+  assigneeUserId String?                 @db.Uuid
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  contact        Contact                 @relation(fields: [contactId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  assignee       User?                   @relation("AssignedTickets", fields: [assigneeUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  messages       ContactTicketMessage[]
+  activities     ContactTicketActivity[]
+
+  @@unique([number], map: "UQ_ContactTicket_number")
+  @@index([contactId], map: "IX_ContactTicket_contactId")
+  @@index([assigneeUserId], map: "IX_ContactTicket_assigneeUserId")
+  @@index([status], map: "IX_ContactTicket_status")
+}
+
+model ContactTicketMessage {
+  id             String              @id(map: "PK_ContactTicketMessage") @default(uuid()) @db.Uuid
+  ticketId       String              @db.Uuid
+  senderType     TicketMessageSender
+  senderUserId   String?             @db.Uuid
+  senderName     String              @db.VarChar(255)
+  body           String              @db.VarChar(20000)
+  isInternalNote Boolean             @default(false)
+  createdAt      DateTime            @default(now())
+  ticket         ContactTicket       @relation(fields: [ticketId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  senderUser     User?               @relation("AuthoredTicketMessages", fields: [senderUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([ticketId], map: "IX_ContactTicketMessage_ticketId")
+  @@index([senderUserId], map: "IX_ContactTicketMessage_senderUserId")
+}
+
+model ContactTicketActivity {
+  id          String                    @id(map: "PK_ContactTicketActivity") @default(uuid()) @db.Uuid
+  ticketId    String                    @db.Uuid
+  type        ContactTicketActivityType
+  description String                    @db.VarChar(500)
+  userId      String?                   @db.Uuid
+  createdAt   DateTime                  @default(now())
+  ticket      ContactTicket             @relation(fields: [ticketId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user        User?                     @relation("LoggedTicketActivities", fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([ticketId], map: "IX_ContactTicketActivity_ticketId")
 }
 
 model Favorite {
@@ -573,6 +661,10 @@ model User {
   pageVisits                   ContactPageVisit[]
   sessions                     Session[]
   emailMessages                ContactEmailMessage[]
+  assignedTasks                ContactTask[]
+  assignedTickets              ContactTicket[]          @relation("AssignedTickets")
+  authoredTicketMessages       ContactTicketMessage[]   @relation("AuthoredTicketMessages")
+  loggedTicketActivities       ContactTicketActivity[]  @relation("LoggedTicketActivities")
 
   @@index([organizationId], map: "IX_User_organizationId")
 }

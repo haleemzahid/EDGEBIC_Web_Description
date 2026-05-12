@@ -128,7 +128,9 @@ export async function ContactTabs({
           value={Tab.Tickets}
           className="m-0 h-full overflow-hidden p-0 data-[state=active]:flex data-[state=active]:flex-col"
         >
-          <ContactTicketsTab />
+          <React.Suspense>
+            <ContactTicketsTab contact={contact} />
+          </React.Suspense>
         </TabsContent>
 
         <TabsContent

@@ -53,7 +53,11 @@ import {
 
 export type AddContactMeetingModalProps = NiceModalHocProps & {
   contactId: string;
+  contactName?: string;
 };
+
+const CALENDLY_EMBED_URL =
+  'https://calendly.com/jc-123/new-meeting?embed_domain=localhost&embed_type=Inline&hide_gdpr_banner=1';
 
 function defaultStart(): Date {
   const now = new Date();
@@ -65,7 +69,7 @@ function toDatetimeLocalValue(date: Date): string {
 }
 
 export const AddContactMeetingModal =
-  NiceModal.create<AddContactMeetingModalProps>(({ contactId }) => {
+  NiceModal.create<AddContactMeetingModalProps>(({ contactId, contactName }) => {
     const modal = useEnhancedModal();
     const mdUp = useMediaQuery(MediaQueries.MdUp, { ssr: false });
     const startDefault = defaultStart();
@@ -83,8 +87,11 @@ export const AddContactMeetingModal =
         status: ContactMeetingStatus.PENDING
       }
     });
-    const title = 'Schedule meeting';
-    const description = 'Add a meeting with this contact.';
+    const title = contactName
+      ? `Schedule meeting with ${contactName}`
+      : 'Schedule meeting';
+    const description =
+      '✨ Once the customer confirms in Calendly, fill in the details below and click "Mark as scheduled" to save it.';
     const canSubmit =
       !methods.formState.isSubmitting &&
       (!methods.formState.isSubmitted || methods.formState.isDirty);
@@ -105,6 +112,13 @@ export const AddContactMeetingModal =
         className={cn('space-y-4', !mdUp && 'p-4')}
         onSubmit={methods.handleSubmit(onSubmit)}
       >
+        <div className="overflow-hidden rounded-md border bg-background">
+          <iframe
+            src={CALENDLY_EMBED_URL}
+            title="Calendly · Book a meeting"
+            className="block h-[420px] w-full border-0"
+          />
+        </div>
         <FormField
           control={methods.control}
           name="title"
@@ -268,7 +282,7 @@ export const AddContactMeetingModal =
           loading={methods.formState.isSubmitting}
           onClick={methods.handleSubmit(onSubmit)}
         >
-          Schedule meeting
+          Mark as scheduled
         </Button>
       </>
     );
@@ -277,7 +291,7 @@ export const AddContactMeetingModal =
         {mdUp ? (
           <Dialog open={modal.visible}>
             <DialogContent
-              className="max-w-lg"
+              className="max-h-[90vh] w-[95vw] max-w-3xl overflow-y-auto"
               onClose={modal.handleClose}
               onAnimationEndCapture={modal.handleAnimationEndCapture}
             >

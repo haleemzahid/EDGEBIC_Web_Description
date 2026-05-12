@@ -29,6 +29,11 @@ export const addContactTask = authActionClient
         description: parsedInput.description,
         status: parsedInput.status,
         priority: parsedInput.priority,
+        category: parsedInput.category ?? null,
+        assigneeUserId: parsedInput.assigneeUserId
+          ? parsedInput.assigneeUserId
+          : null,
+        meetingId: parsedInput.meetingId ? parsedInput.meetingId : null,
         dueDate: parsedInput.dueDate ? parsedInput.dueDate : null
       },
       select: {

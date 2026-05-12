@@ -2,7 +2,11 @@
 
 import * as React from 'react';
 import NiceModal from '@ebay/nice-modal-react';
-import { ContactPriority, ContactTaskStatus } from '@prisma/client';
+import {
+  ContactPriority,
+  ContactTaskCategory,
+  ContactTaskStatus
+} from '@prisma/client';
 import { CheckSquare2Icon } from 'lucide-react';
 
 import { AddContactTaskModal } from '@/components/dashboard/contacts/details/tasks/add-contact-task-modal';
@@ -19,32 +23,48 @@ import {
 } from '@/components/ui/select';
 import { MediaQueries } from '@/constants/media-queries';
 import type { ContactDto } from '@/types/dtos/contact-dto';
+import type { ContactMeetingDto } from '@/types/dtos/contact-meeting-dto';
 import type { ContactTaskDto } from '@/types/dtos/contact-task-dto';
+import type { MemberDto } from '@/types/dtos/member-dto';
 
 export type ContactTasksProps = {
   contact: ContactDto;
   tasks: ContactTaskDto[];
+  meetings: ContactMeetingDto[];
+  members: MemberDto[];
 };
 
 const ALL = '__all__';
+const NO_MEETING = '__none__';
 
 export function ContactTasks({
   contact,
-  tasks
+  tasks,
+  meetings,
+  members
 }: ContactTasksProps): React.JSX.Element {
-  const [priorityFilter, setPriorityFilter] = React.useState<string>(ALL);
   const [categoryFilter, setCategoryFilter] = React.useState<string>(ALL);
   const [assigneeFilter, setAssigneeFilter] = React.useState<string>(ALL);
+  const [priorityFilter, setPriorityFilter] = React.useState<string>(ALL);
   const [meetingFilter, setMeetingFilter] = React.useState<string>(ALL);
 
   const filteredTasks = React.useMemo(
     () =>
       tasks.filter((t) => {
+        if (categoryFilter !== ALL && t.category !== categoryFilter)
+          return false;
+        if (assigneeFilter !== ALL && t.assigneeUserId !== assigneeFilter)
+          return false;
         if (priorityFilter !== ALL && t.priority !== priorityFilter)
           return false;
+        if (meetingFilter !== ALL) {
+          if (meetingFilter === NO_MEETING && t.meetingId) return false;
+          if (meetingFilter !== NO_MEETING && t.meetingId !== meetingFilter)
+            return false;
+        }
         return true;
       }),
-    [tasks, priorityFilter]
+    [tasks, categoryFilter, assigneeFilter, priorityFilter, meetingFilter]
   );
 
   const openTasks = filteredTasks.filter(
@@ -55,20 +75,24 @@ export function ContactTasks({
   );
 
   const handleShowAddTaskModal = (): void => {
-    NiceModal.show(AddContactTaskModal, { contactId: contact.id });
+    NiceModal.show(AddContactTaskModal, {
+      contactId: contact.id,
+      meetings,
+      members
+    });
   };
 
   const handleClear = (): void => {
-    setPriorityFilter(ALL);
     setCategoryFilter(ALL);
     setAssigneeFilter(ALL);
+    setPriorityFilter(ALL);
     setMeetingFilter(ALL);
   };
 
   const hasActiveFilter =
-    priorityFilter !== ALL ||
     categoryFilter !== ALL ||
     assigneeFilter !== ALL ||
+    priorityFilter !== ALL ||
     meetingFilter !== ALL;
 
   return (
@@ -95,27 +119,23 @@ export function ContactTasks({
           </Button>
         </div>
 
-        {/* Filter bar */}
         <div className="flex flex-row flex-wrap items-center gap-2 px-6 pb-3">
           <FilterSelect
             value={categoryFilter}
             onChange={setCategoryFilter}
             placeholder="All categories"
             options={[
-              { value: 'sales', label: 'Sales' },
-              { value: 'onboarding', label: 'Onboarding' },
-              { value: 'support', label: 'Support' },
-              { value: 'follow-up', label: 'Follow-up' }
+              { value: ContactTaskCategory.SALES, label: 'Sales' },
+              { value: ContactTaskCategory.ONBOARDING, label: 'Onboarding' },
+              { value: ContactTaskCategory.SUPPORT, label: 'Support' },
+              { value: ContactTaskCategory.FOLLOW_UP, label: 'Follow-up' }
             ]}
           />
           <FilterSelect
             value={assigneeFilter}
             onChange={setAssigneeFilter}
             placeholder="All assignees"
-            options={[
-              { value: 'me', label: 'Me' },
-              { value: 'team', label: 'Team' }
-            ]}
+            options={members.map((m) => ({ value: m.id, label: m.name }))}
           />
           <FilterSelect
             value={priorityFilter}
@@ -131,7 +151,10 @@ export function ContactTasks({
             value={meetingFilter}
             onChange={setMeetingFilter}
             placeholder="All meetings"
-            options={[{ value: 'none', label: '— No meeting —' }]}
+            options={[
+              { value: NO_MEETING, label: '— No meeting —' },
+              ...meetings.map((m) => ({ value: m.id, label: m.title }))
+            ]}
           />
           {hasActiveFilter && (
             <Button
@@ -148,7 +171,11 @@ export function ContactTasks({
 
         <SectionHeading>Open · {openTasks.length}</SectionHeading>
         {openTasks.length > 0 ? (
-          <ContactTaskList tasks={openTasks} />
+          <ContactTaskList
+            tasks={openTasks}
+            meetings={meetings}
+            members={members}
+          />
         ) : (
           <EmptyText className="p-6">
             There is no open task for this contact.
@@ -156,7 +183,11 @@ export function ContactTasks({
         )}
         <SectionHeading>Done · {completedTasks.length}</SectionHeading>
         {completedTasks.length > 0 ? (
-          <ContactTaskList tasks={completedTasks} />
+          <ContactTaskList
+            tasks={completedTasks}
+            meetings={meetings}
+            members={members}
+          />
         ) : (
           <EmptyText className="p-6">
             There is no completed task for this contact.
