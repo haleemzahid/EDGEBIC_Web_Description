@@ -324,14 +324,16 @@ export function ContactActivity({
       mediaQueryOptions={{ ssr: true }}
       className="h-full"
     >
-      <div className="flex size-full flex-col gap-6 p-6">
+      <div className="flex size-full flex-col">
         {/* Comment box */}
-        <ContactTimelineAddComment
-          profile={profile}
-          contact={contact}
-          showComments={showComments}
-          onShowCommentsChange={setShowComments}
-        />
+        <div className="border-b p-6">
+          <ContactTimelineAddComment
+            profile={profile}
+            contact={contact}
+            showComments={showComments}
+            onShowCommentsChange={setShowComments}
+          />
+        </div>
 
         {/* Activity table */}
         {visibleEvents.length === 0 ? (
@@ -339,77 +341,31 @@ export function ContactActivity({
             No activity yet.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-32 pl-4">Date</TableHead>
-                  <TableHead className="w-20">Time</TableHead>
-                  <TableHead className="w-40">User</TableHead>
-                  <TableHead className="w-44">Action</TableHead>
-                  <TableHead>Details</TableHead>
-                  <TableHead className="w-20" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {visibleEvents.map((event) => {
-                  const occurredAt =
-                    event.type === 'activity'
-                      ? event.occurredAt
-                      : event.createdAt;
-                  const actor =
-                    event.type === 'activity' ? event.actor : event.sender;
-                  const actorName = actor.name || 'Contact form';
+          <Table>
+            <TableHeader className="sticky top-0 z-20 shadow-sm">
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-32 pl-4">Date</TableHead>
+                <TableHead className="w-20">Time</TableHead>
+                <TableHead className="w-40">User</TableHead>
+                <TableHead className="w-44">Action</TableHead>
+                <TableHead>Details</TableHead>
+                <TableHead className="w-24" />
+              </TableRow>
+            </TableHeader>
+            <TableBody showLastRowBorder>
+              {visibleEvents.map((event) => {
+                const occurredAt =
+                  event.type === 'activity'
+                    ? event.occurredAt
+                    : event.createdAt;
+                const actor =
+                  event.type === 'activity' ? event.actor : event.sender;
+                const actorName = actor.name || 'Contact form';
 
-                  if (event.type === 'comment') {
-                    return (
-                      <TableRow key={event.id}>
-                        <TableCell className="pl-4 text-xs text-muted-foreground">
-                          {format(occurredAt, 'dd MMM yyyy')}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {format(occurredAt, 'HH:mm')}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="size-6 shrink-0 rounded-full">
-                              <AvatarImage
-                                src={actor.image}
-                                alt="avatar"
-                              />
-                              <AvatarFallback className="text-[10px]">
-                                {getInitials(actorName)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="truncate text-xs font-medium">
-                              {actorName}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5">
-                            <MessageSquareIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                            <Badge
-                              variant="outline"
-                              className="text-[11px]"
-                            >
-                              Comment
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell className="max-w-xs truncate text-xs text-muted-foreground">
-                          {event.text}
-                        </TableCell>
-                        <TableCell />
-                      </TableRow>
-                    );
-                  }
-
-                  const Icon = actionIcon[event.actionType];
-                  const fields = parseFields(event);
+                if (event.type === 'comment') {
                   return (
                     <TableRow key={event.id}>
-                      <TableCell className="pl-4 text-xs text-muted-foreground">
+                      <TableCell className="pl-4 text-xs tabular-nums text-muted-foreground">
                         {format(occurredAt, 'dd MMM yyyy')}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
@@ -423,7 +379,7 @@ export function ContactActivity({
                               alt="avatar"
                             />
                             <AvatarFallback className="text-[10px]">
-                              {getInitials(actorName) || 'CF'}
+                              {getInitials(actorName)}
                             </AvatarFallback>
                           </Avatar>
                           <span className="truncate text-xs font-medium">
@@ -433,37 +389,81 @@ export function ContactActivity({
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1.5">
-                          <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+                          <MessageSquareIcon className="size-3.5 shrink-0 text-muted-foreground" />
                           <Badge
-                            variant={actionVariant[event.actionType]}
+                            variant="outline"
                             className="text-[11px]"
                           >
-                            {actionLabel[event.actionType]}
+                            Comment
                           </Badge>
                         </div>
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {getActivitySummary(event)}
+                      <TableCell className="max-w-xs truncate text-xs text-muted-foreground">
+                        {event.text}
                       </TableCell>
-                      <TableCell>
-                        {fields.length > 0 && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-2.5 text-[11px]"
-                            onClick={() => setSelectedEvent(event)}
-                          >
-                            Details
-                          </Button>
-                        )}
-                      </TableCell>
+                      <TableCell />
                     </TableRow>
                   );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+                }
+
+                const Icon = actionIcon[event.actionType];
+                const fields = parseFields(event);
+                return (
+                  <TableRow key={event.id}>
+                    <TableCell className="pl-4 text-xs tabular-nums text-muted-foreground">
+                      {format(occurredAt, 'dd MMM yyyy')}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {format(occurredAt, 'HH:mm')}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="size-6 shrink-0 rounded-full">
+                          <AvatarImage
+                            src={actor.image}
+                            alt="avatar"
+                          />
+                          <AvatarFallback className="text-[10px]">
+                            {getInitials(actorName) || 'CF'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="truncate text-xs font-medium">
+                          {actorName}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5">
+                        <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+                        <Badge
+                          variant={actionVariant[event.actionType]}
+                          className="text-[11px]"
+                        >
+                          {actionLabel[event.actionType]}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {getActivitySummary(event)}
+                    </TableCell>
+                    <TableCell>
+                      {fields.length > 0 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2.5 text-[11px]"
+                          onClick={() => setSelectedEvent(event)}
+                        >
+                          Details
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         )}
       </div>
 
