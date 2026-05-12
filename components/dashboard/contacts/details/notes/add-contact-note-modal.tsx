@@ -57,12 +57,13 @@ import type { ContactMeetingDto } from '@/types/dtos/contact-meeting-dto';
 export type AddContactNoteModalProps = NiceModalHocProps & {
   contactId: string;
   meetings?: ContactMeetingDto[];
+  defaultMeetingId?: string;
 };
 
 const NO_MEETING = '__none__';
 
 export const AddContactNoteModal = NiceModal.create<AddContactNoteModalProps>(
-  ({ contactId, meetings = [] }) => {
+  ({ contactId, meetings = [], defaultMeetingId }) => {
     const modal = useEnhancedModal();
     const mdUp = useMediaQuery(MediaQueries.MdUp, { ssr: false });
     const methods = useZodForm({
@@ -73,7 +74,7 @@ export const AddContactNoteModal = NiceModal.create<AddContactNoteModalProps>(
         text: '',
         priority: ContactPriority.MEDIUM,
         pinned: false,
-        meetingId: null
+        meetingId: defaultMeetingId ?? null
       }
     });
     const title = 'Add note';

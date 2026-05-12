@@ -62,12 +62,13 @@ export type AddContactTaskModalProps = NiceModalHocProps & {
   contactId: string;
   meetings?: ContactMeetingDto[];
   members?: MemberDto[];
+  defaultMeetingId?: string;
 };
 
 const NO_VALUE = '__none__';
 
 export const AddContactTaskModal = NiceModal.create<AddContactTaskModalProps>(
-  ({ contactId, meetings = [], members = [] }) => {
+  ({ contactId, meetings = [], members = [], defaultMeetingId }) => {
     const modal = useEnhancedModal();
     const mdUp = useMediaQuery(MediaQueries.MdUp, { ssr: false });
     const methods = useZodForm({
@@ -81,7 +82,7 @@ export const AddContactTaskModal = NiceModal.create<AddContactTaskModalProps>(
         priority: ContactPriority.MEDIUM,
         category: null,
         assigneeUserId: null,
-        meetingId: null,
+        meetingId: defaultMeetingId ?? null,
         description: ''
       }
     });
