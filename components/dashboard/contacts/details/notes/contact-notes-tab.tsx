@@ -1,6 +1,7 @@
 import * as React from 'react';
 
 import { ContactNotes } from '@/components/dashboard/contacts/details/notes/contact-notes';
+import { getContactMeetings } from '@/data/contacts/get-contact-meetings';
 import { getContactNotes } from '@/data/contacts/get-contact-notes';
 import type { ContactDto } from '@/types/dtos/contact-dto';
 
@@ -11,11 +12,15 @@ export type ContactNotesTabProps = {
 export async function ContactNotesTab({
   contact
 }: ContactNotesTabProps): Promise<React.JSX.Element> {
-  const notes = await getContactNotes({ contactId: contact.id });
+  const [notes, meetings] = await Promise.all([
+    getContactNotes({ contactId: contact.id }),
+    getContactMeetings({ contactId: contact.id })
+  ]);
   return (
     <ContactNotes
       contact={contact}
       notes={notes}
+      meetings={meetings}
     />
   );
 }

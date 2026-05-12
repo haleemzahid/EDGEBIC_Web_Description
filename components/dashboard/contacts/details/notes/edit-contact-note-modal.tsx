@@ -2,11 +2,13 @@
 
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
 import { ContactPriority } from '@prisma/client';
+import { format } from 'date-fns';
 import { type SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { updateContactNote } from '@/actions/contacts/update-contact-note';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -50,14 +52,18 @@ import {
   updateContactNoteSchema,
   type UpdateContactNoteSchema
 } from '@/schemas/contacts/update-contact-note-schema';
+import type { ContactMeetingDto } from '@/types/dtos/contact-meeting-dto';
 import type { ContactNoteDto } from '@/types/dtos/contact-note-dto';
 
 export type EditContactNoteModalProps = NiceModalHocProps & {
   note: ContactNoteDto;
+  meetings?: ContactMeetingDto[];
 };
 
+const NO_MEETING = '__none__';
+
 export const EditContactNoteModal = NiceModal.create<EditContactNoteModalProps>(
-  ({ note }) => {
+  ({ note, meetings = [] }) => {
     const modal = useEnhancedModal();
     const mdUp = useMediaQuery(MediaQueries.MdUp, { ssr: false });
     const methods = useZodForm({
@@ -66,7 +72,9 @@ export const EditContactNoteModal = NiceModal.create<EditContactNoteModalProps>(
       defaultValues: {
         id: note.id,
         text: note.text,
-        priority: note.priority
+        priority: note.priority,
+        pinned: note.pinned,
+        meetingId: note.meetingId ?? null
       }
     });
     const title = 'Edit note';
@@ -146,6 +154,66 @@ export const EditContactNoteModal = NiceModal.create<EditContactNoteModalProps>(
                 </Select>
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={methods.control}
+          name="meetingId"
+          render={({ field }) => (
+            <FormItem className="flex w-full flex-col">
+              <FormLabel>Link to meeting (optional)</FormLabel>
+              <FormControl>
+                <Select
+                  value={field.value ? field.value : NO_MEETING}
+                  onValueChange={(next) =>
+                    field.onChange(next === NO_MEETING ? null : next)
+                  }
+                  disabled={methods.formState.isSubmitting}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_MEETING}>— No meeting —</SelectItem>
+                    {meetings.map((m) => (
+                      <SelectItem
+                        key={m.id}
+                        value={m.id}
+                      >
+                        📅 {format(m.startsAt, 'MMM d')} · {m.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <p className="text-xs text-muted-foreground">
+                If linked, the note will also appear on the meeting&apos;s
+                detail.
+              </p>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={methods.control}
+          name="pinned"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start gap-2 space-y-0">
+              <FormControl>
+                <Checkbox
+                  checked={field.value ?? false}
+                  onCheckedChange={(value) => field.onChange(!!value)}
+                  disabled={methods.formState.isSubmitting}
+                  className="mt-0.5"
+                />
+              </FormControl>
+              <div className="leading-tight">
+                <FormLabel className="cursor-pointer">Pin to top</FormLabel>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Keep this note pinned at the top of the list.
+                </p>
+              </div>
             </FormItem>
           )}
         />

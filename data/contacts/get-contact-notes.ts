@@ -48,6 +48,8 @@ export async function getContactNotes(
           contactId: true,
           text: true,
           priority: true,
+          pinned: true,
+          meetingId: true,
           createdAt: true,
           updatedAt: true,
           user: {
@@ -56,11 +58,16 @@ export async function getContactNotes(
               name: true,
               image: true
             }
+          },
+          meeting: {
+            select: {
+              id: true,
+              title: true,
+              startsAt: true
+            }
           }
         },
-        orderBy: {
-          createdAt: SortDirection.Asc
-        }
+        orderBy: [{ pinned: SortDirection.Desc }, { createdAt: SortDirection.Asc }]
       });
 
       const mapped: ContactNoteDto[] = notes.map((note) => ({
@@ -68,6 +75,10 @@ export async function getContactNotes(
         contactId: note.contactId,
         text: note.text ?? undefined,
         priority: note.priority,
+        pinned: note.pinned,
+        meetingId: note.meetingId ?? undefined,
+        meetingTitle: note.meeting?.title,
+        meetingStartsAt: note.meeting?.startsAt,
         edited: note.createdAt.getTime() !== note.updatedAt.getTime(),
         createdAt: note.createdAt,
         updatedAt: note.updatedAt,

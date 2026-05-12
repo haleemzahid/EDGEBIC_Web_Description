@@ -19,18 +19,21 @@ import {
 } from '@/components/ui/select';
 import { MediaQueries } from '@/constants/media-queries';
 import type { ContactDto } from '@/types/dtos/contact-dto';
+import type { ContactMeetingDto } from '@/types/dtos/contact-meeting-dto';
 import type { ContactNoteDto } from '@/types/dtos/contact-note-dto';
 
 export type ContactNotesProps = {
   contact: ContactDto;
   notes: ContactNoteDto[];
+  meetings: ContactMeetingDto[];
 };
 
 const ALL = '__all__';
 
 export function ContactNotes({
   contact,
-  notes
+  notes,
+  meetings
 }: ContactNotesProps): React.JSX.Element {
   const [priorityFilter, setPriorityFilter] = React.useState<string>(ALL);
   const [authorFilter, setAuthorFilter] = React.useState<string>(ALL);
@@ -54,13 +57,21 @@ export function ContactNotes({
           return false;
         if (authorFilter !== ALL && note.sender.id !== authorFilter)
           return false;
+        if (meetingFilter !== ALL) {
+          if (meetingFilter === 'none' && note.meetingId) return false;
+          if (meetingFilter !== 'none' && note.meetingId !== meetingFilter)
+            return false;
+        }
         return true;
       }),
-    [notes, priorityFilter, authorFilter]
+    [notes, priorityFilter, authorFilter, meetingFilter]
   );
 
   const handleShowAddContactNoteModal = async (): Promise<void> => {
-    NiceModal.show(AddContactNoteModal, { contactId: contact.id });
+    NiceModal.show(AddContactNoteModal, {
+      contactId: contact.id,
+      meetings
+    });
   };
 
   const handleClear = (): void => {
@@ -120,7 +131,13 @@ export function ContactNotes({
             value={meetingFilter}
             onChange={setMeetingFilter}
             placeholder="All meetings"
-            options={[{ value: 'none', label: '— No meeting —' }]}
+            options={[
+              { value: 'none', label: '— No meeting —' },
+              ...meetings.map((m) => ({
+                value: m.id,
+                label: m.title
+              }))
+            ]}
           />
           {hasActiveFilter && (
             <Button
@@ -143,6 +160,7 @@ export function ContactNotes({
               <ContactNoteCard
                 key={note.id}
                 note={note}
+                meetings={meetings}
               />
             ))}
           </div>

@@ -3,8 +3,8 @@
 import * as React from 'react';
 import NiceModal from '@ebay/nice-modal-react';
 import { ContactPriority } from '@prisma/client';
-import { formatDistanceToNow } from 'date-fns';
-import { PencilIcon, TrashIcon } from 'lucide-react';
+import { format, formatDistanceToNow } from 'date-fns';
+import { CalendarIcon, PencilIcon, PinIcon, TrashIcon } from 'lucide-react';
 
 import { DeleteContactNoteModal } from '@/components/dashboard/contacts/details/notes/delete-contact-note-modal';
 import { EditContactNoteModal } from '@/components/dashboard/contacts/details/notes/edit-contact-note-modal';
@@ -15,26 +15,33 @@ import { Card, type CardProps } from '@/components/ui/card';
 import { EmptyText } from '@/components/ui/empty-text';
 import { convertMarkdownToHtml } from '@/lib/markdown/convert-markdown-to-html';
 import { cn, getInitials } from '@/lib/utils';
+import type { ContactMeetingDto } from '@/types/dtos/contact-meeting-dto';
 import type { ContactNoteDto } from '@/types/dtos/contact-note-dto';
 
 type ContactNoteCardProps = CardProps & {
   note: ContactNoteDto;
+  meetings?: ContactMeetingDto[];
 };
 
 export function ContactNoteCard({
   note,
+  meetings,
   className,
   ...others
 }: ContactNoteCardProps): React.JSX.Element {
   const handleShowEditContactNoteModal = (): void => {
-    NiceModal.show(EditContactNoteModal, { note });
+    NiceModal.show(EditContactNoteModal, { note, meetings });
   };
   const handleShowDeleteContactNoteModal = (): void => {
     NiceModal.show(DeleteContactNoteModal, { note });
   };
   return (
     <Card
-      className={cn('p-4', className)}
+      className={cn(
+        'p-4',
+        note.pinned && 'border-amber-200 bg-amber-50/40',
+        className
+      )}
       {...others}
     >
       <div className="mb-3 flex flex-row items-start justify-between gap-2">
@@ -57,6 +64,15 @@ export function ContactNoteCard({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {note.pinned && (
+            <Badge
+              variant="secondary"
+              className="border-transparent bg-amber-200 text-[11px] text-amber-900 hover:bg-amber-200"
+            >
+              <PinIcon className="mr-1 size-3 shrink-0" />
+              Pinned
+            </Badge>
+          )}
           {note.priority === ContactPriority.HIGH && (
             <Badge
               variant="secondary"
@@ -101,6 +117,20 @@ export function ContactNoteCard({
         </div>
       ) : (
         <EmptyText className="text-sm opacity-65">Empty</EmptyText>
+      )}
+      {note.meetingTitle && (
+        <div className="mt-3 flex items-center gap-1.5 border-t pt-2 text-xs text-muted-foreground">
+          <CalendarIcon className="size-3.5 shrink-0" />
+          <span>
+            Linked to{' '}
+            <span className="font-medium text-foreground">
+              {note.meetingStartsAt
+                ? `${format(note.meetingStartsAt, 'MMM d')} · `
+                : ''}
+              {note.meetingTitle}
+            </span>
+          </span>
+        </div>
       )}
     </Card>
   );

@@ -5,6 +5,10 @@ export type ContactNoteDto = {
   contactId: string;
   text?: string;
   priority: ContactPriority;
+  pinned: boolean;
+  meetingId?: string;
+  meetingTitle?: string;
+  meetingStartsAt?: Date;
   edited: boolean;
   createdAt: Date;
   updatedAt: Date;

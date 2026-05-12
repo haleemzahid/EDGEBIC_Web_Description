@@ -23,7 +23,22 @@ export const addContactNoteSchema = z.object({
     .or(z.literal('')),
   priority: z.nativeEnum(ContactPriority, {
     invalid_type_error: 'Priority must be a valid value'
-  })
+  }),
+  pinned: z
+    .boolean({
+      invalid_type_error: 'Pinned must be a boolean.'
+    })
+    .optional(),
+  meetingId: z
+    .string({
+      invalid_type_error: 'Meeting id must be a string.'
+    })
+    .trim()
+    .uuid('Meeting id is invalid.')
+    .max(36, 'Maximum 36 characters allowed.')
+    .optional()
+    .or(z.literal(''))
+    .nullable()
 });
 
 export type AddContactNoteSchema = z.infer<typeof addContactNoteSchema>;

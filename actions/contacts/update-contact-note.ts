@@ -28,7 +28,13 @@ export const updateContactNote = authActionClient
       where: { id: parsedInput.id },
       data: {
         text: parsedInput.text,
-        priority: parsedInput.priority
+        priority: parsedInput.priority,
+        pinned: parsedInput.pinned ?? undefined,
+        meetingId: parsedInput.meetingId === undefined
+          ? undefined
+          : parsedInput.meetingId === '' || parsedInput.meetingId === null
+            ? null
+            : parsedInput.meetingId
       },
       select: { contactId: true }
     });

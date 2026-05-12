@@ -16,6 +16,8 @@ export const addContactNote = authActionClient
         contactId: parsedInput.contactId,
         text: parsedInput.text ? parsedInput.text : undefined,
         priority: parsedInput.priority,
+        pinned: parsedInput.pinned ?? false,
+        meetingId: parsedInput.meetingId ? parsedInput.meetingId : null,
         userId: session.user.id
       },
       select: {
