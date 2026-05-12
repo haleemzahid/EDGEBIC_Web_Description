@@ -108,7 +108,7 @@ export const AddContactNoteModal = NiceModal.create<AddContactNoteModalProps>(
           control={methods.control}
           name="text"
           render={({ field }) => (
-            <FormItem className="flex w-full flex-col">
+            <FormItem className="flex w-full flex-col space-y-1.5">
               <FormLabel>Note</FormLabel>
               <FormControl>
                 <TextEditor
@@ -116,7 +116,7 @@ export const AddContactNoteModal = NiceModal.create<AddContactNoteModalProps>(
                   setText={(value: string) =>
                     field.onChange(convertHtmlToMarkdown(value))
                   }
-                  height="240px"
+                  height="160px"
                 />
               </FormControl>
               <p className="text-xs text-muted-foreground">
@@ -126,93 +126,91 @@ export const AddContactNoteModal = NiceModal.create<AddContactNoteModalProps>(
             </FormItem>
           )}
         />
-        <FormField
-          control={methods.control}
-          name="priority"
-          render={({ field }) => (
-            <FormItem className="flex w-full flex-col">
-              <FormLabel>Priority</FormLabel>
-              <FormControl>
-                <Select
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  disabled={methods.formState.isSubmitting}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ContactPriority.LOW}>Low</SelectItem>
-                    <SelectItem value={ContactPriority.MEDIUM}>
-                      Normal
-                    </SelectItem>
-                    <SelectItem value={ContactPriority.HIGH}>
-                      Important
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={methods.control}
-          name="meetingId"
-          render={({ field }) => (
-            <FormItem className="flex w-full flex-col">
-              <FormLabel>Link to meeting (optional)</FormLabel>
-              <FormControl>
-                <Select
-                  value={field.value ? field.value : NO_MEETING}
-                  onValueChange={(next) =>
-                    field.onChange(next === NO_MEETING ? null : next)
-                  }
-                  disabled={methods.formState.isSubmitting}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NO_MEETING}>— No meeting —</SelectItem>
-                    {meetings.map((m) => (
-                      <SelectItem
-                        key={m.id}
-                        value={m.id}
-                      >
-                        📅 {format(m.startsAt, 'MMM d')} · {m.title}
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={methods.control}
+            name="priority"
+            render={({ field }) => (
+              <FormItem className="flex w-full flex-col space-y-1.5">
+                <FormLabel>Priority</FormLabel>
+                <FormControl>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    disabled={methods.formState.isSubmitting}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ContactPriority.LOW}>Low</SelectItem>
+                      <SelectItem value={ContactPriority.MEDIUM}>
+                        Normal
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <p className="text-xs text-muted-foreground">
-                If linked, the note will also appear on the meeting&apos;s
-                detail.
-              </p>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                      <SelectItem value={ContactPriority.HIGH}>
+                        Important
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={methods.control}
+            name="meetingId"
+            render={({ field }) => (
+              <FormItem className="flex w-full flex-col space-y-1.5">
+                <FormLabel>Link to meeting</FormLabel>
+                <FormControl>
+                  <Select
+                    value={field.value ? field.value : NO_MEETING}
+                    onValueChange={(next) =>
+                      field.onChange(next === NO_MEETING ? null : next)
+                    }
+                    disabled={methods.formState.isSubmitting}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NO_MEETING}>
+                        — No meeting —
+                      </SelectItem>
+                      {meetings.map((m) => (
+                        <SelectItem
+                          key={m.id}
+                          value={m.id}
+                        >
+                          📅 {format(m.startsAt, 'MMM d')} · {m.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         <FormField
           control={methods.control}
           name="pinned"
           render={({ field }) => (
-            <FormItem className="flex flex-row items-start gap-2 space-y-0">
+            <FormItem className="space-y-1.5">
+              <FormLabel>Pin to top</FormLabel>
               <FormControl>
-                <Checkbox
-                  checked={field.value ?? false}
-                  onCheckedChange={(value) => field.onChange(!!value)}
-                  disabled={methods.formState.isSubmitting}
-                  className="mt-0.5"
-                />
-              </FormControl>
-              <div className="leading-tight">
-                <FormLabel className="cursor-pointer">Pin to top</FormLabel>
-                <p className="mt-0.5 text-xs text-muted-foreground">
+                <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                  <Checkbox
+                    checked={field.value ?? false}
+                    onCheckedChange={(value) => field.onChange(!!value)}
+                    disabled={methods.formState.isSubmitting}
+                  />
                   Keep this note pinned at the top of the list.
-                </p>
-              </div>
+                </label>
+              </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -243,7 +241,7 @@ export const AddContactNoteModal = NiceModal.create<AddContactNoteModalProps>(
         {mdUp ? (
           <Dialog open={modal.visible}>
             <DialogContent
-              className="max-w-xl"
+              className="max-w-lg"
               onClose={modal.handleClose}
               onAnimationEndCapture={modal.handleAnimationEndCapture}
             >
