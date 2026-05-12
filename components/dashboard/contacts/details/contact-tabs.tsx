@@ -92,7 +92,7 @@ export async function ContactTabs({
           value={Tab.Inbox}
           className="m-0 h-full overflow-hidden p-0 data-[state=active]:flex data-[state=active]:flex-col"
         >
-          <ContactInboxTab />
+          <ContactInboxTab contact={contact} />
         </TabsContent>
 
         <TabsContent
