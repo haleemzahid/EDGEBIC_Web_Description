@@ -1,14 +1,29 @@
 'use client';
 
 import * as React from 'react';
+import NiceModal from '@ebay/nice-modal-react';
 import { ActionType } from '@prisma/client';
+import {
+  type ColumnDef,
+  getCoreRowModel,
+  useReactTable
+} from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { FilePlus2Icon, MessageSquareIcon, PenLineIcon } from 'lucide-react';
+import {
+  FilePlus2Icon,
+  MessageSquareIcon,
+  PencilIcon,
+  PenLineIcon,
+  TrashIcon
+} from 'lucide-react';
 
 import { ContactTimelineAddComment } from '@/components/dashboard/contacts/details/timeline/contact-timeline-add-comment';
+import { DeleteContactCommentModal } from '@/components/dashboard/contacts/details/timeline/delete-contact-comment-modal';
+import { UpdateContactCommentModal } from '@/components/dashboard/contacts/details/timeline/update-contact-comment-modal';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { DataTable } from '@/components/ui/data-table';
 import { ResponsiveScrollArea } from '@/components/ui/scroll-area';
 import {
   Sheet,
@@ -16,14 +31,6 @@ import {
   SheetHeader,
   SheetTitle
 } from '@/components/ui/sheet';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '@/components/ui/table';
 import { contactRecordLabel, contactStageLabel } from '@/constants/labels';
 import { MediaQueries } from '@/constants/media-queries';
 import { capitalize, getInitials } from '@/lib/utils';
@@ -31,6 +38,7 @@ import type { ContactDto } from '@/types/dtos/contact-dto';
 import type { ProfileDto } from '@/types/dtos/profile-dto';
 import type {
   ActivityTimelineEventDto,
+  CommentTimelineEventDto,
   TimelineEventDto
 } from '@/types/dtos/timeline-event-dto';
 
@@ -299,9 +307,193 @@ export function ContactActivity({
   const [selectedEvent, setSelectedEvent] =
     React.useState<ActivityTimelineEventDto | null>(null);
 
-  const visibleEvents = showComments
-    ? events
-    : events.filter((e) => e.type !== 'comment');
+  const visibleEvents = React.useMemo(
+    () => (showComments ? events : events.filter((e) => e.type !== 'comment')),
+    [events, showComments]
+  );
+
+  const columns = React.useMemo<ColumnDef<TimelineEventDto>[]>(
+    () => [
+      {
+        id: 'date',
+        size: 128,
+        header: () => <span className="pl-4">Date</span>,
+        cell: ({ row }) => {
+          const occurredAt =
+            row.original.type === 'activity'
+              ? row.original.occurredAt
+              : row.original.createdAt;
+          return (
+            <span className="pl-4 text-xs tabular-nums text-muted-foreground">
+              {format(occurredAt, 'dd MMM yyyy')}
+            </span>
+          );
+        }
+      },
+      {
+        id: 'time',
+        size: 80,
+        header: () => 'Time',
+        cell: ({ row }) => {
+          const occurredAt =
+            row.original.type === 'activity'
+              ? row.original.occurredAt
+              : row.original.createdAt;
+          return (
+            <span className="text-xs text-muted-foreground">
+              {format(occurredAt, 'HH:mm')}
+            </span>
+          );
+        }
+      },
+      {
+        id: 'user',
+        size: 160,
+        header: () => 'User',
+        cell: ({ row }) => {
+          const actor =
+            row.original.type === 'activity'
+              ? row.original.actor
+              : row.original.sender;
+          const actorName = actor.name || 'Contact form';
+          return (
+            <div className="flex items-center gap-2">
+              <Avatar className="size-6 shrink-0 rounded-full">
+                <AvatarImage
+                  src={actor.image}
+                  alt="avatar"
+                />
+                <AvatarFallback className="text-[10px]">
+                  {getInitials(actorName) || 'CF'}
+                </AvatarFallback>
+              </Avatar>
+              <span className="truncate text-xs font-medium">{actorName}</span>
+            </div>
+          );
+        }
+      },
+      {
+        id: 'action',
+        size: 176,
+        header: () => 'Action',
+        cell: ({ row }) => {
+          if (row.original.type === 'comment') {
+            return (
+              <div className="flex items-center gap-1.5">
+                <MessageSquareIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                <Badge
+                  variant="outline"
+                  className="text-[11px]"
+                >
+                  Comment
+                </Badge>
+              </div>
+            );
+          }
+          const Icon = actionIcon[row.original.actionType];
+          return (
+            <div className="flex items-center gap-1.5">
+              <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+              <Badge
+                variant={actionVariant[row.original.actionType]}
+                className="text-[11px]"
+              >
+                {actionLabel[row.original.actionType]}
+              </Badge>
+            </div>
+          );
+        }
+      },
+      {
+        id: 'details',
+        header: () => 'Details',
+        cell: ({ row }) => {
+          if (row.original.type === 'comment') {
+            return (
+              <span className="block max-w-xs truncate text-xs text-muted-foreground">
+                {row.original.text}
+              </span>
+            );
+          }
+          return (
+            <span className="text-xs text-muted-foreground">
+              {getActivitySummary(row.original)}
+            </span>
+          );
+        }
+      },
+      {
+        id: 'actions',
+        size: 96,
+        header: () => null,
+        cell: ({ row }) => {
+          if (row.original.type === 'comment') {
+            const comment = row.original as CommentTimelineEventDto;
+            const canEdit = profile.id === comment.sender.id;
+            return (
+              <div className="flex items-center justify-end gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-7"
+                  title="Edit comment"
+                  disabled={!canEdit}
+                  onClick={() => {
+                    NiceModal.show(UpdateContactCommentModal, { comment });
+                  }}
+                >
+                  <PencilIcon className="size-3.5 shrink-0" />
+                  <span className="sr-only">Edit comment</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 text-destructive hover:text-destructive"
+                  title="Delete comment"
+                  onClick={() => {
+                    NiceModal.show(DeleteContactCommentModal, { comment });
+                  }}
+                >
+                  <TrashIcon className="size-3.5 shrink-0" />
+                  <span className="sr-only">Delete comment</span>
+                </Button>
+              </div>
+            );
+          }
+          const activity = row.original;
+          const fields = parseFields(activity);
+          if (fields.length === 0) {
+            return null;
+          }
+          return (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 px-2.5 text-[11px]"
+              onClick={() => setSelectedEvent(activity)}
+            >
+              Details
+            </Button>
+          );
+        }
+      }
+    ],
+    [profile.id]
+  );
+
+  const table = useReactTable({
+    data: visibleEvents,
+    columns,
+    getRowId: (row) => row.id,
+    getCoreRowModel: getCoreRowModel(),
+    defaultColumn: {
+      minSize: 0,
+      size: 0
+    }
+  });
 
   return (
     <ResponsiveScrollArea
@@ -320,135 +512,16 @@ export function ContactActivity({
           />
         </div>
 
-        {/* Activity table */}
+        {/* Activity data grid */}
         {visibleEvents.length === 0 ? (
           <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
             No activity yet.
           </div>
         ) : (
-          <Table>
-            <TableHeader className="sticky top-0 z-20 shadow-sm">
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="w-32 pl-4">Date</TableHead>
-                <TableHead className="w-20">Time</TableHead>
-                <TableHead className="w-40">User</TableHead>
-                <TableHead className="w-44">Action</TableHead>
-                <TableHead>Details</TableHead>
-                <TableHead className="w-24" />
-              </TableRow>
-            </TableHeader>
-            <TableBody showLastRowBorder>
-              {visibleEvents.map((event) => {
-                const occurredAt =
-                  event.type === 'activity'
-                    ? event.occurredAt
-                    : event.createdAt;
-                const actor =
-                  event.type === 'activity' ? event.actor : event.sender;
-                const actorName = actor.name || 'Contact form';
-
-                if (event.type === 'comment') {
-                  return (
-                    <TableRow key={event.id}>
-                      <TableCell className="pl-4 text-xs tabular-nums text-muted-foreground">
-                        {format(occurredAt, 'dd MMM yyyy')}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {format(occurredAt, 'HH:mm')}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="size-6 shrink-0 rounded-full">
-                            <AvatarImage
-                              src={actor.image}
-                              alt="avatar"
-                            />
-                            <AvatarFallback className="text-[10px]">
-                              {getInitials(actorName)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="truncate text-xs font-medium">
-                            {actorName}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1.5">
-                          <MessageSquareIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                          <Badge
-                            variant="outline"
-                            className="text-[11px]"
-                          >
-                            Comment
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell className="max-w-xs truncate text-xs text-muted-foreground">
-                        {event.text}
-                      </TableCell>
-                      <TableCell />
-                    </TableRow>
-                  );
-                }
-
-                const Icon = actionIcon[event.actionType];
-                const fields = parseFields(event);
-                return (
-                  <TableRow key={event.id}>
-                    <TableCell className="pl-4 text-xs tabular-nums text-muted-foreground">
-                      {format(occurredAt, 'dd MMM yyyy')}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {format(occurredAt, 'HH:mm')}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="size-6 shrink-0 rounded-full">
-                          <AvatarImage
-                            src={actor.image}
-                            alt="avatar"
-                          />
-                          <AvatarFallback className="text-[10px]">
-                            {getInitials(actorName) || 'CF'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="truncate text-xs font-medium">
-                          {actorName}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        <Icon className="size-3.5 shrink-0 text-muted-foreground" />
-                        <Badge
-                          variant={actionVariant[event.actionType]}
-                          className="text-[11px]"
-                        >
-                          {actionLabel[event.actionType]}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {getActivitySummary(event)}
-                    </TableCell>
-                    <TableCell>
-                      {fields.length > 0 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-7 px-2.5 text-[11px]"
-                          onClick={() => setSelectedEvent(event)}
-                        >
-                          Details
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          <DataTable
+            fixedHeader
+            table={table}
+          />
         )}
       </div>
 
