@@ -3,12 +3,7 @@
 import * as React from 'react';
 import { ActionType } from '@prisma/client';
 import { format } from 'date-fns';
-import {
-  FilePlus2Icon,
-  MessageSquareIcon,
-  PenLineIcon,
-  XIcon
-} from 'lucide-react';
+import { FilePlus2Icon, MessageSquareIcon, PenLineIcon } from 'lucide-react';
 
 import { ContactTimelineAddComment } from '@/components/dashboard/contacts/details/timeline/contact-timeline-add-comment';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -17,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { ResponsiveScrollArea } from '@/components/ui/scroll-area';
 import {
   Sheet,
-  SheetClose,
   SheetContent,
   SheetHeader,
   SheetTitle
@@ -199,19 +193,10 @@ function DetailsSheet({
         side="right"
         className="flex w-full flex-col gap-0 p-0 sm:max-w-lg"
       >
-        <SheetHeader className="flex flex-row items-center justify-between border-b px-5 py-4">
+        <SheetHeader className="border-b px-5 py-4">
           <SheetTitle className="text-sm font-semibold">
             {event ? actionLabel[event.actionType] : ''}
           </SheetTitle>
-          <SheetClose asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 shrink-0"
-            >
-              <XIcon className="size-4" />
-            </Button>
-          </SheetClose>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto">
