@@ -92,7 +92,9 @@ export async function ContactTabs({
           value={Tab.Inbox}
           className="m-0 h-full overflow-hidden p-0 data-[state=active]:flex data-[state=active]:flex-col"
         >
-          <ContactInboxTab contact={contact} />
+          <React.Suspense>
+            <ContactInboxTab contact={contact} />
+          </React.Suspense>
         </TabsContent>
 
         <TabsContent
