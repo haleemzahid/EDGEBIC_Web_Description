@@ -38,7 +38,10 @@ const fieldDisplay: Record<string, { label: string; description: string }> = {
   phone: { label: 'Phone', description: 'Phone number provided' },
   address: { label: 'Address', description: 'Mailing or office address' },
   message: { label: 'Message', description: 'Message left in the form' },
-  description: { label: 'Description', description: 'Notes about this contact' },
+  description: {
+    label: 'Description',
+    description: 'Notes about this contact'
+  },
   productInterest: {
     label: 'Product interest',
     description: 'Product the contact is interested in'
@@ -50,7 +53,38 @@ const fieldDisplay: Record<string, { label: string; description: string }> = {
   record: { label: 'Record type', description: 'Person or company' },
   stage: { label: 'Stage', description: 'Pipeline stage' },
   tags: { label: 'Tags', description: 'Tags attached to this contact' },
-  image: { label: 'Avatar', description: 'Contact avatar image' }
+  image: { label: 'Avatar', description: 'Contact avatar image' },
+  jobTitle: { label: 'Job title', description: 'Contact job title' },
+  company: { label: 'Company', description: 'Company or organisation' },
+  website: { label: 'Website', description: 'Company or personal website' },
+  linkedIn: { label: 'LinkedIn', description: 'LinkedIn profile URL' },
+  country: { label: 'Country', description: 'Country of the contact' },
+  timezone: { label: 'Timezone', description: 'Contact timezone' },
+  leadSource: {
+    label: 'Lead source',
+    description: 'How this lead was acquired'
+  },
+  leadSourceDate: {
+    label: 'Lead source date',
+    description: 'Date of lead acquisition'
+  },
+  lastContactedAt: {
+    label: 'Last contacted',
+    description: 'Date last contacted'
+  },
+  lastContactedNote: {
+    label: 'Last contact note',
+    description: 'Note from last contact'
+  },
+  lastMeetingAt: { label: 'Last meeting', description: 'Date of last meeting' },
+  lastMeetingNote: {
+    label: 'Last meeting note',
+    description: 'Note from last meeting'
+  },
+  stripeCustomerId: {
+    label: 'Stripe ID',
+    description: 'Stripe customer identifier'
+  }
 };
 
 function describeField(key: string): { label: string; description: string } {
@@ -138,28 +172,36 @@ export function ContactTimelineActivity({
 
 const actionTypeToText: Record<ActionType, string> = {
   [ActionType.CREATE]: 'submitted the form.',
-  [ActionType.UPDATE]: 'submitted the form.',
+  [ActionType.UPDATE]: 'updated the contact.',
   [ActionType.DELETE]: 'deleted the contact.'
 };
 
 const actionMeta: Record<
   ActionType,
-  { title: string; subtitle: string; Icon: React.ComponentType<{ className?: string }> }
+  {
+    title: string;
+    subtitle: string;
+    Icon: React.ComponentType<{ className?: string }>;
+    showDiff: boolean;
+  }
 > = {
   [ActionType.CREATE]: {
     title: 'Form submission',
     subtitle: 'Details captured from the contact form',
-    Icon: FilePlus2Icon
+    Icon: FilePlus2Icon,
+    showDiff: false
   },
   [ActionType.UPDATE]: {
-    title: 'Form submission',
-    subtitle: 'Details captured from the contact form',
-    Icon: FilePlus2Icon
+    title: 'Properties updated',
+    subtitle: 'Fields changed on this contact',
+    Icon: FilePlus2Icon,
+    showDiff: true
   },
   [ActionType.DELETE]: {
-    title: 'Form submission',
-    subtitle: 'Details captured from the contact form',
-    Icon: FilePlus2Icon
+    title: 'Contact deleted',
+    subtitle: 'This contact was removed',
+    Icon: FilePlus2Icon,
+    showDiff: false
   }
 };
 
@@ -172,7 +214,7 @@ function SubmissionDetailsCard({
   actionType,
   fields
 }: SubmissionDetailsCardProps): React.JSX.Element {
-  const { title, subtitle, Icon } = actionMeta[actionType];
+  const { title, subtitle, Icon, showDiff } = actionMeta[actionType];
   return (
     <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
       <div className="flex items-center gap-3 border-b bg-muted/30 px-4 py-3">
@@ -186,31 +228,78 @@ function SubmissionDetailsCard({
           </p>
         </div>
       </div>
-      <dl className="divide-y text-sm">
-        {fields.map(({ key, label, description, newValue }) => (
-          <div
-            key={key}
-            className="grid grid-cols-[140px_1fr] gap-3 px-4 py-3"
-          >
-            <dt className="min-w-0">
-              <p className="truncate text-xs font-medium text-foreground">
+
+      {showDiff ? (
+        /* UPDATE — vertical list with old → new diff */
+        <div className="divide-y text-sm">
+          {fields.map(({ key, label, description, oldValue, newValue }) => (
+            <div
+              key={key}
+              className="grid grid-cols-[140px_1fr] gap-3 px-4 py-3"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-xs font-medium text-foreground">
+                  {label}
+                </p>
+                {description && (
+                  <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
+                    {description}
+                  </p>
+                )}
+              </div>
+              <div className="min-w-0 space-y-0.5">
+                {oldValue ? (
+                  <>
+                    <p className="break-words text-xs text-muted-foreground line-through">
+                      {displayValue(key, oldValue)}
+                    </p>
+                    <p className="break-words text-sm text-foreground">
+                      {displayValue(key, newValue) || (
+                        <span className="text-muted-foreground opacity-65">Empty</span>
+                      )}
+                    </p>
+                  </>
+                ) : (
+                  <p className="break-words text-sm text-foreground">
+                    {displayValue(key, newValue) || (
+                      <span className="text-muted-foreground opacity-65">Empty</span>
+                    )}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        /* CREATE — horizontal column grid: label on top, value below, right border between */
+        <div
+          className="grid text-sm"
+          style={{
+            gridTemplateColumns: `repeat(${Math.min(fields.length, 6)}, minmax(0, 1fr))`
+          }}
+        >
+          {fields.map(({ key, label, newValue }, index) => (
+            <div
+              key={key}
+              className={`flex min-w-0 flex-col gap-2 p-3 ${
+                index < fields.length - 1 ? 'border-r' : ''
+              }`}
+            >
+              <p className="truncate text-[11px] font-medium text-muted-foreground">
                 {label}
               </p>
-              {description && (
-                <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
-                  {description}
-                </p>
-              )}
-            </dt>
-            <dd className="min-w-0 break-words text-sm text-foreground">
-              {displayValue(key, newValue) || (
-                <span className="text-muted-foreground opacity-65">Empty</span>
-              )}
-            </dd>
-          </div>
-        ))}
-      </dl>
+              <p
+                className="truncate text-xs font-medium text-foreground"
+                title={displayValue(key, newValue)}
+              >
+                {displayValue(key, newValue) || (
+                  <span className="text-muted-foreground opacity-50">—</span>
+                )}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
-

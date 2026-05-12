@@ -15,7 +15,20 @@ const fieldsToCheck = [
   'address',
   'phone',
   'stage',
-  'tags'
+  'tags',
+  'jobTitle',
+  'company',
+  'website',
+  'linkedIn',
+  'country',
+  'timezone',
+  'leadSource',
+  'leadSourceDate',
+  'lastContactedAt',
+  'lastContactedNote',
+  'lastMeetingAt',
+  'lastMeetingNote',
+  'stripeCustomerId'
 ] as const;
 
 type FieldToCheck = (typeof fieldsToCheck)[number];
