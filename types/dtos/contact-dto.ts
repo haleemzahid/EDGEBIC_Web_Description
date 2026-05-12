@@ -10,6 +10,22 @@ export type ContactDto = {
   email?: string;
   phone?: string;
   address?: string;
+  // Extended properties
+  jobTitle?: string;
+  company?: string;
+  website?: string;
+  linkedIn?: string;
+  country?: string;
+  timezone?: string;
+  leadSource?: string;
+  leadSourceDate?: Date;
+  // Activity
+  lastContactedAt?: Date;
+  lastContactedNote?: string;
+  lastMeetingAt?: Date;
+  lastMeetingNote?: string;
+  // Stripe
+  stripeCustomerId?: string;
   stage: ContactStage;
   isRead: boolean;
   description?: string;

@@ -5,9 +5,17 @@ import NiceModal from '@ebay/nice-modal-react';
 import { ContactRecord } from '@prisma/client';
 import { IdCardIcon } from '@radix-ui/react-icons';
 import {
+  BriefcaseIcon,
+  BuildingIcon,
+  CalendarIcon,
+  GlobeIcon,
+  KeyIcon,
   LayoutListIcon,
+  LinkedinIcon,
   MailIcon,
+  MapPinIcon,
   PhoneIcon,
+  RadioTowerIcon,
   SquareDashedKanbanIcon,
   TrashIcon,
   UploadIcon
@@ -168,9 +176,18 @@ function Properties(contact: ContactDto): React.JSX.Element {
       id: contact.id,
       record: contact.record,
       name: contact.name,
-      email: contact.email,
-      phone: contact.phone,
-      address: contact.address
+      email: contact.email ?? '',
+      phone: contact.phone ?? '',
+      address: contact.address ?? '',
+      jobTitle: contact.jobTitle ?? '',
+      company: contact.company ?? '',
+      website: contact.website ?? '',
+      linkedIn: contact.linkedIn ?? '',
+      country: contact.country ?? '',
+      timezone: contact.timezone ?? '',
+      leadSource: contact.leadSource ?? '',
+      leadSourceDate: contact.leadSourceDate ?? null,
+      stripeCustomerId: contact.stripeCustomerId ?? ''
     }
   });
   const canSubmit = !methods.formState.isSubmitting;
@@ -238,7 +255,7 @@ function Properties(contact: ContactDto): React.JSX.Element {
             </Button>
           )}
         </div>
-        <dl className="space-y-1 text-sm">
+        <div className="space-y-1 text-sm">
           <Property
             icon={<SquareDashedKanbanIcon className="size-3 shrink-0" />}
             term="Record"
@@ -389,6 +406,7 @@ function Properties(contact: ContactDto): React.JSX.Element {
                           className="h-7"
                           disabled={methods.formState.isSubmitting}
                           {...field}
+                          value={field.value ?? ''}
                         />
                       </FormControl>
                       <FormMessage />
@@ -401,7 +419,274 @@ function Properties(contact: ContactDto): React.JSX.Element {
             }
             placeholder="No address available"
           />
-        </dl>
+          <Property
+            icon={<BriefcaseIcon className="size-3 shrink-0" />}
+            term="Job title"
+            details={
+              editMode ? (
+                <FormField
+                  control={methods.control}
+                  name="jobTitle"
+                  render={({ field }) => (
+                    <FormItem className="flex w-full flex-col">
+                      <FormControl>
+                        <Input
+                          type="text"
+                          maxLength={128}
+                          className="h-7"
+                          disabled={methods.formState.isSubmitting}
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : (
+                contact.jobTitle
+              )
+            }
+            placeholder="No job title"
+          />
+          <Property
+            icon={<BuildingIcon className="size-3 shrink-0" />}
+            term="Company"
+            details={
+              editMode ? (
+                <FormField
+                  control={methods.control}
+                  name="company"
+                  render={({ field }) => (
+                    <FormItem className="flex w-full flex-col">
+                      <FormControl>
+                        <Input
+                          type="text"
+                          maxLength={255}
+                          className="h-7"
+                          disabled={methods.formState.isSubmitting}
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : (
+                contact.company
+              )
+            }
+            placeholder="No company"
+          />
+          <Property
+            icon={<GlobeIcon className="size-3 shrink-0" />}
+            term="Website"
+            details={
+              editMode ? (
+                <FormField
+                  control={methods.control}
+                  name="website"
+                  render={({ field }) => (
+                    <FormItem className="flex w-full flex-col">
+                      <FormControl>
+                        <Input
+                          type="url"
+                          maxLength={2048}
+                          className="h-7"
+                          disabled={methods.formState.isSubmitting}
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : contact.website ? (
+                <a
+                  href={contact.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="truncate text-primary hover:underline"
+                >
+                  {contact.website.replace(/^https?:\/\//, '')}
+                </a>
+              ) : undefined
+            }
+            placeholder="No website"
+          />
+          <Property
+            icon={<LinkedinIcon className="size-3 shrink-0" />}
+            term="LinkedIn"
+            details={
+              editMode ? (
+                <FormField
+                  control={methods.control}
+                  name="linkedIn"
+                  render={({ field }) => (
+                    <FormItem className="flex w-full flex-col">
+                      <FormControl>
+                        <Input
+                          type="url"
+                          maxLength={2048}
+                          className="h-7"
+                          disabled={methods.formState.isSubmitting}
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : contact.linkedIn ? (
+                <a
+                  href={contact.linkedIn}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="truncate text-primary hover:underline"
+                >
+                  {contact.linkedIn.replace(
+                    /^https?:\/\/(www\.)?linkedin\.com\/in\//,
+                    'in/'
+                  )}
+                </a>
+              ) : undefined
+            }
+            placeholder="No LinkedIn"
+          />
+          <Property
+            icon={<MapPinIcon className="size-3 shrink-0" />}
+            term="Country"
+            details={
+              editMode ? (
+                <FormField
+                  control={methods.control}
+                  name="country"
+                  render={({ field }) => (
+                    <FormItem className="flex w-full flex-col">
+                      <FormControl>
+                        <Input
+                          type="text"
+                          maxLength={128}
+                          className="h-7"
+                          disabled={methods.formState.isSubmitting}
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : (
+                contact.country
+              )
+            }
+            placeholder="No country"
+          />
+          <Property
+            icon={<RadioTowerIcon className="size-3 shrink-0" />}
+            term="Timezone"
+            details={
+              editMode ? (
+                <FormField
+                  control={methods.control}
+                  name="timezone"
+                  render={({ field }) => (
+                    <FormItem className="flex w-full flex-col">
+                      <FormControl>
+                        <Input
+                          type="text"
+                          maxLength={64}
+                          className="h-7"
+                          disabled={methods.formState.isSubmitting}
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : (
+                contact.timezone
+              )
+            }
+            placeholder="No timezone"
+          />
+          <Property
+            icon={<RadioTowerIcon className="size-3 shrink-0" />}
+            term="Lead source"
+            details={
+              editMode ? (
+                <FormField
+                  control={methods.control}
+                  name="leadSource"
+                  render={({ field }) => (
+                    <FormItem className="flex w-full flex-col">
+                      <FormControl>
+                        <Input
+                          type="text"
+                          maxLength={255}
+                          className="h-7"
+                          disabled={methods.formState.isSubmitting}
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : contact.leadSource ? (
+                <span>
+                  {contact.leadSource}
+                  {contact.leadSourceDate && (
+                    <span className="ml-1 text-muted-foreground">
+                      · {new Date(contact.leadSourceDate).toLocaleDateString()}
+                    </span>
+                  )}
+                </span>
+              ) : undefined
+            }
+            placeholder="No lead source"
+          />
+          <Property
+            icon={<KeyIcon className="size-3 shrink-0" />}
+            term="Stripe ID"
+            details={
+              editMode ? (
+                <FormField
+                  control={methods.control}
+                  name="stripeCustomerId"
+                  render={({ field }) => (
+                    <FormItem className="flex w-full flex-col">
+                      <FormControl>
+                        <Input
+                          type="text"
+                          maxLength={255}
+                          placeholder="cus_..."
+                          className="h-7 font-mono text-xs"
+                          disabled={methods.formState.isSubmitting}
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : contact.stripeCustomerId ? (
+                <span className="font-mono text-xs">
+                  {contact.stripeCustomerId}
+                </span>
+              ) : undefined
+            }
+            placeholder="Not linked"
+          />
+        </div>
       </form>
     </FormProvider>
   );
@@ -422,17 +707,17 @@ function Property({
 }: PropertyProps): React.JSX.Element {
   return (
     <div className="flex h-7 flex-row items-center whitespace-nowrap">
-      <dt className="flex h-7 min-w-24 flex-row items-center gap-2 text-muted-foreground">
+      <span className="flex h-7 min-w-24 flex-row items-center gap-2 text-muted-foreground">
         {icon}
         {term}
-      </dt>
-      <dd className="flex h-7 w-full max-w-[196px] flex-row items-center overflow-hidden text-ellipsis">
+      </span>
+      <span className="flex h-7 w-full max-w-[196px] flex-row items-center overflow-hidden text-ellipsis">
         {details ? (
           details
         ) : (
           <p className="text-muted-foreground opacity-65">{placeholder}</p>
         )}
-      </dd>
+      </span>
     </div>
   );
 }

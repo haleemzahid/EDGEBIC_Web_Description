@@ -29,9 +29,22 @@ export const updateContactProperties = authActionClient
       {
         record: parsedInput.record,
         name: parsedInput.name,
-        email: parsedInput.email,
-        address: parsedInput.address,
-        phone: parsedInput.phone
+        email: parsedInput.email || null,
+        address: parsedInput.address || null,
+        phone: parsedInput.phone || null,
+        jobTitle: parsedInput.jobTitle || null,
+        company: parsedInput.company || null,
+        website: parsedInput.website || null,
+        linkedIn: parsedInput.linkedIn || null,
+        country: parsedInput.country || null,
+        timezone: parsedInput.timezone || null,
+        leadSource: parsedInput.leadSource || null,
+        leadSourceDate: parsedInput.leadSourceDate ?? null,
+        stripeCustomerId: parsedInput.stripeCustomerId || null,
+        lastContactedAt: parsedInput.lastContactedAt ?? null,
+        lastContactedNote: parsedInput.lastContactedNote || null,
+        lastMeetingAt: parsedInput.lastMeetingAt ?? null,
+        lastMeetingNote: parsedInput.lastMeetingNote || null
       },
       session.user.id
     );
