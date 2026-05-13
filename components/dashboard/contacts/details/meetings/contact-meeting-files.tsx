@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import NiceModal from '@ebay/nice-modal-react';
 import { format } from 'date-fns';
 import {
   DownloadIcon,
@@ -13,8 +14,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { deleteContactMeetingFile } from '@/actions/contacts/delete-contact-meeting-file';
 import { uploadContactMeetingFile } from '@/actions/contacts/upload-contact-meeting-file';
+import { DeleteContactMeetingFileModal } from '@/components/dashboard/contacts/details/meetings/delete-contact-meeting-file-modal';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { MAX_MEETING_FILE_SIZE } from '@/schemas/contacts/upload-contact-meeting-file-schema';
@@ -37,10 +38,12 @@ export function ContactMeetingFiles({
   const handleFiles = async (list: FileList | null): Promise<void> => {
     if (!list || list.length === 0) return;
     setUploading(true);
+    let succeeded = 0;
+    const failed: string[] = [];
     try {
       for (const file of Array.from(list)) {
         if (file.size > MAX_MEETING_FILE_SIZE) {
-          toast.error(`${file.name} is too large (max 10 MB)`);
+          failed.push(`${file.name} (too large, max 10 MB)`);
           continue;
         }
         const dataBase64 = await readAsBase64(file);
@@ -52,10 +55,22 @@ export function ContactMeetingFiles({
           dataBase64
         });
         if (result?.serverError) {
-          toast.error(`Couldn't upload ${file.name}`);
+          failed.push(file.name);
         } else {
-          toast.success(`${file.name} uploaded`);
+          succeeded++;
         }
+      }
+      if (succeeded > 0) {
+        toast.success(
+          succeeded === 1 ? '1 file uploaded' : `${succeeded} files uploaded`
+        );
+      }
+      if (failed.length > 0) {
+        toast.error(
+          failed.length === 1
+            ? `Couldn't upload ${failed[0]}`
+            : `Couldn't upload ${failed.length} files`
+        );
       }
       router.refresh();
     } finally {
@@ -64,24 +79,14 @@ export function ContactMeetingFiles({
     }
   };
 
-  const handleDelete = async (file: ContactMeetingFileDto): Promise<void> => {
-    if (!confirm(`Delete "${file.name}"?`)) return;
-    const result = await deleteContactMeetingFile({ id: file.id });
-    if (result?.serverError) {
-      toast.error("Couldn't delete file");
-      return;
-    }
-    toast.success('File deleted');
-    router.refresh();
+  const handleDelete = (file: ContactMeetingFileDto): void => {
+    NiceModal.show(DeleteContactMeetingFileModal, { file });
   };
 
   return (
     <div className="space-y-4">
       <header className="flex flex-row items-center justify-between gap-2">
         <h2 className="text-sm font-semibold">Files</h2>
-        <span className="text-xs text-muted-foreground">
-          Drop files anywhere on the box below.
-        </span>
       </header>
       <div
         className={cn(
@@ -136,7 +141,7 @@ export function ContactMeetingFiles({
             <FileRow
               key={file.id}
               file={file}
-              onDelete={() => void handleDelete(file)}
+              onDelete={() => handleDelete(file)}
             />
           ))}
         </ul>

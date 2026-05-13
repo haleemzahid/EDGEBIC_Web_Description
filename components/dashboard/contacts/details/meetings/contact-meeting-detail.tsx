@@ -8,7 +8,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import {
   CalendarIcon,
   CheckSquare2Icon,
-  ClockIcon,
+  ExternalLinkIcon,
   FileTextIcon,
   MapPinIcon,
   PaperclipIcon,
@@ -22,10 +22,13 @@ import {
 
 import { ContactMeetingFiles } from '@/components/dashboard/contacts/details/meetings/contact-meeting-files';
 import { AddContactNoteModal } from '@/components/dashboard/contacts/details/notes/add-contact-note-modal';
-import { AddContactTaskModal } from '@/components/dashboard/contacts/details/tasks/add-contact-task-modal';
-import { AddContactTicketModal } from '@/components/dashboard/contacts/details/tickets/add-contact-ticket-modal';
 import { DeleteContactNoteModal } from '@/components/dashboard/contacts/details/notes/delete-contact-note-modal';
 import { EditContactNoteModal } from '@/components/dashboard/contacts/details/notes/edit-contact-note-modal';
+import { AddContactTaskModal } from '@/components/dashboard/contacts/details/tasks/add-contact-task-modal';
+import { DeleteContactTaskModal } from '@/components/dashboard/contacts/details/tasks/delete-contact-task-modal';
+import { EditContactTaskModal } from '@/components/dashboard/contacts/details/tasks/edit-contact-task-modal';
+import { AddContactTicketModal } from '@/components/dashboard/contacts/details/tickets/add-contact-ticket-modal';
+import { DeleteContactTicketModal } from '@/components/dashboard/contacts/details/tickets/delete-contact-ticket-modal';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -201,36 +204,6 @@ export function ContactMeetingDetail({
                 </p>
               </SubSection>
             )}
-
-            <div className="flex flex-wrap gap-2 pt-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={handleAddTask}
-              >
-                <PlusIcon className="mr-1 size-3.5 shrink-0" />
-                Create task
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={handleAddTicket}
-              >
-                <PlusIcon className="mr-1 size-3.5 shrink-0" />
-                Create ticket
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={handleAddNote}
-              >
-                <PlusIcon className="mr-1 size-3.5 shrink-0" />
-                Add note
-              </Button>
-            </div>
           </TabsContent>
 
           {/* Files */}
@@ -274,7 +247,8 @@ export function ContactMeetingDetail({
                     <TaskRow
                       key={task.id}
                       task={task}
-                      contactId={contact.id}
+                      meetings={meetings}
+                      members={members}
                     />
                   ))}
                 </ul>
@@ -576,6 +550,9 @@ function TicketRow({
   ticket: ContactTicketDto;
   contactId: string;
 }): React.JSX.Element {
+  const handleDelete = (): void => {
+    NiceModal.show(DeleteContactTicketModal, { ticket });
+  };
   return (
     <li className="flex flex-row items-center justify-between gap-3 px-5 py-3">
       <div className="min-w-0 flex-1">
@@ -598,12 +575,30 @@ function TicketRow({
       >
         {ticket.priority.charAt(0) + ticket.priority.slice(1).toLowerCase()}
       </Badge>
-      <Link
-        href={`/dashboard/contacts/${contactId}/tickets/${ticket.id}`}
-        className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-7"
+        title="Open ticket"
+        asChild
       >
-        View ticket
-      </Link>
+        <Link href={`/dashboard/contacts/${contactId}/tickets/${ticket.id}`}>
+          <ExternalLinkIcon className="size-3.5 shrink-0" />
+          <span className="sr-only">Open ticket</span>
+        </Link>
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-7 text-destructive hover:text-destructive"
+        title="Delete ticket"
+        onClick={handleDelete}
+      >
+        <TrashIcon className="size-3.5 shrink-0" />
+        <span className="sr-only">Delete ticket</span>
+      </Button>
     </li>
   );
 }
@@ -629,12 +624,25 @@ function ticketStatusBadgeClasses(status: ContactTicketDto['status']): string {
 
 function TaskRow({
   task,
-  contactId
+  meetings,
+  members
 }: {
   task: ContactTaskDto;
-  contactId: string;
+  meetings: ContactMeetingDto[];
+  members: MemberDto[];
 }): React.JSX.Element {
   const isDone = task.status === ContactTaskStatus.COMPLETED;
+  const handleEdit = (): void => {
+    NiceModal.show(EditContactTaskModal, {
+      task,
+      meetings,
+      members,
+      hideMeetingField: true
+    });
+  };
+  const handleDelete = (): void => {
+    NiceModal.show(DeleteContactTaskModal, { task });
+  };
   return (
     <li className="flex flex-row items-center justify-between gap-3 px-5 py-3">
       <div className="min-w-0 flex-1">
@@ -662,12 +670,28 @@ function TaskRow({
       >
         {isDone ? 'Done' : task.priority.charAt(0) + task.priority.slice(1).toLowerCase()}
       </Badge>
-      <Link
-        href={`/dashboard/contacts/${contactId}`}
-        className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-7"
+        title="Edit task"
+        onClick={handleEdit}
       >
-        View in CRM
-      </Link>
+        <PencilIcon className="size-3.5 shrink-0" />
+        <span className="sr-only">Edit task</span>
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-7 text-destructive hover:text-destructive"
+        title="Delete task"
+        onClick={handleDelete}
+      >
+        <TrashIcon className="size-3.5 shrink-0" />
+        <span className="sr-only">Delete task</span>
+      </Button>
     </li>
   );
 }

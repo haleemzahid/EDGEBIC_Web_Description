@@ -13,12 +13,13 @@ import {
 import { ContactBillingTab } from '@/components/dashboard/contacts/details/contact-billing-tab';
 import { ContactClientDetailsTab } from '@/components/dashboard/contacts/details/contact-client-details-tab';
 import { ContactInboxTab } from '@/components/dashboard/contacts/details/contact-inbox-tab';
+import { ContactTabsRoot } from '@/components/dashboard/contacts/details/contact-tabs-root';
 import { ContactTicketsTab } from '@/components/dashboard/contacts/details/contact-tickets-tab';
 import { ContactMeetingsTab } from '@/components/dashboard/contacts/details/meetings/contact-meetings-tab';
 import { ContactNotesTab } from '@/components/dashboard/contacts/details/notes/contact-notes-tab';
 import { ContactTasksTab } from '@/components/dashboard/contacts/details/tasks/contact-tasks-tab';
 import { ContactActivityTab } from '@/components/dashboard/contacts/details/timeline/contact-activity-tab';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { ContactDto } from '@/types/dtos/contact-dto';
 
 enum Tab {
@@ -51,10 +52,9 @@ export async function ContactTabs({
   contact
 }: ContactTabsProps): Promise<React.JSX.Element> {
   return (
-    <Tabs
+    <ContactTabsRoot
       defaultValue={Tab.ClientDetails}
-      orientation="vertical"
-      className="flex size-full flex-row overflow-hidden"
+      allowedValues={Object.values(Tab)}
     >
       {/* Vertical tab sidebar */}
       <TabsList className="flex h-full w-52 min-w-52 flex-col items-stretch justify-start gap-0.5 overflow-y-auto rounded-none border-r bg-muted/30 p-3">
@@ -140,6 +140,6 @@ export async function ContactTabs({
           <ContactBillingTab />
         </TabsContent>
       </div>
-    </Tabs>
+    </ContactTabsRoot>
   );
 }

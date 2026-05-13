@@ -67,7 +67,9 @@ export default async function ContactTicketPage({
         <PagePrimaryBar>
           <div className="flex w-full flex-row items-center justify-between gap-4">
             <div className="flex min-w-0 flex-row items-center gap-4">
-              <PageBack href={`/dashboard/contacts/${contactId}`} />
+              <PageBack
+                href={`/dashboard/contacts/${contactId}?tab=tickets`}
+              />
               <div className="min-w-0">
                 <nav className="mb-1 truncate text-xs text-muted-foreground">
                   <Link
@@ -84,7 +86,12 @@ export default async function ContactTicketPage({
                     {contact.name}
                   </Link>
                   {' · '}
-                  Tickets
+                  <Link
+                    href={`/dashboard/contacts/${contactId}?tab=tickets`}
+                    className="hover:underline"
+                  >
+                    Tickets
+                  </Link>
                   {' · '}
                   <span className="font-semibold text-foreground">
                     #{ticket.number}

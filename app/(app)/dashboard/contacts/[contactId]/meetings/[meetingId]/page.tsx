@@ -89,7 +89,9 @@ export default async function ContactMeetingPage({
         <PagePrimaryBar>
           <div className="flex w-full flex-row items-center justify-between gap-4">
             <div className="flex min-w-0 flex-row items-center gap-4">
-              <PageBack href={`/dashboard/contacts/${contactId}`} />
+              <PageBack
+                href={`/dashboard/contacts/${contactId}?tab=meetings`}
+              />
               <div className="min-w-0">
                 <nav className="mb-1 truncate text-xs text-muted-foreground">
                   <Link
@@ -106,7 +108,12 @@ export default async function ContactMeetingPage({
                     {contact.name}
                   </Link>
                   {' · '}
-                  Meetings
+                  <Link
+                    href={`/dashboard/contacts/${contactId}?tab=meetings`}
+                    className="hover:underline"
+                  >
+                    Meetings
+                  </Link>
                   {' · '}
                   <span className="font-semibold text-foreground">
                     {meeting.title}
