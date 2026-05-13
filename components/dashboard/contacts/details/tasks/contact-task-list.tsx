@@ -12,19 +12,23 @@ import { CalendarIcon, MoreHorizontalIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { updateContactTask } from '@/actions/contacts/update-contact-task';
+import {
+  ALL_TASK_STATUSES,
+  getContactTaskStatusMeta,
+  isTaskInactive
+} from '@/components/dashboard/contacts/details/tasks/contact-task-status-meta';
 import { DeleteContactTaskModal } from '@/components/dashboard/contacts/details/tasks/delete-contact-task-modal';
 import { EditContactTaskModal } from '@/components/dashboard/contacts/details/tasks/edit-contact-task-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import type { ContactMeetingDto } from '@/types/dtos/contact-meeting-dto';
 import type { ContactTaskDto } from '@/types/dtos/contact-task-dto';
@@ -144,7 +148,6 @@ function priorityBadgeProps(priority: ContactPriority): {
 }
 
 function ContactTaskListItem({
-  id,
   status,
   priority,
   category,
@@ -159,7 +162,9 @@ function ContactTaskListItem({
   onEdit,
   onDelete
 }: ContactTaskListItemProps): React.JSX.Element {
-  const isDone = status === ContactTaskStatus.COMPLETED;
+  const inactive = isTaskInactive(status);
+  const statusMeta = getContactTaskStatusMeta(status);
+  const priorityMeta = priorityBadgeProps(priority);
   const metaParts: string[] = [];
   if (category) {
     metaParts.push(categoryLabel[category]);
@@ -169,45 +174,30 @@ function ContactTaskListItem({
   }
   if (dueDate) {
     metaParts.push(formatDueDateLabel(dueDate));
-  } else if (isDone) {
+  } else if (status === ContactTaskStatus.COMPLETED) {
     metaParts.push(`Completed ${format(createdAt, 'MMM d, yyyy')}`);
+  } else if (status === ContactTaskStatus.CANCELLED) {
+    metaParts.push(`Cancelled ${format(createdAt, 'MMM d, yyyy')}`);
   } else {
     metaParts.push(`Created ${format(createdAt, 'MMM d, yyyy')}`);
   }
-  const pill = isDone
-    ? {
-        label: 'Done',
-        className:
-          'border-transparent bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
-      }
-    : priorityBadgeProps(priority);
   return (
     <li
       role="listitem"
       className={cn(
         'flex flex-row items-center gap-3 px-6 py-3 transition-colors hover:bg-accent/40',
-        isDone && 'opacity-75'
+        inactive && 'opacity-75'
       )}
     >
-      <Checkbox
-        id={id}
-        checked={isDone}
-        onCheckedChange={(value) =>
-          onStatusChange(
-            value ? ContactTaskStatus.COMPLETED : ContactTaskStatus.OPEN
-          )
-        }
-      />
       <div className="min-w-0 flex-1">
-        <Label
-          htmlFor={id}
+        <div
           className={cn(
-            'block cursor-pointer truncate text-sm font-medium',
-            isDone && 'line-through'
+            'truncate text-sm font-medium',
+            inactive && 'line-through'
           )}
         >
           {title}
-        </Label>
+        </div>
         <div className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
           <span className="truncate">{metaParts.join(' · ')}</span>
           {meetingId && meetingTitle && (
@@ -224,11 +214,43 @@ function ContactTaskListItem({
           )}
         </div>
       </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            title="Change status"
+            className={cn(
+              'shrink-0 cursor-pointer rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition-colors',
+              statusMeta.className
+            )}
+          >
+            {statusMeta.label}
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {ALL_TASK_STATUSES.map((s) => {
+            const meta = getContactTaskStatusMeta(s);
+            return (
+              <DropdownMenuCheckboxItem
+                key={s}
+                checked={status === s}
+                onCheckedChange={(checked) => {
+                  if (checked && status !== s) {
+                    onStatusChange(s);
+                  }
+                }}
+              >
+                {meta.label}
+              </DropdownMenuCheckboxItem>
+            );
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
       <Badge
         variant="secondary"
-        className={cn('shrink-0 text-[11px]', pill.className)}
+        className={cn('shrink-0 text-[11px]', priorityMeta.className)}
       >
-        {pill.label}
+        {priorityMeta.label}
       </Badge>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

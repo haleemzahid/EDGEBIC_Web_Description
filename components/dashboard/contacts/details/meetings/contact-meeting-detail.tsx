@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import NiceModal from '@ebay/nice-modal-react';
-import { ContactMeetingStatus, ContactTaskStatus } from '@prisma/client';
+import { ContactMeetingStatus } from '@prisma/client';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
   CalendarIcon,
@@ -21,6 +21,10 @@ import {
 } from 'lucide-react';
 
 import { ContactMeetingFiles } from '@/components/dashboard/contacts/details/meetings/contact-meeting-files';
+import {
+  getContactTaskStatusMeta,
+  isTaskInactive
+} from '@/components/dashboard/contacts/details/tasks/contact-task-status-meta';
 import { AddContactNoteModal } from '@/components/dashboard/contacts/details/notes/add-contact-note-modal';
 import { DeleteContactNoteModal } from '@/components/dashboard/contacts/details/notes/delete-contact-note-modal';
 import { EditContactNoteModal } from '@/components/dashboard/contacts/details/notes/edit-contact-note-modal';
@@ -631,7 +635,8 @@ function TaskRow({
   meetings: ContactMeetingDto[];
   members: MemberDto[];
 }): React.JSX.Element {
-  const isDone = task.status === ContactTaskStatus.COMPLETED;
+  const statusMeta = getContactTaskStatusMeta(task.status);
+  const inactive = isTaskInactive(task.status);
   const handleEdit = (): void => {
     NiceModal.show(EditContactTaskModal, {
       task,
@@ -649,7 +654,7 @@ function TaskRow({
         <div
           className={cn(
             'truncate text-sm font-medium',
-            isDone && 'text-muted-foreground line-through'
+            inactive && 'text-muted-foreground line-through'
           )}
         >
           ✅ {task.title}
@@ -666,9 +671,15 @@ function TaskRow({
       </div>
       <Badge
         variant="secondary"
+        className={cn('text-[11px]', statusMeta.className)}
+      >
+        {statusMeta.label}
+      </Badge>
+      <Badge
+        variant="secondary"
         className={cn('text-[11px]', priorityBadgeClasses(task.priority))}
       >
-        {isDone ? 'Done' : task.priority.charAt(0) + task.priority.slice(1).toLowerCase()}
+        {task.priority.charAt(0) + task.priority.slice(1).toLowerCase()}
       </Badge>
       <Button
         type="button"

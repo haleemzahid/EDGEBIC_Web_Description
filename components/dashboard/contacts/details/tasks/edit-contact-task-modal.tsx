@@ -252,10 +252,16 @@ export const EditContactTaskModal = NiceModal.create<EditContactTaskModalProps>(
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={ContactTaskStatus.OPEN}>
-                        Open
+                        To do
+                      </SelectItem>
+                      <SelectItem value={ContactTaskStatus.IN_PROGRESS}>
+                        In progress
                       </SelectItem>
                       <SelectItem value={ContactTaskStatus.COMPLETED}>
-                        Completed
+                        Done
+                      </SelectItem>
+                      <SelectItem value={ContactTaskStatus.CANCELLED}>
+                        Cancelled
                       </SelectItem>
                     </SelectContent>
                   </Select>
