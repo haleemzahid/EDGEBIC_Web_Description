@@ -69,9 +69,13 @@ export function ContactMeetingDetail({
   const handleAddTicket = (): void => {
     NiceModal.show(AddContactTicketModal, {
       contactId: contact.id,
-      members
+      members,
+      meetings,
+      defaultMeetingId: meeting.id
     });
   };
+
+  const linkedTickets = tickets.filter((t) => t.meetingId === meeting.id);
   const handleAddNote = (): void => {
     NiceModal.show(AddContactNoteModal, {
       contactId: contact.id,
@@ -117,7 +121,7 @@ export function ContactMeetingDetail({
             >
               <TicketIcon className="mr-1.5 size-3.5 shrink-0" />
               Tickets
-              <CountBadge value={tickets.length} />
+              <CountBadge value={linkedTickets.length} />
             </TabsTrigger>
             <TabsTrigger
               value="notes"
@@ -280,9 +284,21 @@ export function ContactMeetingDetail({
                   Create ticket
                 </Button>
               </header>
-              <EmptyDashedRow>
-                No tickets linked to this meeting yet.
-              </EmptyDashedRow>
+              {linkedTickets.length === 0 ? (
+                <EmptyDashedRow>
+                  No tickets linked to this meeting yet.
+                </EmptyDashedRow>
+              ) : (
+                <ul className="divide-y">
+                  {linkedTickets.map((ticket) => (
+                    <TicketRow
+                      key={ticket.id}
+                      ticket={ticket}
+                      contactId={contact.id}
+                    />
+                  ))}
+                </ul>
+              )}
               <p className="border-t px-5 py-2 text-xs text-muted-foreground">
                 ✨ Tickets linked from{' '}
                 <Link
@@ -291,7 +307,7 @@ export function ContactMeetingDetail({
                 >
                   {contact.name}&apos;s CRM page
                 </Link>{' '}
-                also show here automatically.
+                with this meeting selected also show here automatically.
               </p>
             </div>
           </TabsContent>
@@ -523,6 +539,64 @@ function priorityBadgeClasses(priority: string): string {
       return 'border-transparent bg-muted text-muted-foreground';
     default:
       return 'border-transparent bg-amber-100 text-amber-800 hover:bg-amber-100';
+  }
+}
+
+function TicketRow({
+  ticket,
+  contactId
+}: {
+  ticket: ContactTicketDto;
+  contactId: string;
+}): React.JSX.Element {
+  return (
+    <li className="flex flex-row items-center justify-between gap-3 px-5 py-3">
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-medium">
+          🎫 #{ticket.number} · {ticket.title}
+        </div>
+        <div className="mt-0.5 truncate text-xs text-muted-foreground">
+          {ticket.assigneeName ?? 'Unassigned'}
+        </div>
+      </div>
+      <Badge
+        variant="secondary"
+        className={cn('text-[11px]', ticketStatusBadgeClasses(ticket.status))}
+      >
+        {ticketStatusLabel(ticket.status)}
+      </Badge>
+      <Badge
+        variant="secondary"
+        className={cn('text-[11px]', priorityBadgeClasses(ticket.priority))}
+      >
+        {ticket.priority.charAt(0) + ticket.priority.slice(1).toLowerCase()}
+      </Badge>
+      <Link
+        href={`/dashboard/contacts/${contactId}/tickets/${ticket.id}`}
+        className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+      >
+        View ticket
+      </Link>
+    </li>
+  );
+}
+
+function ticketStatusLabel(status: ContactTicketDto['status']): string {
+  return status.charAt(0) + status.slice(1).toLowerCase();
+}
+
+function ticketStatusBadgeClasses(status: ContactTicketDto['status']): string {
+  switch (status) {
+    case 'OPEN':
+      return 'border-transparent bg-rose-100 text-rose-800 hover:bg-rose-100';
+    case 'PENDING':
+      return 'border-transparent bg-amber-100 text-amber-800 hover:bg-amber-100';
+    case 'RESOLVED':
+      return 'border-transparent bg-emerald-100 text-emerald-800 hover:bg-emerald-100';
+    case 'CLOSED':
+      return 'border-transparent bg-muted text-muted-foreground';
+    default:
+      return 'border-transparent bg-muted text-muted-foreground';
   }
 }
 

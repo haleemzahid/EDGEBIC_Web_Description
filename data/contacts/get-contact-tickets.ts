@@ -47,6 +47,7 @@ export async function getContactTickets(
           id: true,
           number: true,
           contactId: true,
+          meetingId: true,
           title: true,
           description: true,
           status: true,
@@ -59,6 +60,13 @@ export async function getContactTickets(
               id: true,
               name: true,
               image: true
+            }
+          },
+          meeting: {
+            select: {
+              id: true,
+              title: true,
+              startsAt: true
             }
           }
         },
@@ -78,6 +86,9 @@ export async function getContactTickets(
         assigneeUserId: t.assigneeUserId ?? undefined,
         assigneeName: t.assignee?.name,
         assigneeImage: t.assignee?.image ?? undefined,
+        meetingId: t.meetingId ?? undefined,
+        meetingTitle: t.meeting?.title,
+        meetingStartsAt: t.meeting?.startsAt,
         createdAt: t.createdAt,
         updatedAt: t.updatedAt
       }));
@@ -105,6 +116,9 @@ export async function getContactTickets(
   return raw.map((t) => ({
     ...t,
     createdAt: new Date(t.createdAt),
-    updatedAt: new Date(t.updatedAt)
+    updatedAt: new Date(t.updatedAt),
+    meetingStartsAt: t.meetingStartsAt
+      ? new Date(t.meetingStartsAt)
+      : undefined
   }));
 }

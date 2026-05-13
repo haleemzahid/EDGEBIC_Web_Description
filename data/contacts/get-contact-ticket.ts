@@ -47,6 +47,7 @@ export async function getContactTicket(
           id: true,
           number: true,
           contactId: true,
+          meetingId: true,
           title: true,
           description: true,
           status: true,
@@ -59,6 +60,13 @@ export async function getContactTicket(
               id: true,
               name: true,
               image: true
+            }
+          },
+          meeting: {
+            select: {
+              id: true,
+              title: true,
+              startsAt: true
             }
           },
           messages: {
@@ -109,6 +117,9 @@ export async function getContactTicket(
         assigneeUserId: ticket.assigneeUserId ?? undefined,
         assigneeName: ticket.assignee?.name,
         assigneeImage: ticket.assignee?.image ?? undefined,
+        meetingId: ticket.meetingId ?? undefined,
+        meetingTitle: ticket.meeting?.title,
+        meetingStartsAt: ticket.meeting?.startsAt,
         createdAt: ticket.createdAt,
         updatedAt: ticket.updatedAt,
         messages: ticket.messages.map((m) => ({
@@ -155,6 +166,9 @@ export async function getContactTicket(
     ...raw,
     createdAt: new Date(raw.createdAt),
     updatedAt: new Date(raw.updatedAt),
+    meetingStartsAt: raw.meetingStartsAt
+      ? new Date(raw.meetingStartsAt)
+      : undefined,
     messages: raw.messages.map((m) => ({
       ...m,
       createdAt: new Date(m.createdAt)

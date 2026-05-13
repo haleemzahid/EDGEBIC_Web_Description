@@ -38,6 +38,9 @@ export type ContactTicketDto = {
   assigneeUserId?: string;
   assigneeName?: string;
   assigneeImage?: string;
+  meetingId?: string;
+  meetingTitle?: string;
+  meetingStartsAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 };

@@ -45,6 +45,16 @@ export const updateContactTicketSchema = z.object({
     .max(36, 'Maximum 36 characters allowed.')
     .optional()
     .or(z.literal(''))
+    .nullable(),
+  meetingId: z
+    .string({
+      invalid_type_error: 'Meeting id must be a string.'
+    })
+    .trim()
+    .uuid('Meeting id is invalid.')
+    .max(36, 'Maximum 36 characters allowed.')
+    .optional()
+    .or(z.literal(''))
     .nullable()
 });
 

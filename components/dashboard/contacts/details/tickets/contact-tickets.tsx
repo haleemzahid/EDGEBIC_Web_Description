@@ -13,6 +13,7 @@ import { ResponsiveScrollArea } from '@/components/ui/scroll-area';
 import { MediaQueries } from '@/constants/media-queries';
 import { cn } from '@/lib/utils';
 import type { ContactDto } from '@/types/dtos/contact-dto';
+import type { ContactMeetingDto } from '@/types/dtos/contact-meeting-dto';
 import type { ContactTicketDto } from '@/types/dtos/contact-ticket-dto';
 import type { MemberDto } from '@/types/dtos/member-dto';
 
@@ -20,6 +21,7 @@ export type ContactTicketsProps = {
   contact: ContactDto;
   tickets: ContactTicketDto[];
   members: MemberDto[];
+  meetings: ContactMeetingDto[];
 };
 
 function statusBadge(status: ContactTicketStatus): {
@@ -81,12 +83,14 @@ function priorityBadge(priority: ContactPriority): {
 export function ContactTickets({
   contact,
   tickets,
-  members
+  members,
+  meetings
 }: ContactTicketsProps): React.JSX.Element {
   const handleNewTicket = (): void => {
     NiceModal.show(AddContactTicketModal, {
       contactId: contact.id,
-      members
+      members,
+      meetings
     });
   };
   return (

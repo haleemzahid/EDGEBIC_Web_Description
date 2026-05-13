@@ -27,6 +27,7 @@ export const addContactTicket = authActionClient
     const ticket = await prisma.contactTicket.create({
       data: {
         contactId: contact.id,
+        meetingId: parsedInput.meetingId ? parsedInput.meetingId : null,
         title: parsedInput.title,
         description: parsedInput.description || null,
         status: parsedInput.status,

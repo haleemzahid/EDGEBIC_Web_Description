@@ -25,7 +25,8 @@ export const updateContactTicket = authActionClient
         contactId: true,
         status: true,
         priority: true,
-        assigneeUserId: true
+        assigneeUserId: true,
+        meetingId: true
       }
     });
     if (!existing) {
@@ -36,6 +37,10 @@ export const updateContactTicket = authActionClient
       parsedInput.assigneeUserId === '' || parsedInput.assigneeUserId === null
         ? null
         : parsedInput.assigneeUserId;
+    const nextMeetingId =
+      parsedInput.meetingId === '' || parsedInput.meetingId === null
+        ? null
+        : (parsedInput.meetingId ?? null);
 
     await prisma.contactTicket.update({
       where: { id: existing.id },
@@ -44,7 +49,8 @@ export const updateContactTicket = authActionClient
         description: parsedInput.description || null,
         status: parsedInput.status,
         priority: parsedInput.priority,
-        assigneeUserId: nextAssigneeId
+        assigneeUserId: nextAssigneeId,
+        meetingId: nextMeetingId
       }
     });
 
