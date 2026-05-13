@@ -12,6 +12,7 @@ export class NodeMailer implements Mailer {
       from: nodeMailerOptions.from,
       to: payload.recipient,
       ...(payload.cc ? { cc: payload.cc } : {}),
+      ...(payload.replyTo ? { replyTo: payload.replyTo } : {}),
       subject: payload.subject,
       html: payload.html,
       text: payload.text
