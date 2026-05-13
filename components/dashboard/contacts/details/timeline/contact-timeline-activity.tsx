@@ -52,7 +52,6 @@ const fieldDisplay: Record<string, { label: string; description: string }> = {
   },
   record: { label: 'Record type', description: 'Person or company' },
   stage: { label: 'Stage', description: 'Pipeline stage' },
-  tags: { label: 'Tags', description: 'Tags attached to this contact' },
   image: { label: 'Avatar', description: 'Contact avatar image' },
   jobTitle: { label: 'Job title', description: 'Contact job title' },
   company: { label: 'Company', description: 'Company or organisation' },
@@ -109,7 +108,7 @@ export function ContactTimelineActivity({
     return Object.entries(
       event.metadata as Record<string, { old?: string; new?: string }>
     )
-      .filter(([key]) => key !== 'submission')
+      .filter(([key]) => key !== 'submission' && key !== 'tags')
       .map(([key, value]) => {
         const { label, description } = describeField(key);
         return {

@@ -7,6 +7,8 @@ import {
 
 import { prisma } from '@/lib/db/prisma';
 
+// NOTE: 'tags' is intentionally excluded. Tags are only used for filtering in
+// the contact list and should not produce activity-log entries.
 const fieldsToCheck = [
   'record',
   'image',
@@ -15,7 +17,6 @@ const fieldsToCheck = [
   'address',
   'phone',
   'stage',
-  'tags',
   'jobTitle',
   'company',
   'website',
@@ -53,10 +54,6 @@ function safeStringify<T>(value: T): string | null {
   return typeof value === 'object' ? JSON.stringify(value) : String(value);
 }
 
-function joinTags(tags: { text: string }[]): string {
-  return [...new Set(tags.map((tag) => tag.text))].sort().join(',');
-}
-
 export function detectChanges(
   currentContact: Partial<ContactWithTags> | null,
   updatedContact: ContactWithTags,
@@ -65,22 +62,12 @@ export function detectChanges(
   const changes: ContactChanges = {};
 
   for (const field of fieldsToCheck) {
-    if (field === 'tags') {
-      const oldTags = currentContact?.tags
-        ? joinTags(currentContact.tags)
-        : null;
-      const newTags = joinTags(updatedContact.tags);
-      if (oldTags !== newTags) {
-        changes.tags = { old: oldTags, new: newTags };
-      }
-    } else {
-      const oldValue = currentContact
-        ? safeStringify(currentContact[field as keyof Contact])
-        : null;
-      const newValue = safeStringify(updatedContact[field as keyof Contact]);
-      if (oldValue !== newValue && (!updateData || field in updateData)) {
-        changes[field] = { old: oldValue, new: newValue };
-      }
+    const oldValue = currentContact
+      ? safeStringify(currentContact[field as keyof Contact])
+      : null;
+    const newValue = safeStringify(updatedContact[field as keyof Contact]);
+    if (oldValue !== newValue && (!updateData || field in updateData)) {
+      changes[field] = { old: oldValue, new: newValue };
     }
   }
 
