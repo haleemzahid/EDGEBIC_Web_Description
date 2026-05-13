@@ -3,11 +3,10 @@ import Link from 'next/link';
 import { type Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { revalidateTag } from 'next/cache';
-import { EmailFolder, EmailSenderType, Role } from '@prisma/client';
-import { format } from 'date-fns';
+import { EmailFolder, Role } from '@prisma/client';
 import { ChevronLeftIcon } from 'lucide-react';
 
-import { ClientMessageReply } from '@/components/dashboard/client-portal/client-message-reply';
+import { ClientMessageConversation } from '@/components/dashboard/client-portal/client-message-conversation';
 import {
   Page,
   PageBody,
@@ -22,7 +21,7 @@ import { getClientContactLink } from '@/lib/auth/get-client-contact';
 import { getLoginRedirect } from '@/lib/auth/redirect';
 import { checkSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/db/prisma';
-import { cn, createTitle } from '@/lib/utils';
+import { createTitle } from '@/lib/utils';
 
 type Params = { threadId: string };
 
@@ -132,77 +131,21 @@ export default async function ClientMessageDetailPage({
         className="flex min-h-0 flex-1 flex-col overflow-hidden"
       >
         <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-0 overflow-hidden p-4">
-          <div className="flex-1 space-y-4 overflow-y-auto rounded-t-lg border border-b-0 bg-card p-4">
-            {thread.messages.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                No messages in this conversation yet.
-              </p>
-            ) : (
-              thread.messages.map((m) => (
-                <MessageBubble
-                  key={m.id}
-                  authorName={m.senderName}
-                  authorEmail={m.senderEmail}
-                  authorIsClient={m.senderType === EmailSenderType.CONTACT}
-                  body={m.body}
-                  createdAt={m.createdAt}
-                />
-              ))
-            )}
-          </div>
-          <div className="rounded-b-lg border bg-card">
-            <ClientMessageReply threadId={thread.id} />
-          </div>
+          <ClientMessageConversation
+            threadId={thread.id}
+            clientName={link.name}
+            initialMessages={thread.messages.map((m) => ({
+              id: m.id,
+              senderType: m.senderType,
+              senderName: m.senderName,
+              senderEmail: m.senderEmail,
+              body: m.body,
+              createdAt: m.createdAt
+            }))}
+          />
         </div>
       </PageBody>
     </Page>
   );
 }
 
-function MessageBubble({
-  authorName,
-  authorEmail,
-  authorIsClient,
-  body,
-  createdAt
-}: {
-  authorName: string;
-  authorEmail: string | null;
-  authorIsClient: boolean;
-  body: string;
-  createdAt: Date;
-}): React.JSX.Element {
-  return (
-    <div
-      className={cn('flex', authorIsClient ? 'justify-end' : 'justify-start')}
-    >
-      <div
-        className={cn(
-          'max-w-[80%] rounded-lg px-3 py-2 text-sm shadow-sm',
-          authorIsClient
-            ? 'bg-primary text-primary-foreground'
-            : 'border bg-muted text-foreground'
-        )}
-      >
-        <div
-          className={cn(
-            'mb-1 flex items-baseline gap-2 text-[11px]',
-            authorIsClient
-              ? 'text-primary-foreground/70'
-              : 'text-muted-foreground'
-          )}
-        >
-          <span className="font-semibold">
-            {authorIsClient ? 'You' : authorName}
-          </span>
-          {!authorIsClient && authorEmail && (
-            <span className="truncate">&lt;{authorEmail}&gt;</span>
-          )}
-          <span>·</span>
-          <span>{format(createdAt, 'MMM d, h:mm a')}</span>
-        </div>
-        <p className="whitespace-pre-wrap text-sm leading-relaxed">{body}</p>
-      </div>
-    </div>
-  );
-}

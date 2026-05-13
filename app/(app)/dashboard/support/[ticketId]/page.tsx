@@ -2,17 +2,10 @@ import * as React from 'react';
 import Link from 'next/link';
 import { type Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import {
-  ContactPriority,
-  ContactTicketStatus,
-  Role,
-  TicketMessageSender
-} from '@prisma/client';
-import { format } from 'date-fns';
+import { ContactPriority, ContactTicketStatus, Role } from '@prisma/client';
 import { ChevronLeftIcon } from 'lucide-react';
 
-import { ClientTicketReply } from '@/components/dashboard/client-portal/client-ticket-reply';
-import { ConfirmResolvedButton } from '@/components/dashboard/client-portal/confirm-resolved-button';
+import { ClientTicketConversation } from '@/components/dashboard/client-portal/client-ticket-conversation';
 import { Badge } from '@/components/ui/badge';
 import {
   Page,
@@ -103,8 +96,7 @@ export default async function ClientTicketDetailPage({
     notFound();
   }
 
-  const isResolved = ticket.status === ContactTicketStatus.RESOLVED;
-  const isClosed = ticket.status === ContactTicketStatus.CLOSED;
+  // (status handled inside ClientTicketConversation)
 
   return (
     <Page>
@@ -148,117 +140,23 @@ export default async function ClientTicketDetailPage({
         className="flex min-h-0 flex-1 flex-col overflow-hidden"
       >
         <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-0 overflow-hidden p-4">
-          <div className="flex-1 space-y-4 overflow-y-auto rounded-t-lg border border-b-0 bg-card p-4">
-            {ticket.description && (
-              <ConversationBubble
-                authorName={link.name}
-                authorIsClient
-                body={ticket.description}
-                createdAt={ticket.createdAt}
-                isFirst
-              />
-            )}
-            {ticket.messages.map((m) => (
-              <ConversationBubble
-                key={m.id}
-                authorName={m.senderName}
-                authorIsClient={m.senderType === TicketMessageSender.CONTACT}
-                body={m.body}
-                createdAt={m.createdAt}
-              />
-            ))}
-            {ticket.messages.length === 0 && !ticket.description && (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                No messages yet.
-              </p>
-            )}
-          </div>
-          <div className="rounded-b-lg border bg-card">
-            {isClosed ? (
-              <div className="border-t p-4">
-                <p className="text-sm text-muted-foreground">
-                  This ticket is closed.{' '}
-                  <Link
-                    href={Routes.ClientSupport}
-                    className="text-primary underline"
-                  >
-                    Open a new ticket
-                  </Link>{' '}
-                  if you need more help.
-                </p>
-              </div>
-            ) : (
-              <>
-                {isResolved && (
-                  <div className="flex flex-col gap-3 border-t bg-emerald-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="text-sm">
-                      <p className="font-semibold text-emerald-900">
-                        Your team marked this resolved
-                      </p>
-                      <p className="mt-0.5 text-xs text-emerald-800/80">
-                        Confirm if it&apos;s fixed, or reply below to reopen
-                        the ticket.
-                      </p>
-                    </div>
-                    <ConfirmResolvedButton ticketId={ticket.id} />
-                  </div>
-                )}
-                <ClientTicketReply
-                  ticketId={ticket.id}
-                  reopens={isResolved}
-                />
-              </>
-            )}
-          </div>
+          <ClientTicketConversation
+            ticketId={ticket.id}
+            status={ticket.status}
+            clientName={link.name}
+            description={ticket.description}
+            descriptionCreatedAt={ticket.createdAt}
+            initialMessages={ticket.messages.map((m) => ({
+              id: m.id,
+              senderType: m.senderType,
+              senderName: m.senderName,
+              body: m.body,
+              createdAt: m.createdAt
+            }))}
+          />
         </div>
       </PageBody>
     </Page>
-  );
-}
-
-function ConversationBubble({
-  authorName,
-  authorIsClient,
-  body,
-  createdAt,
-  isFirst
-}: {
-  authorName: string;
-  authorIsClient: boolean;
-  body: string;
-  createdAt: Date;
-  isFirst?: boolean;
-}): React.JSX.Element {
-  return (
-    <div className={cn('flex', authorIsClient ? 'justify-end' : 'justify-start')}>
-      <div
-        className={cn(
-          'max-w-[80%] rounded-lg px-3 py-2 text-sm shadow-sm',
-          authorIsClient
-            ? 'bg-primary text-primary-foreground'
-            : 'border bg-muted text-foreground'
-        )}
-      >
-        <div
-          className={cn(
-            'mb-1 flex items-baseline gap-2 text-[11px]',
-            authorIsClient
-              ? 'text-primary-foreground/70'
-              : 'text-muted-foreground'
-          )}
-        >
-          <span className="font-semibold">
-            {authorIsClient ? 'You' : authorName}
-          </span>
-          <span>·</span>
-          <span>{format(createdAt, 'MMM d, h:mm a')}</span>
-          {isFirst && (
-            <span className="ml-1 uppercase tracking-wide">Original</span>
-          )}
-        </div>
-        <p className="whitespace-pre-wrap text-sm leading-relaxed">{body}</p>
-      </div>
-    </div>
   );
 }
 

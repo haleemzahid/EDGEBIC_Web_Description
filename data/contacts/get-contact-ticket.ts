@@ -156,6 +156,11 @@ export async function getContactTicket(
         Caching.createOrganizationTag(
           OrganizationCacheKey.ContactTickets,
           session.user.organizationId
+        ),
+        Caching.createOrganizationTag(
+          OrganizationCacheKey.ContactTickets,
+          session.user.organizationId,
+          parsedInput.contactId
         )
       ]
     }

@@ -34,10 +34,10 @@ const paramsCache = createSearchParamsCache({
 export async function generateMetadata({
   params
 }: NextPageProps): Promise<Metadata> {
-  const { ticketId } = await paramsCache.parse(params);
-  if (ticketId) {
+  const { contactId, ticketId } = await paramsCache.parse(params);
+  if (ticketId && contactId) {
     try {
-      const ticket = await getContactTicket({ id: ticketId });
+      const ticket = await getContactTicket({ id: ticketId, contactId });
       return { title: createTitle(`#${ticket.number} · ${ticket.title}`) };
     } catch {
       // fall through
@@ -54,7 +54,7 @@ export default async function ContactTicketPage({
     return notFound();
   }
 
-  const ticket = await getContactTicket({ id: ticketId });
+  const ticket = await getContactTicket({ id: ticketId, contactId });
   if (ticket.contactId !== contactId) {
     return notFound();
   }
