@@ -110,7 +110,10 @@ export default async function ContactTicketPage({
           </div>
         </PagePrimaryBar>
       </PageHeader>
-      <PageBody className="h-full overflow-y-auto">
+      <PageBody
+        disableScroll
+        className="flex h-full flex-col overflow-hidden"
+      >
         <ContactTicketDetail
           contact={contact}
           ticket={ticket}

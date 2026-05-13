@@ -63,8 +63,8 @@ export function ContactTicketDetail({
   const internalNotes = ticket.messages.filter((m) => m.isInternalNote);
 
   return (
-    <div className="space-y-6 p-6">
-      <p className="text-xs text-muted-foreground">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 p-6">
+      <p className="shrink-0 text-xs text-muted-foreground">
         Created {format(ticket.createdAt, 'MMM d, yyyy · h:mm a')}
         {' · '}
         {ticket.assigneeName
@@ -73,7 +73,7 @@ export function ContactTicketDetail({
       </p>
 
       {ticket.description && (
-        <section className="rounded-lg border bg-muted/30 p-4">
+        <section className="shrink-0 rounded-lg border bg-muted/30 p-4">
           <h3 className="mb-1 text-xs font-semibold uppercase text-muted-foreground">
             Description
           </h3>
@@ -85,7 +85,7 @@ export function ContactTicketDetail({
 
       <Tabs
         defaultValue="conversation"
-        className="flex w-full flex-col"
+        className="flex min-h-0 w-full flex-1 flex-col"
       >
         <TabsList className="w-full justify-start rounded-md border bg-card p-1">
           <TabsTrigger
@@ -122,7 +122,7 @@ export function ContactTicketDetail({
 
         <TabsContent
           value="conversation"
-          className="mt-4 space-y-4"
+          className="mt-4 min-h-0 flex-1 data-[state=active]:flex data-[state=active]:flex-col"
         >
           <ConversationPanel
             ticket={ticket}
@@ -134,7 +134,7 @@ export function ContactTicketDetail({
 
         <TabsContent
           value="notes"
-          className="mt-4"
+          className="mt-4 min-h-0 flex-1 data-[state=active]:flex data-[state=active]:flex-col"
         >
           <NotesPanel
             ticketId={ticket.id}
@@ -145,7 +145,7 @@ export function ContactTicketDetail({
 
         <TabsContent
           value="log"
-          className="mt-4"
+          className="mt-4 min-h-0 flex-1 data-[state=active]:flex data-[state=active]:flex-col"
         >
           <ActivityPanel activities={ticket.activities} />
         </TabsContent>
@@ -214,8 +214,8 @@ function ConversationPanel({
     ticket.status === ContactTicketStatus.CLOSED;
 
   return (
-    <div className="rounded-lg border">
-      <header className="flex flex-row items-center justify-between gap-2 border-b px-4 py-3">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border">
+      <header className="flex shrink-0 flex-row items-center justify-between gap-2 border-b px-4 py-3">
         <h2 className="text-sm font-semibold">
           Conversation with {contact.name}
         </h2>
@@ -232,10 +232,10 @@ function ConversationPanel({
           </Button>
         )}
       </header>
-      <div className="bg-muted/30 px-4 py-2 text-xs text-muted-foreground">
+      <div className="shrink-0 bg-muted/30 px-4 py-2 text-xs text-muted-foreground">
         👁️ The customer can see everything in this tab.
       </div>
-      <ul className="space-y-3 px-4 py-4">
+      <ul className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {messages.length === 0 ? (
           <li className="py-4 text-center text-sm text-muted-foreground">
             No replies yet.
@@ -250,7 +250,7 @@ function ConversationPanel({
           ))
         )}
       </ul>
-      <div className="flex gap-2 border-t p-3">
+      <div className="flex shrink-0 gap-2 border-t p-3">
         <Textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -338,14 +338,14 @@ function NotesPanel({
   };
 
   return (
-    <div className="rounded-lg border">
-      <header className="flex flex-row items-center justify-between gap-2 border-b px-4 py-3">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border">
+      <header className="flex shrink-0 flex-row items-center justify-between gap-2 border-b px-4 py-3">
         <h2 className="text-sm font-semibold">🔒 Internal notes</h2>
         <span className="text-xs text-muted-foreground">
           Only your team can see these. Customer never sees them.
         </span>
       </header>
-      <div className="space-y-3 px-4 py-4">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {notes.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">
             No internal notes yet.
@@ -382,7 +382,7 @@ function NotesPanel({
           ))
         )}
       </div>
-      <div className="border-t border-amber-200 bg-amber-50/40 p-3">
+      <div className="shrink-0 border-t border-amber-200 bg-amber-50/40 p-3">
         <Textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -414,8 +414,8 @@ function ActivityPanel({
   activities: ContactTicketActivityDto[];
 }): React.JSX.Element {
   return (
-    <div className="rounded-lg border">
-      <header className="flex flex-row items-center justify-between gap-2 border-b px-4 py-3">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border">
+      <header className="flex shrink-0 flex-row items-center justify-between gap-2 border-b px-4 py-3">
         <h2 className="text-sm font-semibold">⚡ Activity log</h2>
         <span className="text-xs text-muted-foreground">
           Auto-recorded · cannot be edited
@@ -426,7 +426,7 @@ function ActivityPanel({
           No activity yet.
         </p>
       ) : (
-        <ul className="divide-y">
+        <ul className="min-h-0 flex-1 divide-y overflow-y-auto">
           {activities.map((a) => (
             <li
               key={a.id}
