@@ -11,7 +11,10 @@ import { format, formatDistanceToNow } from 'date-fns';
 import {
   AlertCircleIcon,
   CheckCircle2Icon,
+  CheckIcon,
+  ClockIcon,
   MessageSquareIcon,
+  SendIcon,
   StickyNoteIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -168,26 +171,102 @@ function ConversationPanel({
   onSent
 }: ConversationPanelProps): React.JSX.Element {
   const [text, setText] = React.useState('');
-  const [pending, startTransition] = React.useTransition();
   const [resolving, startResolving] = React.useTransition();
+  const [pendingMessages, setPendingMessages] = React.useState<
+    Array<{
+      tempId: string;
+      body: string;
+      createdAt: Date;
+      state: 'sending' | 'sent' | 'failed';
+    }>
+  >([]);
 
-  const handleSend = (): void => {
-    const body = text.trim();
-    if (!body) return;
-    startTransition(async () => {
+  // Background poll for incoming client replies (no manual refresh needed).
+  React.useEffect(() => {
+    const id = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        onSent();
+      }
+    }, 5000);
+    return () => window.clearInterval(id);
+  }, [onSent]);
+
+  // Drop optimistic entries the moment their server-confirmed twin appears.
+  React.useEffect(() => {
+    if (pendingMessages.length === 0) return;
+    setPendingMessages((prev) =>
+      prev.filter((p) => {
+        if (p.state !== 'sent') return true;
+        const match = messages.some(
+          (m) =>
+            m.senderType === TicketMessageSender.USER &&
+            m.body === p.body &&
+            Math.abs(m.createdAt.getTime() - p.createdAt.getTime()) < 30_000
+        );
+        return !match;
+      })
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
+
+  const sendBody = async (body: string): Promise<void> => {
+    const trimmed = body.trim();
+    if (!trimmed) return;
+    const tempId = `pending-${Date.now()}-${Math.random()}`;
+    setPendingMessages((prev) => [
+      ...prev,
+      { tempId, body: trimmed, createdAt: new Date(), state: 'sending' }
+    ]);
+    setText('');
+    try {
       const result = await addContactTicketMessage({
         ticketId: ticket.id,
-        body,
+        body: trimmed,
         isInternalNote: false
       });
       if (result?.serverError) {
-        toast.error("Couldn't send reply");
+        setPendingMessages((prev) =>
+          prev.map((p) =>
+            p.tempId === tempId ? { ...p, state: 'failed' } : p
+          )
+        );
+        toast.error(result.serverError ?? "Couldn't send reply");
         return;
       }
-      setText('');
-      toast.success('Reply sent');
+      setPendingMessages((prev) =>
+        prev.map((p) => (p.tempId === tempId ? { ...p, state: 'sent' } : p))
+      );
       onSent();
-    });
+    } catch (error) {
+      setPendingMessages((prev) =>
+        prev.map((p) =>
+          p.tempId === tempId ? { ...p, state: 'failed' } : p
+        )
+      );
+      toast.error(
+        error instanceof Error ? error.message : "Couldn't send reply"
+      );
+    }
+  };
+
+  const handleSend = (): void => {
+    void sendBody(text);
+  };
+
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLTextAreaElement>
+  ): void => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      void sendBody(text);
+    }
+  };
+
+  const retry = (tempId: string): void => {
+    const msg = pendingMessages.find((p) => p.tempId === tempId);
+    if (!msg) return;
+    setPendingMessages((prev) => prev.filter((p) => p.tempId !== tempId));
+    void sendBody(msg.body);
   };
 
   const handleMarkResolved = (): void => {
@@ -243,11 +322,13 @@ function ConversationPanel({
             createdAt={ticket.createdAt}
           />
         )}
-        {messages.length === 0 && !ticket.description && (
-          <li className="py-4 text-center text-sm text-muted-foreground">
-            No replies yet.
-          </li>
-        )}
+        {messages.length === 0 &&
+          pendingMessages.length === 0 &&
+          !ticket.description && (
+            <li className="py-4 text-center text-sm text-muted-foreground">
+              No replies yet.
+            </li>
+          )}
         {messages.map((m) => (
           <MessageBubble
             key={m.id}
@@ -255,22 +336,34 @@ function ConversationPanel({
             contactName={contact.name}
           />
         ))}
+        {pendingMessages.map((p) => (
+          <PendingBubble
+            key={p.tempId}
+            body={p.body}
+            createdAt={p.createdAt}
+            state={p.state}
+            onRetry={() => retry(p.tempId)}
+          />
+        ))}
       </ul>
-      <div className="flex shrink-0 gap-2 border-t p-3">
+      <div className="flex shrink-0 items-end gap-2 border-t p-3">
         <Textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={`Reply to ${contact.name?.split(' ')[0] ?? 'the customer'}…`}
-          className="min-h-[60px] resize-y"
-          disabled={pending}
+          onKeyDown={handleKeyDown}
+          rows={1}
+          placeholder={`Reply to ${contact.name?.split(' ')[0] ?? 'the customer'}…  (Enter to send)`}
+          className="max-h-40 min-h-[44px] flex-1 resize-none"
         />
         <Button
           type="button"
           onClick={handleSend}
-          disabled={pending || !text.trim()}
-          className="self-end"
+          disabled={!text.trim()}
+          size="icon"
+          className="size-11 shrink-0"
+          title="Send"
         >
-          Send
+          <SendIcon className="size-4" />
         </Button>
       </div>
     </div>
@@ -307,6 +400,61 @@ function MessageBubble({
       <div className="text-[11px] text-muted-foreground">
         {isUser ? message.senderName : (contactName ?? message.senderName)} ·{' '}
         {format(message.createdAt, 'h:mm a · MMM d')}
+      </div>
+    </li>
+  );
+}
+
+function PendingBubble({
+  body,
+  createdAt,
+  state,
+  onRetry
+}: {
+  body: string;
+  createdAt: Date;
+  state: 'sending' | 'sent' | 'failed';
+  onRetry: () => void;
+}): React.JSX.Element {
+  return (
+    <li className="flex flex-col items-end gap-1">
+      <div
+        className={cn(
+          'max-w-[75%] rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm',
+          'bg-foreground text-background',
+          state === 'failed' && 'opacity-80 ring-1 ring-rose-300'
+        )}
+      >
+        <p className="whitespace-pre-wrap text-sm leading-relaxed">{body}</p>
+        <div className="mt-1 flex items-center justify-end gap-1 text-[10px] text-background/70">
+          {state === 'sending' && (
+            <>
+              <ClockIcon className="size-3" />
+              <span>sending</span>
+            </>
+          )}
+          {state === 'sent' && (
+            <>
+              <CheckIcon className="size-3" />
+              <span>sent</span>
+            </>
+          )}
+          {state === 'failed' && (
+            <>
+              <AlertCircleIcon className="size-3 text-rose-300" />
+              <button
+                type="button"
+                onClick={onRetry}
+                className="underline"
+              >
+                failed — retry
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+      <div className="text-[11px] text-muted-foreground">
+        You · {format(createdAt, 'h:mm a · MMM d')}
       </div>
     </li>
   );

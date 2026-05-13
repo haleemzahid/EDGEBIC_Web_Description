@@ -54,6 +54,17 @@ export function ClientTicketConversation({
   const isClosed = status === ContactTicketStatus.CLOSED;
   const isResolved = status === ContactTicketStatus.RESOLVED;
 
+  // Background poll: pick up new messages from the team without a manual refresh.
+  React.useEffect(() => {
+    if (isClosed) return;
+    const id = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        router.refresh();
+      }
+    }, 5000);
+    return () => window.clearInterval(id);
+  }, [isClosed, router]);
+
   // Drop pending entries that match a newly-confirmed server message (same
   // body within ~30s of the optimistic timestamp). This is the "the server
   // version replaces the optimistic version" pass after router.refresh().
