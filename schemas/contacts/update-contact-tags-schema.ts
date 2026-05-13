@@ -20,7 +20,7 @@ export const updateContactTagsSchema = z.object({
         })
         .trim()
         .min(1, 'Tag is required.')
-        .max(200, 'Maximum 200 characters allowed.')
+        .max(128, 'Maximum 128 characters allowed.')
     })
   )
 });

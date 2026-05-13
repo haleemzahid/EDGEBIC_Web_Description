@@ -36,12 +36,25 @@ export function ContactTagsSection({
       tags: contact.tags
     }
   });
+  const submittingRef = React.useRef(false);
   const onSubmit: SubmitHandler<UpdateContactTagsSchema> = async (values) => {
-    const result = await updateContactTags(values);
-    if (!result?.serverError && !result?.validationErrors) {
-      toast.success('Tags updated');
-    } else {
-      toast.error("Couldn't update tags");
+    if (submittingRef.current) {
+      return;
+    }
+    submittingRef.current = true;
+    try {
+      const result = await updateContactTags(values);
+      if (!result?.serverError && !result?.validationErrors) {
+        toast.success('Tags updated');
+      } else {
+        toast.error(
+          typeof result?.serverError === 'string'
+            ? result.serverError
+            : "Couldn't update tags"
+        );
+      }
+    } finally {
+      submittingRef.current = false;
     }
   };
   return (
@@ -66,7 +79,7 @@ export function ContactTagsSection({
                       tags={field.value}
                       onTagsChange={(values) => {
                         field.onChange(values);
-                        onSubmit(methods.getValues());
+                        void onSubmit({ id: contact.id, tags: values });
                       }}
                       size="sm"
                       variant="default"
