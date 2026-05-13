@@ -70,7 +70,8 @@ export async function getContactMeetings(
         location: m.location ?? undefined,
         status: m.status,
         createdAt: m.createdAt,
-        updatedAt: m.updatedAt
+        updatedAt: m.updatedAt,
+        source: 'crm'
       }));
 
       return mapped;
@@ -96,6 +97,7 @@ export async function getContactMeetings(
   // strings on cache hits. Re-hydrate them so consumers get real Date instances.
   return raw.map((m) => ({
     ...m,
+    source: m.source ?? 'crm',
     startsAt: new Date(m.startsAt),
     endsAt: new Date(m.endsAt),
     createdAt: new Date(m.createdAt),

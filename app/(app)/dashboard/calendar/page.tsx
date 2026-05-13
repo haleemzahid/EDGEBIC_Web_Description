@@ -1,11 +1,14 @@
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
+import NiceModal from '@ebay/nice-modal-react';
 import { Calendar, dateFnsLocalizer, Views } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { enUS } from 'date-fns/locale';
-import { RefreshCw } from 'lucide-react';
+import { CalendarPlusIcon, RefreshCw } from 'lucide-react';
 
+import { BookMeetingModal } from '@/components/dashboard/calendar/book-meeting-modal';
+import { Button } from '@/components/ui/button';
 import {
   Page,
   PageActions,
@@ -38,7 +41,40 @@ interface CalendarEvent {
   end: Date;
   description?: string;
   location?: string;
-  type?: 'meeting' | 'demo' | 'call' | 'event';
+  type?: 'meeting' | 'demo' | 'call' | 'event' | 'calendly';
+}
+
+// Function to fetch Calendly events from our auth-gated API route
+async function fetchCalendlyEvents(): Promise<CalendarEvent[]> {
+  try {
+    const response = await fetch('/api/calendly/events');
+    if (!response.ok) {
+      console.error('[Calendly] /api/calendly/events failed:', response.status);
+      return [];
+    }
+    const data: {
+      configured: boolean;
+      events: Array<{
+        id: string;
+        title: string;
+        start: string;
+        end: string;
+        location?: string;
+      }>;
+    } = await response.json();
+    if (!data.configured) return [];
+    return data.events.map((e) => ({
+      id: e.id,
+      title: e.title,
+      start: new Date(e.start),
+      end: new Date(e.end),
+      location: e.location,
+      type: 'calendly' as const
+    }));
+  } catch (error) {
+    console.error('[Calendly] Failed to fetch events:', error);
+    return [];
+  }
 }
 
 // Google Calendar API configuration
@@ -127,6 +163,9 @@ const eventStyleGetter = (event: CalendarEvent) => {
     case 'event':
       backgroundColor = '#3b82f6'; // blue
       break;
+    case 'calendly':
+      backgroundColor = '#0ea5e9'; // sky
+      break;
   }
 
   return {
@@ -149,13 +188,28 @@ export default function CalendarPage() {
     useState<(typeof Views)[keyof typeof Views]>(Views.MONTH);
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // Fetch events from Google Calendar
+  // Fetch events from Google Calendar + Calendly
   const loadEvents = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const googleEvents = await fetchGoogleCalendarEvents();
-      setEvents(googleEvents);
+      const [googleEvents, calendlyEvents] = await Promise.all([
+        fetchGoogleCalendarEvents(),
+        fetchCalendlyEvents()
+      ]);
+      // Calendly events typically also sync to Google Calendar.
+      // Dedupe by title + same start time within 1 minute, preferring Calendly.
+      const seen = new Set<string>();
+      const keyOf = (e: CalendarEvent): string =>
+        `${e.title.trim().toLowerCase()}|${Math.floor(e.start.getTime() / 60000)}`;
+      const merged: CalendarEvent[] = [];
+      for (const e of [...calendlyEvents, ...googleEvents]) {
+        const k = keyOf(e);
+        if (seen.has(k)) continue;
+        seen.add(k);
+        merged.push(e);
+      }
+      setEvents(merged);
     } catch (err) {
       setError('Failed to load calendar events');
       console.error(err);
@@ -182,6 +236,16 @@ export default function CalendarPage() {
         <PagePrimaryBar>
           <PageTitle>Calendar</PageTitle>
           <PageActions>
+            <Button
+              type="button"
+              variant="outline"
+              size="default"
+              onClick={() => NiceModal.show(BookMeetingModal)}
+              className="gap-2"
+            >
+              <CalendarPlusIcon className="h-4 w-4" />
+              Book a meeting
+            </Button>
             <button
               type="button"
               onClick={loadEvents}
@@ -210,6 +274,10 @@ export default function CalendarPage() {
 
           {/* Legend */}
           <div className="flex flex-wrap gap-4">
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded bg-[#0ea5e9]" />
+              <span className="text-sm text-muted-foreground">Calendly</span>
+            </div>
             <div className="flex items-center gap-2">
               <div className="h-3 w-3 rounded bg-[#8b5cf6]" />
               <span className="text-sm text-muted-foreground">Meetings</span>

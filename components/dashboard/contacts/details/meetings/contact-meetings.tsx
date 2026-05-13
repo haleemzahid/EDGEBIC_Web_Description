@@ -166,13 +166,18 @@ function MeetingRow({
   muted
 }: MeetingRowProps): React.JSX.Element {
   const badge = statusBadge(meeting.status);
+  const isCalendly = meeting.source === 'calendly';
   const handleEdit = (): void => {
     NiceModal.show(EditContactMeetingModal, { meeting });
   };
   const handleDelete = (): void => {
     NiceModal.show(DeleteContactMeetingModal, { meeting });
   };
-  const detailHref = `/dashboard/contacts/${contact.id}/meetings/${meeting.id}`;
+  const detailHref = isCalendly
+    ? undefined
+    : `/dashboard/contacts/${contact.id}/meetings/${meeting.id}`;
+  const RowAnchor: React.ElementType = detailHref ? Link : 'div';
+  const anchorProps = detailHref ? { href: detailHref } : {};
   return (
     <li
       className={cn(
@@ -180,8 +185,8 @@ function MeetingRow({
         muted && 'opacity-75'
       )}
     >
-      <Link
-        href={detailHref}
+      <RowAnchor
+        {...anchorProps}
         className="flex min-w-0 flex-1 flex-row items-center gap-4 text-left"
       >
         <div className="flex size-12 shrink-0 flex-col items-center justify-center rounded-md border bg-background">
@@ -209,9 +214,14 @@ function MeetingRow({
             <span className="truncate text-[11px] text-muted-foreground">
               {contact.name || 'Contact'}
             </span>
+            {isCalendly && (
+              <span className="ml-1 rounded-sm border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-sky-700">
+                Calendly
+              </span>
+            )}
           </div>
         </div>
-      </Link>
+      </RowAnchor>
       <div className="flex shrink-0 items-center gap-2">
         <Badge
           variant="secondary"
@@ -219,30 +229,76 @@ function MeetingRow({
         >
           {badge.label}
         </Badge>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-8"
-              title="Open menu"
-            >
-              <MoreHorizontalIcon className="size-4 shrink-0" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleEdit}>Edit</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="!text-destructive"
-              onClick={handleDelete}
-            >
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {isCalendly ? (
+          meeting.cancelUrl || meeting.rescheduleUrl ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8"
+                  title="Open menu"
+                >
+                  <MoreHorizontalIcon className="size-4 shrink-0" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {meeting.rescheduleUrl && (
+                  <DropdownMenuItem asChild>
+                    <a
+                      href={meeting.rescheduleUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Reschedule
+                    </a>
+                  </DropdownMenuItem>
+                )}
+                {meeting.cancelUrl && (
+                  <DropdownMenuItem
+                    asChild
+                    className="!text-destructive"
+                  >
+                    <a
+                      href={meeting.cancelUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Cancel
+                    </a>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null
+        ) : (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-8"
+                title="Open menu"
+              >
+                <MoreHorizontalIcon className="size-4 shrink-0" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleEdit}>Edit</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="!text-destructive"
+                onClick={handleDelete}
+              >
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
     </li>
   );
