@@ -12,7 +12,10 @@ import {
 import { authActionClient } from '@/actions/safe-action';
 import { Caching, OrganizationCacheKey } from '@/data/caching';
 import { getClientContactLink } from '@/lib/auth/get-client-contact';
+import { getTeamNotificationRecipient } from '@/lib/auth/get-team-notification-recipient';
 import { prisma } from '@/lib/db/prisma';
+import { sendPortalActivityEmail } from '@/lib/smtp/send-portal-activity-email';
+import { getBaseUrl } from '@/lib/urls/get-base-url';
 import { ForbiddenError, NotFoundError } from '@/lib/validation/exceptions';
 import { replyClientTicketSchema } from '@/schemas/client-portal/reply-client-ticket-schema';
 
@@ -108,5 +111,57 @@ export const replyClientTicket = authActionClient
       )
     );
 
+    // Best-effort notify the team. Don't block on email failures.
+    const ticketDetails = await prisma.contactTicket.findUnique({
+      where: { id: ticket.id },
+      select: { number: true, title: true }
+    });
+    if (ticketDetails) {
+      void notifyTeamOfTicketReply({
+        organizationId: link.organizationId,
+        contactId: ticket.contactId,
+        ticketId: ticket.id,
+        ticketNumber: ticketDetails.number,
+        ticketTitle: ticketDetails.title,
+        clientName: link.name,
+        body: parsedInput.body,
+        reopened: reopening
+      }).catch((error) => {
+        console.error('[Notify team] replyClientTicket failed:', error);
+      });
+    }
+
     return { reopened: reopening };
   });
+
+async function notifyTeamOfTicketReply(args: {
+  organizationId: string;
+  contactId: string;
+  ticketId: string;
+  ticketNumber: number;
+  ticketTitle: string;
+  clientName: string;
+  body: string;
+  reopened: boolean;
+}): Promise<void> {
+  const team = await getTeamNotificationRecipient(args.organizationId);
+  if (!team) return;
+  const url = `${getBaseUrl()}/dashboard/contacts/${args.contactId}/tickets/${args.ticketId}`;
+  const subject = args.reopened
+    ? `Ticket #${args.ticketNumber} reopened: ${args.ticketTitle}`
+    : `New reply on #${args.ticketNumber}: ${args.ticketTitle}`;
+  const heading = args.reopened
+    ? `${args.clientName} reopened a ticket`
+    : `${args.clientName} replied to a ticket`;
+  await sendPortalActivityEmail({
+    recipient: team.email,
+    recipientName: team.name,
+    subject,
+    heading,
+    preheader: subject,
+    context: `Ticket #${args.ticketNumber} · ${args.ticketTitle}`,
+    body: args.body,
+    ctaLabel: 'Open ticket in CRM',
+    ctaUrl: url
+  });
+}

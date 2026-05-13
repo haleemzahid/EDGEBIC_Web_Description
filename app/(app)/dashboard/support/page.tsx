@@ -7,6 +7,7 @@ import { formatDistanceToNow } from 'date-fns';
 
 import { NewClientTicketButton } from '@/components/dashboard/client-portal/new-ticket-button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Page,
   PageActions,
@@ -90,7 +91,7 @@ export default async function ClientSupportPage(): Promise<React.JSX.Element> {
 
           <Section title={`Active · ${open.length}`}>
             {open.length === 0 ? (
-              <Empty message="No open tickets." />
+              <EmptyActive />
             ) : (
               <TicketList tickets={open} />
             )}
@@ -141,6 +142,37 @@ function Empty({ message }: { message: string }): React.JSX.Element {
   return <p className="px-4 py-6 text-sm text-muted-foreground">{message}</p>;
 }
 
+function EmptyActive(): React.JSX.Element {
+  return (
+    <div className="flex flex-col items-center gap-3 px-4 py-8 text-center">
+      <p className="text-sm text-muted-foreground">No open tickets.</p>
+      <NewClientTicketButton />
+    </div>
+  );
+}
+
+function priorityLabel(priority: ContactPriority): string {
+  switch (priority) {
+    case ContactPriority.LOW:
+      return 'Low';
+    case ContactPriority.MEDIUM:
+      return 'Medium';
+    case ContactPriority.HIGH:
+      return 'High';
+  }
+}
+
+function priorityClasses(priority: ContactPriority): string {
+  switch (priority) {
+    case ContactPriority.LOW:
+      return 'border-slate-300 text-slate-600';
+    case ContactPriority.MEDIUM:
+      return 'border-slate-300 text-slate-700';
+    case ContactPriority.HIGH:
+      return 'border-rose-300 text-rose-700';
+  }
+}
+
 function TicketList({
   tickets,
   muted
@@ -182,6 +214,14 @@ function TicketList({
               >
                 {statusLabel(t.status)}
               </Badge>
+              {t.priority !== ContactPriority.MEDIUM && (
+                <Badge
+                  variant="outline"
+                  className={cn('text-[10px]', priorityClasses(t.priority))}
+                >
+                  {priorityLabel(t.priority)}
+                </Badge>
+              )}
             </div>
           </Link>
         </li>

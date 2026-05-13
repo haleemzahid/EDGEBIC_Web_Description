@@ -6,7 +6,10 @@ import { EmailSenderType, Role } from '@prisma/client';
 import { authActionClient } from '@/actions/safe-action';
 import { Caching, OrganizationCacheKey } from '@/data/caching';
 import { getClientContactLink } from '@/lib/auth/get-client-contact';
+import { getTeamNotificationRecipient } from '@/lib/auth/get-team-notification-recipient';
 import { prisma } from '@/lib/db/prisma';
+import { sendPortalActivityEmail } from '@/lib/smtp/send-portal-activity-email';
+import { getBaseUrl } from '@/lib/urls/get-base-url';
 import { ForbiddenError, NotFoundError } from '@/lib/validation/exceptions';
 import { replyClientMessageSchema } from '@/schemas/client-portal/reply-client-message-schema';
 
@@ -34,7 +37,7 @@ export const replyClientMessage = authActionClient
         id: parsedInput.threadId,
         contactId: link.contactId
       },
-      select: { id: true, contactId: true }
+      select: { id: true, contactId: true, subject: true }
     });
     if (!thread) {
       throw new NotFoundError('Conversation not found');
@@ -66,4 +69,37 @@ export const replyClientMessage = authActionClient
         thread.contactId
       )
     );
+
+    void notifyTeamOfMessageReply({
+      organizationId: link.organizationId,
+      contactId: thread.contactId,
+      clientName: link.name,
+      subject: thread.subject,
+      body: parsedInput.body
+    }).catch((error) => {
+      console.error('[Notify team] replyClientMessage failed:', error);
+    });
   });
+
+async function notifyTeamOfMessageReply(args: {
+  organizationId: string;
+  contactId: string;
+  clientName: string;
+  subject: string;
+  body: string;
+}): Promise<void> {
+  const team = await getTeamNotificationRecipient(args.organizationId);
+  if (!team) return;
+  const url = `${getBaseUrl()}/dashboard/contacts/${args.contactId}?tab=inbox`;
+  await sendPortalActivityEmail({
+    recipient: team.email,
+    recipientName: team.name,
+    subject: `New reply from ${args.clientName}: ${args.subject}`,
+    heading: `${args.clientName} replied to a message`,
+    preheader: `New reply: ${args.subject}`,
+    context: args.subject,
+    body: args.body,
+    ctaLabel: 'Open in CRM',
+    ctaUrl: url
+  });
+}

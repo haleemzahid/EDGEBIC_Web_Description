@@ -31,7 +31,15 @@ export const metadata: Metadata = {
   title: createTitle('My meetings')
 };
 
-export default async function ClientMeetingsPage(): Promise<React.JSX.Element> {
+type SearchParams = { showAllPast?: string };
+
+export default async function ClientMeetingsPage({
+  searchParams
+}: {
+  searchParams: Promise<SearchParams>;
+}): Promise<React.JSX.Element> {
+  const { showAllPast: showAllPastParam } = await searchParams;
+  const showAllPast = showAllPastParam === '1';
   const session = await dedupedAuth();
   if (!checkSession(session)) {
     return redirect(getLoginRedirect());
@@ -148,7 +156,7 @@ export default async function ClientMeetingsPage(): Promise<React.JSX.Element> {
 
           <Section title={`Upcoming · ${upcoming.length}`}>
             {upcoming.length === 0 ? (
-              <Empty message="No upcoming meetings." />
+              <EmptyUpcoming />
             ) : (
               <MeetingList
                 meetings={upcoming}
@@ -157,17 +165,11 @@ export default async function ClientMeetingsPage(): Promise<React.JSX.Element> {
             )}
           </Section>
 
-          <Section title={`Past · ${past.length}`}>
-            {past.length === 0 ? (
-              <Empty message="No past meetings." />
-            ) : (
-              <MeetingList
-                meetings={past}
-                now={now}
-                muted
-              />
-            )}
-          </Section>
+          <PastSection
+            past={past}
+            now={now}
+            showAll={showAllPast}
+          />
         </div>
       </PageBody>
     </Page>
@@ -229,6 +231,55 @@ function Empty({ message }: { message: string }): React.JSX.Element {
   return <p className="px-4 py-6 text-sm text-muted-foreground">{message}</p>;
 }
 
+const PAST_PAGE_SIZE = 20;
+
+function PastSection({
+  past,
+  now,
+  showAll
+}: {
+  past: ContactMeetingDto[];
+  now: Date;
+  showAll: boolean;
+}): React.JSX.Element {
+  const shown = showAll ? past : past.slice(0, PAST_PAGE_SIZE);
+  const hasMore = !showAll && past.length > PAST_PAGE_SIZE;
+  return (
+    <Section title={`Past · ${past.length}`}>
+      {past.length === 0 ? (
+        <Empty message="No past meetings." />
+      ) : (
+        <>
+          <MeetingList
+            meetings={shown}
+            now={now}
+            muted
+          />
+          {hasMore && (
+            <div className="border-t bg-muted/20 px-4 py-2 text-center">
+              <Link
+                href={`${Routes.ClientMeetings}?showAllPast=1`}
+                className="text-xs font-medium text-primary underline"
+              >
+                Show all {past.length}
+              </Link>
+            </div>
+          )}
+        </>
+      )}
+    </Section>
+  );
+}
+
+function EmptyUpcoming(): React.JSX.Element {
+  return (
+    <div className="flex flex-col items-center gap-3 px-4 py-8 text-center">
+      <p className="text-sm text-muted-foreground">No upcoming meetings.</p>
+      <ClientBookMeetingButton />
+    </div>
+  );
+}
+
 function MeetingList({
   meetings,
   now,
@@ -245,15 +296,12 @@ function MeetingList({
       {meetings.map((m) => {
         const locationIsUrl = !!m.location && isUrl(m.location);
         const status = displayStatus(m.status, m.endsAt, now);
-        return (
-          <li
-            key={m.id}
-            className={cn(
-              'flex flex-row items-center gap-4 px-4 py-3',
-              muted && 'opacity-80',
-              highlight && 'bg-emerald-50/60'
-            )}
-          >
+        const isCalendly = m.source === 'calendly';
+        const detailHref = !isCalendly
+          ? `${Routes.ClientMeetings}/${m.id}`
+          : null;
+        const RowBody = (
+          <>
             <div className="flex size-12 shrink-0 flex-col items-center justify-center rounded-md border bg-background">
               <div className="text-[10px] font-semibold uppercase text-muted-foreground">
                 {format(m.startsAt, 'MMM')}
@@ -269,7 +317,35 @@ function MeetingList({
                 {format(m.endsAt, 'h:mm a')}
                 {m.location && !locationIsUrl ? ` · ${m.location}` : ''}
               </div>
+              {m.description && (
+                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground/80">
+                  {m.description}
+                </p>
+              )}
             </div>
+          </>
+        );
+        return (
+          <li
+            key={m.id}
+            className={cn(
+              'flex flex-row items-center gap-4 px-4 py-3',
+              muted && 'opacity-80',
+              highlight && 'bg-emerald-50/60'
+            )}
+          >
+            {detailHref ? (
+              <Link
+                href={detailHref}
+                className="flex min-w-0 flex-1 items-center gap-4 rounded-md transition-colors hover:bg-accent/40 -mx-1 px-1 py-1"
+              >
+                {RowBody}
+              </Link>
+            ) : (
+              <div className="flex min-w-0 flex-1 items-center gap-4">
+                {RowBody}
+              </div>
+            )}
             {locationIsUrl && m.location && (
               <Button
                 asChild

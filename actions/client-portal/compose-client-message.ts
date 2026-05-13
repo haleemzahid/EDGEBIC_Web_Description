@@ -6,7 +6,10 @@ import { EmailFolder, EmailSenderType, Role } from '@prisma/client';
 import { authActionClient } from '@/actions/safe-action';
 import { Caching, OrganizationCacheKey } from '@/data/caching';
 import { getClientContactLink } from '@/lib/auth/get-client-contact';
+import { getTeamNotificationRecipient } from '@/lib/auth/get-team-notification-recipient';
 import { prisma } from '@/lib/db/prisma';
+import { sendPortalActivityEmail } from '@/lib/smtp/send-portal-activity-email';
+import { getBaseUrl } from '@/lib/urls/get-base-url';
 import { ForbiddenError, NotFoundError } from '@/lib/validation/exceptions';
 import { composeClientMessageSchema } from '@/schemas/client-portal/compose-client-message-schema';
 
@@ -58,5 +61,46 @@ export const composeClientMessage = authActionClient
       )
     );
 
+    void notifyTeamOfMessage({
+      organizationId: link.organizationId,
+      contactId: link.contactId,
+      clientName: link.name,
+      subject: parsedInput.subject,
+      body: parsedInput.body,
+      isNewThread: true
+    }).catch((error) => {
+      console.error('[Notify team] composeClientMessage failed:', error);
+    });
+
     return { threadId: thread.id };
   });
+
+async function notifyTeamOfMessage(args: {
+  organizationId: string;
+  contactId: string;
+  clientName: string;
+  subject: string;
+  body: string;
+  isNewThread: boolean;
+}): Promise<void> {
+  const team = await getTeamNotificationRecipient(args.organizationId);
+  if (!team) return;
+  const url = `${getBaseUrl()}/dashboard/contacts/${args.contactId}?tab=inbox`;
+  const subject = args.isNewThread
+    ? `New message from ${args.clientName}: ${args.subject}`
+    : `New reply from ${args.clientName}: ${args.subject}`;
+  const heading = args.isNewThread
+    ? `${args.clientName} sent a new message`
+    : `${args.clientName} replied to a message`;
+  await sendPortalActivityEmail({
+    recipient: team.email,
+    recipientName: team.name,
+    subject,
+    heading,
+    preheader: subject,
+    context: args.subject,
+    body: args.body,
+    ctaLabel: 'Open in CRM',
+    ctaUrl: url
+  });
+}

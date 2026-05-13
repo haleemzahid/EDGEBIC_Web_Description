@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { type Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import {
+  ContactPriority,
   ContactTicketStatus,
   Role,
   TicketMessageSender
@@ -124,12 +125,22 @@ export default async function ClientTicketDetailPage({
               {ticket.title}
             </PageTitle>
           </div>
-          <Badge
-            variant="secondary"
-            className={statusClasses(ticket.status)}
-          >
-            {statusLabel(ticket.status)}
-          </Badge>
+          <div className="flex shrink-0 items-center gap-1.5">
+            {ticket.priority !== ContactPriority.MEDIUM && (
+              <Badge
+                variant="outline"
+                className={cn('text-[10px]', priorityClasses(ticket.priority))}
+              >
+                {priorityLabel(ticket.priority)} priority
+              </Badge>
+            )}
+            <Badge
+              variant="secondary"
+              className={statusClasses(ticket.status)}
+            >
+              {statusLabel(ticket.status)}
+            </Badge>
+          </div>
         </PagePrimaryBar>
       </PageHeader>
       <PageBody className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -246,6 +257,28 @@ function ConversationBubble({
       </div>
     </div>
   );
+}
+
+function priorityLabel(priority: ContactPriority): string {
+  switch (priority) {
+    case ContactPriority.LOW:
+      return 'Low';
+    case ContactPriority.MEDIUM:
+      return 'Medium';
+    case ContactPriority.HIGH:
+      return 'High';
+  }
+}
+
+function priorityClasses(priority: ContactPriority): string {
+  switch (priority) {
+    case ContactPriority.LOW:
+      return 'border-slate-300 text-slate-600';
+    case ContactPriority.MEDIUM:
+      return 'border-slate-300 text-slate-700';
+    case ContactPriority.HIGH:
+      return 'border-rose-300 text-rose-700';
+  }
 }
 
 function statusLabel(status: ContactTicketStatus): string {

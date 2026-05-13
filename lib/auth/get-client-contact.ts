@@ -22,7 +22,8 @@ export async function getClientContactLink(
       role: true,
       email: true,
       name: true,
-      organizationId: true
+      organizationId: true,
+      contactId: true
     }
   });
   if (
@@ -34,19 +35,38 @@ export async function getClientContactLink(
     return null;
   }
 
-  const contact = await prisma.contact.findFirst({
-    where: {
-      organizationId: user.organizationId,
-      email: user.email
-    },
-    select: { id: true }
-  });
-  if (!contact) return null;
+  // Prefer the explicit User.contactId link. Falls back to email match (for
+  // users created before the contactId column existed) and, when a match is
+  // found that way, persists it back to User.contactId so future calls are
+  // O(1) and stable against email changes.
+  let contactId = user.contactId;
+  if (!contactId) {
+    const contact = await prisma.contact.findFirst({
+      where: {
+        organizationId: user.organizationId,
+        email: user.email
+      },
+      select: { id: true }
+    });
+    if (!contact) return null;
+    contactId = contact.id;
+    await prisma.user
+      .update({
+        where: { id: user.id },
+        data: { contactId }
+      })
+      .catch((error) => {
+        console.error(
+          '[getClientContactLink] Failed to persist contactId:',
+          error
+        );
+      });
+  }
 
   return {
     userId: user.id,
     organizationId: user.organizationId,
-    contactId: contact.id,
+    contactId,
     email: user.email,
     name: user.name
   };
