@@ -265,11 +265,7 @@ export default async function ClientMeetingDetailPage({
               <h2 className="border-b bg-muted/40 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Details
               </h2>
-              <p
-                className={cn(
-                  'whitespace-pre-wrap px-4 py-3 text-sm leading-relaxed'
-                )}
-              >
+              <p className="whitespace-pre-wrap px-4 py-3 text-sm leading-relaxed">
                 {meeting.description}
               </p>
             </section>

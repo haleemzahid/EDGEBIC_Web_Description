@@ -143,7 +143,10 @@ export default async function ClientTicketDetailPage({
           </div>
         </PagePrimaryBar>
       </PageHeader>
-      <PageBody className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <PageBody
+        disableScroll
+        className="flex min-h-0 flex-1 flex-col overflow-hidden"
+      >
         <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-0 overflow-hidden p-4">
           <div className="flex-1 space-y-4 overflow-y-auto rounded-t-lg border border-b-0 bg-card p-4">
             {ticket.description && (
@@ -253,7 +256,7 @@ function ConversationBubble({
             <span className="ml-1 uppercase tracking-wide">Original</span>
           )}
         </div>
-        <p className="whitespace-pre-wrap leading-relaxed">{body}</p>
+        <p className="whitespace-pre-wrap text-sm leading-relaxed">{body}</p>
       </div>
     </div>
   );
