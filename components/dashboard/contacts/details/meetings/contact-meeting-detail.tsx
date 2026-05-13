@@ -15,10 +15,12 @@ import {
   PencilIcon,
   PinIcon,
   PlusIcon,
+  StickyNoteIcon,
   TicketIcon,
   TrashIcon
 } from 'lucide-react';
 
+import { ContactMeetingFiles } from '@/components/dashboard/contacts/details/meetings/contact-meeting-files';
 import { AddContactNoteModal } from '@/components/dashboard/contacts/details/notes/add-contact-note-modal';
 import { AddContactTaskModal } from '@/components/dashboard/contacts/details/tasks/add-contact-task-modal';
 import { AddContactTicketModal } from '@/components/dashboard/contacts/details/tickets/add-contact-ticket-modal';
@@ -32,6 +34,7 @@ import { convertMarkdownToHtml } from '@/lib/markdown/convert-markdown-to-html';
 import { cn, getInitials } from '@/lib/utils';
 import type { ContactDto } from '@/types/dtos/contact-dto';
 import type { ContactMeetingDto } from '@/types/dtos/contact-meeting-dto';
+import type { ContactMeetingFileDto } from '@/types/dtos/contact-meeting-file-dto';
 import type { ContactNoteDto } from '@/types/dtos/contact-note-dto';
 import type { ContactTaskDto } from '@/types/dtos/contact-task-dto';
 import type { ContactTicketDto } from '@/types/dtos/contact-ticket-dto';
@@ -47,6 +50,7 @@ export type ContactMeetingDetailProps = {
   tickets: ContactTicketDto[];
   meetings: ContactMeetingDto[];
   members: MemberDto[];
+  files: ContactMeetingFileDto[];
 };
 
 export function ContactMeetingDetail({
@@ -56,14 +60,16 @@ export function ContactMeetingDetail({
   tasks,
   tickets,
   meetings,
-  members
+  members,
+  files
 }: ContactMeetingDetailProps): React.JSX.Element {
   const handleAddTask = (): void => {
     NiceModal.show(AddContactTaskModal, {
       contactId: contact.id,
       meetings,
       members,
-      defaultMeetingId: meeting.id
+      defaultMeetingId: meeting.id,
+      hideMeetingField: true
     });
   };
   const handleAddTicket = (): void => {
@@ -71,7 +77,8 @@ export function ContactMeetingDetail({
       contactId: contact.id,
       members,
       meetings,
-      defaultMeetingId: meeting.id
+      defaultMeetingId: meeting.id,
+      hideMeetingField: true
     });
   };
 
@@ -80,7 +87,8 @@ export function ContactMeetingDetail({
     NiceModal.show(AddContactNoteModal, {
       contactId: contact.id,
       meetings,
-      defaultMeetingId: meeting.id
+      defaultMeetingId: meeting.id,
+      hideMeetingField: true
     });
   };
 
@@ -108,6 +116,14 @@ export function ContactMeetingDetail({
               Meeting details
             </TabsTrigger>
             <TabsTrigger
+              value="files"
+              className="text-xs"
+            >
+              <PaperclipIcon className="mr-1.5 size-3.5 shrink-0" />
+              Files
+              <CountBadge value={files.length} />
+            </TabsTrigger>
+            <TabsTrigger
               value="tasks"
               className="text-xs"
             >
@@ -127,7 +143,7 @@ export function ContactMeetingDetail({
               value="notes"
               className="text-xs"
             >
-              <PaperclipIcon className="mr-1.5 size-3.5 shrink-0" />
+              <StickyNoteIcon className="mr-1.5 size-3.5 shrink-0" />
               Notes
               <CountBadge value={notes.length} />
             </TabsTrigger>
@@ -215,6 +231,17 @@ export function ContactMeetingDetail({
                 Add note
               </Button>
             </div>
+          </TabsContent>
+
+          {/* Files */}
+          <TabsContent
+            value="files"
+            className="mt-4"
+          >
+            <ContactMeetingFiles
+              meetingId={meeting.id}
+              files={files}
+            />
           </TabsContent>
 
           {/* Tasks */}
@@ -653,7 +680,11 @@ function NoteRow({
   meetings: ContactMeetingDto[];
 }): React.JSX.Element {
   const handleEdit = (): void => {
-    NiceModal.show(EditContactNoteModal, { note, meetings });
+    NiceModal.show(EditContactNoteModal, {
+      note,
+      meetings,
+      hideMeetingField: true
+    });
   };
   const handleDelete = (): void => {
     NiceModal.show(DeleteContactNoteModal, { note });

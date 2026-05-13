@@ -63,12 +63,19 @@ export type AddContactTaskModalProps = NiceModalHocProps & {
   meetings?: ContactMeetingDto[];
   members?: MemberDto[];
   defaultMeetingId?: string;
+  hideMeetingField?: boolean;
 };
 
 const NO_VALUE = '__none__';
 
 export const AddContactTaskModal = NiceModal.create<AddContactTaskModalProps>(
-  ({ contactId, meetings = [], members = [], defaultMeetingId }) => {
+  ({
+    contactId,
+    meetings = [],
+    members = [],
+    defaultMeetingId,
+    hideMeetingField
+  }) => {
     const modal = useEnhancedModal();
     const mdUp = useMediaQuery(MediaQueries.MdUp, { ssr: false });
     const methods = useZodForm({
@@ -253,43 +260,45 @@ export const AddContactTaskModal = NiceModal.create<AddContactTaskModalProps>(
             )}
           />
         </div>
-        <FormField
-          control={methods.control}
-          name="meetingId"
-          render={({ field }) => (
-            <FormItem className="flex w-full flex-col space-y-1.5">
-              <FormLabel>Link to meeting (optional)</FormLabel>
-              <FormControl>
-                <Select
-                  value={field.value ? field.value : NO_VALUE}
-                  onValueChange={(next) =>
-                    field.onChange(next === NO_VALUE ? null : next)
-                  }
-                  disabled={methods.formState.isSubmitting}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NO_VALUE}>— No meeting —</SelectItem>
-                    {meetings.map((m) => (
-                      <SelectItem
-                        key={m.id}
-                        value={m.id}
-                      >
-                        📅 {format(m.startsAt, 'MMM d')} · {m.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <p className="text-xs text-muted-foreground">
-                If linked, the task will also show on the meeting&apos;s detail.
-              </p>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {!hideMeetingField && (
+          <FormField
+            control={methods.control}
+            name="meetingId"
+            render={({ field }) => (
+              <FormItem className="flex w-full flex-col space-y-1.5">
+                <FormLabel>Link to meeting (optional)</FormLabel>
+                <FormControl>
+                  <Select
+                    value={field.value ? field.value : NO_VALUE}
+                    onValueChange={(next) =>
+                      field.onChange(next === NO_VALUE ? null : next)
+                    }
+                    disabled={methods.formState.isSubmitting}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NO_VALUE}>— No meeting —</SelectItem>
+                      {meetings.map((m) => (
+                        <SelectItem
+                          key={m.id}
+                          value={m.id}
+                        >
+                          📅 {format(m.startsAt, 'MMM d')} · {m.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <p className="text-xs text-muted-foreground">
+                  If linked, the task will also show on the meeting&apos;s detail.
+                </p>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         <FormField
           control={methods.control}
           name="description"

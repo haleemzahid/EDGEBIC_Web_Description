@@ -58,12 +58,13 @@ export type AddContactNoteModalProps = NiceModalHocProps & {
   contactId: string;
   meetings?: ContactMeetingDto[];
   defaultMeetingId?: string;
+  hideMeetingField?: boolean;
 };
 
 const NO_MEETING = '__none__';
 
 export const AddContactNoteModal = NiceModal.create<AddContactNoteModalProps>(
-  ({ contactId, meetings = [], defaultMeetingId }) => {
+  ({ contactId, meetings = [], defaultMeetingId, hideMeetingField }) => {
     const modal = useEnhancedModal();
     const mdUp = useMediaQuery(MediaQueries.MdUp, { ssr: false });
     const methods = useZodForm({
@@ -127,7 +128,12 @@ export const AddContactNoteModal = NiceModal.create<AddContactNoteModalProps>(
             </FormItem>
           )}
         />
-        <div className="grid grid-cols-2 gap-4">
+        <div
+          className={cn(
+            'grid gap-4',
+            hideMeetingField ? 'grid-cols-1' : 'grid-cols-2'
+          )}
+        >
           <FormField
             control={methods.control}
             name="priority"
@@ -158,42 +164,44 @@ export const AddContactNoteModal = NiceModal.create<AddContactNoteModalProps>(
               </FormItem>
             )}
           />
-          <FormField
-            control={methods.control}
-            name="meetingId"
-            render={({ field }) => (
-              <FormItem className="flex w-full flex-col space-y-1.5">
-                <FormLabel>Link to meeting</FormLabel>
-                <FormControl>
-                  <Select
-                    value={field.value ? field.value : NO_MEETING}
-                    onValueChange={(next) =>
-                      field.onChange(next === NO_MEETING ? null : next)
-                    }
-                    disabled={methods.formState.isSubmitting}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={NO_MEETING}>
-                        — No meeting —
-                      </SelectItem>
-                      {meetings.map((m) => (
-                        <SelectItem
-                          key={m.id}
-                          value={m.id}
-                        >
-                          📅 {format(m.startsAt, 'MMM d')} · {m.title}
+          {!hideMeetingField && (
+            <FormField
+              control={methods.control}
+              name="meetingId"
+              render={({ field }) => (
+                <FormItem className="flex w-full flex-col space-y-1.5">
+                  <FormLabel>Link to meeting</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={field.value ? field.value : NO_MEETING}
+                      onValueChange={(next) =>
+                        field.onChange(next === NO_MEETING ? null : next)
+                      }
+                      disabled={methods.formState.isSubmitting}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NO_MEETING}>
+                          — No meeting —
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                        {meetings.map((m) => (
+                          <SelectItem
+                            key={m.id}
+                            value={m.id}
+                          >
+                            📅 {format(m.startsAt, 'MMM d')} · {m.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
         </div>
         <FormField
           control={methods.control}

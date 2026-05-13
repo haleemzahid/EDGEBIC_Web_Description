@@ -58,6 +58,7 @@ export type AddContactTicketModalProps = NiceModalHocProps & {
   members?: MemberDto[];
   meetings?: ContactMeetingDto[];
   defaultMeetingId?: string;
+  hideMeetingField?: boolean;
 };
 
 const AUTO_ASSIGN = '__auto__';
@@ -65,7 +66,13 @@ const NO_MEETING = '__none__';
 
 export const AddContactTicketModal =
   NiceModal.create<AddContactTicketModalProps>(
-    ({ contactId, members = [], meetings = [], defaultMeetingId }) => {
+    ({
+      contactId,
+      members = [],
+      meetings = [],
+      defaultMeetingId,
+      hideMeetingField
+    }) => {
       const modal = useEnhancedModal();
       const mdUp = useMediaQuery(MediaQueries.MdUp, { ssr: false });
       const methods = useZodForm({
@@ -245,46 +252,48 @@ export const AddContactTicketModal =
               </FormItem>
             )}
           />
-          <FormField
-            control={methods.control}
-            name="meetingId"
-            render={({ field }) => (
-              <FormItem className="flex w-full flex-col space-y-1.5">
-                <FormLabel>Link to meeting (optional)</FormLabel>
-                <FormControl>
-                  <Select
-                    value={field.value ? field.value : NO_MEETING}
-                    onValueChange={(next) =>
-                      field.onChange(next === NO_MEETING ? null : next)
-                    }
-                    disabled={methods.formState.isSubmitting}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={NO_MEETING}>
-                        — No meeting —
-                      </SelectItem>
-                      {meetings.map((m) => (
-                        <SelectItem
-                          key={m.id}
-                          value={m.id}
-                        >
-                          📅 {format(m.startsAt, 'MMM d')} · {m.title}
+          {!hideMeetingField && (
+            <FormField
+              control={methods.control}
+              name="meetingId"
+              render={({ field }) => (
+                <FormItem className="flex w-full flex-col space-y-1.5">
+                  <FormLabel>Link to meeting (optional)</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={field.value ? field.value : NO_MEETING}
+                      onValueChange={(next) =>
+                        field.onChange(next === NO_MEETING ? null : next)
+                      }
+                      disabled={methods.formState.isSubmitting}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NO_MEETING}>
+                          — No meeting —
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <p className="text-xs text-muted-foreground">
-                  If linked, the ticket will also show on the meeting&apos;s
-                  detail page.
-                </p>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                        {meetings.map((m) => (
+                          <SelectItem
+                            key={m.id}
+                            value={m.id}
+                          >
+                            📅 {format(m.startsAt, 'MMM d')} · {m.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    If linked, the ticket will also show on the meeting&apos;s
+                    detail page.
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
         </form>
       );
       const renderButtons = (

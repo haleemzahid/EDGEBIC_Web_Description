@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/page';
 import { getContact } from '@/data/contacts/get-contact';
 import { getContactMeeting } from '@/data/contacts/get-contact-meeting';
+import { getContactMeetingFiles } from '@/data/contacts/get-contact-meeting-files';
 import { getContactMeetings } from '@/data/contacts/get-contact-meetings';
 import { getContactNotes } from '@/data/contacts/get-contact-notes';
 import { getContactTasks } from '@/data/contacts/get-contact-tasks';
@@ -61,15 +62,23 @@ export default async function ContactMeetingPage({
     return notFound();
   }
 
-  const [contact, allNotes, allTasks, allMeetings, allTickets, members] =
-    await Promise.all([
-      getContact({ id: contactId }),
-      getContactNotes({ contactId }),
-      getContactTasks({ contactId }),
-      getContactMeetings({ contactId }),
-      getContactTickets({ contactId }),
-      getMembers()
-    ]);
+  const [
+    contact,
+    allNotes,
+    allTasks,
+    allMeetings,
+    allTickets,
+    members,
+    files
+  ] = await Promise.all([
+    getContact({ id: contactId }),
+    getContactNotes({ contactId }),
+    getContactTasks({ contactId }),
+    getContactMeetings({ contactId }),
+    getContactTickets({ contactId }),
+    getMembers(),
+    getContactMeetingFiles({ meetingId })
+  ]);
 
   const linkedNotes = allNotes.filter((n) => n.meetingId === meeting.id);
   const linkedTasks = allTasks.filter((t) => t.meetingId === meeting.id);
@@ -124,6 +133,7 @@ export default async function ContactMeetingPage({
           tickets={allTickets}
           meetings={allMeetings}
           members={members}
+          files={files}
         />
       </PageBody>
     </Page>
