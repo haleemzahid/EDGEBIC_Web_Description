@@ -2,9 +2,11 @@
 
 import { createHash } from 'crypto';
 import { revalidateTag } from 'next/cache';
+import { Role } from '@prisma/client';
 
 import { authActionClient } from '@/actions/safe-action';
 import { Caching, OrganizationCacheKey, UserCacheKey } from '@/data/caching';
+import { getClientContactLink } from '@/lib/auth/get-client-contact';
 import { prisma } from '@/lib/db/prisma';
 import { decodeBase64Image } from '@/lib/imaging/decode-base64-image';
 import { resizeImage } from '@/lib/imaging/resize-image';
@@ -68,6 +70,30 @@ export const updatePersonalDetails = authActionClient
       })
     );
 
+    // CLIENT users have a linked Contact in the CRM. Mirror name/phone there
+    // so the team sees up-to-date details without manual re-entry.
+    const callingUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true }
+    });
+    let mirroredContactId: string | null = null;
+    if (callingUser?.role === Role.CLIENT) {
+      const link = await getClientContactLink(session.user.id);
+      if (link) {
+        mirroredContactId = link.contactId;
+        transactions.push(
+          prisma.contact.update({
+            where: { id: link.contactId },
+            data: {
+              name: parsedInput.name,
+              phone: parsedInput.phone || null
+            },
+            select: { id: true }
+          })
+        );
+      }
+    }
+
     await prisma.$transaction(transactions);
 
     revalidateTag(
@@ -79,4 +105,19 @@ export const updatePersonalDetails = authActionClient
         session.user.organizationId
       )
     );
+    if (mirroredContactId) {
+      revalidateTag(
+        Caching.createOrganizationTag(
+          OrganizationCacheKey.Contacts,
+          session.user.organizationId
+        )
+      );
+      revalidateTag(
+        Caching.createOrganizationTag(
+          OrganizationCacheKey.Contact,
+          session.user.organizationId,
+          mirroredContactId
+        )
+      );
+    }
   });

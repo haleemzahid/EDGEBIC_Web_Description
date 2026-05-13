@@ -2,6 +2,7 @@ import 'server-only';
 
 import { unstable_cache as cache } from 'next/cache';
 import { notFound, redirect } from 'next/navigation';
+import { InvitationStatus } from '@prisma/client';
 
 import {
   Caching,
@@ -17,7 +18,10 @@ import {
   getContactSchema,
   type GetContactSchema
 } from '@/schemas/contacts/get-contact-schema';
-import type { ContactDto } from '@/types/dtos/contact-dto';
+import type {
+  ContactDto,
+  ContactInviteStatus
+} from '@/types/dtos/contact-dto';
 
 export async function getContact(input: GetContactSchema): Promise<ContactDto> {
   const session = await dedupedAuth();
@@ -77,6 +81,36 @@ export async function getContact(input: GetContactSchema): Promise<ContactDto> {
         return notFound();
       }
 
+      let inviteStatus: ContactInviteStatus = 'NONE';
+      if (contact.email) {
+        const [memberCount, latestInvitation] = await Promise.all([
+          prisma.user.count({
+            where: {
+              organizationId: session.user.organizationId,
+              email: { equals: contact.email, mode: 'insensitive' }
+            }
+          }),
+          prisma.invitation.findFirst({
+            where: {
+              organizationId: session.user.organizationId,
+              email: { equals: contact.email, mode: 'insensitive' }
+            },
+            orderBy: [{ createdAt: 'desc' }],
+            select: { status: true }
+          })
+        ]);
+        if (memberCount > 0) {
+          inviteStatus = 'USER_EXISTS';
+        } else if (latestInvitation) {
+          inviteStatus =
+            latestInvitation.status === InvitationStatus.ACCEPTED
+              ? 'ACCEPTED'
+              : latestInvitation.status === InvitationStatus.PENDING
+                ? 'PENDING'
+                : 'REVOKED';
+        }
+      }
+
       const response: ContactDto = {
         id: contact.id,
         record: contact.record,
@@ -106,7 +140,8 @@ export async function getContact(input: GetContactSchema): Promise<ContactDto> {
           : undefined,
         hearAboutUs: contact.hearAboutUs ? contact.hearAboutUs : undefined,
         createdAt: contact.createdAt,
-        tags: contact.tags
+        tags: contact.tags,
+        inviteStatus
       };
 
       return response;
@@ -123,6 +158,14 @@ export async function getContact(input: GetContactSchema): Promise<ContactDto> {
           OrganizationCacheKey.Contact,
           session.user.organizationId,
           parsedInput.id
+        ),
+        Caching.createOrganizationTag(
+          OrganizationCacheKey.Invitations,
+          session.user.organizationId
+        ),
+        Caching.createOrganizationTag(
+          OrganizationCacheKey.Members,
+          session.user.organizationId
         )
       ]
     }

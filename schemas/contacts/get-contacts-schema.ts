@@ -17,6 +17,12 @@ export enum RecordsOption {
   Companies = 'companies'
 }
 
+export enum InvitedOption {
+  All = 'all',
+  Invited = 'invited',
+  NotInvited = 'notInvited'
+}
+
 export const getContactsSchema = z.object({
   pageIndex: z.coerce
     .number({
@@ -52,6 +58,9 @@ export const getContactsSchema = z.object({
   records: z.nativeEnum(RecordsOption, {
     required_error: 'Records is required.',
     invalid_type_error: 'Records must be a string.'
+  }),
+  invited: z.nativeEnum(InvitedOption, {
+    invalid_type_error: 'Invited filter must be a string.'
   }),
   tags: z.array(z.string().max(128, 'Maximum 128 characters allowed.'))
 });

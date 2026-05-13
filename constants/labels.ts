@@ -41,6 +41,8 @@ export const roleLabels: Record<Role, string> = {
   [Role.CLIENT]: 'Client'
 };
 
+export const assignableRoles: Role[] = [Role.ADMIN, Role.CLIENT];
+
 export const feedbackCategoryLabels: Record<FeedbackCategory, string> = {
   [FeedbackCategory.SUGGESTION]: 'Suggestion',
   [FeedbackCategory.PROBLEM]: 'Problem',

@@ -9,6 +9,7 @@ import {
 
 import {
   GetContactsSortBy,
+  InvitedOption,
   RecordsOption
 } from '@/schemas/contacts/get-contacts-schema';
 import { SortDirection } from '@/types/sort-direction';
@@ -18,6 +19,9 @@ export const searchParams = {
   pageSize: parseAsInteger.withDefault(50),
   records: parseAsStringLiteral(Object.values(RecordsOption)).withDefault(
     RecordsOption.All
+  ),
+  invited: parseAsStringLiteral(Object.values(InvitedOption)).withDefault(
+    InvitedOption.All
   ),
   sortBy: parseAsStringLiteral(Object.values(GetContactsSortBy)).withDefault(
     GetContactsSortBy.CreatedAt

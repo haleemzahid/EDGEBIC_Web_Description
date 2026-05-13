@@ -3,10 +3,12 @@ import {
   // BellIcon,
   CalendarIcon,
   // CodeIcon,
-  // CreditCardIcon,
+  CreditCardIcon,
   FileTextIcon,
   HomeIcon,
+  LifeBuoyIcon,
   LockKeyholeIcon,
+  MailIcon,
   // PackageIcon,
   SettingsIcon,
   StoreIcon,
@@ -56,6 +58,26 @@ export const clientNavItems: NavItem[] = [
     title: 'Home',
     href: Routes.Welcome,
     icon: HomeIcon
+  },
+  {
+    title: 'My Meetings',
+    href: Routes.ClientMeetings,
+    icon: CalendarIcon
+  },
+  {
+    title: 'Support',
+    href: Routes.ClientSupport,
+    icon: LifeBuoyIcon
+  },
+  {
+    title: 'Messages',
+    href: Routes.ClientMessages,
+    icon: MailIcon
+  },
+  {
+    title: 'Billing',
+    href: Routes.ClientBilling,
+    icon: CreditCardIcon
   },
   {
     title: 'Profile',

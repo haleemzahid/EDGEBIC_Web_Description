@@ -24,6 +24,7 @@ import { ContactsBulkActions } from '@/components/dashboard/contacts/contacts-bu
 import { searchParams } from '@/components/dashboard/contacts/contacts-search-params';
 import { DeleteContactModal } from '@/components/dashboard/contacts/delete-contact-modal';
 import { ContactAvatar } from '@/components/dashboard/contacts/details/contact-avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -393,6 +394,52 @@ const columns: ColumnDef<ContactDto>[] = [
         direction="row"
       />
     ),
+    enableSorting: false,
+    enableHiding: true
+  },
+  {
+    meta: {
+      title: 'Invite'
+    },
+    id: 'inviteStatus',
+    accessorFn: (row) => row.inviteStatus ?? 'NONE',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title="Invite"
+      />
+    ),
+    cell: ({ row }) => {
+      const status = row.original.inviteStatus ?? 'NONE';
+      if (status === 'USER_EXISTS' || status === 'ACCEPTED') {
+        return (
+          <Badge
+            variant="default"
+            className="whitespace-nowrap bg-green-600 hover:bg-green-600/80"
+          >
+            Joined
+          </Badge>
+        );
+      }
+      if (status === 'PENDING') {
+        return (
+          <Badge
+            variant="secondary"
+            className="whitespace-nowrap"
+          >
+            Invited
+          </Badge>
+        );
+      }
+      return (
+        <Badge
+          variant="outline"
+          className="whitespace-nowrap text-muted-foreground"
+        >
+          Not invited
+        </Badge>
+      );
+    },
     enableSorting: false,
     enableHiding: true
   },

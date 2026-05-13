@@ -46,10 +46,12 @@ import { FileUploadAction } from '@/types/file-upload-action';
 
 export type PersonalDetailsCardProps = CardProps & {
   details: PersonalDetailsDto;
+  isClient?: boolean;
 };
 
 export function PersonalDetailsCard({
   details,
+  isClient,
   ...other
 }: PersonalDetailsCardProps): React.JSX.Element {
   const methods = useZodForm({
@@ -206,18 +208,25 @@ export function PersonalDetailsCard({
                   autoComplete="username"
                   value={details.email ?? ''}
                   endAdornment={
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="-mr-2.5 min-w-fit bg-background"
-                      onClick={handleShowChangeEmailModal}
-                    >
-                      Change
-                    </Button>
+                    !isClient && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="-mr-2.5 min-w-fit bg-background"
+                        onClick={handleShowChangeEmailModal}
+                      >
+                        Change
+                      </Button>
+                    )
                   }
                   disabled
                 />
+                {isClient && (
+                  <p className="text-xs text-muted-foreground">
+                    To change your email, please contact your project owner.
+                  </p>
+                )}
               </div>
             </div>
           </form>

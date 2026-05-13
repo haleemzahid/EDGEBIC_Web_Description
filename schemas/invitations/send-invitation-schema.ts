@@ -11,9 +11,9 @@ export const sendInvitationSchema = z.object({
     .min(1, 'Email is required.')
     .max(255, 'Maximum 255 characters allowed.')
     .email('Enter a valid email address.'),
-  role: z.nativeEnum(Role, {
+  role: z.enum([Role.ADMIN, Role.CLIENT], {
     required_error: 'Role is required',
-    invalid_type_error: 'Role must be a string'
+    invalid_type_error: 'Role must be Admin or Client.'
   })
 });
 

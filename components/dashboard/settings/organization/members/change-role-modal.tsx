@@ -38,7 +38,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { roleLabels } from '@/constants/labels';
+import { assignableRoles, roleLabels } from '@/constants/labels';
 import { MediaQueries } from '@/constants/media-queries';
 import { useEnhancedModal } from '@/hooks/use-enhanced-modal';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -116,12 +116,12 @@ export const ChangeRoleModal = NiceModal.create<ChangeRoleModalProps>(
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.values(Role).map((value) => (
+                    {assignableRoles.map((value) => (
                       <SelectItem
                         key={value}
                         value={value}
                       >
-                        {roleLabels[value as Role]}
+                        {roleLabels[value]}
                       </SelectItem>
                     ))}
                   </SelectContent>

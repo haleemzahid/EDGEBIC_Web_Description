@@ -39,7 +39,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { roleLabels } from '@/constants/labels';
+import { assignableRoles, roleLabels } from '@/constants/labels';
 import { MediaQueries } from '@/constants/media-queries';
 import { useEnhancedModal } from '@/hooks/use-enhanced-modal';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -66,7 +66,8 @@ export const EditInvitationModal = NiceModal.create<EditInvitationModalProps>(
       mode: 'onSubmit',
       defaultValues: {
         id: invitation.id,
-        role: invitation.role
+        // Legacy invitations may still hold Role.MEMBER; fall back to CLIENT.
+        role: invitation.role === Role.ADMIN ? Role.ADMIN : Role.CLIENT
       }
     });
     const title = 'Update invitation';
@@ -127,12 +128,12 @@ export const EditInvitationModal = NiceModal.create<EditInvitationModalProps>(
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.values(Role).map((value) => (
+                    {assignableRoles.map((value) => (
                       <SelectItem
                         key={value}
                         value={value}
                       >
-                        {roleLabels[value as Role]}
+                        {roleLabels[value]}
                       </SelectItem>
                     ))}
                   </SelectContent>

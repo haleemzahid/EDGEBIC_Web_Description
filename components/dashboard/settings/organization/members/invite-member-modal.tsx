@@ -40,7 +40,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { roleLabels } from '@/constants/labels';
+import { assignableRoles, roleLabels } from '@/constants/labels';
 import { MediaQueries } from '@/constants/media-queries';
 import { useEnhancedModal } from '@/hooks/use-enhanced-modal';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -54,18 +54,20 @@ import type { ProfileDto } from '@/types/dtos/profile-dto';
 
 export type InviteMemberModalProps = NiceModalHocProps & {
   profile: ProfileDto;
+  defaultEmail?: string;
+  emailReadOnly?: boolean;
 };
 
 export const InviteMemberModal = NiceModal.create<InviteMemberModalProps>(
-  ({ profile }) => {
+  ({ profile, defaultEmail, emailReadOnly }) => {
     const modal = useEnhancedModal();
     const mdUp = useMediaQuery(MediaQueries.MdUp, { ssr: false });
     const methods = useZodForm({
       schema: sendInvitationSchema,
       mode: 'onSubmit',
       defaultValues: {
-        email: '',
-        role: Role.MEMBER
+        email: defaultEmail ?? '',
+        role: Role.CLIENT
       }
     });
     const title = 'Invite member';
@@ -119,6 +121,7 @@ export const InviteMemberModal = NiceModal.create<InviteMemberModalProps>(
                   type="email"
                   maxLength={255}
                   required
+                  readOnly={emailReadOnly}
                   disabled={methods.formState.isSubmitting}
                   {...field}
                 />
@@ -147,7 +150,7 @@ export const InviteMemberModal = NiceModal.create<InviteMemberModalProps>(
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.values(Role).map((value: Role) => (
+                    {assignableRoles.map((value) => (
                       <SelectItem
                         key={value}
                         value={value}

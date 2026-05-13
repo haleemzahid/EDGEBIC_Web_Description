@@ -2,7 +2,7 @@ import 'server-only';
 
 import { unstable_cache as cache } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { ContactRecord, Prisma } from '@prisma/client';
+import { ContactRecord, InvitationStatus, Prisma } from '@prisma/client';
 
 import {
   Caching,
@@ -16,10 +16,14 @@ import { prisma } from '@/lib/db/prisma';
 import { ValidationError } from '@/lib/validation/exceptions';
 import {
   getContactsSchema,
+  InvitedOption,
   RecordsOption,
   type GetContactsSchema
 } from '@/schemas/contacts/get-contacts-schema';
-import type { ContactDto } from '@/types/dtos/contact-dto';
+import type {
+  ContactDto,
+  ContactInviteStatus
+} from '@/types/dtos/contact-dto';
 
 export async function getContacts(input: GetContactsSchema): Promise<{
   contacts: ContactDto[];
@@ -47,19 +51,76 @@ export async function getContacts(input: GetContactsSchema): Promise<{
 
   return cache(
     async () => {
+      // Build invited-email set up front so it can both drive the filter and
+      // populate each contact's inviteStatus without an extra round-trip.
+      const [invitedRows, memberRows] = await Promise.all([
+        prisma.invitation.findMany({
+          where: {
+            organizationId: session.user.organizationId,
+            status: { not: InvitationStatus.REVOKED }
+          },
+          select: { email: true, status: true }
+        }),
+        prisma.user.findMany({
+          where: {
+            organizationId: session.user.organizationId,
+            email: { not: null }
+          },
+          select: { email: true }
+        })
+      ]);
+
+      const memberEmails = new Set(
+        memberRows
+          .map((m) => m.email?.toLowerCase())
+          .filter((e): e is string => !!e)
+      );
+      const invitationByEmail = new Map<string, InvitationStatus>();
+      for (const row of invitedRows) {
+        const key = row.email.toLowerCase();
+        // PENDING wins over ACCEPTED if a fresh invite was created after acceptance.
+        const existing = invitationByEmail.get(key);
+        if (!existing || row.status === InvitationStatus.PENDING) {
+          invitationByEmail.set(key, row.status);
+        }
+      }
+      const knownEmails = new Set<string>([
+        ...memberEmails,
+        ...invitationByEmail.keys()
+      ]);
+
+      const invitedFilter: Prisma.ContactWhereInput | undefined =
+        parsedInput.invited === InvitedOption.Invited
+          ? knownEmails.size > 0
+            ? { email: { in: [...knownEmails], mode: 'insensitive' } }
+            : { id: '00000000-0000-0000-0000-000000000000' } // force empty result
+          : parsedInput.invited === InvitedOption.NotInvited
+            ? knownEmails.size > 0
+              ? {
+                  OR: [
+                    { email: null },
+                    { email: { notIn: [...knownEmails], mode: 'insensitive' } }
+                  ]
+                }
+              : undefined
+            : undefined;
+
+      const baseWhere: Prisma.ContactWhereInput = {
+        organizationId: session.user.organizationId,
+        record: mapRecords(parsedInput.records),
+        tags:
+          parsedInput.tags && parsedInput.tags.length > 0
+            ? { some: { text: { in: parsedInput.tags } } }
+            : undefined,
+        OR: searchVector,
+        ...(invitedFilter ?? {})
+      };
+
       const [contacts, filteredCount, totalCount] = await prisma.$transaction([
         prisma.contact.findMany({
           skip: parsedInput.pageIndex * parsedInput.pageSize,
           take: parsedInput.pageSize,
-          where: {
-            organizationId: session.user.organizationId,
-            record: mapRecords(parsedInput.records),
-            tags:
-              parsedInput.tags && parsedInput.tags.length > 0
-                ? { some: { text: { in: parsedInput.tags } } }
-                : undefined,
-            OR: searchVector
-          },
+          where: baseWhere,
           select: {
             id: true,
             record: true,
@@ -87,15 +148,7 @@ export async function getContacts(input: GetContactsSchema): Promise<{
           ]
         }),
         prisma.contact.count({
-          where: {
-            organizationId: session.user.organizationId,
-            record: mapRecords(parsedInput.records),
-            tags:
-              parsedInput.tags && parsedInput.tags.length > 0
-                ? { some: { text: { in: parsedInput.tags } } }
-                : undefined,
-            OR: searchVector
-          }
+          where: baseWhere
         }),
         prisma.contact.count({
           where: {
@@ -103,6 +156,21 @@ export async function getContacts(input: GetContactsSchema): Promise<{
           }
         })
       ]);
+
+      const resolveInviteStatus = (
+        email?: string | null
+      ): ContactInviteStatus => {
+        if (!email) return 'NONE';
+        const key = email.toLowerCase();
+        if (memberEmails.has(key)) return 'USER_EXISTS';
+        const status = invitationByEmail.get(key);
+        if (!status) return 'NONE';
+        return status === InvitationStatus.ACCEPTED
+          ? 'ACCEPTED'
+          : status === InvitationStatus.PENDING
+            ? 'PENDING'
+            : 'REVOKED';
+      };
 
       const mapped: ContactDto[] = contacts.map((contact) => ({
         id: contact.id,
@@ -118,7 +186,8 @@ export async function getContacts(input: GetContactsSchema): Promise<{
         productInterest: contact.productInterest ? contact.productInterest : undefined,
         hearAboutUs: contact.hearAboutUs ? contact.hearAboutUs : undefined,
         createdAt: contact.createdAt,
-        tags: contact.tags
+        tags: contact.tags,
+        inviteStatus: resolveInviteStatus(contact.email)
       }));
 
       return { contacts: mapped, filteredCount, totalCount };
@@ -132,6 +201,7 @@ export async function getContacts(input: GetContactsSchema): Promise<{
       parsedInput.sortDirection,
       parsedInput.tags.join(','),
       parsedInput.records?.toString() ?? '',
+      parsedInput.invited?.toString() ?? '',
       parsedInput.searchQuery?.toString() ?? ''
     ),
     {
@@ -139,6 +209,14 @@ export async function getContacts(input: GetContactsSchema): Promise<{
       tags: [
         Caching.createOrganizationTag(
           OrganizationCacheKey.Contacts,
+          session.user.organizationId
+        ),
+        Caching.createOrganizationTag(
+          OrganizationCacheKey.Invitations,
+          session.user.organizationId
+        ),
+        Caching.createOrganizationTag(
+          OrganizationCacheKey.Members,
           session.user.organizationId
         )
       ]

@@ -1,0 +1,243 @@
+import * as React from 'react';
+import Link from 'next/link';
+import { type Metadata } from 'next';
+import { redirect } from 'next/navigation';
+import { ContactPriority, ContactTicketStatus, Role } from '@prisma/client';
+import { formatDistanceToNow } from 'date-fns';
+
+import { NewClientTicketButton } from '@/components/dashboard/client-portal/new-ticket-button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Page,
+  PageActions,
+  PageBody,
+  PageHeader,
+  PagePrimaryBar,
+  PageTitle
+} from '@/components/ui/page';
+import { Routes } from '@/constants/routes';
+import { dedupedAuth } from '@/lib/auth';
+import { getClientContactLink } from '@/lib/auth/get-client-contact';
+import { getLoginRedirect } from '@/lib/auth/redirect';
+import { checkSession } from '@/lib/auth/session';
+import { prisma } from '@/lib/db/prisma';
+import { cn, createTitle } from '@/lib/utils';
+
+export const metadata: Metadata = {
+  title: createTitle('Support')
+};
+
+export default async function ClientSupportPage(): Promise<React.JSX.Element> {
+  const session = await dedupedAuth();
+  if (!checkSession(session)) {
+    return redirect(getLoginRedirect());
+  }
+
+  const userFromDb = await prisma.user.findFirst({
+    where: { id: session.user.id },
+    select: { role: true }
+  });
+  if (!userFromDb || userFromDb.role !== Role.CLIENT) {
+    return redirect(Routes.Home);
+  }
+
+  const link = await getClientContactLink(session.user.id);
+  if (!link) {
+    return <UnlinkedNotice />;
+  }
+
+  const tickets = await prisma.contactTicket.findMany({
+    where: { contactId: link.contactId },
+    orderBy: { updatedAt: 'desc' },
+    select: {
+      id: true,
+      number: true,
+      title: true,
+      description: true,
+      status: true,
+      priority: true,
+      createdAt: true,
+      updatedAt: true
+    }
+  });
+
+  const open = tickets.filter(
+    (t) =>
+      t.status === ContactTicketStatus.OPEN ||
+      t.status === ContactTicketStatus.PENDING
+  );
+  const closed = tickets.filter(
+    (t) =>
+      t.status === ContactTicketStatus.RESOLVED ||
+      t.status === ContactTicketStatus.CLOSED
+  );
+
+  return (
+    <Page>
+      <PageHeader>
+        <PagePrimaryBar>
+          <PageTitle>Support</PageTitle>
+          <PageActions>
+            <NewClientTicketButton />
+          </PageActions>
+        </PagePrimaryBar>
+      </PageHeader>
+      <PageBody>
+        <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-6">
+          <p className="text-sm text-muted-foreground">
+            Your support tickets. Open a new one any time you need help.
+          </p>
+
+          <Section title={`Active · ${open.length}`}>
+            {open.length === 0 ? (
+              <Empty message="No open tickets." />
+            ) : (
+              <TicketList tickets={open} />
+            )}
+          </Section>
+
+          <Section title={`Closed · ${closed.length}`}>
+            {closed.length === 0 ? (
+              <Empty message="No closed tickets yet." />
+            ) : (
+              <TicketList
+                tickets={closed}
+                muted
+              />
+            )}
+          </Section>
+        </div>
+      </PageBody>
+    </Page>
+  );
+}
+
+type TicketRow = {
+  id: string;
+  number: number;
+  title: string;
+  description: string | null;
+  status: ContactTicketStatus;
+  priority: ContactPriority;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+function Section({
+  title,
+  children
+}: React.PropsWithChildren<{ title: string }>): React.JSX.Element {
+  return (
+    <section className="overflow-hidden rounded-lg border bg-card">
+      <h2 className="border-b bg-muted/40 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+function Empty({ message }: { message: string }): React.JSX.Element {
+  return <p className="px-4 py-6 text-sm text-muted-foreground">{message}</p>;
+}
+
+function TicketList({
+  tickets,
+  muted
+}: {
+  tickets: TicketRow[];
+  muted?: boolean;
+}): React.JSX.Element {
+  return (
+    <ul className="divide-y">
+      {tickets.map((t) => (
+        <li key={t.id}>
+          <Link
+            href={`${Routes.ClientSupport}/${t.id}`}
+            className={cn(
+              'flex flex-row items-start gap-4 px-4 py-3 transition-colors hover:bg-accent/40',
+              muted && 'opacity-80'
+            )}
+          >
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline gap-2">
+                <span className="shrink-0 font-mono text-xs text-muted-foreground">
+                  #{t.number}
+                </span>
+                <span className="truncate text-sm font-medium">{t.title}</span>
+              </div>
+              {t.description && (
+                <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                  {t.description}
+                </p>
+              )}
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Updated {formatDistanceToNow(t.updatedAt, { addSuffix: true })}
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <Badge
+                variant="secondary"
+                className={statusClasses(t.status)}
+              >
+                {statusLabel(t.status)}
+              </Badge>
+            </div>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function statusLabel(status: ContactTicketStatus): string {
+  switch (status) {
+    case ContactTicketStatus.OPEN:
+      return 'Open';
+    case ContactTicketStatus.PENDING:
+      return 'In progress';
+    case ContactTicketStatus.RESOLVED:
+      return 'Resolved';
+    case ContactTicketStatus.CLOSED:
+      return 'Closed';
+  }
+}
+
+function statusClasses(status: ContactTicketStatus): string {
+  switch (status) {
+    case ContactTicketStatus.OPEN:
+      return 'border-transparent bg-rose-100 text-rose-800';
+    case ContactTicketStatus.PENDING:
+      return 'border-transparent bg-amber-100 text-amber-800';
+    case ContactTicketStatus.RESOLVED:
+      return 'border-transparent bg-emerald-100 text-emerald-800';
+    case ContactTicketStatus.CLOSED:
+      return 'border-transparent bg-muted text-muted-foreground';
+  }
+}
+
+function UnlinkedNotice(): React.JSX.Element {
+  return (
+    <Page>
+      <PageHeader>
+        <PagePrimaryBar>
+          <PageTitle>Support</PageTitle>
+        </PagePrimaryBar>
+      </PageHeader>
+      <PageBody>
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-6">
+          <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            Your client profile isn&apos;t linked to a contact in the CRM yet.
+            Please contact your project owner to complete the link.
+          </p>
+          <Link
+            href={Routes.Welcome}
+            className="text-sm text-primary underline"
+          >
+            Back to Home
+          </Link>
+        </div>
+      </PageBody>
+    </Page>
+  );
+}

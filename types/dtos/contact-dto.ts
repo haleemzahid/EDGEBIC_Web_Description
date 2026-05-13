@@ -2,6 +2,13 @@ import { type ContactRecord, type ContactStage } from '@prisma/client';
 
 import type { TagDto } from '@/types/dtos/tag-dto';
 
+export type ContactInviteStatus =
+  | 'NONE'
+  | 'PENDING'
+  | 'ACCEPTED'
+  | 'REVOKED'
+  | 'USER_EXISTS';
+
 export type ContactDto = {
   id: string;
   record: ContactRecord;
@@ -33,4 +40,5 @@ export type ContactDto = {
   hearAboutUs?: string;
   createdAt: Date;
   tags: TagDto[];
+  inviteStatus?: ContactInviteStatus;
 };

@@ -1,7 +1,15 @@
 'use client';
 
 import * as React from 'react';
-import { BuildingIcon, GridIcon, SearchIcon, UserIcon } from 'lucide-react';
+import {
+  BuildingIcon,
+  GridIcon,
+  MailCheckIcon,
+  MailQuestionIcon,
+  MailXIcon,
+  SearchIcon,
+  UserIcon
+} from 'lucide-react';
 import { useQueryState } from 'nuqs';
 
 import { searchParams } from '@/components/dashboard/contacts/contacts-search-params';
@@ -23,7 +31,10 @@ import {
 import { MediaQueries } from '@/constants/media-queries';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useTransitionContext } from '@/hooks/use-transition-context';
-import { RecordsOption } from '@/schemas/contacts/get-contacts-schema';
+import {
+  InvitedOption,
+  RecordsOption
+} from '@/schemas/contacts/get-contacts-schema';
 import type { TagDto } from '@/types/dtos/tag-dto';
 
 export type ContactsFiltersProps = {
@@ -48,6 +59,14 @@ export function ContactsFilters({
   const [records, setRecords] = useQueryState(
     'records',
     searchParams.records.withOptions({
+      startTransition,
+      shallow: false
+    })
+  );
+
+  const [invited, setInvited] = useQueryState(
+    'invited',
+    searchParams.invited.withOptions({
       startTransition,
       shallow: false
     })
@@ -94,6 +113,15 @@ export function ContactsFilters({
     setSelectedTags(tags);
     if (pageIndex !== 0) {
       setPageIndex(0);
+    }
+  };
+
+  const handleInvitedChange = (value: string): void => {
+    if (value !== invited) {
+      setInvited(value as InvitedOption);
+      if (pageIndex !== 0) {
+        setPageIndex(0);
+      }
     }
   };
 
@@ -155,6 +183,27 @@ export function ContactsFilters({
           selected={selectedTags || []}
           onChange={handleTagsChange}
         />
+        <Select
+          value={invited}
+          onValueChange={handleInvitedChange}
+        >
+          <SelectTrigger className="h-8 w-auto gap-2 border-dashed px-3">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {invitedOptions.map((option) => (
+              <SelectItem
+                key={option.value}
+                value={option.value}
+              >
+                <div className="flex flex-row items-center gap-2 pr-2">
+                  {option.icon}
+                  {option.label}
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div>
         {smUp ? (
@@ -210,5 +259,23 @@ const recordsOptions = [
     label: 'Companies',
     value: RecordsOption.Companies,
     icon: <BuildingIcon className="size-4 shrink-0" />
+  }
+];
+
+const invitedOptions = [
+  {
+    label: 'All clients',
+    value: InvitedOption.All,
+    icon: <MailQuestionIcon className="size-4 shrink-0" />
+  },
+  {
+    label: 'Invited',
+    value: InvitedOption.Invited,
+    icon: <MailCheckIcon className="size-4 shrink-0" />
+  },
+  {
+    label: 'Not invited',
+    value: InvitedOption.NotInvited,
+    icon: <MailXIcon className="size-4 shrink-0" />
   }
 ];

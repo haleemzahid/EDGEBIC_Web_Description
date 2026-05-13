@@ -18,6 +18,10 @@ import { createTitle } from '@/lib/utils';
 
 const CLIENT_ALLOWED_PREFIXES = [
   Routes.Welcome,
+  Routes.ClientMeetings,
+  Routes.ClientSupport,
+  Routes.ClientMessages,
+  Routes.ClientBilling,
   Routes.Profile,
   Routes.Security,
   Routes.Account

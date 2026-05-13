@@ -11,9 +11,9 @@ export const updateInvitationSchema = z.object({
     .uuid('Id is invalid.')
     .min(1, 'Id is required.')
     .max(36, 'Maximum 36 characters allowed.'),
-  role: z.nativeEnum(Role, {
+  role: z.enum([Role.ADMIN, Role.CLIENT], {
     required_error: 'Role is required',
-    invalid_type_error: 'Role must be a string'
+    invalid_type_error: 'Role must be Admin or Client.'
   })
 });
 

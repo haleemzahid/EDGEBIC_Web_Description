@@ -1,7 +1,14 @@
 'use server';
 
 import { revalidateTag } from 'next/cache';
-import { InvitationStatus, Role } from '@prisma/client';
+import {
+  ActionType,
+  ActorType,
+  ContactRecord,
+  ContactStage,
+  InvitationStatus,
+  Role
+} from '@prisma/client';
 
 import { authActionClient } from '@/actions/safe-action';
 import { Routes } from '@/constants/routes';
@@ -88,6 +95,55 @@ export const sendInvitation = authActionClient
         session.user.organizationId
       )
     );
+
+    // Mirror the invitee into CRM as a Contact so they appear in the contacts
+    // list with an "Invited" badge. Only do this for CLIENT invitations — ADMIN
+    // invitations are internal team members and don't belong in the customer CRM.
+    if (parsedInput.role === Role.CLIENT) {
+      const existingContact = await prisma.contact.findFirst({
+        where: {
+          organizationId: session.user.organizationId,
+          email: { equals: parsedInput.email, mode: 'insensitive' }
+        },
+        select: { id: true }
+      });
+
+      if (!existingContact) {
+        const derivedName = parsedInput.email.split('@')[0] || parsedInput.email;
+        const created = await prisma.contact.create({
+          data: {
+            organizationId: session.user.organizationId,
+            record: ContactRecord.PERSON,
+            name: derivedName,
+            email: parsedInput.email,
+            stage: ContactStage.WON,
+            isRead: false
+          },
+          select: { id: true, createdAt: true }
+        });
+        await prisma.contactActivity.create({
+          data: {
+            contactId: created.id,
+            actionType: ActionType.CREATE,
+            actorId: session.user.id,
+            actorType: ActorType.MEMBER,
+            metadata: {
+              source: { old: '', new: 'invitation' },
+              email: { old: '', new: parsedInput.email },
+              role: { old: '', new: parsedInput.role }
+            },
+            occurredAt: created.createdAt
+          }
+        });
+      }
+
+      revalidateTag(
+        Caching.createOrganizationTag(
+          OrganizationCacheKey.Contacts,
+          session.user.organizationId
+        )
+      );
+    }
 
     await sendInvitationEmail({
       recipient: parsedInput.email,
