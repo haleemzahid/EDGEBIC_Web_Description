@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { unstable_cache as cache } from 'next/cache';
-import { type EmailFolder } from '@prisma/client';
+import { type EmailFolder, EmailSenderType } from '@prisma/client';
 
 import {
   Caching,
@@ -18,6 +18,8 @@ export type ClientMessageThreadListItemDto = {
   preview: string;
   unread: boolean;
   updatedAt: Date;
+  lastSenderType: EmailSenderType | null;
+  lastSenderName: string | null;
 };
 
 /**
@@ -39,7 +41,15 @@ export async function getClientMessageThreads(
           subject: true,
           preview: true,
           unread: true,
-          updatedAt: true
+          updatedAt: true,
+          messages: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            select: {
+              senderType: true,
+              senderName: true
+            }
+          }
         }
       });
     },
@@ -65,8 +75,17 @@ export async function getClientMessageThreads(
     }
   )();
 
-  return raw.map((r) => ({
-    ...r,
-    updatedAt: new Date(r.updatedAt)
-  }));
+  return raw.map((r) => {
+    const last = r.messages[0];
+    return {
+      id: r.id,
+      folder: r.folder,
+      subject: r.subject,
+      preview: r.preview,
+      unread: r.unread,
+      updatedAt: new Date(r.updatedAt),
+      lastSenderType: last?.senderType ?? null,
+      lastSenderName: last?.senderName ?? null
+    };
+  });
 }

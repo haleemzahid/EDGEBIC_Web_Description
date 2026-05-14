@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { type Metadata } from 'next';
 import Link from 'next/link';
-import { EmailFolder } from '@prisma/client';
-import { formatDistanceToNow } from 'date-fns';
+import { EmailFolder, EmailSenderType } from '@prisma/client';
+import { format, isThisYear, isToday } from 'date-fns';
 
 import { ClientUnlinkedNotice } from '@/components/dashboard/client-portal/client-unlinked-notice';
 import { DeleteClientMessageButton } from '@/components/dashboard/client-portal/delete-client-message-button';
@@ -89,56 +89,76 @@ export default async function ClientMessagesPage({
               </p>
             ) : (
               <ul className="divide-y">
-                {visibleThreads.map((t) => (
-                  <li
-                    key={t.id}
-                    className={cn(
-                      'group relative flex items-stretch transition-colors hover:bg-accent/40',
-                      t.unread &&
-                        activeTab === 'inbox' &&
-                        'bg-sky-50/60 hover:bg-sky-50'
-                    )}
-                  >
-                    <Link
-                      href={`${Routes.ClientMessages}/${t.id}`}
-                      className="flex min-w-0 flex-1 items-start gap-4 px-4 py-3"
+                {visibleThreads.map((t) => {
+                  const isUnreadRow = t.unread && activeTab === 'inbox';
+                  const senderLabel = senderLabelFor(t, activeTab);
+                  return (
+                    <li
+                      key={t.id}
+                      className={cn(
+                        'group relative flex items-center transition-colors hover:bg-accent/40 hover:shadow-sm',
+                        isUnreadRow && 'bg-white hover:bg-white'
+                      )}
                     >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-baseline gap-2">
+                      <Link
+                        href={`${Routes.ClientMessages}/${t.id}`}
+                        className="flex min-w-0 flex-1 items-center gap-3 px-4 py-2.5"
+                      >
+                        {isUnreadRow ? (
+                          <span
+                            className="size-2 shrink-0 rounded-full bg-sky-500"
+                            aria-label="Unread"
+                          />
+                        ) : (
+                          <span className="size-2 shrink-0" aria-hidden />
+                        )}
+                        <span
+                          className={cn(
+                            'w-40 shrink-0 truncate text-sm',
+                            isUnreadRow
+                              ? 'font-semibold text-foreground'
+                              : 'text-foreground'
+                          )}
+                        >
+                          {senderLabel}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-sm">
                           <span
                             className={cn(
-                              'truncate text-sm',
-                              t.unread && activeTab === 'inbox'
-                                ? 'font-semibold'
-                                : 'font-medium'
+                              isUnreadRow
+                                ? 'font-semibold text-foreground'
+                                : 'text-foreground'
                             )}
                           >
                             {t.subject}
                           </span>
-                        </div>
-                        {t.preview && (
-                          <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-                            {t.preview}
-                          </p>
-                        )}
-                        <p className="mt-1 text-[11px] text-muted-foreground">
-                          {formatDistanceToNow(t.updatedAt, {
-                            addSuffix: true
-                          })}
-                        </p>
+                          {t.preview && (
+                            <span className="text-muted-foreground">
+                              {' — '}
+                              {t.preview}
+                            </span>
+                          )}
+                        </span>
+                        <span
+                          className={cn(
+                            'shrink-0 text-[11px]',
+                            isUnreadRow
+                              ? 'font-semibold text-foreground'
+                              : 'text-muted-foreground'
+                          )}
+                        >
+                          {formatThreadTime(t.updatedAt)}
+                        </span>
+                      </Link>
+                      <div className="flex items-center pr-2 opacity-0 transition-opacity group-hover:opacity-100">
+                        <DeleteClientMessageButton
+                          threadId={t.id}
+                          subject={t.subject}
+                        />
                       </div>
-                      {t.unread && activeTab === 'inbox' && (
-                        <span className="mt-1 inline-block size-2 shrink-0 rounded-full bg-sky-500" />
-                      )}
-                    </Link>
-                    <div className="flex items-center pr-3">
-                      <DeleteClientMessageButton
-                        threadId={t.id}
-                        subject={t.subject}
-                      />
-                    </div>
-                  </li>
-                ))}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </section>
@@ -146,6 +166,31 @@ export default async function ClientMessagesPage({
       </PageBody>
     </Page>
   );
+}
+
+function formatThreadTime(date: Date): string {
+  if (isToday(date)) {
+    return format(date, 'h:mm a');
+  }
+  if (isThisYear(date)) {
+    return format(date, 'MMM d');
+  }
+  return format(date, 'M/d/yy');
+}
+
+function senderLabelFor(
+  thread: { lastSenderType: EmailSenderType | null; lastSenderName: string | null },
+  activeTab: TabKey
+): string {
+  // From the client's perspective: a USER-sent message comes from the team;
+  // a CONTACT-sent message is the client themselves ("Me").
+  if (thread.lastSenderType === EmailSenderType.CONTACT) {
+    return activeTab === 'sent' ? 'Me' : thread.lastSenderName ?? 'Me';
+  }
+  if (thread.lastSenderType === EmailSenderType.USER) {
+    return thread.lastSenderName ?? 'Your team';
+  }
+  return activeTab === 'sent' ? 'Me' : 'Your team';
 }
 
 function Tab({

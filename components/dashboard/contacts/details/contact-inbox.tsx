@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { EmailFolder, EmailSenderType } from '@prisma/client';
-import { formatDistanceToNow } from 'date-fns';
+import { format, isThisYear, isToday } from 'date-fns';
 import {
   ArrowLeftIcon,
   ForwardIcon,
@@ -124,7 +124,14 @@ function getMessageParticipant(
 }
 
 function formatWhen(date: Date): string {
-  return formatDistanceToNow(date, { addSuffix: true });
+  // Gmail-style: time-only for today, "Mon D" for this year, "M/D/YY" otherwise.
+  if (isToday(date)) {
+    return format(date, 'h:mm a');
+  }
+  if (isThisYear(date)) {
+    return format(date, 'MMM d');
+  }
+  return format(date, 'M/d/yy');
 }
 
 export type ContactInboxProps = {
@@ -859,63 +866,84 @@ function ThreadList({
           {threads.map((thread) => {
             const isChecked = selectedIds.has(thread.id);
             const participant = getThreadParticipant(thread, contact);
+            const senderLabel =
+              thread.folder === EmailFolder.SENT
+                ? `You → ${participant.name}`
+                : participant.name;
             return (
               <li
                 key={thread.id}
                 className={cn(
-                  'flex items-start gap-2.5 px-3.5 py-3 transition-colors hover:bg-accent/50',
-                  isChecked && 'bg-accent/50'
+                  'flex items-center gap-2 px-3.5 py-2 transition-colors hover:bg-accent/50 hover:shadow-sm',
+                  isChecked && 'bg-accent/50',
+                  thread.unread && 'bg-background'
                 )}
               >
                 <Checkbox
                   checked={isChecked}
                   onCheckedChange={() => onToggleSelected(thread.id)}
                   aria-label={`Select email: ${thread.subject}`}
-                  className="mt-1.5"
                   disabled={disabled}
                 />
                 <button
                   type="button"
                   onClick={() => onOpen(thread.id)}
-                  className="flex min-w-0 flex-1 items-start gap-2.5 text-left"
+                  className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
                 >
-                  <Avatar className="size-8 shrink-0 rounded-full">
+                  {thread.unread ? (
+                    <span
+                      className="size-2 shrink-0 rounded-full bg-blue-600"
+                      aria-label="Unread"
+                    />
+                  ) : (
+                    <span className="size-2 shrink-0" aria-hidden />
+                  )}
+                  <Avatar className="size-6 shrink-0 rounded-full">
                     <AvatarImage
                       src={participant.image}
                       alt={participant.name}
                     />
-                    <AvatarFallback className="text-[11px] font-semibold">
+                    <AvatarFallback className="text-[10px] font-semibold">
                       {participant.initials}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span
-                        className={cn(
-                          'flex items-center gap-1.5 truncate text-xs',
-                          thread.unread
-                            ? 'font-bold text-foreground'
-                            : 'text-muted-foreground'
-                        )}
-                      >
-                        {thread.unread && (
-                          <span className="size-2 shrink-0 rounded-full bg-blue-600" />
-                        )}
-                        {thread.folder === EmailFolder.SENT
-                          ? `You → ${participant.name}`
-                          : participant.name}
-                      </span>
-                      <span className="shrink-0 text-[11px] text-muted-foreground">
-                        {formatWhen(thread.updatedAt)}
-                      </span>
-                    </div>
-                    <div className="mt-0.5 truncate text-xs font-medium text-foreground">
+                  <span
+                    className={cn(
+                      'w-44 shrink-0 truncate text-xs',
+                      thread.unread
+                        ? 'font-bold text-foreground'
+                        : 'text-foreground'
+                    )}
+                  >
+                    {senderLabel}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-xs">
+                    <span
+                      className={cn(
+                        thread.unread
+                          ? 'font-bold text-foreground'
+                          : 'text-foreground'
+                      )}
+                    >
                       {thread.subject}
-                    </div>
-                    <div className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {thread.preview}
-                    </div>
-                  </div>
+                    </span>
+                    {thread.preview && (
+                      <span className="text-muted-foreground">
+                        {' — '}
+                        {thread.preview}
+                      </span>
+                    )}
+                  </span>
+                  <span
+                    className={cn(
+                      'shrink-0 text-[11px]',
+                      thread.unread
+                        ? 'font-semibold text-foreground'
+                        : 'text-muted-foreground'
+                    )}
+                  >
+                    {formatWhen(thread.updatedAt)}
+                  </span>
                 </button>
               </li>
             );
