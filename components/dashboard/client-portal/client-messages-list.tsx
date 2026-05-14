@@ -1,14 +1,14 @@
 'use client';
 
 import * as React from 'react';
+import NiceModal from '@ebay/nice-modal-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { EmailSenderType } from '@prisma/client';
 import { format, isThisYear, isToday } from 'date-fns';
 import { TrashIcon } from 'lucide-react';
-import { toast } from 'sonner';
 
-import { deleteClientMessages } from '@/actions/client-portal/delete-client-messages';
+import { DeleteClientMessagesModal } from '@/components/dashboard/client-portal/delete-client-messages-modal';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -57,7 +57,6 @@ export function ClientMessagesList({
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(
     () => new Set()
   );
-  const [pending, startTransition] = React.useTransition();
 
   // Reset selection when the visible thread set changes (e.g., tab switch).
   React.useEffect(() => {
@@ -93,40 +92,21 @@ export function ClientMessagesList({
   const handleClear = (): void => setSelectedIds(new Set());
 
   const handleDeleteOne = (threadId: string, subject: string): void => {
-    const confirmed = window.confirm(
-      `Delete "${subject || 'this message'}"? This can't be undone.`
-    );
-    if (!confirmed) return;
-    startTransition(async () => {
-      const result = await deleteClientMessages({ ids: [threadId] });
-      if (result?.serverError || result?.validationErrors) {
-        toast.error(result?.serverError ?? "Couldn't delete message");
-        return;
-      }
-      toast.success('Message deleted');
-      router.refresh();
+    NiceModal.show(DeleteClientMessagesModal, {
+      ids: [threadId],
+      subject,
+      onDeleted: () => router.refresh()
     });
   };
   const handleBulkDelete = (): void => {
     if (visibleSelectedIds.length === 0) return;
-    const confirmed = window.confirm(
-      `Delete ${visibleSelectedIds.length} message${
-        visibleSelectedIds.length === 1 ? '' : 's'
-      }? This can't be undone.`
-    );
-    if (!confirmed) return;
     const ids = [...visibleSelectedIds];
-    startTransition(async () => {
-      const result = await deleteClientMessages({ ids });
-      if (result?.serverError || result?.validationErrors) {
-        toast.error(result?.serverError ?? "Couldn't delete messages");
-        return;
+    NiceModal.show(DeleteClientMessagesModal, {
+      ids,
+      onDeleted: () => {
+        setSelectedIds(new Set());
+        router.refresh();
       }
-      setSelectedIds(new Set());
-      toast.success(
-        `${ids.length} message${ids.length === 1 ? '' : 's'} deleted`
-      );
-      router.refresh();
     });
   };
 
@@ -150,7 +130,6 @@ export function ClientMessagesList({
             checked={allSelected}
             onCheckedChange={handleToggleAll}
             aria-label="Select all messages"
-            disabled={pending}
           />
           {selectionCount > 0 ? (
             <span className="font-medium text-foreground">
@@ -168,8 +147,7 @@ export function ClientMessagesList({
               size="sm"
               className="h-8 text-xs"
               onClick={handleClear}
-              disabled={pending}
-            >
+              >
               Clear
             </Button>
             <Button
@@ -178,8 +156,7 @@ export function ClientMessagesList({
               size="sm"
               className="h-8 border-destructive/30 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={handleBulkDelete}
-              disabled={pending}
-            >
+              >
               <TrashIcon className="mr-1 size-3.5 shrink-0" />
               Delete {selectionCount}
             </Button>
@@ -204,8 +181,7 @@ export function ClientMessagesList({
                 checked={isChecked}
                 onCheckedChange={() => handleToggleOne(t.id)}
                 aria-label={`Select message: ${t.subject}`}
-                disabled={pending}
-              />
+                  />
               <Link
                 href={`${Routes.ClientMessages}/${t.id}`}
                 className="flex min-w-0 flex-1 items-center gap-2.5"
@@ -271,8 +247,7 @@ export function ClientMessagesList({
                   e.stopPropagation();
                   handleDeleteOne(t.id, t.subject);
                 }}
-                disabled={pending}
-                aria-label="Delete message"
+                    aria-label="Delete message"
                 title="Delete"
               >
                 <TrashIcon className="size-3.5" />
