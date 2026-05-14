@@ -286,6 +286,57 @@ export function ClientTicketConversation({
       staged.some((s) => s.state === 'uploaded')) &&
     !staged.some((s) => s.state === 'uploading');
 
+  const replyForm = (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        void send(text);
+      }}
+      className="flex items-end gap-2 border-t p-3"
+    >
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        hidden
+        onChange={onPickFiles}
+      />
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-11 shrink-0"
+        title="Attach files"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={staged.length >= MAX_ATTACHMENTS}
+      >
+        <PaperclipIcon className="size-4" />
+      </Button>
+      <Textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={handleKeyDown}
+        rows={1}
+        maxLength={20000}
+        placeholder={
+          isResolved
+            ? 'Reply to reopen the ticket…'
+            : 'Write a reply…  (Enter to send, Shift+Enter for new line)'
+        }
+        className="max-h-40 min-h-[44px] flex-1 resize-none"
+      />
+      <Button
+        type="submit"
+        disabled={!canSubmit}
+        size="icon"
+        className="size-11 shrink-0"
+        title="Send"
+      >
+        <SendIcon className="size-4" />
+      </Button>
+    </form>
+  );
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">
       <div
@@ -411,56 +462,7 @@ export function ClientTicketConversation({
                 ))}
               </div>
             )}
-            {(!isResolved || resolvedReplyOpen) && (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                void send(text);
-              }}
-              className="flex items-end gap-2 border-t p-3"
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                hidden
-                onChange={onPickFiles}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="size-11 shrink-0"
-                title="Attach files"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={staged.length >= MAX_ATTACHMENTS}
-              >
-                <PaperclipIcon className="size-4" />
-              </Button>
-              <Textarea
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                rows={1}
-                maxLength={20000}
-                placeholder={
-                  isResolved
-                    ? 'Reply to reopen the ticket…'
-                    : 'Write a reply…  (Enter to send, Shift+Enter for new line)'
-                }
-                className="max-h-40 min-h-[44px] flex-1 resize-none"
-              />
-              <Button
-                type="submit"
-                disabled={!canSubmit}
-                size="icon"
-                className="size-11 shrink-0"
-                title="Send"
-              >
-                <SendIcon className="size-4" />
-              </Button>
-            </form>
-            )}
+            {(!isResolved || resolvedReplyOpen) && replyForm}
           </>
         )}
       </div>

@@ -5,7 +5,10 @@ import { ContactTicketActivityType } from '@prisma/client';
 
 import { authActionClient } from '@/actions/safe-action';
 import { Caching, OrganizationCacheKey } from '@/data/caching';
+import { getClientNotificationRecipient } from '@/lib/auth/get-client-notification-recipient';
 import { prisma } from '@/lib/db/prisma';
+import { sendPortalActivityEmail } from '@/lib/smtp/send-portal-activity-email';
+import { getBaseUrl } from '@/lib/urls/get-base-url';
 import { NotFoundError } from '@/lib/validation/exceptions';
 import { addContactTicketSchema } from '@/schemas/contacts/add-contact-ticket-schema';
 
@@ -73,5 +76,42 @@ export const addContactTicket = authActionClient
       )
     );
 
+    void notifyClientOfNewTicket({
+      contactId: contact.id,
+      ticketId: ticket.id,
+      ticketNumber: ticket.number,
+      ticketTitle: parsedInput.title,
+      ticketDescription: parsedInput.description ?? null,
+      staffName: session.user.name ?? 'Your team'
+    }).catch((error) => {
+      console.error('[Notify client] addContactTicket failed:', error);
+    });
+
     return { ticketId: ticket.id, number: ticket.number };
   });
+
+async function notifyClientOfNewTicket(args: {
+  contactId: string;
+  ticketId: string;
+  ticketNumber: number;
+  ticketTitle: string;
+  ticketDescription: string | null;
+  staffName: string;
+}): Promise<void> {
+  const recipient = await getClientNotificationRecipient(args.contactId);
+  if (!recipient) return;
+  const subject = `Ticket #${args.ticketNumber} opened: ${args.ticketTitle}`;
+  await sendPortalActivityEmail({
+    recipient: recipient.email,
+    recipientName: recipient.name,
+    subject,
+    heading: `${args.staffName} opened a ticket for you`,
+    preheader: subject,
+    context: `Ticket #${args.ticketNumber} · ${args.ticketTitle}`,
+    body:
+      args.ticketDescription ??
+      'Open your support portal to see the details and reply.',
+    ctaLabel: 'View ticket',
+    ctaUrl: `${getBaseUrl()}/dashboard/support/${args.ticketId}`
+  });
+}

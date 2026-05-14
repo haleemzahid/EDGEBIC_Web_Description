@@ -1,11 +1,14 @@
 'use server';
 
 import { revalidateTag } from 'next/cache';
-import { ContactTicketActivityType } from '@prisma/client';
+import { ContactTicketActivityType, ContactTicketStatus } from '@prisma/client';
 
 import { authActionClient } from '@/actions/safe-action';
 import { Caching, OrganizationCacheKey } from '@/data/caching';
+import { getClientNotificationRecipient } from '@/lib/auth/get-client-notification-recipient';
 import { prisma } from '@/lib/db/prisma';
+import { sendPortalActivityEmail } from '@/lib/smtp/send-portal-activity-email';
+import { getBaseUrl } from '@/lib/urls/get-base-url';
 import { NotFoundError } from '@/lib/validation/exceptions';
 import { updateContactTicketSchema } from '@/schemas/contacts/update-contact-ticket-schema';
 
@@ -108,4 +111,60 @@ export const updateContactTicket = authActionClient
         existing.contactId
       )
     );
+
+    if (existing.status !== parsedInput.status) {
+      void notifyClientOfStatusChange({
+        contactId: existing.contactId,
+        ticketId: existing.id,
+        nextStatus: parsedInput.status,
+        staffName: session.user.name ?? 'Your team'
+      }).catch((error) => {
+        console.error('[Notify client] updateContactTicket failed:', error);
+      });
+    }
   });
+
+async function notifyClientOfStatusChange(args: {
+  contactId: string;
+  ticketId: string;
+  nextStatus: ContactTicketStatus;
+  staffName: string;
+}): Promise<void> {
+  const [recipient, ticket] = await Promise.all([
+    getClientNotificationRecipient(args.contactId),
+    prisma.contactTicket.findUnique({
+      where: { id: args.ticketId },
+      select: { number: true, title: true }
+    })
+  ]);
+  if (!recipient || !ticket) return;
+
+  const statusLabel = (() => {
+    switch (args.nextStatus) {
+      case ContactTicketStatus.OPEN:
+        return 'reopened';
+      case ContactTicketStatus.PENDING:
+        return 'marked in progress';
+      case ContactTicketStatus.RESOLVED:
+        return 'marked resolved';
+      case ContactTicketStatus.CLOSED:
+        return 'closed';
+    }
+  })();
+  const subject = `Ticket #${ticket.number} ${statusLabel}: ${ticket.title}`;
+  const body =
+    args.nextStatus === ContactTicketStatus.RESOLVED
+      ? `${args.staffName} marked this ticket resolved. Open the portal to confirm or reply if the issue persists.`
+      : `${args.staffName} updated this ticket's status to ${args.nextStatus.toLowerCase()}.`;
+  await sendPortalActivityEmail({
+    recipient: recipient.email,
+    recipientName: recipient.name,
+    subject,
+    heading: `Your ticket was ${statusLabel}`,
+    preheader: subject,
+    context: `Ticket #${ticket.number} · ${ticket.title}`,
+    body,
+    ctaLabel: 'Open ticket',
+    ctaUrl: `${getBaseUrl()}/dashboard/support/${args.ticketId}`
+  });
+}
