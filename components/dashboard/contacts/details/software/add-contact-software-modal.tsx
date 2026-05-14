@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
 import { SoftwareStatus } from '@prisma/client';
 import { type SubmitHandler } from 'react-hook-form';
@@ -86,6 +87,16 @@ export const AddContactSoftwareModal =
         notes: ''
       }
     });
+    // NiceModal keeps the component mounted across show/hide cycles (only
+    // `remove` unmounts it). React Hook Form holds field state on that mounted
+    // instance, so submitting + closing + reopening would show the previous
+    // values. Reset every time the modal becomes visible.
+    React.useEffect(() => {
+      if (modal.visible) {
+        methods.reset();
+      }
+    }, [modal.visible, methods]);
+
     const canSubmit =
       !methods.formState.isSubmitting &&
       (!methods.formState.isSubmitted || methods.formState.isDirty);
@@ -96,6 +107,7 @@ export const AddContactSoftwareModal =
       const result = await addContactSoftware(values);
       if (!result?.serverError && !result?.validationErrors) {
         toast.success('Software added');
+        methods.reset();
         modal.handleClose();
       } else {
         toast.error("Couldn't add software");

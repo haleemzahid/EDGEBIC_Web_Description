@@ -76,6 +76,7 @@ export enum Routes {
   ClientMeetings = '/dashboard/my-meetings',
   ClientSupport = '/dashboard/support',
   ClientMessages = '/dashboard/messages',
+  ClientSoftware = '/dashboard/my-software',
   ClientBilling = '/dashboard/billing-history',
   Settings = '/dashboard/settings',
   Account = '/dashboard/settings/account',

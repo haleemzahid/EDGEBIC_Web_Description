@@ -1,6 +1,7 @@
 import {
   BarChart3Icon,
   // BellIcon,
+  BoxIcon,
   CalendarIcon,
   // CodeIcon,
   CreditCardIcon,
@@ -73,6 +74,11 @@ export const clientNavItems: NavItem[] = [
     title: 'Messages',
     href: Routes.ClientMessages,
     icon: MailIcon
+  },
+  {
+    title: 'My Software',
+    href: Routes.ClientSoftware,
+    icon: BoxIcon
   },
   {
     title: 'Billing',
