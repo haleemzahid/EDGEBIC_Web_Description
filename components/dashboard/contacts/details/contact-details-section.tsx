@@ -25,6 +25,7 @@ import { toast } from 'sonner';
 
 import { updateContactImage } from '@/actions/contacts/update-contact-image';
 import { updateContactProperties } from '@/actions/contacts/update-contact-properties';
+import { ContactProperty } from '@/components/dashboard/contacts/details/contact-property';
 import { CropPhotoModal } from '@/components/dashboard/settings/account/profile/crop-photo-modal';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -256,7 +257,7 @@ function Properties(contact: ContactDto): React.JSX.Element {
           )}
         </div>
         <div className="space-y-1 text-sm">
-          <Property
+          <ContactProperty
             icon={<SquareDashedKanbanIcon className="size-3 shrink-0" />}
             term="Record"
             details={
@@ -298,7 +299,7 @@ function Properties(contact: ContactDto): React.JSX.Element {
             }
             placeholder="No type available"
           />
-          <Property
+          <ContactProperty
             icon={<IdCardIcon className="size-3 shrink-0" />}
             term="Name"
             details={
@@ -328,7 +329,7 @@ function Properties(contact: ContactDto): React.JSX.Element {
             }
             placeholder="No name available"
           />
-          <Property
+          <ContactProperty
             icon={<MailIcon className="size-3 shrink-0" />}
             term="Email"
             details={
@@ -358,7 +359,7 @@ function Properties(contact: ContactDto): React.JSX.Element {
             }
             placeholder="No email available"
           />
-          <Property
+          <ContactProperty
             icon={<PhoneIcon className="size-3 shrink-0" />}
             term="Phone"
             details={
@@ -388,7 +389,7 @@ function Properties(contact: ContactDto): React.JSX.Element {
             }
             placeholder="No phone available"
           />
-          <Property
+          <ContactProperty
             icon={<LayoutListIcon className="size-3 shrink-0" />}
             term="Address"
             details={
@@ -419,7 +420,7 @@ function Properties(contact: ContactDto): React.JSX.Element {
             }
             placeholder="No address available"
           />
-          <Property
+          <ContactProperty
             icon={<BriefcaseIcon className="size-3 shrink-0" />}
             term="Job title"
             details={
@@ -449,7 +450,7 @@ function Properties(contact: ContactDto): React.JSX.Element {
             }
             placeholder="No job title"
           />
-          <Property
+          <ContactProperty
             icon={<BuildingIcon className="size-3 shrink-0" />}
             term="Company"
             details={
@@ -479,7 +480,7 @@ function Properties(contact: ContactDto): React.JSX.Element {
             }
             placeholder="No company"
           />
-          <Property
+          <ContactProperty
             icon={<GlobeIcon className="size-3 shrink-0" />}
             term="Website"
             details={
@@ -516,7 +517,7 @@ function Properties(contact: ContactDto): React.JSX.Element {
             }
             placeholder="No website"
           />
-          <Property
+          <ContactProperty
             icon={<LinkedinIcon className="size-3 shrink-0" />}
             term="LinkedIn"
             details={
@@ -556,7 +557,7 @@ function Properties(contact: ContactDto): React.JSX.Element {
             }
             placeholder="No LinkedIn"
           />
-          <Property
+          <ContactProperty
             icon={<MapPinIcon className="size-3 shrink-0" />}
             term="Country"
             details={
@@ -586,7 +587,7 @@ function Properties(contact: ContactDto): React.JSX.Element {
             }
             placeholder="No country"
           />
-          <Property
+          <ContactProperty
             icon={<RadioTowerIcon className="size-3 shrink-0" />}
             term="Timezone"
             details={
@@ -616,7 +617,7 @@ function Properties(contact: ContactDto): React.JSX.Element {
             }
             placeholder="No timezone"
           />
-          <Property
+          <ContactProperty
             icon={<RadioTowerIcon className="size-3 shrink-0" />}
             term="Lead source"
             details={
@@ -653,7 +654,7 @@ function Properties(contact: ContactDto): React.JSX.Element {
             }
             placeholder="No lead source"
           />
-          <Property
+          <ContactProperty
             icon={<KeyIcon className="size-3 shrink-0" />}
             term="Stripe ID"
             details={
@@ -692,32 +693,3 @@ function Properties(contact: ContactDto): React.JSX.Element {
   );
 }
 
-type PropertyProps = {
-  icon: React.ReactNode;
-  term: string;
-  details?: React.ReactNode;
-  placeholder: string;
-};
-
-function Property({
-  icon,
-  term,
-  details,
-  placeholder
-}: PropertyProps): React.JSX.Element {
-  return (
-    <div className="flex h-7 flex-row items-center whitespace-nowrap">
-      <span className="flex h-7 min-w-24 flex-row items-center gap-2 text-muted-foreground">
-        {icon}
-        {term}
-      </span>
-      <span className="flex h-7 w-full max-w-[196px] flex-row items-center overflow-hidden text-ellipsis">
-        {details ? (
-          details
-        ) : (
-          <p className="text-muted-foreground opacity-65">{placeholder}</p>
-        )}
-      </span>
-    </div>
-  );
-}
