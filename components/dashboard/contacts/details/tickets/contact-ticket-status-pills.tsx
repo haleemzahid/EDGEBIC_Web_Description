@@ -17,7 +17,7 @@ function statusBadgeMeta(status: ContactTicketStatus): {
       };
     case ContactTicketStatus.PENDING:
       return {
-        label: 'Pending',
+        label: 'In progress',
         className:
           'border-transparent bg-amber-100 text-amber-800 hover:bg-amber-100'
       };

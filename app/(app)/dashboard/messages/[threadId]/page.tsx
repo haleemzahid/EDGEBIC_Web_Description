@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { type Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { revalidateTag } from 'next/cache';
-import { unstable_after as after } from 'next/server';
+import { after } from 'next/server';
 import { EmailFolder, Role } from '@prisma/client';
 import { ChevronLeftIcon } from 'lucide-react';
 

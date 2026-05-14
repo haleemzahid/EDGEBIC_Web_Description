@@ -77,7 +77,7 @@ export function ContactTicketDetailMenu({
           <DropdownMenuItem
             onClick={() => setStatus(ContactTicketStatus.PENDING)}
           >
-            Mark pending
+            Mark in progress
           </DropdownMenuItem>
         )}
         {ticket.status !== ContactTicketStatus.RESOLVED && (

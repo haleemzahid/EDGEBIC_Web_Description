@@ -15,6 +15,7 @@ import {
 import { toast } from 'sonner';
 
 import { confirmClientTicketResolved } from '@/actions/client-portal/confirm-client-ticket-resolved';
+import { reopenClientTicket } from '@/actions/client-portal/reopen-client-ticket';
 import { replyClientTicket } from '@/actions/client-portal/reply-client-ticket';
 import {
   AttachmentPreview,
@@ -266,6 +267,20 @@ export function ClientTicketConversation({
     }
   };
 
+  const [reopening, setReopening] = React.useState(false);
+  const [resolvedReplyOpen, setResolvedReplyOpen] = React.useState(false);
+  const handleReopen = async (): Promise<void> => {
+    setReopening(true);
+    const result = await reopenClientTicket({ ticketId });
+    setReopening(false);
+    if (!result?.serverError && !result?.validationErrors) {
+      toast.success('Ticket reopened. Your team has been notified.');
+      router.refresh();
+    } else {
+      toast.error(result?.serverError ?? "Couldn't reopen the ticket.");
+    }
+  };
+
   const canSubmit =
     (text.trim().length > 0 ||
       staged.some((s) => s.state === 'uploaded')) &&
@@ -325,44 +340,67 @@ export function ClientTicketConversation({
       </div>
       <div className="rounded-b-lg border bg-card">
         {isClosed ? (
-          <div className="border-t p-4">
-            <p className="text-sm text-muted-foreground">
-              This ticket is closed.{' '}
-              <Link
-                href={Routes.ClientSupport}
-                className="text-primary underline"
-              >
-                Open a new ticket
-              </Link>{' '}
-              if you need more help.
-            </p>
+          <div className="flex flex-col gap-3 border-t p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm">
+              <p className="font-medium text-foreground">This ticket is closed.</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Reopen it if the issue came back, or{' '}
+                <Link
+                  href={Routes.ClientSupport}
+                  className="text-primary underline"
+                >
+                  open a new ticket
+                </Link>
+                .
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleReopen}
+              disabled={reopening}
+              className="gap-1.5"
+            >
+              <ClockIcon className="size-3.5" />
+              {reopening ? 'Reopening…' : 'Reopen ticket'}
+            </Button>
           </div>
         ) : (
           <>
             {isResolved && (
-              <div className="flex flex-col gap-3 border-t bg-emerald-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 border-t bg-emerald-50/60 p-5 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-sm">
-                  <p className="font-semibold text-emerald-900">
+                  <p className="text-base font-semibold text-emerald-900">
                     Your team marked this resolved
                   </p>
-                  <p className="mt-0.5 text-xs text-emerald-800/80">
-                    Confirm if it&apos;s fixed, or reply below to reopen the
-                    ticket.
+                  <p className="mt-1 text-xs text-emerald-800/80">
+                    Confirm if it&apos;s fixed so we can close this ticket.
                   </p>
                 </div>
                 <Button
                   type="button"
                   variant="default"
-                  size="sm"
                   onClick={handleConfirmResolved}
                   className="gap-1.5"
                 >
-                  <CheckIcon className="size-3.5" />
+                  <CheckIcon className="size-4" />
                   Confirm resolved
                 </Button>
               </div>
             )}
-            {staged.length > 0 && (
+            {isResolved && !resolvedReplyOpen && (
+              <div className="border-t p-3 text-center">
+                <button
+                  type="button"
+                  onClick={() => setResolvedReplyOpen(true)}
+                  className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                >
+                  Still not fixed? Reply to reopen the ticket.
+                </button>
+              </div>
+            )}
+            {(!isResolved || resolvedReplyOpen) && staged.length > 0 && (
               <div className="flex flex-wrap gap-2 border-t bg-muted/40 p-2">
                 {staged.map((s) => (
                   <StagedAttachmentChip
@@ -373,6 +411,7 @@ export function ClientTicketConversation({
                 ))}
               </div>
             )}
+            {(!isResolved || resolvedReplyOpen) && (
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -421,6 +460,7 @@ export function ClientTicketConversation({
                 <SendIcon className="size-4" />
               </Button>
             </form>
+            )}
           </>
         )}
       </div>

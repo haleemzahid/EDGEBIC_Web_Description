@@ -417,6 +417,14 @@ function ConversationPanel({
       <div className="shrink-0 bg-muted/30 px-4 py-2 text-xs text-muted-foreground">
         👁️ The customer can see everything in this tab.
       </div>
+      {ticket.status === ContactTicketStatus.RESOLVED && (
+        <div className="flex shrink-0 items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800">
+          <ClockIcon className="size-3.5 shrink-0" />
+          <span>
+            Awaiting customer confirmation. {contact.name?.split(' ')[0] ?? 'The customer'} will close the ticket when they confirm it&apos;s resolved.
+          </span>
+        </div>
+      )}
       <ul className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {ticket.description && (
           <DescriptionBubble

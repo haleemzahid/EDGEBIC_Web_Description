@@ -211,7 +211,7 @@ export const AddContactTicketModal =
                           Open
                         </SelectItem>
                         <SelectItem value={ContactTicketStatus.PENDING}>
-                          Pending
+                          In progress
                         </SelectItem>
                         <SelectItem value={ContactTicketStatus.RESOLVED}>
                           Resolved
