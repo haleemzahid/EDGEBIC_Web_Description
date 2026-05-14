@@ -512,7 +512,7 @@ export function ContactInbox({
       {/* Panel header — hidden while reading a single email so the reader
           gets the full panel height. */}
       {!selectedThread && (
-        <div className="flex flex-col gap-3 border-b px-6 py-4">
+        <div className="flex flex-col gap-1 px-6 pb-0 pt-4">
           <div className="flex flex-row items-center justify-between gap-2">
             <h2 className="text-base font-semibold">Inbox</h2>
             <Button
@@ -524,10 +524,6 @@ export function ContactInbox({
               + Compose
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            All emails exchanged with {contact.name || 'this contact'}.
-          </p>
-
           {/* Sub-tabs */}
           <div className="flex flex-row gap-1 border-b">
             <SubTab
