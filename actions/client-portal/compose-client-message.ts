@@ -46,7 +46,18 @@ export const composeClientMessage = authActionClient
             senderType: EmailSenderType.CONTACT,
             senderName: link.name,
             senderEmail: link.email,
-            body: parsedInput.body
+            body: parsedInput.body,
+            attachments:
+              parsedInput.attachments.length > 0
+                ? {
+                    create: parsedInput.attachments.map((a) => ({
+                      fileName: a.fileName,
+                      storedName: a.storedName,
+                      mimeType: a.mimeType,
+                      sizeBytes: a.sizeBytes
+                    }))
+                  }
+                : undefined
           }
         }
       },

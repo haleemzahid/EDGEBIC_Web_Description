@@ -19,6 +19,12 @@ import { deleteContactEmails } from '@/actions/contacts/delete-contact-emails';
 import { markContactEmailRead } from '@/actions/contacts/mark-contact-email-read';
 import { replyContactEmail } from '@/actions/contacts/reply-contact-email';
 import { sendContactEmail } from '@/actions/contacts/send-contact-email';
+import {
+  AttachmentPreview,
+  StagedAttachmentChip,
+  type StagedAttachmentItem,
+  type TicketAttachmentView
+} from '@/components/dashboard/ticket-attachment-ui';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -42,6 +48,19 @@ import type { ContactDto } from '@/types/dtos/contact-dto';
 import type { ProfileDto } from '@/types/dtos/profile-dto';
 
 type FolderKey = 'INBOX' | 'SENT';
+
+type UploadedAttachment = {
+  storedName: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+};
+
+type StagedAttachment = StagedAttachmentItem & {
+  uploaded?: UploadedAttachment;
+};
+
+const MAX_REPLY_ATTACHMENTS = 5;
 
 type ThreadParticipant = {
   name: string;
@@ -128,12 +147,17 @@ export function ContactInbox({
     () => new Set()
   );
   const [replyText, setReplyText] = React.useState<string>('');
+  const [stagedReply, setStagedReply] = React.useState<StagedAttachment[]>([]);
   const [composeOpen, setComposeOpen] = React.useState<boolean>(false);
   const [composeDraft, setComposeDraft] = React.useState<{
     to: string;
     subject: string;
     body: string;
   }>({ to: contact.email || '', subject: '', body: '' });
+  const [stagedCompose, setStagedCompose] = React.useState<StagedAttachment[]>(
+    []
+  );
+  const composeFileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const inboxCount = initialThreads.filter(
     (t) => t.folder === EmailFolder.INBOX
@@ -163,6 +187,7 @@ export function ContactInbox({
   const handleOpenThread = (id: string): void => {
     setSelectedId(id);
     setReplyText('');
+    setStagedReply([]);
     const thread = initialThreads.find((t) => t.id === id);
     if (thread?.unread) {
       startTransition(async () => {
@@ -175,6 +200,68 @@ export function ContactInbox({
   const handleBackToList = (): void => {
     setSelectedId(null);
     setReplyText('');
+    setStagedReply([]);
+  };
+
+  const uploadReplyFiles = async (files: File[]): Promise<void> => {
+    if (!selectedThread) return;
+    const room = MAX_REPLY_ATTACHMENTS - stagedReply.length;
+    if (room <= 0) {
+      toast.error(`Maximum ${MAX_REPLY_ATTACHMENTS} files per reply`);
+      return;
+    }
+    const accepted = files.slice(0, room);
+    if (accepted.length < files.length) {
+      toast.error(`Only the first ${room} file(s) were attached`);
+    }
+    const items: StagedAttachment[] = accepted.map((file) => ({
+      tempId: `staged-${Date.now()}-${Math.random()}`,
+      file,
+      state: 'uploading'
+    }));
+    setStagedReply((prev) => [...prev, ...items]);
+    await Promise.all(
+      items.map(async (item) => {
+        const fd = new FormData();
+        fd.append('threadId', selectedThread.id);
+        fd.append('files', item.file);
+        try {
+          const res = await fetch('/api/message-attachments', {
+            method: 'POST',
+            body: fd
+          });
+          if (!res.ok) {
+            const data = await res
+              .json()
+              .catch(() => ({ error: 'Upload failed' }));
+            throw new Error(data?.error ?? 'Upload failed');
+          }
+          const data = (await res.json()) as {
+            attachments: UploadedAttachment[];
+          };
+          const uploaded = data.attachments[0];
+          setStagedReply((prev) =>
+            prev.map((s) =>
+              s.tempId === item.tempId
+                ? { ...s, state: 'uploaded', uploaded }
+                : s
+            )
+          );
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Upload failed';
+          setStagedReply((prev) =>
+            prev.map((s) =>
+              s.tempId === item.tempId ? { ...s, state: 'failed', error: msg } : s
+            )
+          );
+          toast.error(`${item.file.name}: ${msg}`);
+        }
+      })
+    );
+  };
+
+  const removeStagedReply = (tempId: string): void => {
+    setStagedReply((prev) => prev.filter((s) => s.tempId !== tempId));
   };
 
   const handleToggleSelected = (id: string): void => {
@@ -254,18 +341,28 @@ export function ContactInbox({
   };
 
   const handleSendReply = (): void => {
+    if (!selectedThread) return;
     const body = replyText.trim();
-    if (!body || !selectedThread) return;
+    const readyAttachments = stagedReply
+      .filter((s) => s.state === 'uploaded' && s.uploaded)
+      .map((s) => s.uploaded as UploadedAttachment);
+    if (!body && readyAttachments.length === 0) return;
+    if (stagedReply.some((s) => s.state === 'uploading')) {
+      toast.error('Please wait for uploads to finish');
+      return;
+    }
     startTransition(async () => {
       const result = await replyContactEmail({
         threadId: selectedThread.id,
-        body
+        body,
+        attachments: readyAttachments
       });
       if (result?.serverError) {
         toast.error("Reply couldn't be sent");
         return;
       }
       setReplyText('');
+      setStagedReply([]);
       toast.success('Reply sent');
       router.refresh();
     });
@@ -282,7 +379,78 @@ export function ContactInbox({
       subject: initial?.subject ?? '',
       body: initial?.body ?? ''
     });
+    setStagedCompose([]);
     setComposeOpen(true);
+  };
+
+  const uploadComposeFiles = async (files: File[]): Promise<void> => {
+    const room = MAX_REPLY_ATTACHMENTS - stagedCompose.length;
+    if (room <= 0) {
+      toast.error(`Maximum ${MAX_REPLY_ATTACHMENTS} files`);
+      return;
+    }
+    const accepted = files.slice(0, room);
+    if (accepted.length < files.length) {
+      toast.error(`Only the first ${room} file(s) were attached`);
+    }
+    const items: StagedAttachment[] = accepted.map((file) => ({
+      tempId: `compose-${Date.now()}-${Math.random()}`,
+      file,
+      state: 'uploading'
+    }));
+    setStagedCompose((prev) => [...prev, ...items]);
+    await Promise.all(
+      items.map(async (item) => {
+        const fd = new FormData();
+        fd.append('contactId', contact.id);
+        fd.append('files', item.file);
+        try {
+          const res = await fetch('/api/message-attachments', {
+            method: 'POST',
+            body: fd
+          });
+          if (!res.ok) {
+            const data = await res
+              .json()
+              .catch(() => ({ error: 'Upload failed' }));
+            throw new Error(data?.error ?? 'Upload failed');
+          }
+          const data = (await res.json()) as {
+            attachments: UploadedAttachment[];
+          };
+          const uploaded = data.attachments[0];
+          setStagedCompose((prev) =>
+            prev.map((s) =>
+              s.tempId === item.tempId
+                ? { ...s, state: 'uploaded', uploaded }
+                : s
+            )
+          );
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Upload failed';
+          setStagedCompose((prev) =>
+            prev.map((s) =>
+              s.tempId === item.tempId
+                ? { ...s, state: 'failed', error: msg }
+                : s
+            )
+          );
+          toast.error(`${item.file.name}: ${msg}`);
+        }
+      })
+    );
+  };
+
+  const onComposePickFiles = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ): void => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (files.length > 0) void uploadComposeFiles(files);
+    e.target.value = '';
+  };
+
+  const removeStagedCompose = (tempId: string): void => {
+    setStagedCompose((prev) => prev.filter((s) => s.tempId !== tempId));
   };
 
   const handleForward = (): void => {
@@ -308,12 +476,20 @@ export function ContactInbox({
     const subject = composeDraft.subject.trim();
     const body = composeDraft.body.trim();
     if (!to || !subject || !body) return;
+    if (stagedCompose.some((s) => s.state === 'uploading')) {
+      toast.error('Please wait for uploads to finish');
+      return;
+    }
+    const readyAttachments = stagedCompose
+      .filter((s) => s.state === 'uploaded' && s.uploaded)
+      .map((s) => s.uploaded as UploadedAttachment);
     startTransition(async () => {
       const result = await sendContactEmail({
         contactId: contact.id,
         to,
         subject,
-        body
+        body,
+        attachments: readyAttachments
       });
       if (result?.serverError) {
         toast.error("Email couldn't be sent");
@@ -322,6 +498,7 @@ export function ContactInbox({
       const newThreadId = result?.data?.threadId;
       setComposeOpen(false);
       setComposeDraft({ to: contact.email || '', subject: '', body: '' });
+      setStagedCompose([]);
       setFolder('SENT');
       if (newThreadId) {
         setSelectedId(newThreadId);
@@ -376,6 +553,9 @@ export function ContactInbox({
             contact={contact}
             replyText={replyText}
             onReplyTextChange={setReplyText}
+            staged={stagedReply}
+            onUploadFiles={uploadReplyFiles}
+            onRemoveStaged={removeStagedReply}
             onBack={handleBackToList}
             onForward={handleForward}
             onDelete={handleDelete}
@@ -470,6 +650,38 @@ export function ContactInbox({
                 placeholder="Write your message…"
                 disabled={pending}
               />
+            </div>
+            {stagedCompose.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {stagedCompose.map((s) => (
+                  <StagedAttachmentChip
+                    key={s.tempId}
+                    item={s}
+                    onRemove={() => removeStagedCompose(s.tempId)}
+                  />
+                ))}
+              </div>
+            )}
+            <input
+              ref={composeFileInputRef}
+              type="file"
+              multiple
+              hidden
+              onChange={onComposePickFiles}
+            />
+            <div>
+              <button
+                type="button"
+                onClick={() => composeFileInputRef.current?.click()}
+                disabled={
+                  pending || stagedCompose.length >= MAX_REPLY_ATTACHMENTS
+                }
+                className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
+                title="Attach files"
+              >
+                <PaperclipIcon className="size-3.5 shrink-0" />
+                Attach files
+              </button>
             </div>
           </div>
           <DialogFooter>
@@ -720,6 +932,9 @@ type ThreadReaderProps = {
   contact: ContactDto;
   replyText: string;
   onReplyTextChange: (next: string) => void;
+  staged: StagedAttachment[];
+  onUploadFiles: (files: File[]) => Promise<void>;
+  onRemoveStaged: (tempId: string) => void;
   onBack: () => void;
   onForward: () => void;
   onDelete: () => void;
@@ -734,6 +949,9 @@ function ThreadReader({
   contact,
   replyText,
   onReplyTextChange,
+  staged,
+  onUploadFiles,
+  onRemoveStaged,
   onBack,
   onForward,
   onDelete,
@@ -742,6 +960,15 @@ function ThreadReader({
   disabled
 }: ThreadReaderProps): React.JSX.Element {
   const participant = getThreadParticipant(thread, contact);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const onPickFiles = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (files.length > 0) void onUploadFiles(files);
+    e.target.value = '';
+  };
+  const canSubmit =
+    (replyText.trim().length > 0 || staged.some((s) => s.state === 'uploaded')) &&
+    !staged.some((s) => s.state === 'uploading');
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       {/* Reader head */}
@@ -842,6 +1069,17 @@ function ThreadReader({
                 <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
                   {message.body}
                 </div>
+                {message.attachments.length > 0 && (
+                  <div className="mt-3 flex flex-col gap-2">
+                    {message.attachments.map((a) => (
+                      <AttachmentPreview
+                        key={a.id}
+                        attachment={a}
+                        alignEnd={false}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -857,12 +1095,36 @@ function ThreadReader({
           className="min-h-[70px] resize-y bg-background"
           disabled={disabled}
         />
+        {staged.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {staged.map((s) => (
+              <StagedAttachmentChip
+                key={s.tempId}
+                item={s}
+                onRemove={() => onRemoveStaged(s.tempId)}
+              />
+            ))}
+          </div>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          hidden
+          onChange={onPickFiles}
+        />
         <div className="mt-2 flex items-center justify-between">
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={disabled || staged.length >= MAX_REPLY_ATTACHMENTS}
+              className="flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-accent hover:text-foreground disabled:opacity-50"
+              title="Attach files"
+            >
               <PaperclipIcon className="size-3.5 shrink-0" />
               Attach
-            </span>
+            </button>
             <span className="flex items-center gap-1">
               <SparklesIcon className="size-3.5 shrink-0" />
               Snippet
@@ -882,7 +1144,7 @@ function ThreadReader({
               type="button"
               size="sm"
               onClick={onSendReply}
-              disabled={disabled || !replyText.trim()}
+              disabled={disabled || !canSubmit}
             >
               <SendIcon className="mr-1 size-3.5 shrink-0" />
               Send reply

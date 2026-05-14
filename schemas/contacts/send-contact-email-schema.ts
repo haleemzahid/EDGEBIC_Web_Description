@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { ticketAttachmentInputSchema } from '@/schemas/client-portal/reply-client-ticket-schema';
+
 export const sendContactEmailSchema = z.object({
   contactId: z
     .string({
@@ -33,7 +35,8 @@ export const sendContactEmailSchema = z.object({
     })
     .trim()
     .min(1, 'Message is required.')
-    .max(20000, 'Maximum 20000 characters allowed.')
+    .max(20000, 'Maximum 20000 characters allowed.'),
+  attachments: z.array(ticketAttachmentInputSchema).max(5).default([])
 });
 
 export type SendContactEmailSchema = z.infer<typeof sendContactEmailSchema>;

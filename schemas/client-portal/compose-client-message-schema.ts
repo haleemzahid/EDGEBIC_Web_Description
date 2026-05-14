@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { ticketAttachmentInputSchema } from '@/schemas/client-portal/reply-client-ticket-schema';
+
 export const composeClientMessageSchema = z.object({
   subject: z
     .string({ required_error: 'Subject is required.' })
@@ -10,7 +12,8 @@ export const composeClientMessageSchema = z.object({
     .string({ required_error: 'Message is required.' })
     .trim()
     .min(1, 'Message is required.')
-    .max(20000, 'Maximum 20000 characters allowed.')
+    .max(20000, 'Maximum 20000 characters allowed.'),
+  attachments: z.array(ticketAttachmentInputSchema).max(5).default([])
 });
 
 export type ComposeClientMessageSchema = z.infer<

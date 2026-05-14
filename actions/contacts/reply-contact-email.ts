@@ -69,6 +69,11 @@ export const replyContactEmail = authActionClient
       );
     }
 
+    const previewBase = parsedInput.body
+      ? parsedInput.body
+      : parsedInput.attachments
+          .map((a) => a.fileName)
+          .join(', ');
     await prisma.$transaction([
       prisma.contactEmailMessage.create({
         data: {
@@ -79,13 +84,24 @@ export const replyContactEmail = authActionClient
           senderEmail: session.user.email ?? undefined,
           recipientName: thread.contact.name,
           recipientEmail: thread.contact.email,
-          body: parsedInput.body
+          body: parsedInput.body,
+          attachments:
+            parsedInput.attachments.length > 0
+              ? {
+                  create: parsedInput.attachments.map((a) => ({
+                    fileName: a.fileName,
+                    storedName: a.storedName,
+                    mimeType: a.mimeType,
+                    sizeBytes: a.sizeBytes
+                  }))
+                }
+              : undefined
         }
       }),
       prisma.contactEmailThread.update({
         where: { id: thread.id },
         data: {
-          preview: parsedInput.body.slice(0, 500),
+          preview: previewBase.slice(0, 500),
           unread: false
         }
       })

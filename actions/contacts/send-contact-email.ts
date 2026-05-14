@@ -65,7 +65,18 @@ export const sendContactEmail = authActionClient
             senderEmail: session.user.email ?? undefined,
             recipientName: contact.name,
             recipientEmail: parsedInput.to,
-            body: parsedInput.body
+            body: parsedInput.body,
+            attachments:
+              parsedInput.attachments.length > 0
+                ? {
+                    create: parsedInput.attachments.map((a) => ({
+                      fileName: a.fileName,
+                      storedName: a.storedName,
+                      mimeType: a.mimeType,
+                      sizeBytes: a.sizeBytes
+                    }))
+                  }
+                : undefined
           }
         }
       },

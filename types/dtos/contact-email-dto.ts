@@ -1,5 +1,13 @@
 import { type EmailFolder, type EmailSenderType } from '@prisma/client';
 
+export type ContactEmailMessageAttachmentDto = {
+  id: string;
+  fileName: string;
+  storedName: string;
+  mimeType: string;
+  sizeBytes: number;
+};
+
 export type ContactEmailMessageDto = {
   id: string;
   threadId: string;
@@ -12,6 +20,7 @@ export type ContactEmailMessageDto = {
   recipientEmail?: string;
   body: string;
   createdAt: Date;
+  attachments: ContactEmailMessageAttachmentDto[];
 };
 
 export type ContactEmailThreadDto = {

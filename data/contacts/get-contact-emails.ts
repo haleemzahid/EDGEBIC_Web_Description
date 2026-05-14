@@ -71,6 +71,16 @@ export async function getContactEmails(
                 select: {
                   image: true
                 }
+              },
+              attachments: {
+                orderBy: { createdAt: SortDirection.Asc },
+                select: {
+                  id: true,
+                  fileName: true,
+                  storedName: true,
+                  mimeType: true,
+                  sizeBytes: true
+                }
               }
             },
             orderBy: {
@@ -95,7 +105,14 @@ export async function getContactEmails(
           recipientName: m.recipientName ?? undefined,
           recipientEmail: m.recipientEmail ?? undefined,
           body: m.body,
-          createdAt: m.createdAt
+          createdAt: m.createdAt,
+          attachments: m.attachments.map((a) => ({
+            id: a.id,
+            fileName: a.fileName,
+            storedName: a.storedName,
+            mimeType: a.mimeType,
+            sizeBytes: a.sizeBytes
+          }))
         }));
         return {
           id: thread.id,

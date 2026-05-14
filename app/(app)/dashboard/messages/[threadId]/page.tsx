@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { type Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { revalidateTag } from 'next/cache';
+import { unstable_after as after } from 'next/server';
 import { EmailFolder, Role } from '@prisma/client';
 import { ChevronLeftIcon } from 'lucide-react';
 
@@ -83,7 +84,17 @@ export default async function ClientMessageDetailPage({
           senderName: true,
           senderEmail: true,
           body: true,
-          createdAt: true
+          createdAt: true,
+          attachments: {
+            orderBy: { createdAt: 'asc' },
+            select: {
+              id: true,
+              fileName: true,
+              storedName: true,
+              mimeType: true,
+              sizeBytes: true
+            }
+          }
         }
       }
     }
@@ -92,19 +103,23 @@ export default async function ClientMessageDetailPage({
     notFound();
   }
 
-  // Fix #3: auto-clear unread when the client opens the thread.
+  // Auto-clear unread when the client opens the thread. The DB write is
+  // safe to do here (idempotent), but `revalidateTag` can't run during a
+  // page render in Next 15, so we defer it via `after()`.
   if (thread.unread) {
     await prisma.contactEmailThread.update({
       where: { id: thread.id },
       data: { unread: false }
     });
-    revalidateTag(
-      Caching.createOrganizationTag(
-        OrganizationCacheKey.ContactEmails,
-        link.organizationId,
-        link.contactId
-      )
-    );
+    after(() => {
+      revalidateTag(
+        Caching.createOrganizationTag(
+          OrganizationCacheKey.ContactEmails,
+          link.organizationId,
+          link.contactId
+        )
+      );
+    });
   }
 
   return (
@@ -140,7 +155,14 @@ export default async function ClientMessageDetailPage({
               senderName: m.senderName,
               senderEmail: m.senderEmail,
               body: m.body,
-              createdAt: m.createdAt
+              createdAt: m.createdAt,
+              attachments: m.attachments.map((a) => ({
+                id: a.id,
+                fileName: a.fileName,
+                storedName: a.storedName,
+                mimeType: a.mimeType,
+                sizeBytes: a.sizeBytes
+              }))
             }))}
           />
         </div>
