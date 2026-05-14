@@ -2,12 +2,12 @@
 
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
 import { ContactMeetingStatus } from '@prisma/client';
-import { format } from 'date-fns';
 import { type SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { updateContactMeeting } from '@/actions/contacts/update-contact-meeting';
 import { Button } from '@/components/ui/button';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 import {
   Dialog,
   DialogContent,
@@ -55,10 +55,6 @@ import type { ContactMeetingDto } from '@/types/dtos/contact-meeting-dto';
 export type EditContactMeetingModalProps = NiceModalHocProps & {
   meeting: ContactMeetingDto;
 };
-
-function toDatetimeLocalValue(date: Date): string {
-  return format(date, "yyyy-MM-dd'T'HH:mm");
-}
 
 export const EditContactMeetingModal =
   NiceModal.create<EditContactMeetingModalProps>(({ meeting }) => {
@@ -128,17 +124,11 @@ export const EditContactMeetingModal =
               <FormItem className="flex w-full flex-col">
                 <FormLabel required>Starts</FormLabel>
                 <FormControl>
-                  <Input
-                    type="datetime-local"
-                    value={
-                      field.value ? toDatetimeLocalValue(field.value) : ''
-                    }
-                    onChange={(e) =>
-                      field.onChange(
-                        e.target.value ? new Date(e.target.value) : undefined
-                      )
-                    }
+                  <DateTimePicker
+                    date={field.value}
+                    onDateChange={field.onChange}
                     disabled={methods.formState.isSubmitting}
+                    className="w-full"
                   />
                 </FormControl>
                 <FormMessage />
@@ -152,17 +142,11 @@ export const EditContactMeetingModal =
               <FormItem className="flex w-full flex-col">
                 <FormLabel required>Ends</FormLabel>
                 <FormControl>
-                  <Input
-                    type="datetime-local"
-                    value={
-                      field.value ? toDatetimeLocalValue(field.value) : ''
-                    }
-                    onChange={(e) =>
-                      field.onChange(
-                        e.target.value ? new Date(e.target.value) : undefined
-                      )
-                    }
+                  <DateTimePicker
+                    date={field.value}
+                    onDateChange={field.onChange}
                     disabled={methods.formState.isSubmitting}
+                    className="w-full"
                   />
                 </FormControl>
                 <FormMessage />

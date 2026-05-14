@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import { type Role } from '@prisma/client';
 import NextAuth, { type DefaultSession, type NextAuthConfig } from 'next-auth';
 import { encode } from 'next-auth/jwt';
 
@@ -12,18 +13,14 @@ import { session } from '@/lib/auth/session';
 declare module 'next-auth' {
   interface User {
     organizationId: string | null;
+    role: Role;
   }
 
   interface Session {
     user: {
       organizationId: string | null;
+      role: Role;
     } & DefaultSession['user'];
-  }
-}
-
-declare module 'next-auth' {
-  interface User {
-    organizationId: string | null;
   }
 }
 

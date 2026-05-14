@@ -2,12 +2,12 @@ import * as React from 'react';
 import Link from 'next/link';
 import { type Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { ContactPriority, ContactTicketStatus, Role } from '@prisma/client';
+import { ContactPriority, ContactTicketStatus } from '@prisma/client';
 import { formatDistanceToNow } from 'date-fns';
 
+import { ClientUnlinkedNotice } from '@/components/dashboard/client-portal/client-unlinked-notice';
 import { NewClientTicketButton } from '@/components/dashboard/client-portal/new-ticket-button';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Page,
   PageActions,
@@ -17,11 +17,8 @@ import {
   PageTitle
 } from '@/components/ui/page';
 import { Routes } from '@/constants/routes';
-import { dedupedAuth } from '@/lib/auth';
-import { getClientContactLink } from '@/lib/auth/get-client-contact';
-import { getLoginRedirect } from '@/lib/auth/redirect';
-import { checkSession } from '@/lib/auth/session';
-import { prisma } from '@/lib/db/prisma';
+import { getClientTickets } from '@/data/client-portal/get-client-tickets';
+import { requireClientRole } from '@/lib/auth/require-client-role';
 import { cn, createTitle } from '@/lib/utils';
 
 export const metadata: Metadata = {
@@ -29,38 +26,12 @@ export const metadata: Metadata = {
 };
 
 export default async function ClientSupportPage(): Promise<React.JSX.Element> {
-  const session = await dedupedAuth();
-  if (!checkSession(session)) {
-    return redirect(getLoginRedirect());
-  }
-
-  const userFromDb = await prisma.user.findFirst({
-    where: { id: session.user.id },
-    select: { role: true }
-  });
-  if (!userFromDb || userFromDb.role !== Role.CLIENT) {
-    return redirect(Routes.Home);
-  }
-
-  const link = await getClientContactLink(session.user.id);
+  const { link } = await requireClientRole();
   if (!link) {
-    return <UnlinkedNotice />;
+    return <ClientUnlinkedNotice title="Support" />;
   }
 
-  const tickets = await prisma.contactTicket.findMany({
-    where: { contactId: link.contactId },
-    orderBy: { updatedAt: 'desc' },
-    select: {
-      id: true,
-      number: true,
-      title: true,
-      description: true,
-      status: true,
-      priority: true,
-      createdAt: true,
-      updatedAt: true
-    }
-  });
+  const tickets = await getClientTickets(link);
 
   const open = tickets.filter(
     (t) =>
@@ -256,28 +227,3 @@ function statusClasses(status: ContactTicketStatus): string {
   }
 }
 
-function UnlinkedNotice(): React.JSX.Element {
-  return (
-    <Page>
-      <PageHeader>
-        <PagePrimaryBar>
-          <PageTitle>Support</PageTitle>
-        </PagePrimaryBar>
-      </PageHeader>
-      <PageBody>
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-6">
-          <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-            Your client profile isn&apos;t linked to a contact in the CRM yet.
-            Please contact your project owner to complete the link.
-          </p>
-          <Link
-            href={Routes.Welcome}
-            className="text-sm text-primary underline"
-          >
-            Back to Home
-          </Link>
-        </div>
-      </PageBody>
-    </Page>
-  );
-}

@@ -214,6 +214,7 @@ export const callbacks = {
   async session({ trigger, session, user }) {
     if (session && user) {
       session.user.organizationId = user.organizationId;
+      session.user.role = user.role;
       session.user.id = user.id;
     }
 

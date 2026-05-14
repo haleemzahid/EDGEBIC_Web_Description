@@ -1,11 +1,11 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { type Metadata } from 'next';
-import { redirect } from 'next/navigation';
-import { Role, SoftwareStatus } from '@prisma/client';
+import { SoftwareStatus } from '@prisma/client';
 import { format } from 'date-fns';
 import { BookOpenIcon, DownloadIcon, ExternalLinkIcon } from 'lucide-react';
 
+import { ClientUnlinkedNotice } from '@/components/dashboard/client-portal/client-unlinked-notice';
 import { Badge } from '@/components/ui/badge';
 import {
   Page,
@@ -15,11 +15,8 @@ import {
   PageTitle
 } from '@/components/ui/page';
 import { Routes } from '@/constants/routes';
-import { dedupedAuth } from '@/lib/auth';
-import { getClientContactLink } from '@/lib/auth/get-client-contact';
-import { getLoginRedirect } from '@/lib/auth/redirect';
-import { checkSession } from '@/lib/auth/session';
-import { prisma } from '@/lib/db/prisma';
+import { getClientSoftware } from '@/data/client-portal/get-client-software';
+import { requireClientRole } from '@/lib/auth/require-client-role';
 import { cn, createTitle } from '@/lib/utils';
 
 export const metadata: Metadata = {
@@ -53,43 +50,12 @@ const statusConfig: Record<
 };
 
 export default async function ClientSoftwarePage(): Promise<React.JSX.Element> {
-  const session = await dedupedAuth();
-  if (!checkSession(session)) {
-    return redirect(getLoginRedirect());
-  }
-
-  const userFromDb = await prisma.user.findFirst({
-    where: { id: session.user.id },
-    select: { role: true }
-  });
-  if (!userFromDb || userFromDb.role !== Role.CLIENT) {
-    return redirect(Routes.Home);
-  }
-
-  const link = await getClientContactLink(session.user.id);
+  const { link } = await requireClientRole();
   if (!link) {
-    return <UnlinkedNotice />;
+    return <ClientUnlinkedNotice title="My Software" />;
   }
 
-  const software = await prisma.contactSoftware.findMany({
-    where: { contactId: link.contactId },
-    orderBy: [{ status: 'asc' }, { name: 'asc' }],
-    select: {
-      id: true,
-      name: true,
-      installedVersion: true,
-      latestVersion: true,
-      installDate: true,
-      status: true,
-      docsUrl: true,
-      downloadUrl: true,
-      licenseType: true,
-      seats: true,
-      os: true,
-      database: true,
-      notes: true
-    }
-  });
+  const software = await getClientSoftware(link);
 
   return (
     <Page>
@@ -267,28 +233,3 @@ function EmptyState(): React.JSX.Element {
   );
 }
 
-function UnlinkedNotice(): React.JSX.Element {
-  return (
-    <Page>
-      <PageHeader>
-        <PagePrimaryBar>
-          <PageTitle>My Software</PageTitle>
-        </PagePrimaryBar>
-      </PageHeader>
-      <PageBody>
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-6">
-          <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-            Your client profile isn&apos;t linked to a contact in the CRM yet.
-            Please contact your project owner to complete the link.
-          </p>
-          <Link
-            href={Routes.Welcome}
-            className="text-sm text-primary underline"
-          >
-            Back to Home
-          </Link>
-        </div>
-      </PageBody>
-    </Page>
-  );
-}

@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 
 import { addContactSoftware } from '@/actions/contacts/add-contact-software';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Dialog,
   DialogContent,
@@ -185,18 +186,11 @@ export const AddContactSoftwareModal =
               <FormItem>
                 <FormLabel>Install date</FormLabel>
                 <FormControl>
-                  <Input
-                    type="date"
-                    value={
-                      field.value
-                        ? new Date(field.value).toISOString().split('T')[0]
-                        : ''
-                    }
-                    onChange={(e) =>
-                      field.onChange(
-                        e.target.value ? new Date(e.target.value) : null
-                      )
-                    }
+                  <DatePicker
+                    date={field.value ?? undefined}
+                    onDateChange={(d) => field.onChange(d ?? null)}
+                    disabled={methods.formState.isSubmitting}
+                    className="w-full"
                   />
                 </FormControl>
                 <FormMessage />

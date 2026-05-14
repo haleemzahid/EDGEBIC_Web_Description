@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
 import { useRouter } from 'next/navigation';
 import { type SubmitHandler } from 'react-hook-form';
@@ -52,6 +53,13 @@ export const NewClientTicketModal = NiceModal.create<NiceModalHocProps>(() => {
     mode: 'onSubmit',
     defaultValues: { title: '', description: '' }
   });
+  // NiceModal.hide() doesn't unmount; reset RHF state on every reopen so
+  // stale values from a prior submit don't persist.
+  React.useEffect(() => {
+    if (modal.visible) {
+      methods.reset();
+    }
+  }, [modal.visible, methods]);
   const title = 'Open a support ticket';
   const description = 'Tell us what you need help with.';
   const canSubmit =
@@ -63,6 +71,7 @@ export const NewClientTicketModal = NiceModal.create<NiceModalHocProps>(() => {
     const result = await createClientTicket(values);
     if (!result?.serverError && !result?.validationErrors) {
       toast.success(`Ticket #${result?.data?.number ?? ''} opened`);
+      methods.reset();
       modal.handleClose();
       router.refresh();
     } else {

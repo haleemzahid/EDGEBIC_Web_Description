@@ -217,7 +217,12 @@ function Bubble({
   onRetry?: () => void;
 }): React.JSX.Element {
   return (
-    <div className={cn('flex', authorIsClient ? 'justify-end' : 'justify-start')}>
+    <div
+      className={cn(
+        'flex flex-col gap-1',
+        authorIsClient ? 'items-end' : 'items-start'
+      )}
+    >
       <div
         className={cn(
           'max-w-[80%] rounded-lg px-3 py-2 text-sm shadow-sm',
@@ -227,23 +232,6 @@ function Bubble({
           state === 'failed' && 'opacity-80 ring-1 ring-rose-300'
         )}
       >
-        <div
-          className={cn(
-            'mb-1 flex items-baseline gap-2 text-[11px]',
-            authorIsClient
-              ? 'text-primary-foreground/70'
-              : 'text-muted-foreground'
-          )}
-        >
-          <span className="font-semibold">
-            {authorIsClient ? 'You' : authorName}
-          </span>
-          {!authorIsClient && authorEmail && (
-            <span className="truncate">&lt;{authorEmail}&gt;</span>
-          )}
-          <span>·</span>
-          <span>{format(createdAt, 'MMM d, h:mm a')}</span>
-        </div>
         <p className="whitespace-pre-wrap text-sm leading-relaxed">{body}</p>
         {state && (
           <div
@@ -280,6 +268,14 @@ function Bubble({
             )}
           </div>
         )}
+      </div>
+      <div className="text-[11px] text-muted-foreground">
+        {authorIsClient ? 'You' : authorName}
+        {!authorIsClient && authorEmail && (
+          <span className="ml-1">&lt;{authorEmail}&gt;</span>
+        )}
+        {' · '}
+        {format(createdAt, 'h:mm a · MMM d')}
       </div>
     </div>
   );

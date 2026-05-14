@@ -1,11 +1,12 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { type Metadata } from 'next';
-import { redirect } from 'next/navigation';
-import { ContactMeetingStatus, Role } from '@prisma/client';
+import { ContactMeetingStatus } from '@prisma/client';
 import { format } from 'date-fns';
 import { ExternalLinkIcon, VideoIcon } from 'lucide-react';
 
+import { ClientBookMeetingButton } from '@/components/dashboard/client-portal/client-book-meeting-button';
+import { ClientUnlinkedNotice } from '@/components/dashboard/client-portal/client-unlinked-notice';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,15 +18,11 @@ import {
   PageTitle
 } from '@/components/ui/page';
 import { Routes } from '@/constants/routes';
+import { getClientMeetings } from '@/data/client-portal/get-client-meetings';
 import { getCalendlyMeetingsForContact } from '@/data/contacts/get-calendly-meetings-for-contact';
-import { dedupedAuth } from '@/lib/auth';
-import { getClientContactLink } from '@/lib/auth/get-client-contact';
-import { getLoginRedirect } from '@/lib/auth/redirect';
-import { checkSession } from '@/lib/auth/session';
-import { prisma } from '@/lib/db/prisma';
+import { requireClientRole } from '@/lib/auth/require-client-role';
 import { cn, createTitle } from '@/lib/utils';
 import type { ContactMeetingDto } from '@/types/dtos/contact-meeting-dto';
-import { ClientBookMeetingButton } from '@/components/dashboard/client-portal/client-book-meeting-button';
 
 export const metadata: Metadata = {
   title: createTitle('My meetings')
@@ -40,40 +37,13 @@ export default async function ClientMeetingsPage({
 }): Promise<React.JSX.Element> {
   const { showAllPast: showAllPastParam } = await searchParams;
   const showAllPast = showAllPastParam === '1';
-  const session = await dedupedAuth();
-  if (!checkSession(session)) {
-    return redirect(getLoginRedirect());
-  }
-
-  const userFromDb = await prisma.user.findFirst({
-    where: { id: session.user.id },
-    select: { role: true }
-  });
-  if (!userFromDb || userFromDb.role !== Role.CLIENT) {
-    return redirect(Routes.Home);
-  }
-
-  const link = await getClientContactLink(session.user.id);
+  const { link } = await requireClientRole();
   if (!link) {
-    return <UnlinkedNotice title="My meetings" />;
+    return <ClientUnlinkedNotice title="My meetings" />;
   }
 
   const [dbMeetings, calendlyMeetings] = await Promise.all([
-    prisma.contactMeeting.findMany({
-      where: { contactId: link.contactId },
-      orderBy: { startsAt: 'desc' },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        startsAt: true,
-        endsAt: true,
-        location: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    }),
+    getClientMeetings(link),
     getCalendlyMeetingsForContact({
       contactId: link.contactId,
       contactEmail: link.email
@@ -405,28 +375,3 @@ function statusClasses(status: ContactMeetingStatus): string {
   }
 }
 
-function UnlinkedNotice({ title }: { title: string }): React.JSX.Element {
-  return (
-    <Page>
-      <PageHeader>
-        <PagePrimaryBar>
-          <PageTitle>{title}</PageTitle>
-        </PagePrimaryBar>
-      </PageHeader>
-      <PageBody>
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-6">
-          <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-            Your client profile isn&apos;t linked to a contact in the CRM yet.
-            Please contact your project owner to complete the link.
-          </p>
-          <Link
-            href={Routes.Welcome}
-            className="text-sm text-primary underline"
-          >
-            Back to Home
-          </Link>
-        </div>
-      </PageBody>
-    </Page>
-  );
-}

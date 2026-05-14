@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
 import { ContactPriority, ContactTicketStatus } from '@prisma/client';
 import { format } from 'date-fns';
@@ -88,6 +89,13 @@ export const AddContactTicketModal =
           meetingId: defaultMeetingId ?? null
         }
       });
+      // NiceModal.hide() doesn't unmount; reset RHF state on every reopen so
+      // stale values from a prior submit don't persist.
+      React.useEffect(() => {
+        if (modal.visible) {
+          methods.reset();
+        }
+      }, [modal.visible, methods]);
       const title = 'New ticket';
       const description = 'Create a support ticket linked to this contact.';
       const canSubmit =
@@ -102,6 +110,7 @@ export const AddContactTicketModal =
         const result = await addContactTicket(values);
         if (!result?.serverError && !result?.validationErrors) {
           toast.success(`Ticket #${result?.data?.number ?? ''} created`);
+          methods.reset();
           modal.handleClose();
         } else {
           toast.error("Couldn't create ticket");

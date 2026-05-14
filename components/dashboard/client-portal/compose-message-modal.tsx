@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
 import { useRouter } from 'next/navigation';
 import { type SubmitHandler } from 'react-hook-form';
@@ -53,6 +54,13 @@ export const ComposeMessageModal = NiceModal.create<NiceModalHocProps>(() => {
     mode: 'onSubmit',
     defaultValues: { subject: '', body: '' }
   });
+  // NiceModal.hide() doesn't unmount; reset RHF state on every reopen so
+  // stale values from a prior submit don't persist.
+  React.useEffect(() => {
+    if (modal.visible) {
+      methods.reset();
+    }
+  }, [modal.visible, methods]);
   const title = 'New message';
   const description = 'Start a new conversation with your project team.';
   const canSubmit =
@@ -66,6 +74,7 @@ export const ComposeMessageModal = NiceModal.create<NiceModalHocProps>(() => {
     const result = await composeClientMessage(values);
     if (!result?.serverError && !result?.validationErrors) {
       toast.success('Message sent');
+      methods.reset();
       modal.handleClose();
       const threadId = result?.data?.threadId;
       if (threadId) {
