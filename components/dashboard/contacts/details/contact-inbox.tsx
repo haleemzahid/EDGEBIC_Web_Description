@@ -40,11 +40,11 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { cn, getInitials } from '@/lib/utils';
+import type { ContactDto } from '@/types/dtos/contact-dto';
 import type {
   ContactEmailMessageDto,
   ContactEmailThreadDto
 } from '@/types/dtos/contact-email-dto';
-import type { ContactDto } from '@/types/dtos/contact-dto';
 import type { ProfileDto } from '@/types/dtos/profile-dto';
 
 type FolderKey = 'INBOX' | 'SENT';
@@ -89,10 +89,8 @@ function getThreadParticipant(
   const lastFromContact = [...thread.messages]
     .reverse()
     .find((m) => m.senderType === EmailSenderType.CONTACT);
-  const name =
-    lastFromContact?.senderName ?? contact.name ?? 'Contact';
-  const email =
-    lastFromContact?.senderEmail ?? contact.email ?? undefined;
+  const name = lastFromContact?.senderName ?? contact.name ?? 'Contact';
+  const email = lastFromContact?.senderEmail ?? contact.email ?? undefined;
   return {
     name,
     email,
@@ -258,7 +256,9 @@ export function ContactInbox({
           const msg = error instanceof Error ? error.message : 'Upload failed';
           setStagedReply((prev) =>
             prev.map((s) =>
-              s.tempId === item.tempId ? { ...s, state: 'failed', error: msg } : s
+              s.tempId === item.tempId
+                ? { ...s, state: 'failed', error: msg }
+                : s
             )
           );
           toast.error(`${item.file.name}: ${msg}`);
@@ -448,9 +448,7 @@ export function ContactInbox({
     );
   };
 
-  const onComposePickFiles = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ): void => {
+  const onComposePickFiles = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     if (files.length > 0) void uploadComposeFiles(files);
     e.target.value = '';
@@ -517,39 +515,42 @@ export function ContactInbox({
 
   return (
     <div className="flex size-full flex-col overflow-hidden">
-      {/* Panel header */}
-      <div className="flex flex-col gap-3 border-b px-6 py-4">
-        <div className="flex flex-row items-center justify-between gap-2">
-          <h2 className="text-base font-semibold">Inbox</h2>
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => openCompose()}
-            disabled={pending}
-          >
-            + Compose
-          </Button>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          All emails exchanged with {contact.name || 'this contact'}.
-        </p>
+      {/* Panel header — hidden while reading a single email so the reader
+          gets the full panel height. */}
+      {!selectedThread && (
+        <div className="flex flex-col gap-3 border-b px-6 py-4">
+          <div className="flex flex-row items-center justify-between gap-2">
+            <h2 className="text-base font-semibold">Inbox</h2>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => openCompose()}
+              disabled={pending}
+            >
+              + Compose
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            All emails exchanged with {contact.name || 'this contact'}.
+          </p>
 
-        {/* Sub-tabs */}
-        <div className="flex flex-row gap-1 border-b">
-          <SubTab
-            active={folder === 'INBOX'}
-            label="📥 Inbox"
-            count={inboxCount}
-            onClick={() => handleSelectFolder('INBOX')}
-          />
-          <SubTab
-            active={folder === 'SENT'}
-            label="📤 Sent"
-            count={sentCount}
-            onClick={() => handleSelectFolder('SENT')}
-          />
+          {/* Sub-tabs */}
+          <div className="flex flex-row gap-1 border-b">
+            <SubTab
+              active={folder === 'INBOX'}
+              label="📥 Inbox"
+              count={inboxCount}
+              onClick={() => handleSelectFolder('INBOX')}
+            />
+            <SubTab
+              active={folder === 'SENT'}
+              label="📤 Sent"
+              count={sentCount}
+              onClick={() => handleSelectFolder('SENT')}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Body */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -896,7 +897,10 @@ function ThreadList({
                       aria-label="Unread"
                     />
                   ) : (
-                    <span className="size-2 shrink-0" aria-hidden />
+                    <span
+                      className="size-2 shrink-0"
+                      aria-hidden
+                    />
                   )}
                   <Avatar className="size-6 shrink-0 rounded-full">
                     <AvatarImage
@@ -995,21 +999,27 @@ function ThreadReader({
     e.target.value = '';
   };
   const canSubmit =
-    (replyText.trim().length > 0 || staged.some((s) => s.state === 'uploaded')) &&
+    (replyText.trim().length > 0 ||
+      staged.some((s) => s.state === 'uploaded')) &&
     !staged.some((s) => s.state === 'uploading');
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       {/* Reader head */}
-      <div className="border-b px-5 py-4">
-        <button
-          type="button"
-          onClick={onBack}
-          className="mb-2 flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
-          <ArrowLeftIcon className="size-3.5 shrink-0" />
-          Back to inbox
-        </button>
-        <h3 className="text-base font-semibold">{thread.subject}</h3>
+      <div className="border-b px-5 py-3">
+        <div className="mb-2 flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="size-7"
+            onClick={onBack}
+            title="Back to inbox"
+            aria-label="Back to inbox"
+          >
+            <ArrowLeftIcon className="size-4 shrink-0" />
+          </Button>
+          <h3 className="truncate text-base font-semibold">{thread.subject}</h3>
+        </div>
         <div className="mt-2 flex items-center gap-2.5">
           <Avatar className="size-8 rounded-full">
             <AvatarImage
@@ -1058,7 +1068,7 @@ function ThreadReader({
       </div>
 
       {/* Thread */}
-      <ScrollArea className="min-h-0 flex-1">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="space-y-3 px-5 py-4">
           {thread.messages.map((message) => {
             const messageParticipant = getMessageParticipant(
@@ -1112,7 +1122,7 @@ function ThreadReader({
             );
           })}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Reply box */}
       <div className="border-t bg-muted/30 px-5 py-3">
