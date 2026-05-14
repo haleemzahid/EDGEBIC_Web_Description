@@ -73,6 +73,12 @@ export function ClientMessageConversation({
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
 
+  const lastTeamMessage = [...initialMessages]
+    .reverse()
+    .find((m) => m.senderType === EmailSenderType.USER);
+  const recipientFirstName =
+    lastTeamMessage?.senderName?.split(' ')[0] || 'the team';
+
   // Background poll for new messages from the team.
   React.useEffect(() => {
     const id = window.setInterval(() => {
@@ -332,7 +338,7 @@ export function ClientMessageConversation({
             onKeyDown={handleKeyDown}
             rows={1}
             maxLength={20000}
-            placeholder="Write a message…  (Enter to send, Shift+Enter for new line)"
+            placeholder={`Reply to ${recipientFirstName}…  (Enter to send, Shift+Enter for new line)`}
             className="max-h-40 min-h-[44px] flex-1 resize-none"
           />
           <Button
