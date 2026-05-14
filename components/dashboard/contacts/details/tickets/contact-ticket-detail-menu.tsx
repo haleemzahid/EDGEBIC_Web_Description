@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 
 import { updateContactTicket } from '@/actions/contacts/update-contact-ticket';
 import { DeleteContactTicketModal } from '@/components/dashboard/contacts/details/tickets/delete-contact-ticket-modal';
+import { EditContactTicketModal } from '@/components/dashboard/contacts/details/tickets/edit-contact-ticket-modal';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -17,17 +18,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import type { ContactMeetingDto } from '@/types/dtos/contact-meeting-dto';
 import type { ContactTicketWithDetailsDto } from '@/types/dtos/contact-ticket-dto';
+import type { MemberDto } from '@/types/dtos/member-dto';
 
 export type ContactTicketDetailMenuProps = {
   ticket: ContactTicketWithDetailsDto;
+  members?: MemberDto[];
+  meetings?: ContactMeetingDto[];
 };
 
 export function ContactTicketDetailMenu({
-  ticket
+  ticket,
+  members = [],
+  meetings = []
 }: ContactTicketDetailMenuProps): React.JSX.Element {
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
+
+  const handleEdit = (): void => {
+    NiceModal.show(EditContactTicketModal, { ticket, members, meetings });
+  };
 
   const setStatus = (nextStatus: ContactTicketStatus): void => {
     startTransition(async () => {
@@ -68,6 +79,8 @@ export function ContactTicketDetailMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={handleEdit}>Edit</DropdownMenuItem>
+        <DropdownMenuSeparator />
         {ticket.status !== ContactTicketStatus.OPEN && (
           <DropdownMenuItem onClick={() => setStatus(ContactTicketStatus.OPEN)}>
             Reopen

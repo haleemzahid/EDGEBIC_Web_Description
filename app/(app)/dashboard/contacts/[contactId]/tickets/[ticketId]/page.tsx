@@ -19,7 +19,9 @@ import {
   PageTitle
 } from '@/components/ui/page';
 import { getContact } from '@/data/contacts/get-contact';
+import { getContactMeetings } from '@/data/contacts/get-contact-meetings';
 import { getContactTicket } from '@/data/contacts/get-contact-ticket';
+import { getMembers } from '@/data/members/get-members';
 import { createTitle } from '@/lib/utils';
 import type { NextPageProps } from '@/types/next-page-props';
 
@@ -59,7 +61,11 @@ export default async function ContactTicketPage({
     return notFound();
   }
 
-  const contact = await getContact({ id: contactId });
+  const [contact, members, meetings] = await Promise.all([
+    getContact({ id: contactId }),
+    getMembers(),
+    getContactMeetings({ contactId })
+  ]);
 
   return (
     <Page>
@@ -105,7 +111,11 @@ export default async function ContactTicketPage({
             <div className="flex shrink-0 flex-row items-center gap-2">
               <ContactTicketStatusBadge status={ticket.status} />
               <ContactTicketPriorityBadge priority={ticket.priority} />
-              <ContactTicketDetailMenu ticket={ticket} />
+              <ContactTicketDetailMenu
+                ticket={ticket}
+                members={members}
+                meetings={meetings}
+              />
             </div>
           </div>
         </PagePrimaryBar>
