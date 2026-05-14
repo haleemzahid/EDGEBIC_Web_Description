@@ -55,11 +55,7 @@ export default async function ClientSupportPage(): Promise<React.JSX.Element> {
         </PagePrimaryBar>
       </PageHeader>
       <PageBody>
-        <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-6">
-          <p className="text-sm text-muted-foreground">
-            Your support tickets. Open a new one any time you need help.
-          </p>
-
+        <div className="flex w-full flex-col gap-6 p-6">
           <Section title={`Active · ${open.length}`}>
             {open.length === 0 ? (
               <EmptyActive />
