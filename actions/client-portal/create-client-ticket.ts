@@ -2,6 +2,8 @@
 
 import { revalidateTag } from 'next/cache';
 import {
+  ActionType,
+  ActorType,
   ContactPriority,
   ContactTicketActivityType,
   ContactTicketStatus,
@@ -37,28 +39,77 @@ export const createClientTicket = authActionClient
       );
     }
 
-    const ticket = await prisma.contactTicket.create({
-      data: {
-        contactId: link.contactId,
-        title: parsedInput.title,
-        description: parsedInput.description || null,
-        status: ContactTicketStatus.OPEN,
-        priority: ContactPriority.MEDIUM
-      },
-      select: { id: true, number: true }
-    });
+    const now = new Date();
+    const ticket = await prisma.$transaction(async (tx) => {
+      const created = await tx.contactTicket.create({
+        data: {
+          contactId: link.contactId,
+          title: parsedInput.title,
+          description: parsedInput.description || null,
+          status: ContactTicketStatus.OPEN,
+          priority: ContactPriority.MEDIUM
+        },
+        select: { id: true, number: true }
+      });
 
-    await prisma.contactTicketActivity.create({
-      data: {
-        ticketId: ticket.id,
-        type: ContactTicketActivityType.CREATED,
-        description: `Ticket #${ticket.number} opened by ${link.name}`
-      }
+      await tx.contactTicketActivity.create({
+        data: {
+          ticketId: created.id,
+          type: ContactTicketActivityType.CREATED,
+          description: `Ticket #${created.number} opened by ${link.name}`
+        }
+      });
+
+      // Bubble the contact to the top of the CRM (default sort is createdAt
+      // desc, unread first) and log a ContactActivity so the Activity tab
+      // surfaces this submission alongside other inbound activity.
+      await tx.contact.update({
+        where: { id: link.contactId },
+        data: { createdAt: now, isRead: false }
+      });
+
+      await tx.contactActivity.create({
+        data: {
+          contactId: link.contactId,
+          actionType: ActionType.CREATE,
+          actorId: 'client-portal-ticket',
+          actorType: ActorType.API,
+          metadata: {
+            ticketId: created.id,
+            ticketNumber: created.number,
+            title: parsedInput.title,
+            description: parsedInput.description ?? ''
+          },
+          occurredAt: now
+        }
+      });
+
+      return created;
     });
 
     revalidateTag(
       Caching.createOrganizationTag(
         OrganizationCacheKey.ContactTickets,
+        link.organizationId,
+        link.contactId
+      )
+    );
+    revalidateTag(
+      Caching.createOrganizationTag(
+        OrganizationCacheKey.Contacts,
+        link.organizationId
+      )
+    );
+    revalidateTag(
+      Caching.createOrganizationTag(
+        OrganizationCacheKey.Contact,
+        link.organizationId,
+        link.contactId
+      )
+    );
+    revalidateTag(
+      Caching.createOrganizationTag(
+        OrganizationCacheKey.ContactTimelineEvents,
         link.organizationId,
         link.contactId
       )
