@@ -14,6 +14,7 @@ import {
   CheckIcon,
   ClockIcon,
   MessageSquareIcon,
+  PaperclipIcon,
   SendIcon,
   StickyNoteIcon
 } from 'lucide-react';
@@ -21,6 +22,11 @@ import { toast } from 'sonner';
 
 import { addContactTicketMessage } from '@/actions/contacts/add-contact-ticket-message';
 import { updateContactTicket } from '@/actions/contacts/update-contact-ticket';
+import {
+  AttachmentPreview,
+  StagedAttachmentChip,
+  type StagedAttachmentItem
+} from '@/components/dashboard/ticket-attachment-ui';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -164,6 +170,27 @@ type ConversationPanelProps = {
   onSent: () => void;
 };
 
+type UploadedAttachment = {
+  storedName: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+};
+
+type StagedAttachment = StagedAttachmentItem & {
+  uploaded?: UploadedAttachment;
+};
+
+type PendingAdminMessage = {
+  tempId: string;
+  body: string;
+  attachments: UploadedAttachment[];
+  createdAt: Date;
+  state: 'sending' | 'sent' | 'failed';
+};
+
+const MAX_ADMIN_ATTACHMENTS = 5;
+
 function ConversationPanel({
   ticket,
   contact,
@@ -172,14 +199,9 @@ function ConversationPanel({
 }: ConversationPanelProps): React.JSX.Element {
   const [text, setText] = React.useState('');
   const [resolving, startResolving] = React.useTransition();
-  const [pendingMessages, setPendingMessages] = React.useState<
-    Array<{
-      tempId: string;
-      body: string;
-      createdAt: Date;
-      state: 'sending' | 'sent' | 'failed';
-    }>
-  >([]);
+  const [pendingMessages, setPendingMessages] = React.useState<PendingAdminMessage[]>([]);
+  const [staged, setStaged] = React.useState<StagedAttachment[]>([]);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   // Background poll for incoming client replies (no manual refresh needed).
   React.useEffect(() => {
@@ -209,20 +231,97 @@ function ConversationPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
+  const uploadFiles = async (files: File[]): Promise<void> => {
+    const room = MAX_ADMIN_ATTACHMENTS - staged.length;
+    if (room <= 0) {
+      toast.error(`Maximum ${MAX_ADMIN_ATTACHMENTS} files per message`);
+      return;
+    }
+    const accepted = files.slice(0, room);
+    if (accepted.length < files.length) {
+      toast.error(`Only the first ${room} file(s) were attached`);
+    }
+    const items: StagedAttachment[] = accepted.map((file) => ({
+      tempId: `staged-${Date.now()}-${Math.random()}`,
+      file,
+      state: 'uploading'
+    }));
+    setStaged((prev) => [...prev, ...items]);
+    await Promise.all(
+      items.map(async (item) => {
+        const fd = new FormData();
+        fd.append('ticketId', ticket.id);
+        fd.append('files', item.file);
+        try {
+          const res = await fetch('/api/ticket-attachments', {
+            method: 'POST',
+            body: fd
+          });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({ error: 'Upload failed' }));
+            throw new Error(data?.error ?? 'Upload failed');
+          }
+          const data = (await res.json()) as { attachments: UploadedAttachment[] };
+          const uploaded = data.attachments[0];
+          setStaged((prev) =>
+            prev.map((s) =>
+              s.tempId === item.tempId
+                ? { ...s, state: 'uploaded', uploaded }
+                : s
+            )
+          );
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Upload failed';
+          setStaged((prev) =>
+            prev.map((s) =>
+              s.tempId === item.tempId ? { ...s, state: 'failed', error: msg } : s
+            )
+          );
+          toast.error(`${item.file.name}: ${msg}`);
+        }
+      })
+    );
+  };
+
+  const onPickFiles = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (files.length > 0) void uploadFiles(files);
+    e.target.value = '';
+  };
+
+  const removeStaged = (tempId: string): void => {
+    setStaged((prev) => prev.filter((s) => s.tempId !== tempId));
+  };
+
   const sendBody = async (body: string): Promise<void> => {
     const trimmed = body.trim();
-    if (!trimmed) return;
+    const readyAttachments = staged
+      .filter((s) => s.state === 'uploaded' && s.uploaded)
+      .map((s) => s.uploaded as UploadedAttachment);
+    if (!trimmed && readyAttachments.length === 0) return;
+    if (staged.some((s) => s.state === 'uploading')) {
+      toast.error('Please wait for uploads to finish');
+      return;
+    }
     const tempId = `pending-${Date.now()}-${Math.random()}`;
     setPendingMessages((prev) => [
       ...prev,
-      { tempId, body: trimmed, createdAt: new Date(), state: 'sending' }
+      {
+        tempId,
+        body: trimmed,
+        attachments: readyAttachments,
+        createdAt: new Date(),
+        state: 'sending'
+      }
     ]);
     setText('');
+    setStaged([]);
     try {
       const result = await addContactTicketMessage({
         ticketId: ticket.id,
         body: trimmed,
-        isInternalNote: false
+        isInternalNote: false,
+        attachments: readyAttachments
       });
       if (result?.serverError) {
         setPendingMessages((prev) =>
@@ -266,8 +365,12 @@ function ConversationPanel({
     const msg = pendingMessages.find((p) => p.tempId === tempId);
     if (!msg) return;
     setPendingMessages((prev) => prev.filter((p) => p.tempId !== tempId));
-    void sendBody(msg.body);
+    setText(msg.body);
   };
+
+  const canSubmit =
+    (text.trim().length > 0 || staged.some((s) => s.state === 'uploaded')) &&
+    !staged.some((s) => s.state === 'uploading');
 
   const handleMarkResolved = (): void => {
     startResolving(async () => {
@@ -342,11 +445,47 @@ function ConversationPanel({
             body={p.body}
             createdAt={p.createdAt}
             state={p.state}
+            attachments={p.attachments.map((a, i) => ({
+              id: `${p.tempId}-${i}`,
+              fileName: a.fileName,
+              storedName: a.storedName,
+              mimeType: a.mimeType,
+              sizeBytes: a.sizeBytes
+            }))}
             onRetry={() => retry(p.tempId)}
           />
         ))}
       </ul>
+      {staged.length > 0 && (
+        <div className="flex shrink-0 flex-wrap gap-2 border-t bg-muted/40 p-2">
+          {staged.map((s) => (
+            <StagedAttachmentChip
+              key={s.tempId}
+              item={s}
+              onRemove={() => removeStaged(s.tempId)}
+            />
+          ))}
+        </div>
+      )}
       <div className="flex shrink-0 items-end gap-2 border-t p-3">
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          hidden
+          onChange={onPickFiles}
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-11 shrink-0"
+          title="Attach files"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={staged.length >= MAX_ADMIN_ATTACHMENTS}
+        >
+          <PaperclipIcon className="size-4" />
+        </Button>
         <Textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -358,7 +497,7 @@ function ConversationPanel({
         <Button
           type="button"
           onClick={handleSend}
-          disabled={!text.trim()}
+          disabled={!canSubmit}
           size="icon"
           className="size-11 shrink-0"
           title="Send"
@@ -378,6 +517,7 @@ function MessageBubble({
   contactName: string;
 }): React.JSX.Element {
   const isUser = message.senderType === TicketMessageSender.USER;
+  const hasBody = message.body.length > 0;
   return (
     <li
       className={cn(
@@ -385,18 +525,36 @@ function MessageBubble({
         isUser ? 'items-end' : 'items-start'
       )}
     >
-      <div
-        className={cn(
-          'max-w-[75%] rounded-2xl px-4 py-2.5 text-sm',
-          isUser
-            ? 'rounded-tr-sm bg-foreground text-background'
-            : 'rounded-tl-sm bg-muted text-foreground'
-        )}
-      >
-        <p className="whitespace-pre-wrap text-sm leading-relaxed">
-          {message.body}
-        </p>
-      </div>
+      {hasBody && (
+        <div
+          className={cn(
+            'max-w-[75%] rounded-2xl px-4 py-2.5 text-sm',
+            isUser
+              ? 'rounded-tr-sm bg-foreground text-background'
+              : 'rounded-tl-sm bg-muted text-foreground'
+          )}
+        >
+          <p className="whitespace-pre-wrap text-sm leading-relaxed">
+            {message.body}
+          </p>
+        </div>
+      )}
+      {message.attachments.length > 0 && (
+        <div
+          className={cn(
+            'flex max-w-[75%] flex-col gap-2',
+            isUser ? 'items-end' : 'items-start'
+          )}
+        >
+          {message.attachments.map((a) => (
+            <AttachmentPreview
+              key={a.id}
+              attachment={a}
+              alignEnd={isUser}
+            />
+          ))}
+        </div>
+      )}
       <div className="text-[11px] text-muted-foreground">
         {isUser ? message.senderName : (contactName ?? message.senderName)} ·{' '}
         {format(message.createdAt, 'h:mm a · MMM d')}
@@ -409,50 +567,72 @@ function PendingBubble({
   body,
   createdAt,
   state,
+  attachments,
   onRetry
 }: {
   body: string;
   createdAt: Date;
   state: 'sending' | 'sent' | 'failed';
+  attachments: Array<{
+    id: string;
+    fileName: string;
+    storedName: string;
+    mimeType: string;
+    sizeBytes: number;
+  }>;
   onRetry: () => void;
 }): React.JSX.Element {
+  const hasBody = body.length > 0;
   return (
     <li className="flex flex-col items-end gap-1">
-      <div
-        className={cn(
-          'max-w-[75%] rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm',
-          'bg-foreground text-background',
-          state === 'failed' && 'opacity-80 ring-1 ring-rose-300'
-        )}
-      >
-        <p className="whitespace-pre-wrap text-sm leading-relaxed">{body}</p>
-        <div className="mt-1 flex items-center justify-end gap-1 text-[10px] text-background/70">
-          {state === 'sending' && (
-            <>
-              <ClockIcon className="size-3" />
-              <span>sending</span>
-            </>
+      {hasBody && (
+        <div
+          className={cn(
+            'max-w-[75%] rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm',
+            'bg-foreground text-background',
+            state === 'failed' && 'opacity-80 ring-1 ring-rose-300'
           )}
-          {state === 'sent' && (
-            <>
-              <CheckIcon className="size-3" />
-              <span>sent</span>
-            </>
-          )}
-          {state === 'failed' && (
-            <>
-              <AlertCircleIcon className="size-3 text-rose-300" />
-              <button
-                type="button"
-                onClick={onRetry}
-                className="underline"
-              >
-                failed — retry
-              </button>
-            </>
-          )}
+        >
+          <p className="whitespace-pre-wrap text-sm leading-relaxed">{body}</p>
+          <div className="mt-1 flex items-center justify-end gap-1 text-[10px] text-background/70">
+            {state === 'sending' && (
+              <>
+                <ClockIcon className="size-3" />
+                <span>sending</span>
+              </>
+            )}
+            {state === 'sent' && (
+              <>
+                <CheckIcon className="size-3" />
+                <span>sent</span>
+              </>
+            )}
+            {state === 'failed' && (
+              <>
+                <AlertCircleIcon className="size-3 text-rose-300" />
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  className="underline"
+                >
+                  failed — retry
+                </button>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+      {attachments.length > 0 && (
+        <div className="flex max-w-[75%] flex-col items-end gap-2">
+          {attachments.map((a) => (
+            <AttachmentPreview
+              key={a.id}
+              attachment={a}
+              alignEnd
+            />
+          ))}
+        </div>
+      )}
       <div className="text-[11px] text-muted-foreground">
         You · {format(createdAt, 'h:mm a · MMM d')}
       </div>

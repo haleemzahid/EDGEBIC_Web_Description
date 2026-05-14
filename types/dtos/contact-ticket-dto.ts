@@ -5,6 +5,14 @@ import {
   type TicketMessageSender
 } from '@prisma/client';
 
+export type ContactTicketMessageAttachmentDto = {
+  id: string;
+  fileName: string;
+  storedName: string;
+  mimeType: string;
+  sizeBytes: number;
+};
+
 export type ContactTicketMessageDto = {
   id: string;
   ticketId: string;
@@ -15,6 +23,7 @@ export type ContactTicketMessageDto = {
   body: string;
   isInternalNote: boolean;
   createdAt: Date;
+  attachments: ContactTicketMessageAttachmentDto[];
 };
 
 export type ContactTicketActivityDto = {

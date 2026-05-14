@@ -66,7 +66,18 @@ export const replyClientTicket = authActionClient
           senderType: TicketMessageSender.CONTACT,
           senderName: link.name,
           body: parsedInput.body,
-          isInternalNote: false
+          isInternalNote: false,
+          attachments:
+            parsedInput.attachments.length > 0
+              ? {
+                  create: parsedInput.attachments.map((a) => ({
+                    fileName: a.fileName,
+                    storedName: a.storedName,
+                    mimeType: a.mimeType,
+                    sizeBytes: a.sizeBytes
+                  }))
+                }
+              : undefined
         }
       }),
       prisma.contactTicketActivity.create({

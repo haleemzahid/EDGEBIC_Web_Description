@@ -87,7 +87,17 @@ export default async function ClientTicketDetailPage({
           senderType: true,
           senderName: true,
           body: true,
-          createdAt: true
+          createdAt: true,
+          attachments: {
+            orderBy: { createdAt: 'asc' },
+            select: {
+              id: true,
+              fileName: true,
+              storedName: true,
+              mimeType: true,
+              sizeBytes: true
+            }
+          }
         }
       }
     }
@@ -139,7 +149,7 @@ export default async function ClientTicketDetailPage({
         disableScroll
         className="flex min-h-0 flex-1 flex-col overflow-hidden"
       >
-        <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-0 overflow-hidden p-4">
+        <div className="flex w-full flex-1 flex-col gap-0 overflow-hidden p-4">
           <ClientTicketConversation
             ticketId={ticket.id}
             status={ticket.status}
@@ -151,7 +161,14 @@ export default async function ClientTicketDetailPage({
               senderType: m.senderType,
               senderName: m.senderName,
               body: m.body,
-              createdAt: m.createdAt
+              createdAt: m.createdAt,
+              attachments: m.attachments.map((a) => ({
+                id: a.id,
+                fileName: a.fileName,
+                storedName: a.storedName,
+                mimeType: a.mimeType,
+                sizeBytes: a.sizeBytes
+              }))
             }))}
           />
         </div>

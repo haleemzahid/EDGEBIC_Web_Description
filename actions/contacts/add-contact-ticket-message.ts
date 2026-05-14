@@ -47,7 +47,18 @@ export const addContactTicketMessage = authActionClient
           senderUserId: session.user.id,
           senderName: session.user.name ?? '',
           body: parsedInput.body,
-          isInternalNote: parsedInput.isInternalNote
+          isInternalNote: parsedInput.isInternalNote,
+          attachments:
+            parsedInput.attachments.length > 0
+              ? {
+                  create: parsedInput.attachments.map((a) => ({
+                    fileName: a.fileName,
+                    storedName: a.storedName,
+                    mimeType: a.mimeType,
+                    sizeBytes: a.sizeBytes
+                  }))
+                }
+              : undefined
         }
       }),
       prisma.contactTicketActivity.create({

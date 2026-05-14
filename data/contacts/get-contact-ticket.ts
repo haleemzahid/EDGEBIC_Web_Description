@@ -81,6 +81,16 @@ export async function getContactTicket(
               createdAt: true,
               senderUser: {
                 select: { image: true }
+              },
+              attachments: {
+                orderBy: { createdAt: SortDirection.Asc },
+                select: {
+                  id: true,
+                  fileName: true,
+                  storedName: true,
+                  mimeType: true,
+                  sizeBytes: true
+                }
               }
             },
             orderBy: { createdAt: SortDirection.Asc }
@@ -131,7 +141,14 @@ export async function getContactTicket(
           senderImage: m.senderUser?.image ?? undefined,
           body: m.body,
           isInternalNote: m.isInternalNote,
-          createdAt: m.createdAt
+          createdAt: m.createdAt,
+          attachments: m.attachments.map((a) => ({
+            id: a.id,
+            fileName: a.fileName,
+            storedName: a.storedName,
+            mimeType: a.mimeType,
+            sizeBytes: a.sizeBytes
+          }))
         })),
         activities: ticket.activities.map((a) => ({
           id: a.id,
