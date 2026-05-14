@@ -10,7 +10,6 @@ import {
   InboxIcon,
   PaperclipIcon,
   SendIcon,
-  SparklesIcon,
   TrashIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -375,11 +374,6 @@ export function ContactInbox({
     });
   };
 
-  const handleSaveDraft = (): void => {
-    if (!replyText.trim()) return;
-    toast.success('Draft saved');
-  };
-
   const openCompose = (initial?: Partial<typeof composeDraft>): void => {
     setComposeDraft({
       to: initial?.to ?? contact.email ?? '',
@@ -567,7 +561,6 @@ export function ContactInbox({
             onBack={handleBackToList}
             onForward={handleForward}
             onDelete={handleDelete}
-            onSaveDraft={handleSaveDraft}
             onSendReply={handleSendReply}
             disabled={pending}
           />
@@ -970,7 +963,6 @@ type ThreadReaderProps = {
   onBack: () => void;
   onForward: () => void;
   onDelete: () => void;
-  onSaveDraft: () => void;
   onSendReply: () => void;
   disabled: boolean;
 };
@@ -987,7 +979,6 @@ function ThreadReader({
   onBack,
   onForward,
   onDelete,
-  onSaveDraft,
   onSendReply,
   disabled
 }: ThreadReaderProps): React.JSX.Element {
@@ -1069,7 +1060,7 @@ function ThreadReader({
 
       {/* Thread */}
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="space-y-3 px-5 py-4">
+        <div className="space-y-4 px-5 py-4">
           {thread.messages.map((message) => {
             const messageParticipant = getMessageParticipant(
               message,
@@ -1077,47 +1068,53 @@ function ThreadReader({
               contact
             );
             const isMe = message.senderType === EmailSenderType.USER;
+            const hasBody = message.body.length > 0;
             return (
               <div
                 key={message.id}
                 className={cn(
-                  'rounded-lg border p-4',
-                  isMe ? 'bg-muted/40' : 'bg-background'
+                  'flex flex-col gap-1',
+                  isMe ? 'items-end' : 'items-start'
                 )}
               >
-                <div className="mb-2 flex items-center gap-2.5">
-                  <Avatar className="size-7 rounded-full">
-                    <AvatarImage
-                      src={messageParticipant.image}
-                      alt={messageParticipant.name}
-                    />
-                    <AvatarFallback className="text-[10px] font-semibold">
-                      {messageParticipant.initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="text-xs">
-                    <strong className="font-semibold">
-                      {messageParticipant.name}
-                    </strong>
-                    <span className="ml-1.5 text-muted-foreground">
-                      · {formatWhen(message.createdAt)}
-                    </span>
+                {hasBody && (
+                  <div
+                    className={cn(
+                      'max-w-[80%] rounded-lg px-3 py-2 text-sm shadow-sm',
+                      isMe
+                        ? 'bg-primary text-primary-foreground'
+                        : 'border bg-muted text-foreground'
+                    )}
+                  >
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                      {message.body}
+                    </p>
                   </div>
-                </div>
-                <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-                  {message.body}
-                </div>
+                )}
                 {message.attachments.length > 0 && (
-                  <div className="mt-3 flex flex-col gap-2">
+                  <div
+                    className={cn(
+                      'flex max-w-[80%] flex-col gap-2',
+                      isMe ? 'items-end' : 'items-start'
+                    )}
+                  >
                     {message.attachments.map((a) => (
                       <AttachmentPreview
                         key={a.id}
                         attachment={a}
-                        alignEnd={false}
+                        alignEnd={isMe}
                       />
                     ))}
                   </div>
                 )}
+                <div className="text-[11px] text-muted-foreground">
+                  {isMe ? 'You' : messageParticipant.name}
+                  {!isMe && messageParticipant.email && (
+                    <span className="ml-1">&lt;{messageParticipant.email}&gt;</span>
+                  )}
+                  {' · '}
+                  {format(message.createdAt, 'h:mm a · MMM d')}
+                </div>
               </div>
             );
           })}
@@ -1125,16 +1122,9 @@ function ThreadReader({
       </div>
 
       {/* Reply box */}
-      <div className="border-t bg-muted/30 px-5 py-3">
-        <Textarea
-          value={replyText}
-          onChange={(e) => onReplyTextChange(e.target.value)}
-          placeholder={`Reply to ${participant.name.split(' ')[0]}…`}
-          className="min-h-[70px] resize-y bg-background"
-          disabled={disabled}
-        />
+      <div className="border-t bg-card">
         {staged.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 border-t bg-muted/40 p-2">
             {staged.map((s) => (
               <StagedAttachmentChip
                 key={s.tempId}
@@ -1144,51 +1134,56 @@ function ThreadReader({
             ))}
           </div>
         )}
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          hidden
-          onChange={onPickFiles}
-        />
-        <div className="mt-2 flex items-center justify-between">
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={disabled || staged.length >= MAX_REPLY_ATTACHMENTS}
-              className="flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-accent hover:text-foreground disabled:opacity-50"
-              title="Attach files"
-            >
-              <PaperclipIcon className="size-3.5 shrink-0" />
-              Attach
-            </button>
-            <span className="flex items-center gap-1">
-              <SparklesIcon className="size-3.5 shrink-0" />
-              Snippet
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onSaveDraft}
-              disabled={disabled || !replyText.trim()}
-            >
-              Save draft
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              onClick={onSendReply}
-              disabled={disabled || !canSubmit}
-            >
-              <SendIcon className="mr-1 size-3.5 shrink-0" />
-              Send reply
-            </Button>
-          </div>
-        </div>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!disabled && canSubmit) onSendReply();
+          }}
+          className="flex items-end gap-2 border-t p-3"
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            hidden
+            onChange={onPickFiles}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-11 shrink-0"
+            title="Attach files"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={disabled || staged.length >= MAX_REPLY_ATTACHMENTS}
+          >
+            <PaperclipIcon className="size-4" />
+          </Button>
+          <Textarea
+            value={replyText}
+            onChange={(e) => onReplyTextChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (!disabled && canSubmit) onSendReply();
+              }
+            }}
+            rows={1}
+            maxLength={20000}
+            placeholder={`Reply to ${participant.name.split(' ')[0]}…  (Enter to send, Shift+Enter for new line)`}
+            className="max-h-40 min-h-[44px] flex-1 resize-none"
+            disabled={disabled}
+          />
+          <Button
+            type="submit"
+            disabled={disabled || !canSubmit}
+            size="icon"
+            className="size-11 shrink-0"
+            title="Send"
+          >
+            <SendIcon className="size-4" />
+          </Button>
+        </form>
       </div>
     </div>
   );

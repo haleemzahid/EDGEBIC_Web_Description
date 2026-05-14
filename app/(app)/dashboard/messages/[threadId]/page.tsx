@@ -145,7 +145,7 @@ export default async function ClientMessageDetailPage({
         disableScroll
         className="flex min-h-0 flex-1 flex-col overflow-hidden"
       >
-        <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-0 overflow-hidden p-4">
+        <div className="flex w-full flex-1 flex-col gap-0 overflow-hidden p-4">
           <ClientMessageConversation
             threadId={thread.id}
             clientName={link.name}
