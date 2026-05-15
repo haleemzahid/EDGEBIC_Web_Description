@@ -31,6 +31,7 @@ export type ClientSoftwareDto = {
   os: string | null;
   database: string | null;
   notes: string | null;
+  createdAt: Date;
 };
 
 /**
@@ -58,7 +59,8 @@ export async function getClientSoftware(
           seats: true,
           os: true,
           database: true,
-          notes: true
+          notes: true,
+          createdAt: true
         }
       });
     },
@@ -86,7 +88,8 @@ export async function getClientSoftware(
 
   return raw.map((r) => ({
     ...r,
-    installDate: r.installDate ? new Date(r.installDate) : null
+    installDate: r.installDate ? new Date(r.installDate) : null,
+    createdAt: new Date(r.createdAt)
   }));
 }
 
@@ -144,7 +147,7 @@ export async function getClientSoftwareList(
       skip: parsed.pageIndex * parsed.pageSize,
       take: parsed.pageSize,
       where,
-      orderBy: [{ status: 'asc' }, { name: 'asc' }],
+      orderBy: { [parsed.sortBy]: parsed.sortDirection },
       select: {
         id: true,
         name: true,
@@ -158,7 +161,8 @@ export async function getClientSoftwareList(
         seats: true,
         os: true,
         database: true,
-        notes: true
+        notes: true,
+        createdAt: true
       }
     }),
     prisma.contactSoftware.count({ where }),
@@ -168,7 +172,8 @@ export async function getClientSoftwareList(
   return {
     software: rows.map((r) => ({
       ...r,
-      installDate: r.installDate ? new Date(r.installDate) : null
+      installDate: r.installDate ? new Date(r.installDate) : null,
+      createdAt: new Date(r.createdAt)
     })),
     filteredCount,
     totalCount

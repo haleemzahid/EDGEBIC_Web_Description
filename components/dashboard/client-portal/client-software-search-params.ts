@@ -7,7 +7,11 @@ import {
   parseAsStringLiteral
 } from 'nuqs/server';
 
-import { ClientSoftwareStatusAll } from '@/schemas/client-portal/get-client-software-schema';
+import {
+  ClientSoftwareStatusAll,
+  GetClientSoftwareSortBy
+} from '@/schemas/client-portal/get-client-software-schema';
+import { SortDirection } from '@/types/sort-direction';
 
 const statusValues = [
   ClientSoftwareStatusAll,
@@ -19,6 +23,12 @@ export const searchParams = {
   pageSize: parseAsInteger.withDefault(50),
   status: parseAsStringLiteral(statusValues).withDefault(
     ClientSoftwareStatusAll
+  ),
+  sortBy: parseAsStringLiteral(
+    Object.values(GetClientSoftwareSortBy)
+  ).withDefault(GetClientSoftwareSortBy.CreatedAt),
+  sortDirection: parseAsStringLiteral(Object.values(SortDirection)).withDefault(
+    SortDirection.Desc
   ),
   searchQuery: parseAsString.withDefault('')
 };

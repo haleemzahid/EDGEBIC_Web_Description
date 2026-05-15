@@ -79,7 +79,7 @@ export default async function ClientSoftwarePage({
             <React.Suspense>
               <ClientSoftwareList
                 software={software}
-                filteredCount={filteredCount}
+                totalCount={filteredCount}
               />
             </React.Suspense>
           ) : (

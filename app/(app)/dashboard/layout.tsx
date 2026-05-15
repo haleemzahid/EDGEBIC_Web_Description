@@ -21,6 +21,7 @@ const CLIENT_ALLOWED_PREFIXES = [
   Routes.ClientMeetings,
   Routes.ClientSupport,
   Routes.ClientMessages,
+  Routes.ClientSoftware,
   Routes.ClientBilling,
   Routes.Profile,
   Routes.Security,
