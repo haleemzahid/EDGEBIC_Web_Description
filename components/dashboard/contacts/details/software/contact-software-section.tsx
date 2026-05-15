@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import NiceModal from '@ebay/nice-modal-react';
-import { SoftwareStatus } from '@prisma/client';
 import {
   ExternalLinkIcon,
   PencilIcon,
@@ -13,7 +12,6 @@ import {
 import { AddContactSoftwareModal } from '@/components/dashboard/contacts/details/software/add-contact-software-modal';
 import { DeleteContactSoftwareModal } from '@/components/dashboard/contacts/details/software/delete-contact-software-modal';
 import { EditContactSoftwareModal } from '@/components/dashboard/contacts/details/software/edit-contact-software-modal';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -29,29 +27,6 @@ import {
   TooltipTrigger
 } from '@/components/ui/tooltip';
 import type { ContactSoftwareDto } from '@/types/dtos/contact-software-dto';
-
-const statusConfig: Record<
-  SoftwareStatus,
-  {
-    label: string;
-    variant: 'default' | 'secondary' | 'destructive' | 'outline';
-  }
-> = {
-  [SoftwareStatus.UP_TO_DATE]: { label: 'Up to date', variant: 'default' },
-  [SoftwareStatus.UPDATE_AVAILABLE]: {
-    label: 'Update available',
-    variant: 'outline'
-  },
-  [SoftwareStatus.NEEDS_ATTENTION]: {
-    label: 'Needs attention',
-    variant: 'destructive'
-  },
-  [SoftwareStatus.TRIAL]: { label: 'Trial', variant: 'secondary' },
-  [SoftwareStatus.NOT_INSTALLED]: {
-    label: 'Not installed',
-    variant: 'secondary'
-  }
-};
 
 export type ContactSoftwareSectionProps = {
   contactId: string;
