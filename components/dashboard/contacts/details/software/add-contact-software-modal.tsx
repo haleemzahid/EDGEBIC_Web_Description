@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/drawer';
 import {
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -32,7 +33,6 @@ import {
   FormProvider
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { MediaQueries } from '@/constants/media-queries';
 import { useEnhancedModal } from '@/hooks/use-enhanced-modal';
@@ -141,10 +141,6 @@ export const AddContactSoftwareModal =
           type="hidden"
           {...methods.register('contactId')}
         />
-        <input
-          type="hidden"
-          {...methods.register('downloadUrl')}
-        />
 
         <FormField
           control={methods.control}
@@ -198,23 +194,31 @@ export const AddContactSoftwareModal =
           )}
         />
 
-        <div className="space-y-2">
-          <Label htmlFor="installer-file">Installer file</Label>
-          <Input
-            id="installer-file"
-            type="file"
-            accept=".exe,.msi,.zip,.dmg,.pkg,.appimage,.deb,.rpm,.gz,.tar,.7z,.bin,.apk,.jar,.run"
-            disabled={uploading}
-            onChange={handleFileChange}
-          />
-          <p className="text-xs text-muted-foreground">
-            {uploading
-              ? 'Uploading…'
-              : uploadedFileName
-                ? `Uploaded: ${uploadedFileName}`
-                : 'Optional. Upload an installer (.exe, .msi, .zip, …). Max 1 GB.'}
-          </p>
-        </div>
+        <FormField
+          control={methods.control}
+          name="downloadUrl"
+          render={() => (
+            <FormItem>
+              <FormLabel>Installer file</FormLabel>
+              <FormControl>
+                <Input
+                  type="file"
+                  accept=".exe,.msi,.zip,.dmg,.pkg,.appimage,.deb,.rpm,.gz,.tar,.7z,.bin,.apk,.jar,.run"
+                  disabled={uploading}
+                  onChange={handleFileChange}
+                />
+              </FormControl>
+              <FormDescription>
+                {uploading
+                  ? 'Uploading…'
+                  : uploadedFileName
+                    ? `Uploaded: ${uploadedFileName}`
+                    : 'Optional. Upload an installer (.exe, .msi, .zip, …). Max 1 GB.'}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={methods.control}

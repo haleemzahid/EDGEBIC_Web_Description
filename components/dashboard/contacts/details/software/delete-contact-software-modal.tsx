@@ -57,7 +57,12 @@ export const DeleteContactSoftwareModal =
         toast.success('Software removed');
         modal.handleClose();
       } else {
-        toast.error("Couldn't remove software");
+        const reason =
+          result?.serverError ||
+          (result?.validationErrors
+            ? JSON.stringify(result.validationErrors)
+            : 'Unknown error');
+        toast.error(`Couldn't remove software: ${reason}`);
       }
     };
     const title = 'Remove software?';

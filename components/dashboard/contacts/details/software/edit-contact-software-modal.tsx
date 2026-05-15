@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
 import { type SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -24,6 +25,7 @@ import {
 } from '@/components/ui/drawer';
 import {
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -73,7 +75,46 @@ export const EditContactSoftwareModal =
         notes: software.notes ?? ''
       }
     });
+    const [uploading, setUploading] = React.useState(false);
+    const [uploadedFileName, setUploadedFileName] = React.useState<
+      string | null
+    >(null);
+
+    const handleFileChange = async (
+      e: React.ChangeEvent<HTMLInputElement>
+    ): Promise<void> => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      setUploading(true);
+      try {
+        const body = new FormData();
+        body.append('file', file);
+        const res = await fetch('/api/software-files', {
+          method: 'POST',
+          body
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          throw new Error(json?.error || 'Upload failed');
+        }
+        methods.setValue('downloadUrl', json.downloadUrl, {
+          shouldDirty: true
+        });
+        setUploadedFileName(json.fileName ?? file.name);
+        toast.success('Installer uploaded');
+      } catch (error) {
+        e.target.value = '';
+        setUploadedFileName(null);
+        toast.error(
+          error instanceof Error ? error.message : "Couldn't upload file"
+        );
+      } finally {
+        setUploading(false);
+      }
+    };
+
     const canSubmit =
+      !uploading &&
       !methods.formState.isSubmitting &&
       (!methods.formState.isSubmitted || methods.formState.isDirty);
     const onSubmit: SubmitHandler<UpdateContactSoftwareSchema> = async (
@@ -147,6 +188,34 @@ export const EditContactSoftwareModal =
                   {...field}
                 />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={methods.control}
+          name="downloadUrl"
+          render={() => (
+            <FormItem>
+              <FormLabel>Installer file</FormLabel>
+              <FormControl>
+                <Input
+                  type="file"
+                  accept=".exe,.msi,.zip,.dmg,.pkg,.appimage,.deb,.rpm,.gz,.tar,.7z,.bin,.apk,.jar,.run"
+                  disabled={uploading}
+                  onChange={handleFileChange}
+                />
+              </FormControl>
+              <FormDescription>
+                {uploading
+                  ? 'Uploading…'
+                  : uploadedFileName
+                    ? `Uploaded: ${uploadedFileName}`
+                    : software.downloadUrl
+                      ? 'A file is already attached. Choose a file to replace it.'
+                      : 'Optional. Upload an installer (.exe, .msi, .zip, …). Max 1 GB.'}
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
