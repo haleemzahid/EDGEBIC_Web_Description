@@ -32,6 +32,7 @@ import {
   FormProvider
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { MediaQueries } from '@/constants/media-queries';
 import { useEnhancedModal } from '@/hooks/use-enhanced-modal';
@@ -62,15 +63,57 @@ export const AddContactSoftwareModal =
         notes: ''
       }
     });
+    const [uploading, setUploading] = React.useState(false);
+    const [uploadedFileName, setUploadedFileName] = React.useState<
+      string | null
+    >(null);
+
     // NiceModal keeps the component mounted across show/hide cycles. Reset
     // every time the modal becomes visible so reopening starts fresh.
     React.useEffect(() => {
       if (modal.visible) {
         methods.reset();
+        setUploading(false);
+        setUploadedFileName(null);
       }
     }, [modal.visible, methods]);
 
+    const handleFileChange = async (
+      e: React.ChangeEvent<HTMLInputElement>
+    ): Promise<void> => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      setUploading(true);
+      try {
+        const body = new FormData();
+        body.append('file', file);
+        const res = await fetch('/api/software-files', {
+          method: 'POST',
+          body
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          throw new Error(json?.error || 'Upload failed');
+        }
+        methods.setValue('downloadUrl', json.downloadUrl, {
+          shouldDirty: true
+        });
+        setUploadedFileName(json.fileName ?? file.name);
+        toast.success('Installer uploaded');
+      } catch (error) {
+        e.target.value = '';
+        setUploadedFileName(null);
+        methods.setValue('downloadUrl', '', { shouldDirty: true });
+        toast.error(
+          error instanceof Error ? error.message : "Couldn't upload file"
+        );
+      } finally {
+        setUploading(false);
+      }
+    };
+
     const canSubmit =
+      !uploading &&
       !methods.formState.isSubmitting &&
       (!methods.formState.isSubmitted || methods.formState.isDirty);
     const onSubmit: SubmitHandler<AddContactSoftwareSchema> = async (
@@ -97,6 +140,10 @@ export const AddContactSoftwareModal =
         <input
           type="hidden"
           {...methods.register('contactId')}
+        />
+        <input
+          type="hidden"
+          {...methods.register('downloadUrl')}
         />
 
         <FormField
@@ -150,6 +197,24 @@ export const AddContactSoftwareModal =
             </FormItem>
           )}
         />
+
+        <div className="space-y-2">
+          <Label htmlFor="installer-file">Installer file</Label>
+          <Input
+            id="installer-file"
+            type="file"
+            accept=".exe,.msi,.zip,.dmg,.pkg,.appimage,.deb,.rpm,.gz,.tar,.7z,.bin,.apk,.jar,.run"
+            disabled={uploading}
+            onChange={handleFileChange}
+          />
+          <p className="text-xs text-muted-foreground">
+            {uploading
+              ? 'Uploading…'
+              : uploadedFileName
+                ? `Uploaded: ${uploadedFileName}`
+                : 'Optional. Upload an installer (.exe, .msi, .zip, …). Max 1 GB.'}
+          </p>
+        </div>
 
         <FormField
           control={methods.control}
