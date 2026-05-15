@@ -2,12 +2,15 @@ import * as React from 'react';
 import Link from 'next/link';
 import { type Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { ContactPriority, ContactTicketStatus, Role } from '@prisma/client';
+import { Role } from '@prisma/client';
 import { ChevronLeftIcon } from 'lucide-react';
 
 import { ClientTicketConversation } from '@/components/dashboard/client-portal/client-ticket-conversation';
 import { CloseTicketButton } from '@/components/dashboard/client-portal/close-ticket-button';
-import { Badge } from '@/components/ui/badge';
+import {
+  ContactTicketPriorityBadge,
+  ContactTicketStatusBadge
+} from '@/components/dashboard/contacts/details/tickets/contact-ticket-status-pills';
 import {
   Page,
   PageBody,
@@ -21,7 +24,7 @@ import { getClientContactLink } from '@/lib/auth/get-client-contact';
 import { getLoginRedirect } from '@/lib/auth/redirect';
 import { checkSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/db/prisma';
-import { cn, createTitle } from '@/lib/utils';
+import { createTitle } from '@/lib/utils';
 
 type Params = { ticketId: string };
 
@@ -117,7 +120,7 @@ export default async function ClientTicketDetailPage({
             <Link
               href={Routes.ClientSupport}
               className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-              title="Back to Support"
+              title="Back to Tickets"
             >
               <ChevronLeftIcon className="size-4" />
             </Link>
@@ -129,20 +132,8 @@ export default async function ClientTicketDetailPage({
             </PageTitle>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
-            {ticket.priority !== ContactPriority.MEDIUM && (
-              <Badge
-                variant="outline"
-                className={cn('text-[10px]', priorityClasses(ticket.priority))}
-              >
-                {priorityLabel(ticket.priority)} priority
-              </Badge>
-            )}
-            <Badge
-              variant="secondary"
-              className={statusClasses(ticket.status)}
-            >
-              {statusLabel(ticket.status)}
-            </Badge>
+            <ContactTicketPriorityBadge priority={ticket.priority} />
+            <ContactTicketStatusBadge status={ticket.status} />
             <CloseTicketButton
               ticketId={ticket.id}
               status={ticket.status}
@@ -182,50 +173,3 @@ export default async function ClientTicketDetailPage({
   );
 }
 
-function priorityLabel(priority: ContactPriority): string {
-  switch (priority) {
-    case ContactPriority.LOW:
-      return 'Low';
-    case ContactPriority.MEDIUM:
-      return 'Medium';
-    case ContactPriority.HIGH:
-      return 'High';
-  }
-}
-
-function priorityClasses(priority: ContactPriority): string {
-  switch (priority) {
-    case ContactPriority.LOW:
-      return 'border-slate-300 text-slate-600';
-    case ContactPriority.MEDIUM:
-      return 'border-slate-300 text-slate-700';
-    case ContactPriority.HIGH:
-      return 'border-rose-300 text-rose-700';
-  }
-}
-
-function statusLabel(status: ContactTicketStatus): string {
-  switch (status) {
-    case ContactTicketStatus.OPEN:
-      return 'Open';
-    case ContactTicketStatus.PENDING:
-      return 'In progress';
-    case ContactTicketStatus.RESOLVED:
-      return 'Resolved';
-    case ContactTicketStatus.CLOSED:
-      return 'Closed';
-  }
-}
-
-function statusClasses(status: ContactTicketStatus): string {
-  switch (status) {
-    case ContactTicketStatus.OPEN:
-      return 'border-transparent bg-rose-100 text-rose-800';
-    case ContactTicketStatus.PENDING:
-      return 'border-transparent bg-amber-100 text-amber-800';
-    case ContactTicketStatus.RESOLVED:
-      return 'border-transparent bg-emerald-100 text-emerald-800';
-    case ContactTicketStatus.CLOSED:
-      return 'border-transparent bg-muted text-muted-foreground';
-  }
-}

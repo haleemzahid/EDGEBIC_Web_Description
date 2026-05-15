@@ -72,7 +72,7 @@ export const clientNavItems: NavItem[] = [
     icon: CalendarIcon
   },
   {
-    title: 'Support',
+    title: 'Tickets',
     href: Routes.ClientSupport,
     icon: LifeBuoyIcon
   },
