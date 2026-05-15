@@ -72,6 +72,7 @@ export enum Routes {
   Welcome = '/dashboard/welcome',
   Analytics = '/dashboard/analytics',
   Contacts = '/dashboard/contacts',
+  Tickets = '/dashboard/tickets',
   Inventory = '/dashboard/inventory',
   ClientMeetings = '/dashboard/my-meetings',
   ClientSupport = '/dashboard/support',

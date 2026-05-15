@@ -13,6 +13,7 @@ import {
   // PackageIcon,
   SettingsIcon,
   StoreIcon,
+  TicketIcon,
   UserIcon,
   UserPlus2Icon,
   UsersIcon
@@ -36,6 +37,11 @@ export const mainNavItems: NavItem[] = [
     title: 'CRM',
     href: Routes.Contacts,
     icon: UsersIcon
+  },
+  {
+    title: 'Tickets',
+    href: Routes.Tickets,
+    icon: TicketIcon
   },
   {
     title: 'Blog',

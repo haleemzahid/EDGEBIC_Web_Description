@@ -58,3 +58,8 @@ export type ContactTicketWithDetailsDto = ContactTicketDto & {
   messages: ContactTicketMessageDto[];
   activities: ContactTicketActivityDto[];
 };
+
+export type OrganizationTicketRowDto = ContactTicketDto & {
+  contactName: string;
+  contactImage?: string;
+};
