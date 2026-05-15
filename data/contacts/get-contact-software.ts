@@ -63,7 +63,7 @@ export async function getContactSoftware(
           createdAt: true,
           updatedAt: true
         },
-        orderBy: { createdAt: 'asc' }
+        orderBy: { createdAt: 'desc' }
       });
 
       return rows.map((row) => ({

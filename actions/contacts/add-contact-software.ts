@@ -20,7 +20,7 @@ export const addContactSoftware = authActionClient
         name: parsedInput.name,
         installedVersion: parsedInput.installedVersion || undefined,
         latestVersion: parsedInput.latestVersion || undefined,
-        installDate: parsedInput.installDate ?? undefined,
+        installDate: parsedInput.installDate ?? new Date(),
         status: parsedInput.status,
         githubUrl: parsedInput.githubUrl || undefined,
         docsUrl: parsedInput.docsUrl || undefined,

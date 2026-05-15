@@ -72,16 +72,14 @@ export function ContactSoftwareSection({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Product</TableHead>
-                <TableHead>Installed</TableHead>
-                <TableHead>Latest</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Product name</TableHead>
+                <TableHead>Version</TableHead>
+                <TableHead>Date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {software.map((item) => {
-                const { label, variant } = statusConfig[item.status];
                 return (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">
@@ -106,24 +104,16 @@ export function ContactSoftwareSection({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div>
-                        <span className="font-mono text-xs font-semibold text-blue-600">
-                          {item.installedVersion ?? '—'}
-                        </span>
-                        {item.installDate && (
-                          <div className="text-xs text-muted-foreground">
-                            {new Date(item.installDate).toLocaleDateString()}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
                       <span className="font-mono text-xs font-semibold text-blue-600">
-                        {item.latestVersion ?? '—'}
+                        {item.installedVersion ?? '—'}
                       </span>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={variant}>{label}</Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {item.installDate
+                          ? new Date(item.installDate).toLocaleDateString()
+                          : '—'}
+                      </span>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
