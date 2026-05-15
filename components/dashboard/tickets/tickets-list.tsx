@@ -22,6 +22,7 @@ import {
 import { searchParams } from '@/components/dashboard/tickets/tickets-search-params';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -65,31 +66,37 @@ export function TicketsList({
   };
 
   return (
-    <div className="flex flex-1 flex-col">
-      {tickets.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-          <div className="flex size-12 items-center justify-center rounded-full bg-muted">
-            <TicketIcon className="size-5 text-muted-foreground" />
+    <div className="relative flex flex-col overflow-hidden">
+      {/* 64px (primary bar) + 48px (secondary bar) + 65px (pagination) = 177px */}
+      <ScrollArea
+        verticalScrollBar
+        className="h-[calc(100svh-177px)]"
+      >
+        {tickets.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 p-12 text-center">
+            <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+              <TicketIcon className="size-5 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-sm font-medium">No tickets match these filters</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Try clearing filters or changing the search.
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-medium">No tickets match these filters</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Try clearing filters or changing the search.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <ul className="divide-y">
-          {tickets.map((t) => (
-            <TicketRow
-              key={t.id}
-              ticket={t}
-            />
-          ))}
-        </ul>
-      )}
+        ) : (
+          <ul className="divide-y">
+            {tickets.map((t) => (
+              <TicketRow
+                key={t.id}
+                ticket={t}
+              />
+            ))}
+          </ul>
+        )}
+      </ScrollArea>
 
-      <div className="sticky inset-x-0 bottom-0 z-20 mt-auto border-t bg-background">
+      <div className="border-t bg-background">
         <div className="flex flex-row items-center justify-between gap-2 space-x-2 px-6 py-4">
           <div className="flex flex-row items-center gap-4 sm:gap-6 lg:gap-8">
             <div className="flex items-center space-x-2">
