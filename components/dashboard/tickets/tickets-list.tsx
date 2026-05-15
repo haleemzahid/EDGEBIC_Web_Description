@@ -2,83 +2,43 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { ContactPriority, ContactTicketStatus } from '@prisma/client';
-import { formatDistanceToNow } from 'date-fns';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
+  DoubleArrowLeftIcon,
+  DoubleArrowRightIcon
+} from '@radix-ui/react-icons';
+import { formatDistanceToNow } from 'date-fns';
+import {
+  ChevronRightIcon as ChevronRightLucideIcon,
   TicketIcon
 } from 'lucide-react';
 import { useQueryState } from 'nuqs';
 
+import {
+  ContactTicketPriorityBadge,
+  ContactTicketStatusBadge
+} from '@/components/dashboard/contacts/details/tickets/contact-ticket-status-pills';
 import { searchParams } from '@/components/dashboard/tickets/tickets-search-params';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 import { useTransitionContext } from '@/hooks/use-transition-context';
-import { cn, getInitials } from '@/lib/utils';
+import { getInitials } from '@/lib/utils';
 import type { OrganizationTicketRowDto } from '@/types/dtos/contact-ticket-dto';
+
+const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50];
 
 export type TicketsListProps = {
   tickets: OrganizationTicketRowDto[];
   filteredCount: number;
 };
-
-function statusBadge(status: ContactTicketStatus): {
-  label: string;
-  className: string;
-} {
-  switch (status) {
-    case ContactTicketStatus.OPEN:
-      return {
-        label: 'Open',
-        className:
-          'border-transparent bg-rose-100 text-rose-800 hover:bg-rose-100'
-      };
-    case ContactTicketStatus.PENDING:
-      return {
-        label: 'In progress',
-        className:
-          'border-transparent bg-amber-100 text-amber-800 hover:bg-amber-100'
-      };
-    case ContactTicketStatus.RESOLVED:
-      return {
-        label: 'Resolved',
-        className:
-          'border-transparent bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
-      };
-    case ContactTicketStatus.CLOSED:
-      return {
-        label: 'Closed',
-        className: 'border-transparent bg-muted text-muted-foreground'
-      };
-  }
-}
-
-function priorityBadge(priority: ContactPriority): {
-  label: string;
-  className: string;
-} {
-  switch (priority) {
-    case ContactPriority.HIGH:
-      return {
-        label: 'High',
-        className:
-          'border-transparent bg-amber-100 text-amber-800 hover:bg-amber-100'
-      };
-    case ContactPriority.MEDIUM:
-      return {
-        label: 'Medium',
-        className:
-          'border-transparent bg-yellow-100 text-yellow-800 hover:bg-yellow-100'
-      };
-    case ContactPriority.LOW:
-      return {
-        label: 'Low',
-        className: 'border-transparent bg-muted text-foreground hover:bg-muted'
-      };
-  }
-}
 
 export function TicketsList({
   tickets,
@@ -90,15 +50,19 @@ export function TicketsList({
     'pageIndex',
     searchParams.pageIndex.withOptions({ startTransition, shallow: false })
   );
-  const [pageSize] = useQueryState(
+  const [pageSize, setPageSize] = useQueryState(
     'pageSize',
     searchParams.pageSize.withOptions({ startTransition, shallow: false })
   );
 
   const totalPages = Math.max(1, Math.ceil(filteredCount / pageSize));
-  const currentPage = pageIndex + 1;
-  const start = filteredCount === 0 ? 0 : pageIndex * pageSize + 1;
-  const end = Math.min((pageIndex + 1) * pageSize, filteredCount);
+  const canPrev = pageIndex > 0;
+  const canNext = pageIndex < totalPages - 1;
+
+  const handlePageSizeChange = (value: string): void => {
+    void setPageSize(Number(value));
+    void setPageIndex(0);
+  };
 
   return (
     <div className="flex flex-1 flex-col">
@@ -125,36 +89,87 @@ export function TicketsList({
         </ul>
       )}
 
-      <div className="mt-auto flex items-center justify-between gap-3 border-t bg-background px-6 py-3 text-xs text-muted-foreground">
-        <div>
-          {filteredCount === 0
-            ? 'No results'
-            : `Showing ${start}–${end} of ${filteredCount}`}
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="hidden sm:inline">
-            Page {currentPage} of {totalPages}
-          </span>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={pageIndex === 0}
-            onClick={() => setPageIndex(Math.max(0, pageIndex - 1))}
-          >
-            <ChevronLeftIcon className="size-4 shrink-0" />
-            Prev
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={pageIndex >= totalPages - 1}
-            onClick={() => setPageIndex(pageIndex + 1)}
-          >
-            Next
-            <ChevronRightIcon className="size-4 shrink-0" />
-          </Button>
+      <div className="sticky inset-x-0 bottom-0 z-20 mt-auto border-t bg-background">
+        <div className="flex flex-row items-center justify-between gap-2 space-x-2 px-6 py-4">
+          <div className="flex flex-row items-center gap-4 sm:gap-6 lg:gap-8">
+            <div className="flex items-center space-x-2">
+              <Select
+                value={`${pageSize}`}
+                onValueChange={handlePageSizeChange}
+              >
+                <SelectTrigger className="h-8 w-16">
+                  <SelectValue placeholder={pageSize} />
+                </SelectTrigger>
+                <SelectContent side="top">
+                  {PAGE_SIZE_OPTIONS.map((option) => (
+                    <SelectItem
+                      key={option}
+                      value={`${option}`}
+                    >
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="whitespace-nowrap text-sm font-medium">
+                <span className="hidden sm:inline">rows per page</span>
+                <span className="sm:hidden">rows</span>
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+              Page {pageIndex + 1} of {totalPages}
+            </div>
+            <Button
+              aria-label="Go to first page"
+              variant="outline"
+              className="hidden size-8 p-0 lg:flex"
+              onClick={() => setPageIndex(0)}
+              disabled={!canPrev}
+            >
+              <DoubleArrowLeftIcon
+                className="size-4 shrink-0"
+                aria-hidden="true"
+              />
+            </Button>
+            <Button
+              aria-label="Go to previous page"
+              variant="outline"
+              className="size-8 p-0"
+              onClick={() => setPageIndex(Math.max(0, pageIndex - 1))}
+              disabled={!canPrev}
+            >
+              <ChevronLeftIcon
+                className="size-4 shrink-0"
+                aria-hidden="true"
+              />
+            </Button>
+            <Button
+              aria-label="Go to next page"
+              variant="outline"
+              className="size-8 p-0"
+              onClick={() => setPageIndex(pageIndex + 1)}
+              disabled={!canNext}
+            >
+              <ChevronRightIcon
+                className="size-4 shrink-0"
+                aria-hidden="true"
+              />
+            </Button>
+            <Button
+              aria-label="Go to last page"
+              variant="outline"
+              className="hidden size-8 p-0 lg:flex"
+              onClick={() => setPageIndex(totalPages - 1)}
+              disabled={!canNext}
+            >
+              <DoubleArrowRightIcon
+                className="size-4 shrink-0"
+                aria-hidden="true"
+              />
+            </Button>
+          </div>
         </div>
       </div>
     </div>
@@ -166,8 +181,6 @@ function TicketRow({
 }: {
   ticket: OrganizationTicketRowDto;
 }): React.JSX.Element {
-  const status = statusBadge(ticket.status);
-  const priority = priorityBadge(ticket.priority);
   return (
     <li>
       <Link
@@ -187,6 +200,11 @@ function TicketRow({
           <div className="truncate text-sm font-medium">
             #{ticket.number} · {ticket.title}
           </div>
+          {ticket.description && (
+            <div className="mt-0.5 truncate text-xs text-foreground/70">
+              {ticket.description}
+            </div>
+          )}
           <div className="mt-0.5 truncate text-xs text-muted-foreground">
             {ticket.contactName}
             {ticket.assigneeName
@@ -196,19 +214,9 @@ function TicketRow({
             {formatDistanceToNow(ticket.updatedAt, { addSuffix: true })}
           </div>
         </div>
-        <Badge
-          variant="secondary"
-          className={cn('hidden text-[11px] sm:inline-flex', status.className)}
-        >
-          {status.label}
-        </Badge>
-        <Badge
-          variant="secondary"
-          className={cn('hidden text-[11px] md:inline-flex', priority.className)}
-        >
-          {priority.label}
-        </Badge>
-        <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
+        <ContactTicketStatusBadge status={ticket.status} />
+        <ContactTicketPriorityBadge priority={ticket.priority} />
+        <ChevronRightLucideIcon className="size-4 shrink-0 text-muted-foreground" />
       </Link>
     </li>
   );
