@@ -257,8 +257,7 @@ const columns: ColumnDef<ClientSoftwareDto>[] = [
         >
           <a
             href={row.original.downloadUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            download
           >
             <DownloadIcon className="mr-1.5 size-3.5" />
             Download
