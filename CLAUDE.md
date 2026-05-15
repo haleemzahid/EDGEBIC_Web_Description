@@ -38,3 +38,11 @@ Whenever you build, edit, or refactor a table page, it MUST mirror the Contacts 
 - Do not run `prisma migrate dev`, `prisma migrate deploy`, `prisma db push`, `prisma migrate reset`, or any other schema-applying or data-altering command unless I have explicitly asked for it in the current message.
 - It is fine to read with `prisma generate`, `prisma format`, or to inspect schema files.
 - If a task seems to require a migration, stop and ask first.
+
+## 5. Never run my code without explicit permission
+
+- Do not start the app or any server: `npm run dev`, `next dev`, `next start`, `next build`, etc.
+- Do not execute scripts, tests, or DB queries against my project: `npm`/`pnpm`/`node`/`npx tsx` scripts, test runners, seed/query scripts, or anything that executes project code or hits the database.
+- Writing/editing files is fine. Read-only inspection (`git status`/`diff`/`log`) is fine. Static checks like `tsc --noEmit` are fine ONLY if I asked for verification — otherwise just write the code and tell me how to run it myself.
+- When something needs to be run (dev server, a test, a curl/test command), give me the exact command to run myself and STOP. Do not run it for me.
+- If verifying requires running code, ask first and wait for an explicit "yes".
