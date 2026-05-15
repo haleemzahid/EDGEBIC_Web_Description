@@ -19,6 +19,7 @@ import { DownloadIcon } from 'lucide-react';
 import { useQueryStates } from 'nuqs';
 
 import { searchParams } from '@/components/dashboard/client-portal/client-software-search-params';
+import { Button } from '@/components/ui/button';
 import {
   DataTable,
   DataTableColumnHeader,
@@ -205,7 +206,7 @@ const columns: ColumnDef<ClientSoftwareDto>[] = [
       />
     ),
     cell: ({ row }) => (
-      <span className="whitespace-nowrap font-mono text-xs">
+      <span className="whitespace-nowrap text-sm">
         {row.original.installedVersion ?? (
           <span className="text-muted-foreground">—</span>
         )}
@@ -248,23 +249,34 @@ const columns: ColumnDef<ClientSoftwareDto>[] = [
         title="Download"
       />
     ),
-    cell: ({ row }) => (
-      <div className="flex">
-        {row.original.downloadUrl ? (
+    cell: ({ row }) =>
+      row.original.downloadUrl ? (
+        <Button
+          asChild
+          variant="default"
+          size="sm"
+        >
           <a
             href={row.original.downloadUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-emerald-600 px-3 text-xs font-medium text-white shadow-sm transition-colors hover:bg-emerald-700"
           >
-            <DownloadIcon className="size-3.5" />
+            <DownloadIcon className="mr-1.5 size-3.5" />
             Download
           </a>
-        ) : (
-          <span className="text-xs text-muted-foreground">—</span>
-        )}
-      </div>
-    ),
+        </Button>
+      ) : (
+        <Button
+          type="button"
+          variant="default"
+          size="sm"
+          disabled
+          title="No download available"
+        >
+          <DownloadIcon className="mr-1.5 size-3.5" />
+          Download
+        </Button>
+      ),
     enableSorting: false,
     enableHiding: true
   },
