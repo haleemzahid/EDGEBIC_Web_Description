@@ -3,6 +3,8 @@ import { z } from 'zod';
 
 import { prisma } from '@/lib/db/prisma';
 import { LicenseKeyGenerator } from '@/lib/license/license-key-generator';
+import { SystemFingerprintGenerator } from '@/lib/license/system-fingerprint';
+import { rateLimit } from '@/lib/network/rate-limit';
 
 // Secure software-update endpoint. Installed software POSTs its license key
 // (machine-to-machine — no browser session) and gets back only safe,
@@ -12,40 +14,151 @@ import { LicenseKeyGenerator } from '@/lib/license/license-key-generator';
 //   licenseKey --hash--> Purchase (licenseKeyHash) --email--> Contact
 //   --> ContactSoftware rows.
 //
+// Hardening (all reuse existing infra):
+//   - IP rate limiting (lib/network/rate-limit)
+//   - Machine binding: if the license was activated & bound to a machine,
+//     the caller must prove it's the same machine (system-fingerprint)
+//   - Failed/blocked attempts logged to LicenseActivation
+//
 // NOTE: ContactSoftware has no `releaseDate` column yet, so `releaseDate`
-// is sourced from `updatedAt` (when the latest-version row was last
-// changed) as a stopgap. A dedicated column requires a Prisma migration.
+// is sourced from `updatedAt` as a stopgap. A real column needs a migration.
 
 const requestSchema = z.object({
   licenseKey: z.string().min(1),
+  // Optional. Required only if the license is machine-bound (activated).
+  processorId: z.string().min(1).optional(),
   // Optional: narrow the response to a single product by name.
   product: z.string().min(1).optional()
 });
 
-export async function POST(request: NextRequest) {
+function getClientIp(request: NextRequest): string {
+  return (
+    request.headers.get('x-forwarded-for') ||
+    request.headers.get('x-real-ip') ||
+    'unknown'
+  );
+}
+
+// Mirrors the activate route's logger. Only called when we have a real
+// purchaseId (LicenseActivation.purchaseId is an FK to Purchase).
+async function logAttempt(
+  purchaseId: string,
+  status: 'success' | 'failed' | 'blocked',
+  errorMessage: string | null,
+  ctx: {
+    email: string;
+    systemFingerprint: string;
+    processorId: string;
+    ipAddress: string;
+    userAgent: string;
+  }
+): Promise<void> {
   try {
+    await prisma.licenseActivation.create({
+      data: {
+        purchaseId,
+        email: ctx.email,
+        systemFingerprint: ctx.systemFingerprint,
+        processorId: ctx.processorId,
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        status,
+        errorMessage
+      }
+    });
+  } catch (error) {
+    console.error('Failed to log software-latest attempt:', error);
+  }
+}
+
+export async function POST(request: NextRequest) {
+  const clientIp = getClientIp(request);
+  const userAgent = request.headers.get('user-agent') || '';
+
+  try {
+    // 1. Rate limit by IP (reuses the in-memory limiter used by auth).
+    const limiter = rateLimit({ intervalInMs: 60 * 1000 });
+    const rl = limiter.check(20, `software-latest:${clientIp}`);
+    if (rl.isRateLimited) {
+      return NextResponse.json(
+        { error: 'Too many requests' },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
-    const { licenseKey, product } = requestSchema.parse(body);
+    const { licenseKey, processorId, product } = requestSchema.parse(body);
 
     const licenseKeyHash = LicenseKeyGenerator.hashLicenseKey(licenseKey);
 
     const purchase = await prisma.purchase.findUnique({
       where: { licenseKeyHash },
-      select: { email: true, licenseStatus: true }
+      select: {
+        id: true,
+        email: true,
+        licenseStatus: true,
+        systemFingerprint: true,
+        processorId: true
+      }
     });
 
+    const { fingerprint } =
+      SystemFingerprintGenerator.generateFingerprint(request);
+
     if (!purchase) {
+      // No real purchaseId → cannot write a LicenseActivation row (FK).
+      console.warn(
+        `software-latest: unknown license key from ip=${clientIp}`
+      );
       return NextResponse.json(
         { error: 'License not found' },
         { status: 404 }
       );
     }
 
+    const logCtx = {
+      email: purchase.email,
+      systemFingerprint: fingerprint,
+      processorId: processorId ?? '',
+      ipAddress: clientIp,
+      userAgent
+    };
+
     if (purchase.licenseStatus !== 'active') {
+      await logAttempt(
+        purchase.id,
+        'blocked',
+        'License is not active',
+        logCtx
+      );
       return NextResponse.json(
         { error: 'License is not active' },
         { status: 403 }
       );
+    }
+
+    // 2. Machine binding — enforced only for licenses that were activated
+    // and bound to a machine (dummy/unbound licenses skip this, so test
+    // data still works).
+    if (purchase.systemFingerprint || purchase.processorId) {
+      const fingerprintOk =
+        !purchase.systemFingerprint ||
+        purchase.systemFingerprint === fingerprint;
+      const processorOk =
+        !purchase.processorId || purchase.processorId === processorId;
+
+      if (!fingerprintOk || !processorOk) {
+        await logAttempt(
+          purchase.id,
+          'blocked',
+          'System validation failed',
+          logCtx
+        );
+        return NextResponse.json(
+          { error: 'System validation failed' },
+          { status: 403 }
+        );
+      }
     }
 
     // Purchase links to the CRM contact by email (same convention the rest
@@ -58,6 +171,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!contact) {
+      await logAttempt(purchase.id, 'success', null, logCtx);
       return NextResponse.json({ software: [] });
     }
 
@@ -77,6 +191,8 @@ export async function POST(request: NextRequest) {
         updatedAt: true
       }
     });
+
+    await logAttempt(purchase.id, 'success', null, logCtx);
 
     const software = rows.map((r) => ({
       productName: r.name,
