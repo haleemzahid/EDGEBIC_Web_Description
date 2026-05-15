@@ -3,6 +3,7 @@
 import { revalidateTag } from 'next/cache';
 import {
   ContactTicketActivityType,
+  ContactTicketStatus,
   TicketMessageSender
 } from '@prisma/client';
 
@@ -11,7 +12,7 @@ import { Caching, OrganizationCacheKey } from '@/data/caching';
 import { prisma } from '@/lib/db/prisma';
 import { sendPortalActivityEmail } from '@/lib/smtp/send-portal-activity-email';
 import { getBaseUrl } from '@/lib/urls/get-base-url';
-import { NotFoundError } from '@/lib/validation/exceptions';
+import { ForbiddenError, NotFoundError } from '@/lib/validation/exceptions';
 import { addContactTicketMessageSchema } from '@/schemas/contacts/add-contact-ticket-message-schema';
 
 export const addContactTicketMessage = authActionClient
@@ -30,6 +31,7 @@ export const addContactTicketMessage = authActionClient
         contactId: true,
         number: true,
         title: true,
+        status: true,
         contact: {
           select: { name: true, email: true }
         }
@@ -37,6 +39,17 @@ export const addContactTicketMessage = authActionClient
     });
     if (!ticket) {
       throw new NotFoundError('Ticket not found');
+    }
+    // Closed tickets are terminal — the client closed them, so no more
+    // messages can be appended. Internal notes are still allowed since
+    // they're team-only and don't notify the customer.
+    if (
+      ticket.status === ContactTicketStatus.CLOSED &&
+      !parsedInput.isInternalNote
+    ) {
+      throw new ForbiddenError(
+        'This ticket is closed. Reopen it before sending a reply.'
+      );
     }
 
     await prisma.$transaction([

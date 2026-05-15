@@ -6,6 +6,7 @@ import { ContactPriority, ContactTicketStatus, Role } from '@prisma/client';
 import { ChevronLeftIcon } from 'lucide-react';
 
 import { ClientTicketConversation } from '@/components/dashboard/client-portal/client-ticket-conversation';
+import { CloseTicketButton } from '@/components/dashboard/client-portal/close-ticket-button';
 import { Badge } from '@/components/ui/badge';
 import {
   Page,
@@ -142,6 +143,10 @@ export default async function ClientTicketDetailPage({
             >
               {statusLabel(ticket.status)}
             </Badge>
+            <CloseTicketButton
+              ticketId={ticket.id}
+              status={ticket.status}
+            />
           </div>
         </PagePrimaryBar>
       </PageHeader>

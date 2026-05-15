@@ -10,7 +10,6 @@ import {
 import { format, formatDistanceToNow } from 'date-fns';
 import {
   AlertCircleIcon,
-  CheckCircle2Icon,
   CheckIcon,
   ClockIcon,
   MessageSquareIcon,
@@ -21,7 +20,6 @@ import {
 import { toast } from 'sonner';
 
 import { addContactTicketMessage } from '@/actions/contacts/add-contact-ticket-message';
-import { updateContactTicket } from '@/actions/contacts/update-contact-ticket';
 import {
   AttachmentPreview,
   StagedAttachmentChip,
@@ -72,26 +70,7 @@ export function ContactTicketDetail({
   const internalNotes = ticket.messages.filter((m) => m.isInternalNote);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 p-6">
-      <p className="shrink-0 text-xs text-muted-foreground">
-        Created {format(ticket.createdAt, 'MMM d, yyyy · h:mm a')}
-        {' · '}
-        {ticket.assigneeName
-          ? `Assigned to ${ticket.assigneeName}`
-          : 'Unassigned'}
-      </p>
-
-      {ticket.description && (
-        <section className="shrink-0 rounded-lg border bg-muted/30 p-4">
-          <h3 className="mb-1 text-xs font-semibold uppercase text-muted-foreground">
-            Description
-          </h3>
-          <p className="whitespace-pre-wrap text-sm text-foreground/90">
-            {ticket.description}
-          </p>
-        </section>
-      )}
-
+    <div className="flex min-h-0 flex-1 flex-col gap-4 px-4 py-3">
       <Tabs
         defaultValue="conversation"
         className="flex min-h-0 w-full flex-1 flex-col"
@@ -198,7 +177,6 @@ function ConversationPanel({
   onSent
 }: ConversationPanelProps): React.JSX.Element {
   const [text, setText] = React.useState('');
-  const [resolving, startResolving] = React.useTransition();
   const [pendingMessages, setPendingMessages] = React.useState<PendingAdminMessage[]>([]);
   const [staged, setStaged] = React.useState<StagedAttachment[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -372,51 +350,10 @@ function ConversationPanel({
     (text.trim().length > 0 || staged.some((s) => s.state === 'uploaded')) &&
     !staged.some((s) => s.state === 'uploading');
 
-  const handleMarkResolved = (): void => {
-    startResolving(async () => {
-      const result = await updateContactTicket({
-        id: ticket.id,
-        title: ticket.title,
-        description: ticket.description ?? '',
-        status: ContactTicketStatus.RESOLVED,
-        priority: ticket.priority,
-        assigneeUserId: ticket.assigneeUserId ?? null
-      });
-      if (result?.serverError) {
-        toast.error("Couldn't mark resolved");
-        return;
-      }
-      toast.success('Ticket marked resolved');
-      onSent();
-    });
-  };
-
-  const alreadyResolved =
-    ticket.status === ContactTicketStatus.RESOLVED ||
-    ticket.status === ContactTicketStatus.CLOSED;
+  const isClosed = ticket.status === ContactTicketStatus.CLOSED;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border">
-      <header className="flex shrink-0 flex-row items-center justify-between gap-2 border-b px-4 py-3">
-        <h2 className="text-sm font-semibold">
-          Conversation with {contact.name}
-        </h2>
-        {!alreadyResolved && (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={handleMarkResolved}
-            disabled={resolving}
-          >
-            <CheckCircle2Icon className="mr-1 size-3.5 shrink-0" />
-            Mark resolved
-          </Button>
-        )}
-      </header>
-      <div className="shrink-0 bg-muted/30 px-4 py-2 text-xs text-muted-foreground">
-        👁️ The customer can see everything in this tab.
-      </div>
       {ticket.status === ContactTicketStatus.RESOLVED && (
         <div className="flex shrink-0 items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800">
           <ClockIcon className="size-3.5 shrink-0" />
@@ -464,55 +401,64 @@ function ConversationPanel({
           />
         ))}
       </ul>
-      {staged.length > 0 && (
-        <div className="flex shrink-0 flex-wrap gap-2 border-t bg-muted/40 p-2">
-          {staged.map((s) => (
-            <StagedAttachmentChip
-              key={s.tempId}
-              item={s}
-              onRemove={() => removeStaged(s.tempId)}
-            />
-          ))}
+      {isClosed ? (
+        <div className="shrink-0 border-t bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
+          🔒 This ticket is closed. The customer can reopen it from their
+          support page if they need more help.
         </div>
+      ) : (
+        <>
+          {staged.length > 0 && (
+            <div className="flex shrink-0 flex-wrap gap-2 border-t bg-muted/40 p-2">
+              {staged.map((s) => (
+                <StagedAttachmentChip
+                  key={s.tempId}
+                  item={s}
+                  onRemove={() => removeStaged(s.tempId)}
+                />
+              ))}
+            </div>
+          )}
+          <div className="flex shrink-0 items-end gap-2 border-t p-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              hidden
+              onChange={onPickFiles}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-11 shrink-0"
+              title="Attach files"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={staged.length >= MAX_ADMIN_ATTACHMENTS}
+            >
+              <PaperclipIcon className="size-4" />
+            </Button>
+            <Textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              rows={1}
+              placeholder={`Reply to ${contact.name?.split(' ')[0] ?? 'the customer'}…  (Enter to send)`}
+              className="max-h-40 min-h-[44px] flex-1 resize-none"
+            />
+            <Button
+              type="button"
+              onClick={handleSend}
+              disabled={!canSubmit}
+              size="icon"
+              className="size-11 shrink-0"
+              title="Send"
+            >
+              <SendIcon className="size-4" />
+            </Button>
+          </div>
+        </>
       )}
-      <div className="flex shrink-0 items-end gap-2 border-t p-3">
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          hidden
-          onChange={onPickFiles}
-        />
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-11 shrink-0"
-          title="Attach files"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={staged.length >= MAX_ADMIN_ATTACHMENTS}
-        >
-          <PaperclipIcon className="size-4" />
-        </Button>
-        <Textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          rows={1}
-          placeholder={`Reply to ${contact.name?.split(' ')[0] ?? 'the customer'}…  (Enter to send)`}
-          className="max-h-40 min-h-[44px] flex-1 resize-none"
-        />
-        <Button
-          type="button"
-          onClick={handleSend}
-          disabled={!canSubmit}
-          size="icon"
-          className="size-11 shrink-0"
-          title="Send"
-        >
-          <SendIcon className="size-4" />
-        </Button>
-      </div>
     </div>
   );
 }

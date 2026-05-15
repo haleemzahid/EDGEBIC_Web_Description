@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { closeClientTicket } from '@/actions/client-portal/close-client-ticket';
 import { confirmClientTicketResolved } from '@/actions/client-portal/confirm-client-ticket-resolved';
 import { reopenClientTicket } from '@/actions/client-portal/reopen-client-ticket';
 import { replyClientTicket } from '@/actions/client-portal/reply-client-ticket';
@@ -270,7 +269,6 @@ export function ClientTicketConversation({
 
   const [reopening, setReopening] = React.useState(false);
   const [resolvedReplyOpen, setResolvedReplyOpen] = React.useState(false);
-  const [closing, setClosing] = React.useState(false);
   const handleReopen = async (): Promise<void> => {
     setReopening(true);
     const result = await reopenClientTicket({ ticketId });
@@ -282,21 +280,6 @@ export function ClientTicketConversation({
       toast.error(result?.serverError ?? "Couldn't reopen the ticket.");
     }
   };
-  const handleClose = async (): Promise<void> => {
-    if (!window.confirm('Close this ticket? You can reopen it later if needed.')) {
-      return;
-    }
-    setClosing(true);
-    const result = await closeClientTicket({ ticketId });
-    setClosing(false);
-    if (!result?.serverError && !result?.validationErrors) {
-      toast.success('Ticket closed. Your team has been notified.');
-      router.refresh();
-    } else {
-      toast.error(result?.serverError ?? "Couldn't close the ticket.");
-    }
-  };
-
   const canSubmit =
     (text.trim().length > 0 ||
       staged.some((s) => s.state === 'uploaded')) &&
@@ -479,18 +462,6 @@ export function ClientTicketConversation({
               </div>
             )}
             {(!isResolved || resolvedReplyOpen) && replyForm}
-            {!isResolved && (
-              <div className="border-t p-3 text-center">
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  disabled={closing}
-                  className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
-                >
-                  {closing ? 'Closing…' : 'All sorted? Close ticket'}
-                </button>
-              </div>
-            )}
           </>
         )}
       </div>
