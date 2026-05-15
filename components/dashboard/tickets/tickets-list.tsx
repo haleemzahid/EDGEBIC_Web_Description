@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -30,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import { CenteredSpinner } from '@/components/ui/spinner';
 import { useTransitionContext } from '@/hooks/use-transition-context';
 import { getInitials } from '@/lib/utils';
 import type { OrganizationTicketRowDto } from '@/types/dtos/contact-ticket-dto';
@@ -45,7 +47,19 @@ export function TicketsList({
   tickets,
   filteredCount
 }: TicketsListProps): React.JSX.Element {
-  const { startTransition } = useTransitionContext();
+  const router = useRouter();
+  const { isLoading, startTransition } = useTransitionContext();
+
+  // Auto-refresh so new tickets and replies bubble in without a manual reload.
+  // Only poll while the tab is visible to keep the load light.
+  React.useEffect(() => {
+    const id = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        router.refresh();
+      }
+    }, 10_000);
+    return () => window.clearInterval(id);
+  }, [router]);
 
   const [pageIndex, setPageIndex] = useQueryState(
     'pageIndex',
@@ -179,6 +193,7 @@ export function TicketsList({
           </div>
         </div>
       </div>
+      {isLoading && <CenteredSpinner />}
     </div>
   );
 }
