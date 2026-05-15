@@ -4,16 +4,37 @@ import * as React from 'react';
 import NiceModal from '@ebay/nice-modal-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  DoubleArrowLeftIcon,
+  DoubleArrowRightIcon
+} from '@radix-ui/react-icons';
 import { EmailSenderType } from '@prisma/client';
 import { format, isThisYear, isToday } from 'date-fns';
 import { TrashIcon } from 'lucide-react';
+import { useQueryState } from 'nuqs';
 
+import { searchParams } from '@/components/dashboard/client-portal/client-messages-search-params';
 import { DeleteClientMessagesModal } from '@/components/dashboard/client-portal/delete-client-messages-modal';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { CenteredSpinner } from '@/components/ui/spinner';
 import { Routes } from '@/constants/routes';
+import { useTransitionContext } from '@/hooks/use-transition-context';
 import { cn, getInitials } from '@/lib/utils';
+import { MessageFolderOption } from '@/schemas/client-portal/get-client-message-threads-schema';
+
+const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50];
 
 export type ClientMessagesListThread = {
   id: string;
@@ -27,7 +48,8 @@ export type ClientMessagesListThread = {
 
 export type ClientMessagesListProps = {
   threads: ClientMessagesListThread[];
-  activeTab: 'inbox' | 'sent';
+  activeFolder: MessageFolderOption;
+  filteredCount: number;
 };
 
 function formatThreadTime(date: Date): string {
@@ -38,30 +60,62 @@ function formatThreadTime(date: Date): string {
 
 function senderLabelFor(
   thread: ClientMessagesListThread,
-  activeTab: 'inbox' | 'sent'
+  activeFolder: MessageFolderOption
 ): string {
   if (thread.lastSenderType === EmailSenderType.CONTACT) {
-    return activeTab === 'sent' ? 'Me' : thread.lastSenderName ?? 'Me';
+    return activeFolder === MessageFolderOption.Sent
+      ? 'Me'
+      : thread.lastSenderName ?? 'Me';
   }
   if (thread.lastSenderType === EmailSenderType.USER) {
     return thread.lastSenderName ?? 'Your team';
   }
-  return activeTab === 'sent' ? 'Me' : 'Your team';
+  return activeFolder === MessageFolderOption.Sent ? 'Me' : 'Your team';
 }
 
 export function ClientMessagesList({
   threads,
-  activeTab
+  activeFolder,
+  filteredCount
 }: ClientMessagesListProps): React.JSX.Element {
   const router = useRouter();
+  const { isLoading, startTransition } = useTransitionContext();
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(
     () => new Set()
   );
 
-  // Reset selection when the visible thread set changes (e.g., tab switch).
+  // Auto-refresh so new team replies appear without a manual reload.
+  React.useEffect(() => {
+    const id = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        router.refresh();
+      }
+    }, 10_000);
+    return () => window.clearInterval(id);
+  }, [router]);
+
+  const [pageIndex, setPageIndex] = useQueryState(
+    'pageIndex',
+    searchParams.pageIndex.withOptions({ startTransition, shallow: false })
+  );
+  const [pageSize, setPageSize] = useQueryState(
+    'pageSize',
+    searchParams.pageSize.withOptions({ startTransition, shallow: false })
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredCount / pageSize));
+  const canPrev = pageIndex > 0;
+  const canNext = pageIndex < totalPages - 1;
+
+  const handlePageSizeChange = (value: string): void => {
+    void setPageSize(Number(value));
+    void setPageIndex(0);
+  };
+
+  // Reset selection when the visible thread set changes (e.g., folder switch).
   React.useEffect(() => {
     setSelectedIds(new Set());
-  }, [activeTab, threads.length]);
+  }, [activeFolder, threads.length]);
 
   const visibleSelectedIds = threads
     .map((t) => t.id)
@@ -110,26 +164,15 @@ export function ClientMessagesList({
     });
   };
 
-  if (threads.length === 0) {
-    return (
-      <section className="overflow-hidden rounded-lg border bg-card">
-        <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-          {activeTab === 'inbox'
-            ? "Your inbox is empty. When your project team emails you, it'll appear here."
-            : "You haven't sent any messages yet."}
-        </p>
-      </section>
-    );
-  }
-
   return (
-    <section className="overflow-hidden rounded-lg border bg-card">
+    <div className="relative flex flex-col overflow-hidden">
       <div className="flex items-center justify-between gap-2 border-b bg-background px-3.5 py-2">
         <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
           <Checkbox
             checked={allSelected}
             onCheckedChange={handleToggleAll}
             aria-label="Select all messages"
+            disabled={threads.length === 0}
           />
           {selectionCount > 0 ? (
             <span className="font-medium text-foreground">
@@ -147,7 +190,7 @@ export function ClientMessagesList({
               size="sm"
               className="h-8 text-xs"
               onClick={handleClear}
-              >
+            >
               Clear
             </Button>
             <Button
@@ -156,18 +199,29 @@ export function ClientMessagesList({
               size="sm"
               className="h-8 border-destructive/30 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={handleBulkDelete}
-              >
+            >
               <TrashIcon className="mr-1 size-3.5 shrink-0" />
               Delete {selectionCount}
             </Button>
           </div>
         )}
       </div>
-      <ul className="divide-y">
-        {threads.map((t) => {
-          const isUnreadRow = t.unread && activeTab === 'inbox';
-          const isChecked = selectedIds.has(t.id);
-          const senderLabel = senderLabelFor(t, activeTab);
+      {/* 64px (primary bar) + 48px (secondary bar) + 41px (bulk bar) + 65px (pagination) = 218px */}
+      <ScrollArea
+        verticalScrollBar
+        className="h-[calc(100svh-218px)]"
+      >
+        {threads.length === 0 ? (
+          <p className="px-4 py-12 text-center text-sm text-muted-foreground">
+            No messages match these filters.
+          </p>
+        ) : (
+          <ul className="divide-y">
+            {threads.map((t) => {
+              const isUnreadRow =
+                t.unread && activeFolder !== MessageFolderOption.Sent;
+              const isChecked = selectedIds.has(t.id);
+              const senderLabel = senderLabelFor(t, activeFolder);
           return (
             <li
               key={t.id}
@@ -254,8 +308,95 @@ export function ClientMessagesList({
               </Button>
             </li>
           );
-        })}
-      </ul>
-    </section>
+            })}
+          </ul>
+        )}
+      </ScrollArea>
+
+      <div className="border-t bg-background">
+        <div className="flex flex-row items-center justify-between gap-2 space-x-2 px-6 py-4">
+          <div className="flex flex-row items-center gap-4 sm:gap-6 lg:gap-8">
+            <div className="flex items-center space-x-2">
+              <Select
+                value={`${pageSize}`}
+                onValueChange={handlePageSizeChange}
+              >
+                <SelectTrigger className="h-8 w-16">
+                  <SelectValue placeholder={pageSize} />
+                </SelectTrigger>
+                <SelectContent side="top">
+                  {PAGE_SIZE_OPTIONS.map((option) => (
+                    <SelectItem
+                      key={option}
+                      value={`${option}`}
+                    >
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="whitespace-nowrap text-sm font-medium">
+                <span className="hidden sm:inline">rows per page</span>
+                <span className="sm:hidden">rows</span>
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+              Page {pageIndex + 1} of {totalPages}
+            </div>
+            <Button
+              aria-label="Go to first page"
+              variant="outline"
+              className="hidden size-8 p-0 lg:flex"
+              onClick={() => setPageIndex(0)}
+              disabled={!canPrev}
+            >
+              <DoubleArrowLeftIcon
+                className="size-4 shrink-0"
+                aria-hidden="true"
+              />
+            </Button>
+            <Button
+              aria-label="Go to previous page"
+              variant="outline"
+              className="size-8 p-0"
+              onClick={() => setPageIndex(Math.max(0, pageIndex - 1))}
+              disabled={!canPrev}
+            >
+              <ChevronLeftIcon
+                className="size-4 shrink-0"
+                aria-hidden="true"
+              />
+            </Button>
+            <Button
+              aria-label="Go to next page"
+              variant="outline"
+              className="size-8 p-0"
+              onClick={() => setPageIndex(pageIndex + 1)}
+              disabled={!canNext}
+            >
+              <ChevronRightIcon
+                className="size-4 shrink-0"
+                aria-hidden="true"
+              />
+            </Button>
+            <Button
+              aria-label="Go to last page"
+              variant="outline"
+              className="hidden size-8 p-0 lg:flex"
+              onClick={() => setPageIndex(totalPages - 1)}
+              disabled={!canNext}
+            >
+              <DoubleArrowRightIcon
+                className="size-4 shrink-0"
+                aria-hidden="true"
+              />
+            </Button>
+          </div>
+        </div>
+      </div>
+      {isLoading && <CenteredSpinner />}
+    </div>
   );
 }
