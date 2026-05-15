@@ -23,7 +23,6 @@ import { Button } from '@/components/ui/button';
 import {
   DataTable,
   DataTableColumnHeader,
-  DataTableColumnOptionsHeader,
   DataTablePagination
 } from '@/components/ui/data-table';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -279,13 +278,5 @@ const columns: ColumnDef<ClientSoftwareDto>[] = [
       ),
     enableSorting: false,
     enableHiding: true
-  },
-  {
-    id: 'columnOptions',
-    size: 64,
-    header: ({ table }) => <DataTableColumnOptionsHeader table={table} />,
-    cell: () => null,
-    enableSorting: false,
-    enableHiding: false
   }
 ];
