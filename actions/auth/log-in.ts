@@ -21,11 +21,16 @@ export const logIn = actionClient
 
     // Expected UX for logins is to pass the login credentials through
     // and not validate them on the client-side.
+    //
+    // We deliberately use `redirect: false` here. Redirecting from inside the
+    // server action triggers a *soft* client navigation that races the freshly
+    // set session cookie, leaving the destination page blank until a manual
+    // refresh on the first login. Instead we return the target URL and let the
+    // client do a full-page navigation, which always carries the new cookie.
     try {
       await signIn(IdentityProvider.Credentials, {
         ...parsedInput,
-        redirectTo: callbackUrl,
-        redirect: true
+        redirect: false
       });
     } catch (e) {
       if (e instanceof CredentialsSignin) {
@@ -35,4 +40,6 @@ export const logIn = actionClient
       }
       throw e;
     }
+
+    return { redirectTo: callbackUrl };
   });

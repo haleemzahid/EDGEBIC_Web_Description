@@ -70,6 +70,14 @@ export function LoginCard(props: CardProps): React.JSX.Element {
     setIsLoading(true);
     const result = await logIn(values);
 
+    if (result?.data?.redirectTo) {
+      // Full-page navigation so the new session cookie and current build
+      // assets are used. A soft router push here reproduces the blank-page-
+      // until-refresh bug on first login.
+      window.location.assign(result.data.redirectTo);
+      return;
+    }
+
     if (result?.validationErrors?._errors) {
       const errorCode = result.validationErrors._errors[0] as AuthErrorCode;
 

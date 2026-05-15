@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     shortcut: '/favicon.ico',
     apple: '/logos/edgebic-logo.png'
   },
-  manifest: '/manifest',
+  manifest: '/manifest.webmanifest',
   robots: {
     index: true,
     follow: true,

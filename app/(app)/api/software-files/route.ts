@@ -5,7 +5,6 @@ import { dedupedAuth } from '@/lib/auth';
 import { checkSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/db/prisma';
 import { saveSoftwareFile } from '@/lib/software-files/storage';
-import { getBaseUrl } from '@/lib/urls/get-base-url';
 
 // Team-side installer upload. Stores the file and returns an absolute
 // downloadUrl that the Add/Edit software flow saves on ContactSoftware
@@ -42,9 +41,12 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   try {
     const saved = await saveSoftwareFile(file);
+    // Use the origin the upload actually came in on (not the hard-coded
+    // NEXT_PUBLIC_BASE_URL) so the link points to the same server that
+    // now holds the file.
     return NextResponse.json(
       {
-        downloadUrl: `${getBaseUrl()}${saved.publicUrl}`,
+        downloadUrl: `${req.nextUrl.origin}${saved.publicUrl}`,
         fileName: saved.fileName,
         sizeBytes: saved.sizeBytes
       },
