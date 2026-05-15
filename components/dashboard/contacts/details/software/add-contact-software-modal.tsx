@@ -2,13 +2,11 @@
 
 import * as React from 'react';
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
-import { SoftwareStatus } from '@prisma/client';
 import { type SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { addContactSoftware } from '@/actions/contacts/add-contact-software';
 import { Button } from '@/components/ui/button';
-import { DatePicker } from '@/components/ui/date-picker';
 import {
   Dialog,
   DialogContent,
@@ -34,13 +32,6 @@ import {
   FormProvider
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { MediaQueries } from '@/constants/media-queries';
 import { useEnhancedModal } from '@/hooks/use-enhanced-modal';
@@ -51,14 +42,6 @@ import {
   addContactSoftwareSchema,
   type AddContactSoftwareSchema
 } from '@/schemas/contacts/add-contact-software-schema';
-
-const statusOptions: { value: SoftwareStatus; label: string }[] = [
-  { value: SoftwareStatus.UP_TO_DATE, label: 'Up to date' },
-  { value: SoftwareStatus.UPDATE_AVAILABLE, label: 'Update available' },
-  { value: SoftwareStatus.NEEDS_ATTENTION, label: 'Needs attention' },
-  { value: SoftwareStatus.TRIAL, label: 'Trial' },
-  { value: SoftwareStatus.NOT_INSTALLED, label: 'Not installed' }
-];
 
 export type AddContactSoftwareModalProps = NiceModalHocProps & {
   contactId: string;
@@ -74,24 +57,13 @@ export const AddContactSoftwareModal =
       defaultValues: {
         contactId,
         name: '',
-        installedVersion: '',
-        latestVersion: '',
-        status: SoftwareStatus.UP_TO_DATE,
-        githubUrl: '',
         docsUrl: '',
-        downloadUrl: '',
-        licenseKey: '',
-        licenseType: '',
-        os: '',
-        database: '',
-        installPath: '',
+        installedVersion: '',
         notes: ''
       }
     });
-    // NiceModal keeps the component mounted across show/hide cycles (only
-    // `remove` unmounts it). React Hook Form holds field state on that mounted
-    // instance, so submitting + closing + reopening would show the previous
-    // values. Reset every time the modal becomes visible.
+    // NiceModal keeps the component mounted across show/hide cycles. Reset
+    // every time the modal becomes visible so reopening starts fresh.
     React.useEffect(() => {
       if (modal.visible) {
         methods.reset();
@@ -127,7 +99,6 @@ export const AddContactSoftwareModal =
           {...methods.register('contactId')}
         />
 
-        {/* Basics */}
         <FormField
           control={methods.control}
           name="name"
@@ -144,249 +115,17 @@ export const AddContactSoftwareModal =
             </FormItem>
           )}
         />
-        <div className="grid grid-cols-2 gap-3">
-          <FormField
-            control={methods.control}
-            name="installedVersion"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Installed version</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="v1.0.0"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={methods.control}
-            name="latestVersion"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Latest version</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="v1.0.0"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <FormField
-            control={methods.control}
-            name="installDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Install date</FormLabel>
-                <FormControl>
-                  <DatePicker
-                    date={field.value ?? undefined}
-                    onDateChange={(d) => field.onChange(d ?? null)}
-                    disabled={methods.formState.isSubmitting}
-                    className="w-full"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={methods.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
-                <FormControl>
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statusOptions.map((o) => (
-                        <SelectItem
-                          key={o.value}
-                          value={o.value}
-                        >
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
 
-        {/* Links */}
         <FormField
           control={methods.control}
-          name="githubUrl"
+          name="docsUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>GitHub repository URL</FormLabel>
+              <FormLabel>Documentation URL</FormLabel>
               <FormControl>
                 <Input
                   type="url"
-                  placeholder="https://github.com/org/repo"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className="grid grid-cols-2 gap-3">
-          <FormField
-            control={methods.control}
-            name="docsUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Documentation URL</FormLabel>
-                <FormControl>
-                  <Input
-                    type="url"
-                    placeholder="https://docs.example.com"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={methods.control}
-            name="downloadUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Download URL</FormLabel>
-                <FormControl>
-                  <Input
-                    type="url"
-                    placeholder="https://download.example.com"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        {/* License */}
-        <div className="grid grid-cols-2 gap-3">
-          <FormField
-            control={methods.control}
-            name="licenseKey"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>License key</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="USR-XXXX-XXXX"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={methods.control}
-            name="licenseType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>License type</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Annual subscription"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        <FormField
-          control={methods.control}
-          name="seats"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Seats</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  min={1}
-                  placeholder="5"
-                  value={field.value ?? ''}
-                  onChange={(e) =>
-                    field.onChange(
-                      e.target.value ? Number(e.target.value) : null
-                    )
-                  }
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Environment */}
-        <div className="grid grid-cols-2 gap-3">
-          <FormField
-            control={methods.control}
-            name="os"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>OS</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Windows Server 2022"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={methods.control}
-            name="database"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Database</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="SQL Server 2019"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        <FormField
-          control={methods.control}
-          name="installPath"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Install path</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="C:\Program Files\…"
+                  placeholder="https://docs.example.com"
                   {...field}
                 />
               </FormControl>
@@ -395,7 +134,23 @@ export const AddContactSoftwareModal =
           )}
         />
 
-        {/* Notes */}
+        <FormField
+          control={methods.control}
+          name="installedVersion"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Version</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="v1.0.0"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={methods.control}
           name="notes"
