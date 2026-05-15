@@ -170,6 +170,11 @@ function TicketRow({ contactId, ticket }: TicketRowProps): React.JSX.Element {
           <div className="truncate text-sm font-medium">
             #{ticket.number} · {ticket.title}
           </div>
+          {ticket.description && (
+            <div className="mt-0.5 truncate text-xs text-foreground/70">
+              {ticket.description}
+            </div>
+          )}
           <div className="mt-0.5 truncate text-xs text-muted-foreground">
             {ticket.assigneeName
               ? `Assigned to ${ticket.assigneeName}`
