@@ -40,6 +40,7 @@ function DatePicker({
     <Popover>
       <PopoverTrigger asChild>
         <Button
+          type="button"
           variant={variant || 'outline'}
           className={cn(
             'justify-start whitespace-nowrap text-left font-normal',
@@ -108,6 +109,7 @@ function DateRangePicker({
         <PopoverTrigger asChild>
           <Button
             id="date"
+            type="button"
             variant={'outline'}
             className={cn(
               'w-[260px] justify-start text-left font-normal',

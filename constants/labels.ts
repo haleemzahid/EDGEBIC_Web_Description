@@ -54,3 +54,17 @@ export const webhookTriggerLabels: Record<WebhookTrigger, string> = {
   [WebhookTrigger.CONTACT_UPDATED]: 'Contact updated',
   [WebhookTrigger.CONTACT_DELETED]: 'Contact deleted'
 };
+
+// Standard CRM lead-source set. Stored as the label string on
+// Contact.leadSource (free-text column), so the values double as labels.
+export const leadSourceOptions = [
+  'Website',
+  'Referral',
+  'Google / Search',
+  'Social media',
+  'Email campaign',
+  'Event / Trade show',
+  'Cold outreach',
+  'Partner',
+  'Other'
+] as const;

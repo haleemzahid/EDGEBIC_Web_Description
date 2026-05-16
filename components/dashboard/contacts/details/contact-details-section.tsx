@@ -29,6 +29,8 @@ import { ContactProperty } from '@/components/dashboard/contacts/details/contact
 import { CropPhotoModal } from '@/components/dashboard/settings/account/profile/crop-photo-modal';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Combobox } from '@/components/ui/combobox';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   FormControl,
   FormField,
@@ -49,10 +51,12 @@ import {
   TooltipContent,
   TooltipTrigger
 } from '@/components/ui/tooltip';
-import { contactRecordLabel } from '@/constants/labels';
+import { contactRecordLabel, leadSourceOptions } from '@/constants/labels';
 import { MAX_IMAGE_SIZE } from '@/constants/limits';
 import { useZodForm } from '@/hooks/use-zod-form';
+import { getTimezones } from '@/lib/timezones';
 import { cn } from '@/lib/utils';
+import { billingAddressCountries } from '@/schemas/billing/update-billing-address-schema';
 import {
   updateContactPropertiesSchema,
   type UpdateContactPropertiesSchema
@@ -188,6 +192,10 @@ function Properties(contact: ContactDto): React.JSX.Element {
       timezone: contact.timezone ?? '',
       leadSource: contact.leadSource ?? '',
       leadSourceDate: contact.leadSourceDate ?? null,
+      lastContactedAt: contact.lastContactedAt ?? null,
+      lastContactedNote: contact.lastContactedNote ?? '',
+      lastMeetingAt: contact.lastMeetingAt ?? null,
+      lastMeetingNote: contact.lastMeetingNote ?? '',
       stripeCustomerId: contact.stripeCustomerId ?? ''
     }
   });
@@ -213,6 +221,21 @@ function Properties(contact: ContactDto): React.JSX.Element {
       toast.error("Couldn't update properties");
     }
   };
+  // Country is stored as the human-readable name (the column is free-text and
+  // the read-only view + activity timeline render it raw), so value === label.
+  const countryOptions = React.useMemo(
+    () =>
+      billingAddressCountries.map((c) => ({ value: c.name, label: c.name })),
+    []
+  );
+  const timezoneOptions = React.useMemo(
+    () => getTimezones().map((tz) => ({ value: tz, label: tz })),
+    []
+  );
+  const leadSourceComboOptions = React.useMemo(
+    () => leadSourceOptions.map((s) => ({ value: s, label: s })),
+    []
+  );
   return (
     <FormProvider {...methods}>
       <form
@@ -568,13 +591,14 @@ function Properties(contact: ContactDto): React.JSX.Element {
                   render={({ field }) => (
                     <FormItem className="flex w-full flex-col">
                       <FormControl>
-                        <Input
-                          type="text"
-                          maxLength={128}
-                          className="h-7"
-                          disabled={methods.formState.isSubmitting}
-                          {...field}
+                        <Combobox
+                          options={countryOptions}
                           value={field.value ?? ''}
+                          onChange={field.onChange}
+                          disabled={methods.formState.isSubmitting}
+                          placeholder="Select country"
+                          searchPlaceholder="Search country…"
+                          emptyText="No country found."
                         />
                       </FormControl>
                       <FormMessage />
@@ -598,13 +622,14 @@ function Properties(contact: ContactDto): React.JSX.Element {
                   render={({ field }) => (
                     <FormItem className="flex w-full flex-col">
                       <FormControl>
-                        <Input
-                          type="text"
-                          maxLength={64}
-                          className="h-7"
-                          disabled={methods.formState.isSubmitting}
-                          {...field}
+                        <Combobox
+                          options={timezoneOptions}
                           value={field.value ?? ''}
+                          onChange={field.onChange}
+                          disabled={methods.formState.isSubmitting}
+                          placeholder="Select timezone"
+                          searchPlaceholder="Search timezone…"
+                          emptyText="No timezone found."
                         />
                       </FormControl>
                       <FormMessage />
@@ -628,6 +653,95 @@ function Properties(contact: ContactDto): React.JSX.Element {
                   render={({ field }) => (
                     <FormItem className="flex w-full flex-col">
                       <FormControl>
+                        <Combobox
+                          options={leadSourceComboOptions}
+                          value={field.value ?? ''}
+                          onChange={field.onChange}
+                          disabled={methods.formState.isSubmitting}
+                          placeholder="Select lead source"
+                          searchPlaceholder="Search…"
+                          emptyText="No match."
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : (
+                contact.leadSource
+              )
+            }
+            placeholder="No lead source"
+          />
+          <ContactProperty
+            icon={<CalendarIcon className="size-3 shrink-0" />}
+            term="Lead source date"
+            details={
+              editMode ? (
+                <FormField
+                  control={methods.control}
+                  name="leadSourceDate"
+                  render={({ field }) => (
+                    <FormItem className="flex w-full flex-col">
+                      <FormControl>
+                        <DatePicker
+                          date={field.value ?? undefined}
+                          onDateChange={(d) => field.onChange(d ?? null)}
+                          disabled={methods.formState.isSubmitting}
+                          placeholder="Pick a date"
+                          className="h-7 w-full"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : contact.leadSourceDate ? (
+                new Date(contact.leadSourceDate).toLocaleDateString()
+              ) : undefined
+            }
+            placeholder="No date"
+          />
+          <ContactProperty
+            icon={<CalendarIcon className="size-3 shrink-0" />}
+            term="Last contacted"
+            details={
+              editMode ? (
+                <FormField
+                  control={methods.control}
+                  name="lastContactedAt"
+                  render={({ field }) => (
+                    <FormItem className="flex w-full flex-col">
+                      <FormControl>
+                        <DatePicker
+                          date={field.value ?? undefined}
+                          onDateChange={(d) => field.onChange(d ?? null)}
+                          disabled={methods.formState.isSubmitting}
+                          placeholder="Pick a date"
+                          className="h-7 w-full"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : contact.lastContactedAt ? (
+                new Date(contact.lastContactedAt).toLocaleDateString()
+              ) : undefined
+            }
+            placeholder="Never contacted"
+          />
+          <ContactProperty
+            icon={<LayoutListIcon className="size-3 shrink-0" />}
+            term="Last contact note"
+            details={
+              editMode ? (
+                <FormField
+                  control={methods.control}
+                  name="lastContactedNote"
+                  render={({ field }) => (
+                    <FormItem className="flex w-full flex-col">
+                      <FormControl>
                         <Input
                           type="text"
                           maxLength={255}
@@ -641,18 +755,70 @@ function Properties(contact: ContactDto): React.JSX.Element {
                     </FormItem>
                   )}
                 />
-              ) : contact.leadSource ? (
-                <span>
-                  {contact.leadSource}
-                  {contact.leadSourceDate && (
-                    <span className="ml-1 text-muted-foreground">
-                      · {new Date(contact.leadSourceDate).toLocaleDateString()}
-                    </span>
+              ) : (
+                contact.lastContactedNote
+              )
+            }
+            placeholder="No note"
+          />
+          <ContactProperty
+            icon={<CalendarIcon className="size-3 shrink-0" />}
+            term="Last meeting"
+            details={
+              editMode ? (
+                <FormField
+                  control={methods.control}
+                  name="lastMeetingAt"
+                  render={({ field }) => (
+                    <FormItem className="flex w-full flex-col">
+                      <FormControl>
+                        <DatePicker
+                          date={field.value ?? undefined}
+                          onDateChange={(d) => field.onChange(d ?? null)}
+                          disabled={methods.formState.isSubmitting}
+                          placeholder="Pick a date"
+                          className="h-7 w-full"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </span>
+                />
+              ) : contact.lastMeetingAt ? (
+                new Date(contact.lastMeetingAt).toLocaleDateString()
               ) : undefined
             }
-            placeholder="No lead source"
+            placeholder="No meeting"
+          />
+          <ContactProperty
+            icon={<LayoutListIcon className="size-3 shrink-0" />}
+            term="Last meeting note"
+            details={
+              editMode ? (
+                <FormField
+                  control={methods.control}
+                  name="lastMeetingNote"
+                  render={({ field }) => (
+                    <FormItem className="flex w-full flex-col">
+                      <FormControl>
+                        <Input
+                          type="text"
+                          maxLength={255}
+                          className="h-7"
+                          disabled={methods.formState.isSubmitting}
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : (
+                contact.lastMeetingNote
+              )
+            }
+            placeholder="No note"
           />
           <ContactProperty
             icon={<KeyIcon className="size-3 shrink-0" />}

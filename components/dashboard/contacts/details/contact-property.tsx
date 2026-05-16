@@ -14,12 +14,12 @@ export function ContactProperty({
   placeholder
 }: ContactPropertyProps): React.JSX.Element {
   return (
-    <div className="flex h-7 flex-row items-center whitespace-nowrap">
-      <span className="flex h-7 min-w-24 flex-row items-center gap-2 text-muted-foreground">
+    <div className="flex min-h-7 flex-row items-start">
+      <span className="flex h-7 w-36 shrink-0 flex-row items-center gap-2 pr-3 text-muted-foreground">
         {icon}
-        {term}
+        <span className="truncate">{term}</span>
       </span>
-      <span className="flex h-7 w-full max-w-[196px] flex-row items-center overflow-hidden text-ellipsis">
+      <span className="flex min-h-7 w-full max-w-[196px] flex-col justify-center">
         {details ? (
           details
         ) : (

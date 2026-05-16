@@ -316,7 +316,6 @@ export function ContactActivity({
     () => [
       {
         id: 'date',
-        size: 128,
         header: () => <span className="pl-4">Date</span>,
         cell: ({ row }) => {
           const occurredAt =
@@ -332,7 +331,6 @@ export function ContactActivity({
       },
       {
         id: 'time',
-        size: 80,
         header: () => 'Time',
         cell: ({ row }) => {
           const occurredAt =
@@ -348,7 +346,6 @@ export function ContactActivity({
       },
       {
         id: 'user',
-        size: 160,
         header: () => 'User',
         cell: ({ row }) => {
           const actor =
@@ -374,7 +371,6 @@ export function ContactActivity({
       },
       {
         id: 'action',
-        size: 176,
         header: () => 'Action',
         cell: ({ row }) => {
           if (row.original.type === 'comment') {
