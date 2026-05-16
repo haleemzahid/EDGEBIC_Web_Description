@@ -63,9 +63,15 @@ export async function getCroppedPngImage(
     canvas.height
   );
 
-  const croppedImageUrl = canvas.toDataURL('image/png');
-  const response = await fetch(croppedImageUrl);
-  const blob = await response.blob();
+  // Read the blob straight off the canvas instead of fetch()ing the data
+  // URL — fetching a data: URI is blocked by our connect-src CSP and was
+  // the cause of "Failed to crop the image".
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob((b) => resolve(b), 'image/png')
+  );
+  if (!blob) {
+    throw new Error('Failed to create image blob.');
+  }
 
   if (blob.size > maxImageSize) {
     return await getCroppedPngImage(
@@ -76,7 +82,7 @@ export async function getCroppedPngImage(
     );
   }
 
-  return croppedImageUrl;
+  return canvas.toDataURL('image/png');
 }
 
 export type CropperElement = {
