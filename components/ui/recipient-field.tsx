@@ -90,6 +90,8 @@ export function RecipientField({
         shape="pill"
         placeholder={placeholder}
         disabled={disabled}
+        // Borderless input so the field matches the Subject row (no box).
+        className="h-8 border-0 px-0 shadow-none focus-visible:ring-0"
       />
       {open && suggestions.length > 0 && (
         <div

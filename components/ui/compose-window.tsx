@@ -6,8 +6,10 @@ import { Maximize2Icon, Minimize2Icon, MinusIcon, XIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
+// Current Gmail uses a light header (dark text on light gray), not the old
+// dark charcoal. Theme tokens keep it correct in dark mode too.
 const headerBtn =
-  'size-7 shrink-0 text-neutral-300 hover:bg-white/10 hover:text-white';
+  'size-7 shrink-0 text-muted-foreground hover:bg-accent hover:text-foreground';
 
 export type ComposeWindowProps = {
   open: boolean;
@@ -54,7 +56,7 @@ export function ComposeWindow({
 
   const header = (
     <div
-      className="flex h-10 shrink-0 cursor-pointer items-center justify-between bg-[#404040] px-4 text-sm font-medium text-neutral-50"
+      className="flex h-10 shrink-0 cursor-pointer items-center justify-between border-b bg-muted px-4 text-sm font-medium text-foreground"
       onClick={() => setMinimized((m) => !m)}
     >
       <span className="truncate pr-2">{title}</span>

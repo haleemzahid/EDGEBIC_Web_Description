@@ -201,6 +201,8 @@ export function ContactInbox({
   const [composeOpen, setComposeOpen] = React.useState<boolean>(false);
   const [showCc, setShowCc] = React.useState<boolean>(false);
   const [showBcc, setShowBcc] = React.useState<boolean>(false);
+  // Gmail hides the formatting toolbar until "Aa" is clicked.
+  const [showFormatting, setShowFormatting] = React.useState<boolean>(false);
   // Bumped to force the seed-once rich-text editor to remount & re-read the
   // body (on open, forward, draft-restore, emoji insert).
   const [composeEditorKey, setComposeEditorKey] = React.useState<number>(0);
@@ -483,6 +485,7 @@ export function ContactInbox({
     });
     setShowCc((src?.cc?.length ?? 0) > 0);
     setShowBcc((src?.bcc?.length ?? 0) > 0);
+    setShowFormatting(false);
     setStagedCompose([]);
     setComposeEditorKey((k) => k + 1);
     setComposeOpen(true);
@@ -770,6 +773,22 @@ export function ContactInbox({
               type="button"
               variant="ghost"
               size="icon"
+              className={cn(
+                'font-semibold',
+                showFormatting && 'bg-accent text-foreground'
+              )}
+              onClick={() => setShowFormatting((v) => !v)}
+              disabled={pending}
+              title="Formatting options"
+              aria-label="Formatting options"
+              aria-pressed={showFormatting}
+            >
+              <span className="text-sm leading-none">A</span>
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => composeFileInputRef.current?.click()}
               disabled={
                 pending || stagedCompose.length >= MAX_REPLY_ATTACHMENTS
@@ -807,12 +826,24 @@ export function ContactInbox({
                 />
               </PopoverContent>
             </Popover>
+            {/* Discard — far right, like Gmail's trash. */}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="ml-auto"
+              onClick={handleComposeClose}
+              disabled={pending}
+              title="Discard draft"
+              aria-label="Discard draft"
+            >
+              <TrashIcon className="size-4 shrink-0" />
+            </Button>
           </>
         }
       >
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex items-start gap-2 border-b px-4 py-1">
-            <span className="mt-2 text-sm text-muted-foreground">To</span>
+          <div className="flex items-start gap-2 border-b px-4 py-1.5">
             <div className="min-w-0 flex-1">
               <RecipientField
                 value={composeDraft.to}
@@ -820,11 +851,11 @@ export function ContactInbox({
                   setComposeDraft((d) => ({ ...d, to: emails }))
                 }
                 validate={isEmail}
-                placeholder="recipient@example.com"
+                placeholder="To"
                 disabled={pending}
               />
             </div>
-            <div className="mt-2 flex shrink-0 items-center gap-2 text-sm text-muted-foreground">
+            <div className="mt-1.5 flex shrink-0 items-center gap-1 text-sm text-muted-foreground">
               {!showCc && (
                 <Button
                   type="button"
@@ -850,33 +881,29 @@ export function ContactInbox({
             </div>
           </div>
           {showCc && (
-            <div className="flex items-start gap-2 border-b px-4 py-1">
-              <span className="mt-2 text-sm text-muted-foreground">Cc</span>
-              <div className="min-w-0 flex-1">
-                <RecipientField
-                  value={composeDraft.cc}
-                  onChange={(emails) =>
-                    setComposeDraft((d) => ({ ...d, cc: emails }))
-                  }
-                  validate={isEmail}
-                  disabled={pending}
-                />
-              </div>
+            <div className="border-b px-4 py-1.5">
+              <RecipientField
+                value={composeDraft.cc}
+                onChange={(emails) =>
+                  setComposeDraft((d) => ({ ...d, cc: emails }))
+                }
+                validate={isEmail}
+                placeholder="Cc"
+                disabled={pending}
+              />
             </div>
           )}
           {showBcc && (
-            <div className="flex items-start gap-2 border-b px-4 py-1">
-              <span className="mt-2 text-sm text-muted-foreground">Bcc</span>
-              <div className="min-w-0 flex-1">
-                <RecipientField
-                  value={composeDraft.bcc}
-                  onChange={(emails) =>
-                    setComposeDraft((d) => ({ ...d, bcc: emails }))
-                  }
-                  validate={isEmail}
-                  disabled={pending}
-                />
-              </div>
+            <div className="border-b px-4 py-1.5">
+              <RecipientField
+                value={composeDraft.bcc}
+                onChange={(emails) =>
+                  setComposeDraft((d) => ({ ...d, bcc: emails }))
+                }
+                validate={isEmail}
+                placeholder="Bcc"
+                disabled={pending}
+              />
             </div>
           )}
           <div className="border-b px-4">
@@ -891,7 +918,19 @@ export function ContactInbox({
               className="h-10 border-0 px-0 shadow-none focus-visible:ring-0"
             />
           </div>
-          <div className="flex-1 px-3 py-2">
+          {/* Override the shared editor's box look so it reads like Gmail's
+              borderless body (the TextEditor itself is left untouched as
+              it's shared with notes). */}
+          <div
+            className={cn(
+              'flex-1 px-3 py-2 [&_.editor-container]:px-0 [&_.editor]:rounded-none [&_.editor]:border-0 [&_.editor]:bg-transparent',
+              // Gmail-style: formatting toolbar (+ its divider) hidden until
+              // "Aa". Toggled purely from here so the shared TextEditor used
+              // by Notes is untouched.
+              !showFormatting &&
+                '[&_.editor-container>*:first-child]:hidden [&_.editor-container>.opacity-40]:hidden'
+            )}
+          >
             <TextEditor
               // Remount per open so it re-seeds from the (possibly
               // forwarded/draft-restored) body; the editor is seed-once.
