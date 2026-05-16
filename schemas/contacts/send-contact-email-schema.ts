@@ -13,13 +13,17 @@ export const sendContactEmailSchema = z.object({
     .min(1, 'Contact id is required.')
     .max(36, 'Maximum 36 characters allowed.'),
   to: z
-    .string({
-      required_error: 'Recipient is required.',
-      invalid_type_error: 'Recipient must be a string.'
-    })
-    .trim()
-    .email('Recipient must be a valid email.')
-    .max(255, 'Maximum 255 characters allowed.'),
+    .array(z.string().trim().email('Each recipient must be a valid email.'))
+    .min(1, 'At least one recipient is required.')
+    .max(50, 'Maximum 50 recipients allowed.'),
+  cc: z
+    .array(z.string().trim().email('Each Cc must be a valid email.'))
+    .max(50, 'Maximum 50 Cc recipients allowed.')
+    .default([]),
+  bcc: z
+    .array(z.string().trim().email('Each Bcc must be a valid email.'))
+    .max(50, 'Maximum 50 Bcc recipients allowed.')
+    .default([]),
   subject: z
     .string({
       required_error: 'Subject is required.',

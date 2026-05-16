@@ -5,6 +5,10 @@ import { EmailFolder, EmailSenderType } from '@prisma/client';
 
 import { authActionClient } from '@/actions/safe-action';
 import { Caching, OrganizationCacheKey } from '@/data/caching';
+import {
+  htmlToPlainText,
+  sanitizeEmailHtml
+} from '@/lib/email/sanitize-email-html';
 import { prisma } from '@/lib/db/prisma';
 import { sendContactMessageEmail } from '@/lib/smtp/send-contact-message-email';
 import { GatewayError, NotFoundError } from '@/lib/validation/exceptions';
@@ -32,16 +36,28 @@ export const sendContactEmail = authActionClient
 
     // Send the actual email FIRST. If SMTP fails we don't persist a
     // misleading "Sent" record in the DB.
+    // Keep the joined string only for the single-column DB record below.
+    // The mailer must receive the ARRAY — Resend rejects a comma-joined
+    // string of multiple addresses (nodemailer tolerates it).
+    const toJoined = parsedInput.to.join(', ');
+    // The body is rich-text HTML from the compose editor — sanitize once
+    // here so the same safe markup is both emailed and persisted, and
+    // derive a plain-text preview from it.
+    const safeBody = sanitizeEmailHtml(parsedInput.body);
+    const previewText = htmlToPlainText(safeBody).slice(0, 500);
     try {
-      await sendContactMessageEmail({
-        recipient: parsedInput.to,
-        recipientName: contact.name,
-        subject: parsedInput.subject,
-        body: parsedInput.body,
-        senderName: session.user.name ?? 'Support',
-        senderEmail: session.user.email ?? undefined,
-        organizationName: contact.organization?.name
-      });
+      await sendContactMessageEmail(
+        {
+          recipient: parsedInput.to,
+          recipientName: contact.name,
+          subject: parsedInput.subject,
+          body: safeBody,
+          senderName: session.user.name ?? 'Support',
+          senderEmail: session.user.email ?? undefined,
+          organizationName: contact.organization?.name
+        },
+        { cc: parsedInput.cc, bcc: parsedInput.bcc }
+      );
     } catch (error) {
       throw new GatewayError(
         error instanceof Error
@@ -55,7 +71,7 @@ export const sendContactEmail = authActionClient
         contactId: contact.id,
         folder: EmailFolder.SENT,
         subject: parsedInput.subject,
-        preview: parsedInput.body.slice(0, 500),
+        preview: previewText,
         unread: false,
         messages: {
           create: {
@@ -64,8 +80,10 @@ export const sendContactEmail = authActionClient
             senderName: session.user.name ?? '',
             senderEmail: session.user.email ?? undefined,
             recipientName: contact.name,
-            recipientEmail: parsedInput.to,
-            body: parsedInput.body,
+            // Single column holds the To list (joined). Cc/Bcc are delivered
+            // but not persisted separately (would need a schema migration).
+            recipientEmail: toJoined.slice(0, 255),
+            body: safeBody,
             attachments:
               parsedInput.attachments.length > 0
                 ? {

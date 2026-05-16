@@ -11,6 +11,7 @@ export class ResendMailer implements Mailer {
       from: resendOptions.from,
       to: payload.recipient,
       ...(payload.cc ? { cc: payload.cc } : {}),
+      ...(payload.bcc ? { bcc: payload.bcc } : {}),
       ...(payload.replyTo ? { replyTo: payload.replyTo } : {}),
       subject: payload.subject,
       html: payload.html,

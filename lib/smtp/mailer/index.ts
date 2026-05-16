@@ -1,6 +1,7 @@
 export type MailerPayload = {
-  recipient: string;
+  recipient: string | string[];
   cc?: string | string[];
+  bcc?: string | string[];
   replyTo?: string;
   subject: string;
   text: string;

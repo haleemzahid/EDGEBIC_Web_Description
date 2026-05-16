@@ -13,38 +13,19 @@ import {
   type StagedAttachmentItem
 } from '@/components/dashboard/ticket-attachment-ui';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle
-} from '@/components/ui/drawer';
+import { ComposeWindow } from '@/components/ui/compose-window';
 import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
   FormProvider
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Routes } from '@/constants/routes';
-import { MediaQueries } from '@/constants/media-queries';
 import { useEnhancedModal } from '@/hooks/use-enhanced-modal';
-import { useMediaQuery } from '@/hooks/use-media-query';
 import { useZodForm } from '@/hooks/use-zod-form';
-import { cn } from '@/lib/utils';
 import {
   composeClientMessageSchema,
   type ComposeClientMessageSchema
@@ -66,7 +47,6 @@ const MAX_ATTACHMENTS = 5;
 export const ComposeMessageModal = NiceModal.create<NiceModalHocProps>(() => {
   const modal = useEnhancedModal();
   const router = useRouter();
-  const mdUp = useMediaQuery(MediaQueries.MdUp, { ssr: false });
   const methods = useZodForm({
     schema: composeClientMessageSchema,
     mode: 'onSubmit',
@@ -149,8 +129,7 @@ export const ComposeMessageModal = NiceModal.create<NiceModalHocProps>(() => {
   const removeStaged = (tempId: string): void => {
     setStaged((prev) => prev.filter((s) => s.tempId !== tempId));
   };
-  const title = 'New message';
-  const description = 'Start a new conversation with your project team.';
+
   const canSubmit =
     !methods.formState.isSubmitting &&
     (!methods.formState.isSubmitted || methods.formState.isDirty);
@@ -186,138 +165,105 @@ export const ComposeMessageModal = NiceModal.create<NiceModalHocProps>(() => {
     }
   };
 
-  const renderForm = (
-    <form
-      className={cn('space-y-4', !mdUp && 'p-4')}
-      onSubmit={methods.handleSubmit(onSubmit)}
-    >
-      <FormField
-        control={methods.control}
-        name="subject"
-        render={({ field }) => (
-          <FormItem className="flex w-full flex-col space-y-1.5">
-            <FormLabel required>Subject</FormLabel>
-            <FormControl>
-              <Input
-                {...field}
-                type="text"
-                maxLength={500}
-                required
-                placeholder="e.g. Question about my project timeline"
-                disabled={methods.formState.isSubmitting}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={methods.control}
-        name="body"
-        render={({ field }) => (
-          <FormItem className="flex w-full flex-col space-y-1.5">
-            <FormLabel required>Message</FormLabel>
-            <FormControl>
-              <Textarea
-                {...field}
-                rows={8}
-                maxLength={20000}
-                required
-                placeholder="Write your message…"
-                disabled={methods.formState.isSubmitting}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      {staged.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {staged.map((s) => (
-            <StagedAttachmentChip
-              key={s.tempId}
-              item={s}
-              onRemove={() => removeStaged(s.tempId)}
-            />
-          ))}
-        </div>
-      )}
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        hidden
-        onChange={onPickFiles}
-      />
-      <button
-        type="button"
-        onClick={() => fileInputRef.current?.click()}
-        disabled={
-          methods.formState.isSubmitting || staged.length >= MAX_ATTACHMENTS
-        }
-        className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
-        title="Attach files"
-      >
-        <PaperclipIcon className="size-3.5 shrink-0" />
-        Attach files
-      </button>
-    </form>
-  );
-
-  const renderButtons = (
+  const footer = (
     <>
-      <Button
-        type="button"
-        variant="outline"
-        onClick={modal.handleClose}
-      >
-        Cancel
-      </Button>
       <Button
         type="button"
         variant="default"
         disabled={!canSubmit}
         onClick={methods.handleSubmit(onSubmit)}
       >
-        Send message
+        Send
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={
+          methods.formState.isSubmitting || staged.length >= MAX_ATTACHMENTS
+        }
+        title="Attach files"
+        aria-label="Attach files"
+      >
+        <PaperclipIcon className="size-4 shrink-0" />
       </Button>
     </>
   );
 
   return (
     <FormProvider {...methods}>
-      {mdUp ? (
-        <Dialog open={modal.visible}>
-          <DialogContent
-            className="max-h-[95vh] w-[95vw] max-w-lg overflow-y-auto"
-            onClose={modal.handleClose}
-            onAnimationEndCapture={modal.handleAnimationEndCapture}
-          >
-            <DialogHeader>
-              <DialogTitle>{title}</DialogTitle>
-              <DialogDescription>{description}</DialogDescription>
-            </DialogHeader>
-            {renderForm}
-            <DialogFooter>{renderButtons}</DialogFooter>
-          </DialogContent>
-        </Dialog>
-      ) : (
-        <Drawer
-          open={modal.visible}
-          onOpenChange={modal.handleOpenChange}
+      <ComposeWindow
+        open={modal.visible}
+        onClose={modal.handleClose}
+        title="New message"
+        closeDisabled={methods.formState.isSubmitting}
+        onFilesDropped={(files) => void uploadFiles(files)}
+        footer={footer}
+      >
+        <form
+          className="flex min-h-0 flex-1 flex-col"
+          onSubmit={methods.handleSubmit(onSubmit)}
         >
-          <DrawerContent>
-            <DrawerHeader className="text-left">
-              <DrawerTitle>{title}</DrawerTitle>
-              <DrawerDescription>{description}</DrawerDescription>
-            </DrawerHeader>
-            {renderForm}
-            <DrawerFooter className="flex-col-reverse pt-4">
-              {renderButtons}
-            </DrawerFooter>
-          </DrawerContent>
-        </Drawer>
-      )}
+          <FormField
+            control={methods.control}
+            name="subject"
+            render={({ field }) => (
+              <FormItem className="space-y-0 border-b px-4">
+                <FormControl>
+                  <Input
+                    {...field}
+                    type="text"
+                    maxLength={500}
+                    required
+                    placeholder="Subject"
+                    disabled={methods.formState.isSubmitting}
+                    className="h-10 border-0 px-0 shadow-none focus-visible:ring-0"
+                  />
+                </FormControl>
+                <FormMessage className="pb-1" />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={methods.control}
+            name="body"
+            render={({ field }) => (
+              <FormItem className="flex min-h-0 flex-1 flex-col space-y-0 px-4 py-2">
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    maxLength={20000}
+                    required
+                    placeholder="Write your message…"
+                    disabled={methods.formState.isSubmitting}
+                    className="min-h-[160px] flex-1 resize-none border-0 px-0 shadow-none focus-visible:ring-0"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {staged.length > 0 && (
+            <div className="flex flex-wrap gap-2 px-4 pb-2">
+              {staged.map((s) => (
+                <StagedAttachmentChip
+                  key={s.tempId}
+                  item={s}
+                  onRemove={() => removeStaged(s.tempId)}
+                />
+              ))}
+            </div>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            hidden
+            onChange={onPickFiles}
+          />
+        </form>
+      </ComposeWindow>
     </FormProvider>
   );
 });

@@ -10,9 +10,17 @@ import {
   InboxIcon,
   PaperclipIcon,
   SendIcon,
+  SmileIcon,
   TrashIcon
 } from 'lucide-react';
+import EmojiPicker, {
+  EmojiStyle,
+  SkinTones,
+  Theme,
+  type EmojiClickData
+} from 'emoji-picker-react';
 import { toast } from 'sonner';
+import { z } from 'zod';
 
 import { deleteContactEmails } from '@/actions/contacts/delete-contact-emails';
 import { markContactEmailRead } from '@/actions/contacts/mark-contact-email-read';
@@ -27,15 +35,15 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog';
+import { ComposeWindow } from '@/components/ui/compose-window';
 import { Input } from '@/components/ui/input';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from '@/components/ui/popover';
+import { RecipientField } from '@/components/ui/recipient-field';
+import { TextEditor } from '@/components/ui/text-editor';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { cn, getInitials } from '@/lib/utils';
@@ -60,6 +68,44 @@ type StagedAttachment = StagedAttachmentItem & {
 };
 
 const MAX_REPLY_ATTACHMENTS = 5;
+
+// Local, dependency-free check so we don't pull the server-side
+// sanitize-html module into the client bundle. New rich-text messages are
+// stored as sanitized HTML; legacy / plain-text messages render as text.
+function isHtmlBody(value: string): boolean {
+  return /<\/?[a-z][\s\S]*>/i.test(value);
+}
+
+const draftStorageKey = (contactId: string): string =>
+  `compose-draft:${contactId}`;
+
+// Reuse zod (the project's validation lib) for email checks instead of a
+// hand-rolled regex.
+const emailSchema = z.string().trim().email();
+const isEmail = (value: string): boolean =>
+  emailSchema.safeParse(value).success;
+
+// Append an emoji into the rich-text HTML body. Mirrors the comment box,
+// which also appends rather than inserting at the caret (the shared
+// TextEditor is seed-once, so the body is re-seeded after this).
+function appendEmojiToHtml(html: string, emoji: string): string {
+  if (/<\/p>\s*$/i.test(html)) {
+    return html.replace(/<\/p>\s*$/i, `${emoji}</p>`);
+  }
+  return (html ?? '') + emoji;
+}
+
+// True if the rich-text body has actual content (an empty Lexical editor
+// still emits markup like "<p><br></p>").
+function htmlHasContent(html: string): boolean {
+  return (
+    html
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/\s+/g, '')
+      .trim().length > 0
+  );
+}
 
 type ThreadParticipant = {
   name: string;
@@ -153,11 +199,24 @@ export function ContactInbox({
   const [replyText, setReplyText] = React.useState<string>('');
   const [stagedReply, setStagedReply] = React.useState<StagedAttachment[]>([]);
   const [composeOpen, setComposeOpen] = React.useState<boolean>(false);
+  const [showCc, setShowCc] = React.useState<boolean>(false);
+  const [showBcc, setShowBcc] = React.useState<boolean>(false);
+  // Bumped to force the seed-once rich-text editor to remount & re-read the
+  // body (on open, forward, draft-restore, emoji insert).
+  const [composeEditorKey, setComposeEditorKey] = React.useState<number>(0);
   const [composeDraft, setComposeDraft] = React.useState<{
-    to: string;
+    to: string[];
+    cc: string[];
+    bcc: string[];
     subject: string;
     body: string;
-  }>({ to: contact.email || '', subject: '', body: '' });
+  }>({
+    to: contact.email ? [contact.email] : [],
+    cc: [],
+    bcc: [],
+    subject: '',
+    body: ''
+  });
   const [stagedCompose, setStagedCompose] = React.useState<StagedAttachment[]>(
     []
   );
@@ -374,14 +433,85 @@ export function ContactInbox({
     });
   };
 
+  // Persist the draft so closing/minimizing or a reload doesn't lose it.
+  React.useEffect(() => {
+    if (!composeOpen || typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(
+        draftStorageKey(contact.id),
+        JSON.stringify({
+          to: composeDraft.to,
+          cc: composeDraft.cc,
+          bcc: composeDraft.bcc,
+          subject: composeDraft.subject,
+          body: composeDraft.body
+        })
+      );
+    } catch {
+      // storage full / unavailable — drafting still works in-memory
+    }
+  }, [composeOpen, composeDraft, contact.id]);
+
+  const clearSavedDraft = (): void => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.removeItem(draftStorageKey(contact.id));
+    } catch {
+      // ignore
+    }
+  };
+
   const openCompose = (initial?: Partial<typeof composeDraft>): void => {
+    // An explicit initial (reply/forward) always wins; otherwise restore a
+    // previously saved draft for this contact if one exists.
+    let restored: Partial<typeof composeDraft> | null = null;
+    if (!initial && typeof window !== 'undefined') {
+      try {
+        const raw = window.localStorage.getItem(draftStorageKey(contact.id));
+        if (raw) restored = JSON.parse(raw) as Partial<typeof composeDraft>;
+      } catch {
+        restored = null;
+      }
+    }
+    const src = initial ?? restored ?? undefined;
     setComposeDraft({
-      to: initial?.to ?? contact.email ?? '',
-      subject: initial?.subject ?? '',
-      body: initial?.body ?? ''
+      to: src?.to ?? (contact.email ? [contact.email] : []),
+      cc: src?.cc ?? [],
+      bcc: src?.bcc ?? [],
+      subject: src?.subject ?? '',
+      body: src?.body ?? ''
     });
+    setShowCc((src?.cc?.length ?? 0) > 0);
+    setShowBcc((src?.bcc?.length ?? 0) > 0);
     setStagedCompose([]);
+    setComposeEditorKey((k) => k + 1);
     setComposeOpen(true);
+  };
+
+  const handleComposeEmoji = (emoji: EmojiClickData): void => {
+    setComposeDraft((d) => ({
+      ...d,
+      body: appendEmojiToHtml(d.body, emoji.emoji)
+    }));
+    // Re-seed the seed-once editor so the emoji shows immediately.
+    setComposeEditorKey((k) => k + 1);
+  };
+
+  const handleComposeClose = (): void => {
+    const hasDraft =
+      composeDraft.subject.trim().length > 0 ||
+      htmlHasContent(composeDraft.body) ||
+      composeDraft.cc.length > 0 ||
+      composeDraft.bcc.length > 0 ||
+      stagedCompose.length > 0;
+    if (
+      hasDraft &&
+      !window.confirm('Discard this email? Your draft will be lost.')
+    ) {
+      return;
+    }
+    clearSavedDraft();
+    setComposeOpen(false);
   };
 
   const uploadComposeFiles = async (files: File[]): Promise<void> => {
@@ -456,13 +586,32 @@ export function ContactInbox({
     if (!selectedThread) return;
     const last = selectedThread.messages[selectedThread.messages.length - 1];
     const participant = getThreadParticipant(selectedThread, contact);
-    const quoted = last
-      ? `\n\n---------- Forwarded message ----------\nFrom: ${
-          last.senderName
-        }${last.senderEmail ? ` <${last.senderEmail}>` : ''}\nDate: ${last.createdAt.toLocaleString()}\nSubject: ${selectedThread.subject}\n\n${last.body}`
+    // Body is HTML now — build an HTML quote. Legacy/plain bodies get
+    // escaped and their newlines converted so they survive in rich text.
+    const esc = (s: string): string =>
+      s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    const innerHtml = last
+      ? isHtmlBody(last.body)
+        ? last.body
+        : esc(last.body).replace(/\n/g, '<br/>')
       : '';
+    const quoted = last
+      ? `<p><br/></p><p>---------- Forwarded message ----------</p><p>From: ${esc(
+          last.senderName
+        )}${
+          last.senderEmail ? ` &lt;${esc(last.senderEmail)}&gt;` : ''
+        }<br/>Date: ${esc(
+          last.createdAt.toLocaleString()
+        )}<br/>Subject: ${esc(
+          selectedThread.subject
+        )}</p><blockquote>${innerHtml}</blockquote>`
+      : '';
+    const fwdTo = participant.email ?? contact.email;
     openCompose({
-      to: participant.email ?? contact.email ?? '',
+      to: fwdTo ? [fwdTo] : [],
       subject: selectedThread.subject.startsWith('Fwd:')
         ? selectedThread.subject
         : `Fwd: ${selectedThread.subject}`,
@@ -471,10 +620,17 @@ export function ContactInbox({
   };
 
   const handleSendCompose = (): void => {
-    const to = composeDraft.to.trim();
+    const to = composeDraft.to.map((e) => e.trim()).filter(Boolean);
+    const cc = composeDraft.cc.map((e) => e.trim()).filter(Boolean);
+    const bcc = composeDraft.bcc.map((e) => e.trim()).filter(Boolean);
     const subject = composeDraft.subject.trim();
     const body = composeDraft.body.trim();
-    if (!to || !subject || !body) return;
+    if (to.length === 0 || !subject || !htmlHasContent(body)) return;
+    const invalid = [...to, ...cc, ...bcc].find((e) => !isEmail(e));
+    if (invalid) {
+      toast.error(`Invalid email address: ${invalid}`);
+      return;
+    }
     if (stagedCompose.some((s) => s.state === 'uploading')) {
       toast.error('Please wait for uploads to finish');
       return;
@@ -486,17 +642,26 @@ export function ContactInbox({
       const result = await sendContactEmail({
         contactId: contact.id,
         to,
+        cc,
+        bcc,
         subject,
         body,
         attachments: readyAttachments
       });
       if (result?.serverError) {
-        toast.error("Email couldn't be sent");
+        toast.error(result.serverError || "Email couldn't be sent");
         return;
       }
       const newThreadId = result?.data?.threadId;
+      clearSavedDraft();
       setComposeOpen(false);
-      setComposeDraft({ to: contact.email || '', subject: '', body: '' });
+      setComposeDraft({
+        to: contact.email ? [contact.email] : [],
+        cc: [],
+        bcc: [],
+        subject: '',
+        body: ''
+      });
       setStagedCompose([]);
       setFolder('SENT');
       if (newThreadId) {
@@ -579,133 +744,186 @@ export function ContactInbox({
         )}
       </div>
 
-      {/* Compose dialog */}
-      <Dialog
+      {/* Gmail-style compose window */}
+      <ComposeWindow
         open={composeOpen}
-        onOpenChange={setComposeOpen}
-      >
-        <DialogContent
-          className="max-w-lg"
-          onClose={() => setComposeOpen(false)}
-        >
-          <DialogHeader>
-            <DialogTitle>New email</DialogTitle>
-            <DialogDescription>
-              Compose a new email to {contact.name || 'this contact'}.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="compose-to"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                To
-              </label>
-              <Input
-                id="compose-to"
-                type="email"
-                value={composeDraft.to}
-                onChange={(e) =>
-                  setComposeDraft((d) => ({ ...d, to: e.target.value }))
-                }
-                placeholder="recipient@example.com"
-                disabled={pending}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="compose-subject"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                Subject
-              </label>
-              <Input
-                id="compose-subject"
-                value={composeDraft.subject}
-                onChange={(e) =>
-                  setComposeDraft((d) => ({ ...d, subject: e.target.value }))
-                }
-                placeholder="Subject"
-                disabled={pending}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="compose-body"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                Message
-              </label>
-              <Textarea
-                id="compose-body"
-                rows={6}
-                value={composeDraft.body}
-                onChange={(e) =>
-                  setComposeDraft((d) => ({ ...d, body: e.target.value }))
-                }
-                placeholder="Write your message…"
-                disabled={pending}
-              />
-            </div>
-            {stagedCompose.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {stagedCompose.map((s) => (
-                  <StagedAttachmentChip
-                    key={s.tempId}
-                    item={s}
-                    onRemove={() => removeStagedCompose(s.tempId)}
-                  />
-                ))}
-              </div>
-            )}
-            <input
-              ref={composeFileInputRef}
-              type="file"
-              multiple
-              hidden
-              onChange={onComposePickFiles}
-            />
-            <div>
-              <button
-                type="button"
-                onClick={() => composeFileInputRef.current?.click()}
-                disabled={
-                  pending || stagedCompose.length >= MAX_REPLY_ATTACHMENTS
-                }
-                className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
-                title="Attach files"
-              >
-                <PaperclipIcon className="size-3.5 shrink-0" />
-                Attach files
-              </button>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setComposeOpen(false)}
-              disabled={pending}
-            >
-              Cancel
-            </Button>
+        onClose={handleComposeClose}
+        title={composeDraft.subject.trim() || 'New email'}
+        closeDisabled={pending}
+        onFilesDropped={(files) => void uploadComposeFiles(files)}
+        footer={
+          <>
             <Button
               type="button"
               onClick={handleSendCompose}
               disabled={
                 pending ||
-                !composeDraft.to.trim() ||
+                composeDraft.to.length === 0 ||
                 !composeDraft.subject.trim() ||
-                !composeDraft.body.trim()
+                !htmlHasContent(composeDraft.body)
               }
             >
               <SendIcon className="mr-1 size-3.5 shrink-0" />
               Send
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => composeFileInputRef.current?.click()}
+              disabled={
+                pending || stagedCompose.length >= MAX_REPLY_ATTACHMENTS
+              }
+              title="Attach files"
+              aria-label="Attach files"
+            >
+              <PaperclipIcon className="size-4 shrink-0" />
+            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disabled={pending}
+                  title="Insert emoji"
+                  aria-label="Insert emoji"
+                >
+                  <SmileIcon className="size-4 shrink-0" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="start"
+                className="w-fit border-0 p-0"
+              >
+                <EmojiPicker
+                  onEmojiClick={handleComposeEmoji}
+                  autoFocusSearch={false}
+                  theme={Theme.LIGHT}
+                  previewConfig={{ showPreview: false }}
+                  skinTonesDisabled
+                  defaultSkinTone={SkinTones.NEUTRAL}
+                  emojiStyle={EmojiStyle.NATIVE}
+                />
+              </PopoverContent>
+            </Popover>
+          </>
+        }
+      >
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex items-start gap-2 border-b px-4 py-1">
+            <span className="mt-2 text-sm text-muted-foreground">To</span>
+            <div className="min-w-0 flex-1">
+              <RecipientField
+                value={composeDraft.to}
+                onChange={(emails) =>
+                  setComposeDraft((d) => ({ ...d, to: emails }))
+                }
+                validate={isEmail}
+                placeholder="recipient@example.com"
+                disabled={pending}
+              />
+            </div>
+            <div className="mt-2 flex shrink-0 items-center gap-2 text-sm text-muted-foreground">
+              {!showCc && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto px-1 py-0 font-normal"
+                  onClick={() => setShowCc(true)}
+                >
+                  Cc
+                </Button>
+              )}
+              {!showBcc && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto px-1 py-0 font-normal"
+                  onClick={() => setShowBcc(true)}
+                >
+                  Bcc
+                </Button>
+              )}
+            </div>
+          </div>
+          {showCc && (
+            <div className="flex items-start gap-2 border-b px-4 py-1">
+              <span className="mt-2 text-sm text-muted-foreground">Cc</span>
+              <div className="min-w-0 flex-1">
+                <RecipientField
+                  value={composeDraft.cc}
+                  onChange={(emails) =>
+                    setComposeDraft((d) => ({ ...d, cc: emails }))
+                  }
+                  validate={isEmail}
+                  disabled={pending}
+                />
+              </div>
+            </div>
+          )}
+          {showBcc && (
+            <div className="flex items-start gap-2 border-b px-4 py-1">
+              <span className="mt-2 text-sm text-muted-foreground">Bcc</span>
+              <div className="min-w-0 flex-1">
+                <RecipientField
+                  value={composeDraft.bcc}
+                  onChange={(emails) =>
+                    setComposeDraft((d) => ({ ...d, bcc: emails }))
+                  }
+                  validate={isEmail}
+                  disabled={pending}
+                />
+              </div>
+            </div>
+          )}
+          <div className="border-b px-4">
+            <Input
+              id="compose-subject"
+              value={composeDraft.subject}
+              onChange={(e) =>
+                setComposeDraft((d) => ({ ...d, subject: e.target.value }))
+              }
+              placeholder="Subject"
+              disabled={pending}
+              className="h-10 border-0 px-0 shadow-none focus-visible:ring-0"
+            />
+          </div>
+          <div className="flex-1 px-3 py-2">
+            <TextEditor
+              // Remount per open so it re-seeds from the (possibly
+              // forwarded/draft-restored) body; the editor is seed-once.
+              key={composeEditorKey}
+              getText={() => composeDraft.body}
+              setText={(html) =>
+                setComposeDraft((d) => ({ ...d, body: html }))
+              }
+              placeholder="Write your message…"
+              height="220px"
+            />
+          </div>
+          {stagedCompose.length > 0 && (
+            <div className="flex flex-wrap gap-2 px-4 pb-2">
+              {stagedCompose.map((s) => (
+                <StagedAttachmentChip
+                  key={s.tempId}
+                  item={s}
+                  onRemove={() => removeStagedCompose(s.tempId)}
+                />
+              ))}
+            </div>
+          )}
+          <input
+            ref={composeFileInputRef}
+            type="file"
+            multiple
+            hidden
+            onChange={onComposePickFiles}
+          />
+        </div>
+      </ComposeWindow>
     </div>
   );
 }
@@ -1082,9 +1300,19 @@ function ThreadReader({
                         : 'border bg-muted text-foreground'
                     )}
                   >
-                    <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                      {message.body}
-                    </p>
+                    {isHtmlBody(message.body) ? (
+                      <div
+                        className="text-sm leading-relaxed [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+                        // Body is sanitized server-side before it is stored
+                        // (see lib/email/sanitize-email-html.ts). Legacy /
+                        // plain-text messages fall through to the <p> branch.
+                        dangerouslySetInnerHTML={{ __html: message.body }}
+                      />
+                    ) : (
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                        {message.body}
+                      </p>
+                    )}
                   </div>
                 )}
                 {message.attachments.length > 0 && (

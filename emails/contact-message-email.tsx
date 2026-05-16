@@ -10,9 +10,13 @@ import {
 } from '@react-email/components';
 
 import { AppInfo } from '@/constants/app-info';
+import {
+  looksLikeHtml,
+  sanitizeEmailHtml
+} from '@/lib/email/sanitize-email-html';
 
 export type ContactMessageEmailData = {
-  recipient: string;
+  recipient: string | string[];
   recipientName?: string;
   subject: string;
   body: string;
@@ -59,17 +63,29 @@ export const ContactMessageEmail = ({
           >
             {recipientName ? `Hi ${recipientName},` : 'Hello,'}
           </Heading>
-          <Text
-            style={{
-              margin: 0,
-              fontSize: '15px',
-              lineHeight: '1.7',
-              color: '#1e293b',
-              whiteSpace: 'pre-wrap' as const
-            }}
-          >
-            {body}
-          </Text>
+          {looksLikeHtml(body) ? (
+            <div
+              style={{
+                margin: 0,
+                fontSize: '15px',
+                lineHeight: '1.7',
+                color: '#1e293b'
+              }}
+              dangerouslySetInnerHTML={{ __html: sanitizeEmailHtml(body) }}
+            />
+          ) : (
+            <Text
+              style={{
+                margin: 0,
+                fontSize: '15px',
+                lineHeight: '1.7',
+                color: '#1e293b',
+                whiteSpace: 'pre-wrap' as const
+              }}
+            >
+              {body}
+            </Text>
+          )}
           <Text
             style={{
               marginTop: '32px',
