@@ -2,7 +2,21 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-export const TICKET_ATTACHMENT_PUBLIC_DIR = 'uploads/ticket-attachments';
+import { uploadRawToCloudinary, useCloudinary } from '@/lib/uploads/cloudinary';
+
+// Two backends, chosen automatically (see lib/uploads/cloudinary.ts):
+//  - production: Cloudinary (raw), public_id = storedName so the URL is
+//    deterministic and rebuildable from just the stored name.
+//  - local dev: disk under ./data/ticket-attachments, served by
+//    app/(app)/api/ticket-attachments/[name]/route.ts
+// Either way the DB only stores `storedName`; the URL is derived in
+// ticketAttachmentUrl().
+
+// Cloudinary folder + local-dev directory.
+export const TICKET_ATTACHMENT_FOLDER = 'ticket-attachments';
+export const TICKET_ATTACHMENT_DIR =
+  process.env.TICKET_ATTACHMENT_DIR ||
+  path.join(process.cwd(), 'data', 'ticket-attachments');
 export const TICKET_ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 export const TICKET_ATTACHMENT_MAX_PER_MESSAGE = 5;
 
@@ -39,6 +53,12 @@ function sanitizeFilename(filename: string): string {
   return safe || 'file';
 }
 
+// Stored names are `<uuid>` optionally followed by a simple extension.
+// Reject anything else so the serving route can't be path-traversed.
+export function isValidAttachmentName(name: string): boolean {
+  return /^[0-9a-f-]{36}(\.[a-z0-9]{1,8})?$/.test(name);
+}
+
 export type SavedAttachment = {
   storedName: string;
   fileName: string;
@@ -64,21 +84,32 @@ export async function saveTicketAttachmentFile(
 
   const ext = sanitizeExtension(file.name);
   const storedName = `${randomUUID()}${ext}`;
-  const targetDir = path.join(process.cwd(), 'public', TICKET_ATTACHMENT_PUBLIC_DIR);
-  await mkdir(targetDir, { recursive: true });
-
   const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(targetDir, storedName), buffer);
+
+  if (useCloudinary()) {
+    // public_id = storedName (extension included) so the delivery URL is
+    // deterministic: ticketAttachmentUrl() can rebuild it later.
+    await uploadRawToCloudinary(buffer, {
+      folder: TICKET_ATTACHMENT_FOLDER,
+      publicId: storedName
+    });
+  } else {
+    await mkdir(TICKET_ATTACHMENT_DIR, { recursive: true });
+    await writeFile(path.join(TICKET_ATTACHMENT_DIR, storedName), buffer);
+  }
 
   return {
     storedName,
     fileName: sanitizeFilename(file.name),
     mimeType: file.type || 'application/octet-stream',
     sizeBytes: file.size,
-    publicUrl: `/${TICKET_ATTACHMENT_PUBLIC_DIR}/${storedName}`
+    publicUrl: ticketAttachmentPublicUrl(storedName)
   };
 }
 
+// Single source of truth for an attachment's URL. Always points at our
+// own route, which streams from disk (dev) or redirects to Cloudinary
+// (prod) — so callers never need to know the backend.
 export function ticketAttachmentPublicUrl(storedName: string): string {
-  return `/${TICKET_ATTACHMENT_PUBLIC_DIR}/${storedName}`;
+  return `/api/ticket-attachments/${storedName}`;
 }
