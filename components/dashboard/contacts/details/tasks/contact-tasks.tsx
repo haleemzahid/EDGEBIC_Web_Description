@@ -4,16 +4,13 @@ import * as React from 'react';
 import NiceModal from '@ebay/nice-modal-react';
 import {
   ContactPriority,
-  ContactTaskCategory,
-  ContactTaskStatus
+  ContactTaskCategory
 } from '@prisma/client';
 import { CheckSquare2Icon } from 'lucide-react';
 
 import { AddContactTaskModal } from '@/components/dashboard/contacts/details/tasks/add-contact-task-modal';
-import { ContactTaskList } from '@/components/dashboard/contacts/details/tasks/contact-task-list';
+import { ContactTasksDataTable } from '@/components/dashboard/contacts/details/tasks/contact-tasks-data-table';
 import { Button } from '@/components/ui/button';
-import { EmptyText } from '@/components/ui/empty-text';
-import { ResponsiveScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -21,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { MediaQueries } from '@/constants/media-queries';
+import { TransitionProvider } from '@/hooks/use-transition-context';
 import type { ContactDto } from '@/types/dtos/contact-dto';
 import type { ContactMeetingDto } from '@/types/dtos/contact-meeting-dto';
 import type { ContactTaskDto } from '@/types/dtos/contact-task-dto';
@@ -67,13 +64,6 @@ export function ContactTasks({
     [tasks, categoryFilter, assigneeFilter, priorityFilter, meetingFilter]
   );
 
-  const openTasks = filteredTasks.filter(
-    (task) => task.status === ContactTaskStatus.OPEN
-  );
-  const completedTasks = filteredTasks.filter(
-    (task) => task.status === ContactTaskStatus.COMPLETED
-  );
-
   const handleShowAddTaskModal = (): void => {
     NiceModal.show(AddContactTaskModal, {
       contactId: contact.id,
@@ -96,105 +86,120 @@ export function ContactTasks({
     meetingFilter !== ALL;
 
   return (
-    <ResponsiveScrollArea
-      breakpoint={MediaQueries.MdUp}
-      mediaQueryOptions={{ ssr: true }}
-      className="h-full"
-    >
-      <div className="border-b">
-        <div className="flex flex-row items-center justify-between gap-2 px-6 pb-2 pt-4">
-          <div>
-            <h1 className="text-base font-semibold">Tasks</h1>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              To-do items linked to this contact.
-            </p>
-          </div>
+    <div className="flex h-full flex-col">
+      <div className="flex flex-row items-center justify-between gap-2 border-b px-6 pb-2 pt-4">
+        <div>
+          <h1 className="text-base font-semibold">Tasks</h1>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            To-do items linked to this contact.
+          </p>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          onClick={handleShowAddTaskModal}
+        >
+          <CheckSquare2Icon className="mr-1 size-3.5 shrink-0" />
+          Add task
+        </Button>
+      </div>
+
+      <div className="flex flex-row flex-wrap items-center gap-2 border-b px-6 py-3">
+        <FilterSelect
+          value={categoryFilter}
+          onChange={setCategoryFilter}
+          placeholder="All categories"
+          options={[
+            { value: ContactTaskCategory.SALES, label: 'Sales' },
+            { value: ContactTaskCategory.ONBOARDING, label: 'Onboarding' },
+            { value: ContactTaskCategory.SUPPORT, label: 'Support' },
+            { value: ContactTaskCategory.FOLLOW_UP, label: 'Follow-up' }
+          ]}
+        />
+        <FilterSelect
+          value={assigneeFilter}
+          onChange={setAssigneeFilter}
+          placeholder="All assignees"
+          options={members.map((m) => ({ value: m.id, label: m.name }))}
+        />
+        <FilterSelect
+          value={priorityFilter}
+          onChange={setPriorityFilter}
+          placeholder="All priorities"
+          options={[
+            { value: ContactPriority.HIGH, label: 'High' },
+            { value: ContactPriority.MEDIUM, label: 'Medium' },
+            { value: ContactPriority.LOW, label: 'Low' }
+          ]}
+        />
+        <FilterSelect
+          value={meetingFilter}
+          onChange={setMeetingFilter}
+          placeholder="All meetings"
+          options={[
+            { value: NO_MEETING, label: '— No meeting —' },
+            ...meetings.map((m) => ({ value: m.id, label: m.title }))
+          ]}
+        />
+        {hasActiveFilter && (
           <Button
             type="button"
+            variant="ghost"
             size="sm"
-            onClick={handleShowAddTaskModal}
+            className="h-8 text-xs"
+            onClick={handleClear}
           >
-            <CheckSquare2Icon className="mr-1 size-3.5 shrink-0" />
-            Add task
+            Clear
           </Button>
-        </div>
-
-        <div className="flex flex-row flex-wrap items-center gap-2 px-6 pb-3">
-          <FilterSelect
-            value={categoryFilter}
-            onChange={setCategoryFilter}
-            placeholder="All categories"
-            options={[
-              { value: ContactTaskCategory.SALES, label: 'Sales' },
-              { value: ContactTaskCategory.ONBOARDING, label: 'Onboarding' },
-              { value: ContactTaskCategory.SUPPORT, label: 'Support' },
-              { value: ContactTaskCategory.FOLLOW_UP, label: 'Follow-up' }
-            ]}
-          />
-          <FilterSelect
-            value={assigneeFilter}
-            onChange={setAssigneeFilter}
-            placeholder="All assignees"
-            options={members.map((m) => ({ value: m.id, label: m.name }))}
-          />
-          <FilterSelect
-            value={priorityFilter}
-            onChange={setPriorityFilter}
-            placeholder="All priorities"
-            options={[
-              { value: ContactPriority.HIGH, label: 'High' },
-              { value: ContactPriority.MEDIUM, label: 'Medium' },
-              { value: ContactPriority.LOW, label: 'Low' }
-            ]}
-          />
-          <FilterSelect
-            value={meetingFilter}
-            onChange={setMeetingFilter}
-            placeholder="All meetings"
-            options={[
-              { value: NO_MEETING, label: '— No meeting —' },
-              ...meetings.map((m) => ({ value: m.id, label: m.title }))
-            ]}
-          />
-          {hasActiveFilter && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 text-xs"
-              onClick={handleClear}
-            >
-              Clear
-            </Button>
-          )}
-        </div>
-
-        <SectionHeading>Open · {openTasks.length}</SectionHeading>
-        {openTasks.length > 0 ? (
-          <ContactTaskList
-            tasks={openTasks}
-            meetings={meetings}
-            members={members}
-          />
-        ) : (
-          <EmptyText className="p-6">
-            There is no open task for this contact.
-          </EmptyText>
-        )}
-        <SectionHeading>Done · {completedTasks.length}</SectionHeading>
-        {completedTasks.length > 0 ? (
-          <ContactTaskList
-            tasks={completedTasks}
-            meetings={meetings}
-            members={members}
-          />
-        ) : (
-          <EmptyText className="p-6">
-            There is no completed task for this contact.
-          </EmptyText>
         )}
       </div>
-    </ResponsiveScrollArea>
+
+      <div className="flex min-h-0 flex-1 flex-col">
+        {filteredTasks.length === 0 ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
+            <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+              <CheckSquare2Icon className="size-5 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-sm font-medium">
+                {tasks.length === 0 ? 'No tasks' : 'No matching tasks'}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {tasks.length === 0
+                  ? 'To-do items linked to this contact will appear here.'
+                  : 'Try clearing the filters above.'}
+              </p>
+            </div>
+            {tasks.length === 0 ? (
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleShowAddTaskModal}
+              >
+                + Add task
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleClear}
+              >
+                Clear filters
+              </Button>
+            )}
+          </div>
+        ) : (
+          <TransitionProvider>
+            <ContactTasksDataTable
+              data={filteredTasks}
+              members={members}
+              meetings={meetings}
+            />
+          </TransitionProvider>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -231,15 +236,5 @@ function FilterSelect({
         ))}
       </SelectContent>
     </Select>
-  );
-}
-
-function SectionHeading(
-  props: React.PropsWithChildren
-): React.JSX.Element {
-  return (
-    <h4 className="border-y bg-muted/40 px-6 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-      {props.children}
-    </h4>
   );
 }

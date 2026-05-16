@@ -9,8 +9,10 @@ import {
 
 import {
   ClientTicketsPriorityAll,
+  ClientTicketsSortBy,
   ClientTicketsStatusAll
 } from '@/schemas/client-portal/get-client-tickets-schema';
+import { SortDirection } from '@/types/sort-direction';
 
 const statusValues = [
   ClientTicketsStatusAll,
@@ -29,6 +31,12 @@ export const searchParams = {
   ),
   priority: parseAsStringLiteral(priorityValues).withDefault(
     ClientTicketsPriorityAll
+  ),
+  sortBy: parseAsStringLiteral(Object.values(ClientTicketsSortBy)).withDefault(
+    ClientTicketsSortBy.UpdatedAt
+  ),
+  sortDirection: parseAsStringLiteral(Object.values(SortDirection)).withDefault(
+    SortDirection.Desc
   ),
   searchQuery: parseAsString.withDefault('')
 };

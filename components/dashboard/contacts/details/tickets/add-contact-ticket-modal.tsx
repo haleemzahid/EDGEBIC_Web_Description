@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
+import { useRouter } from 'next/navigation';
 import { ContactPriority, ContactTicketStatus } from '@prisma/client';
 import { format } from 'date-fns';
 import { type SubmitHandler } from 'react-hook-form';
@@ -75,6 +76,7 @@ export const AddContactTicketModal =
       hideMeetingField
     }) => {
       const modal = useEnhancedModal();
+      const router = useRouter();
       const mdUp = useMediaQuery(MediaQueries.MdUp, { ssr: false });
       const methods = useZodForm({
         schema: addContactTicketSchema,
@@ -112,6 +114,9 @@ export const AddContactTicketModal =
           toast.success(`Ticket #${result?.data?.number ?? ''} created`);
           methods.reset();
           modal.handleClose();
+          // Sibling edit/delete modals refresh the route; do the same here so
+          // the new ticket shows in the table immediately (no 10s polling).
+          router.refresh();
         } else {
           toast.error("Couldn't create ticket");
         }

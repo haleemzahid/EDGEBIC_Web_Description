@@ -161,7 +161,7 @@ export async function getClientTicketsList(
         createdAt: true,
         updatedAt: true
       },
-      orderBy: { updatedAt: 'desc' }
+      orderBy: { [parsed.sortBy]: parsed.sortDirection }
     }),
     prisma.contactTicket.count({ where }),
     prisma.contactTicket.count({ where: baseFilter })

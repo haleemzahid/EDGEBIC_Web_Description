@@ -2,9 +2,9 @@ import * as React from 'react';
 import { type Metadata } from 'next';
 import { InfoIcon } from 'lucide-react';
 
+import { ClientTicketsDataTable } from '@/components/dashboard/client-portal/client-tickets-data-table';
 import { ClientTicketsEmptyState } from '@/components/dashboard/client-portal/client-tickets-empty-state';
 import { ClientTicketsFilters } from '@/components/dashboard/client-portal/client-tickets-filters';
-import { ClientTicketsList } from '@/components/dashboard/client-portal/client-tickets-list';
 import { searchParamsCache } from '@/components/dashboard/client-portal/client-tickets-search-params';
 import { ClientUnlinkedNotice } from '@/components/dashboard/client-portal/client-unlinked-notice';
 import { NewClientTicketButton } from '@/components/dashboard/client-portal/new-ticket-button';
@@ -84,9 +84,9 @@ export default async function ClientSupportPage({
         <PageBody disableScroll={hasAnyTickets}>
           {hasAnyTickets ? (
             <React.Suspense>
-              <ClientTicketsList
-                tickets={tickets}
-                filteredCount={filteredCount}
+              <ClientTicketsDataTable
+                data={tickets}
+                totalCount={filteredCount}
               />
             </React.Suspense>
           ) : (

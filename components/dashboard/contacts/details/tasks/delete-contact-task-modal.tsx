@@ -1,6 +1,7 @@
 'use client';
 
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
+import { useRouter } from 'next/navigation';
 import { type SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -40,6 +41,7 @@ export type DeleteContactTaskModalProps = NiceModalHocProps & {
 export const DeleteContactTaskModal =
   NiceModal.create<DeleteContactTaskModalProps>(({ task }) => {
     const modal = useEnhancedModal();
+    const router = useRouter();
     const mdUp = useMediaQuery(MediaQueries.MdUp, { ssr: false });
     const methods = useZodForm({
       schema: deleteContactSchema,
@@ -59,6 +61,8 @@ export const DeleteContactTaskModal =
       if (!result?.serverError && !result?.validationErrors) {
         toast.success('Task deleted');
         modal.handleClose();
+        // No 10s polling on the Tasks table; refresh so the row disappears.
+        router.refresh();
       } else {
         toast.error("Task couldn't be deleted");
       }

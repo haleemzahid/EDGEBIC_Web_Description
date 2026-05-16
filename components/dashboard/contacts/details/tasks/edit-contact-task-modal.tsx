@@ -1,6 +1,7 @@
 'use client';
 
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
+import { useRouter } from 'next/navigation';
 import {
   ContactPriority,
   ContactTaskCategory,
@@ -71,6 +72,7 @@ const NO_VALUE = '__none__';
 export const EditContactTaskModal = NiceModal.create<EditContactTaskModalProps>(
   ({ task, meetings = [], members = [], hideMeetingField }) => {
     const modal = useEnhancedModal();
+    const router = useRouter();
     const mdUp = useMediaQuery(MediaQueries.MdUp, { ssr: false });
     const methods = useZodForm({
       schema: updateContactTaskSchema,
@@ -100,6 +102,8 @@ export const EditContactTaskModal = NiceModal.create<EditContactTaskModalProps>(
       if (!result?.serverError && !result?.validationErrors) {
         toast.success('Task updated');
         modal.handleClose();
+        // No 10s polling on the Tasks table; refresh so the edit shows.
+        router.refresh();
       } else {
         toast.error("Couldn't update task");
       }

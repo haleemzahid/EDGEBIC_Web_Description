@@ -1,6 +1,7 @@
 'use client';
 
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
+import { useRouter } from 'next/navigation';
 import {
   ContactPriority,
   ContactTaskCategory,
@@ -77,6 +78,7 @@ export const AddContactTaskModal = NiceModal.create<AddContactTaskModalProps>(
     hideMeetingField
   }) => {
     const modal = useEnhancedModal();
+    const router = useRouter();
     const mdUp = useMediaQuery(MediaQueries.MdUp, { ssr: false });
     const methods = useZodForm({
       schema: addContactTaskSchema,
@@ -106,6 +108,8 @@ export const AddContactTaskModal = NiceModal.create<AddContactTaskModalProps>(
       if (!result?.serverError && !result?.validationErrors) {
         toast.success('Task added');
         modal.handleClose();
+        // No 10s polling on the Tasks table; refresh so the new task shows.
+        router.refresh();
       } else {
         toast.error("Couldn't add task");
       }

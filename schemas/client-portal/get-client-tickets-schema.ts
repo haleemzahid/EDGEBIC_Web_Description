@@ -4,12 +4,25 @@ import {
 } from '@prisma/client';
 import { z } from 'zod';
 
+import { SortDirection } from '@/types/sort-direction';
+
 export const ClientTicketsStatusAll = 'all';
 export const ClientTicketsPriorityAll = 'all';
+
+export enum ClientTicketsSortBy {
+  Number = 'number',
+  Title = 'title',
+  Status = 'status',
+  Priority = 'priority',
+  CreatedAt = 'createdAt',
+  UpdatedAt = 'updatedAt'
+}
 
 export const getClientTicketsSchema = z.object({
   pageIndex: z.number().int().min(0).default(0),
   pageSize: z.number().int().min(1).max(200).default(50),
+  sortBy: z.nativeEnum(ClientTicketsSortBy).default(ClientTicketsSortBy.UpdatedAt),
+  sortDirection: z.nativeEnum(SortDirection).default(SortDirection.Desc),
   status: z
     .union([
       z.literal(ClientTicketsStatusAll),
