@@ -27,7 +27,7 @@ export function formatBytes(n: number): string {
 }
 
 export function ticketAttachmentUrl(storedName: string): string {
-  return `/api/ticket-attachments/${storedName}`;
+  return `/uploads/ticket-attachments/${storedName}`;
 }
 
 export function StagedAttachmentChip({

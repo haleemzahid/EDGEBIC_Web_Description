@@ -41,13 +41,12 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   try {
     const saved = await saveSoftwareFile(file);
-    // Cloudinary returns an absolute URL (use as-is). Local disk returns
-    // a relative path — prefix it with the request origin.
-    const downloadUrl =
-      saved.url ?? `${req.nextUrl.origin}${saved.publicUrl}`;
+    // Use the origin the upload actually came in on (not the hard-coded
+    // NEXT_PUBLIC_BASE_URL) so the link points to the same server that
+    // now holds the file.
     return NextResponse.json(
       {
-        downloadUrl,
+        downloadUrl: `${req.nextUrl.origin}${saved.publicUrl}`,
         fileName: saved.fileName,
         sizeBytes: saved.sizeBytes
       },
