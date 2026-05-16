@@ -2,9 +2,22 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
+// Files are routed into separate local folders by kind so videos, images
+// and other docs don't all pile into one directory. Each is a normal
+// folder under public/, so Next.js serves the returned publicUrl as-is.
+export const VIDEO_PUBLIC_DIR = 'uploads/videos';
+export const IMAGE_PUBLIC_DIR = 'uploads/images';
+// Non-image / non-video attachments (pdf, doc, zip, …) keep the original
+// folder so already-stored URLs stay valid.
 export const TICKET_ATTACHMENT_PUBLIC_DIR = 'uploads/ticket-attachments';
 export const TICKET_ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 export const TICKET_ATTACHMENT_MAX_PER_MESSAGE = 5;
+
+function publicDirForMime(mimeType: string): string {
+  if (mimeType.startsWith('video/')) return VIDEO_PUBLIC_DIR;
+  if (mimeType.startsWith('image/')) return IMAGE_PUBLIC_DIR;
+  return TICKET_ATTACHMENT_PUBLIC_DIR;
+}
 
 const ALLOWED_MIME_PREFIXES = ['image/', 'video/', 'audio/', 'text/'];
 const ALLOWED_MIME_TYPES = new Set([
@@ -64,7 +77,8 @@ export async function saveTicketAttachmentFile(
 
   const ext = sanitizeExtension(file.name);
   const storedName = `${randomUUID()}${ext}`;
-  const targetDir = path.join(process.cwd(), 'public', TICKET_ATTACHMENT_PUBLIC_DIR);
+  const publicDir = publicDirForMime(file.type);
+  const targetDir = path.join(process.cwd(), 'public', publicDir);
   await mkdir(targetDir, { recursive: true });
 
   const buffer = Buffer.from(await file.arrayBuffer());
@@ -75,7 +89,7 @@ export async function saveTicketAttachmentFile(
     fileName: sanitizeFilename(file.name),
     mimeType: file.type || 'application/octet-stream',
     sizeBytes: file.size,
-    publicUrl: `/${TICKET_ATTACHMENT_PUBLIC_DIR}/${storedName}`
+    publicUrl: `/${publicDir}/${storedName}`
   };
 }
 
