@@ -56,11 +56,10 @@ export const updateContactPropertiesSchema = z.object({
   timezone: optionalString(64),
   leadSource: optionalString(255),
   leadSourceDate: z.coerce.date().optional().nullable(),
-  stripeCustomerId: optionalString(255),
-  lastContactedAt: z.coerce.date().optional().nullable(),
-  lastContactedNote: optionalString(255),
-  lastMeetingAt: z.coerce.date().optional().nullable(),
-  lastMeetingNote: optionalString(255)
+  stripeCustomerId: optionalString(255)
+  // Last contacted / last meeting (+ notes) are owned by the dedicated
+  // Activity section (updateContactActivity) — intentionally not here so a
+  // Properties save can't clobber them.
 });
 
 export type UpdateContactPropertiesSchema = z.infer<

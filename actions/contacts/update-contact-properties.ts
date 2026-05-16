@@ -40,11 +40,10 @@ export const updateContactProperties = authActionClient
         timezone: parsedInput.timezone || null,
         leadSource: parsedInput.leadSource || null,
         leadSourceDate: parsedInput.leadSourceDate ?? null,
-        stripeCustomerId: parsedInput.stripeCustomerId || null,
-        lastContactedAt: parsedInput.lastContactedAt ?? null,
-        lastContactedNote: parsedInput.lastContactedNote || null,
-        lastMeetingAt: parsedInput.lastMeetingAt ?? null,
-        lastMeetingNote: parsedInput.lastMeetingNote || null
+        stripeCustomerId: parsedInput.stripeCustomerId || null
+        // lastContactedAt / lastMeetingAt (+ notes) are owned by the
+        // Activity section (updateContactActivity); not written here so a
+        // Properties save can't null them out.
       },
       session.user.id
     );

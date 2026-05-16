@@ -192,10 +192,6 @@ function Properties(contact: ContactDto): React.JSX.Element {
       timezone: contact.timezone ?? '',
       leadSource: contact.leadSource ?? '',
       leadSourceDate: contact.leadSourceDate ?? null,
-      lastContactedAt: contact.lastContactedAt ?? null,
-      lastContactedNote: contact.lastContactedNote ?? '',
-      lastMeetingAt: contact.lastMeetingAt ?? null,
-      lastMeetingNote: contact.lastMeetingNote ?? '',
       stripeCustomerId: contact.stripeCustomerId ?? ''
     }
   });
@@ -701,124 +697,6 @@ function Properties(contact: ContactDto): React.JSX.Element {
               ) : undefined
             }
             placeholder="No date"
-          />
-          <ContactProperty
-            icon={<CalendarIcon className="size-3 shrink-0" />}
-            term="Last contacted"
-            details={
-              editMode ? (
-                <FormField
-                  control={methods.control}
-                  name="lastContactedAt"
-                  render={({ field }) => (
-                    <FormItem className="flex w-full flex-col">
-                      <FormControl>
-                        <DatePicker
-                          date={field.value ?? undefined}
-                          onDateChange={(d) => field.onChange(d ?? null)}
-                          disabled={methods.formState.isSubmitting}
-                          placeholder="Pick a date"
-                          className="h-7 w-full"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ) : contact.lastContactedAt ? (
-                new Date(contact.lastContactedAt).toLocaleDateString()
-              ) : undefined
-            }
-            placeholder="Never contacted"
-          />
-          <ContactProperty
-            icon={<LayoutListIcon className="size-3 shrink-0" />}
-            term="Last contact note"
-            details={
-              editMode ? (
-                <FormField
-                  control={methods.control}
-                  name="lastContactedNote"
-                  render={({ field }) => (
-                    <FormItem className="flex w-full flex-col">
-                      <FormControl>
-                        <Input
-                          type="text"
-                          maxLength={255}
-                          className="h-7"
-                          disabled={methods.formState.isSubmitting}
-                          {...field}
-                          value={field.value ?? ''}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ) : (
-                contact.lastContactedNote
-              )
-            }
-            placeholder="No note"
-          />
-          <ContactProperty
-            icon={<CalendarIcon className="size-3 shrink-0" />}
-            term="Last meeting"
-            details={
-              editMode ? (
-                <FormField
-                  control={methods.control}
-                  name="lastMeetingAt"
-                  render={({ field }) => (
-                    <FormItem className="flex w-full flex-col">
-                      <FormControl>
-                        <DatePicker
-                          date={field.value ?? undefined}
-                          onDateChange={(d) => field.onChange(d ?? null)}
-                          disabled={methods.formState.isSubmitting}
-                          placeholder="Pick a date"
-                          className="h-7 w-full"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ) : contact.lastMeetingAt ? (
-                new Date(contact.lastMeetingAt).toLocaleDateString()
-              ) : undefined
-            }
-            placeholder="No meeting"
-          />
-          <ContactProperty
-            icon={<LayoutListIcon className="size-3 shrink-0" />}
-            term="Last meeting note"
-            details={
-              editMode ? (
-                <FormField
-                  control={methods.control}
-                  name="lastMeetingNote"
-                  render={({ field }) => (
-                    <FormItem className="flex w-full flex-col">
-                      <FormControl>
-                        <Input
-                          type="text"
-                          maxLength={255}
-                          className="h-7"
-                          disabled={methods.formState.isSubmitting}
-                          {...field}
-                          value={field.value ?? ''}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ) : (
-                contact.lastMeetingNote
-              )
-            }
-            placeholder="No note"
           />
           <ContactProperty
             icon={<KeyIcon className="size-3 shrink-0" />}
