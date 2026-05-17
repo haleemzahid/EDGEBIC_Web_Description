@@ -176,8 +176,6 @@ export default async function ClientTicketDetailPage({
             status={ticket.status}
             canManage={ticket.createdByClient}
             clientName={link.name}
-            description={ticket.description}
-            descriptionCreatedAt={ticket.createdAt}
             initialMessages={ticket.messages.map((m) => ({
               id: m.id,
               senderType: m.senderType,

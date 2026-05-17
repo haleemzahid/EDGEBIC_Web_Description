@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { EditClientTicketModal } from '@/components/dashboard/client-portal/edit-ticket-modal';
+import { ViewClientTicketModal } from '@/components/dashboard/client-portal/view-ticket-modal';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CenteredSpinner } from '@/components/ui/spinner';
 import { Routes } from '@/constants/routes';
@@ -280,6 +281,9 @@ function TicketRowActions({
 }): React.JSX.Element {
   const router = useRouter();
   const handleView = (): void => {
+    NiceModal.show(ViewClientTicketModal, { ticket });
+  };
+  const handleConversation = (): void => {
     router.push(`${Routes.ClientSupport}/${ticket.id}`);
   };
   const handleEdit = (): void => {
@@ -311,6 +315,14 @@ function TicketRowActions({
           }}
         >
           View
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={(e) => {
+            e.stopPropagation();
+            handleConversation();
+          }}
+        >
+          Conversation
         </DropdownMenuItem>
         {ticket.createdByClient && (
           <>
