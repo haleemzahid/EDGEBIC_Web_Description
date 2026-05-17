@@ -43,7 +43,12 @@ export const replyClientTicket = authActionClient
         id: parsedInput.ticketId,
         contactId: link.contactId
       },
-      select: { id: true, contactId: true, status: true }
+      select: {
+        id: true,
+        contactId: true,
+        status: true,
+        createdByClient: true
+      }
     });
     if (!ticket) {
       throw new NotFoundError('Ticket not found');
@@ -55,6 +60,16 @@ export const replyClientTicket = authActionClient
     if (ticket.status === ContactTicketStatus.CLOSED) {
       throw new ForbiddenError(
         'This ticket is closed. Please open a new ticket if you need more help.'
+      );
+    }
+    // Replying to a RESOLVED ticket reopens it — a status change the client
+    // may only perform on tickets they opened themselves.
+    if (
+      ticket.status === ContactTicketStatus.RESOLVED &&
+      !ticket.createdByClient
+    ) {
+      throw new ForbiddenError(
+        'Only your team can reopen a ticket they opened. Please open a new ticket if you need more help.'
       );
     }
     const reopening = ticket.status === ContactTicketStatus.RESOLVED;

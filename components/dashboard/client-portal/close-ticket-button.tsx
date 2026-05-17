@@ -19,15 +19,23 @@ import { Button } from '@/components/ui/button';
 export type CloseTicketButtonProps = {
   ticketId: string;
   status: ContactTicketStatus;
+  /** Only tickets the client opened themselves can be closed by the client. */
+  canManage: boolean;
 };
 
 export function CloseTicketButton({
   ticketId,
-  status
+  status,
+  canManage
 }: CloseTicketButtonProps): React.JSX.Element | null {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [closing, setClosing] = React.useState(false);
+
+  // Team-opened tickets are view + reply only — no client-side status changes.
+  if (!canManage) {
+    return null;
+  }
 
   // Already-closed tickets shouldn't show the close action; resolved tickets
   // are confirmed via the inline "Confirm resolved" path inside the

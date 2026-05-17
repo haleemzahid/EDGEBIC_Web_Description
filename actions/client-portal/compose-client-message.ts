@@ -7,6 +7,7 @@ import { authActionClient } from '@/actions/safe-action';
 import { Caching, OrganizationCacheKey } from '@/data/caching';
 import { getClientContactLink } from '@/lib/auth/get-client-contact';
 import { getTeamNotificationRecipient } from '@/lib/auth/get-team-notification-recipient';
+import { createTeamNotification } from '@/lib/notifications/create-team-notification';
 import {
   htmlToPlainText,
   sanitizeEmailHtml
@@ -113,7 +114,8 @@ async function notifyTeamOfMessage(args: {
 }): Promise<void> {
   const team = await getTeamNotificationRecipient(args.organizationId);
   if (!team) return;
-  const url = `${getBaseUrl()}/dashboard/contacts/${args.contactId}?tab=inbox`;
+  const path = `/dashboard/contacts/${args.contactId}?tab=inbox`;
+  const url = `${getBaseUrl()}${path}`;
   const subject = args.isNewThread
     ? `New message from ${args.clientName}: ${args.subject}`
     : `New reply from ${args.clientName}: ${args.subject}`;
@@ -130,5 +132,17 @@ async function notifyTeamOfMessage(args: {
     body: args.body,
     ctaLabel: 'Open in CRM',
     ctaUrl: url
+  });
+
+  // Additive: also surface an in-app notification on the Contacts table.
+  await createTeamNotification({
+    userId: team.userId,
+    subject,
+    content: `${heading}: ${args.subject}`,
+    link: path,
+    contactId: args.contactId,
+    type: 'MESSAGE'
+  }).catch((error) => {
+    console.error('[Notify team] in-app message notification failed:', error);
   });
 }

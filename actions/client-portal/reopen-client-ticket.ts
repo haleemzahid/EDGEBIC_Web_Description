@@ -45,10 +45,22 @@ export const reopenClientTicket = authActionClient
         id: parsedInput.ticketId,
         contactId: link.contactId
       },
-      select: { id: true, contactId: true, status: true, number: true, title: true }
+      select: {
+        id: true,
+        contactId: true,
+        status: true,
+        number: true,
+        title: true,
+        createdByClient: true
+      }
     });
     if (!ticket) {
       throw new NotFoundError('Ticket not found');
+    }
+    if (!ticket.createdByClient) {
+      throw new ForbiddenError(
+        'Only your team can change the status of a ticket they opened.'
+      );
     }
     if (ticket.status !== ContactTicketStatus.CLOSED) {
       throw new PreConditionError('Only a closed ticket can be reopened.');

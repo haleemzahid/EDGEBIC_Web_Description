@@ -17,7 +17,13 @@ import {
   VisibilityState,
   type Row
 } from '@tanstack/react-table';
-import { MoreHorizontalIcon } from 'lucide-react';
+import {
+  BellIcon,
+  CalendarIcon,
+  MailIcon,
+  MoreHorizontalIcon,
+  TicketIcon
+} from 'lucide-react';
 import { useQueryStates } from 'nuqs';
 
 import { ContactsBulkActions } from '@/components/dashboard/contacts/contacts-bulk-actions';
@@ -48,17 +54,25 @@ import { Routes } from '@/constants/routes';
 import { useTransitionContext } from '@/hooks/use-transition-context';
 import { cn } from '@/lib/utils';
 import { GetContactsSortBy } from '@/schemas/contacts/get-contacts-schema';
+import type {
+  ClientActivityItem,
+  ClientActivityMap
+} from '@/data/contacts/get-client-activity';
+import { dismissContactNotifications } from '@/actions/notifications/dismiss-contact-notifications';
 import type { ContactDto } from '@/types/dtos/contact-dto';
 import { SortDirection } from '@/types/sort-direction';
 
 export type ContactsDataTableProps = {
   data: ContactDto[];
   totalCount: number;
+  /** Per-contact client-activity (ticket/message) the client created. */
+  clientActivity?: ClientActivityMap;
 };
 
 export function ContactsDataTable({
   data,
-  totalCount
+  totalCount,
+  clientActivity = {}
 }: ContactsDataTableProps): React.JSX.Element {
   const router = useRouter();
   const { isLoading, startTransition } = useTransitionContext();
@@ -109,6 +123,7 @@ export function ContactsDataTable({
   const table = useReactTable({
     data,
     columns,
+    meta: { clientActivity },
     state: {
       sorting: [
         {
@@ -200,6 +215,82 @@ export function ContactsDataTable({
   );
 }
 
+// Type → label/icon/colour. New activity types (e.g. MEETING) only need an
+// entry here to get their own badge; unknown types fall back generically.
+const ACTIVITY_META: Record<
+  string,
+  { label: string; icon: typeof TicketIcon; className: string }
+> = {
+  TICKET: {
+    label: 'New ticket',
+    icon: TicketIcon,
+    className: 'border-transparent bg-amber-100 text-amber-800 hover:bg-amber-200'
+  },
+  MESSAGE: {
+    label: 'New message',
+    icon: MailIcon,
+    className: 'border-transparent bg-blue-100 text-blue-800 hover:bg-blue-200'
+  },
+  MEETING: {
+    label: 'New meeting',
+    icon: CalendarIcon,
+    className:
+      'border-transparent bg-violet-100 text-violet-800 hover:bg-violet-200'
+  }
+};
+
+// One badge per activity type. Clicking it clears just that type's
+// notifications for the contact and opens the latest item of that type.
+function ClientActivityBadge({
+  contactId,
+  item
+}: {
+  contactId: string;
+  item: ClientActivityItem;
+}): React.JSX.Element {
+  const router = useRouter();
+  const [pending, startTransition] = React.useTransition();
+  const meta = ACTIVITY_META[item.type] ?? {
+    label: 'New activity',
+    icon: BellIcon,
+    className: 'border-transparent bg-muted text-foreground hover:bg-accent'
+  };
+  const Icon = meta.icon;
+
+  const handleClick = (e: React.MouseEvent): void => {
+    e.stopPropagation();
+    startTransition(async () => {
+      await dismissContactNotifications({ contactId, type: item.type });
+      router.push(item.link);
+      router.refresh();
+    });
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={pending}
+      title={`${meta.label} — open and clear`}
+      className="inline-flex w-fit items-center"
+    >
+      <Badge
+        variant="secondary"
+        className={cn(
+          'gap-1 whitespace-nowrap text-[11px]',
+          meta.className
+        )}
+      >
+        <Icon className="size-3 shrink-0" />
+        {meta.label}
+        {item.count > 1 && (
+          <span className="font-semibold">·{item.count}</span>
+        )}
+      </Badge>
+    </button>
+  );
+}
+
 const columns: ColumnDef<ContactDto>[] = [
   {
     id: 'select',
@@ -254,6 +345,41 @@ const columns: ColumnDef<ContactDto>[] = [
     ),
     enableSorting: true,
     enableHiding: true
+  },
+  {
+    id: 'clientActivity',
+    meta: {
+      title: 'Activity'
+    },
+    enableSorting: false,
+    enableHiding: true,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title="Activity"
+      />
+    ),
+    cell: ({ row, table }) => {
+      const map = (
+        table.options.meta as { clientActivity?: ClientActivityMap } | undefined
+      )?.clientActivity;
+      const items = map?.[row.original.id];
+      if (!items || items.length === 0) {
+        return null;
+      }
+      // One separate badge per activity type.
+      return (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {items.map((item) => (
+            <ClientActivityBadge
+              key={item.type}
+              contactId={row.original.id}
+              item={item}
+            />
+          ))}
+        </div>
+      );
+    }
   },
   {
     meta: {

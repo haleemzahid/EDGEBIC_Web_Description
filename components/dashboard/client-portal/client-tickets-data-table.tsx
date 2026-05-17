@@ -11,7 +11,9 @@ import {
   VisibilityState,
   type Row
 } from '@tanstack/react-table';
+import NiceModal from '@ebay/nice-modal-react';
 import { format } from 'date-fns';
+import { MoreHorizontalIcon } from 'lucide-react';
 import { useQueryStates } from 'nuqs';
 
 import { searchParams } from '@/components/dashboard/client-portal/client-tickets-search-params';
@@ -25,6 +27,15 @@ import {
   DataTableColumnOptionsHeader,
   DataTablePagination
 } from '@/components/ui/data-table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { EditClientTicketModal } from '@/components/dashboard/client-portal/edit-ticket-modal';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CenteredSpinner } from '@/components/ui/spinner';
 import { Routes } from '@/constants/routes';
@@ -258,6 +269,63 @@ const columns: ColumnDef<ClientTicketListItemDto>[] = [
     id: 'actions',
     size: 64,
     header: ({ table }) => <DataTableColumnOptionsHeader table={table} />,
-    cell: () => null
+    cell: ({ row }) => <TicketRowActions ticket={row.original} />
   }
 ];
+
+function TicketRowActions({
+  ticket
+}: {
+  ticket: ClientTicketListItemDto;
+}): React.JSX.Element {
+  const router = useRouter();
+  const handleView = (): void => {
+    router.push(`${Routes.ClientSupport}/${ticket.id}`);
+  };
+  const handleEdit = (): void => {
+    NiceModal.show(EditClientTicketModal, {
+      ticketId: ticket.id,
+      title: ticket.title,
+      description: ticket.description
+    });
+  };
+  return (
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          className="ml-auto mr-4 flex size-8 data-[state=open]:bg-muted"
+          onClick={(e) => e.stopPropagation()}
+          title="Open menu"
+        >
+          <MoreHorizontalIcon className="size-4 shrink-0" />
+          <span className="sr-only">Open menu</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem
+          onClick={(e) => {
+            e.stopPropagation();
+            handleView();
+          }}
+        >
+          View
+        </DropdownMenuItem>
+        {ticket.createdByClient && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit();
+              }}
+            >
+              Edit
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}

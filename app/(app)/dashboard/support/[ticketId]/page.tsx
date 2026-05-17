@@ -85,6 +85,7 @@ export default async function ClientTicketDetailPage({
       status: true,
       priority: true,
       clientUnread: true,
+      createdByClient: true,
       createdAt: true,
       updatedAt: true,
       messages: {
@@ -160,6 +161,7 @@ export default async function ClientTicketDetailPage({
             <CloseTicketButton
               ticketId={ticket.id}
               status={ticket.status}
+              canManage={ticket.createdByClient}
             />
           </div>
         </PagePrimaryBar>
@@ -172,6 +174,7 @@ export default async function ClientTicketDetailPage({
           <ClientTicketConversation
             ticketId={ticket.id}
             status={ticket.status}
+            canManage={ticket.createdByClient}
             clientName={link.name}
             description={ticket.description}
             descriptionCreatedAt={ticket.createdAt}

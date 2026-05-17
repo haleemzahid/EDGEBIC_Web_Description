@@ -14,6 +14,7 @@ import { authActionClient } from '@/actions/safe-action';
 import { Caching, OrganizationCacheKey } from '@/data/caching';
 import { getClientContactLink } from '@/lib/auth/get-client-contact';
 import { getTeamNotificationRecipient } from '@/lib/auth/get-team-notification-recipient';
+import { createTeamNotification } from '@/lib/notifications/create-team-notification';
 import { prisma } from '@/lib/db/prisma';
 import { sendPortalActivityEmail } from '@/lib/smtp/send-portal-activity-email';
 import { getBaseUrl } from '@/lib/urls/get-base-url';
@@ -47,7 +48,10 @@ export const createClientTicket = authActionClient
           title: parsedInput.title,
           description: parsedInput.description || null,
           status: ContactTicketStatus.OPEN,
-          priority: ContactPriority.MEDIUM
+          priority: ContactPriority.MEDIUM,
+          // Client opened this themselves → they get full manage rights
+          // (close / reopen). Team-opened tickets are view + reply only.
+          createdByClient: true
         },
         select: { id: true, number: true }
       });
@@ -142,7 +146,8 @@ async function notifyTeamOfNewTicket(args: {
 }): Promise<void> {
   const team = await getTeamNotificationRecipient(args.organizationId);
   if (!team) return;
-  const url = `${getBaseUrl()}/dashboard/contacts/${args.contactId}/tickets/${args.ticketId}`;
+  const path = `/dashboard/contacts/${args.contactId}/tickets/${args.ticketId}`;
+  const url = `${getBaseUrl()}${path}`;
   await sendPortalActivityEmail({
     recipient: team.email,
     recipientName: team.name,
@@ -153,5 +158,17 @@ async function notifyTeamOfNewTicket(args: {
     body: args.body,
     ctaLabel: 'Open ticket in CRM',
     ctaUrl: url
+  });
+
+  // Additive: also surface an in-app notification on the Contacts table.
+  await createTeamNotification({
+    userId: team.userId,
+    subject: `New ticket #${args.ticketNumber}`,
+    content: `${args.clientName} opened ticket #${args.ticketNumber}: ${args.title}`,
+    link: path,
+    contactId: args.contactId,
+    type: 'TICKET'
+  }).catch((error) => {
+    console.error('[Notify team] in-app ticket notification failed:', error);
   });
 }

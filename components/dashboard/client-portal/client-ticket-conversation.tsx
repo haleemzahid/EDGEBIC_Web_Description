@@ -42,6 +42,11 @@ export type ClientTicketConversationMessage = {
 export type ClientTicketConversationProps = {
   ticketId: string;
   status: ContactTicketStatus;
+  /**
+   * True only when the client opened this ticket themselves. Team-opened
+   * tickets are view + reply only — no close / reopen / confirm-resolved.
+   */
+  canManage: boolean;
   clientName: string;
   description: string | null;
   descriptionCreatedAt: Date;
@@ -72,6 +77,7 @@ const MAX_ATTACHMENTS = 5;
 export function ClientTicketConversation({
   ticketId,
   status,
+  canManage,
   clientName,
   description,
   descriptionCreatedAt,
@@ -394,7 +400,7 @@ export function ClientTicketConversation({
             <div className="text-sm">
               <p className="font-medium text-foreground">This ticket is closed.</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Reopen it if the issue came back, or{' '}
+                {canManage ? 'Reopen it if the issue came back, or ' : 'If you need more help, '}
                 <Link
                   href={Routes.ClientSupport}
                   className="text-primary underline"
@@ -404,17 +410,19 @@ export function ClientTicketConversation({
                 .
               </p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleReopen}
-              disabled={reopening}
-              className="gap-1.5"
-            >
-              <ClockIcon className="size-3.5" />
-              {reopening ? 'Reopening…' : 'Reopen ticket'}
-            </Button>
+            {canManage && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleReopen}
+                disabled={reopening}
+                className="gap-1.5"
+              >
+                <ClockIcon className="size-3.5" />
+                {reopening ? 'Reopening…' : 'Reopen ticket'}
+              </Button>
+            )}
           </div>
         ) : (
           <>
@@ -425,21 +433,25 @@ export function ClientTicketConversation({
                     Your team marked this resolved
                   </p>
                   <p className="mt-1 text-xs text-emerald-800/80">
-                    Confirm if it&apos;s fixed so we can close this ticket.
+                    {canManage
+                      ? "Confirm if it's fixed so we can close this ticket."
+                      : 'If you still need help, open a new ticket — your team manages this ticket.'}
                   </p>
                 </div>
-                <Button
-                  type="button"
-                  variant="default"
-                  onClick={handleConfirmResolved}
-                  className="gap-1.5"
-                >
-                  <CheckIcon className="size-4" />
-                  Confirm resolved
-                </Button>
+                {canManage && (
+                  <Button
+                    type="button"
+                    variant="default"
+                    onClick={handleConfirmResolved}
+                    className="gap-1.5"
+                  >
+                    <CheckIcon className="size-4" />
+                    Confirm resolved
+                  </Button>
+                )}
               </div>
             )}
-            {isResolved && !resolvedReplyOpen && (
+            {isResolved && canManage && !resolvedReplyOpen && (
               <div className="border-t p-3 text-center">
                 <button
                   type="button"

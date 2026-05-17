@@ -29,6 +29,7 @@ export type ClientTicketListItemDto = {
   description: string | null;
   status: ContactTicketStatus;
   priority: ContactPriority;
+  createdByClient: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -55,6 +56,7 @@ export async function getClientTickets(
           description: true,
           status: true,
           priority: true,
+          createdByClient: true,
           createdAt: true,
           updatedAt: true
         }
@@ -158,6 +160,7 @@ export async function getClientTicketsList(
         description: true,
         status: true,
         priority: true,
+        createdByClient: true,
         createdAt: true,
         updatedAt: true
       },

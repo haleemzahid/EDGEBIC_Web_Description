@@ -42,10 +42,15 @@ export const confirmClientTicketResolved = authActionClient
         id: parsedInput.ticketId,
         contactId: link.contactId
       },
-      select: { id: true, status: true }
+      select: { id: true, status: true, createdByClient: true }
     });
     if (!ticket) {
       throw new NotFoundError('Ticket not found');
+    }
+    if (!ticket.createdByClient) {
+      throw new ForbiddenError(
+        'Only your team can change the status of a ticket they opened.'
+      );
     }
     if (ticket.status !== ContactTicketStatus.RESOLVED) {
       throw new PreConditionError(
