@@ -59,7 +59,6 @@ import {
 } from '@/components/ui/popover';
 import { RecipientField } from '@/components/ui/recipient-field';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Textarea } from '@/components/ui/textarea';
 import {
   appendEmojiToHtml,
   appendHtmlToBody,
@@ -190,6 +189,8 @@ export function ContactInbox({
     () => new Set()
   );
   const [replyText, setReplyText] = React.useState<string>('');
+  // Remounts the seed-once reply editor (on thread open / back / send).
+  const [replyEditorKey, setReplyEditorKey] = React.useState<number>(0);
   const [stagedReply, setStagedReply] = React.useState<StagedAttachment[]>([]);
   const [composeOpen, setComposeOpen] = React.useState<boolean>(false);
   const [showCc, setShowCc] = React.useState<boolean>(false);
@@ -250,6 +251,7 @@ export function ContactInbox({
   const handleOpenThread = (id: string): void => {
     setSelectedId(id);
     setReplyText('');
+    setReplyEditorKey((k) => k + 1);
     setStagedReply([]);
     const thread = initialThreads.find((t) => t.id === id);
     if (thread?.unread) {
@@ -263,6 +265,7 @@ export function ContactInbox({
   const handleBackToList = (): void => {
     setSelectedId(null);
     setReplyText('');
+    setReplyEditorKey((k) => k + 1);
     setStagedReply([]);
   };
 
@@ -407,11 +410,10 @@ export function ContactInbox({
 
   const handleSendReply = (): void => {
     if (!selectedThread) return;
-    const body = replyText.trim();
     const readyAttachments = stagedReply
       .filter((s) => s.state === 'uploaded' && s.uploaded)
       .map((s) => s.uploaded as UploadedAttachment);
-    if (!body && readyAttachments.length === 0) return;
+    if (!htmlHasContent(replyText) && readyAttachments.length === 0) return;
     if (stagedReply.some((s) => s.state === 'uploading')) {
       toast.error('Please wait for uploads to finish');
       return;
@@ -419,7 +421,7 @@ export function ContactInbox({
     startTransition(async () => {
       const result = await replyContactEmail({
         threadId: selectedThread.id,
-        body,
+        body: replyText,
         attachments: readyAttachments
       });
       if (result?.serverError) {
@@ -427,6 +429,7 @@ export function ContactInbox({
         return;
       }
       setReplyText('');
+      setReplyEditorKey((k) => k + 1);
       setStagedReply([]);
       toast.success('Reply sent');
       router.refresh();
@@ -778,6 +781,7 @@ export function ContactInbox({
             contact={contact}
             replyText={replyText}
             onReplyTextChange={setReplyText}
+            replyEditorKey={replyEditorKey}
             staged={stagedReply}
             onUploadFiles={uploadReplyFiles}
             onRemoveStaged={removeStagedReply}
@@ -1366,6 +1370,7 @@ type ThreadReaderProps = {
   contact: ContactDto;
   replyText: string;
   onReplyTextChange: (next: string) => void;
+  replyEditorKey: number;
   staged: StagedAttachment[];
   onUploadFiles: (files: File[]) => Promise<void>;
   onRemoveStaged: (tempId: string) => void;
@@ -1382,6 +1387,7 @@ function ThreadReader({
   contact,
   replyText,
   onReplyTextChange,
+  replyEditorKey,
   staged,
   onUploadFiles,
   onRemoveStaged,
@@ -1393,13 +1399,49 @@ function ThreadReader({
 }: ThreadReaderProps): React.JSX.Element {
   const participant = getThreadParticipant(thread, contact);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const imageInputRef = React.useRef<HTMLInputElement | null>(null);
+  // Gmail-style reply toolbar state (mirrors the compose window).
+  const [showReplyFormatting, setShowReplyFormatting] =
+    React.useState<boolean>(false);
+  const [replyInsertKey, setReplyInsertKey] = React.useState<number>(0);
+  const [linkOpen, setLinkOpen] = React.useState<boolean>(false);
+  const [linkUrl, setLinkUrl] = React.useState<string>('');
+  const [linkText, setLinkText] = React.useState<string>('');
   const onPickFiles = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     if (files.length > 0) void onUploadFiles(files);
     e.target.value = '';
   };
+  const onPickImages = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (files.length > 0) void onUploadFiles(files);
+    e.target.value = '';
+  };
+  const handleReplyEmoji = (emoji: EmojiClickData): void => {
+    onReplyTextChange(appendEmojiToHtml(replyText, emoji.emoji));
+    setReplyInsertKey((k) => k + 1);
+  };
+  const handleInsertReplyLink = (): void => {
+    const rawUrl = linkUrl.trim();
+    if (!rawUrl) return;
+    const href = /^(https?:|mailto:|tel:)/i.test(rawUrl)
+      ? rawUrl
+      : `https://${rawUrl}`;
+    const label = linkText.trim() || rawUrl;
+    const anchor = `<a href="${escapeHtml(href)}">${escapeHtml(label)}</a>`;
+    onReplyTextChange(appendHtmlToBody(replyText, anchor));
+    setReplyInsertKey((k) => k + 1);
+    setLinkUrl('');
+    setLinkText('');
+    setLinkOpen(false);
+  };
+  const handleReplyPlainText = (): void => {
+    onReplyTextChange(htmlToPlainParagraphs(replyText));
+    setShowReplyFormatting(false);
+    setReplyInsertKey((k) => k + 1);
+  };
   const canSubmit =
-    (replyText.trim().length > 0 ||
+    (htmlHasContent(replyText) ||
       staged.some((s) => s.state === 'uploaded')) &&
     !staged.some((s) => s.state === 'uploading');
   return (
@@ -1553,13 +1595,7 @@ function ThreadReader({
             ))}
           </div>
         )}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!disabled && canSubmit) onSendReply();
-          }}
-          className="flex items-end gap-2 border-t p-3"
-        >
+        <div className="border-t p-3">
           <input
             ref={fileInputRef}
             type="file"
@@ -1567,42 +1603,184 @@ function ThreadReader({
             hidden
             onChange={onPickFiles}
           />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-11 shrink-0"
-            title="Attach files"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={disabled || staged.length >= MAX_REPLY_ATTACHMENTS}
-          >
-            <PaperclipIcon className="size-4" />
-          </Button>
-          <Textarea
-            value={replyText}
-            onChange={(e) => onReplyTextChange(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                if (!disabled && canSubmit) onSendReply();
-              }
-            }}
-            rows={1}
-            maxLength={20000}
-            placeholder={`Reply to ${participant.name.split(' ')[0]}…  (Enter to send, Shift+Enter for new line)`}
-            className="max-h-40 min-h-[44px] flex-1 resize-none"
-            disabled={disabled}
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            hidden
+            onChange={onPickImages}
           />
-          <Button
-            type="submit"
-            disabled={disabled || !canSubmit}
-            size="icon"
-            className="size-11 shrink-0"
-            title="Send"
-          >
-            <SendIcon className="size-4" />
-          </Button>
-        </form>
+          <div className="flex flex-col overflow-hidden rounded-lg border">
+            <div
+              className={cn(
+                'px-3 py-2 [&_.editor-container]:px-0',
+                disabled && 'pointer-events-none opacity-60'
+              )}
+            >
+              <ComposeEditor
+                key={`reply-${replyEditorKey}-${replyInsertKey}`}
+                getText={() => replyText}
+                setText={onReplyTextChange}
+                placeholder={`Reply to ${participant.name.split(' ')[0]}…`}
+                height="72px"
+                showToolbar={showReplyFormatting}
+              />
+            </div>
+            <div className="flex shrink-0 items-center gap-1 border-t bg-background px-2 py-1.5">
+              <Button
+                type="button"
+                onClick={onSendReply}
+                disabled={disabled || !canSubmit}
+              >
+                <SendIcon className="mr-1 size-3.5 shrink-0" />
+                Send
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  'font-semibold',
+                  showReplyFormatting && 'bg-accent text-foreground'
+                )}
+                onClick={() => setShowReplyFormatting((v) => !v)}
+                disabled={disabled}
+                title="Formatting options"
+                aria-label="Formatting options"
+                aria-pressed={showReplyFormatting}
+              >
+                <span className="text-sm leading-none">A</span>
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={disabled || staged.length >= MAX_REPLY_ATTACHMENTS}
+                title="Attach files"
+                aria-label="Attach files"
+              >
+                <PaperclipIcon className="size-4 shrink-0" />
+              </Button>
+              <Popover
+                open={linkOpen}
+                onOpenChange={setLinkOpen}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    disabled={disabled}
+                    title="Insert link"
+                    aria-label="Insert link"
+                  >
+                    <Link2Icon className="size-4 shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="start"
+                  className="w-80 space-y-3"
+                >
+                  <div className="space-y-1.5">
+                    <Label htmlFor="reply-link-text">Text to display</Label>
+                    <Input
+                      id="reply-link-text"
+                      value={linkText}
+                      onChange={(e) => setLinkText(e.target.value)}
+                      placeholder="Link text (optional)"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="reply-link-url">Web address</Label>
+                    <Input
+                      id="reply-link-url"
+                      value={linkUrl}
+                      onChange={(e) => setLinkUrl(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleInsertReplyLink();
+                        }
+                      }}
+                      placeholder="https://example.com"
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleInsertReplyLink}
+                      disabled={!linkUrl.trim()}
+                    >
+                      Insert link
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    disabled={disabled}
+                    title="Insert emoji"
+                    aria-label="Insert emoji"
+                  >
+                    <SmileIcon className="size-4 shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="start"
+                  className="w-fit border-0 p-0"
+                >
+                  <EmojiPicker
+                    onEmojiClick={handleReplyEmoji}
+                    autoFocusSearch={false}
+                    theme={Theme.LIGHT}
+                    previewConfig={{ showPreview: false }}
+                    skinTonesDisabled
+                    defaultSkinTone={SkinTones.NEUTRAL}
+                    emojiStyle={EmojiStyle.NATIVE}
+                  />
+                </PopoverContent>
+              </Popover>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={disabled || staged.length >= MAX_REPLY_ATTACHMENTS}
+                title="Insert photo"
+                aria-label="Insert photo"
+              >
+                <ImageIcon className="size-4 shrink-0" />
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    disabled={disabled}
+                    title="More options"
+                    aria-label="More options"
+                  >
+                    <MoreVerticalIcon className="size-4 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem onClick={handleReplyPlainText}>
+                    <RemoveFormattingIcon className="mr-2 size-4 shrink-0" />
+                    Plain text mode
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

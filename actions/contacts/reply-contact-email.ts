@@ -5,12 +5,17 @@ import { EmailSenderType } from '@prisma/client';
 
 import { authActionClient } from '@/actions/safe-action';
 import { Caching, OrganizationCacheKey } from '@/data/caching';
+import {
+  htmlToPlainText,
+  sanitizeEmailHtml
+} from '@/lib/email/sanitize-email-html';
 import { prisma } from '@/lib/db/prisma';
 import { sendContactMessageEmail } from '@/lib/smtp/send-contact-message-email';
 import {
   GatewayError,
   NotFoundError,
-  PreConditionError
+  PreConditionError,
+  ValidationError
 } from '@/lib/validation/exceptions';
 import { replyContactEmailSchema } from '@/schemas/contacts/reply-contact-email-schema';
 
@@ -51,12 +56,24 @@ export const replyContactEmail = authActionClient
       ? thread.subject
       : `Re: ${thread.subject}`;
 
+    // The body is rich-text HTML from the reply editor — sanitize once so the
+    // same safe markup is emailed and stored, and derive a plain-text
+    // preview. An empty editor still emits markup, so require real text or
+    // an attachment.
+    const safeBody = parsedInput.body
+      ? sanitizeEmailHtml(parsedInput.body)
+      : '';
+    const plainText = safeBody ? htmlToPlainText(safeBody).trim() : '';
+    if (!plainText && parsedInput.attachments.length === 0) {
+      throw new ValidationError('Message or attachment is required.');
+    }
+
     try {
       await sendContactMessageEmail({
         recipient: thread.contact.email,
         recipientName: thread.contact.name,
         subject: replySubject,
-        body: parsedInput.body,
+        body: safeBody,
         senderName: session.user.name ?? 'Support',
         senderEmail: session.user.email ?? undefined,
         organizationName: thread.contact.organization?.name
@@ -69,8 +86,8 @@ export const replyContactEmail = authActionClient
       );
     }
 
-    const previewBase = parsedInput.body
-      ? parsedInput.body
+    const previewBase = plainText
+      ? plainText
       : parsedInput.attachments
           .map((a) => a.fileName)
           .join(', ');
@@ -84,7 +101,7 @@ export const replyContactEmail = authActionClient
           senderEmail: session.user.email ?? undefined,
           recipientName: thread.contact.name,
           recipientEmail: thread.contact.email,
-          body: parsedInput.body,
+          body: safeBody,
           attachments:
             parsedInput.attachments.length > 0
               ? {
