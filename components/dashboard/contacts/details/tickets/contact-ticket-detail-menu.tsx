@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { updateContactTicket } from '@/actions/contacts/update-contact-ticket';
 import { DeleteContactTicketModal } from '@/components/dashboard/contacts/details/tickets/delete-contact-ticket-modal';
 import { EditContactTicketModal } from '@/components/dashboard/contacts/details/tickets/edit-contact-ticket-modal';
+import { ViewContactTicketModal } from '@/components/dashboard/contacts/details/tickets/view-contact-ticket-modal';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -37,6 +38,10 @@ export function ContactTicketDetailMenu({
   const [pending, startTransition] = React.useTransition();
 
   const isClosed = ticket.status === ContactTicketStatus.CLOSED;
+
+  const handleView = (): void => {
+    NiceModal.show(ViewContactTicketModal, { ticket });
+  };
 
   const handleEdit = (): void => {
     // A closed ticket is read-only — it must be reopened before editing.
@@ -86,6 +91,7 @@ export function ContactTicketDetailMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={handleView}>View details</DropdownMenuItem>
         <DropdownMenuItem
           disabled={isClosed}
           onClick={handleEdit}

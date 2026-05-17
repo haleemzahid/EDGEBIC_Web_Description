@@ -374,20 +374,11 @@ function ConversationPanel({
         ref={listRef}
         className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4"
       >
-        {ticket.description && (
-          <DescriptionBubble
-            description={ticket.description}
-            contactName={contact.name}
-            createdAt={ticket.createdAt}
-          />
+        {messages.length === 0 && pendingMessages.length === 0 && (
+          <li className="py-4 text-center text-sm text-muted-foreground">
+            No replies yet. The ticket description is in “View details”.
+          </li>
         )}
-        {messages.length === 0 &&
-          pendingMessages.length === 0 &&
-          !ticket.description && (
-            <li className="py-4 text-center text-sm text-muted-foreground">
-              No replies yet.
-            </li>
-          )}
         {messages.map((m) => (
           <MessageBubble
             key={m.id}
@@ -606,29 +597,6 @@ function PendingBubble({
   );
 }
 
-function DescriptionBubble({
-  description,
-  contactName,
-  createdAt
-}: {
-  description: string;
-  contactName: string;
-  createdAt: Date;
-}): React.JSX.Element {
-  return (
-    <li className="flex flex-col items-start gap-1">
-      <div className="max-w-[75%] rounded-2xl rounded-tl-sm border border-dashed bg-muted/40 px-4 py-2.5 text-sm">
-        <p className="whitespace-pre-wrap text-sm leading-relaxed">
-          {description}
-        </p>
-      </div>
-      <div className="text-[11px] text-muted-foreground">
-        {contactName} · opened the ticket ·{' '}
-        {format(createdAt, 'h:mm a · MMM d')}
-      </div>
-    </li>
-  );
-}
 
 type NotesPanelProps = {
   ticketId: string;

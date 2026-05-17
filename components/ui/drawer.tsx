@@ -66,13 +66,15 @@ const DrawerContent = React.forwardRef<
     <DrawerPrimitive.Content
       ref={ref}
       className={cn(
-        'fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background',
+        // Cap to the viewport; the body wrapper scrolls when content is
+        // taller so tall drawers never overflow off-screen.
+        'fixed inset-x-0 bottom-0 z-50 mt-24 flex max-h-[96vh] flex-col rounded-t-[10px] border bg-background',
         className
       )}
       {...props}
     >
-      <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
-      {children}
+      <div className="mx-auto mt-4 h-2 w-[100px] shrink-0 rounded-full bg-muted" />
+      <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
     </DrawerPrimitive.Content>
   </DrawerPortal>
 ));

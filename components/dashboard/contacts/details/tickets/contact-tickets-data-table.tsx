@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import NiceModal from '@ebay/nice-modal-react';
 import {
@@ -21,6 +20,7 @@ import { toast } from 'sonner';
 
 import { DeleteContactTicketModal } from '@/components/dashboard/contacts/details/tickets/delete-contact-ticket-modal';
 import { EditContactTicketModal } from '@/components/dashboard/contacts/details/tickets/edit-contact-ticket-modal';
+import { ViewContactTicketModal } from '@/components/dashboard/contacts/details/tickets/view-contact-ticket-modal';
 import {
   ContactTicketPriorityBadge,
   ContactTicketStatusBadge
@@ -96,8 +96,8 @@ export function ContactTicketsDataTable({
   );
 
   const columns = React.useMemo(
-    () => getColumns({ contactId, members, meetings }),
-    [contactId, members, meetings]
+    () => getColumns({ members, meetings }),
+    [members, meetings]
   );
 
   const table = useReactTable({
@@ -169,11 +169,9 @@ export function ContactTicketsDataTable({
 }
 
 function getColumns({
-  contactId,
   members,
   meetings
 }: {
-  contactId: string;
   members: MemberDto[];
   meetings: ContactMeetingDto[];
 }): ColumnDef<ContactTicketDto>[] {
@@ -290,6 +288,9 @@ function getColumns({
             meetings
           });
         };
+        const handleView = (): void => {
+          NiceModal.show(ViewContactTicketModal, { ticket });
+        };
         const handleDelete = (): void => {
           NiceModal.show(DeleteContactTicketModal, { ticket });
         };
@@ -308,12 +309,13 @@ function getColumns({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link
-                  href={`/dashboard/contacts/${contactId}/tickets/${ticket.id}`}
-                >
-                  View
-                </Link>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleView();
+                }}
+              >
+                View
               </DropdownMenuItem>
               <DropdownMenuItem
                 disabled={isClosed}

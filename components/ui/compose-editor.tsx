@@ -798,7 +798,7 @@ export function ComposeEditor(props: ComposeEditorProps): React.JSX.Element {
               />
             }
             placeholder={
-              <p className="pointer-events-none absolute select-none p-1 text-sm text-muted-foreground opacity-60">
+              <p className="pointer-events-none absolute left-0 top-0 select-none p-1 text-sm text-muted-foreground opacity-60">
                 {props.placeholder || ''}
               </p>
             }
