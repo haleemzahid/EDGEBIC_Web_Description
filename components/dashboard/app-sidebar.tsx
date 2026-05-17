@@ -25,11 +25,14 @@ import type { ProfileDto } from '@/types/dtos/profile-dto';
 export type AppSidebarProps = {
   favorites: FavoriteDto[];
   profile: ProfileDto;
+  /** Unseen-count badges keyed by nav item href (client portal only). */
+  navBadges?: Record<string, number>;
 };
 
 export function AppSidebar({
   // favorites,
-  profile
+  profile,
+  navBadges
 }: AppSidebarProps): React.JSX.Element {
   const sidebar = useSidebar();
   const xlUp = useMediaQuery(MediaQueries.XlUp, { ssr: true, fallback: true });
@@ -68,7 +71,10 @@ export function AppSidebar({
           /* Overriding the hardcoded { disply:table } to get full flex height */
           className="h-full [&>[data-radix-scroll-area-viewport]>div]:!flex [&>[data-radix-scroll-area-viewport]>div]:h-full [&>[data-radix-scroll-area-viewport]>div]:flex-col"
         >
-          <NavMain role={profile.role} />
+          <NavMain
+            role={profile.role}
+            navBadges={navBadges}
+          />
           {/* <NavFavorites favorites={favorites} />
           <NavSupport
             profile={profile}

@@ -34,7 +34,10 @@ export const addContactMeeting = authActionClient
         startsAt: parsedInput.startsAt,
         endsAt: parsedInput.endsAt,
         location: parsedInput.location || null,
-        status: parsedInput.status
+        status: parsedInput.status,
+        // Surface a "new" badge on the client portal sidebar until the
+        // client opens the My Meetings page.
+        clientUnread: true
       },
       select: { id: true }
     });

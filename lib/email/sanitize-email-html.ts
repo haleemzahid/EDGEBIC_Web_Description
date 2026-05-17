@@ -29,16 +29,39 @@ const EMAIL_SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   ],
   allowedAttributes: {
     a: ['href', 'name', 'target', 'rel'],
+    // Gmail-style rich text sets inline styles (font, size, color,
+    // alignment) on these elements — keep them so formatting survives.
     span: ['style'],
     p: ['style'],
-    div: ['style']
+    div: ['style'],
+    h1: ['style'],
+    h2: ['style'],
+    h3: ['style'],
+    ul: ['style'],
+    ol: ['style'],
+    li: ['style'],
+    blockquote: ['style']
   },
   allowedStyles: {
     '*': {
       'text-align': [/^left$/, /^right$/, /^center$/, /^justify$/],
       'font-weight': [/^bold$/, /^\d{3}$/],
       'font-style': [/^italic$/],
-      'text-decoration': [/^underline$/, /^line-through$/]
+      'text-decoration': [
+        /^underline$/,
+        /^line-through$/,
+        /^underline line-through$/,
+        /^line-through underline$/
+      ],
+      // Hex / rgb(a) / named colours only.
+      color: [/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i, /^rgb/i, /^[a-z]+$/i],
+      'background-color': [
+        /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i,
+        /^rgb/i,
+        /^[a-z]+$/i
+      ],
+      'font-family': [/^[\w\s",'-]+$/],
+      'font-size': [/^\d{1,3}(?:px|pt|em|%)$/]
     }
   },
   allowedSchemes: ['http', 'https', 'mailto', 'tel'],

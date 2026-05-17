@@ -1,6 +1,8 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { type Metadata } from 'next';
+import { revalidateTag } from 'next/cache';
+import { after } from 'next/server';
 import { ContactMeetingStatus } from '@prisma/client';
 import { format } from 'date-fns';
 import { ExternalLinkIcon, VideoIcon } from 'lucide-react';
@@ -18,9 +20,11 @@ import {
   PageTitle
 } from '@/components/ui/page';
 import { Routes } from '@/constants/routes';
+import { Caching, OrganizationCacheKey } from '@/data/caching';
 import { getClientMeetings } from '@/data/client-portal/get-client-meetings';
 import { getCalendlyMeetingsForContact } from '@/data/contacts/get-calendly-meetings-for-contact';
 import { requireClientRole } from '@/lib/auth/require-client-role';
+import { prisma } from '@/lib/db/prisma';
 import { cn, createTitle } from '@/lib/utils';
 import type { ContactMeetingDto } from '@/types/dtos/contact-meeting-dto';
 
@@ -40,6 +44,25 @@ export default async function ClientMeetingsPage({
   const { link } = await requireClientRole();
   if (!link) {
     return <ClientUnlinkedNotice title="My meetings" />;
+  }
+
+  // Visiting the list counts as "seen" — clear every unseen meeting for this
+  // client so the sidebar badge drops. Deferred via `after()` because
+  // `revalidateTag` can't run during render in Next 15.
+  const cleared = await prisma.contactMeeting.updateMany({
+    where: { contactId: link.contactId, clientUnread: true },
+    data: { clientUnread: false }
+  });
+  if (cleared.count > 0) {
+    after(() => {
+      revalidateTag(
+        Caching.createOrganizationTag(
+          OrganizationCacheKey.ContactMeetings,
+          link.organizationId,
+          link.contactId
+        )
+      );
+    });
   }
 
   const [dbMeetings, calendlyMeetings] = await Promise.all([

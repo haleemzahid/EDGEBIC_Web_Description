@@ -31,7 +31,10 @@ export const addContactSoftware = authActionClient
         os: parsedInput.os || undefined,
         database: parsedInput.database || undefined,
         installPath: parsedInput.installPath || undefined,
-        notes: parsedInput.notes || undefined
+        notes: parsedInput.notes || undefined,
+        // Surface a "new" badge on the client portal sidebar until the
+        // client opens the My Software page.
+        clientUnread: true
       },
       select: { id: true }
     });

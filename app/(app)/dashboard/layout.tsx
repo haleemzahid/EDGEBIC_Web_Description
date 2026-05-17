@@ -8,8 +8,10 @@ import { SidebarRenderer } from '@/components/dashboard/sidebar-renderer';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { Routes } from '@/constants/routes';
 import { getProfile } from '@/data/account/get-profile';
+import { getClientSidebarCounts } from '@/data/client-portal/get-client-sidebar-counts';
 import { getFavorites } from '@/data/favorites/get-favorites';
 import { dedupedAuth } from '@/lib/auth';
+import { getClientContactLink } from '@/lib/auth/get-client-contact';
 import { getLoginRedirect } from '@/lib/auth/redirect';
 import { checkSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/db/prisma';
@@ -76,12 +78,29 @@ export default async function DashboardLayout({
     getProfile()
   ]);
 
+  // Unseen-count badges for the client portal sidebar (Tickets / Messages /
+  // Meetings / My Software). Keyed by route so NavMain can match by href.
+  let navBadges: Record<string, number> = {};
+  if (isClient) {
+    const link = await getClientContactLink(session.user.id);
+    if (link) {
+      const counts = await getClientSidebarCounts(link);
+      navBadges = {
+        [Routes.ClientSupport]: counts.tickets,
+        [Routes.ClientMessages]: counts.messages,
+        [Routes.ClientMeetings]: counts.meetings,
+        [Routes.ClientSoftware]: counts.software
+      };
+    }
+  }
+
   return (
     <div className="flex h-screen overflow-hidden">
       <SidebarProvider>
         <SidebarRenderer
           favorites={favorites}
           profile={profile}
+          navBadges={navBadges}
         />
         {/* Set max-width so full-width tables can overflow horizontally correctly */}
         <SidebarInset

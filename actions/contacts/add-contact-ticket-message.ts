@@ -53,6 +53,16 @@ export const addContactTicketMessage = authActionClient
     }
 
     await prisma.$transaction([
+      // A team reply (not an internal note) is something the client needs to
+      // see — flag it so the portal sidebar badge lights up.
+      ...(parsedInput.isInternalNote
+        ? []
+        : [
+            prisma.contactTicket.update({
+              where: { id: ticket.id },
+              data: { clientUnread: true }
+            })
+          ]),
       prisma.contactTicketMessage.create({
         data: {
           ticketId: ticket.id,

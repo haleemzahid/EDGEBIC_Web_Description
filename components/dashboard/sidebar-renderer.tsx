@@ -13,6 +13,8 @@ import { ProfileDto } from '@/types/dtos/profile-dto';
 export type SidebarRendererProps = {
   favorites: FavoriteDto[];
   profile: ProfileDto;
+  /** Unseen-count badges keyed by nav item href (client portal only). */
+  navBadges?: Record<string, number>;
 };
 
 export function SidebarRenderer(

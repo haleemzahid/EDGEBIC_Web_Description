@@ -8,6 +8,7 @@ import { Role } from '@prisma/client';
 import {
   SidebarGroup,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   type SidebarGroupProps
@@ -19,9 +20,15 @@ import type { NavItem } from '@/types/nav-item';
 
 export type NavMainProps = SidebarGroupProps & {
   role: Role;
+  /** Unseen-count badges keyed by nav item href (client portal only). */
+  navBadges?: Record<string, number>;
 };
 
-export function NavMain({ role, ...props }: NavMainProps): React.JSX.Element {
+export function NavMain({
+  role,
+  navBadges,
+  ...props
+}: NavMainProps): React.JSX.Element {
   const pathname = usePathname();
   const navItems: NavItem[] =
     role === Role.CLIENT ? clientNavItems : mainNavItems;
@@ -38,7 +45,9 @@ export function NavMain({ role, ...props }: NavMainProps): React.JSX.Element {
   return (
     <SidebarGroup {...props}>
       <SidebarMenu>
-        {navItems.map((item, index) => (
+        {navItems.map((item, index) => {
+          const badgeCount = navBadges?.[item.href] ?? 0;
+          return (
           <SidebarMenuItem key={index}>
             <SidebarMenuButton
               asChild
@@ -62,8 +71,14 @@ export function NavMain({ role, ...props }: NavMainProps): React.JSX.Element {
                 </span>
               </Link>
             </SidebarMenuButton>
+            {badgeCount > 0 && (
+              <SidebarMenuBadge className="bg-primary text-primary-foreground">
+                {badgeCount > 99 ? '99+' : badgeCount}
+              </SidebarMenuBadge>
+            )}
           </SidebarMenuItem>
-        ))}
+          );
+        })}
       </SidebarMenu>
     </SidebarGroup>
   );

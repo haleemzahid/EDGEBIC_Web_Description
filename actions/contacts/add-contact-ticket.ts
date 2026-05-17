@@ -37,7 +37,10 @@ export const addContactTicket = authActionClient
         priority: parsedInput.priority,
         assigneeUserId: parsedInput.assigneeUserId
           ? parsedInput.assigneeUserId
-          : null
+          : null,
+        // Surface a "new" badge on the client portal sidebar until the
+        // client opens this ticket.
+        clientUnread: true
       },
       select: { id: true, number: true }
     });

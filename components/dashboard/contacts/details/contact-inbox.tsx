@@ -40,6 +40,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ComposeEditor } from '@/components/ui/compose-editor';
 import { ComposeWindow } from '@/components/ui/compose-window';
 import {
   DropdownMenu,
@@ -56,7 +57,6 @@ import {
   PopoverTrigger
 } from '@/components/ui/popover';
 import { RecipientField } from '@/components/ui/recipient-field';
-import { TextEditor } from '@/components/ui/text-editor';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { cn, getInitials } from '@/lib/utils';
@@ -99,8 +99,8 @@ const isEmail = (value: string): boolean =>
   emailSchema.safeParse(value).success;
 
 // Append an emoji into the rich-text HTML body. Mirrors the comment box,
-// which also appends rather than inserting at the caret (the shared
-// TextEditor is seed-once, so the body is re-seeded after this).
+// which also appends rather than inserting at the caret (ComposeEditor is
+// seed-once, so the body is re-seeded after this).
 function appendEmojiToHtml(html: string, emoji: string): string {
   if (/<\/p>\s*$/i.test(html)) {
     return html.replace(/<\/p>\s*$/i, `${emoji}</p>`);
@@ -1116,20 +1116,10 @@ export function ContactInbox({
               className="h-10 border-0 px-0 shadow-none focus-visible:ring-0"
             />
           </div>
-          {/* Override the shared editor's box look so it reads like Gmail's
-              borderless body (the TextEditor itself is left untouched as
-              it's shared with notes). */}
-          <div
-            className={cn(
-              'flex-1 px-3 py-2 [&_.editor-container]:px-0 [&_.editor]:rounded-none [&_.editor]:border-0 [&_.editor]:bg-transparent',
-              // Gmail-style: formatting toolbar (+ its divider) hidden until
-              // "Aa". Toggled purely from here so the shared TextEditor used
-              // by Notes is untouched.
-              !showFormatting &&
-                '[&_.editor-container>*:first-child]:hidden [&_.editor-container>.opacity-40]:hidden'
-            )}
-          >
-            <TextEditor
+          {/* Gmail-style body: borderless editor; the formatting strip is
+              docked at the BOTTOM and toggled by the "Aa" button. */}
+          <div className="flex min-h-0 flex-1 flex-col px-3 py-2">
+            <ComposeEditor
               // Remount per open so it re-seeds from the (possibly
               // forwarded/draft-restored) body; the editor is seed-once.
               key={composeEditorKey}
@@ -1139,6 +1129,7 @@ export function ContactInbox({
               }
               placeholder="Write your message…"
               height="220px"
+              showToolbar={showFormatting}
             />
           </div>
           {stagedCompose.length > 0 && (

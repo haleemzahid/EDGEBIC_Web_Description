@@ -1,5 +1,7 @@
 import * as React from 'react';
 import { type Metadata } from 'next';
+import { revalidateTag } from 'next/cache';
+import { after } from 'next/server';
 import { InfoIcon } from 'lucide-react';
 
 import { ClientSoftwareEmptyState } from '@/components/dashboard/client-portal/client-software-empty-state';
@@ -20,9 +22,11 @@ import {
   TooltipContent,
   TooltipTrigger
 } from '@/components/ui/tooltip';
+import { Caching, OrganizationCacheKey } from '@/data/caching';
 import { getClientSoftwareList } from '@/data/client-portal/get-client-software';
 import { TransitionProvider } from '@/hooks/use-transition-context';
 import { requireClientRole } from '@/lib/auth/require-client-role';
+import { prisma } from '@/lib/db/prisma';
 import { createTitle } from '@/lib/utils';
 import type { NextPageProps } from '@/types/next-page-props';
 
@@ -39,6 +43,25 @@ export default async function ClientSoftwarePage({
   const { link } = await requireClientRole();
   if (!link) {
     return <ClientUnlinkedNotice title="My Software" />;
+  }
+
+  // Visiting the list counts as "seen" — clear every unseen software row for
+  // this client so the sidebar badge drops. Deferred via `after()` because
+  // `revalidateTag` can't run during render in Next 15.
+  const cleared = await prisma.contactSoftware.updateMany({
+    where: { contactId: link.contactId, clientUnread: true },
+    data: { clientUnread: false }
+  });
+  if (cleared.count > 0) {
+    after(() => {
+      revalidateTag(
+        Caching.createOrganizationTag(
+          OrganizationCacheKey.ContactSoftware,
+          link.organizationId,
+          link.contactId
+        )
+      );
+    });
   }
 
   const parsedSearchParams = await searchParamsCache.parse(searchParams);

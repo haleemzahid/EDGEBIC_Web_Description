@@ -2,6 +2,8 @@ import * as React from 'react';
 import Link from 'next/link';
 import { type Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
+import { revalidateTag } from 'next/cache';
+import { after } from 'next/server';
 import { Role } from '@prisma/client';
 import { ChevronLeftIcon } from 'lucide-react';
 
@@ -19,6 +21,7 @@ import {
   PageTitle
 } from '@/components/ui/page';
 import { Routes } from '@/constants/routes';
+import { Caching, OrganizationCacheKey } from '@/data/caching';
 import { dedupedAuth } from '@/lib/auth';
 import { getClientContactLink } from '@/lib/auth/get-client-contact';
 import { getLoginRedirect } from '@/lib/auth/redirect';
@@ -81,6 +84,7 @@ export default async function ClientTicketDetailPage({
       description: true,
       status: true,
       priority: true,
+      clientUnread: true,
       createdAt: true,
       updatedAt: true,
       messages: {
@@ -108,6 +112,25 @@ export default async function ClientTicketDetailPage({
   });
   if (!ticket) {
     notFound();
+  }
+
+  // Auto-clear the "new" flag when the client opens the ticket so the
+  // sidebar badge drops. `revalidateTag` can't run during render in Next 15,
+  // so defer it via `after()` (mirrors the messages thread page).
+  if (ticket.clientUnread) {
+    await prisma.contactTicket.update({
+      where: { id: ticket.id },
+      data: { clientUnread: false }
+    });
+    after(() => {
+      revalidateTag(
+        Caching.createOrganizationTag(
+          OrganizationCacheKey.ContactTickets,
+          link.organizationId,
+          link.contactId
+        )
+      );
+    });
   }
 
   // (status handled inside ClientTicketConversation)
