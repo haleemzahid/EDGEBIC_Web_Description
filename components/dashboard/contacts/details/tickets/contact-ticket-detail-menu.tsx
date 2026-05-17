@@ -36,7 +36,14 @@ export function ContactTicketDetailMenu({
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
 
+  const isClosed = ticket.status === ContactTicketStatus.CLOSED;
+
   const handleEdit = (): void => {
+    // A closed ticket is read-only — it must be reopened before editing.
+    if (isClosed) {
+      toast.error('Reopen this ticket before editing it.');
+      return;
+    }
     NiceModal.show(EditContactTicketModal, { ticket, members, meetings });
   };
 
@@ -79,11 +86,16 @@ export function ContactTicketDetailMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={handleEdit}>Edit</DropdownMenuItem>
+        <DropdownMenuItem
+          disabled={isClosed}
+          onClick={handleEdit}
+        >
+          {isClosed ? 'Edit (reopen first)' : 'Edit'}
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         {ticket.status !== ContactTicketStatus.OPEN && (
           <DropdownMenuItem onClick={() => setStatus(ContactTicketStatus.OPEN)}>
-            Reopen
+            Reopen{isClosed ? ' to edit' : ''}
           </DropdownMenuItem>
         )}
         {ticket.status !== ContactTicketStatus.PENDING && (

@@ -180,6 +180,14 @@ function ConversationPanel({
   const [pendingMessages, setPendingMessages] = React.useState<PendingAdminMessage[]>([]);
   const [staged, setStaged] = React.useState<StagedAttachment[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const listRef = React.useRef<HTMLUListElement | null>(null);
+
+  // Keep the latest message in view — same behaviour as the client-side
+  // conversation, which the admin panel was missing.
+  React.useEffect(() => {
+    const el = listRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages.length, pendingMessages.length]);
 
   // Background poll for incoming client replies (no manual refresh needed).
   React.useEffect(() => {
@@ -362,7 +370,10 @@ function ConversationPanel({
           </span>
         </div>
       )}
-      <ul className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
+      <ul
+        ref={listRef}
+        className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4"
+      >
         {ticket.description && (
           <DescriptionBubble
             description={ticket.description}
@@ -443,7 +454,8 @@ function ConversationPanel({
               onChange={(e) => setText(e.target.value)}
               onKeyDown={handleKeyDown}
               rows={1}
-              placeholder={`Reply to ${contact.name?.split(' ')[0] ?? 'the customer'}…  (Enter to send)`}
+              maxLength={20000}
+              placeholder={`Reply to ${contact.name?.split(' ')[0] ?? 'the customer'}…  (Enter to send, Shift+Enter for new line)`}
               className="max-h-40 min-h-[44px] flex-1 resize-none"
             />
             <Button
@@ -706,7 +718,7 @@ function NotesPanel({
         />
         <div className="mt-2 flex items-center justify-between gap-2">
           <span className="text-xs text-amber-800">
-            @ mention a teammate to notify them
+            Saved to the ticket · visible to your team only
           </span>
           <Button
             type="button"

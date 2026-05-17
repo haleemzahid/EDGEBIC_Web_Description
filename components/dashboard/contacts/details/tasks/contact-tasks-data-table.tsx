@@ -23,6 +23,7 @@ import {
   searchParams,
   TasksSortBy
 } from '@/components/dashboard/contacts/details/tasks/tasks-search-params';
+import { ViewContactTaskModal } from '@/components/dashboard/contacts/details/tasks/view-contact-task-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -167,9 +168,10 @@ export function ContactTasksDataTable({
   });
 
   // Tasks have no detail page (unlike tickets); clicking a row opens the
-  // existing edit modal — same affordance the list view used.
+  // read-only view panel. Editing is one click away from there or via the
+  // row menu.
   const handleRowClicked = (row: Row<ContactTaskDto>): void => {
-    NiceModal.show(EditContactTaskModal, {
+    NiceModal.show(ViewContactTaskModal, {
       task: row.original,
       members,
       meetings
@@ -361,6 +363,9 @@ function getColumns({
       header: ({ table }) => <DataTableColumnOptionsHeader table={table} />,
       cell: ({ row }) => {
         const task = row.original;
+        const handleView = (): void => {
+          NiceModal.show(ViewContactTaskModal, { task, members, meetings });
+        };
         const handleEdit = (): void => {
           NiceModal.show(EditContactTaskModal, { task, members, meetings });
         };
@@ -382,6 +387,14 @@ function getColumns({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleView();
+                }}
+              >
+                View
+              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();

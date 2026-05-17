@@ -8,9 +8,17 @@ import {
   AlertCircleIcon,
   CheckIcon,
   ClockIcon,
+  Link2Icon,
   PaperclipIcon,
-  SendIcon
+  SendIcon,
+  SmileIcon
 } from 'lucide-react';
+import EmojiPicker, {
+  EmojiStyle,
+  SkinTones,
+  Theme,
+  type EmojiClickData
+} from 'emoji-picker-react';
 import { toast } from 'sonner';
 
 import { replyClientMessage } from '@/actions/client-portal/reply-client-message';
@@ -21,7 +29,22 @@ import {
   type TicketAttachmentView
 } from '@/components/dashboard/ticket-attachment-ui';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { ComposeEditor } from '@/components/ui/compose-editor';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from '@/components/ui/popover';
+import {
+  appendEmojiToHtml,
+  appendHtmlToBody,
+  escapeHtml,
+  htmlHasContent,
+  htmlToText,
+  isHtmlBody
+} from '@/lib/email/compose-html';
 import { cn } from '@/lib/utils';
 
 export type ClientMessageConversationMessage = {
@@ -68,8 +91,15 @@ export function ClientMessageConversation({
 }: ClientMessageConversationProps): React.JSX.Element {
   const router = useRouter();
   const [pending, setPending] = React.useState<PendingMessage[]>([]);
+  // Body is rich-text HTML from the compose editor.
   const [text, setText] = React.useState('');
+  // Bumped to remount the seed-once editor (after send, retry, emoji/link).
+  const [editorKey, setEditorKey] = React.useState(0);
+  const [showFormatting, setShowFormatting] = React.useState(false);
   const [staged, setStaged] = React.useState<StagedAttachment[]>([]);
+  const [linkOpen, setLinkOpen] = React.useState(false);
+  const [linkUrl, setLinkUrl] = React.useState('');
+  const [linkText, setLinkText] = React.useState('');
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -94,10 +124,13 @@ export function ClientMessageConversation({
     setPending((prev) =>
       prev.filter((p) => {
         if (p.state !== 'sent') return true;
+        // Server stores sanitized HTML; the optimistic copy is raw editor
+        // HTML — compare on visible text so the bubble de-dupes reliably.
+        const pText = htmlToText(p.body);
         const match = initialMessages.some(
           (m) =>
             m.senderType === EmailSenderType.CONTACT &&
-            m.body === p.body &&
+            htmlToText(m.body) === pText &&
             Math.abs(m.createdAt.getTime() - p.createdAt.getTime()) < 30_000
         );
         return !match;
@@ -178,12 +211,32 @@ export function ClientMessageConversation({
     setStaged((prev) => prev.filter((s) => s.tempId !== tempId));
   };
 
-  const send = async (body: string): Promise<void> => {
-    const trimmed = body.trim();
+  const handleEmoji = (emoji: EmojiClickData): void => {
+    setText((b) => appendEmojiToHtml(b, emoji.emoji));
+    setEditorKey((k) => k + 1);
+  };
+
+  const handleInsertLink = (): void => {
+    const rawUrl = linkUrl.trim();
+    if (!rawUrl) return;
+    const href = /^(https?:|mailto:|tel:)/i.test(rawUrl)
+      ? rawUrl
+      : `https://${rawUrl}`;
+    const label = linkText.trim() || rawUrl;
+    const anchor = `<a href="${escapeHtml(href)}">${escapeHtml(label)}</a>`;
+    setText((b) => appendHtmlToBody(b, anchor));
+    setEditorKey((k) => k + 1);
+    setLinkUrl('');
+    setLinkText('');
+    setLinkOpen(false);
+  };
+
+  const send = async (htmlBody: string): Promise<void> => {
     const readyAttachments = staged
       .filter((s) => s.state === 'uploaded' && s.uploaded)
       .map((s) => s.uploaded as UploadedAttachment);
-    if (!trimmed && readyAttachments.length === 0) return;
+    const hasText = htmlHasContent(htmlBody);
+    if (!hasText && readyAttachments.length === 0) return;
     if (staged.some((s) => s.state === 'uploading')) {
       toast.error('Please wait for uploads to finish');
       return;
@@ -194,19 +247,20 @@ export function ClientMessageConversation({
       ...prev,
       {
         tempId,
-        body: trimmed,
+        body: hasText ? htmlBody : '',
         attachments: readyAttachments,
         createdAt: new Date(),
         state: 'sending'
       }
     ]);
     setText('');
+    setEditorKey((k) => k + 1);
     setStaged([]);
 
     try {
       const result = await replyClientMessage({
         threadId,
-        body: trimmed,
+        body: hasText ? htmlBody : '',
         attachments: readyAttachments
       });
       if (result?.serverError || result?.validationErrors) {
@@ -234,22 +288,16 @@ export function ClientMessageConversation({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      void send(text);
-    }
-  };
-
   const retry = (tempId: string): void => {
     const msg = pending.find((p) => p.tempId === tempId);
     if (!msg) return;
     setPending((prev) => prev.filter((p) => p.tempId !== tempId));
     setText(msg.body);
+    setEditorKey((k) => k + 1);
   };
 
   const canSubmit =
-    (text.trim().length > 0 || staged.some((s) => s.state === 'uploaded')) &&
+    (htmlHasContent(text) || staged.some((s) => s.state === 'uploaded')) &&
     !staged.some((s) => s.state === 'uploading');
 
   return (
@@ -307,50 +355,150 @@ export function ClientMessageConversation({
             ))}
           </div>
         )}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void send(text);
-          }}
-          className="flex items-end gap-2 border-t p-3"
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            hidden
-            onChange={onPickFiles}
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-11 shrink-0"
-            title="Attach files"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={staged.length >= MAX_ATTACHMENTS}
-          >
-            <PaperclipIcon className="size-4" />
-          </Button>
-          <Textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            rows={1}
-            maxLength={20000}
-            placeholder={`Reply to ${recipientFirstName}…  (Enter to send, Shift+Enter for new line)`}
-            className="max-h-40 min-h-[44px] flex-1 resize-none"
-          />
-          <Button
-            type="submit"
-            disabled={!canSubmit}
-            size="icon"
-            className="size-11 shrink-0"
-            title="Send"
-          >
-            <SendIcon className="size-4" />
-          </Button>
-        </form>
+        <div className="flex min-h-0 flex-col border-t">
+          <div className="px-3 py-2">
+            <ComposeEditor
+              key={editorKey}
+              getText={() => text}
+              setText={setText}
+              placeholder={`Reply to ${recipientFirstName}…`}
+              height="96px"
+              showToolbar={showFormatting}
+            />
+          </div>
+          <div className="flex items-center gap-1 border-t px-2 py-1.5">
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              hidden
+              onChange={onPickFiles}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={cn(
+                'size-8 font-semibold',
+                showFormatting && 'bg-accent text-foreground'
+              )}
+              onClick={() => setShowFormatting((v) => !v)}
+              title="Formatting options"
+              aria-label="Formatting options"
+              aria-pressed={showFormatting}
+            >
+              <span className="text-sm leading-none">A</span>
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-8"
+              title="Attach files"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={staged.length >= MAX_ATTACHMENTS}
+            >
+              <PaperclipIcon className="size-4" />
+            </Button>
+            <Popover
+              open={linkOpen}
+              onOpenChange={setLinkOpen}
+            >
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8"
+                  title="Insert link"
+                  aria-label="Insert link"
+                >
+                  <Link2Icon className="size-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="start"
+                className="w-80 space-y-3"
+              >
+                <div className="space-y-1.5">
+                  <Label htmlFor="client-reply-link-text">
+                    Text to display
+                  </Label>
+                  <Input
+                    id="client-reply-link-text"
+                    value={linkText}
+                    onChange={(e) => setLinkText(e.target.value)}
+                    placeholder="Link text (optional)"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="client-reply-link-url">Web address</Label>
+                  <Input
+                    id="client-reply-link-url"
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleInsertLink();
+                      }
+                    }}
+                    placeholder="https://example.com"
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleInsertLink}
+                    disabled={!linkUrl.trim()}
+                  >
+                    Insert link
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8"
+                  title="Insert emoji"
+                  aria-label="Insert emoji"
+                >
+                  <SmileIcon className="size-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="start"
+                className="w-fit border-0 p-0"
+              >
+                <EmojiPicker
+                  onEmojiClick={handleEmoji}
+                  autoFocusSearch={false}
+                  theme={Theme.LIGHT}
+                  previewConfig={{ showPreview: false }}
+                  skinTonesDisabled
+                  defaultSkinTone={SkinTones.NEUTRAL}
+                  emojiStyle={EmojiStyle.NATIVE}
+                />
+              </PopoverContent>
+            </Popover>
+            <Button
+              type="button"
+              onClick={() => void send(text)}
+              disabled={!canSubmit}
+              size="sm"
+              className="ml-auto"
+              title="Send"
+            >
+              <SendIcon className="mr-1 size-3.5 shrink-0" />
+              Send
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -393,7 +541,19 @@ function Bubble({
             state === 'failed' && 'opacity-80 ring-1 ring-rose-300'
           )}
         >
-          <p className="whitespace-pre-wrap text-sm leading-relaxed">{body}</p>
+          {isHtmlBody(body) ? (
+            <div
+              className="text-sm leading-relaxed [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+              // Stored bodies are sanitized server-side
+              // (lib/email/sanitize-email-html.ts). Legacy / plain-text
+              // messages fall through to the <p> branch below.
+              dangerouslySetInnerHTML={{ __html: body }}
+            />
+          ) : (
+            <p className="whitespace-pre-wrap text-sm leading-relaxed">
+              {body}
+            </p>
+          )}
           {state && (
             <div
               className={cn(

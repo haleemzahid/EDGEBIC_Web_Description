@@ -59,6 +59,14 @@ import {
 import { RecipientField } from '@/components/ui/recipient-field';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  appendEmojiToHtml,
+  appendHtmlToBody,
+  escapeHtml,
+  htmlHasContent,
+  htmlToPlainParagraphs,
+  isHtmlBody
+} from '@/lib/email/compose-html';
 import { cn, getInitials } from '@/lib/utils';
 import type { ContactDto } from '@/types/dtos/contact-dto';
 import type {
@@ -82,13 +90,6 @@ type StagedAttachment = StagedAttachmentItem & {
 
 const MAX_REPLY_ATTACHMENTS = 5;
 
-// Local, dependency-free check so we don't pull the server-side
-// sanitize-html module into the client bundle. New rich-text messages are
-// stored as sanitized HTML; legacy / plain-text messages render as text.
-function isHtmlBody(value: string): boolean {
-  return /<\/?[a-z][\s\S]*>/i.test(value);
-}
-
 const draftStorageKey = (contactId: string): string =>
   `compose-draft:${contactId}`;
 
@@ -97,59 +98,6 @@ const draftStorageKey = (contactId: string): string =>
 const emailSchema = z.string().trim().email();
 const isEmail = (value: string): boolean =>
   emailSchema.safeParse(value).success;
-
-// Append an emoji into the rich-text HTML body. Mirrors the comment box,
-// which also appends rather than inserting at the caret (ComposeEditor is
-// seed-once, so the body is re-seeded after this).
-function appendEmojiToHtml(html: string, emoji: string): string {
-  if (/<\/p>\s*$/i.test(html)) {
-    return html.replace(/<\/p>\s*$/i, `${emoji}</p>`);
-  }
-  return (html ?? '') + emoji;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-// Append an HTML snippet (link / image) into the body. Same seed-once
-// constraint as appendEmojiToHtml — caller re-seeds the editor after.
-function appendHtmlToBody(html: string, snippet: string): string {
-  if (/<\/p>\s*$/i.test(html)) {
-    return html.replace(/<\/p>\s*$/i, `${snippet}</p>`);
-  }
-  return `${html ?? ''}<p>${snippet}</p>`;
-}
-
-// Strip all markup so the body becomes Gmail-style "plain text mode".
-function htmlToPlainParagraphs(html: string): string {
-  const text = html
-    .replace(/<\/(p|div|h[1-6]|li|blockquote)>/gi, '\n')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<[^>]*>/g, '')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>');
-  const lines = text.split('\n').map((l) => l.trim());
-  return lines.map((l) => `<p>${escapeHtml(l) || '<br>'}</p>`).join('');
-}
-
-// True if the rich-text body has actual content (an empty Lexical editor
-// still emits markup like "<p><br></p>").
-function htmlHasContent(html: string): boolean {
-  return (
-    html
-      .replace(/<[^>]*>/g, '')
-      .replace(/&nbsp;/gi, ' ')
-      .replace(/\s+/g, '')
-      .trim().length > 0
-  );
-}
 
 type ThreadParticipant = {
   name: string;

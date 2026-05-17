@@ -13,9 +13,11 @@ import {
   VisibilityState,
   type Row
 } from '@tanstack/react-table';
+import { ContactTicketStatus } from '@prisma/client';
 import { format } from 'date-fns';
 import { MoreHorizontalIcon } from 'lucide-react';
 import { useQueryStates } from 'nuqs';
+import { toast } from 'sonner';
 
 import { DeleteContactTicketModal } from '@/components/dashboard/contacts/details/tickets/delete-contact-ticket-modal';
 import { EditContactTicketModal } from '@/components/dashboard/contacts/details/tickets/edit-contact-ticket-modal';
@@ -272,7 +274,13 @@ function getColumns({
       header: ({ table }) => <DataTableColumnOptionsHeader table={table} />,
       cell: ({ row }) => {
         const ticket = row.original;
+        const isClosed = ticket.status === ContactTicketStatus.CLOSED;
         const handleEdit = (): void => {
+          // A closed ticket is read-only — it must be reopened first.
+          if (isClosed) {
+            toast.error('Reopen this ticket before editing it.');
+            return;
+          }
           // The list row is a ContactTicketDto; the edit modal types a
           // ContactTicketWithDetailsDto but only uses the base fields, so
           // adapt with empty message/activity arrays.
@@ -308,12 +316,13 @@ function getColumns({
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem
+                disabled={isClosed}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleEdit();
                 }}
               >
-                Edit
+                {isClosed ? 'Edit (reopen first)' : 'Edit'}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

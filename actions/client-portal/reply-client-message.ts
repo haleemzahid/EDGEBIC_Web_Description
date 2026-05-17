@@ -7,10 +7,18 @@ import { authActionClient } from '@/actions/safe-action';
 import { Caching, OrganizationCacheKey } from '@/data/caching';
 import { getClientContactLink } from '@/lib/auth/get-client-contact';
 import { getTeamNotificationRecipient } from '@/lib/auth/get-team-notification-recipient';
+import {
+  htmlToPlainText,
+  sanitizeEmailHtml
+} from '@/lib/email/sanitize-email-html';
 import { prisma } from '@/lib/db/prisma';
 import { sendPortalActivityEmail } from '@/lib/smtp/send-portal-activity-email';
 import { getBaseUrl } from '@/lib/urls/get-base-url';
-import { ForbiddenError, NotFoundError } from '@/lib/validation/exceptions';
+import {
+  ForbiddenError,
+  NotFoundError,
+  ValidationError
+} from '@/lib/validation/exceptions';
 import { replyClientMessageSchema } from '@/schemas/client-portal/reply-client-message-schema';
 
 export const replyClientMessage = authActionClient
@@ -43,11 +51,19 @@ export const replyClientMessage = authActionClient
       throw new NotFoundError('Conversation not found');
     }
 
-    const previewBase = parsedInput.body
-      ? parsedInput.body
-      : parsedInput.attachments
-          .map((a) => a.fileName)
-          .join(', ');
+    // The body is rich-text HTML from the reply editor — sanitize once and
+    // derive a plain-text preview/notification from it. An empty editor still
+    // emits markup, so fall back to attachment names when there's no text.
+    const safeBody = parsedInput.body
+      ? sanitizeEmailHtml(parsedInput.body)
+      : '';
+    const plainText = safeBody ? htmlToPlainText(safeBody).trim() : '';
+    if (!plainText && parsedInput.attachments.length === 0) {
+      throw new ValidationError('Message body is required.');
+    }
+    const previewBase = plainText
+      ? plainText
+      : parsedInput.attachments.map((a) => a.fileName).join(', ');
     await prisma.$transaction([
       prisma.contactEmailMessage.create({
         data: {
@@ -55,7 +71,7 @@ export const replyClientMessage = authActionClient
           senderType: EmailSenderType.CONTACT,
           senderName: link.name,
           senderEmail: link.email,
-          body: parsedInput.body,
+          body: plainText ? safeBody : '',
           attachments:
             parsedInput.attachments.length > 0
               ? {
@@ -91,7 +107,7 @@ export const replyClientMessage = authActionClient
       contactId: thread.contactId,
       clientName: link.name,
       subject: thread.subject,
-      body: parsedInput.body
+      body: plainText
     }).catch((error) => {
       console.error('[Notify team] replyClientMessage failed:', error);
     });

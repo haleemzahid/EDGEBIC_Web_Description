@@ -7,10 +7,18 @@ import { authActionClient } from '@/actions/safe-action';
 import { Caching, OrganizationCacheKey } from '@/data/caching';
 import { getClientContactLink } from '@/lib/auth/get-client-contact';
 import { getTeamNotificationRecipient } from '@/lib/auth/get-team-notification-recipient';
+import {
+  htmlToPlainText,
+  sanitizeEmailHtml
+} from '@/lib/email/sanitize-email-html';
 import { prisma } from '@/lib/db/prisma';
 import { sendPortalActivityEmail } from '@/lib/smtp/send-portal-activity-email';
 import { getBaseUrl } from '@/lib/urls/get-base-url';
-import { ForbiddenError, NotFoundError } from '@/lib/validation/exceptions';
+import {
+  ForbiddenError,
+  NotFoundError,
+  ValidationError
+} from '@/lib/validation/exceptions';
 import { composeClientMessageSchema } from '@/schemas/client-portal/compose-client-message-schema';
 
 export const composeClientMessage = authActionClient
@@ -32,6 +40,15 @@ export const composeClientMessage = authActionClient
       );
     }
 
+    // The body is rich-text HTML from the compose editor — sanitize once
+    // here so the same safe markup is persisted, and derive a plain-text
+    // preview/notification from it.
+    const safeBody = sanitizeEmailHtml(parsedInput.body);
+    const plainText = htmlToPlainText(safeBody).trim();
+    if (!plainText) {
+      throw new ValidationError('Message body is required.');
+    }
+
     // From the team's perspective, a thread the client initiates is an
     // incoming conversation → INBOX folder, marked unread so the team sees it.
     const thread = await prisma.contactEmailThread.create({
@@ -39,14 +56,14 @@ export const composeClientMessage = authActionClient
         contactId: link.contactId,
         folder: EmailFolder.INBOX,
         subject: parsedInput.subject,
-        preview: parsedInput.body.slice(0, 500),
+        preview: plainText.slice(0, 500),
         unread: true,
         messages: {
           create: {
             senderType: EmailSenderType.CONTACT,
             senderName: link.name,
             senderEmail: link.email,
-            body: parsedInput.body,
+            body: safeBody,
             attachments:
               parsedInput.attachments.length > 0
                 ? {
@@ -77,7 +94,7 @@ export const composeClientMessage = authActionClient
       contactId: link.contactId,
       clientName: link.name,
       subject: parsedInput.subject,
-      body: parsedInput.body,
+      body: plainText,
       isNewThread: true
     }).catch((error) => {
       console.error('[Notify team] composeClientMessage failed:', error);
