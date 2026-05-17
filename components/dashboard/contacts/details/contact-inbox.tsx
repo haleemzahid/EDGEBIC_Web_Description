@@ -31,6 +31,7 @@ import { deleteContactEmails } from '@/actions/contacts/delete-contact-emails';
 import { markContactEmailRead } from '@/actions/contacts/mark-contact-email-read';
 import { replyContactEmail } from '@/actions/contacts/reply-contact-email';
 import { sendContactEmail } from '@/actions/contacts/send-contact-email';
+import { dismissContactNotifications } from '@/actions/notifications/dismiss-contact-notifications';
 import {
   AttachmentPreview,
   StagedAttachmentChip,
@@ -431,6 +432,16 @@ export function ContactInbox({
       router.refresh();
     });
   };
+
+  // Viewing the contact's Inbox = reading their messages: clear this
+  // contact's unread "message" activity badge on the Contacts table
+  // automatically. Scoped to the signed-in user inside the action.
+  React.useEffect(() => {
+    void dismissContactNotifications({
+      contactId: contact.id,
+      type: 'MESSAGE'
+    });
+  }, [contact.id]);
 
   // Persist the draft so closing/minimizing or a reload doesn't lose it.
   React.useEffect(() => {

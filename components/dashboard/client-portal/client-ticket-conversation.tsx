@@ -48,6 +48,8 @@ export type ClientTicketConversationProps = {
    */
   canManage: boolean;
   clientName: string;
+  description: string | null;
+  descriptionCreatedAt: Date;
   initialMessages: ClientTicketConversationMessage[];
 };
 
@@ -77,6 +79,8 @@ export function ClientTicketConversation({
   status,
   canManage,
   clientName,
+  description,
+  descriptionCreatedAt,
   initialMessages
 }: ClientTicketConversationProps): React.JSX.Element {
   const router = useRouter();
@@ -344,6 +348,16 @@ export function ClientTicketConversation({
         ref={scrollRef}
         className="flex-1 space-y-4 overflow-y-auto rounded-t-lg border border-b-0 bg-card p-4"
       >
+        {description && (
+          <Bubble
+            authorName={clientName}
+            authorIsClient
+            body={description}
+            createdAt={descriptionCreatedAt}
+            isFirst
+            attachments={[]}
+          />
+        )}
         {initialMessages.map((m) => (
           <Bubble
             key={m.id}
@@ -373,7 +387,8 @@ export function ClientTicketConversation({
           />
         ))}
         {initialMessages.length === 0 &&
-          pending.length === 0 && (
+          pending.length === 0 &&
+          !description && (
             <p className="py-8 text-center text-sm text-muted-foreground">
               No messages yet.
             </p>

@@ -20,6 +20,7 @@ import {
 import { toast } from 'sonner';
 
 import { addContactTicketMessage } from '@/actions/contacts/add-contact-ticket-message';
+import { dismissContactNotifications } from '@/actions/notifications/dismiss-contact-notifications';
 import {
   AttachmentPreview,
   StagedAttachmentChip,
@@ -68,6 +69,16 @@ export function ContactTicketDetail({
   const router = useRouter();
   const conversationMessages = ticket.messages.filter((m) => !m.isInternalNote);
   const internalNotes = ticket.messages.filter((m) => m.isInternalNote);
+
+  // Viewing the ticket = reading it: clear this contact's unread "ticket"
+  // activity badge on the Contacts table automatically (no badge click
+  // needed). Scoped to the signed-in user inside the action.
+  React.useEffect(() => {
+    void dismissContactNotifications({
+      contactId: contact.id,
+      type: 'TICKET'
+    });
+  }, [contact.id]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 px-4 py-3">
