@@ -82,15 +82,21 @@ export default async function DashboardLayout({
   // Meetings / My Software). Keyed by route so NavMain can match by href.
   let navBadges: Record<string, number> = {};
   if (isClient) {
-    const link = await getClientContactLink(session.user.id);
-    if (link) {
-      const counts = await getClientSidebarCounts(link);
-      navBadges = {
-        [Routes.ClientSupport]: counts.tickets,
-        [Routes.ClientMessages]: counts.messages,
-        [Routes.ClientMeetings]: counts.meetings,
-        [Routes.ClientSoftware]: counts.software
-      };
+    // Badges are non-critical chrome — never let a counts failure (stale
+    // Prisma client, DB hiccup) break navigation for the whole portal.
+    try {
+      const link = await getClientContactLink(session.user.id);
+      if (link) {
+        const counts = await getClientSidebarCounts(link);
+        navBadges = {
+          [Routes.ClientSupport]: counts.tickets,
+          [Routes.ClientMessages]: counts.messages,
+          [Routes.ClientMeetings]: counts.meetings,
+          [Routes.ClientSoftware]: counts.software
+        };
+      }
+    } catch (error) {
+      console.error('[Sidebar badges] failed to load counts:', error);
     }
   }
 

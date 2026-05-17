@@ -106,28 +106,6 @@ export const AddContactNoteModal = NiceModal.create<AddContactNoteModalProps>(
           disabled={methods.formState.isSubmitting}
           {...methods.register('contactId')}
         />
-        <FormField
-          control={methods.control}
-          name="text"
-          render={({ field }) => (
-            <FormItem className="flex w-full flex-col space-y-1.5">
-              <FormLabel>Note</FormLabel>
-              <FormControl>
-                <TextEditor
-                  getText={() => convertMarkdownToHtml(field.value || '')}
-                  setText={(value: string) =>
-                    field.onChange(convertHtmlToMarkdown(value))
-                  }
-                  height="160px"
-                />
-              </FormControl>
-              <p className="text-xs text-muted-foreground">
-                Tip: type @ to mention a teammate.
-              </p>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
         <div
           className={cn(
             'grid gap-4',
@@ -203,6 +181,28 @@ export const AddContactNoteModal = NiceModal.create<AddContactNoteModalProps>(
             />
           )}
         </div>
+        <FormField
+          control={methods.control}
+          name="text"
+          render={({ field }) => (
+            <FormItem className="flex w-full flex-col space-y-1.5">
+              <FormLabel>Note</FormLabel>
+              <FormControl>
+                <TextEditor
+                  getText={() => convertMarkdownToHtml(field.value || '')}
+                  setText={(value: string) =>
+                    field.onChange(convertHtmlToMarkdown(value))
+                  }
+                  height="160px"
+                />
+              </FormControl>
+              <p className="text-xs text-muted-foreground">
+                Tip: type @ to mention a teammate.
+              </p>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={methods.control}
           name="pinned"
