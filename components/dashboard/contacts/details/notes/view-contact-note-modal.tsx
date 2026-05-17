@@ -111,6 +111,28 @@ export const ViewContactNoteModal = NiceModal.create<ViewContactNoteModalProps>(
           </Field>
         </div>
 
+        {/* Read-only meta — shown before the note body */}
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Author">
+            <span className="flex items-center gap-2">
+              <Avatar className="size-6 shrink-0 rounded-full">
+                <AvatarImage
+                  src={note.sender.image}
+                  alt={note.sender.name}
+                />
+                <AvatarFallback className="text-[10px] font-semibold">
+                  {getInitials(note.sender.name) || 'NA'}
+                </AvatarFallback>
+              </Avatar>
+              {note.sender.name}
+            </span>
+          </Field>
+          <Field label="Created">
+            {format(new Date(note.createdAt), 'MMM d, yyyy')}
+            {note.edited && ' · edited'}
+          </Field>
+        </div>
+
         {/* 3 — Note */}
         <Field label="Note">
           {note.text ? (
@@ -139,28 +161,6 @@ export const ViewContactNoteModal = NiceModal.create<ViewContactNoteModalProps>(
             <span className="text-muted-foreground">Not pinned</span>
           )}
         </Field>
-
-        {/* Read-only meta */}
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Author">
-            <span className="flex items-center gap-2">
-              <Avatar className="size-6 shrink-0 rounded-full">
-                <AvatarImage
-                  src={note.sender.image}
-                  alt={note.sender.name}
-                />
-                <AvatarFallback className="text-[10px] font-semibold">
-                  {getInitials(note.sender.name) || 'NA'}
-                </AvatarFallback>
-              </Avatar>
-              {note.sender.name}
-            </span>
-          </Field>
-          <Field label="Created">
-            {format(new Date(note.createdAt), 'MMM d, yyyy')}
-            {note.edited && ' · edited'}
-          </Field>
-        </div>
       </div>
     );
 
