@@ -7,8 +7,13 @@ import { format, isThisYear, isToday } from 'date-fns';
 import {
   ArrowLeftIcon,
   ForwardIcon,
+  ImageIcon,
   InboxIcon,
+  Link2Icon,
+  MoreVerticalIcon,
   PaperclipIcon,
+  PrinterIcon,
+  RemoveFormattingIcon,
   SendIcon,
   SmileIcon,
   TrashIcon
@@ -36,7 +41,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ComposeWindow } from '@/components/ui/compose-window';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Popover,
   PopoverContent,
@@ -93,6 +106,37 @@ function appendEmojiToHtml(html: string, emoji: string): string {
     return html.replace(/<\/p>\s*$/i, `${emoji}</p>`);
   }
   return (html ?? '') + emoji;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// Append an HTML snippet (link / image) into the body. Same seed-once
+// constraint as appendEmojiToHtml — caller re-seeds the editor after.
+function appendHtmlToBody(html: string, snippet: string): string {
+  if (/<\/p>\s*$/i.test(html)) {
+    return html.replace(/<\/p>\s*$/i, `${snippet}</p>`);
+  }
+  return `${html ?? ''}<p>${snippet}</p>`;
+}
+
+// Strip all markup so the body becomes Gmail-style "plain text mode".
+function htmlToPlainParagraphs(html: string): string {
+  const text = html
+    .replace(/<\/(p|div|h[1-6]|li|blockquote)>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>');
+  const lines = text.split('\n').map((l) => l.trim());
+  return lines.map((l) => `<p>${escapeHtml(l) || '<br>'}</p>`).join('');
 }
 
 // True if the rich-text body has actual content (an empty Lexical editor
@@ -223,6 +267,11 @@ export function ContactInbox({
     []
   );
   const composeFileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const composeImageInputRef = React.useRef<HTMLInputElement | null>(null);
+  // Gmail's "Insert link" popover state.
+  const [linkOpen, setLinkOpen] = React.useState<boolean>(false);
+  const [linkUrl, setLinkUrl] = React.useState<string>('');
+  const [linkText, setLinkText] = React.useState<string>('');
 
   const inboxCount = initialThreads.filter(
     (t) => t.folder === EmailFolder.INBOX
@@ -500,6 +549,49 @@ export function ContactInbox({
     setComposeEditorKey((k) => k + 1);
   };
 
+  const handleInsertLink = (): void => {
+    const rawUrl = linkUrl.trim();
+    if (!rawUrl) return;
+    // Default to https:// when the user omits a scheme (Gmail does this too).
+    const href = /^(https?:|mailto:|tel:)/i.test(rawUrl)
+      ? rawUrl
+      : `https://${rawUrl}`;
+    const label = linkText.trim() || rawUrl;
+    const anchor = `<a href="${escapeHtml(href)}">${escapeHtml(label)}</a>`;
+    setComposeDraft((d) => ({ ...d, body: appendHtmlToBody(d.body, anchor) }));
+    setComposeEditorKey((k) => k + 1);
+    setLinkUrl('');
+    setLinkText('');
+    setLinkOpen(false);
+  };
+
+  const handlePlainTextMode = (): void => {
+    setComposeDraft((d) => ({
+      ...d,
+      body: htmlToPlainParagraphs(d.body)
+    }));
+    setShowFormatting(false);
+    setComposeEditorKey((k) => k + 1);
+  };
+
+  const handlePrintDraft = (): void => {
+    if (typeof window === 'undefined') return;
+    const w = window.open('', '_blank', 'noopener,noreferrer,width=800');
+    if (!w) return;
+    w.document.write(
+      `<!doctype html><html><head><title>${escapeHtml(
+        composeDraft.subject.trim() || 'New email'
+      )}</title></head><body style="font-family:system-ui,sans-serif;padding:24px;">` +
+        `<h2 style="font-size:18px;">${escapeHtml(
+          composeDraft.subject.trim() || '(no subject)'
+        )}</h2>` +
+        `<div>${composeDraft.body || ''}</div></body></html>`
+    );
+    w.document.close();
+    w.focus();
+    w.print();
+  };
+
   const handleComposeClose = (): void => {
     const hasDraft =
       composeDraft.subject.trim().length > 0 ||
@@ -576,6 +668,14 @@ export function ContactInbox({
   };
 
   const onComposePickFiles = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (files.length > 0) void uploadComposeFiles(files);
+    e.target.value = '';
+  };
+
+  const onComposePickImages = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ): void => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     if (files.length > 0) void uploadComposeFiles(files);
     e.target.value = '';
@@ -798,6 +898,63 @@ export function ContactInbox({
             >
               <PaperclipIcon className="size-4 shrink-0" />
             </Button>
+            {/* Insert link — Gmail's chain-link button. */}
+            <Popover
+              open={linkOpen}
+              onOpenChange={setLinkOpen}
+            >
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disabled={pending}
+                  title="Insert link"
+                  aria-label="Insert link"
+                >
+                  <Link2Icon className="size-4 shrink-0" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="start"
+                className="w-80 space-y-3"
+              >
+                <div className="space-y-1.5">
+                  <Label htmlFor="compose-link-text">Text to display</Label>
+                  <Input
+                    id="compose-link-text"
+                    value={linkText}
+                    onChange={(e) => setLinkText(e.target.value)}
+                    placeholder="Link text (optional)"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="compose-link-url">Web address</Label>
+                  <Input
+                    id="compose-link-url"
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleInsertLink();
+                      }
+                    }}
+                    placeholder="https://example.com"
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleInsertLink}
+                    disabled={!linkUrl.trim()}
+                  >
+                    Insert link
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -826,6 +983,47 @@ export function ContactInbox({
                 />
               </PopoverContent>
             </Popover>
+            {/* Insert photo — Gmail's image button. Inline rendering needs a
+                mailer/CID change, so this attaches the image (works today). */}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => composeImageInputRef.current?.click()}
+              disabled={
+                pending || stagedCompose.length >= MAX_REPLY_ATTACHMENTS
+              }
+              title="Insert photo"
+              aria-label="Insert photo"
+            >
+              <ImageIcon className="size-4 shrink-0" />
+            </Button>
+            {/* More options — Gmail's three-dot menu. */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disabled={pending}
+                  title="More options"
+                  aria-label="More options"
+                >
+                  <MoreVerticalIcon className="size-4 shrink-0" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onClick={handlePlainTextMode}>
+                  <RemoveFormattingIcon className="mr-2 size-4 shrink-0" />
+                  Plain text mode
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handlePrintDraft}>
+                  <PrinterIcon className="mr-2 size-4 shrink-0" />
+                  Print
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {/* Discard — far right, like Gmail's trash. */}
             <Button
               type="button"
@@ -960,6 +1158,14 @@ export function ContactInbox({
             multiple
             hidden
             onChange={onComposePickFiles}
+          />
+          <input
+            ref={composeImageInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            hidden
+            onChange={onComposePickImages}
           />
         </div>
       </ComposeWindow>

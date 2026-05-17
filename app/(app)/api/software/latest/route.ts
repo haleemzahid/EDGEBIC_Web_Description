@@ -183,11 +183,13 @@ export async function POST(request: NextRequest) {
           : {})
       },
       orderBy: { updatedAt: 'desc' },
-      // Only safe fields — never licenseKey, installPath, notes, etc.
+      // Only safe fields — never licenseKey, installPath, etc.
+      // `notes` is intentionally exposed as the product "description".
       select: {
         name: true,
         latestVersion: true,
         downloadUrl: true,
+        notes: true,
         updatedAt: true
       }
     });
@@ -196,6 +198,7 @@ export async function POST(request: NextRequest) {
 
     const software = rows.map((r) => ({
       productName: r.name,
+      description: r.notes,
       latestVersion: r.latestVersion,
       version: r.latestVersion,
       downloadUrl: r.downloadUrl,

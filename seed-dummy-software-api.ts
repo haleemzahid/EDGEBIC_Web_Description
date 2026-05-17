@@ -16,6 +16,10 @@ import { LicenseKeyGenerator } from '@/lib/license/license-key-generator';
 const DUMMY_KEY = 'TEST-DUMMY-KEY-0001';
 const DUMMY_EMAIL = 'dummy-test@example.com';
 const DUMMY_PRODUCT = 'Dummy Product';
+const DUMMY_DESCRIPTION =
+  'Dummy Product is a test entry for the software-update endpoint. ' +
+  'This text is returned as the "description" field so you can verify ' +
+  'the API surfaces product information correctly.';
 const DUMMY_SESSION = 'dummy-session-software-api-test';
 
 async function main() {
@@ -53,14 +57,22 @@ async function main() {
     where: { contactId: contact.id, name: DUMMY_PRODUCT },
     select: { id: true }
   });
-  if (!existingSoftware) {
+  if (existingSoftware) {
+    // Keep the description in sync on re-runs.
+    await prisma.contactSoftware.update({
+      where: { id: existingSoftware.id },
+      data: { notes: DUMMY_DESCRIPTION }
+    });
+  } else {
     await prisma.contactSoftware.create({
       data: {
         contactId: contact.id,
         name: DUMMY_PRODUCT,
         installedVersion: '9.0.0',
         latestVersion: '9.9.9',
-        downloadUrl: 'https://example.com/dummy-setup-9.9.9.exe'
+        downloadUrl: 'https://example.com/dummy-setup-9.9.9.exe',
+        // Returned as "description" by POST /api/software/latest.
+        notes: DUMMY_DESCRIPTION
       }
     });
   }
