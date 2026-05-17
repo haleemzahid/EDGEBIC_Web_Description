@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import NiceModal from '@ebay/nice-modal-react';
 import {
   ExternalLinkIcon,
@@ -37,6 +38,19 @@ export function ContactSoftwareSection({
   contactId,
   software
 }: ContactSoftwareSectionProps): React.JSX.Element {
+  const router = useRouter();
+
+  // Auto-refresh so add/edit/delete (and team-side changes) appear without a
+  // manual reload — same visibility-aware polling the other contact lists use.
+  React.useEffect(() => {
+    const id = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        router.refresh();
+      }
+    }, 10_000);
+    return () => window.clearInterval(id);
+  }, [router]);
+
   const handleAdd = () => {
     NiceModal.show(AddContactSoftwareModal, { contactId });
   };

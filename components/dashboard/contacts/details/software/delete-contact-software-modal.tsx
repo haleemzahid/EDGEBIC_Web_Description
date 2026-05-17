@@ -1,6 +1,7 @@
 'use client';
 
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
+import { useRouter } from 'next/navigation';
 import { type SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -40,6 +41,7 @@ export type DeleteContactSoftwareModalProps = NiceModalHocProps & {
 export const DeleteContactSoftwareModal =
   NiceModal.create<DeleteContactSoftwareModalProps>(({ software }) => {
     const modal = useEnhancedModal();
+    const router = useRouter();
     const mdUp = useMediaQuery(MediaQueries.MdUp, { ssr: false });
     const methods = useZodForm({
       schema: deleteContactSoftwareSchema,
@@ -56,6 +58,7 @@ export const DeleteContactSoftwareModal =
       if (!result?.serverError && !result?.validationErrors) {
         toast.success('Software removed');
         modal.handleClose();
+        router.refresh();
       } else {
         const reason =
           result?.serverError ||
@@ -100,11 +103,12 @@ export const DeleteContactSoftwareModal =
     if (mdUp) {
       return (
         <FormProvider {...methods}>
-          <AlertDialog
-            open={modal.visible}
-            onOpenChange={modal.handleOpenChange}
-          >
-            <AlertDialogContent>
+          <AlertDialog open={modal.visible}>
+            <AlertDialogContent
+              className="max-w-sm"
+              onClose={modal.handleClose}
+              onAnimationEndCapture={modal.handleAnimationEndCapture}
+            >
               <AlertDialogHeader>
                 <AlertDialogTitle>{title}</AlertDialogTitle>
                 <AlertDialogDescription>
