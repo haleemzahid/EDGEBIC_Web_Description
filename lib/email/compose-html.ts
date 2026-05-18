@@ -88,3 +88,85 @@ export function htmlHasContent(html: string): boolean {
       .trim().length > 0
   );
 }
+
+/**
+ * Print a compose/reply draft via a hidden iframe.
+ *
+ * Why an iframe and not `window.open`: passing `noopener` to
+ * `window.open(..., features)` makes browsers return `null`, so the old
+ * `if (!w) return;` path silently swallowed every print. The iframe also
+ * dodges popup blockers, waits for load before printing, and cleans itself
+ * up afterwards.
+ *
+ * Shared by all four Gmail-style composers (admin compose + reply, client
+ * compose + reply) so the behaviour stays identical.
+ */
+export function printComposeDraft(args: {
+  subject?: string;
+  body: string;
+  /** Optional header rows rendered above the body (To/Cc/Subject/…). */
+  headers?: { label: string; value: string }[];
+}): void {
+  if (typeof document === 'undefined') return;
+
+  const title = (args.subject ?? '').trim() || 'Draft';
+  const headerRows = (args.headers ?? [])
+    .filter((h) => h.value.trim().length > 0)
+    .map(
+      (h) =>
+        `<tr><td style="padding:2px 12px 2px 0;color:#6b7280;white-space:nowrap;vertical-align:top;">${escapeHtml(
+          h.label
+        )}</td><td style="padding:2px 0;">${escapeHtml(h.value)}</td></tr>`
+    )
+    .join('');
+
+  const html =
+    `<!doctype html><html><head><meta charset="utf-8" />` +
+    `<title>${escapeHtml(title)}</title></head>` +
+    `<body style="font-family:system-ui,-apple-system,sans-serif;padding:24px;color:#111827;">` +
+    (headerRows
+      ? `<table style="font-size:13px;border-collapse:collapse;margin-bottom:16px;">${headerRows}</table>` +
+        `<hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 16px;" />`
+      : '') +
+    `<div>${args.body || ''}</div>` +
+    `</body></html>`;
+
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  document.body.appendChild(iframe);
+
+  let cleaned = false;
+  const cleanup = (): void => {
+    if (cleaned) return;
+    cleaned = true;
+    window.setTimeout(() => iframe.remove(), 500);
+  };
+
+  iframe.onload = (): void => {
+    const win = iframe.contentWindow;
+    if (!win) {
+      iframe.remove();
+      return;
+    }
+    win.onafterprint = cleanup;
+    win.focus();
+    win.print();
+    // Fallback in case onafterprint never fires (some browsers).
+    window.setTimeout(cleanup, 60_000);
+  };
+
+  const doc = iframe.contentWindow?.document;
+  if (!doc) {
+    iframe.remove();
+    return;
+  }
+  doc.open();
+  doc.write(html);
+  doc.close();
+}

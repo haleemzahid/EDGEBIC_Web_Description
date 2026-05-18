@@ -9,11 +9,14 @@ import EmojiPicker, {
   type EmojiClickData
 } from 'emoji-picker-react';
 import {
+  CheckIcon,
   Link2Icon,
   MoreVerticalIcon,
+  PrinterIcon,
   RemoveFormattingIcon,
   SendIcon,
-  SmileIcon
+  SmileIcon,
+  SpellCheckIcon
 } from 'lucide-react';
 import { type SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -26,6 +29,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import {
@@ -48,7 +52,8 @@ import {
   appendHtmlToBody,
   escapeHtml,
   htmlHasContent,
-  htmlToPlainParagraphs
+  htmlToPlainParagraphs,
+  printComposeDraft
 } from '@/lib/email/compose-html';
 import { cn } from '@/lib/utils';
 import { replyClientMessageSchema } from '@/schemas/client-portal/reply-client-message-schema';
@@ -69,6 +74,7 @@ export function ClientMessageReply({
   const body = methods.watch('body') ?? '';
   const [editorKey, setEditorKey] = React.useState<number>(0);
   const [showFormatting, setShowFormatting] = React.useState<boolean>(false);
+  const [spellCheck, setSpellCheck] = React.useState<boolean>(true);
   const [linkOpen, setLinkOpen] = React.useState<boolean>(false);
   const [linkUrl, setLinkUrl] = React.useState<string>('');
   const [linkText, setLinkText] = React.useState<string>('');
@@ -118,6 +124,9 @@ export function ClientMessageReply({
     setShowFormatting(false);
     setEditorKey((k) => k + 1);
   };
+  const handlePrint = (): void => {
+    printComposeDraft({ subject: 'Reply', body });
+  };
 
   return (
     <FormProvider {...methods}>
@@ -146,6 +155,7 @@ export function ClientMessageReply({
                       placeholder="Write a message to your project team…"
                       height="72px"
                       showToolbar={showFormatting}
+                      spellCheck={spellCheck}
                     />
                   </div>
                   <div className="flex shrink-0 items-center gap-1 border-t bg-background px-2 py-1.5">
@@ -273,6 +283,20 @@ export function ClientMessageReply({
                         <DropdownMenuItem onClick={handlePlainText}>
                           <RemoveFormattingIcon className="mr-2 size-4 shrink-0" />
                           Plain text mode
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handlePrint}>
+                          <PrinterIcon className="mr-2 size-4 shrink-0" />
+                          Print
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setSpellCheck((v) => !v)}
+                        >
+                          <SpellCheckIcon className="mr-2 size-4 shrink-0" />
+                          <span className="flex-1">Spell check</span>
+                          {spellCheck && (
+                            <CheckIcon className="ml-2 size-4 shrink-0" />
+                          )}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

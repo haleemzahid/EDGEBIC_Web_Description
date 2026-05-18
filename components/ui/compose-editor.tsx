@@ -655,6 +655,8 @@ export type ComposeEditorProps = {
   placeholder?: string;
   /** Gmail toggles the formatting strip with the "Aa" button. */
   showToolbar?: boolean;
+  /** Browser red-underline spell check on the body. Defaults to on. */
+  spellCheck?: boolean;
 };
 
 // Compose-only rich-text editor. Deliberately separate from the shared
@@ -795,6 +797,7 @@ export function ComposeEditor(props: ComposeEditorProps): React.JSX.Element {
               <ContentEditable
                 className="compose-editor-input"
                 style={{ minHeight: props.height }}
+                spellCheck={props.spellCheck ?? true}
               />
             }
             placeholder={

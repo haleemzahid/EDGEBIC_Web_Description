@@ -22,6 +22,13 @@ export type ComposeWindowProps = {
   closeDisabled?: boolean;
   /** Files dropped anywhere on the (non-minimized) window. */
   onFilesDropped?: (files: File[]) => void;
+  /**
+   * Controlled expand (full-screen) state. When provided, the parent owns
+   * it so external triggers (e.g. a "Default to full screen" menu item) and
+   * the header expand button stay in sync. Omit for the internal default.
+   */
+  expanded?: boolean;
+  onExpandedChange?: (expanded: boolean) => void;
 };
 
 // Gmail-style compose surface: a non-modal panel docked to the bottom-right
@@ -38,17 +45,33 @@ export function ComposeWindow({
   children,
   footer,
   closeDisabled,
-  onFilesDropped
+  onFilesDropped,
+  expanded: expandedProp,
+  onExpandedChange
 }: ComposeWindowProps): React.JSX.Element | null {
   const [minimized, setMinimized] = React.useState(false);
-  const [expanded, setExpanded] = React.useState(false);
+  const [expandedInternal, setExpandedInternal] = React.useState(false);
   const [dragOver, setDragOver] = React.useState(false);
 
-  // Reset chrome state each time the window is (re)opened.
+  // Controlled-or-uncontrolled: parent owns the state if it passes `expanded`.
+  const isExpandedControlled = expandedProp !== undefined;
+  const expanded = isExpandedControlled ? expandedProp : expandedInternal;
+  const setExpanded = React.useCallback(
+    (next: boolean): void => {
+      if (!isExpandedControlled) {
+        setExpandedInternal(next);
+      }
+      onExpandedChange?.(next);
+    },
+    [isExpandedControlled, onExpandedChange]
+  );
+
+  // Reset chrome state each time the window is (re)opened. Only the internal
+  // expand state is reset here — a controlled parent resets its own.
   React.useEffect(() => {
     if (open) {
       setMinimized(false);
-      setExpanded(false);
+      setExpandedInternal(false);
     }
   }, [open]);
 
@@ -83,7 +106,7 @@ export function ComposeWindow({
           onClick={(e) => {
             e.stopPropagation();
             setMinimized(false);
-            setExpanded((x) => !x);
+            setExpanded(!expanded);
           }}
         >
           {expanded ? (

@@ -4,14 +4,17 @@ import * as React from 'react';
 import NiceModal, { type NiceModalHocProps } from '@ebay/nice-modal-react';
 import { useRouter } from 'next/navigation';
 import {
+  CheckIcon,
   ImageIcon,
   Link2Icon,
+  Maximize2Icon,
   MoreVerticalIcon,
   PaperclipIcon,
   PrinterIcon,
   RemoveFormattingIcon,
   SendIcon,
   SmileIcon,
+  SpellCheckIcon,
   TrashIcon
 } from 'lucide-react';
 import EmojiPicker, {
@@ -51,7 +54,8 @@ import {
   appendHtmlToBody,
   escapeHtml,
   htmlHasContent,
-  htmlToPlainParagraphs
+  htmlToPlainParagraphs,
+  printComposeDraft
 } from '@/lib/email/compose-html';
 import { cn } from '@/lib/utils';
 
@@ -102,6 +106,9 @@ export const ComposeMessageModal = NiceModal.create<NiceModalHocProps>(() => {
   // Bumped to remount the seed-once rich-text editor (open, draft-restore,
   // emoji/link insert, plain-text mode).
   const [editorKey, setEditorKey] = React.useState(0);
+  // Compose ⋮ menu: full-screen (controls ComposeWindow) + body spell check.
+  const [expanded, setExpanded] = React.useState(false);
+  const [spellCheck, setSpellCheck] = React.useState(true);
   const [staged, setStaged] = React.useState<StagedAttachment[]>([]);
   const [linkOpen, setLinkOpen] = React.useState(false);
   const [linkUrl, setLinkUrl] = React.useState('');
@@ -119,6 +126,8 @@ export const ComposeMessageModal = NiceModal.create<NiceModalHocProps>(() => {
     setShowFormatting(false);
     setStaged([]);
     setSubmitting(false);
+    setExpanded(false);
+    setSpellCheck(true);
     setEditorKey((k) => k + 1);
   }, [modal.visible]);
 
@@ -230,21 +239,12 @@ export const ComposeMessageModal = NiceModal.create<NiceModalHocProps>(() => {
   };
 
   const handlePrint = (): void => {
-    if (typeof window === 'undefined') return;
-    const w = window.open('', '_blank', 'noopener,noreferrer,width=800');
-    if (!w) return;
-    w.document.write(
-      `<!doctype html><html><head><title>${escapeHtml(
-        subject.trim() || 'New message'
-      )}</title></head><body style="font-family:system-ui,sans-serif;padding:24px;">` +
-        `<h2 style="font-size:18px;">${escapeHtml(
-          subject.trim() || '(no subject)'
-        )}</h2>` +
-        `<div>${body || ''}</div></body></html>`
-    );
-    w.document.close();
-    w.focus();
-    w.print();
+    const trimmed = subject.trim() || '(no subject)';
+    printComposeDraft({
+      subject: trimmed,
+      body,
+      headers: [{ label: 'Subject', value: trimmed }]
+    });
   };
 
   const hasDraft = (): boolean =>
@@ -450,6 +450,10 @@ export const ComposeMessageModal = NiceModal.create<NiceModalHocProps>(() => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
+          <DropdownMenuItem onClick={() => setExpanded((v) => !v)}>
+            <Maximize2Icon className="mr-2 size-4 shrink-0" />
+            {expanded ? 'Exit full screen' : 'Default to full screen'}
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={handlePlainTextMode}>
             <RemoveFormattingIcon className="mr-2 size-4 shrink-0" />
             Plain text mode
@@ -458,6 +462,11 @@ export const ComposeMessageModal = NiceModal.create<NiceModalHocProps>(() => {
           <DropdownMenuItem onClick={handlePrint}>
             <PrinterIcon className="mr-2 size-4 shrink-0" />
             Print
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setSpellCheck((v) => !v)}>
+            <SpellCheckIcon className="mr-2 size-4 shrink-0" />
+            <span className="flex-1">Spell check</span>
+            {spellCheck && <CheckIcon className="ml-2 size-4 shrink-0" />}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -482,6 +491,8 @@ export const ComposeMessageModal = NiceModal.create<NiceModalHocProps>(() => {
       onClose={handleClose}
       title={subject.trim() || 'New message'}
       closeDisabled={submitting}
+      expanded={expanded}
+      onExpandedChange={setExpanded}
       onFilesDropped={(files) => void uploadFiles(files)}
       footer={footer}
     >
@@ -506,6 +517,7 @@ export const ComposeMessageModal = NiceModal.create<NiceModalHocProps>(() => {
             placeholder="Write your message…"
             height="220px"
             showToolbar={showFormatting}
+            spellCheck={spellCheck}
           />
         </div>
         {staged.length > 0 && (

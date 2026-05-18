@@ -6,18 +6,24 @@ import { EmailFolder, EmailSenderType } from '@prisma/client';
 import { format, isThisYear, isToday } from 'date-fns';
 import {
   ArrowLeftIcon,
+  CalendarClockIcon,
+  CheckIcon,
   ForwardIcon,
   ImageIcon,
   InboxIcon,
   Link2Icon,
+  Maximize2Icon,
   MoreVerticalIcon,
   PaperclipIcon,
   PrinterIcon,
   RemoveFormattingIcon,
   SendIcon,
   SmileIcon,
+  SpellCheckIcon,
+  TagIcon,
   TrashIcon
 } from 'lucide-react';
+import NiceModal from '@ebay/nice-modal-react';
 import EmojiPicker, {
   EmojiStyle,
   SkinTones,
@@ -32,6 +38,7 @@ import { markContactEmailRead } from '@/actions/contacts/mark-contact-email-read
 import { replyContactEmail } from '@/actions/contacts/reply-contact-email';
 import { sendContactEmail } from '@/actions/contacts/send-contact-email';
 import { dismissContactNotifications } from '@/actions/notifications/dismiss-contact-notifications';
+import { AddContactMeetingModal } from '@/components/dashboard/contacts/details/meetings/add-contact-meeting-modal';
 import {
   AttachmentPreview,
   StagedAttachmentChip,
@@ -48,6 +55,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -65,7 +75,8 @@ import {
   escapeHtml,
   htmlHasContent,
   htmlToPlainParagraphs,
-  isHtmlBody
+  isHtmlBody,
+  printComposeDraft
 } from '@/lib/email/compose-html';
 import { cn, getInitials } from '@/lib/utils';
 import type { ContactDto } from '@/types/dtos/contact-dto';
@@ -193,6 +204,11 @@ export function ContactInbox({
   const [replyEditorKey, setReplyEditorKey] = React.useState<number>(0);
   const [stagedReply, setStagedReply] = React.useState<StagedAttachment[]>([]);
   const [composeOpen, setComposeOpen] = React.useState<boolean>(false);
+  // Compose ⋮ menu: full-screen toggle (controls ComposeWindow) and the
+  // body spell-check toggle. Gmail defaults spell check on.
+  const [composeExpanded, setComposeExpanded] =
+    React.useState<boolean>(false);
+  const [spellCheckOn, setSpellCheckOn] = React.useState<boolean>(true);
   const [showCc, setShowCc] = React.useState<boolean>(false);
   const [showBcc, setShowBcc] = React.useState<boolean>(false);
   // Gmail hides the formatting toolbar until "Aa" is clicked.
@@ -499,6 +515,7 @@ export function ContactInbox({
     setShowFormatting(false);
     setStagedCompose([]);
     setComposeEditorKey((k) => k + 1);
+    setComposeExpanded(false);
     setComposeOpen(true);
   };
 
@@ -527,6 +544,18 @@ export function ContactInbox({
     setLinkOpen(false);
   };
 
+  // "Label" applies one of the contact's CRM tags as a Gmail-style
+  // bracketed subject prefix (this app has no email-label system, so the
+  // subject prefix is the closest non-destructive equivalent).
+  const handleApplyLabel = (label: string): void => {
+    const prefix = `[${label}] `;
+    setComposeDraft((d) =>
+      d.subject.startsWith(prefix)
+        ? d
+        : { ...d, subject: prefix + d.subject }
+    );
+  };
+
   const handlePlainTextMode = (): void => {
     setComposeDraft((d) => ({
       ...d,
@@ -537,70 +566,17 @@ export function ContactInbox({
   };
 
   const handlePrintDraft = (): void => {
-    if (typeof document === 'undefined') return;
-
     const subject = composeDraft.subject.trim() || '(no subject)';
-    const headerRow = (label: string, value: string): string =>
-      value
-        ? `<tr><td style="padding:2px 12px 2px 0;color:#6b7280;white-space:nowrap;vertical-align:top;">${label}</td><td style="padding:2px 0;">${escapeHtml(
-            value
-          )}</td></tr>`
-        : '';
-
-    const html =
-      `<!doctype html><html><head><meta charset="utf-8" />` +
-      `<title>${escapeHtml(subject)}</title></head>` +
-      `<body style="font-family:system-ui,-apple-system,sans-serif;padding:24px;color:#111827;">` +
-      `<table style="font-size:13px;border-collapse:collapse;margin-bottom:16px;">` +
-      headerRow('To', composeDraft.to.join(', ')) +
-      headerRow('Cc', composeDraft.cc.join(', ')) +
-      headerRow('Bcc', composeDraft.bcc.join(', ')) +
-      headerRow('Subject', subject) +
-      `</table>` +
-      `<hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 16px;" />` +
-      `<div>${composeDraft.body || ''}</div>` +
-      `</body></html>`;
-
-    // A hidden iframe prints reliably without tripping popup blockers
-    // (window.open with noopener returns null and silently fails).
-    const iframe = document.createElement('iframe');
-    iframe.setAttribute('aria-hidden', 'true');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    document.body.appendChild(iframe);
-
-    let cleaned = false;
-    const cleanup = (): void => {
-      if (cleaned) return;
-      cleaned = true;
-      window.setTimeout(() => iframe.remove(), 500);
-    };
-
-    iframe.onload = (): void => {
-      const win = iframe.contentWindow;
-      if (!win) {
-        iframe.remove();
-        return;
-      }
-      win.onafterprint = cleanup;
-      win.focus();
-      win.print();
-      // Fallback in case onafterprint never fires (some browsers).
-      window.setTimeout(cleanup, 60_000);
-    };
-
-    const doc = iframe.contentWindow?.document;
-    if (!doc) {
-      iframe.remove();
-      return;
-    }
-    doc.open();
-    doc.write(html);
-    doc.close();
+    printComposeDraft({
+      subject,
+      body: composeDraft.body,
+      headers: [
+        { label: 'To', value: composeDraft.to.join(', ') },
+        { label: 'Cc', value: composeDraft.cc.join(', ') },
+        { label: 'Bcc', value: composeDraft.bcc.join(', ') },
+        { label: 'Subject', value: subject }
+      ]
+    });
   };
 
   const handleComposeClose = (): void => {
@@ -865,6 +841,8 @@ export function ContactInbox({
         onClose={handleComposeClose}
         title={composeDraft.subject.trim() || 'New email'}
         closeDisabled={pending}
+        expanded={composeExpanded}
+        onExpandedChange={setComposeExpanded}
         onFilesDropped={(files) => void uploadComposeFiles(files)}
         footer={
           <>
@@ -1025,6 +1003,14 @@ export function ContactInbox({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
+                <DropdownMenuItem
+                  onClick={() => setComposeExpanded((v) => !v)}
+                >
+                  <Maximize2Icon className="mr-2 size-4 shrink-0" />
+                  {composeExpanded
+                    ? 'Exit full screen'
+                    : 'Default to full screen'}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handlePlainTextMode}>
                   <RemoveFormattingIcon className="mr-2 size-4 shrink-0" />
                   Plain text mode
@@ -1033,6 +1019,49 @@ export function ContactInbox({
                 <DropdownMenuItem onClick={handlePrintDraft}>
                   <PrinterIcon className="mr-2 size-4 shrink-0" />
                   Print
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setSpellCheckOn((v) => !v)}
+                >
+                  <SpellCheckIcon className="mr-2 size-4 shrink-0" />
+                  <span className="flex-1">Spell check</span>
+                  {spellCheckOn && (
+                    <CheckIcon className="ml-2 size-4 shrink-0" />
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <TagIcon className="mr-2 size-4 shrink-0" />
+                    Label
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    {contact.tags.length === 0 ? (
+                      <DropdownMenuItem disabled>
+                        No labels
+                      </DropdownMenuItem>
+                    ) : (
+                      contact.tags.map((tag) => (
+                        <DropdownMenuItem
+                          key={tag.id}
+                          onClick={() => handleApplyLabel(tag.text)}
+                        >
+                          {tag.text}
+                        </DropdownMenuItem>
+                      ))
+                    )}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuItem
+                  onClick={() =>
+                    NiceModal.show(AddContactMeetingModal, {
+                      contactId: contact.id,
+                      contactName: contact.name
+                    })
+                  }
+                >
+                  <CalendarClockIcon className="mr-2 size-4 shrink-0" />
+                  Set up a time to meet
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -1142,6 +1171,7 @@ export function ContactInbox({
               placeholder="Write your message…"
               height="220px"
               showToolbar={showFormatting}
+              spellCheck={spellCheckOn}
             />
           </div>
           {stagedCompose.length > 0 && (
@@ -1452,6 +1482,8 @@ function ThreadReader({
   // Gmail-style reply toolbar state (mirrors the compose window).
   const [showReplyFormatting, setShowReplyFormatting] =
     React.useState<boolean>(false);
+  const [replySpellCheck, setReplySpellCheck] =
+    React.useState<boolean>(true);
   const [replyInsertKey, setReplyInsertKey] = React.useState<number>(0);
   const [linkOpen, setLinkOpen] = React.useState<boolean>(false);
   const [linkUrl, setLinkUrl] = React.useState<string>('');
@@ -1483,6 +1515,15 @@ function ThreadReader({
     setLinkUrl('');
     setLinkText('');
     setLinkOpen(false);
+  };
+  const handleReplyPrint = (): void => {
+    printComposeDraft({
+      subject: `Reply to ${participant.name}`,
+      body: replyText,
+      headers: [
+        { label: 'To', value: participant.email ?? participant.name }
+      ]
+    });
   };
   const handleReplyPlainText = (): void => {
     onReplyTextChange(htmlToPlainParagraphs(replyText));
@@ -1674,6 +1715,7 @@ function ThreadReader({
                 placeholder={`Reply to ${participant.name.split(' ')[0]}…`}
                 height="72px"
                 showToolbar={showReplyFormatting}
+                spellCheck={replySpellCheck}
               />
             </div>
             <div className="flex shrink-0 items-center gap-1 border-t bg-background px-2 py-1.5">
@@ -1824,6 +1866,32 @@ function ThreadReader({
                   <DropdownMenuItem onClick={handleReplyPlainText}>
                     <RemoveFormattingIcon className="mr-2 size-4 shrink-0" />
                     Plain text mode
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleReplyPrint}>
+                    <PrinterIcon className="mr-2 size-4 shrink-0" />
+                    Print
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setReplySpellCheck((v) => !v)}
+                  >
+                    <SpellCheckIcon className="mr-2 size-4 shrink-0" />
+                    <span className="flex-1">Spell check</span>
+                    {replySpellCheck && (
+                      <CheckIcon className="ml-2 size-4 shrink-0" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() =>
+                      NiceModal.show(AddContactMeetingModal, {
+                        contactId: contact.id,
+                        contactName: contact.name
+                      })
+                    }
+                  >
+                    <CalendarClockIcon className="mr-2 size-4 shrink-0" />
+                    Set up a time to meet
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
