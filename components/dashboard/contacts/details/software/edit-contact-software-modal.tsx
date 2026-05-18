@@ -228,6 +228,22 @@ export const EditContactSoftwareModal =
           render={() => (
             <FormItem>
               <FormLabel>Installer file</FormLabel>
+              {software.downloadUrl && !uploadedFileName ? (
+                <Button
+                  type="button"
+                  variant="link"
+                  asChild
+                  className="h-auto justify-start p-0 text-sm"
+                >
+                  <a
+                    href={software.downloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Current file — download
+                  </a>
+                </Button>
+              ) : null}
               <FormControl>
                 <Input
                   type="file"
@@ -242,7 +258,7 @@ export const EditContactSoftwareModal =
                   : uploadedFileName
                     ? `Uploaded: ${uploadedFileName}`
                     : software.downloadUrl
-                      ? 'A file is already attached. Choose a file to replace it.'
+                      ? 'A file is already attached. Choose a file only to replace it.'
                       : 'Optional. Upload an installer (.exe, .msi, .zip, …). Max 1 GB.'}
               </FormDescription>
               <FormMessage />
