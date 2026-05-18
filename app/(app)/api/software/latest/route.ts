@@ -22,13 +22,26 @@ import { rateLimit } from '@/lib/network/rate-limit';
 //
 // NOTE: ContactSoftware has no `releaseDate` column yet, so `releaseDate`
 // is sourced from `updatedAt` as a stopgap. A real column needs a migration.
+//
+// Write-back: when the caller also sends `product` + `version`, after the
+// license validates we record that software against the customer's CRM
+// contact (create the ContactSoftware row if missing, otherwise bump its
+// installed version to the reported one). This keeps the customer's CRM
+// software list in sync with what they actually have installed.
 
 const requestSchema = z.object({
   licenseKey: z.string().min(1),
   // Optional. Required only if the license is machine-bound (activated).
   processorId: z.string().min(1).optional(),
-  // Optional: narrow the response to a single product by name.
-  product: z.string().min(1).optional()
+  // Optional: narrow the response to a single product by name. Also the
+  // product to record when `version` is supplied.
+  product: z.string().min(1).optional(),
+  // Optional: the version the client currently has installed. When sent
+  // together with `product`, the customer's software is added/updated to it.
+  version: z.string().min(1).max(64).optional(),
+  // Optional: download URL to store for this product on the customer's
+  // ContactSoftware row (set together with `product`).
+  downloadUrl: z.string().url().max(2048).optional()
 });
 
 function getClientIp(request: NextRequest): string {
@@ -87,7 +100,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { licenseKey, processorId, product } = requestSchema.parse(body);
+    const { licenseKey, processorId, product, version, downloadUrl } =
+      requestSchema.parse(body);
 
     const licenseKeyHash = LicenseKeyGenerator.hashLicenseKey(licenseKey);
 
@@ -173,6 +187,50 @@ export async function POST(request: NextRequest) {
     if (!contact) {
       await logAttempt(purchase.id, 'success', null, logCtx);
       return NextResponse.json({ software: [] });
+    }
+
+    // Write-back: record the reported software/version against the
+    // customer. Best-effort — a failure here must not break the client's
+    // self-update lookup, so it's isolated and logged.
+    if (product && version) {
+      try {
+        const existingSoftware = await prisma.contactSoftware.findFirst({
+          where: {
+            contactId: contact.id,
+            name: { equals: product, mode: 'insensitive' }
+          },
+          select: { id: true, latestVersion: true }
+        });
+
+        if (existingSoftware) {
+          await prisma.contactSoftware.update({
+            where: { id: existingSoftware.id },
+            data: {
+              installedVersion: version,
+              // Keep latestVersion meaningful: seed it on first sight, but
+              // never let a client downgrade the known-latest value.
+              latestVersion: existingSoftware.latestVersion || version,
+              // Only overwrite the stored URL when one is supplied.
+              ...(downloadUrl ? { downloadUrl } : {})
+            }
+          });
+        } else {
+          await prisma.contactSoftware.create({
+            data: {
+              contactId: contact.id,
+              name: product,
+              installedVersion: version,
+              latestVersion: version,
+              downloadUrl: downloadUrl ?? null
+            }
+          });
+        }
+      } catch (writeError) {
+        console.error(
+          'software-latest: failed to record customer software',
+          writeError
+        );
+      }
     }
 
     const rows = await prisma.contactSoftware.findMany({

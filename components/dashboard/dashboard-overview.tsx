@@ -26,19 +26,16 @@ import {
   PagePrimaryBar,
   PageTitle
 } from '@/components/ui/page';
-import type { ContactOption } from '@/data/contacts/get-contact-options';
 import type { PurchaseStats } from '@/data/purchases/get-purchases';
 
 interface DashboardOverviewProps {
   purchaseStats: PurchaseStats;
   youtubeVideoUrl?: string | null;
-  contactOptions: ContactOption[];
 }
 
 export function DashboardOverview({
   purchaseStats,
-  youtubeVideoUrl,
-  contactOptions
+  youtubeVideoUrl
 }: DashboardOverviewProps): React.JSX.Element {
   const [searchTerm, setSearchTerm] = React.useState('');
 
@@ -49,9 +46,7 @@ export function DashboardOverview({
           <PageTitle>Edgebi Dashboard</PageTitle>
           <PageActions>
             <Button
-              onClick={() =>
-                NiceModal.show(AddLicenseModal, { contactOptions })
-              }
+              onClick={() => NiceModal.show(AddLicenseModal)}
               variant="default"
             >
               <PlusIcon className="mr-2 size-4" />
