@@ -35,6 +35,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { DeleteClientTicketModal } from '@/components/dashboard/client-portal/delete-client-ticket-modal';
 import { EditClientTicketModal } from '@/components/dashboard/client-portal/edit-ticket-modal';
 import { ViewClientTicketModal } from '@/components/dashboard/client-portal/view-ticket-modal';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -293,6 +294,12 @@ function TicketRowActions({
       description: ticket.description
     });
   };
+  const handleDelete = (): void => {
+    NiceModal.show(DeleteClientTicketModal, {
+      ticketId: ticket.id,
+      title: ticket.title
+    });
+  };
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
@@ -334,6 +341,15 @@ function TicketRowActions({
               }}
             >
               Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete();
+              }}
+            >
+              Delete
             </DropdownMenuItem>
           </>
         )}
