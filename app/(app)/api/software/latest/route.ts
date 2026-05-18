@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db/prisma';
 import { LicenseKeyGenerator } from '@/lib/license/license-key-generator';
 import { SystemFingerprintGenerator } from '@/lib/license/system-fingerprint';
 import { rateLimit } from '@/lib/network/rate-limit';
+import { getBaseUrl } from '@/lib/urls/get-base-url';
 
 // Secure software-update endpoint. Installed software POSTs its license key
 // (machine-to-machine — no browser session) and gets back only safe,
@@ -74,6 +75,35 @@ function resolveLicenseKey(
   }
 
   return null;
+}
+
+// The stored downloadUrl may be (a) a relative path like
+// `/uploads/software/<file>` (new uploads), or (b) an old absolute URL
+// with `localhost` baked in from a dev-machine upload, or (c) a real
+// external URL. Resolve (a) and repair (b) against the canonical base
+// URL; pass through any other absolute http(s) URL untouched.
+function resolveDownloadUrl(stored: string | null): string | null {
+  if (!stored) return null;
+  const base = getBaseUrl().replace(/\/+$/, '');
+
+  if (stored.startsWith('/')) {
+    return `${base}${stored}`;
+  }
+
+  try {
+    const url = new URL(stored);
+    if (
+      url.hostname === 'localhost' ||
+      url.hostname === '127.0.0.1' ||
+      url.hostname === '0.0.0.0'
+    ) {
+      return `${base}${url.pathname}${url.search}`;
+    }
+    return stored;
+  } catch {
+    // Not a parseable absolute URL — treat as a relative path.
+    return `${base}/${stored.replace(/^\/+/, '')}`;
+  }
 }
 
 function getClientIp(request: NextRequest): string {
@@ -313,7 +343,7 @@ export async function POST(request: NextRequest) {
         productName: r.name,
         description: r.notes,
         latestVersion: latest,
-        downloadUrl: r.downloadUrl,
+        downloadUrl: resolveDownloadUrl(r.downloadUrl),
         releaseDate: r.updatedAt
       };
     });

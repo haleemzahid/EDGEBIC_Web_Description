@@ -41,12 +41,14 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   try {
     const saved = await saveSoftwareFile(file);
-    // Use the origin the upload actually came in on (not the hard-coded
-    // NEXT_PUBLIC_BASE_URL) so the link points to the same server that
-    // now holds the file.
+    // Store the RELATIVE public path only. The absolute URL is built at
+    // read time (api/software/latest) against the canonical base URL, so
+    // an installer uploaded from localhost still serves a correct public
+    // link in production. Prefix with the canonical origin for the
+    // immediate UI confirmation only.
     return NextResponse.json(
       {
-        downloadUrl: `${req.nextUrl.origin}${saved.publicUrl}`,
+        downloadUrl: saved.publicUrl,
         fileName: saved.fileName,
         sizeBytes: saved.sizeBytes
       },
