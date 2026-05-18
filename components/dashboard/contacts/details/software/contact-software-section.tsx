@@ -87,7 +87,7 @@ export function ContactSoftwareSection({
             <TableHeader>
               <TableRow>
                 <TableHead>Product name</TableHead>
-                <TableHead>Version</TableHead>
+                <TableHead>Latest version</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -119,7 +119,7 @@ export function ContactSoftwareSection({
                     </TableCell>
                     <TableCell>
                       <span className="font-mono text-xs font-semibold text-blue-600">
-                        {item.installedVersion ?? '—'}
+                        {item.latestVersion ?? item.installedVersion ?? '—'}
                       </span>
                     </TableCell>
                     <TableCell>

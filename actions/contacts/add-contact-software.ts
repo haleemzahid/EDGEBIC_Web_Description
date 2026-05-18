@@ -50,7 +50,7 @@ export const addContactSoftware = authActionClient
     void notifyClientOfSoftware({
       contactId: parsedInput.contactId,
       name: parsedInput.name,
-      installedVersion: parsedInput.installedVersion ?? null,
+      version: parsedInput.latestVersion ?? null,
       staffName: session.user.name ?? 'Your team'
     }).catch((error) => {
       console.error('[Notify client] addContactSoftware failed:', error);
@@ -60,12 +60,12 @@ export const addContactSoftware = authActionClient
 async function notifyClientOfSoftware(args: {
   contactId: string;
   name: string;
-  installedVersion: string | null;
+  version: string | null;
   staffName: string;
 }): Promise<void> {
   const recipient = await getClientNotificationRecipient(args.contactId);
   if (!recipient) return;
-  const versionSuffix = args.installedVersion ? ` v${args.installedVersion}` : '';
+  const versionSuffix = args.version ? ` v${args.version}` : '';
   const subject = `Software added: ${args.name}${versionSuffix}`;
   await sendPortalActivityEmail({
     recipient: recipient.email,

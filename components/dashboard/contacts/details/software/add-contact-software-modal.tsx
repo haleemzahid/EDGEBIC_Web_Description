@@ -59,7 +59,7 @@ export const AddContactSoftwareModal =
         contactId,
         name: '',
         docsUrl: '',
-        installedVersion: '',
+        latestVersion: '',
         notes: ''
       }
     });
@@ -78,7 +78,7 @@ export const AddContactSoftwareModal =
           contactId,
           name: '',
           docsUrl: '',
-          installedVersion: '',
+          latestVersion: '',
           notes: ''
         });
         setUploading(false);
@@ -187,10 +187,10 @@ export const AddContactSoftwareModal =
 
         <FormField
           control={methods.control}
-          name="installedVersion"
+          name="latestVersion"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Version</FormLabel>
+              <FormLabel>Latest version</FormLabel>
               <FormControl>
                 <Input
                   placeholder="v1.0.0"

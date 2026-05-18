@@ -248,6 +248,9 @@ export async function POST(request: NextRequest) {
       select: {
         name: true,
         latestVersion: true,
+        // Fallback source: the admin form fills `installedVersion` (its
+        // "Version" field), so use it when `latestVersion` is unset.
+        installedVersion: true,
         downloadUrl: true,
         notes: true,
         updatedAt: true
@@ -256,14 +259,20 @@ export async function POST(request: NextRequest) {
 
     await logAttempt(purchase.id, 'success', null, logCtx);
 
-    const software = rows.map((r) => ({
-      productName: r.name,
-      description: r.notes,
-      latestVersion: r.latestVersion,
-      version: r.latestVersion,
-      downloadUrl: r.downloadUrl,
-      releaseDate: r.updatedAt
-    }));
+    const software = rows.map((r) => {
+      // One version concept: the latest version. Prefer the explicit
+      // `latestVersion`; fall back to whatever the admin entered as the
+      // product version (`installedVersion`).
+      const latest = r.latestVersion || r.installedVersion || null;
+      return {
+        productName: r.name,
+        description: r.notes,
+        latestVersion: latest,
+        version: latest,
+        downloadUrl: r.downloadUrl,
+        releaseDate: r.updatedAt
+      };
+    });
 
     return NextResponse.json({ software });
   } catch (error) {

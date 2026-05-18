@@ -207,10 +207,10 @@ export const EditContactSoftwareModal =
 
         <FormField
           control={methods.control}
-          name="installedVersion"
+          name="latestVersion"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Version</FormLabel>
+              <FormLabel>Latest version</FormLabel>
               <FormControl>
                 <Input
                   placeholder="v1.0.0"
