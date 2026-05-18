@@ -21,6 +21,7 @@ import {
   BellIcon,
   CalendarIcon,
   MailIcon,
+  MailPlusIcon,
   MoreHorizontalIcon,
   TicketIcon
 } from 'lucide-react';
@@ -30,6 +31,7 @@ import { ContactsBulkActions } from '@/components/dashboard/contacts/contacts-bu
 import { searchParams } from '@/components/dashboard/contacts/contacts-search-params';
 import { DeleteContactModal } from '@/components/dashboard/contacts/delete-contact-modal';
 import { ContactAvatar } from '@/components/dashboard/contacts/details/contact-avatar';
+import { InviteMemberModal } from '@/components/dashboard/settings/organization/members/invite-member-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -60,6 +62,7 @@ import type {
 } from '@/data/contacts/get-client-activity';
 import { dismissContactNotifications } from '@/actions/notifications/dismiss-contact-notifications';
 import type { ContactDto } from '@/types/dtos/contact-dto';
+import type { ProfileDto } from '@/types/dtos/profile-dto';
 import { SortDirection } from '@/types/sort-direction';
 
 export type ContactsDataTableProps = {
@@ -67,12 +70,15 @@ export type ContactsDataTableProps = {
   totalCount: number;
   /** Per-contact client-activity (ticket/message) the client created. */
   clientActivity?: ClientActivityMap;
+  /** Current user — required by the invite modal opened from the Invite column. */
+  profile: ProfileDto;
 };
 
 export function ContactsDataTable({
   data,
   totalCount,
-  clientActivity = {}
+  clientActivity = {},
+  profile
 }: ContactsDataTableProps): React.JSX.Element {
   const router = useRouter();
   const { isLoading, startTransition } = useTransitionContext();
@@ -123,7 +129,7 @@ export function ContactsDataTable({
   const table = useReactTable({
     data,
     columns,
-    meta: { clientActivity },
+    meta: { clientActivity, profile },
     state: {
       sorting: [
         {
@@ -548,7 +554,7 @@ const columns: ColumnDef<ContactDto>[] = [
         title="Invite"
       />
     ),
-    cell: ({ row }) => {
+    cell: ({ row, table }) => {
       const status = row.original.inviteStatus ?? 'NONE';
       if (status === 'USER_EXISTS' || status === 'ACCEPTED') {
         return (
@@ -570,13 +576,42 @@ const columns: ColumnDef<ContactDto>[] = [
           </Badge>
         );
       }
+      const email = row.original.email;
+      if (!email) {
+        return (
+          <Badge
+            variant="outline"
+            className="whitespace-nowrap text-muted-foreground"
+          >
+            No email
+          </Badge>
+        );
+      }
+      // Direct invite: open the same InviteMemberModal the contact-detail
+      // page uses, with the email pre-filled and locked.
+      const profile = (
+        table.options.meta as { profile?: ProfileDto } | undefined
+      )?.profile;
       return (
-        <Badge
-          variant="outline"
-          className="whitespace-nowrap text-muted-foreground"
+        <Button
+          type="button"
+          variant="default"
+          size="sm"
+          className="h-7 whitespace-nowrap"
+          title="Send a client-portal invitation to this contact"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!profile) return;
+            NiceModal.show(InviteMemberModal, {
+              profile,
+              defaultEmail: email,
+              emailReadOnly: true
+            });
+          }}
         >
-          Not invited
-        </Badge>
+          <MailPlusIcon className="mr-1.5 size-3.5 shrink-0" />
+          Invite
+        </Button>
       );
     },
     enableSorting: false,

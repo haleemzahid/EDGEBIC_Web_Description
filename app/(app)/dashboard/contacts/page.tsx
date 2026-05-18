@@ -21,6 +21,7 @@ import {
   TooltipContent,
   TooltipTrigger
 } from '@/components/ui/tooltip';
+import { getProfile } from '@/data/account/get-profile';
 import { getClientActivity } from '@/data/contacts/get-client-activity';
 import { getContactTags } from '@/data/contacts/get-contact-tags';
 import { getContacts } from '@/data/contacts/get-contacts';
@@ -41,11 +42,12 @@ export default async function ContactsPage({
 }: NextPageProps): Promise<React.JSX.Element> {
   const parsedSearchParams = await searchParamsCache.parse(searchParams);
 
-  const [{ contacts, filteredCount, totalCount }, tags, clientActivity] =
+  const [{ contacts, filteredCount, totalCount }, tags, clientActivity, profile] =
     await Promise.all([
       getContacts(parsedSearchParams),
       getContactTags(),
-      getClientActivity()
+      getClientActivity(),
+      getProfile()
     ]);
 
   const hasAnyContacts = totalCount > 0;
@@ -86,6 +88,7 @@ export default async function ContactsPage({
                 data={contacts}
                 totalCount={filteredCount}
                 clientActivity={clientActivity}
+                profile={profile}
               />
             </React.Suspense>
           ) : (
