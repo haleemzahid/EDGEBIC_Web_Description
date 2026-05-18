@@ -30,7 +30,11 @@ import { rateLimit } from '@/lib/network/rate-limit';
 // software list in sync with what they actually have installed.
 
 const requestSchema = z.object({
-  licenseKey: z.string().min(1),
+  // The license key now travels in the `Authorization: Bearer <key>` header
+  // (fallback `X-License-Key`). It stays optional in the body purely for
+  // backward compat with already-installed apps that still send it here —
+  // see `resolveLicenseKey`. New callers should use the header.
+  licenseKey: z.string().min(1).optional(),
   // Optional. Required only if the license is machine-bound (activated).
   processorId: z.string().min(1).optional(),
   // Optional: narrow the response to a single product by name. Also the
@@ -43,6 +47,34 @@ const requestSchema = z.object({
   // ContactSoftware row (set together with `product`).
   downloadUrl: z.string().url().max(2048).optional()
 });
+
+// Credentials belong in a header, not the body. Prefer the standard
+// `Authorization: Bearer <key>`, also accept `X-License-Key`, and finally
+// fall back to a `licenseKey` in the body so apps shipped before this
+// change keep working until they're updated.
+function resolveLicenseKey(
+  request: NextRequest,
+  bodyLicenseKey: string | undefined
+): string | null {
+  const authHeader = request.headers.get('authorization');
+  if (authHeader) {
+    const match = /^Bearer\s+(.+)$/i.exec(authHeader.trim());
+    if (match && match[1].trim()) {
+      return match[1].trim();
+    }
+  }
+
+  const headerKey = request.headers.get('x-license-key');
+  if (headerKey && headerKey.trim()) {
+    return headerKey.trim();
+  }
+
+  if (bodyLicenseKey && bodyLicenseKey.trim()) {
+    return bodyLicenseKey.trim();
+  }
+
+  return null;
+}
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -100,8 +132,21 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { licenseKey, processorId, product, version, downloadUrl } =
-      requestSchema.parse(body);
+    const {
+      licenseKey: bodyLicenseKey,
+      processorId,
+      product,
+      version,
+      downloadUrl
+    } = requestSchema.parse(body);
+
+    const licenseKey = resolveLicenseKey(request, bodyLicenseKey);
+    if (!licenseKey) {
+      return NextResponse.json(
+        { error: 'Missing license key' },
+        { status: 401 }
+      );
+    }
 
     const licenseKeyHash = LicenseKeyGenerator.hashLicenseKey(licenseKey);
 
@@ -268,7 +313,6 @@ export async function POST(request: NextRequest) {
         productName: r.name,
         description: r.notes,
         latestVersion: latest,
-        version: latest,
         downloadUrl: r.downloadUrl,
         releaseDate: r.updatedAt
       };
