@@ -8,10 +8,15 @@ import {
   AlertCircleIcon,
   CheckIcon,
   ClockIcon,
+  ImageIcon,
   Link2Icon,
+  MoreVerticalIcon,
   PaperclipIcon,
+  PrinterIcon,
+  RemoveFormattingIcon,
   SendIcon,
-  SmileIcon
+  SmileIcon,
+  SpellCheckIcon
 } from 'lucide-react';
 import EmojiPicker, {
   EmojiStyle,
@@ -30,6 +35,13 @@ import {
 } from '@/components/dashboard/ticket-attachment-ui';
 import { Button } from '@/components/ui/button';
 import { ComposeEditor } from '@/components/ui/compose-editor';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -42,8 +54,10 @@ import {
   appendHtmlToBody,
   escapeHtml,
   htmlHasContent,
+  htmlToPlainParagraphs,
   htmlToText,
-  isHtmlBody
+  isHtmlBody,
+  printComposeDraft
 } from '@/lib/email/compose-html';
 import { cn } from '@/lib/utils';
 
@@ -96,11 +110,14 @@ export function ClientMessageConversation({
   // Bumped to remount the seed-once editor (after send, retry, emoji/link).
   const [editorKey, setEditorKey] = React.useState(0);
   const [showFormatting, setShowFormatting] = React.useState(false);
+  // Gmail-style reply toolbar state — mirrors the admin inbox composer.
+  const [spellCheck, setSpellCheck] = React.useState(true);
   const [staged, setStaged] = React.useState<StagedAttachment[]>([]);
   const [linkOpen, setLinkOpen] = React.useState(false);
   const [linkUrl, setLinkUrl] = React.useState('');
   const [linkText, setLinkText] = React.useState('');
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const imageInputRef = React.useRef<HTMLInputElement | null>(null);
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
 
   const lastTeamMessage = [...initialMessages]
@@ -207,6 +224,12 @@ export function ClientMessageConversation({
     e.target.value = '';
   };
 
+  const onPickImages = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (files.length > 0) void uploadFiles(files);
+    e.target.value = '';
+  };
+
   const removeStaged = (tempId: string): void => {
     setStaged((prev) => prev.filter((s) => s.tempId !== tempId));
   };
@@ -229,6 +252,19 @@ export function ClientMessageConversation({
     setLinkUrl('');
     setLinkText('');
     setLinkOpen(false);
+  };
+
+  const handlePlainText = (): void => {
+    setText((b) => htmlToPlainParagraphs(b));
+    setShowFormatting(false);
+    setEditorKey((k) => k + 1);
+  };
+
+  const handlePrint = (): void => {
+    printComposeDraft({
+      subject: `Reply to ${recipientFirstName}`,
+      body: text
+    });
   };
 
   const send = async (htmlBody: string): Promise<void> => {
@@ -356,30 +392,48 @@ export function ClientMessageConversation({
           </div>
         )}
         <div className="flex min-h-0 flex-col border-t">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            hidden
+            onChange={onPickFiles}
+          />
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            hidden
+            onChange={onPickImages}
+          />
           <div className="px-3 py-2">
             <ComposeEditor
               key={editorKey}
               getText={() => text}
               setText={setText}
               placeholder={`Reply to ${recipientFirstName}…`}
-              height="96px"
+              height="72px"
               showToolbar={showFormatting}
+              spellCheck={spellCheck}
             />
           </div>
           <div className="flex items-center gap-1 border-t px-2 py-1.5">
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              hidden
-              onChange={onPickFiles}
-            />
+            <Button
+              type="button"
+              onClick={() => void send(text)}
+              disabled={!canSubmit}
+              title="Send"
+            >
+              <SendIcon className="mr-1 size-3.5 shrink-0" />
+              Send
+            </Button>
             <Button
               type="button"
               variant="ghost"
               size="icon"
               className={cn(
-                'size-8 font-semibold',
+                'font-semibold',
                 showFormatting && 'bg-accent text-foreground'
               )}
               onClick={() => setShowFormatting((v) => !v)}
@@ -393,12 +447,12 @@ export function ClientMessageConversation({
               type="button"
               variant="ghost"
               size="icon"
-              className="size-8"
               title="Attach files"
+              aria-label="Attach files"
               onClick={() => fileInputRef.current?.click()}
               disabled={staged.length >= MAX_ATTACHMENTS}
             >
-              <PaperclipIcon className="size-4" />
+              <PaperclipIcon className="size-4 shrink-0" />
             </Button>
             <Popover
               open={linkOpen}
@@ -409,11 +463,10 @@ export function ClientMessageConversation({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="size-8"
                   title="Insert link"
                   aria-label="Insert link"
                 >
-                  <Link2Icon className="size-4" />
+                  <Link2Icon className="size-4 shrink-0" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent
@@ -464,11 +517,10 @@ export function ClientMessageConversation({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="size-8"
                   title="Insert emoji"
                   aria-label="Insert emoji"
                 >
-                  <SmileIcon className="size-4" />
+                  <SmileIcon className="size-4 shrink-0" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent
@@ -488,15 +540,48 @@ export function ClientMessageConversation({
             </Popover>
             <Button
               type="button"
-              onClick={() => void send(text)}
-              disabled={!canSubmit}
-              size="sm"
-              className="ml-auto"
-              title="Send"
+              variant="ghost"
+              size="icon"
+              onClick={() => imageInputRef.current?.click()}
+              disabled={staged.length >= MAX_ATTACHMENTS}
+              title="Insert photo"
+              aria-label="Insert photo"
             >
-              <SendIcon className="mr-1 size-3.5 shrink-0" />
-              Send
+              <ImageIcon className="size-4 shrink-0" />
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  title="More options"
+                  aria-label="More options"
+                >
+                  <MoreVerticalIcon className="size-4 shrink-0" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onClick={handlePlainText}>
+                  <RemoveFormattingIcon className="mr-2 size-4 shrink-0" />
+                  Plain text mode
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handlePrint}>
+                  <PrinterIcon className="mr-2 size-4 shrink-0" />
+                  Print
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setSpellCheck((v) => !v)}
+                >
+                  <SpellCheckIcon className="mr-2 size-4 shrink-0" />
+                  <span className="flex-1">Spell check</span>
+                  {spellCheck && (
+                    <CheckIcon className="ml-2 size-4 shrink-0" />
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
