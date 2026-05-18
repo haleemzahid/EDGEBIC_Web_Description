@@ -194,23 +194,28 @@ const columns: ColumnDef<ClientSoftwareDto>[] = [
   },
   {
     meta: {
-      title: 'Version'
+      title: 'Latest version'
     },
     id: GetClientSoftwareSortBy.InstalledVersion,
     accessorKey: 'installedVersion',
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
-        title="Version"
+        title="Latest version"
       />
     ),
-    cell: ({ row }) => (
-      <span className="whitespace-nowrap text-sm">
-        {row.original.installedVersion ?? (
-          <span className="text-muted-foreground">—</span>
-        )}
-      </span>
-    ),
+    cell: ({ row }) => {
+      // The admin "Latest version" field saves to `latestVersion`; the
+      // modal has no installed-version input, so prefer latestVersion and
+      // only fall back to installedVersion (mirrors /api/software/latest).
+      const version =
+        row.original.latestVersion ?? row.original.installedVersion;
+      return (
+        <span className="whitespace-nowrap text-sm">
+          {version ?? <span className="text-muted-foreground">—</span>}
+        </span>
+      );
+    },
     enableSorting: true,
     enableHiding: true
   },
