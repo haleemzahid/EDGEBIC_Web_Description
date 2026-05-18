@@ -1,37 +1,44 @@
 'use client';
 
 import * as React from 'react';
+import NiceModal from '@ebay/nice-modal-react';
 import {
   // FileDownIcon,
   // MailIcon,
   // RefreshCwIcon,
+  PlusIcon,
   SearchIcon
 } from 'lucide-react';
 
+import { AddLicenseModal } from '@/components/dashboard/inventory/add-license-modal';
 import { CustomersTable } from '@/components/dashboard/customers-table';
 import { PaymentMethodsChart } from '@/components/dashboard/payment-methods-chart';
 import { RevenueChart } from '@/components/dashboard/revenue-chart';
 import { StatsGrid } from '@/components/dashboard/stats-grid';
 import { YouTubeVideo } from '@/components/dashboard/youtube-video';
-// import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Page,
+  PageActions,
   PageBody,
   PageHeader,
   PagePrimaryBar,
   PageTitle
 } from '@/components/ui/page';
+import type { ContactOption } from '@/data/contacts/get-contact-options';
 import type { PurchaseStats } from '@/data/purchases/get-purchases';
 
 interface DashboardOverviewProps {
   purchaseStats: PurchaseStats;
   youtubeVideoUrl?: string | null;
+  contactOptions: ContactOption[];
 }
 
 export function DashboardOverview({
   purchaseStats,
-  youtubeVideoUrl
+  youtubeVideoUrl,
+  contactOptions
 }: DashboardOverviewProps): React.JSX.Element {
   const [searchTerm, setSearchTerm] = React.useState('');
 
@@ -40,6 +47,17 @@ export function DashboardOverview({
       <PageHeader>
         <PagePrimaryBar>
           <PageTitle>Edgebi Dashboard</PageTitle>
+          <PageActions>
+            <Button
+              onClick={() =>
+                NiceModal.show(AddLicenseModal, { contactOptions })
+              }
+              variant="default"
+            >
+              <PlusIcon className="mr-2 size-4" />
+              Add license
+            </Button>
+          </PageActions>
         </PagePrimaryBar>
       </PageHeader>
 

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { DashboardOverview } from '@/components/dashboard/dashboard-overview';
+import { getContactOptions } from '@/data/contacts/get-contact-options';
 import { getYouTubeVideo } from '@/data/organization/get-youtube-video';
 import { getPurchaseStats } from '@/data/purchases/get-purchases';
 import { createTitle } from '@/lib/utils';
@@ -10,15 +11,17 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardHomePage(): Promise<React.JSX.Element> {
-  const [purchaseStats, youtubeVideoUrl] = await Promise.all([
+  const [purchaseStats, youtubeVideoUrl, contactOptions] = await Promise.all([
     getPurchaseStats(),
-    getYouTubeVideo()
+    getYouTubeVideo(),
+    getContactOptions()
   ]);
 
   return (
     <DashboardOverview
       purchaseStats={purchaseStats}
       youtubeVideoUrl={youtubeVideoUrl}
+      contactOptions={contactOptions}
     />
   );
 }
