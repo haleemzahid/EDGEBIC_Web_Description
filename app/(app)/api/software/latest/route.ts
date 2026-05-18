@@ -175,12 +175,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Purchase links to the CRM contact by email (same convention the rest
-    // of the system uses to dedupe public submissions).
+    // Purchase links to the CRM contact by email. Pick the original
+    // (oldest) match deterministically so repeated calls always resolve to
+    // the same contact and never spill software onto a later duplicate.
     const contact = await prisma.contact.findFirst({
       where: {
         email: { equals: purchase.email, mode: 'insensitive' }
       },
+      orderBy: { createdAt: 'asc' },
       select: { id: true }
     });
 

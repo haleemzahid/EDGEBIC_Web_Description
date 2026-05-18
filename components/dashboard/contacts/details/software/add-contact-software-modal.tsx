@@ -68,15 +68,23 @@ export const AddContactSoftwareModal =
       string | null
     >(null);
 
-    // NiceModal keeps the component mounted across show/hide cycles. Reset
-    // every time the modal becomes visible so reopening starts fresh.
+    // NiceModal keeps the component mounted across show/hide cycles, so a
+    // bare reset() would restore the contactId from the FIRST contact the
+    // modal was ever opened for — saving software onto the wrong contact.
+    // Reset to the CURRENT contactId every time it opens.
     React.useEffect(() => {
       if (modal.visible) {
-        methods.reset();
+        methods.reset({
+          contactId,
+          name: '',
+          docsUrl: '',
+          installedVersion: '',
+          notes: ''
+        });
         setUploading(false);
         setUploadedFileName(null);
       }
-    }, [modal.visible, methods]);
+    }, [modal.visible, methods, contactId]);
 
     const handleFileChange = async (
       e: React.ChangeEvent<HTMLInputElement>

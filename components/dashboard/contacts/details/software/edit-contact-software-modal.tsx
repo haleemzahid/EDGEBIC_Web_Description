@@ -80,6 +80,35 @@ export const EditContactSoftwareModal =
       string | null
     >(null);
 
+    // NiceModal keeps the component mounted across show/hide cycles, so
+    // without this the form would keep the FIRST software row's values
+    // (including its id) and Edit would save onto the wrong software.
+    // Re-sync to the currently-opened software every time it opens.
+    React.useEffect(() => {
+      if (modal.visible) {
+        methods.reset({
+          id: software.id,
+          name: software.name,
+          installedVersion: software.installedVersion ?? '',
+          latestVersion: software.latestVersion ?? '',
+          installDate: software.installDate ?? null,
+          status: software.status,
+          githubUrl: software.githubUrl ?? '',
+          docsUrl: software.docsUrl ?? '',
+          downloadUrl: software.downloadUrl ?? '',
+          licenseKey: software.licenseKey ?? '',
+          licenseType: software.licenseType ?? '',
+          seats: software.seats ?? null,
+          os: software.os ?? '',
+          database: software.database ?? '',
+          installPath: software.installPath ?? '',
+          notes: software.notes ?? ''
+        });
+        setUploading(false);
+        setUploadedFileName(null);
+      }
+    }, [modal.visible, methods, software]);
+
     const handleFileChange = async (
       e: React.ChangeEvent<HTMLInputElement>
     ): Promise<void> => {

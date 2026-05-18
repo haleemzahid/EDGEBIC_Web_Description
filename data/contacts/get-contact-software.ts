@@ -83,7 +83,7 @@ export async function getContactSoftware(
         notes: row.notes ?? undefined
       }));
     },
-    Caching.createOrganizationTag(
+    Caching.createOrganizationKeyParts(
       OrganizationCacheKey.ContactSoftware,
       session.user.organizationId,
       parsedInput.contactId
