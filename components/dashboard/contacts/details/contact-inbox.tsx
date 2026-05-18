@@ -20,7 +20,6 @@ import {
   SendIcon,
   SmileIcon,
   SpellCheckIcon,
-  TagIcon,
   TrashIcon
 } from 'lucide-react';
 import NiceModal from '@ebay/nice-modal-react';
@@ -55,9 +54,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -544,18 +540,6 @@ export function ContactInbox({
     setLinkOpen(false);
   };
 
-  // "Label" applies one of the contact's CRM tags as a Gmail-style
-  // bracketed subject prefix (this app has no email-label system, so the
-  // subject prefix is the closest non-destructive equivalent).
-  const handleApplyLabel = (label: string): void => {
-    const prefix = `[${label}] `;
-    setComposeDraft((d) =>
-      d.subject.startsWith(prefix)
-        ? d
-        : { ...d, subject: prefix + d.subject }
-    );
-  };
-
   const handlePlainTextMode = (): void => {
     setComposeDraft((d) => ({
       ...d,
@@ -1030,28 +1014,6 @@ export function ContactInbox({
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    <TagIcon className="mr-2 size-4 shrink-0" />
-                    Label
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent>
-                    {contact.tags.length === 0 ? (
-                      <DropdownMenuItem disabled>
-                        No labels
-                      </DropdownMenuItem>
-                    ) : (
-                      contact.tags.map((tag) => (
-                        <DropdownMenuItem
-                          key={tag.id}
-                          onClick={() => handleApplyLabel(tag.text)}
-                        >
-                          {tag.text}
-                        </DropdownMenuItem>
-                      ))
-                    )}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
                 <DropdownMenuItem
                   onClick={() =>
                     NiceModal.show(AddContactMeetingModal, {
