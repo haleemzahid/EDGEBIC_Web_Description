@@ -77,7 +77,7 @@ export const clientNavItems: NavItem[] = [
     icon: LifeBuoyIcon
   },
   {
-    title: 'Messages',
+    title: 'Inbox',
     href: Routes.ClientMessages,
     icon: MailIcon
   },

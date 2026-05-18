@@ -26,8 +26,21 @@ export function formatBytes(n: number): string {
   return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
-export function ticketAttachmentUrl(storedName: string): string {
-  return `/uploads/ticket-attachments/${storedName}`;
+// Files are routed into separate public folders by kind at upload time
+// (see lib/ticket-attachments/storage.ts -> publicDirForMime). The URL
+// MUST mirror that routing or images/videos resolve to the wrong folder
+// and 404 (broken thumbnail). The DB stores only storedName + mimeType,
+// so re-derive the folder from mimeType here.
+export function ticketAttachmentUrl(
+  storedName: string,
+  mimeType: string
+): string {
+  const dir = mimeType.startsWith('video/')
+    ? 'uploads/videos'
+    : mimeType.startsWith('image/')
+      ? 'uploads/images'
+      : 'uploads/ticket-attachments';
+  return `/${dir}/${storedName}`;
 }
 
 export function StagedAttachmentChip({
@@ -78,7 +91,7 @@ export function AttachmentPreview({
   attachment: TicketAttachmentView;
   alignEnd: boolean;
 }): React.JSX.Element {
-  const url = ticketAttachmentUrl(attachment.storedName);
+  const url = ticketAttachmentUrl(attachment.storedName, attachment.mimeType);
   const isImage = attachment.mimeType.startsWith('image/');
   if (isImage) {
     return (

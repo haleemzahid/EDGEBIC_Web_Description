@@ -119,7 +119,10 @@ export const replyContactEmail = authActionClient
         where: { id: thread.id },
         data: {
           preview: previewBase.slice(0, 500),
-          unread: false
+          // Team replied → unread BY THE CLIENT so the portal sidebar badge
+          // lights up. Cleared when the client opens the thread. Mirrors
+          // the ticket clientUnread pattern.
+          unread: true
         }
       })
     ]);

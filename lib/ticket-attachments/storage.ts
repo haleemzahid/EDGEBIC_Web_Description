@@ -93,6 +93,12 @@ export async function saveTicketAttachmentFile(
   };
 }
 
-export function ticketAttachmentPublicUrl(storedName: string): string {
-  return `/${TICKET_ATTACHMENT_PUBLIC_DIR}/${storedName}`;
+// Mirror publicDirForMime: files are routed into different folders by
+// kind at write time, so the URL must be derived from the same mimeType
+// or images/videos 404. Callers must pass the stored mimeType.
+export function ticketAttachmentPublicUrl(
+  storedName: string,
+  mimeType: string
+): string {
+  return `/${publicDirForMime(mimeType)}/${storedName}`;
 }

@@ -72,7 +72,11 @@ export const sendContactEmail = authActionClient
         folder: EmailFolder.SENT,
         subject: parsedInput.subject,
         preview: previewText,
-        unread: false,
+        // Team-sent → unread BY THE CLIENT so the client-portal sidebar
+        // badge lights up (counts folder=SENT + unread). Cleared when the
+        // client opens the thread (messages/[threadId]/page.tsx). Mirrors
+        // the ticket clientUnread pattern.
+        unread: true,
         messages: {
           create: {
             senderType: EmailSenderType.USER,
