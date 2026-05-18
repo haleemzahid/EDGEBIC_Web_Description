@@ -537,21 +537,70 @@ export function ContactInbox({
   };
 
   const handlePrintDraft = (): void => {
-    if (typeof window === 'undefined') return;
-    const w = window.open('', '_blank', 'noopener,noreferrer,width=800');
-    if (!w) return;
-    w.document.write(
-      `<!doctype html><html><head><title>${escapeHtml(
-        composeDraft.subject.trim() || 'New email'
-      )}</title></head><body style="font-family:system-ui,sans-serif;padding:24px;">` +
-        `<h2 style="font-size:18px;">${escapeHtml(
-          composeDraft.subject.trim() || '(no subject)'
-        )}</h2>` +
-        `<div>${composeDraft.body || ''}</div></body></html>`
-    );
-    w.document.close();
-    w.focus();
-    w.print();
+    if (typeof document === 'undefined') return;
+
+    const subject = composeDraft.subject.trim() || '(no subject)';
+    const headerRow = (label: string, value: string): string =>
+      value
+        ? `<tr><td style="padding:2px 12px 2px 0;color:#6b7280;white-space:nowrap;vertical-align:top;">${label}</td><td style="padding:2px 0;">${escapeHtml(
+            value
+          )}</td></tr>`
+        : '';
+
+    const html =
+      `<!doctype html><html><head><meta charset="utf-8" />` +
+      `<title>${escapeHtml(subject)}</title></head>` +
+      `<body style="font-family:system-ui,-apple-system,sans-serif;padding:24px;color:#111827;">` +
+      `<table style="font-size:13px;border-collapse:collapse;margin-bottom:16px;">` +
+      headerRow('To', composeDraft.to.join(', ')) +
+      headerRow('Cc', composeDraft.cc.join(', ')) +
+      headerRow('Bcc', composeDraft.bcc.join(', ')) +
+      headerRow('Subject', subject) +
+      `</table>` +
+      `<hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 16px;" />` +
+      `<div>${composeDraft.body || ''}</div>` +
+      `</body></html>`;
+
+    // A hidden iframe prints reliably without tripping popup blockers
+    // (window.open with noopener returns null and silently fails).
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    let cleaned = false;
+    const cleanup = (): void => {
+      if (cleaned) return;
+      cleaned = true;
+      window.setTimeout(() => iframe.remove(), 500);
+    };
+
+    iframe.onload = (): void => {
+      const win = iframe.contentWindow;
+      if (!win) {
+        iframe.remove();
+        return;
+      }
+      win.onafterprint = cleanup;
+      win.focus();
+      win.print();
+      // Fallback in case onafterprint never fires (some browsers).
+      window.setTimeout(cleanup, 60_000);
+    };
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) {
+      iframe.remove();
+      return;
+    }
+    doc.open();
+    doc.write(html);
+    doc.close();
   };
 
   const handleComposeClose = (): void => {
