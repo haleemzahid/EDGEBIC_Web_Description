@@ -1,5 +1,6 @@
 import {
   type ContactPriority,
+  type ContactRecord,
   type ContactTicketActivityType,
   type ContactTicketStatus,
   type TicketMessageSender
@@ -62,4 +63,5 @@ export type ContactTicketWithDetailsDto = ContactTicketDto & {
 export type OrganizationTicketRowDto = ContactTicketDto & {
   contactName: string;
   contactImage?: string;
+  contactRecord: ContactRecord;
 };

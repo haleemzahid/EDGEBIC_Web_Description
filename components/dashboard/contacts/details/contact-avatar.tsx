@@ -14,12 +14,18 @@ export type ContactAvatarProps = AvatarProps & {
   record: ContactRecord;
   src?: string;
   alt?: string;
+  /**
+   * What to render when there's no image. Defaults to the person/company
+   * icon. Pass e.g. initials to show those instead.
+   */
+  fallback?: React.ReactNode;
 };
 
 export function ContactAvatar({
   record,
   src,
   alt,
+  fallback,
   className,
   ...other
 }: ContactAvatarProps): React.JSX.Element {
@@ -38,11 +44,12 @@ export function ContactAvatar({
         alt={alt ?? 'avatar'}
       />
       <AvatarFallback>
-        {record === ContactRecord.COMPANY ? (
-          <BuildingIcon className="size-4 shrink-0 text-muted-foreground" />
-        ) : (
-          <UserIcon className="size-4 shrink-0 text-muted-foreground" />
-        )}
+        {fallback ??
+          (record === ContactRecord.COMPANY ? (
+            <BuildingIcon className="size-4 shrink-0 text-muted-foreground" />
+          ) : (
+            <UserIcon className="size-4 shrink-0 text-muted-foreground" />
+          ))}
       </AvatarFallback>
     </Avatar>
   );

@@ -110,7 +110,8 @@ export async function getTickets(input: GetTicketsSchema): Promise<{
           select: {
             id: true,
             name: true,
-            image: true
+            image: true,
+            record: true
           }
         },
         meeting: {
@@ -146,7 +147,8 @@ export async function getTickets(input: GetTicketsSchema): Promise<{
     createdAt: t.createdAt,
     updatedAt: t.updatedAt,
     contactName: t.contact.name,
-    contactImage: t.contact.image ?? undefined
+    contactImage: t.contact.image ?? undefined,
+    contactRecord: t.contact.record
   }));
 
   return { tickets: mapped, filteredCount, totalCount };

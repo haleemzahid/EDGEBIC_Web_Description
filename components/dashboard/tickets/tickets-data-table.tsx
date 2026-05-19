@@ -25,10 +25,10 @@ import {
   ContactTicketPriorityBadge,
   ContactTicketStatusBadge
 } from '@/components/dashboard/contacts/details/tickets/contact-ticket-status-pills';
+import { ContactAvatar } from '@/components/dashboard/contacts/details/contact-avatar';
 import { DeleteTicketsModal } from '@/components/dashboard/tickets/delete-tickets-modal';
 import { searchParams } from '@/components/dashboard/tickets/tickets-search-params';
 import { TicketsBulkActions } from '@/components/dashboard/tickets/tickets-bulk-actions';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -268,15 +268,12 @@ const columns: ColumnDef<OrganizationTicketRowDto>[] = [
     ),
     cell: ({ row }) => (
       <div className="flex w-fit flex-row items-center gap-2">
-        <Avatar className="size-8 shrink-0">
-          <AvatarImage
-            src={row.original.contactImage}
-            alt={row.original.contactName}
-          />
-          <AvatarFallback className="text-[11px] font-semibold">
-            {getInitials(row.original.contactName)}
-          </AvatarFallback>
-        </Avatar>
+        <ContactAvatar
+          record={row.original.contactRecord}
+          src={row.original.contactImage}
+          className="size-7 text-[11px] font-semibold"
+          fallback={getInitials(row.original.contactName)}
+        />
         <span className="whitespace-nowrap text-sm">
           {row.original.contactName}
         </span>
