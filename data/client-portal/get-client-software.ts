@@ -35,6 +35,29 @@ export type ClientSoftwareDto = {
 };
 
 /**
+ * Installer URLs were historically saved as absolute links built from the
+ * upload-time origin (e.g. http://localhost:3000/uploads/software/x.zip),
+ * which 404s for clients on the live site. For our own served upload paths,
+ * strip the scheme+host so the link resolves against whatever host the
+ * client is actually on. Genuine external links are left untouched.
+ */
+function normalizeDownloadUrl(url: string | null): string | null {
+  if (!url) {
+    return url;
+  }
+  try {
+    const parsed = new URL(url);
+    if (parsed.pathname.startsWith('/uploads/')) {
+      return `${parsed.pathname}${parsed.search}`;
+    }
+    return url;
+  } catch {
+    // Already relative (or not a valid absolute URL) — use as-is.
+    return url;
+  }
+}
+
+/**
  * Returns the software the team has provisioned for this client.
  * Hides admin-only operational fields (licenseKey, installPath, githubUrl).
  */
@@ -88,6 +111,7 @@ export async function getClientSoftware(
 
   return raw.map((r) => ({
     ...r,
+    downloadUrl: normalizeDownloadUrl(r.downloadUrl),
     installDate: r.installDate ? new Date(r.installDate) : null,
     createdAt: new Date(r.createdAt)
   }));
@@ -172,6 +196,7 @@ export async function getClientSoftwareList(
   return {
     software: rows.map((r) => ({
       ...r,
+      downloadUrl: normalizeDownloadUrl(r.downloadUrl),
       installDate: r.installDate ? new Date(r.installDate) : null,
       createdAt: new Date(r.createdAt)
     })),
