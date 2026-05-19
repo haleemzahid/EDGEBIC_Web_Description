@@ -652,6 +652,8 @@ export type ComposeEditorProps = {
   getText: () => string;
   setText: (text: string) => void;
   height?: string;
+  /** Caps the editor; content beyond this scrolls instead of growing. */
+  maxHeight?: string;
   placeholder?: string;
   /** Gmail toggles the formatting strip with the "Aa" button. */
   showToolbar?: boolean;
@@ -790,7 +792,7 @@ export function ComposeEditor(props: ComposeEditorProps): React.JSX.Element {
         `}</style>
         <div
           className="relative min-h-0 flex-1 overflow-y-auto"
-          style={{ minHeight: props.height }}
+          style={{ minHeight: props.height, maxHeight: props.maxHeight }}
         >
           <RichTextPlugin
             contentEditable={

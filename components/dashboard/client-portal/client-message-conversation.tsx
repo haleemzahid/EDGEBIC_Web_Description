@@ -340,6 +340,9 @@ export function ClientMessageConversation({
     <div className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">
       <div
         ref={scrollRef}
+        // Capped height so a long single message scrolls inside instead of
+        // growing the page and pushing the reply box away. flex-1 still
+        // fills when the parent height is bounded. Mirrors the admin inbox.
         className="flex-1 space-y-4 overflow-y-auto rounded-t-lg border border-b-0 bg-card p-4"
       >
         {initialMessages.length === 0 && pending.length === 0 ? (
@@ -414,6 +417,7 @@ export function ClientMessageConversation({
               setText={setText}
               placeholder={`Reply to ${recipientFirstName}…`}
               height="72px"
+              maxHeight="240px"
               showToolbar={showFormatting}
               spellCheck={spellCheck}
             />

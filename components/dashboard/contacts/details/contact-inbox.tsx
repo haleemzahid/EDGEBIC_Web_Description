@@ -1561,7 +1561,9 @@ function ThreadReader({
         </div>
       </div>
 
-      {/* Thread */}
+      {/* Thread — capped height so a long single email scrolls inside
+          instead of growing the page and pushing the reply box away.
+          flex-1 still lets it fill when the parent height is bounded. */}
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="space-y-4 px-5 py-4">
           {thread.messages.map((message) => {
@@ -1676,6 +1678,7 @@ function ThreadReader({
                 setText={onReplyTextChange}
                 placeholder={`Reply to ${participant.name.split(' ')[0]}…`}
                 height="72px"
+                maxHeight="240px"
                 showToolbar={showReplyFormatting}
                 spellCheck={replySpellCheck}
               />
