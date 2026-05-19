@@ -2,9 +2,9 @@ import * as React from 'react';
 import { type Metadata } from 'next';
 import { InfoIcon } from 'lucide-react';
 
+import { TicketsDataTable } from '@/components/dashboard/tickets/tickets-data-table';
 import { TicketsEmptyState } from '@/components/dashboard/tickets/tickets-empty-state';
 import { TicketsFilters } from '@/components/dashboard/tickets/tickets-filters';
-import { TicketsList } from '@/components/dashboard/tickets/tickets-list';
 import { searchParamsCache } from '@/components/dashboard/tickets/tickets-search-params';
 import {
   Page,
@@ -73,9 +73,9 @@ export default async function TicketsPage({
         <PageBody disableScroll={hasAnyTickets}>
           {hasAnyTickets ? (
             <React.Suspense>
-              <TicketsList
-                tickets={tickets}
-                filteredCount={filteredCount}
+              <TicketsDataTable
+                data={tickets}
+                totalCount={filteredCount}
               />
             </React.Suspense>
           ) : (
