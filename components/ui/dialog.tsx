@@ -52,12 +52,10 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 export type DialogContentElement = React.ElementRef<
   typeof DialogPrimitive.Content
 >;
-export type DialogContentProps = Omit<
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
-  'onEscapeKeyDown' | 'onPointerDownOutside'
-> & {
-  onClose?: () => void;
-};
+export type DialogContentProps =
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+    onClose?: () => void;
+  };
 const DialogContent = React.forwardRef<
   DialogContentElement,
   DialogContentProps

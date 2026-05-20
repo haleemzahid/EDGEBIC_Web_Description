@@ -312,7 +312,12 @@ export const EditContactSoftwareModal =
             open={modal.visible}
             onOpenChange={modal.handleOpenChange}
           >
-            <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+            <DialogContent
+              className="max-h-[90vh] max-w-lg overflow-y-auto"
+              onEscapeKeyDown={(e) => e.preventDefault()}
+              onPointerDownOutside={(e) => e.preventDefault()}
+              onInteractOutside={(e) => e.preventDefault()}
+            >
               <DialogHeader>
                 <DialogTitle>{title}</DialogTitle>
                 <DialogDescription>{description}</DialogDescription>
@@ -329,6 +334,7 @@ export const EditContactSoftwareModal =
         <Drawer
           open={modal.visible}
           onOpenChange={modal.handleOpenChange}
+          dismissible={false}
         >
           <DrawerContent>
             <DrawerHeader>
