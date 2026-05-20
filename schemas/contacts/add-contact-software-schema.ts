@@ -39,11 +39,17 @@ export const addContactSoftwareSchema = z.object({
     .max(2048)
     .optional()
     .or(z.literal('')),
+  // Accept either an absolute URL (external host) or a relative upload
+  // path like /api/uploads/software/<file> that our streaming route serves.
+  // Relative paths avoid baking the upload-time origin into the DB.
   downloadUrl: z
     .string()
     .trim()
-    .url('Must be a valid URL.')
     .max(2048)
+    .refine(
+      (v) => v.startsWith('/') || /^https?:\/\/\S+$/.test(v),
+      { message: 'Must be a URL or upload path.' }
+    )
     .optional()
     .or(z.literal('')),
   licenseKey: z.string().trim().max(255).optional().or(z.literal('')),

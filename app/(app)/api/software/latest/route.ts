@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db/prisma';
 import { LicenseKeyGenerator } from '@/lib/license/license-key-generator';
 import { SystemFingerprintGenerator } from '@/lib/license/system-fingerprint';
 import { rateLimit } from '@/lib/network/rate-limit';
+import { getBaseUrl } from '@/lib/urls/get-base-url';
 
 // Secure software-update endpoint. Installed software POSTs its license key
 // (machine-to-machine — no browser session) and gets back only safe,
@@ -304,6 +305,17 @@ export async function POST(request: NextRequest) {
 
     await logAttempt(purchase.id, 'success', null, logCtx);
 
+    // Installed Windows apps (machine-to-machine) need an absolute URL —
+    // they're not running in a browser, so a relative /api/uploads/... path
+    // is useless to them. Prefix any host-less stored URL with the
+    // configured base URL before responding.
+    const baseUrl = getBaseUrl();
+    const absolutize = (url: string | null): string | null => {
+      if (!url) return url;
+      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      return url;
+    };
+
     const software = rows.map((r) => {
       // One version concept: the latest version. Prefer the explicit
       // `latestVersion`; fall back to whatever the admin entered as the
@@ -313,7 +325,7 @@ export async function POST(request: NextRequest) {
         productName: r.name,
         description: r.notes,
         latestVersion: latest,
-        downloadUrl: r.downloadUrl,
+        downloadUrl: absolutize(r.downloadUrl),
         releaseDate: r.updatedAt
       };
     });

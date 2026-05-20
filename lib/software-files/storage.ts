@@ -47,8 +47,9 @@ export type SavedSoftwareFile = {
   fileName: string;
   mimeType: string;
   sizeBytes: number;
-  // Relative public path; the caller wraps it with the base URL so the
-  // stored downloadUrl is an absolute, fetchable link.
+  // Relative URL that hits the streaming route (/api/uploads/...).
+  // Stored as-is on ContactSoftware.downloadUrl so it resolves against
+  // whatever host the client is on — no localhost-origin baked in.
   publicUrl: string;
 };
 
@@ -88,6 +89,6 @@ export async function saveSoftwareFile(
     fileName: sanitizeFilename(file.name),
     mimeType: file.type || 'application/octet-stream',
     sizeBytes: file.size,
-    publicUrl: `/${SOFTWARE_FILE_PUBLIC_DIR}/${storedName}`
+    publicUrl: `/api/${SOFTWARE_FILE_PUBLIC_DIR}/${storedName}`
   };
 }

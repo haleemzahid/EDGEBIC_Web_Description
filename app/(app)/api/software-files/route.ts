@@ -41,12 +41,14 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   try {
     const saved = await saveSoftwareFile(file);
-    // Use the origin the upload actually came in on, so the link points to
-    // the same server that now holds the file: upload from localhost:3001
-    // -> localhost:3001 URL; upload from the live site -> live URL.
+    // Save a host-less, relative URL (/api/uploads/...). It resolves
+    // against whatever host the browser is on — so no localhost-origin
+    // leaks into the DB when uploading behind a misconfigured proxy.
+    // External / machine-to-machine consumers (/api/software/latest) wrap
+    // it with the configured base URL when they hand it out.
     return NextResponse.json(
       {
-        downloadUrl: `${req.nextUrl.origin}${saved.publicUrl}`,
+        downloadUrl: saved.publicUrl,
         fileName: saved.fileName,
         sizeBytes: saved.sizeBytes
       },
