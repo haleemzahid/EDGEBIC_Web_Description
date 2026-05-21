@@ -31,6 +31,10 @@ export function formatBytes(n: number): string {
 // MUST mirror that routing or images/videos resolve to the wrong folder
 // and 404 (broken thumbnail). The DB stores only storedName + mimeType,
 // so re-derive the folder from mimeType here.
+//
+// Served through /api/uploads/[...path] (not Next's static handler) so
+// runtime-written files resolve on a containerized deploy. Relative URL
+// keeps it host-agnostic — no upload-time origin baked in.
 export function ticketAttachmentUrl(
   storedName: string,
   mimeType: string
@@ -40,7 +44,7 @@ export function ticketAttachmentUrl(
     : mimeType.startsWith('image/')
       ? 'uploads/images'
       : 'uploads/ticket-attachments';
-  return `/${dir}/${storedName}`;
+  return `/api/${dir}/${storedName}`;
 }
 
 export function StagedAttachmentChip({

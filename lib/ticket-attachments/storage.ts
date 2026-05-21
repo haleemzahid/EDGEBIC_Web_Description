@@ -3,8 +3,10 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 // Files are routed into separate local folders by kind so videos, images
-// and other docs don't all pile into one directory. Each is a normal
-// folder under public/, so Next.js serves the returned publicUrl as-is.
+// and other docs don't all pile into one directory. They live under
+// public/uploads/ but are served through /api/uploads/[...path] (not
+// Next's static handler) so runtime-written files resolve on a
+// containerized deploy. publicUrl is therefore prefixed with /api.
 export const VIDEO_PUBLIC_DIR = 'uploads/videos';
 export const IMAGE_PUBLIC_DIR = 'uploads/images';
 // Non-image / non-video attachments (pdf, doc, zip, …) keep the original
@@ -89,16 +91,17 @@ export async function saveTicketAttachmentFile(
     fileName: sanitizeFilename(file.name),
     mimeType: file.type || 'application/octet-stream',
     sizeBytes: file.size,
-    publicUrl: `/${publicDir}/${storedName}`
+    publicUrl: `/api/${publicDir}/${storedName}`
   };
 }
 
 // Mirror publicDirForMime: files are routed into different folders by
 // kind at write time, so the URL must be derived from the same mimeType
 // or images/videos 404. Callers must pass the stored mimeType.
+// Served through /api/uploads/[...path] — see VIDEO_PUBLIC_DIR comment.
 export function ticketAttachmentPublicUrl(
   storedName: string,
   mimeType: string
 ): string {
-  return `/${publicDirForMime(mimeType)}/${storedName}`;
+  return `/api/${publicDirForMime(mimeType)}/${storedName}`;
 }
