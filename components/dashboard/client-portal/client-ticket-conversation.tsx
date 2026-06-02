@@ -26,6 +26,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Routes } from '@/constants/routes';
+import { useTicketRealtime } from '@/lib/ably/use-ticket-realtime';
 import { cn } from '@/lib/utils';
 
 export type ClientTicketConversationAttachment = TicketAttachmentView;
@@ -92,16 +93,13 @@ export function ClientTicketConversation({
   const isClosed = status === ContactTicketStatus.CLOSED;
   const isResolved = status === ContactTicketStatus.RESOLVED;
 
-  // Background poll: pick up new messages from the team without a manual refresh.
-  React.useEffect(() => {
-    if (isClosed) return;
-    const id = window.setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        router.refresh();
-      }
-    }, 5000);
-    return () => window.clearInterval(id);
-  }, [isClosed, router]);
+  // Realtime push via Ably — pick up team replies the moment they're sent.
+  // CLOSED tickets are terminal so we skip the subscription entirely.
+  useTicketRealtime(
+    ticketId,
+    React.useCallback(() => router.refresh(), [router]),
+    { enabled: !isClosed }
+  );
 
   // Drop pending entries that match a newly-confirmed server message (same
   // body within ~30s of the optimistic timestamp).

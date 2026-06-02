@@ -9,6 +9,7 @@ import {
 
 import { authActionClient } from '@/actions/safe-action';
 import { Caching, OrganizationCacheKey } from '@/data/caching';
+import { publishTicketUpdate } from '@/lib/ably/server';
 import { prisma } from '@/lib/db/prisma';
 import { sendPortalActivityEmail } from '@/lib/smtp/send-portal-activity-email';
 import { getBaseUrl } from '@/lib/urls/get-base-url';
@@ -105,6 +106,12 @@ export const addContactTicketMessage = authActionClient
         ticket.contactId
       )
     );
+
+    // Push the "something changed" signal to every open viewer of this ticket
+    // (admin + client side). Receivers refetch via router.refresh(); we never
+    // send the message body over the wire, so internal notes are safely
+    // filtered out by the server component for client viewers.
+    void publishTicketUpdate(ticket.id);
 
     // Notify the client when team replies (skip internal notes).
     if (!parsedInput.isInternalNote && ticket.contact.email) {

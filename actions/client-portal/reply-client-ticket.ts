@@ -11,6 +11,7 @@ import {
 
 import { authActionClient } from '@/actions/safe-action';
 import { Caching, OrganizationCacheKey } from '@/data/caching';
+import { publishTicketUpdate } from '@/lib/ably/server';
 import { getClientContactLink } from '@/lib/auth/get-client-contact';
 import { getTeamNotificationRecipient } from '@/lib/auth/get-team-notification-recipient';
 import { prisma } from '@/lib/db/prisma';
@@ -136,6 +137,10 @@ export const replyClientTicket = authActionClient
         ticket.contactId
       )
     );
+
+    // Push the "something changed" signal to every open viewer of this ticket
+    // (admin + client side). Receivers refetch via router.refresh().
+    void publishTicketUpdate(ticket.id);
 
     // Best-effort notify the team. Don't block on email failures.
     const ticketDetails = await prisma.contactTicket.findUnique({

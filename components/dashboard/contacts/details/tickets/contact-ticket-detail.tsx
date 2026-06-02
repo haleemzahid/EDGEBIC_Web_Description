@@ -30,6 +30,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { useTicketRealtime } from '@/lib/ably/use-ticket-realtime';
 import { cn, getInitials } from '@/lib/utils';
 import type { ContactDto } from '@/types/dtos/contact-dto';
 import type {
@@ -200,15 +201,9 @@ function ConversationPanel({
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages.length, pendingMessages.length]);
 
-  // Background poll for incoming client replies (no manual refresh needed).
-  React.useEffect(() => {
-    const id = window.setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        onSent();
-      }
-    }, 5000);
-    return () => window.clearInterval(id);
-  }, [onSent]);
+  // Realtime push via Ably — every viewer of this ticket gets a refresh
+  // signal the moment the server publishes a ticket-update event.
+  useTicketRealtime(ticket.id, onSent);
 
   // Drop optimistic entries the moment their server-confirmed twin appears.
   React.useEffect(() => {

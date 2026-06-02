@@ -256,13 +256,22 @@ function ClientActivityBadge({
     startTransition(async () => {
       await dismissContactNotifications({ contactId, type: item.type });
       // Single unread → open the deep link (specific thread/ticket).
-      // Multiple unread → drop the per-item key (e.g. threadId) so the
-      // section opens in list view with all unread items visible.
+      // Multiple unread → drop the per-item key so the section opens in
+      // list view with all unread items visible.
+      //   • email: /dashboard/contacts/{id}?tab=inbox&threadId=… → strip threadId
+      //   • ticket: /dashboard/contacts/{id}/tickets/{tid}      → /…?tab=tickets
       let target = item.link;
       if (item.count > 1) {
         try {
           const url = new URL(target, window.location.origin);
           url.searchParams.delete('threadId');
+          const ticketMatch = url.pathname.match(
+            /^(\/dashboard\/contacts\/[^/]+)\/tickets\/[^/]+$/
+          );
+          if (ticketMatch) {
+            url.pathname = ticketMatch[1];
+            url.searchParams.set('tab', 'tickets');
+          }
           target = `${url.pathname}${url.search}${url.hash}`;
         } catch {
           // Fall back to the original link if parsing fails.
