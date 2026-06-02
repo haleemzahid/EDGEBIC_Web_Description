@@ -70,29 +70,7 @@ type StagedAttachment = StagedAttachmentItem & {
   uploaded?: UploadedAttachment;
 };
 
-type Draft = { subject: string; body: string };
-
 const MAX_ATTACHMENTS = 5;
-const DRAFT_KEY = 'client-compose-draft';
-
-function readSavedDraft(): Draft | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.localStorage.getItem(DRAFT_KEY);
-    return raw ? (JSON.parse(raw) as Draft) : null;
-  } catch {
-    return null;
-  }
-}
-
-function clearSavedDraft(): void {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.removeItem(DRAFT_KEY);
-  } catch {
-    // ignore
-  }
-}
 
 export const ComposeMessageModal = NiceModal.create<NiceModalHocProps>(() => {
   const modal = useEnhancedModal();
@@ -116,13 +94,12 @@ export const ComposeMessageModal = NiceModal.create<NiceModalHocProps>(() => {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const imageInputRef = React.useRef<HTMLInputElement | null>(null);
 
-  // NiceModal.hide() doesn't unmount; reset (or restore a saved draft) on
-  // every reopen so stale state from a prior submit doesn't persist.
+  // NiceModal.hide() doesn't unmount; reset on EVERY visibility transition
+  // (close AND open) so the next reopen is guaranteed-blank even if state
+  // updates from a Send raced the modal-close. No draft persistence.
   React.useEffect(() => {
-    if (!modal.visible) return;
-    const saved = readSavedDraft();
-    setSubject(saved?.subject ?? '');
-    setBody(saved?.body ?? '');
+    setSubject('');
+    setBody('');
     setShowFormatting(false);
     setStaged([]);
     setSubmitting(false);
@@ -130,19 +107,6 @@ export const ComposeMessageModal = NiceModal.create<NiceModalHocProps>(() => {
     setSpellCheck(true);
     setEditorKey((k) => k + 1);
   }, [modal.visible]);
-
-  // Persist the draft so closing/minimizing or a reload doesn't lose it.
-  React.useEffect(() => {
-    if (!modal.visible || typeof window === 'undefined') return;
-    try {
-      window.localStorage.setItem(
-        DRAFT_KEY,
-        JSON.stringify({ subject, body } satisfies Draft)
-      );
-    } catch {
-      // storage full / unavailable — drafting still works in-memory
-    }
-  }, [modal.visible, subject, body]);
 
   const uploadFiles = async (files: File[]): Promise<void> => {
     const room = MAX_ATTACHMENTS - staged.length;
@@ -260,7 +224,6 @@ export const ComposeMessageModal = NiceModal.create<NiceModalHocProps>(() => {
     ) {
       return;
     }
-    clearSavedDraft();
     modal.handleClose();
   };
 
@@ -284,7 +247,6 @@ export const ComposeMessageModal = NiceModal.create<NiceModalHocProps>(() => {
     });
     if (!result?.serverError && !result?.validationErrors) {
       toast.success('Message sent');
-      clearSavedDraft();
       setSubject('');
       setBody('');
       setStaged([]);
