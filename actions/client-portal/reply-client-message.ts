@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidateTag } from 'next/cache';
-import { EmailSenderType, Role } from '@prisma/client';
+import { EmailFolder, EmailSenderType, Role } from '@prisma/client';
 
 import { authActionClient } from '@/actions/safe-action';
 import { Caching, OrganizationCacheKey } from '@/data/caching';
@@ -92,6 +92,11 @@ export const replyClientMessage = authActionClient
         data: {
           preview: previewBase.slice(0, 500),
           unread: true,
+          // A client reply belongs in the admin's Inbox tab (folder=INBOX is
+          // the team's incoming view). On an admin-started thread the folder
+          // was SENT; flip it so the conversation always lives in
+          // whoever-needs-to-respond's inbox.
+          folder: EmailFolder.INBOX,
           // A new client reply un-trashes the thread for the team so it
           // reappears in the admin inbox (Gmail-style resurrection).
           teamDeleted: false

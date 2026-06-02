@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidateTag } from 'next/cache';
-import { EmailSenderType } from '@prisma/client';
+import { EmailFolder, EmailSenderType } from '@prisma/client';
 
 import { authActionClient } from '@/actions/safe-action';
 import { Caching, OrganizationCacheKey } from '@/data/caching';
@@ -123,6 +123,11 @@ export const replyContactEmail = authActionClient
           // lights up. Cleared when the client opens the thread. Mirrors
           // the ticket clientUnread pattern.
           unread: true,
+          // A team reply belongs in the client's Inbox tab (folder=SENT is
+          // the team's outbound view = the client's inbox view). On a
+          // client-started thread the folder was INBOX; flip it so the
+          // conversation always lives in whoever-needs-to-respond's inbox.
+          folder: EmailFolder.SENT,
           // A new team reply un-trashes the thread for the client (Gmail
           // resurrects a deleted thread when new mail arrives on it).
           clientDeleted: false
