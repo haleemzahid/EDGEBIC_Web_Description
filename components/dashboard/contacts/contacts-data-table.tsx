@@ -255,7 +255,20 @@ function ClientActivityBadge({
     e.stopPropagation();
     startTransition(async () => {
       await dismissContactNotifications({ contactId, type: item.type });
-      router.push(item.link);
+      // Single unread → open the deep link (specific thread/ticket).
+      // Multiple unread → drop the per-item key (e.g. threadId) so the
+      // section opens in list view with all unread items visible.
+      let target = item.link;
+      if (item.count > 1) {
+        try {
+          const url = new URL(target, window.location.origin);
+          url.searchParams.delete('threadId');
+          target = `${url.pathname}${url.search}${url.hash}`;
+        } catch {
+          // Fall back to the original link if parsing fails.
+        }
+      }
+      router.push(target);
       router.refresh();
     });
   };

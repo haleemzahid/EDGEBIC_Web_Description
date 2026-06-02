@@ -108,6 +108,7 @@ export const composeClientMessage = authActionClient
     void notifyTeamOfMessage({
       organizationId: link.organizationId,
       contactId: link.contactId,
+      threadId: thread.id,
       clientName: link.name,
       subject: parsedInput.subject,
       body: plainText,
@@ -122,6 +123,7 @@ export const composeClientMessage = authActionClient
 async function notifyTeamOfMessage(args: {
   organizationId: string;
   contactId: string;
+  threadId: string;
   clientName: string;
   subject: string;
   body: string;
@@ -129,7 +131,10 @@ async function notifyTeamOfMessage(args: {
 }): Promise<void> {
   const team = await getTeamNotificationRecipient(args.organizationId);
   if (!team) return;
-  const path = `/dashboard/contacts/${args.contactId}?tab=inbox`;
+  // Deep link to the specific thread so the CRM badge can open it directly
+  // when there's a single unread item. When multiple unread items exist,
+  // the badge click strips ?threadId and falls back to the inbox list.
+  const path = `/dashboard/contacts/${args.contactId}?tab=inbox&threadId=${args.threadId}`;
   const url = `${getBaseUrl()}${path}`;
   const subject = args.isNewThread
     ? `New message from ${args.clientName}: ${args.subject}`

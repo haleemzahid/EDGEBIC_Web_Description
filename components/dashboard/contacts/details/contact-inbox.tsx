@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { EmailFolder, EmailSenderType } from '@prisma/client';
 import { format, isThisYear, isToday } from 'date-fns';
 import {
@@ -188,10 +188,22 @@ export function ContactInbox({
   initialThreads
 }: ContactInboxProps): React.JSX.Element {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const threadIdFromUrl = searchParams.get('threadId');
   const [pending, startTransition] = React.useTransition();
 
   const [folder, setFolder] = React.useState<FolderKey>('INBOX');
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
+
+  // Deep link from CRM badge: ?threadId=<id> auto-opens that thread (and
+  // switches to the right folder if the thread is in SENT).
+  React.useEffect(() => {
+    if (!threadIdFromUrl) return;
+    const target = initialThreads.find((t) => t.id === threadIdFromUrl);
+    if (!target) return;
+    setFolder(target.folder === EmailFolder.SENT ? 'SENT' : 'INBOX');
+    setSelectedId(threadIdFromUrl);
+  }, [threadIdFromUrl, initialThreads]);
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(
     () => new Set()
   );

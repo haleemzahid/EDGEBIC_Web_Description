@@ -103,10 +103,12 @@ export default async function ClientMessageDetailPage({
     notFound();
   }
 
-  // Auto-clear unread when the client opens the thread. The DB write is
-  // safe to do here (idempotent), but `revalidateTag` can't run during a
-  // page render in Next 15, so we defer it via `after()`.
-  if (thread.unread) {
+  // Auto-clear unread only when the client opens a thread the admin sent
+  // (folder = SENT from the team's perspective). `unread` semantics is "the
+  // recipient hasn't read this yet" — for client-authored threads (folder =
+  // INBOX) the admin is the recipient, so the client viewing must NOT clear
+  // the flag, otherwise the CRM badge / bold row state goes stale.
+  if (thread.unread && thread.folder === EmailFolder.SENT) {
     await prisma.contactEmailThread.update({
       where: { id: thread.id },
       data: { unread: false }
