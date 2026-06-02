@@ -126,16 +126,6 @@ export function ClientMessageConversation({
   const recipientFirstName =
     lastTeamMessage?.senderName?.split(' ')[0] || 'the team';
 
-  // Background poll for new messages from the team.
-  React.useEffect(() => {
-    const id = window.setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        router.refresh();
-      }
-    }, 5000);
-    return () => window.clearInterval(id);
-  }, [router]);
-
   React.useEffect(() => {
     if (pending.length === 0) return;
     setPending((prev) =>

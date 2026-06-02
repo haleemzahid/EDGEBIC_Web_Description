@@ -122,7 +122,10 @@ export const replyContactEmail = authActionClient
           // Team replied → unread BY THE CLIENT so the portal sidebar badge
           // lights up. Cleared when the client opens the thread. Mirrors
           // the ticket clientUnread pattern.
-          unread: true
+          unread: true,
+          // A new team reply un-trashes the thread for the client (Gmail
+          // resurrects a deleted thread when new mail arrives on it).
+          clientDeleted: false
         }
       })
     ]);

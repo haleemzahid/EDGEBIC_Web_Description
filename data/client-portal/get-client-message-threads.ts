@@ -45,7 +45,7 @@ export async function getClientMessageThreads(
   const raw = await cache(
     async () => {
       return prisma.contactEmailThread.findMany({
-        where: { contactId: link.contactId },
+        where: { contactId: link.contactId, clientDeleted: false },
         orderBy: { updatedAt: 'desc' },
         select: {
           id: true,
@@ -128,7 +128,8 @@ export async function getClientMessageThreadsList(
   const parsed = result.data;
 
   const baseFilter: Prisma.ContactEmailThreadWhereInput = {
-    contactId: link.contactId
+    contactId: link.contactId,
+    clientDeleted: false
   };
 
   const folderFilter: Prisma.ContactEmailThreadWhereInput | undefined =

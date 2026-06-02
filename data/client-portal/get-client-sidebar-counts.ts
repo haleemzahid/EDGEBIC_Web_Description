@@ -41,7 +41,8 @@ export async function getClientSidebarCounts(
           where: {
             contactId: link.contactId,
             unread: true,
-            folder: EmailFolder.SENT
+            folder: EmailFolder.SENT,
+            clientDeleted: false
           }
         }),
         prisma.contactMeeting.count({

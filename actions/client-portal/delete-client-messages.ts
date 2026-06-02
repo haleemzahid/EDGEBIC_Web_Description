@@ -25,21 +25,40 @@ export const deleteClientMessages = authActionClient
       );
     }
 
-    // Only delete threads that belong to this client's linked contact.
+    // Per-side soft delete (Gmail-style). Admin retains its own view of the
+    // thread unless they had already deleted it too — in which case nobody
+    // can see the row anymore and we hard-remove it to keep the table tidy.
     const threads = await prisma.contactEmailThread.findMany({
       where: {
         id: { in: parsedInput.ids },
         contactId: link.contactId
       },
-      select: { id: true }
+      select: { id: true, teamDeleted: true }
     });
     if (threads.length === 0) {
       throw new NotFoundError('Messages not found');
     }
 
-    await prisma.contactEmailThread.deleteMany({
-      where: { id: { in: threads.map((t) => t.id) } }
-    });
+    const hardDeleteIds = threads.filter((t) => t.teamDeleted).map((t) => t.id);
+    const softDeleteIds = threads.filter((t) => !t.teamDeleted).map((t) => t.id);
+
+    await prisma.$transaction([
+      ...(softDeleteIds.length > 0
+        ? [
+            prisma.contactEmailThread.updateMany({
+              where: { id: { in: softDeleteIds } },
+              data: { clientDeleted: true }
+            })
+          ]
+        : []),
+      ...(hardDeleteIds.length > 0
+        ? [
+            prisma.contactEmailThread.deleteMany({
+              where: { id: { in: hardDeleteIds } }
+            })
+          ]
+        : [])
+    ]);
 
     revalidateTag(
       Caching.createOrganizationTag(

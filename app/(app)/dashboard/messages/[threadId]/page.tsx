@@ -68,7 +68,10 @@ export default async function ClientMessageDetailPage({
   const thread = await prisma.contactEmailThread.findFirst({
     where: {
       id: threadId,
-      contactId: link.contactId
+      contactId: link.contactId,
+      // If the client trashed this thread, treat the URL as not-found so
+      // they can't deep-link back into a "deleted" conversation.
+      clientDeleted: false
     },
     select: {
       id: true,

@@ -91,7 +91,10 @@ export const replyClientMessage = authActionClient
         where: { id: thread.id },
         data: {
           preview: previewBase.slice(0, 500),
-          unread: true
+          unread: true,
+          // A new client reply un-trashes the thread for the team so it
+          // reappears in the admin inbox (Gmail-style resurrection).
+          teamDeleted: false
         }
       }),
       // Bubble the contact to the top of the CRM and mark unread so the

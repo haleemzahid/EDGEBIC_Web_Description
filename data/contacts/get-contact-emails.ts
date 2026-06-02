@@ -44,7 +44,10 @@ export async function getContactEmails(
           contactId: parsedInput.contactId,
           contact: {
             organizationId: session.user.organizationId
-          }
+          },
+          // Hide threads the team has trashed (per-side soft delete). The
+          // client still sees them unless they trashed them too.
+          teamDeleted: false
         },
         select: {
           id: true,

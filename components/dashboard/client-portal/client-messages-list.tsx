@@ -84,16 +84,6 @@ export function ClientMessagesList({
     () => new Set()
   );
 
-  // Auto-refresh so new team replies appear without a manual reload.
-  React.useEffect(() => {
-    const id = window.setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        router.refresh();
-      }
-    }, 10_000);
-    return () => window.clearInterval(id);
-  }, [router]);
-
   const [pageIndex, setPageIndex] = useQueryState(
     'pageIndex',
     searchParams.pageIndex.withOptions({ startTransition, shallow: false })
