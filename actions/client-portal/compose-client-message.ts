@@ -52,41 +52,56 @@ export const composeClientMessage = authActionClient
 
     // From the team's perspective, a thread the client initiates is an
     // incoming conversation → INBOX folder, marked unread so the team sees it.
-    const thread = await prisma.contactEmailThread.create({
-      data: {
-        contactId: link.contactId,
-        folder: EmailFolder.INBOX,
-        subject: parsedInput.subject,
-        preview: plainText.slice(0, 500),
-        unread: true,
-        messages: {
-          create: {
-            senderType: EmailSenderType.CONTACT,
-            senderName: link.name,
-            senderEmail: link.email,
-            body: safeBody,
-            attachments:
-              parsedInput.attachments.length > 0
-                ? {
-                    create: parsedInput.attachments.map((a) => ({
-                      fileName: a.fileName,
-                      storedName: a.storedName,
-                      mimeType: a.mimeType,
-                      sizeBytes: a.sizeBytes
-                    }))
-                  }
-                : undefined
+    // Also bubble the contact to the top of the CRM and mark unread so the
+    // row shows bold (mirrors the ticket flow).
+    const now = new Date();
+    const [thread] = await prisma.$transaction([
+      prisma.contactEmailThread.create({
+        data: {
+          contactId: link.contactId,
+          folder: EmailFolder.INBOX,
+          subject: parsedInput.subject,
+          preview: plainText.slice(0, 500),
+          unread: true,
+          messages: {
+            create: {
+              senderType: EmailSenderType.CONTACT,
+              senderName: link.name,
+              senderEmail: link.email,
+              body: safeBody,
+              attachments:
+                parsedInput.attachments.length > 0
+                  ? {
+                      create: parsedInput.attachments.map((a) => ({
+                        fileName: a.fileName,
+                        storedName: a.storedName,
+                        mimeType: a.mimeType,
+                        sizeBytes: a.sizeBytes
+                      }))
+                    }
+                  : undefined
+            }
           }
-        }
-      },
-      select: { id: true }
-    });
+        },
+        select: { id: true }
+      }),
+      prisma.contact.update({
+        where: { id: link.contactId },
+        data: { createdAt: now, isRead: false }
+      })
+    ]);
 
     revalidateTag(
       Caching.createOrganizationTag(
         OrganizationCacheKey.ContactEmails,
         link.organizationId,
         link.contactId
+      )
+    );
+    revalidateTag(
+      Caching.createOrganizationTag(
+        OrganizationCacheKey.Contacts,
+        link.organizationId
       )
     );
 

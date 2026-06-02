@@ -83,18 +83,6 @@ export function ContactsDataTable({
   const router = useRouter();
   const { isLoading, startTransition } = useTransitionContext();
 
-  // Auto-refresh the CRM list so client-portal submissions (new tickets,
-  // messages, etc.) bubble to the top without a manual reload. Only poll
-  // while the tab is visible to keep the load light.
-  React.useEffect(() => {
-    const id = window.setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        router.refresh();
-      }
-    }, 10_000);
-    return () => window.clearInterval(id);
-  }, [router]);
-
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});

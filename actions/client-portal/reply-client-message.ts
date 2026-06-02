@@ -7,6 +7,7 @@ import { authActionClient } from '@/actions/safe-action';
 import { Caching, OrganizationCacheKey } from '@/data/caching';
 import { getClientContactLink } from '@/lib/auth/get-client-contact';
 import { getTeamNotificationRecipient } from '@/lib/auth/get-team-notification-recipient';
+import { createTeamNotification } from '@/lib/notifications/create-team-notification';
 import {
   htmlToPlainText,
   sanitizeEmailHtml
@@ -64,6 +65,7 @@ export const replyClientMessage = authActionClient
     const previewBase = plainText
       ? plainText
       : parsedInput.attachments.map((a) => a.fileName).join(', ');
+    const now = new Date();
     await prisma.$transaction([
       prisma.contactEmailMessage.create({
         data: {
@@ -91,6 +93,12 @@ export const replyClientMessage = authActionClient
           preview: previewBase.slice(0, 500),
           unread: true
         }
+      }),
+      // Bubble the contact to the top of the CRM and mark unread so the
+      // row shows bold (mirrors the ticket flow).
+      prisma.contact.update({
+        where: { id: thread.contactId },
+        data: { createdAt: now, isRead: false }
       })
     ]);
 
@@ -99,6 +107,12 @@ export const replyClientMessage = authActionClient
         OrganizationCacheKey.ContactEmails,
         link.organizationId,
         thread.contactId
+      )
+    );
+    revalidateTag(
+      Caching.createOrganizationTag(
+        OrganizationCacheKey.Contacts,
+        link.organizationId
       )
     );
 
@@ -122,16 +136,31 @@ async function notifyTeamOfMessageReply(args: {
 }): Promise<void> {
   const team = await getTeamNotificationRecipient(args.organizationId);
   if (!team) return;
-  const url = `${getBaseUrl()}/dashboard/contacts/${args.contactId}?tab=inbox`;
+  const path = `/dashboard/contacts/${args.contactId}?tab=inbox`;
+  const url = `${getBaseUrl()}${path}`;
+  const subject = `New reply from ${args.clientName}: ${args.subject}`;
+  const heading = `${args.clientName} replied to a message`;
   await sendPortalActivityEmail({
     recipient: team.email,
     recipientName: team.name,
-    subject: `New reply from ${args.clientName}: ${args.subject}`,
-    heading: `${args.clientName} replied to a message`,
+    subject,
+    heading,
     preheader: `New reply: ${args.subject}`,
     context: args.subject,
     body: args.body,
     ctaLabel: 'Open in CRM',
     ctaUrl: url
+  });
+
+  // Additive: also surface an in-app notification on the Contacts table.
+  await createTeamNotification({
+    userId: team.userId,
+    subject,
+    content: `${heading}: ${args.subject}`,
+    link: path,
+    contactId: args.contactId,
+    type: 'MESSAGE'
+  }).catch((error) => {
+    console.error('[Notify team] in-app reply notification failed:', error);
   });
 }
