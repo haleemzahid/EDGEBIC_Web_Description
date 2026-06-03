@@ -331,72 +331,67 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Release lookup from the global SoftwareRelease catalog.
-    //   - With both `version` and `releaseDate`: return that exact version
-    //     PLUS every release that's newer by version OR by date.
-    //   - Otherwise: return only the single latest release.
-    // `product` (optional) scopes the search to one product.
-    const productWhere = product
-      ? { product: { equals: product, mode: 'insensitive' as const } }
-      : {};
+    // Source of truth: the customer's own ContactSoftware rows (what shows
+    // on their CRM page). The API only ever returns software belonging to
+    // the calling customer — never the entire catalog.
+    //   - With `version` + `releaseDate`: return rows whose version equals
+    //     the filter version OR is greater (anchor + greater).
+    //     `releaseDate` is required as the trigger but isn't used inside
+    //     the comparison — the filter is purely version-based.
+    //   - Otherwise: return only the single most-recent row.
+    // `product` (optional) scopes the search to one product the customer owns.
+    if (!contact) {
+      await logAttempt(purchase.id, 'success', null, logCtx);
+      return NextResponse.json({ software: [] });
+    }
 
-    let releaseRows: Array<{
-      product: string;
-      version: string;
-      releaseDate: Date;
-      downloadUrl: string | null;
-      notes: string | null;
-    }>;
+    const customerSoftware = await prisma.contactSoftware.findMany({
+      where: {
+        contactId: contact.id,
+        ...(product
+          ? { name: { equals: product, mode: 'insensitive' as const } }
+          : {})
+      },
+      orderBy: { updatedAt: 'desc' },
+      select: {
+        name: true,
+        installedVersion: true,
+        latestVersion: true,
+        downloadUrl: true,
+        notes: true,
+        updatedAt: true
+      }
+    });
+
+    // Pick the version each row represents: latestVersion when set,
+    // otherwise installedVersion (the admin "Version" field).
+    const versioned = customerSoftware
+      .map((s) => ({
+        ...s,
+        version: s.latestVersion || s.installedVersion || null
+      }))
+      .filter((s) => s.version !== null) as Array<
+      (typeof customerSoftware)[number] & { version: string }
+    >;
+
+    let resultRows: typeof versioned;
 
     if (version && filterReleaseDate) {
-      // Release catalogs are small (dozens of rows per product), so the
-      // version comparison is done in JS — Postgres has no first-class
-      // semver / natural-sort operator and a raw expression would lock us
-      // out of the case-insensitive product match.
-      const all = await prisma.softwareRelease.findMany({
-        where: productWhere,
-        orderBy: { releaseDate: 'desc' },
-        select: {
-          product: true,
-          version: true,
-          releaseDate: true,
-          downloadUrl: true,
-          notes: true
-        }
-      });
-
       const filterVersionNorm = normalizeVersion(version);
-
-      releaseRows = all.filter((r) => {
-        const rNorm = normalizeVersion(r.version);
+      resultRows = versioned.filter((s) => {
+        const sNorm = normalizeVersion(s.version);
         // Anchor: the exact requested version is always included.
-        if (rNorm === filterVersionNorm) return true;
-        // Newer by release date.
-        if (r.releaseDate.getTime() > filterReleaseDate.getTime()) return true;
-        // Newer by version — natural compare so "10" > "9", "1.2.10" > "1.2.9".
-        if (
-          rNorm.localeCompare(filterVersionNorm, undefined, {
+        if (sNorm === filterVersionNorm) return true;
+        // Greater by version — natural compare so "10" > "9", "1.2.10" > "1.2.9".
+        return (
+          sNorm.localeCompare(filterVersionNorm, undefined, {
             numeric: true,
             sensitivity: 'base'
           }) > 0
-        ) {
-          return true;
-        }
-        return false;
+        );
       });
     } else {
-      const latest = await prisma.softwareRelease.findFirst({
-        where: productWhere,
-        orderBy: { releaseDate: 'desc' },
-        select: {
-          product: true,
-          version: true,
-          releaseDate: true,
-          downloadUrl: true,
-          notes: true
-        }
-      });
-      releaseRows = latest ? [latest] : [];
+      resultRows = versioned.length > 0 ? [versioned[0]] : [];
     }
 
     await logAttempt(purchase.id, 'success', null, logCtx);
@@ -412,14 +407,12 @@ export async function POST(request: NextRequest) {
       return url;
     };
 
-    const software = releaseRows.map((r) => ({
-      productName: r.product,
-      description: r.notes,
-      // Kept as `latestVersion` for response-shape backward compat — when
-      // filtering, each row carries its own version here.
-      latestVersion: r.version,
-      downloadUrl: absolutize(r.downloadUrl),
-      releaseDate: formatDmy(r.releaseDate)
+    const software = resultRows.map((s) => ({
+      productName: s.name,
+      description: s.notes,
+      latestVersion: s.version,
+      downloadUrl: absolutize(s.downloadUrl),
+      releaseDate: formatDmy(s.updatedAt)
     }));
 
     return NextResponse.json({ software });
