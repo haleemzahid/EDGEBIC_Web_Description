@@ -110,6 +110,14 @@ function formatDmy(date: Date): string {
   return `${date.getUTCDate()}/${date.getUTCMonth() + 1}/${date.getUTCFullYear()}`;
 }
 
+// Admins type versions inconsistently ("v10.2", "10.2", " V10.2 "). Strip a
+// leading "v"/"V" and trim so equality and natural-sort both work regardless
+// of how the version was entered. Storage stays as typed for display; only
+// the comparison is normalized.
+function normalizeVersion(v: string): string {
+  return v.trim().replace(/^[vV]/, '');
+}
+
 function getClientIp(request: NextRequest): string {
   return (
     request.headers.get('x-forwarded-for') ||
@@ -357,14 +365,17 @@ export async function POST(request: NextRequest) {
         }
       });
 
+      const filterVersionNorm = normalizeVersion(version);
+
       releaseRows = all.filter((r) => {
+        const rNorm = normalizeVersion(r.version);
         // Anchor: the exact requested version is always included.
-        if (r.version === version) return true;
+        if (rNorm === filterVersionNorm) return true;
         // Newer by release date.
         if (r.releaseDate.getTime() > filterReleaseDate.getTime()) return true;
         // Newer by version — natural compare so "10" > "9", "1.2.10" > "1.2.9".
         if (
-          r.version.localeCompare(version, undefined, {
+          rNorm.localeCompare(filterVersionNorm, undefined, {
             numeric: true,
             sensitivity: 'base'
           }) > 0
