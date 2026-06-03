@@ -42,13 +42,17 @@ export default async function ContactsPage({
 }: NextPageProps): Promise<React.JSX.Element> {
   const parsedSearchParams = await searchParamsCache.parse(searchParams);
 
-  const [{ contacts, filteredCount, totalCount }, tags, clientActivity, profile] =
+  const [{ contacts, filteredCount, totalCount }, tags, profile] =
     await Promise.all([
       getContacts(parsedSearchParams),
       getContactTags(),
-      getClientActivity(),
       getProfile()
     ]);
+
+  // Scope the notification query to just the contacts on screen so the
+  // badge lookup stays small no matter how many unread notifications the
+  // user has overall.
+  const clientActivity = await getClientActivity(contacts.map((c) => c.id));
 
   const hasAnyContacts = totalCount > 0;
 

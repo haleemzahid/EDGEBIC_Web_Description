@@ -23,18 +23,28 @@ export type ClientActivityMap = Record<string, ClientActivityItem[]>;
  * Undismissed client-activity notifications for the signed-in team user,
  * keyed by contactId and grouped by type so each type renders its own
  * badge on the Contacts table. Read-only and additive.
+ *
+ * Pass `contactIds` to scope the query to only the contacts currently
+ * visible on the page — otherwise the query loads every undismissed
+ * notification for the user, which can be thousands of rows.
  */
-export async function getClientActivity(): Promise<ClientActivityMap> {
+export async function getClientActivity(
+  contactIds?: string[]
+): Promise<ClientActivityMap> {
   const session = await dedupedAuth();
   if (!checkSession(session)) {
     return redirect(getLoginRedirect());
+  }
+
+  if (contactIds && contactIds.length === 0) {
+    return {};
   }
 
   const notifications = await prisma.notification.findMany({
     where: {
       userId: session.user.id,
       dismissed: false,
-      contactId: { not: null }
+      contactId: contactIds ? { in: contactIds } : { not: null }
     },
     orderBy: { createdAt: 'desc' },
     select: { contactId: true, type: true, link: true }
