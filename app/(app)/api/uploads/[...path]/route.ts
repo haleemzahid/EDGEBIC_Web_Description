@@ -51,6 +51,15 @@ export async function GET(
     return new NextResponse(undefined, { status: 404 });
   }
 
+  // Software installers must never be served by this unauthenticated route.
+  // They go through /api/download?token=... which checks the Purchase
+  // token, expiry, and per-license download count. Anyone sharing a raw
+  // /api/uploads/software/<uuid>.zip URL otherwise grants unlimited
+  // free downloads.
+  if (segments[0]?.toLowerCase() === 'software') {
+    return new NextResponse(undefined, { status: 404 });
+  }
+
   // Join + normalize, then make sure the resolved absolute path is still
   // inside UPLOADS_ROOT. Blocks ../ traversal and absolute-path tricks.
   const requested = path.normalize(path.join(...segments));
