@@ -4,6 +4,9 @@ import { MetadataRoute } from 'next';
 import { allDocs, allPosts } from 'content-collections';
 import { getBaseUrl } from '@/lib/urls/get-base-url';
 import { states } from '@/data/states';
+import { listApprovedMatrixSlugs } from '@/lib/programmatic/matrix';
+import { listExcelTemplateSlugs } from '@/lib/programmatic/excel-templates';
+import { listCompetitorSlugs } from '@/lib/programmatic/competitors';
 
 // High-priority pages that should be crawled more frequently
 const HIGH_PRIORITY_PAGES = new Set([
@@ -54,7 +57,8 @@ const MEDIUM_PRIORITY_PAGES = new Set([
   'spreadsheet-scheduler',
   'spreadsheet-qc',
   'compare-products',
-  'production-scheduling-products'
+  'production-scheduling-products',
+  'machine-monitoring-software'
 ]);
 
 function getPagePriority(urlPath: string): number {
@@ -219,6 +223,35 @@ export default async function Sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: 'monthly' as const,
       priority: state.tier === 1 ? 0.7 : state.tier === 2 ? 0.5 : 0.4
+    })),
+    // Programmatic SEO — Industry × Feature matrix pages.
+    // Dynamic route at app/(app)/(marketing)/[matrixSlug]/page.tsx is skipped
+    // by the filesystem walker (line 139 — entry.name.startsWith('[')), so
+    // we enumerate the approved slugs here. See docs/seo/PROGRAMMATIC-SEO-PLAN.md.
+    ...listApprovedMatrixSlugs().map((slug) => ({
+      url: `${baseUrl}/${slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.6
+    })),
+    // Programmatic Excel template pages — dynamic [templateSlug] route under
+    // /excel-templates/ that handles the 30 new templates beyond the 14
+    // static folders. Filesystem walker skips the dynamic folder, so we
+    // enumerate the new template slugs here.
+    ...listExcelTemplateSlugs().map((slug) => ({
+      url: `${baseUrl}/excel-templates/${slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.6
+    })),
+    // Programmatic competitor comparison pages — dynamic [competitorSlug]
+    // route under /compare-products/ that handles the 20 new comparisons
+    // beyond the 10 existing static folders.
+    ...listCompetitorSlugs().map((slug) => ({
+      url: `${baseUrl}/compare-products/${slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.7
     }))
   ];
 

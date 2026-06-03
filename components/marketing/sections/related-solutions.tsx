@@ -172,6 +172,16 @@ const ALL_SOLUTIONS: Record<string, RelatedLink> = {
     title: 'Warehouse Management Software',
     description: 'Multi-location WMS that understands BOMs, work orders, and shop-floor flow',
     href: Routes.WarehouseManagementSoftware
+  },
+  [Routes.MachineMonitoringSoftware]: {
+    title: 'Machine Monitoring Software',
+    description: 'Real-time OEE, downtime, and shop floor analytics for every machine',
+    href: Routes.MachineMonitoringSoftware
+  },
+  [Routes.Edgebi]: {
+    title: 'EDGEBI Dashboards',
+    description: 'Visual Gantt scheduling and manufacturing business intelligence',
+    href: Routes.Edgebi
   }
 };
 
@@ -405,6 +415,13 @@ const CROSS_LINK_MAP: Record<string, string[]> = {
     Routes.MultiLocationScheduling,
     Routes.BomSoftware,
     Routes.ManufacturingSoftware
+  ],
+  [Routes.MachineMonitoringSoftware]: [
+    Routes.Edgebi,
+    Routes.FiniteCapacityScheduling,
+    Routes.OnTimeDelivery,
+    Routes.MachineShopScheduling,
+    Routes.CncShopScheduling
   ]
 };
 

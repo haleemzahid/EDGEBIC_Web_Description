@@ -246,6 +246,46 @@ async function loadMarketingPages() {
   }
 
   await scan(MARKETING_DIR, '');
+
+  // Programmatic pages — dynamic routes at /[matrixSlug], /excel-templates/
+  // [templateSlug], and /compare-products/[competitorSlug] are skipped by
+  // the filesystem walker. Inject all approved records from the unified
+  // cache. Regenerate the cache with:
+  //   npx tsx scripts/seo/programmatic/dump-matrix-cache.mjs
+  const programmaticCachePath = path.join(ROOT, 'content', 'seo', 'programmatic-pages-cache.json');
+  try {
+    const raw = await fs.readFile(programmaticCachePath, 'utf8');
+    const cache = JSON.parse(raw);
+    for (const record of cache.records || []) {
+      pages.push({
+        url: record.url,
+        slug: record.slug,
+        title: record.title || '',
+        description: record.description || '',
+        keywords: (record.keywords || '').split(',').map((k) => k.trim()).filter(Boolean)
+      });
+    }
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+    // No unified cache — fall back to legacy matrix-only cache.
+    const matrixCachePath = path.join(ROOT, 'content', 'seo', 'programmatic-matrix-cache.json');
+    try {
+      const raw = await fs.readFile(matrixCachePath, 'utf8');
+      const cache = JSON.parse(raw);
+      for (const record of cache.records || []) {
+        pages.push({
+          url: record.url,
+          slug: record.slug,
+          title: record.title || '',
+          description: record.description || '',
+          keywords: (record.keywords || '').split(',').map((k) => k.trim()).filter(Boolean)
+        });
+      }
+    } catch (err2) {
+      if (err2.code !== 'ENOENT') throw err2;
+    }
+  }
+
   return pages;
 }
 
