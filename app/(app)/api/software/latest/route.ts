@@ -40,10 +40,22 @@ const requestSchema = z.object({
   processorId: z.string().min(1).optional(),
   // Optional: narrow the response to a single product by name. Also the
   // product to record when `version` is supplied.
-  product: z.string().min(1).optional(),
-  // Optional: the version the client currently has installed. When sent
-  // together with `product`, the customer's software is added/updated to it.
+  product: z.string().min(1).max(255).optional(),
+  // Optional: the version the client currently has installed. Two uses:
+  //   1. When sent with `product`, the customer's ContactSoftware row is
+  //      added/updated to it (write-back).
+  //   2. When sent with `releaseDate`, becomes the filter floor — the
+  //      response returns this exact version plus every release that is
+  //      newer by version OR by date.
   version: z.string().min(1).max(64).optional(),
+  // Optional: the release date of the version the client currently has,
+  // in `D/M/YYYY` format (e.g. "3/6/2026" = 3 June 2026). Used together
+  // with `version` as the filter floor. Without both, the endpoint
+  // returns only the single latest release.
+  releaseDate: z
+    .string()
+    .regex(/^\d{1,2}\/\d{1,2}\/\d{4}$/, 'Use D/M/YYYY format')
+    .optional(),
   // Optional: download URL to store for this product on the customer's
   // ContactSoftware row (set together with `product`).
   downloadUrl: z.string().url().max(2048).optional()
@@ -75,6 +87,27 @@ function resolveLicenseKey(
   }
 
   return null;
+}
+
+// Releases use date-only values in `D/M/YYYY` format. Stored as Postgres
+// DATE — using UTC midnight in JS avoids timezone shifts that would
+// otherwise drift the day across `getDate()` / `toISOString()`.
+function parseDmy(value: string): Date | null {
+  const [d, m, y] = value.split('/').map((n) => parseInt(n, 10));
+  if (!d || !m || !y) return null;
+  const date = new Date(Date.UTC(y, m - 1, d));
+  if (
+    date.getUTCDate() !== d ||
+    date.getUTCMonth() !== m - 1 ||
+    date.getUTCFullYear() !== y
+  ) {
+    return null;
+  }
+  return date;
+}
+
+function formatDmy(date: Date): string {
+  return `${date.getUTCDate()}/${date.getUTCMonth() + 1}/${date.getUTCFullYear()}`;
 }
 
 function getClientIp(request: NextRequest): string {
@@ -138,8 +171,20 @@ export async function POST(request: NextRequest) {
       processorId,
       product,
       version,
+      releaseDate: bodyReleaseDate,
       downloadUrl
     } = requestSchema.parse(body);
+
+    let filterReleaseDate: Date | null = null;
+    if (bodyReleaseDate) {
+      filterReleaseDate = parseDmy(bodyReleaseDate);
+      if (!filterReleaseDate) {
+        return NextResponse.json(
+          { error: 'Invalid releaseDate — use D/M/YYYY format' },
+          { status: 400 }
+        );
+      }
+    }
 
     const licenseKey = resolveLicenseKey(request, bodyLicenseKey);
     if (!licenseKey) {
@@ -232,15 +277,12 @@ export async function POST(request: NextRequest) {
       select: { id: true }
     });
 
-    if (!contact) {
-      await logAttempt(purchase.id, 'success', null, logCtx);
-      return NextResponse.json({ software: [] });
-    }
-
-    // Write-back: record the reported software/version against the
-    // customer. Best-effort — a failure here must not break the client's
-    // self-update lookup, so it's isolated and logged.
-    if (product && version) {
+    // Write-back: record the reported software/version against the CRM
+    // contact. Best-effort — a failure here must not break the release
+    // lookup, so it's isolated and logged. Skipped entirely when the
+    // license has no matching contact (release lookup is global, so we
+    // can still serve it).
+    if (contact && product && version) {
       try {
         const existingSoftware = await prisma.contactSoftware.findFirst({
           where: {
@@ -281,27 +323,70 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const rows = await prisma.contactSoftware.findMany({
-      where: {
-        contactId: contact.id,
-        ...(product
-          ? { name: { equals: product, mode: 'insensitive' } }
-          : {})
-      },
-      orderBy: { updatedAt: 'desc' },
-      // Only safe fields — never licenseKey, installPath, etc.
-      // `notes` is intentionally exposed as the product "description".
-      select: {
-        name: true,
-        latestVersion: true,
-        // Fallback source: the admin form fills `installedVersion` (its
-        // "Version" field), so use it when `latestVersion` is unset.
-        installedVersion: true,
-        downloadUrl: true,
-        notes: true,
-        updatedAt: true
-      }
-    });
+    // Release lookup from the global SoftwareRelease catalog.
+    //   - With both `version` and `releaseDate`: return that exact version
+    //     PLUS every release that's newer by version OR by date.
+    //   - Otherwise: return only the single latest release.
+    // `product` (optional) scopes the search to one product.
+    const productWhere = product
+      ? { product: { equals: product, mode: 'insensitive' as const } }
+      : {};
+
+    let releaseRows: Array<{
+      product: string;
+      version: string;
+      releaseDate: Date;
+      downloadUrl: string | null;
+      notes: string | null;
+    }>;
+
+    if (version && filterReleaseDate) {
+      // Release catalogs are small (dozens of rows per product), so the
+      // version comparison is done in JS — Postgres has no first-class
+      // semver / natural-sort operator and a raw expression would lock us
+      // out of the case-insensitive product match.
+      const all = await prisma.softwareRelease.findMany({
+        where: productWhere,
+        orderBy: { releaseDate: 'desc' },
+        select: {
+          product: true,
+          version: true,
+          releaseDate: true,
+          downloadUrl: true,
+          notes: true
+        }
+      });
+
+      releaseRows = all.filter((r) => {
+        // Anchor: the exact requested version is always included.
+        if (r.version === version) return true;
+        // Newer by release date.
+        if (r.releaseDate.getTime() > filterReleaseDate.getTime()) return true;
+        // Newer by version — natural compare so "10" > "9", "1.2.10" > "1.2.9".
+        if (
+          r.version.localeCompare(version, undefined, {
+            numeric: true,
+            sensitivity: 'base'
+          }) > 0
+        ) {
+          return true;
+        }
+        return false;
+      });
+    } else {
+      const latest = await prisma.softwareRelease.findFirst({
+        where: productWhere,
+        orderBy: { releaseDate: 'desc' },
+        select: {
+          product: true,
+          version: true,
+          releaseDate: true,
+          downloadUrl: true,
+          notes: true
+        }
+      });
+      releaseRows = latest ? [latest] : [];
+    }
 
     await logAttempt(purchase.id, 'success', null, logCtx);
 
@@ -316,19 +401,15 @@ export async function POST(request: NextRequest) {
       return url;
     };
 
-    const software = rows.map((r) => {
-      // One version concept: the latest version. Prefer the explicit
-      // `latestVersion`; fall back to whatever the admin entered as the
-      // product version (`installedVersion`).
-      const latest = r.latestVersion || r.installedVersion || null;
-      return {
-        productName: r.name,
-        description: r.notes,
-        latestVersion: latest,
-        downloadUrl: absolutize(r.downloadUrl),
-        releaseDate: r.updatedAt
-      };
-    });
+    const software = releaseRows.map((r) => ({
+      productName: r.product,
+      description: r.notes,
+      // Kept as `latestVersion` for response-shape backward compat — when
+      // filtering, each row carries its own version here.
+      latestVersion: r.version,
+      downloadUrl: absolutize(r.downloadUrl),
+      releaseDate: formatDmy(r.releaseDate)
+    }));
 
     return NextResponse.json({ software });
   } catch (error) {
