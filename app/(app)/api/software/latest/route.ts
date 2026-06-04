@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db/prisma';
 import { LicenseKeyGenerator } from '@/lib/license/license-key-generator';
 import { SystemFingerprintGenerator } from '@/lib/license/system-fingerprint';
 import { rateLimit } from '@/lib/network/rate-limit';
+import { signDownloadToken } from '@/lib/software-files/download-token';
 import { getBaseUrl } from '@/lib/urls/get-base-url';
 
 // Secure software-update endpoint. Installed software POSTs its license key
@@ -398,11 +399,26 @@ export async function POST(request: NextRequest) {
 
     // Installed Windows apps (machine-to-machine) need an absolute URL —
     // they're not running in a browser, so a relative /api/uploads/... path
-    // is useless to them. Prefix any host-less stored URL with the
-    // configured base URL before responding.
+    // is useless to them.
+    //
+    // Uploaded installers live under /api/uploads/software/<file>, which the
+    // public uploads route deliberately 404s. For those, mint a short-lived,
+    // license-bound token and point the caller at the gated /api/software/
+    // download route instead (the elevated updater downloads it with no creds).
+    // Any other (external) URL is just absolutized as before.
     const baseUrl = getBaseUrl();
-    const absolutize = (url: string | null): string | null => {
+    const UPLOADS_SOFTWARE_PREFIX = '/api/uploads/software/';
+    const resolveDownloadUrl = (url: string | null): string | null => {
       if (!url) return url;
+      if (url.startsWith(UPLOADS_SOFTWARE_PREFIX)) {
+        const storedName = url.slice(UPLOADS_SOFTWARE_PREFIX.length);
+        const token = signDownloadToken(storedName, licenseKeyHash);
+        if (token) {
+          return `${baseUrl}/api/software/download?token=${encodeURIComponent(token)}`;
+        }
+        // Secret unconfigured — emit nothing rather than a URL that 404s.
+        return null;
+      }
       if (url.startsWith('/')) return `${baseUrl}${url}`;
       return url;
     };
@@ -411,7 +427,7 @@ export async function POST(request: NextRequest) {
       productName: s.name,
       description: s.notes,
       latestVersion: s.version,
-      downloadUrl: absolutize(s.downloadUrl),
+      downloadUrl: resolveDownloadUrl(s.downloadUrl),
       releaseDate: formatDmy(s.updatedAt)
     }));
 

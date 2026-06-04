@@ -49,9 +49,10 @@ function getClientIp(request: NextRequest): string {
 }
 
 // A code is only ever sent to an address the system already knows: a dashboard
-// User, a license-holding Purchase, or a CRM Contact. This covers desktop /
-// licensed users (who may have no dashboard account) while preventing the
-// endpoint being used to spray reset codes at arbitrary inboxes.
+// User, a license-holding Purchase, a registered license seat (a local FCP
+// operator the desktop registered under its license), or a CRM Contact. This
+// covers desktop / licensed users (who may have no dashboard account) while
+// preventing the endpoint being used to spray reset codes at arbitrary inboxes.
 async function resolveKnownRecipient(normalizedEmail: string): Promise<{
   name: string;
   userId: string | null;
@@ -71,6 +72,16 @@ async function resolveKnownRecipient(normalizedEmail: string): Promise<{
   });
   if (purchase) {
     return { name: purchase.customerName || 'there', userId: null };
+  }
+
+  // Local FCP operators registered under a license (see /api/license/users).
+  const licenseUser = await prisma.licenseUser.findFirst({
+    where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
+    orderBy: { createdAt: 'asc' },
+    select: { name: true }
+  });
+  if (licenseUser) {
+    return { name: licenseUser.name || 'there', userId: null };
   }
 
   const contact = await prisma.contact.findFirst({
