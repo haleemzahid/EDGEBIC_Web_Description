@@ -701,6 +701,34 @@ model ResetPasswordRequest {
   @@index([email], map: "IX_ResetPasswordRequest_email")
 }
 
+// 6-digit code password-reset flow used by the desktop app via the public
+// API (app/(app)/api/auth/password-reset/*). The code itself is never stored
+// in plaintext: `codeHash` is an HMAC-SHA256 of `${email}:${code}` keyed with
+// AUTH_SECRET, so a database leak alone cannot reveal a code. `userId` /
+// `requestedName` are a best-effort snapshot of who requested the reset (for
+// the admin audit view); they are null when the email belongs to a license
+// holder or CRM contact rather than a dashboard User.
+model PasswordResetCode {
+  id            String    @id(map: "PK_PasswordResetCode") @default(uuid()) @db.Uuid
+  email         String    @db.VarChar(255)
+  userId        String?   @db.Uuid
+  requestedName String?   @db.VarChar(255)
+  codeHash      String    @db.VarChar(128)
+  expires       DateTime
+  attempts      Int       @default(0)
+  maxAttempts   Int       @default(5)
+  consumedAt    DateTime?
+  ipAddress     String?   @db.VarChar(64)
+  userAgent     String?   @db.VarChar(512)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([email], map: "IX_PasswordResetCode_email")
+  @@index([userId], map: "IX_PasswordResetCode_userId")
+  @@index([createdAt], map: "IX_PasswordResetCode_createdAt")
+}
+
 model Session {
   id           String   @id(map: "PK_Session") @default(uuid()) @db.Uuid
   sessionToken String   @unique
@@ -737,6 +765,7 @@ model User {
   accounts                     Account[]
   authenticatorApp             AuthenticatorApp?
   changeEmailRequests          ChangeEmailRequest[]
+  passwordResetCodes           PasswordResetCode[]
   comments                     ContactComment[]
   favorites                    Favorite[]
   feedback                     Feedback[]
