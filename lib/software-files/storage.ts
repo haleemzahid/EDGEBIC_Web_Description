@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 // Mirrors lib/ticket-attachments/storage.ts but tuned for installers:
@@ -91,4 +91,64 @@ export async function saveSoftwareFile(
     sizeBytes: file.size,
     publicUrl: `/api/${SOFTWARE_FILE_PUBLIC_DIR}/${storedName}`
   };
+}
+
+/**
+ * Deletes the on-disk installer backing a ContactSoftware.downloadUrl.
+ * Only touches files we actually saved under SOFTWARE_FILE_PUBLIC_DIR —
+ * external download links (and malformed/empty URLs) are left alone. Accepts
+ * both relative (/api/uploads/software/x.zip) and legacy absolute URLs.
+ * Best-effort: a file that is already gone is not an error. Returns true
+ * only when a file was actually removed.
+ */
+export async function deleteSoftwareFileByUrl(
+  downloadUrl: string | null | undefined
+): Promise<boolean> {
+  if (!downloadUrl) {
+    return false;
+  }
+
+  // Reduce to a path, whether the stored value is absolute or relative.
+  let pathname: string;
+  try {
+    pathname = new URL(downloadUrl).pathname;
+  } catch {
+    pathname = downloadUrl;
+  }
+
+  // Must point at our software upload dir; bail on external links.
+  const marker = `/${SOFTWARE_FILE_PUBLIC_DIR}/`;
+  const markerIndex = pathname.indexOf(marker);
+  if (markerIndex === -1) {
+    return false;
+  }
+
+  // basename() strips any directory parts, neutralising ../ traversal.
+  const storedName = path.basename(
+    decodeURIComponent(pathname.slice(markerIndex + marker.length))
+  );
+  if (!storedName || storedName === '.' || storedName === '..') {
+    return false;
+  }
+
+  const targetDir = path.join(
+    process.cwd(),
+    'public',
+    SOFTWARE_FILE_PUBLIC_DIR
+  );
+  const absolute = path.join(targetDir, storedName);
+  const dirWithSep = targetDir.endsWith(path.sep)
+    ? targetDir
+    : targetDir + path.sep;
+  if (!absolute.startsWith(dirWithSep)) {
+    return false;
+  }
+
+  try {
+    await unlink(absolute);
+    return true;
+  } catch {
+    // Already removed (or never lived on this disk) — nothing to clean up.
+    return false;
+  }
 }

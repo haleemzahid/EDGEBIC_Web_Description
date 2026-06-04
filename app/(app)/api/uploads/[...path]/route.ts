@@ -4,6 +4,9 @@ import path from 'node:path';
 import { Readable } from 'node:stream';
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { dedupedAuth } from '@/lib/auth';
+import { checkSession } from '@/lib/auth/session';
+
 // Streams files from <repo>/public/uploads/<...path> regardless of whether
 // they existed at build time. Next.js's built-in static handler only serves
 // files that were in public/ at build time, so runtime-written installers
@@ -51,13 +54,17 @@ export async function GET(
     return new NextResponse(undefined, { status: 404 });
   }
 
-  // Software installers must never be served by this unauthenticated route.
-  // They go through /api/download?token=... which checks the Purchase
-  // token, expiry, and per-license download count. Anyone sharing a raw
-  // /api/uploads/software/<uuid>.zip URL otherwise grants unlimited
-  // free downloads.
+  // Software installers must not be served to UNAUTHENTICATED callers — a raw
+  // /api/uploads/software/<uuid>.zip URL would otherwise grant anyone who got
+  // hold of it unlimited free downloads. Logged-in users (team members and
+  // their portal clients) are allowed through so the My Software / CRM
+  // download buttons work. Respond 404 (not 401) so the path's existence
+  // isn't revealed to anonymous probes.
   if (segments[0]?.toLowerCase() === 'software') {
-    return new NextResponse(undefined, { status: 404 });
+    const session = await dedupedAuth();
+    if (!checkSession(session)) {
+      return new NextResponse(undefined, { status: 404 });
+    }
   }
 
   // Join + normalize, then make sure the resolved absolute path is still
@@ -102,6 +109,14 @@ export async function GET(
     ? `inline; filename="${encodeURIComponent(filename)}"`
     : `attachment; filename="${encodeURIComponent(filename)}"`;
 
+  // Installers are auth-gated above, so they must not land in a shared/CDN
+  // cache that would then hand them out unauthenticated. Public uploads
+  // (images, etc.) keep the long immutable cache.
+  const isSoftware = segments[0]?.toLowerCase() === 'software';
+  const cacheControl = isSoftware
+    ? 'private, no-store'
+    : 'public, max-age=31536000, immutable';
+
   // Stream instead of loading the whole file into memory — installers
   // can be up to 1 GB (see SOFTWARE_FILE_MAX_BYTES).
   const nodeStream = createReadStream(absolute);
@@ -113,7 +128,7 @@ export async function GET(
       'Content-Type': contentType,
       'Content-Length': info.size.toString(),
       'Content-Disposition': disposition,
-      'Cache-Control': 'public, max-age=31536000, immutable'
+      'Cache-Control': cacheControl
     }
   });
 }
