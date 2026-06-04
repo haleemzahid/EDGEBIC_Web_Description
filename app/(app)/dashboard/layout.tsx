@@ -63,7 +63,15 @@ export default async function DashboardLayout({
   const isClient = userFromDb!.role === Role.CLIENT;
   if (isClient) {
     const pathname = (getPathname() ?? '').split('?')[0];
-    if (!isClientAllowedPath(pathname)) {
+    // Only gate real dashboard sections ("/dashboard/<section>"). During a
+    // redirect-chained soft navigation (e.g. Login -> /dashboard ->
+    // /dashboard/welcome) the resolved pathname can lag a hop behind the segment
+    // actually being rendered and report "/dashboard" or an "/auth/*" origin.
+    // Redirecting on those phantom paths bounces the client back to Welcome while
+    // Welcome is rendering, causing an infinite RSC redirect loop. Bare
+    // "/dashboard" is already handled by dashboard/page.tsx.
+    const isDashboardSection = pathname.startsWith(`${Routes.Home}/`);
+    if (isDashboardSection && !isClientAllowedPath(pathname)) {
       return redirect(Routes.Welcome);
     }
   } else if (
