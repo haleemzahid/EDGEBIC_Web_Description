@@ -51,6 +51,11 @@ export const KEYWORDS = [
   { id: 209, keyword: 'inventory management software', vol: 2000, kd: 65, intent: 'T', tier: 1, priority: 'now', suggestedUrl: '/inventory-management-software' },
   { id: 210, keyword: 'warehouse management software', vol: 1400, kd: 60, intent: 'T', tier: 1, priority: 'now', suggestedUrl: '/warehouse-management-software' },
 
+  // Machine monitoring head terms (added to close JobPack gap — high-volume, low-KD)
+  { id: 211, keyword: 'machine monitoring system', vol: 1500, kd: 13, intent: 'T', tier: 1, priority: 'now', suggestedUrl: '/machine-monitoring-software' },
+  { id: 212, keyword: 'machine monitoring software', vol: 880, kd: 18, intent: 'T', tier: 1, priority: 'now', suggestedUrl: '/machine-monitoring-software' },
+  { id: 213, keyword: 'production schedule template excel', vol: 150, kd: 7, intent: 'C', tier: 3, priority: 'now', suggestedUrl: '/excel-templates/production-schedule' },
+
   // ─────────────── TIER 2 — ALTERNATIVES / COMPARISONS ───────────────
   { id: 29, keyword: 'MRPeasy alternative', vol: 140, kd: 15, intent: 'C', tier: 2, priority: 'now', suggestedUrl: '/compare-products/rmdb-vs-mrpeasy' },
   { id: 30, keyword: 'MRPeasy alternatives', vol: 170, kd: 18, intent: 'C', tier: 2, priority: 'now', suggestedUrl: '/compare-products/rmdb-vs-mrpeasy' },

@@ -135,5 +135,8 @@ export enum Routes {
   ManufacturingSoftware = '/manufacturing-software',
   MrpSystem = '/mrp-system',
   InventoryManagementSoftware = '/inventory-management-software',
-  WarehouseManagementSoftware = '/warehouse-management-software'
+  WarehouseManagementSoftware = '/warehouse-management-software',
+
+  // Head-term category hubs (JobPack gap closure)
+  MachineMonitoringSoftware = '/machine-monitoring-software'
 }

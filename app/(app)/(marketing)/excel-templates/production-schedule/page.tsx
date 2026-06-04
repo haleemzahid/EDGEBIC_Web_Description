@@ -12,7 +12,7 @@ export const metadata = createPageMetadata({
     'Download a free production schedule Excel template designed for real manufacturing — with finite capacity logic, work order tracking, and a clear upgrade path when you outgrow it.',
   path: '/excel-templates/production-schedule',
   keywords:
-    'production schedule excel template, free production schedule template excel, manufacturing schedule template excel, production scheduling spreadsheet, factory production schedule excel, weekly production schedule template, manufacturing schedule template'
+    'production schedule template excel, production schedule excel template, free production schedule template excel, manufacturing schedule template excel, production scheduling spreadsheet, factory production schedule excel, weekly production schedule template, manufacturing schedule template, excel production schedule template'
 });
 
 const data: ExcelTemplatePageData = {
