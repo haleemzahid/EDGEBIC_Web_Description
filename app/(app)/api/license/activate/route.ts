@@ -72,9 +72,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if already activated
-    if (purchase.licenseStatus === 'active') {
-      // Allow reactivation on same system
+    // A license can be `licenseStatus: 'active'` yet never bound to a machine —
+    // e.g. issued manually by an admin (actions/inventory/add-license.ts sets
+    // 'active' with no systemFingerprint/processorId/activatedAt). "Active"
+    // there means "entitled", not "already installed somewhere". Only treat the
+    // license as already-activated when it is genuinely bound to a machine;
+    // otherwise fall through and bind it to THIS machine below.
+    const isBoundToMachine = Boolean(
+      purchase.systemFingerprint || purchase.processorId
+    );
+
+    if (purchase.licenseStatus === 'active' && isBoundToMachine) {
+      // Same machine → idempotent reactivation.
       if (
         purchase.systemFingerprint === systemFingerprint &&
         purchase.processorId === processorId
@@ -92,25 +101,25 @@ export async function POST(request: NextRequest) {
           message: 'License already activated on this system',
           activatedAt: purchase.activatedAt
         });
-      } else {
-        // Different system - block activation
-        await logActivationAttempt(
-          'blocked',
-          'License already active on different system',
-          {
-            purchaseId: purchase.id,
-            email,
-            systemFingerprint,
-            processorId,
-            clientIP,
-            userAgent
-          }
-        );
-        return NextResponse.json(
-          { error: 'License is already activated on another system' },
-          { status: 409 }
-        );
       }
+
+      // Bound to a different machine → block.
+      await logActivationAttempt(
+        'blocked',
+        'License already active on different system',
+        {
+          purchaseId: purchase.id,
+          email,
+          systemFingerprint,
+          processorId,
+          clientIP,
+          userAgent
+        }
+      );
+      return NextResponse.json(
+        { error: 'License is already activated on another system' },
+        { status: 409 }
+      );
     }
 
     // Check activation attempts
