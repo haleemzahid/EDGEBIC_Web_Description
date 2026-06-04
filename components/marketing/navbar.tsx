@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { ExternalLink } from '@/components/marketing/fragments/external-link';
+import { LoginNavButton } from '@/components/marketing/login-nav-button';
 import { MENU_LINKS } from '@/components/marketing/marketing-links';
 import { MobileMenu } from '@/components/marketing/mobile-menu';
 import { buttonVariants } from '@/components/ui/button';
@@ -135,15 +136,12 @@ export function Navbar(): React.JSX.Element {
                 </NavigationMenuList>
               </NavigationMenu>
             </div>
-            <Link
-              href={Routes.Login}
+            <LoginNavButton
               className={cn(
                 buttonVariants({ variant: 'default', size: 'sm' }),
                 'ml-4'
               )}
-            >
-              Login
-            </Link>
+            />
           </div>
         </nav>
         <MobileMenu className="lg:hidden" />

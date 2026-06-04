@@ -9,6 +9,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { RemoveScroll } from 'react-remove-scroll';
 
 import { ExternalLink } from '@/components/marketing/fragments/external-link';
+import { LoginNavButton } from '@/components/marketing/login-nav-button';
 import { DOCS_LINKS, MENU_LINKS } from '@/components/marketing/marketing-links';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -229,8 +230,7 @@ function MainMobileMenu({
           ))}
         </ul>
         <div className="flex w-full flex-col gap-2">
-          <Link
-            href={Routes.Login}
+          <LoginNavButton
             onClick={onLinkClicked}
             className={cn(
               buttonVariants({
@@ -241,7 +241,7 @@ function MainMobileMenu({
             )}
           >
             Log in
-          </Link>
+          </LoginNavButton>
         </div>
       </div>
     </div>
