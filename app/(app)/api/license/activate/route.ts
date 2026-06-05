@@ -9,186 +9,204 @@ const activateLicenseSchema = z.object({
   licenseKey: z.string().min(1),
   email: z.string().email(),
   processorId: z.string().min(1),
-  systemInfo: z.string().min(1)
+  systemInfo: z.string().min(1),
+  deviceName: z.string().max(255).optional()
 });
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { licenseKey, email, processorId, systemInfo } =
+    const { licenseKey, email, processorId, deviceName } =
       activateLicenseSchema.parse(body);
 
+    const normalizedEmail = email.toLowerCase();
     const clientIP =
       request.headers.get('x-forwarded-for') ||
       request.headers.get('x-real-ip') ||
       'unknown';
     const userAgent = request.headers.get('user-agent') || '';
 
-    // Generate system fingerprint
+    // Device identity. The fingerprint (derived from request headers) is the
+    // seat key — the desktop app MUST send stable, machine-distinguishing
+    // headers (esp. x-hardware-info) so each physical machine yields a distinct
+    // fingerprint. See docs/licensing/LICENSE-API-CONTRACT.md.
     const { fingerprint: systemFingerprint } =
       SystemFingerprintGenerator.generateFingerprint(request);
 
-    // Hash the license key for lookup
     const licenseKeyHash = LicenseKeyGenerator.hashLicenseKey(licenseKey);
 
-    // Find purchase by license key hash
     const purchase = await prisma.purchase.findUnique({
-      where: { licenseKeyHash },
-      include: { activations: true }
+      where: { licenseKeyHash }
     });
 
     if (!purchase) {
-      await logActivationAttempt(
-        'failed',
-        'License key not found in the system',
-        {
-          licenseKeyHash,
-          email,
-          systemFingerprint,
-          processorId,
-          clientIP,
-          userAgent
-        }
-      );
-      return NextResponse.json(
-        { error: 'Invalid license key' },
-        { status: 404 }
-      );
-    }
-
-    // Verify email matches
-    if (purchase.email.toLowerCase() !== email.toLowerCase()) {
-      await logActivationAttempt('failed', 'Email mismatch.', {
-        purchaseId: purchase.id,
-        email,
+      await logActivationAttempt('failed', 'License key not found in the system', {
+        email: normalizedEmail,
         systemFingerprint,
         processorId,
         clientIP,
         userAgent
       });
-      return NextResponse.json(
-        { error: 'Email does not match license' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid license key' }, { status: 404 });
     }
 
-    // A license can be `licenseStatus: 'active'` yet never bound to a machine —
-    // e.g. issued manually by an admin (actions/inventory/add-license.ts sets
-    // 'active' with no systemFingerprint/processorId/activatedAt). "Active"
-    // there means "entitled", not "already installed somewhere". Only treat the
-    // license as already-activated when it is genuinely bound to a machine;
-    // otherwise fall through and bind it to THIS machine below.
-    const isBoundToMachine = Boolean(
-      purchase.systemFingerprint || purchase.processorId
-    );
-
-    if (purchase.licenseStatus === 'active' && isBoundToMachine) {
-      // Same machine → idempotent reactivation.
-      if (
-        purchase.systemFingerprint === systemFingerprint &&
-        purchase.processorId === processorId
-      ) {
-        await logActivationAttempt('success', 'Reactivation on same system', {
-          purchaseId: purchase.id,
-          email,
-          systemFingerprint,
-          processorId,
-          clientIP,
-          userAgent
-        });
-        return NextResponse.json({
-          success: true,
-          message: 'License already activated on this system',
-          activatedAt: purchase.activatedAt
-        });
-      }
-
-      // Bound to a different machine → block.
-      await logActivationAttempt(
-        'blocked',
-        'License already active on different system',
-        {
-          purchaseId: purchase.id,
-          email,
-          systemFingerprint,
-          processorId,
-          clientIP,
-          userAgent
-        }
-      );
-      return NextResponse.json(
-        { error: 'License is already activated on another system' },
-        { status: 409 }
-      );
-    }
-
-    // Check activation attempts
-    if (purchase.activationAttempts >= purchase.maxActivationAttempts) {
-      await logActivationAttempt(
-        'blocked',
-        'Maximum activation attempts exceeded',
-        {
-          purchaseId: purchase.id,
-          email,
-          systemFingerprint,
-          processorId,
-          clientIP,
-          userAgent
-        }
-      );
-      return NextResponse.json(
-        { error: 'Maximum activation attempts exceeded' },
-        { status: 429 }
-      );
-    }
-
-    // Check if license is revoked
+    // Revoked licenses can never activate, on any device.
     if (purchase.licenseStatus === 'revoked') {
       await logActivationAttempt('blocked', 'License is revoked', {
         purchaseId: purchase.id,
-        email,
+        email: normalizedEmail,
         systemFingerprint,
         processorId,
         clientIP,
         userAgent
       });
       return NextResponse.json(
-        { error: 'License has been fsdf revoked' },
+        { error: 'License has been revoked' },
         { status: 403 }
       );
     }
 
-    // Activate license for system
+    // Seat-based binding. A license may activate on up to `purchase.seats`
+    // distinct machines. The license key is the shared secret: any email may
+    // activate as long as a seat is free, and is auto-registered to the
+    // operator roster ("auto include all users"). The seat count is the limit,
+    // not the email. This whole block is transactional so two machines racing
+    // for the last seat can't both win.
     const now = new Date();
+    const seatResult = await prisma.$transaction(async (tx) => {
+      const existingSeat = await tx.licenseSeat.findUnique({
+        where: {
+          purchaseId_systemFingerprint: {
+            purchaseId: purchase.id,
+            systemFingerprint
+          }
+        }
+      });
+
+      if (existingSeat) {
+        // Reclaiming a released seat consumes capacity again — re-check.
+        if (existingSeat.status !== 'active') {
+          const activeCount = await tx.licenseSeat.count({
+            where: { purchaseId: purchase.id, status: 'active' }
+          });
+          if (activeCount >= purchase.seats) {
+            return { ok: false as const, reason: 'full' as const };
+          }
+        }
+        await tx.licenseSeat.update({
+          where: { id: existingSeat.id },
+          data: {
+            status: 'active',
+            email: normalizedEmail,
+            processorId,
+            deviceName: deviceName ?? existingSeat.deviceName,
+            lastSeenAt: now,
+            releasedAt: null
+          }
+        });
+        return {
+          ok: true as const,
+          reactivated: existingSeat.status === 'active'
+        };
+      }
+
+      const activeCount = await tx.licenseSeat.count({
+        where: { purchaseId: purchase.id, status: 'active' }
+      });
+      if (activeCount >= purchase.seats) {
+        return { ok: false as const, reason: 'full' as const };
+      }
+
+      await tx.licenseSeat.create({
+        data: {
+          purchaseId: purchase.id,
+          email: normalizedEmail,
+          systemFingerprint,
+          processorId,
+          deviceName,
+          status: 'active',
+          firstActivatedAt: now,
+          lastSeenAt: now
+        }
+      });
+      return { ok: true as const, reactivated: false };
+    });
+
+    if (!seatResult.ok) {
+      await logActivationAttempt(
+        'blocked',
+        `All ${purchase.seats} seats are in use`,
+        {
+          purchaseId: purchase.id,
+          email: normalizedEmail,
+          systemFingerprint,
+          processorId,
+          clientIP,
+          userAgent
+        }
+      );
+      return NextResponse.json(
+        {
+          error: `License seat limit reached. All ${purchase.seats} seats are in use. Release a seat or increase the seat count.`,
+          seats: purchase.seats
+        },
+        { status: 409 }
+      );
+    }
+
+    // Register the operator on the roster (used by password-reset + shows who
+    // is on each license). Idempotent on (purchaseId, email).
+    await prisma.licenseUser.upsert({
+      where: {
+        purchaseId_email: { purchaseId: purchase.id, email: normalizedEmail }
+      },
+      update: { lastSeenAt: now },
+      create: { purchaseId: purchase.id, email: normalizedEmail }
+    });
+
+    // Keep the legacy columns as "most recently activated device" for display.
     const updatedPurchase = await prisma.purchase.update({
       where: { id: purchase.id },
       data: {
         licenseStatus: 'active',
-        activatedAt: now,
-        activatedEmail: email,
+        activatedAt: purchase.activatedAt ?? now,
+        activatedEmail: normalizedEmail,
         systemFingerprint,
         processorId,
         activationAttempts: purchase.activationAttempts + 1
       }
     });
 
-    await logActivationAttempt('success', 'License activated successfully', {
-      purchaseId: purchase.id,
-      email,
-      systemFingerprint,
-      processorId,
-      clientIP,
-      userAgent
+    const seatsUsed = await prisma.licenseSeat.count({
+      where: { purchaseId: purchase.id, status: 'active' }
     });
 
+    await logActivationAttempt(
+      'success',
+      seatResult.reactivated
+        ? 'Reactivation on existing seat'
+        : 'License activated on new seat',
+      {
+        purchaseId: purchase.id,
+        email: normalizedEmail,
+        systemFingerprint,
+        processorId,
+        clientIP,
+        userAgent
+      }
+    );
+
     return NextResponse.json({
-      licenseKey: licenseKey, // original license key
-      email: email,
+      licenseKey,
+      email: normalizedEmail,
       status: updatedPurchase.licenseStatus,
       activatedAt: updatedPurchase.activatedAt,
       expiresAt: updatedPurchase.expiresAt ?? null,
-      systemFingerprint: updatedPurchase.systemFingerprint,
-      processorId: updatedPurchase.processorId
+      systemFingerprint,
+      processorId,
+      seats: updatedPurchase.seats,
+      seatsUsed,
+      seatsRemaining: Math.max(0, updatedPurchase.seats - seatsUsed)
     });
   } catch (error) {
     console.error('License activation error:', error);
@@ -212,7 +230,6 @@ async function logActivationAttempt(
   errorMessage: string | null,
   data: {
     purchaseId?: string;
-    licenseKeyHash?: string;
     email: string;
     systemFingerprint: string;
     processorId: string;

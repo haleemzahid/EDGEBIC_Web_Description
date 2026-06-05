@@ -659,6 +659,12 @@ model Purchase {
   licenseKey            String?
   licenseKeyHash        String?   @unique
   licenseStatus         String    @default("inactive") // inactive, active, revoked
+  // Max number of distinct devices (seats) this key may be activated on.
+  // Defaults to 1 so existing single-machine licenses keep their old behaviour.
+  // Current occupancy is the count of active LicenseSeat rows, NOT the legacy
+  // systemFingerprint/processorId columns below (those now only record the most
+  // recently activated device for display).
+  seats                 Int       @default(1)
   activatedAt           DateTime?
   activatedEmail        String?
   systemFingerprint     String?
@@ -669,10 +675,70 @@ model Purchase {
   updatedAt             DateTime  @updatedAt
   expiresAt             DateTime? // Optional expiration for download link
 
-  activations LicenseActivation[]
-  licenseUsers LicenseUser[]
+  activations     LicenseActivation[]
+  licenseUsers    LicenseUser[]
+  licenseSeats    LicenseSeat[]
+  licenseRequests LicenseRequest[]
 
   @@map("purchases")
+}
+
+// One row per device that currently occupies a seat on a license. This is the
+// source of truth for seat enforcement: activeSeats = count(status = 'active').
+// Releasing a seat (status = 'released') frees it for another machine. Distinct
+// from LicenseActivation, which is an append-only audit log of every attempt.
+model LicenseSeat {
+  id                String    @id @default(cuid())
+  purchaseId        String
+  email             String // operator email bound to this device
+  systemFingerprint String
+  processorId       String?
+  deviceName        String?
+  status            String    @default("active") // active | released
+  firstActivatedAt  DateTime  @default(now())
+  lastSeenAt        DateTime  @default(now())
+  releasedAt        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  purchase          Purchase  @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+
+  @@unique([purchaseId, systemFingerprint])
+  @@index([purchaseId])
+  @@index([email])
+  @@map("license_seats")
+}
+
+// Self-service license request queued by the desktop app. The app posts one
+// request per device (auto-including every operator email it knows about); an
+// admin then approves a batch of requests, which mints ONE key with
+// seats = number of approved devices and links each request to that purchase.
+model LicenseRequest {
+  id                String    @id @default(cuid())
+  email             String // requester / device owner
+  customerName      String?
+  company           String?
+  groupKey          String? // optional auto-grouping (email domain / company)
+  systemFingerprint String?
+  processorId       String?
+  deviceName        String?
+  operatorEmails    String[] // every operator on the device ("auto include all users")
+  product           String?
+  requestedSeats    Int       @default(1)
+  status            String    @default("pending") // pending | approved | rejected
+  purchaseId        String? // the issued license, set on approval
+  reviewedByUserId  String?
+  reviewedAt        DateTime?
+  note              String?
+  ipAddress         String?
+  userAgent         String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  purchase          Purchase? @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([groupKey])
+  @@index([email])
+  @@map("license_requests")
 }
 
 // Operator/seat emails registered under a license by the desktop app. Lets the

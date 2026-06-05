@@ -26,6 +26,9 @@ export interface PurchaseWithStats {
   processorId: string | null;
   activationAttempts: number;
   maxActivationAttempts: number;
+  // Seat fields (populated by getPurchases; optional elsewhere)
+  seats?: number;
+  usedSeats?: number;
 }
 
 export interface PurchaseStats {
@@ -74,16 +77,22 @@ export async function getPurchases(
         licenseKey: true,
         licenseKeyHash: true,
         licenseStatus: true,
+        seats: true,
         activatedAt: true,
         activatedEmail: true,
         systemFingerprint: true,
         processorId: true,
         activationAttempts: true,
-        maxActivationAttempts: true
+        maxActivationAttempts: true,
+        // Active seat occupancy for the "used / total" column
+        _count: { select: { licenseSeats: { where: { status: 'active' } } } }
       }
     });
 
-    return purchases;
+    return purchases.map(({ _count, ...purchase }) => ({
+      ...purchase,
+      usedSeats: _count.licenseSeats
+    }));
   } catch (error) {
     console.error('Error fetching purchases:', error);
     throw error;

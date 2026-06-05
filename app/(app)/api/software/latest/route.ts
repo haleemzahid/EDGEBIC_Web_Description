@@ -251,17 +251,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Machine binding — enforced only for licenses that were activated
-    // and bound to a machine (dummy/unbound licenses skip this, so test
-    // data still works).
-    if (purchase.systemFingerprint || purchase.processorId) {
-      const fingerprintOk =
-        !purchase.systemFingerprint ||
-        purchase.systemFingerprint === fingerprint;
-      const processorOk =
-        !purchase.processorId || purchase.processorId === processorId;
-
-      if (!fingerprintOk || !processorOk) {
+    // 2. Machine binding — seat-aware. If the license has any occupied seats
+    // (i.e. it has been activated), the caller must hold one of them (matched
+    // by fingerprint OR processor id). Licenses with no seats yet (dummy/unbound
+    // test data) skip this so test data still works. This replaces the old
+    // single-machine check so EVERY seated device on a multi-seat key can fetch
+    // updates, not just the most recently activated one.
+    const activeSeatCount = await prisma.licenseSeat.count({
+      where: { purchaseId: purchase.id, status: 'active' }
+    });
+    if (activeSeatCount > 0) {
+      const seat = await prisma.licenseSeat.findFirst({
+        where: {
+          purchaseId: purchase.id,
+          status: 'active',
+          OR: [
+            { systemFingerprint: fingerprint },
+            ...(processorId ? [{ processorId }] : [])
+          ]
+        },
+        select: { id: true }
+      });
+      if (!seat) {
         await logAttempt(
           purchase.id,
           'blocked',

@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { CheckCircleIcon, ClockIcon } from 'lucide-react';
 
+import { LicenseSeatsManager } from '@/components/dashboard/license-seats-manager';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -278,6 +279,7 @@ export function CustomersTable({
                 <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>License</TableHead>
+                <TableHead>Seats</TableHead>
                 <TableHead>Installer</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -338,6 +340,18 @@ export function CustomersTable({
                         </div>
                       )}
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {purchase.licenseKey ? (
+                      <Badge
+                        variant="outline"
+                        className="font-mono"
+                      >
+                        {purchase.usedSeats ?? 0} / {purchase.seats ?? 1}
+                      </Badge>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     {getInstallerStatus(
@@ -630,6 +644,11 @@ export function CustomersTable({
                       </div>
                     </div>
                   </div>
+                )}
+
+                {/* Seat management (devices, release, seat cap, roster) */}
+                {selectedPurchase.licenseKey && (
+                  <LicenseSeatsManager purchaseId={selectedPurchase.id} />
                 )}
               </div>
 

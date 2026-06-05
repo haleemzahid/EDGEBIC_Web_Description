@@ -12,6 +12,7 @@ import {
 
 import { AddLicenseModal } from '@/components/dashboard/inventory/add-license-modal';
 import { CustomersTable } from '@/components/dashboard/customers-table';
+import { LicenseRequestsInbox } from '@/components/dashboard/license-requests-inbox';
 import { PaymentMethodsChart } from '@/components/dashboard/payment-methods-chart';
 import { RevenueChart } from '@/components/dashboard/revenue-chart';
 import { StatsGrid } from '@/components/dashboard/stats-grid';
@@ -103,6 +104,11 @@ export function DashboardOverview({
         {/* <div className="lg:col-span-1">
           <PaymentMethodsChart />
         </div> */}
+      </div>
+
+      {/* License Requests Inbox (desktop self-service requests) */}
+      <div className="!mt-3">
+        <LicenseRequestsInbox />
       </div>
 
       {/* Customers Table */}

@@ -46,3 +46,17 @@ Whenever you build, edit, or refactor a table page, it MUST mirror the Contacts 
 - Writing/editing files is fine. Read-only inspection (`git status`/`diff`/`log`) is fine. Static checks like `tsc --noEmit` are fine ONLY if I asked for verification — otherwise just write the code and tell me how to run it myself.
 - When something needs to be run (dev server, a test, a curl/test command), give me the exact command to run myself and STOP. Do not run it for me.
 - If verifying requires running code, ask first and wait for an explicit "yes".
+
+## 6. Licensing architecture (multi-seat)
+
+Licenses are **multi-seat, machine-bound**: one key may activate on up to
+`Purchase.seats` distinct devices. **Reuse this model — do not reintroduce
+single-machine binding.**
+
+- **Source of truth for the wiring contract:** [docs/licensing/LICENSE-API-CONTRACT.md](docs/licensing/LICENSE-API-CONTRACT.md) (desktop/API) and [docs/licensing/LICENSING-OVERVIEW.md](docs/licensing/LICENSING-OVERVIEW.md) (data model + enforcement). Keep both in sync with the code.
+- **Models** (`prisma/schema.prisma`): `Purchase` = the license (`licenseKey` + unique `licenseKeyHash`, `licenseStatus`, `seats`); `LicenseSeat` = one occupied device (`@@unique([purchaseId, systemFingerprint])`, `status` active/released) — **the seat-enforcement gate** (`usedSeats = count(active)`); `LicenseActivation` = append-only audit log (never enforce on it); `LicenseUser` = operator roster; `LicenseRequest` = self-service approval queue.
+- **Keys:** `lib/license/license-key-generator.ts` (`NTCB-…` format). Always look up by `hashLicenseKey()` (SHA-256) — never query plaintext. The **key is the secret**: any email may activate while a seat is free and is auto-added to the roster; the seat count is the limit, not the email.
+- **Lifecycle:** desktop `POST /api/license/request` → admin approves a batch in the dashboard inbox → one key minted with `seats = approved device count` (`actions/licenses/approve-license-requests.ts`) → `POST /api/license/activate` consumes a seat (transactional, `409` when full) → `validate` / `software/latest` are **seat-gated** (match an active seat by fingerprint OR processorId).
+- **Admin gating:** API routes use `lib/auth/require-admin-api.ts`; server actions (`actions/licenses/*`) use `authActionClient` + `isAdmin`.
+- **UI:** lives in the dashboard overview (`components/dashboard/dashboard-overview.tsx` at `/dashboard/home`) — `license-requests-inbox.tsx` (approve/reject/export), `customers-table.tsx` (`used / total` Seats column), and `license-seats-manager.tsx` (release seats, change cap, roster). "Add license" (`components/dashboard/inventory/add-license-modal.tsx`) auto-generates a key when left blank and takes a seat count.
+- **Note:** these dashboard surfaces predate and intentionally deviate from the Contacts table pattern in rule 2 (they use the custom `components/ui/table.tsx`); extend them in place to match their own style rather than rewriting to the `DataTable` pattern.

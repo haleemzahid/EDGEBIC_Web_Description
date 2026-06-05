@@ -39,11 +39,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify system fingerprint and processor ID
-    if (
-      purchase.systemFingerprint !== systemFingerprint ||
-      purchase.processorId !== processorId
-    ) {
+    // Seat-based validation: the calling device is valid if it holds an active
+    // seat on this license (matched by fingerprint OR processor id). This
+    // replaces the old single-machine check so every seated device on a
+    // multi-seat key validates — not just the most recently activated one.
+    // Backfilled seats keep legacy single-seat licenses working unchanged.
+    const seat = await prisma.licenseSeat.findFirst({
+      where: {
+        purchaseId: purchase.id,
+        status: 'active',
+        OR: [{ systemFingerprint }, { processorId }]
+      },
+      select: { id: true }
+    });
+
+    if (!seat) {
       return NextResponse.json(
         { valid: false, error: 'System validation failed' },
         { status: 403 }
@@ -54,7 +64,8 @@ export async function POST(request: NextRequest) {
       valid: true,
       purchaseId: purchase.id,
       activatedAt: purchase.activatedAt,
-      customerName: purchase.customerName
+      customerName: purchase.customerName,
+      seats: purchase.seats
     });
   } catch (error) {
     console.error('License validation error:', error);

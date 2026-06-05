@@ -8,15 +8,16 @@ import { authActionClient } from '@/actions/safe-action';
 import { Caching, OrganizationCacheKey } from '@/data/caching';
 import { prisma } from '@/lib/db/prisma';
 import { LicenseKeyGenerator } from '@/lib/license/license-key-generator';
-import { PreConditionError } from '@/lib/validation/exceptions';
+import { GatewayError, PreConditionError } from '@/lib/validation/exceptions';
 import { addLicenseSchema } from '@/schemas/inventory/add-license-schema';
 
-// Admin issues a license by email. The key is typed manually (no
-// auto-generation) but hashed with the same LicenseKeyGenerator the Stripe
-// flow uses, so validation/activation keep working. Licenses live on the
-// Purchase model.
+// Admin issues a license by email. The key may be typed manually OR left blank
+// to auto-generate an NTCB key; either way it's hashed with the same
+// LicenseKeyGenerator the Stripe flow uses, so validation/activation keep
+// working. `seats` sets how many devices the key may activate on. Licenses live
+// on the Purchase model.
 //
-// - Email already has a license  -> update that license key (no duplicate).
+// - Email already has a license  -> update that license key + seats (no duplicate).
 // - Email has no license yet     -> create one directly (CRM match optional;
 //                                   if the email exists in CRM we reuse the
 //                                   contact's name).
@@ -25,7 +26,32 @@ export const addLicense = authActionClient
   .schema(addLicenseSchema)
   .action(async ({ parsedInput, ctx: { session } }) => {
     const email = parsedInput.email.trim().toLowerCase();
-    const licenseKey = parsedInput.licenseKey.trim();
+    const seats = parsedInput.seats;
+
+    // Blank key -> auto-generate a globally-unique one (lookups go by hash).
+    let licenseKey = parsedInput.licenseKey?.trim() ?? '';
+    if (!licenseKey) {
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const candidate = LicenseKeyGenerator.generateLicenseKey(
+          crypto.randomUUID(),
+          email
+        );
+        const candidateHash = LicenseKeyGenerator.hashLicenseKey(candidate);
+        const clash = await prisma.purchase.findUnique({
+          where: { licenseKeyHash: candidateHash },
+          select: { id: true }
+        });
+        if (!clash) {
+          licenseKey = candidate;
+          break;
+        }
+      }
+      if (!licenseKey) {
+        throw new GatewayError(
+          'Could not generate a unique license key. Please try again.'
+        );
+      }
+    }
     const licenseKeyHash = LicenseKeyGenerator.hashLicenseKey(licenseKey);
 
     // One license per user: reuse any existing license row for this email.
@@ -91,10 +117,11 @@ export const addLicense = authActionClient
           licenseKey,
           licenseKeyHash,
           licenseStatus: 'active',
-          status: 'completed'
+          status: 'completed',
+          seats
         }
       });
-      return;
+      return { licenseKey, seats };
     }
 
     await prisma.purchase.create({
@@ -109,7 +136,10 @@ export const addLicense = authActionClient
         stripeSessionId: `manual-${crypto.randomUUID()}`,
         licenseKey,
         licenseKeyHash,
-        licenseStatus: 'active'
+        licenseStatus: 'active',
+        seats
       }
     });
+
+    return { licenseKey, seats };
   });

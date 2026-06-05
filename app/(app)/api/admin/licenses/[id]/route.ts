@@ -15,6 +15,12 @@ export async function GET(
         activations: {
           orderBy: { createdAt: 'desc' },
           take: 50 // Get more activation history for details view
+        },
+        licenseSeats: {
+          orderBy: { firstActivatedAt: 'desc' }
+        },
+        licenseUsers: {
+          orderBy: { lastSeenAt: 'desc' }
         }
       }
     });
@@ -38,9 +44,19 @@ export async function GET(
       lastAttempt: license.activations[0]?.createdAt || null
     };
 
+    const seatsUsed = license.licenseSeats.filter(
+      (s) => s.status === 'active'
+    ).length;
+    const seatStats = {
+      total: license.seats,
+      used: seatsUsed,
+      remaining: Math.max(0, license.seats - seatsUsed)
+    };
+
     return NextResponse.json({
       license,
-      activationStats
+      activationStats,
+      seatStats
     });
   } catch (error) {
     console.error('Error fetching license details:', error);
@@ -51,7 +67,7 @@ export async function GET(
   }
 }
 
-// Update license status (admin function)
+// Update license status and/or seat count (admin function)
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -59,22 +75,56 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { licenseStatus, notes } = body;
+    const { licenseStatus, seats, notes } = body as {
+      licenseStatus?: string;
+      seats?: number;
+      notes?: string;
+    };
 
-    // Validate status
-    if (!['inactive', 'active', 'revoked'].includes(licenseStatus)) {
+    const data: Record<string, unknown> = { updatedAt: new Date() };
+
+    if (licenseStatus !== undefined) {
+      if (!['inactive', 'active', 'revoked'].includes(licenseStatus)) {
+        return NextResponse.json(
+          { error: 'Invalid license status' },
+          { status: 400 }
+        );
+      }
+      data.licenseStatus = licenseStatus;
+    }
+
+    if (seats !== undefined) {
+      const seatCount = Number(seats);
+      if (!Number.isInteger(seatCount) || seatCount < 1) {
+        return NextResponse.json(
+          { error: 'Seats must be a positive integer' },
+          { status: 400 }
+        );
+      }
+      const activeSeats = await prisma.licenseSeat.count({
+        where: { purchaseId: id, status: 'active' }
+      });
+      if (seatCount < activeSeats) {
+        return NextResponse.json(
+          {
+            error: `${activeSeats} seats are in use. Release seats before lowering the cap to ${seatCount}.`
+          },
+          { status: 409 }
+        );
+      }
+      data.seats = seatCount;
+    }
+
+    if (data.licenseStatus === undefined && data.seats === undefined) {
       return NextResponse.json(
-        { error: 'Invalid license status' },
+        { error: 'Nothing to update' },
         { status: 400 }
       );
     }
 
     const updatedLicense = await prisma.purchase.update({
       where: { id },
-      data: {
-        licenseStatus,
-        updatedAt: new Date()
-      }
+      data
     });
 
     // Log the admin action
@@ -84,7 +134,9 @@ export async function PATCH(
         email: 'admin@system',
         systemFingerprint: 'admin-action',
         status: 'admin-update',
-        errorMessage: `Status changed to ${licenseStatus}. Notes: ${notes || 'None'}`
+        errorMessage: `Updated ${
+          licenseStatus !== undefined ? `status=${licenseStatus} ` : ''
+        }${seats !== undefined ? `seats=${seats} ` : ''}Notes: ${notes || 'None'}`
       }
     });
 
