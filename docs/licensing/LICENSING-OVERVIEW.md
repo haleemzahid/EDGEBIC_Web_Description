@@ -27,6 +27,13 @@ Purchase** so the cutover is seamless).
   idempotent. Email is informational (auto-added to roster).
 - **Runtime validate:** `app/(app)/api/license/validate/route.ts` — valid iff
   `active` **and** an active seat matches by `systemFingerprint` OR `processorId`.
+- **Seat release (self-service):** `app/(app)/api/license/deactivate/route.ts` —
+  the inverse of activate. Flips this device's `LicenseSeat` to `released`
+  (matched by `systemFingerprint` OR `processorId`), stamps `releasedAt`, and
+  re-counts `usedSeats`. Idempotent (a device with no active seat still returns
+  `200`); keeps the seat row for audit; never touches `licenseStatus` so it can't
+  un-revoke. The desktop "revoke" action calls it best-effort before clearing the
+  local license. Logs a `LicenseActivation` row with `status = 'deactivated'`.
 - **Software updates:** `app/(app)/api/software/latest/route.ts` — same
   seat-match gate before serving a customer's releases.
 - **Seat count / release (admin):** `actions/licenses/update-license-seats.ts`,

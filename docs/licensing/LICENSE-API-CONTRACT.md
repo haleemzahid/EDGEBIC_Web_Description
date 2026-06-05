@@ -44,8 +44,9 @@ key out of logs and crash reports.
  │ Desktop app │ ─────────────────────────────▶ │ Consume a seat    │
  │             │   (seat consumed per machine)  │ (N max, then 409) │
  └─────────────┘                                 └──────────────────┘
-        │  POST /api/license/validate (runtime check, holds a seat?)
-        │  POST /api/software/latest  (update check; seat-gated)
+        │  POST /api/license/validate   (runtime check, holds a seat?)
+        │  POST /api/license/deactivate (release this seat on revoke)
+        │  POST /api/software/latest    (update check; seat-gated)
         ▼  GET  /api/software/download?token=… (gated installer)
 ```
 
@@ -197,7 +198,49 @@ Lightweight "is this device still licensed?" check. Valid when the license is
 // 403 { "valid": false, "error": "System validation failed" }   // no active seat for this device
 ```
 
-### 4.5 `POST /api/software/latest` — update check (seat-gated)
+### 4.5 `POST /api/license/deactivate` — release this device's seat
+
+The inverse of activate. Frees the seat this machine holds so another device can
+reuse it (the desktop "revoke this device" action calls it). Matches the seat by
+`systemFingerprint` **or** `processorId`, like validate. **Idempotent:** if the
+device holds no active seat it still returns `200` — the desired end-state (no
+active seat for this device) already holds. The `LicenseSeat` row is **kept for
+audit** and only flipped `active → released` (so the device can re-activate and
+reclaim the slot later). It never changes `licenseStatus`, so it can't un-revoke
+a license; seat occupancy is the only thing it touches.
+
+**Auth:** none (the key is the credential). Send the fingerprint headers (§3) for
+the audit trail. **Rate limit:** 30 / min / IP.
+
+Request body:
+```jsonc
+{
+  "licenseKey": "NTCB-XXXX-XXXX-XXXX-XXXX-XXXX",  // required
+  "systemFingerprint": "9a1f…",                    // server-issued fp from activate
+  "processorId": "BFEBFBFF000906EA"                // fallback match
+}
+```
+At least one of `systemFingerprint` / `processorId` is required.
+
+Responses:
+```jsonc
+// 200 — seat released (or already free; alreadyReleased=true means no-op)
+{ "success": true, "status": "released", "alreadyReleased": false,
+  "seats": 6, "seatsUsed": 2, "seatsRemaining": 4 }
+// 404 — { "error": "Invalid license key" }
+// 400 — { "error": "Invalid request data", "details": [...] }
+//        or { "error": "systemFingerprint or processorId is required" }
+// 429 — { "error": "Too many requests. Try again shortly." }
+```
+
+curl:
+```bash
+curl -X POST https://usersolutions.com/api/license/deactivate \
+  -H 'Content-Type: application/json' \
+  -d '{"licenseKey":"NTCB-…","systemFingerprint":"9a1f…","processorId":"BFEBFBFF000906EA"}'
+```
+
+### 4.6 `POST /api/software/latest` — update check (seat-gated)
 
 Machine-to-machine update check + install write-back. Returns only the calling
 customer's software, never the whole catalog. Seat-gated: once a license has
@@ -217,7 +260,7 @@ occupied seats, the caller must hold one.
 // 401 missing key · 403 not active / seat mismatch · 404 unknown key · 429 rate limited
 ```
 
-### 4.6 `GET /api/software/download?token=…` — gated installer
+### 4.7 `GET /api/software/download?token=…` — gated installer
 
 Streams an installer using the short-lived, license-bound token minted by
 `software/latest`. **Rate limit:** 10 / min / license. Token TTL ~1h. Requires
@@ -275,6 +318,10 @@ on key present, app start:
 periodically while running:
     POST /api/license/validate  (confirm seat still held)
     POST /api/software/latest    (offer updates; download via returned token URL)
+on user "revoke / deactivate this device":
+    POST /api/license/deactivate (free this machine's seat; best-effort)
+        2xx -> seat released (also 2xx if it was already free — idempotent)
+        then clear the local license regardless of the result
 ```
 
 Send the §3 headers on **every** request so the server computes a consistent,
