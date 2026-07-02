@@ -66,6 +66,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Expired licenses (trials past their window) can't activate a new seat.
+    // NULL licenseExpiresAt = perpetual, so full licenses are unaffected.
+    if (
+      purchase.licenseExpiresAt &&
+      purchase.licenseExpiresAt.getTime() < Date.now()
+    ) {
+      await logActivationAttempt('blocked', 'License has expired', {
+        purchaseId: purchase.id,
+        email: normalizedEmail,
+        systemFingerprint,
+        processorId,
+        clientIP,
+        userAgent
+      });
+      return NextResponse.json(
+        {
+          error: 'License has expired',
+          licenseType: purchase.licenseType,
+          expiresAt: purchase.licenseExpiresAt
+        },
+        { status: 403 }
+      );
+    }
+
     // Seat-based binding. A license may activate on up to `purchase.seats`
     // distinct machines. The license key is the shared secret: any email may
     // activate as long as a seat is free, and is auto-registered to the
@@ -200,8 +224,11 @@ export async function POST(request: NextRequest) {
       licenseKey,
       email: normalizedEmail,
       status: updatedPurchase.licenseStatus,
+      licenseType: updatedPurchase.licenseType,
       activatedAt: updatedPurchase.activatedAt,
-      expiresAt: updatedPurchase.expiresAt ?? null,
+      // The license-validity expiry (trials), NOT the legacy download-link
+      // `expiresAt`. NULL for perpetual licenses.
+      expiresAt: updatedPurchase.licenseExpiresAt ?? null,
       systemFingerprint,
       processorId,
       seats: updatedPurchase.seats,

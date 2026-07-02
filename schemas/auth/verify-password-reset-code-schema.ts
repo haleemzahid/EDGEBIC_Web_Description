@@ -21,7 +21,17 @@ export const verifyPasswordResetCodeSchema = z.object({
     .regex(
       new RegExp(`^\\d{${PASSWORD_RESET_CODE_LENGTH}}$`),
       `Code must be ${PASSWORD_RESET_CODE_LENGTH} digits.`
-    )
+    ),
+  // Re-checked at verify so the license key is required for the whole flow, not
+  // just to request the code.
+  licenseKey: z
+    .string({
+      required_error: 'License key is required.',
+      invalid_type_error: 'License key must be a string.'
+    })
+    .trim()
+    .min(1, 'License key is required.')
+    .max(128, 'Maximum 128 characters allowed.')
 });
 
 export type VerifyPasswordResetCodeSchema = z.infer<

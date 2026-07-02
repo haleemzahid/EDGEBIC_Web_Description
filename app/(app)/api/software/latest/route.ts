@@ -211,6 +211,8 @@ export async function POST(request: NextRequest) {
         id: true,
         email: true,
         licenseStatus: true,
+        licenseType: true,
+        licenseExpiresAt: true,
         systemFingerprint: true,
         processorId: true
       }
@@ -247,6 +249,18 @@ export async function POST(request: NextRequest) {
       );
       return NextResponse.json(
         { error: 'License is not active' },
+        { status: 403 }
+      );
+    }
+
+    // Expired (trial) licenses don't get updates — same gate as validate.
+    if (
+      purchase.licenseExpiresAt &&
+      purchase.licenseExpiresAt.getTime() < Date.now()
+    ) {
+      await logAttempt(purchase.id, 'blocked', 'License has expired', logCtx);
+      return NextResponse.json(
+        { error: 'License has expired' },
         { status: 403 }
       );
     }

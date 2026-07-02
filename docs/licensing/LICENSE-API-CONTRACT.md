@@ -146,6 +146,53 @@ curl 'https://usersolutions.com/api/license/request?email=operator@acme.com' \
 // 404 — { "status": "not_found" }
 ```
 
+### 4.2.1 `POST /api/license/trial` — instant self-service trial (no approval)
+
+Mints a **time-limited** license immediately — no admin approval, unlike the
+request→approve flow. Validity is `LICENSE_TRIAL_DAYS` (default **7**). The
+returned key activates and validates exactly like a full key, but `activate` /
+`validate` / `software/latest` start refusing it once `expiresAt` passes.
+
+**One trial per identity (idempotent):** a device (fingerprint **or**
+`processorId`) or email that already has a trial gets that **same** trial back —
+even after it expired — so re-running never mints a fresh window. Send the §3
+fingerprint headers.
+
+**Auth:** none. **Rate limit:** 30 / min / IP. **Seats:** 1.
+
+Request body:
+```jsonc
+{
+  "email": "operator@acme.com",       // required
+  "processorId": "BFEBFBFF000906EA",  // required — stable hardware id
+  "customerName": "Acme Plant 2",     // optional
+  "company": "Acme Manufacturing",    // optional
+  "product": "EDGEBI",                // optional
+  "deviceName": "LINE-PC-07",         // optional
+  "systemInfo": "Windows 11 / i7"     // optional
+}
+```
+
+Responses (`GET /api/license/trial?email=…` returns the same shape for a poll):
+```jsonc
+// 200 — trial issued or re-returned
+{ "licenseKey": "NTCB-…", "licenseType": "trial", "status": "trial",
+  "expiresAt": "2026-07-07T12:00:00.000Z", "seats": 1, "trialDaysRemaining": 7 }
+// 200 — existing trial already past its window
+{ "licenseKey": "NTCB-…", "licenseType": "trial", "status": "expired",
+  "expiresAt": "2026-06-20T…", "seats": 1, "trialDaysRemaining": 0 }
+// 400 { "error": "Invalid request data", "details": [...] }
+// 429 { "error": "Too many requests. Try again shortly." }
+// 404 (GET only) { "status": "not_found" }
+```
+
+curl:
+```bash
+curl -X POST https://usersolutions.com/api/license/trial \
+  -H 'Content-Type: application/json' -H 'X-Hardware-Info: BFEBFBFF000906EA' \
+  -d '{"email":"operator@acme.com","processorId":"BFEBFBFF000906EA"}'
+```
+
 ### 4.3 `POST /api/license/activate` — activate (consume a seat)
 
 Binds this machine to a seat. Idempotent for the same machine (re-activating just
@@ -169,12 +216,15 @@ Responses:
 // 200 — seat consumed (or refreshed)
 {
   "licenseKey": "NTCB-…", "email": "operator@acme.com", "status": "active",
-  "activatedAt": "2026-06-05T12:00:00.000Z", "expiresAt": null,
+  "licenseType": "full",   // "full" | "trial"
+  "activatedAt": "2026-06-05T12:00:00.000Z",
+  "expiresAt": null,       // license-validity expiry (trials); null = perpetual
   "systemFingerprint": "9a1f…", "processorId": "BFEBFBFF000906EA",
   "seats": 6, "seatsUsed": 3, "seatsRemaining": 3
 }
 // 404 — { "error": "Invalid license key" }
 // 403 — { "error": "License has been revoked" }
+// 403 — { "error": "License has expired", "licenseType": "trial", "expiresAt": "…" }
 // 409 — { "error": "License seat limit reached. All 6 seats are in use…", "seats": 6 }
 // 400 — { "error": "Invalid request data", "details": [...] }
 ```
@@ -182,8 +232,8 @@ Responses:
 ### 4.4 `POST /api/license/validate` — runtime check
 
 Lightweight "is this device still licensed?" check. Valid when the license is
-`active` **and** this device holds an active seat (matched by `systemFingerprint`
-**or** `processorId`).
+`active`, **not expired**, **and** this device holds an active seat (matched by
+`systemFingerprint` **or** `processorId`).
 
 **Auth:** none. Note: this endpoint takes `systemFingerprint` **in the body**
 (unlike activate, which derives it from headers).
@@ -192,11 +242,31 @@ Lightweight "is this device still licensed?" check. Valid when the license is
 // request
 { "licenseKey": "NTCB-…", "systemFingerprint": "9a1f…", "processorId": "BFEBFBFF000906EA" }
 // 200
-{ "valid": true, "purchaseId": "…", "activatedAt": "…", "customerName": "Acme", "seats": 6 }
+{ "valid": true, "purchaseId": "…", "activatedAt": "…", "customerName": "Acme",
+  "seats": 6, "licenseType": "trial", "expiresAt": "2026-07-07T12:00:00.000Z",
+  // Present only when LICENSE_SIGNING_PRIVATE_KEY is configured (production).
+  "proof": { "alg": "ES256", "keyId": "9a1f0b2c", "signedAt": "2026-06-30T…",
+             "nonce": "…", "signature": "<base64>" } }
 // 404 { "valid": false, "error": "License not found" }
 // 400 { "valid": false, "error": "License is not active" }
+// 403 { "valid": false, "error": "License expired", "licenseType": "trial", "expiresAt": "…" }
 // 403 { "valid": false, "error": "System validation failed" }   // no active seat for this device
 ```
+
+**Verifying the proof (REQUIRED for tamper-resistance).** When `proof` is
+present the desktop MUST verify it with the **embedded** ECDSA P-256 public key
+before trusting `valid`. The signed message is a fixed-order, pipe-joined string
+(reproduce it byte-for-byte; see `lib/license/license-signing.ts`):
+
+```
+EDGEBI-LICENSE-PROOF-V1|valid=1|purchaseId=<id>|licenseKeyHash=<sha256(licenseKey)>
+  |licenseType=<full|trial>|expiresAt=<iso or empty>|signedAt=<iso>|nonce=<hex>
+```
+
+`licenseKeyHash` binds the proof to one key (so a "valid" proof can't be replayed
+for another license); reject the proof if `signedAt` is not within a few minutes
+of now (replay defence). A missing `proof` means signing isn't configured on the
+server — treat that as online-only trust (acceptable in dev, not production).
 
 ### 4.5 `POST /api/license/deactivate` — release this device's seat
 
@@ -295,7 +365,7 @@ issued license, and returns the key.
 | --- | --- | --- |
 | 400 | Bad input (zod `details`) / license not active (validate) | Fix payload; re-request a license. |
 | 401 | Missing key (software/latest) / no admin session | Provide key / sign in. |
-| 403 | Revoked, or this device has no active seat | Stop; contact admin. |
+| 403 | Revoked, **expired** (trial ended), or this device has no active seat | Stop; buy/renew or contact admin. |
 | 404 | Unknown key / request not found | Re-check key; re-submit request. |
 | 409 | All seats in use | Admin must release a seat or raise the cap. |
 | 429 | Rate limited | Back off and retry. |
@@ -334,7 +404,14 @@ machine-distinct fingerprint.
 | Var | Used by |
 | --- | --- |
 | `LICENSE_ENCRYPTION_KEY` | Key generation (`lib/license/license-key-generator.ts`). |
+| `LICENSE_SIGNING_PRIVATE_KEY` | ECDSA P-256 (ES256) signing of validate proofs (`lib/license/license-signing.ts`). Base64 PEM. **Set in production** for tamper-resistance. |
+| `LICENSE_SIGNING_PUBLIC_KEY` | Optional explicit public key; otherwise derived from the private key. The same key is **embedded in the desktop** to verify proofs. |
+| `LICENSE_TRIAL_DAYS` | Trial validity for `/api/license/trial` (default `7`). |
 | `SOFTWARE_DOWNLOAD_SECRET` | Signing/verifying download tokens. |
+
+Generate the signing keypair once with
+`npx tsx scripts/generate-license-signing-keys.ts` and embed the printed public
+key in the desktop build.
 
 See also [`LICENSING-OVERVIEW.md`](./LICENSING-OVERVIEW.md) for the data model and
 how seats are enforced in the codebase.

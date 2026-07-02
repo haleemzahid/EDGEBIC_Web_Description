@@ -41,6 +41,8 @@ export async function GET(request: NextRequest) {
           status: true,
           licenseKey: true,
           licenseStatus: true,
+          licenseType: true,
+          licenseExpiresAt: true,
           activatedAt: true,
           activatedEmail: true,
           systemFingerprint: true,

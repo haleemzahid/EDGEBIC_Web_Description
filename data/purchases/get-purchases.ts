@@ -20,6 +20,9 @@ export interface PurchaseWithStats {
   licenseKey: string | null;
   licenseKeyHash: string | null;
   licenseStatus: string;
+  // Trial fields (populated by getPurchases; optional elsewhere)
+  licenseType?: string;
+  licenseExpiresAt?: Date | null;
   activatedAt: Date | null;
   activatedEmail: string | null;
   systemFingerprint: string | null;
@@ -77,6 +80,8 @@ export async function getPurchases(
         licenseKey: true,
         licenseKeyHash: true,
         licenseStatus: true,
+        licenseType: true,
+        licenseExpiresAt: true,
         seats: true,
         activatedAt: true,
         activatedEmail: true,

@@ -9,6 +9,7 @@ import {
   PASSWORD_RESET_CODE_RESEND_COOLDOWN_SECONDS
 } from '@/constants/limits';
 import { verifyAppApiKey } from '@/lib/auth/app-api-key';
+import { resolveLicenseScopedRecipient } from '@/lib/auth/license-reset-recipient';
 import {
   generatePasswordResetCode,
   hashPasswordResetCode
@@ -19,17 +20,17 @@ import { sendPasswordResetCodeEmail } from '@/lib/smtp/send-password-reset-code-
 import { requestPasswordResetCodeSchema } from '@/schemas/auth/request-password-reset-code-schema';
 
 // Step 1 of the desktop-app forgot-password flow.
-//   POST { email }  ->  generates a 6-digit code, stores only its HMAC,
-//                       emails the code (Resend) and returns a GENERIC body.
+//   POST { email, licenseKey }  ->  generates a 6-digit code, stores only its
+//                       HMAC, emails the code (Resend) and returns a GENERIC body.
 //
 // Security posture:
 //   - Shared-secret gate (fail-closed) so it can't be hit by arbitrary traffic.
 //   - Per-IP + per-email rate limiting to stop flooding / email spraying.
-//   - "Known emails only": a code is issued solely for an address the system
-//     already recognises (User / Purchase / Contact), never for an arbitrary
-//     inbox.
-//   - Anti-enumeration: the response is identical whether or not the email is
-//     recognised, throttled, or fails to send.
+//   - LICENSE-SCOPED: a code is issued only when the email is registered under
+//     the license identified by `licenseKey` (owner / roster / seat). The
+//     license key + email pair is the credential — see resolveLicenseScopedRecipient.
+//   - Anti-enumeration: the response is identical whether or not the pair
+//     matches, is throttled, or fails to send.
 
 // Identical response for every non-error path so callers (and attackers)
 // cannot distinguish registered emails from unknown ones.
@@ -46,54 +47,6 @@ function getClientIp(request: NextRequest): string {
     request.headers.get('x-real-ip') ||
     'unknown'
   );
-}
-
-// A code is only ever sent to an address the system already knows: a dashboard
-// User, a license-holding Purchase, a registered license seat (a local FCP
-// operator the desktop registered under its license), or a CRM Contact. This
-// covers desktop / licensed users (who may have no dashboard account) while
-// preventing the endpoint being used to spray reset codes at arbitrary inboxes.
-async function resolveKnownRecipient(normalizedEmail: string): Promise<{
-  name: string;
-  userId: string | null;
-} | null> {
-  const user = await prisma.user.findUnique({
-    where: { email: normalizedEmail },
-    select: { id: true, name: true }
-  });
-  if (user) {
-    return { name: user.name, userId: user.id };
-  }
-
-  const purchase = await prisma.purchase.findFirst({
-    where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
-    orderBy: { createdAt: 'desc' },
-    select: { customerName: true }
-  });
-  if (purchase) {
-    return { name: purchase.customerName || 'there', userId: null };
-  }
-
-  // Local FCP operators registered under a license (see /api/license/users).
-  const licenseUser = await prisma.licenseUser.findFirst({
-    where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
-    orderBy: { createdAt: 'asc' },
-    select: { name: true }
-  });
-  if (licenseUser) {
-    return { name: licenseUser.name || 'there', userId: null };
-  }
-
-  const contact = await prisma.contact.findFirst({
-    where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
-    orderBy: { createdAt: 'asc' },
-    select: { name: true }
-  });
-  if (contact) {
-    return { name: contact.name || 'there', userId: null };
-  }
-
-  return null;
 }
 
 export async function POST(request: NextRequest) {
@@ -115,7 +68,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { email } = requestPasswordResetCodeSchema.parse(body);
+    const { email, licenseKey } = requestPasswordResetCodeSchema.parse(body);
     const normalizedEmail = email.toLowerCase();
     const now = new Date();
 
@@ -142,8 +95,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(GENERIC_OK);
     }
 
-    // 4. Only issue/send for recognised emails. Unknown → generic OK, no email.
-    const recipient = await resolveKnownRecipient(normalizedEmail);
+    // 4. Only issue/send when this email is registered under THIS license
+    //    (owner / roster / seat). Any mismatch → generic OK, no email
+    //    (anti-enumeration — reveals nothing about the license or the email).
+    const recipient = await resolveLicenseScopedRecipient(
+      normalizedEmail,
+      licenseKey
+    );
     if (!recipient) {
       return NextResponse.json(GENERIC_OK);
     }

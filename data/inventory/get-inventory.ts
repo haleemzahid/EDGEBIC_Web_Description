@@ -19,6 +19,8 @@ export interface LicenseInventoryItem {
   email: string;
   licenseKey: string | null;
   licenseStatus: string;
+  licenseType: string;
+  licenseExpiresAt: Date | null;
   amount: number;
   currency: string;
   createdAt: Date;
@@ -62,6 +64,8 @@ export async function getInventoryStats(): Promise<InventoryStats> {
         email: true,
         licenseKey: true,
         licenseStatus: true,
+        licenseType: true,
+        licenseExpiresAt: true,
         amount: true,
         currency: true,
         createdAt: true,
@@ -164,6 +168,8 @@ export async function getAllLicenses(
         email: true,
         licenseKey: true,
         licenseStatus: true,
+        licenseType: true,
+        licenseExpiresAt: true,
         amount: true,
         currency: true,
         createdAt: true,

@@ -49,6 +49,34 @@ export function LicenseInventoryTable({
     toast.success(`${label} copied to clipboard`);
   };
 
+  const getTypeBadge = (license: LicenseInventoryItem) => {
+    if (license.licenseType !== 'trial') {
+      return <Badge variant="outline">Full</Badge>;
+    }
+    const expired =
+      !!license.licenseExpiresAt &&
+      new Date(license.licenseExpiresAt).getTime() < Date.now();
+    return (
+      <div className="flex flex-col gap-0.5">
+        <Badge
+          className={
+            expired
+              ? 'bg-red-500 hover:bg-red-600'
+              : 'bg-blue-500 hover:bg-blue-600'
+          }
+        >
+          {expired ? 'Trial expired' : 'Trial'}
+        </Badge>
+        {license.licenseExpiresAt && (
+          <span className="text-xs text-muted-foreground">
+            {expired ? 'ended' : 'ends'}{' '}
+            {format(new Date(license.licenseExpiresAt), 'MMM dd, yyyy')}
+          </span>
+        )}
+      </div>
+    );
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -108,6 +136,7 @@ export function LicenseInventoryTable({
                 <TableHead>Customer</TableHead>
                 <TableHead>License Key</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead>Purchase Date</TableHead>
                 <TableHead>Activated</TableHead>
                 <TableHead>Amount</TableHead>
@@ -157,6 +186,7 @@ export function LicenseInventoryTable({
                     </div>
                   </TableCell>
                   <TableCell>{getStatusBadge(license.licenseStatus)}</TableCell>
+                  <TableCell>{getTypeBadge(license)}</TableCell>
                   <TableCell className="text-sm">
                     {format(new Date(license.createdAt), 'MMM dd, yyyy')}
                   </TableCell>

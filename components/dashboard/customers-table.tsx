@@ -50,6 +50,31 @@ function getLicenseStatusBadge(
   }
 }
 
+function getTrialBadge(purchase: PurchaseWithStats) {
+  if (purchase.licenseType !== 'trial') return null;
+  const expired =
+    !!purchase.licenseExpiresAt &&
+    new Date(purchase.licenseExpiresAt).getTime() < Date.now();
+  return (
+    <Badge
+      className={
+        expired
+          ? 'bg-red-100 text-red-800 hover:bg-red-100'
+          : 'bg-blue-100 text-blue-800 hover:bg-blue-100'
+      }
+      title={
+        purchase.licenseExpiresAt
+          ? `${expired ? 'Trial ended' : 'Trial ends'} ${new Date(
+              purchase.licenseExpiresAt
+            ).toLocaleDateString()}`
+          : undefined
+      }
+    >
+      {expired ? 'Trial expired' : 'Trial'}
+    </Badge>
+  );
+}
+
 function getStatusBadge(status: string) {
   switch (status) {
     case 'completed':
@@ -327,6 +352,7 @@ export function CustomersTable({
                           purchase.licenseStatus,
                           purchase.activatedAt
                         )}
+                        {getTrialBadge(purchase)}
                       </div>
                       {purchase.licenseKey && (
                         <div className="font-mono text-xs text-muted-foreground">
@@ -584,6 +610,20 @@ export function CustomersTable({
                             selectedPurchase.activatedAt
                           )}
                         </span>
+                      </div>
+                      <div>
+                        <span className="font-medium">Type:</span>{' '}
+                        {selectedPurchase.licenseType === 'trial'
+                          ? 'Trial'
+                          : 'Full'}
+                        {selectedPurchase.licenseType === 'trial' &&
+                          selectedPurchase.licenseExpiresAt &&
+                          ` (${
+                            new Date(selectedPurchase.licenseExpiresAt).getTime() <
+                            Date.now()
+                              ? 'expired'
+                              : 'expires'
+                          } ${formatDate(selectedPurchase.licenseExpiresAt)})`}
                       </div>
                       <div>
                         <span className="font-medium">Activated:</span>{' '}

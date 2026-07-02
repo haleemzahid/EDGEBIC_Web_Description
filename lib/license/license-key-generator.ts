@@ -64,27 +64,46 @@ export class LicenseKeyGenerator {
     return crypto.createHash('sha256').update(licenseKey).digest('hex');
   }
 
+  // Authenticated AES-256-GCM. The previous implementation used GCM but threw
+  // the auth tag away and used a hard-coded salt, so `decrypt()` could never
+  // round-trip (final() rejects a missing tag) and the ciphertext was
+  // unauthenticated. Format is `salt:iv:tag:ciphertext` (all hex); the salt and
+  // a 12-byte GCM nonce are random per call, and the tag is verified on
+  // decrypt so any tampering fails closed.
   private static encrypt(text: string): string {
-    const iv = crypto.randomBytes(16);
-    const key = crypto.scryptSync(this.ENCRYPTION_KEY, 'salt', 32);
+    const salt = crypto.randomBytes(16);
+    const iv = crypto.randomBytes(12); // 96-bit nonce — the GCM standard size
+    const key = crypto.scryptSync(this.ENCRYPTION_KEY, salt, 32);
     const cipher = crypto.createCipheriv(this.ALGORITHM, key, iv);
 
-    let encrypted = cipher.update(text, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
+    const encrypted = Buffer.concat([
+      cipher.update(text, 'utf8'),
+      cipher.final()
+    ]);
+    const tag = cipher.getAuthTag();
 
-    return iv.toString('hex') + ':' + encrypted;
+    return [
+      salt.toString('hex'),
+      iv.toString('hex'),
+      tag.toString('hex'),
+      encrypted.toString('hex')
+    ].join(':');
   }
 
   private static decrypt(encryptedData: string): string {
-    const parts = encryptedData.split(':');
-    const iv = Buffer.from(parts[0], 'hex');
-    const encrypted = parts[1];
-    const key = crypto.scryptSync(this.ENCRYPTION_KEY, 'salt', 32);
+    const [saltHex, ivHex, tagHex, dataHex] = encryptedData.split(':');
+    const key = crypto.scryptSync(this.ENCRYPTION_KEY, Buffer.from(saltHex, 'hex'), 32);
 
-    const decipher = crypto.createDecipheriv(this.ALGORITHM, key, iv);
-    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
+    const decipher = crypto.createDecipheriv(
+      this.ALGORITHM,
+      key,
+      Buffer.from(ivHex, 'hex')
+    );
+    decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
 
-    return decrypted;
+    return Buffer.concat([
+      decipher.update(Buffer.from(dataHex, 'hex')),
+      decipher.final()
+    ]).toString('utf8');
   }
 }

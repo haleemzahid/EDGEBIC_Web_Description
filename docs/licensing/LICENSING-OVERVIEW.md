@@ -8,7 +8,7 @@ data model and where enforcement happens in the codebase.
 
 | Model | Role |
 | --- | --- |
-| `Purchase` (`purchases`) | The license. Holds the key (`licenseKey` + unique `licenseKeyHash`), `licenseStatus` (`inactive`/`active`/`revoked`), and **`seats`** (device cap, default 1). Also doubles as the Stripe purchase / dashboard customer row. The legacy `systemFingerprint`/`processorId` columns now only record the **most recently activated device** for display — they are NOT the enforcement gate. |
+| `Purchase` (`purchases`) | The license. Holds the key (`licenseKey` + unique `licenseKeyHash`), `licenseStatus` (`inactive`/`active`/`revoked`), **`seats`** (device cap, default 1), and the type/validity pair **`licenseType`** (`full`/`trial`, default `full`) + **`licenseExpiresAt`** (NULL = perpetual; set for trials). Also doubles as the Stripe purchase / dashboard customer row. The legacy `systemFingerprint`/`processorId` columns now only record the **most recently activated device** for display — they are NOT the enforcement gate (except on trials, where they also bind the trial to its issuing device for one-trial-per-device). |
 | `LicenseSeat` (`license_seats`) | One row per device that occupies a seat. `@@unique([purchaseId, systemFingerprint])`. `status = active` consumes a seat; `released` frees it. **Source of truth for seat enforcement:** `usedSeats = count(active)`. |
 | `LicenseActivation` (`license_activations`) | Append-only audit log of every activation/validate/admin attempt (`success`/`failed`/`blocked`/`admin-update`). Never used for enforcement. |
 | `LicenseUser` (`license_users`) | Operator roster (`@@unique([purchaseId, email])`). Auto-populated on activation and on approval; feeds password-reset. |
@@ -26,7 +26,17 @@ Purchase** so the cutover is seamless).
   The `@@unique([purchaseId, systemFingerprint])` makes the same machine
   idempotent. Email is informational (auto-added to roster).
 - **Runtime validate:** `app/(app)/api/license/validate/route.ts` — valid iff
-  `active` **and** an active seat matches by `systemFingerprint` OR `processorId`.
+  `active`, **not expired** (`licenseExpiresAt` in the future or NULL), **and**
+  an active seat matches by `systemFingerprint` OR `processorId`. The success
+  response carries an **ECDSA P-256 `proof`** (`lib/license/license-signing.ts`) so
+  the desktop can't be fooled by a fake server — see the contract doc.
+- **Expiry gate:** activate (`403 License has expired`), validate
+  (`403 License expired`), and `software/latest` (`403`) all refuse a license
+  whose `licenseExpiresAt` has passed. Full licenses (NULL) are unaffected.
+- **Self-service trials:** `app/(app)/api/license/trial/route.ts` mints a
+  `licenseType = 'trial'` Purchase with `licenseExpiresAt = now + LICENSE_TRIAL_DAYS`
+  (default 7), `seats = 1`, bound to the requesting device — one trial per
+  device/email (idempotent re-issue, even after expiry). No admin approval.
 - **Seat release (self-service):** `app/(app)/api/license/deactivate/route.ts` —
   the inverse of activate. Flips this device's `LicenseSeat` to `released`
   (matched by `systemFingerprint` OR `processorId`), stamps `releasedAt`, and

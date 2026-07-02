@@ -2,19 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { verifyAppApiKey } from '@/lib/auth/app-api-key';
+import { resolveLicenseScopedRecipient } from '@/lib/auth/license-reset-recipient';
 import { verifyPasswordResetCode } from '@/lib/auth/password-reset-code';
 import { prisma } from '@/lib/db/prisma';
 import { rateLimit } from '@/lib/network/rate-limit';
 import { verifyPasswordResetCodeSchema } from '@/schemas/auth/verify-password-reset-code-schema';
 
 // Step 2 of the desktop-app forgot-password flow.
-//   POST { email, code }  ->  verifies the code online and, on success, burns
-//                             it (single-use). The desktop app then lets the
-//                             user set a new password locally.
+//   POST { email, code, licenseKey }  ->  re-checks the license key + email are
+//                             a valid pair, verifies the code online and, on
+//                             success, burns it (single-use). The desktop app
+//                             then lets the user set a new password locally.
 //
-// The code is checked against the stored HMAC with a timing-safe compare.
-// Wrong guesses increment an attempt counter and the code locks after
-// maxAttempts, so an online brute-force of the 1,000,000-code space is capped.
+// The license key is required at BOTH steps: even someone who intercepts a code
+// can't reset without also presenting the matching license key. The code is
+// checked against the stored HMAC with a timing-safe compare; wrong guesses
+// increment an attempt counter and the code locks after maxAttempts, so an
+// online brute-force of the 1,000,000-code space is capped.
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -42,9 +46,22 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { email, code } = verifyPasswordResetCodeSchema.parse(body);
+    const { email, code, licenseKey } = verifyPasswordResetCodeSchema.parse(body);
     const normalizedEmail = email.toLowerCase();
     const now = new Date();
+
+    // License gate: the email must still be registered under this license key.
+    // A mismatch is reported exactly like a bad code (no enumeration).
+    const recipient = await resolveLicenseScopedRecipient(
+      normalizedEmail,
+      licenseKey
+    );
+    if (!recipient) {
+      return NextResponse.json(
+        { success: false, verified: false, error: 'Invalid or expired code' },
+        { status: 400 }
+      );
+    }
 
     // Newest still-unconsumed code for this address.
     const record = await prisma.passwordResetCode.findFirst({
