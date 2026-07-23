@@ -1,0 +1,188 @@
+---
+title: "Deploying and Administering EDGEBIC: From First Install to Multi-User"
+description: "Manufacturing scheduling software deployment done right: EDGEBIC's SQLite-to-SQL Server path, users and roles, import masks, backups, and admin housekeeping."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Admin & Deployment
+author: user-solutions
+cluster: edgebic-admin
+pillarSlug: edgebic-admin-guide
+keywords:
+  - manufacturing scheduling software deployment
+  - scheduling software administration
+  - SQLite vs SQL Server scheduling
+  - roles and permissions manufacturing software
+  - import masks data migration
+  - scheduling software backup
+targetPhrase: "manufacturing scheduling software deployment"
+wordCount: 3000
+readingTime: 15
+faqQuestions:
+  - question: "Does EDGEBIC need a server to get started?"
+    answer: "No. On first run, EDGEBIC creates a single-file SQLite database on the local machine automatically, with zero setup. That is a complete, fully functional deployment for a single planner. When the team grows, you switch the provider to a SQL Server database that every installation points at, and all users then share one live plan. The switch is a settings change plus an application restart, not a reinstall."
+  - question: "How do users and permissions work in EDGEBIC?"
+    answer: "EDGEBIC uses role-based access: a permission is one atomic right, a role is a named bundle of permissions, and a user holds one or more roles. A person's capabilities are the union of their roles, so a second role only ever adds rights. Screens and buttons a user lacks permission for are hidden or refused. The built-in Administrator role always holds every permission and cannot be deleted, and neither can the founding administrator account."
+  - question: "How does data get from our ERP or spreadsheets into EDGEBIC?"
+    answer: "Through import masks: saved column mappings for Excel and delimited text files. You map your file's columns to EDGEBIC fields once, then every later run is two clicks. Eight entity types are supported: products, work centers, customers, sales orders, BOR routings, actuals, plant holidays, and shifts. Every row lands as exactly one outcome (created, updated, reused, or failed with a recorded reason), and a per-run log file records every row."
+  - question: "What is the backup story for an EDGEBIC deployment?"
+    answer: "For the default SQLite setup, one click on the Export button creates a timestamped backup file next to the database, safe even while the application is running; restoring is copying the file back. For SQL Server, the scheduling database joins your IT team's standard backup rotation. The practical rule from the documentation: take an export before every data clear, mass BOR re-import, or database provider switch."
+  - question: "What happens if EDGEBIC cannot connect to its database at startup?"
+    answer: "A recovery window opens instead of the main application. It shows the error, embeds the data-source editor so you can fix the connection on the spot, and offers four actions: retry the same connection, reset to the default local database, repair the database's internal version history (data is not changed), or exit. Startup failures also log to a file support can read."
+qaQuestions:
+  - question: "We are one planner today but expect four users next year. What is the honest deployment path?"
+    answer: "Start on the default SQLite file: zero setup, full functionality, one planner. When the team grows, the documented path is exactly what one customer walkthrough shows: click Export for a backup, switch the provider to SQL Server (server name, database name, Windows authentication), press Test connection, then Apply and restart. EDGEBIC creates the database schema on first connection. Note that switching does not move data: the old database keeps everything and the new one starts empty, so plan to re-import master data from your standard files or migrate deliberately. Each user then runs the application on their own PC pointed at the same database and sees the same live plan."
+  - question: "Our ERP exports setup times in minutes, but EDGEBIC works in hours. Do we have to reshape every file?"
+    answer: "No. Each import mask column mapping accepts a conversion factor that multiplies numeric values before storage. A setup-minutes column mapped with a factor of 0.016667 lands a 30-minute cell as 0.5 hours; seconds use 0.000278. The mask remembers the mapping, the worksheet, and the factor, so the weekly file is select-mask, run, read the result counts. If a run shows failures, the result dialog opens a per-run log listing the exact rows and reasons, and by default one bad row never blocks the rest of the file."
+---
+
+**Manufacturing scheduling software deployment** is where good evaluations go to die: a tool that demos well but needs a database administrator, a middleware server, and a six-month rollout never earns its keep on a busy shop floor. EDGEBIC by User Solutions is built for the opposite curve: first run creates a local single-file database automatically with zero setup, and the same application later scales to a shared SQL Server deployment for a whole planning team by changing one setting. In between sit the jobs this guide covers: users, roles and permissions, loading your data through import masks, configuration, backups, and recovery.
+
+Fast deployment is a User Solutions tradition, not a slogan: the company has implemented scheduling for manufacturers since 1991, and the documented Plastilite case integrated scheduling with the Fourth Shift ERP in five days, a methodology carried forward into [EDGEBIC](/edgebic). This pillar walks the administrator's whole journey, grounded in the product's documented behavior.
+
+## Day One: First Launch to First Sign-In
+
+The very first time EDGEBIC starts against a new database, it asks you to create the administrator account before anything else: full name, username, and a password meeting the policy (by default, at least 8 characters with an uppercase letter, a lowercase letter, and a digit). Sign in, and you are in the application.
+
+Two security behaviors are on from the start:
+
+- **Lockout.** Five consecutive wrong passwords lock an account for 15 minutes, and the error message never reveals whether the username exists (that is deliberate). An administrator can clear a lock immediately with the Unlock button.
+- **The security audit trail.** Every security-relevant event (sign-ins, failed attempts, lockouts, user and role changes, permission denials) is recorded permanently in an append-only trail inside the database. There is no in-app viewing screen for it yet; it exists as a record your administrator or support can query when a compliance question arrives.
+
+The founding administrator account and the built-in Administrator role are protected system records: they cannot be deleted, and the Administrator role always holds every permission, including new ones added by product updates.
+
+## Where the Data Lives: SQLite First, SQL Server When You Grow
+
+EDGEBIC's data-source design maps to how scheduling teams actually grow:
+
+| Provider | Best for | What it is |
+|---|---|---|
+| SQLite (default) | A single workstation | One file, created automatically on first run in the local application data folder. No setup at all |
+| SQL Server | Multiple users sharing one plan | A database on your IT-managed server; every EDGEBIC install points at it |
+| In-memory | Testing and demos only | Nothing is saved; all data is lost on exit |
+
+(PostgreSQL and MySQL appear in the provider list but are not yet available.)
+
+The single-file default is not a toy tier. It is the same schema and the same engine; it simply lives in one portable file, which makes the single-planner deployment trivially simple and trivially portable: copy the file, and you have moved the system.
+
+### Switching to SQL Server, step by step
+
+The documented multi-user path, from the worked example of a shop growing from one planner to four:
+
+1. Ask IT for a server name and either Windows-authentication rights or a SQL login. The scheduling database itself does not need to exist yet; EDGEBIC creates it on first connection.
+2. In Settings, on the DataSource tab, choose SQL Server, enter the server and database name, and pick the authentication mode. Windows authentication is recommended: no stored passwords at all.
+3. Press **Test connection**. The status text tells you exactly where you stand, including the friendly case where the server is reachable and the database will be created on first launch.
+4. A warning card reminds you that switching requires a restart and offers **Export current first**: a one-click backup of the database you are leaving. Take it.
+5. **Apply and restart.** EDGEBIC restarts on the new connection and builds the schema automatically.
+
+The one thing the documentation warns about in bold: switching providers does not move your data. The old database keeps everything; the new one starts empty. Plan the migration: either restore from a backup path your IT supports, or rebuild master data through the import masks (below), which is often the cleaner start for a production go-live.
+
+For SQL-authentication setups, the stored password is encrypted and tied to the Windows account that entered it; a copied configuration on another account simply requires re-entering the password once. Prefer Windows authentication and the issue never exists.
+
+### When startup fails
+
+If EDGEBIC cannot start against its database, you get a recovery window instead of a crash: the error with expandable details, an embedded data-source editor to fix the connection on the spot, and four buttons: Retry (after starting a stopped server), Reset to the default local database, Repair database (rebuilds internal version bookkeeping for a database whose structure is already current; data is not changed), and Exit. Startup errors also land in a log file for support.
+
+## Users, Roles, and Permissions
+
+EDGEBIC uses role-based access control with a deliberately simple mental model: a **permission** is one atomic right ("view work centers," "generate schedules," "delete customers"); a **role** is a named bundle of permissions ("Planner," "Shop Floor Supervisor"); a **user** holds one or more roles. What a signed-in person can see and click is the union of their roles' permissions, so assigning a second role only ever adds capabilities. Screens and buttons a user lacks are hidden or refused, including the entire Settings area and the security screens themselves.
+
+Building the team is a few minutes of work:
+
+- **Roles first.** Create a role, tick capabilities in a permission tree grouped by area (sales, production, master data, insights, data, settings, security), with select-all and clear buttons per group. Start from nothing and add permissions when someone genuinely hits a wall; that is easier than clawing rights back.
+- **Then users.** Username, full name, initial password, roles. Tick "must change password on next login" so new hires set their own on first sign-in.
+- **Departures get deactivated, not deleted.** Deactivation bars sign-in while keeping the account's history intact, which is what makes the audit trail worth having.
+
+Three operational rules from the documentation deserve their own line:
+
+1. **One account per person, never shared logins.** The audit trail only means something if actions map to people.
+2. **Review custom roles after every upgrade.** When a product update introduces new permissions, only the built-in Administrator role receives them automatically; custom roles must be granted new capabilities explicitly. That is a security-first default, and it means new features can appear for the admin and not for planners until you grant them.
+3. **Permissions come through roles.** There is no per-user grant or deny override screen; to give one planner less, create a narrower role (for example, "Planner, no delete") and assign that.
+
+Changes take effect at the affected user's next sign-in, and every one of these administrative actions writes to the security audit trail.
+
+## Loading Your Data: Import Masks
+
+Nobody types a factory into a scheduling system. EDGEBIC's import architecture is the **import mask**: a saved recipe that remembers the entity type, the file format, whether the first row is headings, and (most importantly) how each column in your file maps to an EDGEBIC field. You build the mask once by dragging file headings onto target fields; every later run is select the mask, click Do It.
+
+Eight entity types cover the deployment data path: products, work centers, customers, sales orders (jobs), BOR routings, actuals, plant holidays, and shifts. Files can be Excel workbooks or delimited text (comma, semicolon, tab, or space).
+
+The result discipline is what makes imports trustworthy. Every row in your file becomes exactly one outcome: **Created**, **Updated**, **Reused** (found and deliberately left alone), or **Failed** with the reason recorded. The result dialog shows the counts; a per-run log file records every row. By default a bad row does not stop the run, so one typo never blocks 199 good rows, and matching is by natural business key, case-insensitively, so a file row for WIDGET-A finds the existing Widget-A.
+
+Details that save deployment days:
+
+- **Unit conversion at the column.** A per-column conversion factor multiplies numeric values before storage: 0.016667 turns source minutes into hours, so an ERP exporting setup times in minutes needs no file surgery.
+- **Update semantics you control.** With updates off (the default), existing records come back Reused and untouched: the safe mode. Turn updates on for runs whose purpose is changing values, like a weekly price refresh, and note that blank cells preserve existing values rather than wiping them.
+- **Auto-creation for order and routing loads.** A sales-order or BOR import can create missing products, customers, and work centers on the fly, which is exactly what you want when bootstrapping from an ERP export.
+- **Routing chaining without link columns.** BOR imports can auto-chain steps in sequence-number order (give steps gaps of 10, so step 15 can be inserted later) and connect the final step to the end product, so the imported routing renders complete in the graphical designer.
+
+Two BOR-specific warnings from the documentation, worth repeating verbatim in spirit: a BOR re-import wipes and recreates the product's routing steps each run, so never split one product's steps across two files, and scheduled jobs are unaffected because each carries its own frozen routing snapshot (see the [visual scheduling guide](/blog/edgebic-visual-scheduling-guide) for that mechanism). And imports never recalculate the schedule: they change data, and you run the scheduler afterwards.
+
+This import-mask architecture is also EDGEBIC's honest ERP integration story: recurring exports from any system that can produce Excel or CSV, mapped once, run on a rhythm, with schedule results exported back out from the grids and reports. The [ERP integration hub](/edgebic-erp-integration) covers the pattern, and the [JobBOSS integration guide](/blog/edgebic-jobboss-integration-guide) walks a concrete example end to end. For actuals specifically, the import path complements the kiosk and planner entry described in the [shop floor guide](/blog/edgebic-shop-floor-guide): re-running an actuals file is safe by design, since days the file carries are overwritten and days it omits are preserved.
+
+## Configuration: Policy vs Display
+
+EDGEBIC separates configuration into two homes, and knowing the split saves administrators hours of confusion:
+
+**Site-wide policy** lives in Settings and changes what the scheduling engine computes for everyone: the default scheduling direction (forward or backward), what happens when a backward job does not fit (accept the forward fallback silently, or pause for review), which optimizer engine runs (see the [optimizer guide](/blog/edgebic-optimizer-guide)), how short-confirmed operations are handled on reschedule, the capacity search window, hour roll-up rules, and whether sub-assemblies are exploded into the schedule. Policy changes are read fresh on every scheduler run: save, then run, no restart. The one exception in all of Settings is the database connection, which always requires a restart.
+
+**Display configuration** lives with the schedule views and changes only what each user sees: Gantt bar captions and colors, actual-versus-planned overlays, variance thresholds, drag permissions, and how edits are batched. Two users can configure their displays differently and still see the same underlying schedule. Tuned a display just right? Export the configuration and let a colleague import it instead of re-clicking forty options.
+
+A localization layer rounds this out: administrators can rename on-screen labels to plant vocabulary (say, "Machine Group" instead of "Workcenter") across the application, with export and import of label sets between machines. If your plant says "cell," rename the label rather than retraining the vocabulary; the concepts underneath do not change.
+
+A quick reference for what takes effect when, because it is the most common new-administrator question:
+
+| Change | Takes effect |
+|---|---|
+| Scheduling policy (direction, short-confirm, sub-assemblies) | The next scheduler run after saving; no restart |
+| Optimizer engine selection | The next optimizer run; proposals still require an explicit Accept |
+| Display configuration | When the user saves and applies it; per machine and user |
+| User and role changes | At the affected user's next sign-in |
+| Database connection | Always requires an application restart |
+
+Getting data out is as routine as getting it in: the Job View grid, the BOR grid, and the work-center schedule all export what you see to Excel with one button, and every report dialog carries Excel and PDF export in its footer. Grid exports are deliberately display snapshots for sharing and analysis, not import files; to move a whole system between machines, back up and restore the database instead.
+
+## Housekeeping: Backups, Data Clearing, and Logs
+
+**Backups.** For SQLite, the Export button on the DataSource tab creates a timestamped backup next to the database file with one click, safe even while EDGEBIC is running; restore by copying the file back with the application closed. For SQL Server, put the scheduling database in IT's standard backup rotation. The documented rule of thumb: export before every data clear, mass BOR re-import, or provider switch. It costs one click.
+
+**Clearing data.** The Clear Data Tables utility resets a training database, wipes a demo, or starts a planning year fresh. It is deliberately hard to trigger by accident: a red warning banner, a choice between clearing selected areas (with each row expandable to show what it cascades to) and a full database wipe, a separate opt-in before user accounts are touched, and a typed confirmation word before the button enables. There is no undo, which is why the export habit above exists.
+
+**Layout resets.** Grid and panel layouts save per user automatically. Reset them per view from that view's configuration dialog, or wholesale through data management.
+
+**Logs.** Import runs log one file per run (opened directly from the import result dialog). Startup errors log to a dedicated file. Scheduling diagnostics write to a support-driven folder. Security events live in the database's audit trail. When something looks wrong operationally rather than administratively, start with the [troubleshooting guide](/blog/edgebic-troubleshooting-guide).
+
+## A Deployment Playbook
+
+Condensing the documentation's worked examples into a sequence you can run:
+
+1. **Install and create the admin.** First launch, administrator dialog, sign in. You are deployed, on SQLite, in minutes.
+2. **Load master data by mask.** Shifts and holidays first, then work centers, products, customers, and routings. Dry-run each new mask on ten rows before the full file.
+3. **Prove the loop on one product.** Import a handful of orders, run the scheduler, log an actual, reschedule. This validates data quality while the dataset is small.
+4. **Back up, then scale when ready.** Export, switch to SQL Server with Windows authentication, re-import or migrate, and point each user's installation at the shared database.
+5. **Build roles before adding users.** Planner and supervisor roles with least-privilege defaults; one account per person; must-change-password on creation; deactivate leavers.
+6. **Set site policy once, deliberately.** Scheduling direction, backward-fit behavior, short-confirm policy: decide as a site, tell the team, and change at quiet moments.
+7. **Put backups on a schedule, not on memory.** Nightly file copy or SQL rotation, plus the one-click export before anything destructive.
+
+For the platform this administration supports, start with the [complete EDGEBIC guide](/blog/edgebic-complete-guide); if you are moving from RMDB or EDGEBI, the [upgrade path](/rmdb-to-edgebic) explains what your existing data and habits carry forward through exactly the import machinery described here.
+
+Deployment is where User Solutions has always competed: the same rapid-implementation approach behind the five-day Fourth Shift integration, applied with modern tooling. If you want a deployment plan scoped to your shop (single planner or a multi-user rollout), [contact US](/contact-us) and bring a sample export from your current system; mapping it through an import mask is the fastest way to see how short the path really is.
+
+<Accordion title="Does EDGEBIC need a server to get started?">
+No. On first run, EDGEBIC creates a single-file SQLite database on the local machine automatically, with zero setup. That is a complete, fully functional deployment for a single planner. When the team grows, you switch the provider to a SQL Server database that every installation points at, and all users then share one live plan. The switch is a settings change plus an application restart, not a reinstall.
+</Accordion>
+
+<Accordion title="How do users and permissions work in EDGEBIC?">
+EDGEBIC uses role-based access: a permission is one atomic right, a role is a named bundle of permissions, and a user holds one or more roles. A person's capabilities are the union of their roles, so a second role only ever adds rights. Screens and buttons a user lacks permission for are hidden or refused. The built-in Administrator role always holds every permission and cannot be deleted, and neither can the founding administrator account.
+</Accordion>
+
+<Accordion title="How does data get from our ERP or spreadsheets into EDGEBIC?">
+Through import masks: saved column mappings for Excel and delimited text files. You map your file's columns to EDGEBIC fields once, then every later run is two clicks. Eight entity types are supported: products, work centers, customers, sales orders, BOR routings, actuals, plant holidays, and shifts. Every row lands as exactly one outcome (created, updated, reused, or failed with a recorded reason), and a per-run log file records every row.
+</Accordion>
+
+<Accordion title="What is the backup story for an EDGEBIC deployment?">
+For the default SQLite setup, one click on the Export button creates a timestamped backup file next to the database, safe even while the application is running; restoring is copying the file back. For SQL Server, the scheduling database joins your IT team's standard backup rotation. The practical rule from the documentation: take an export before every data clear, mass BOR re-import, or database provider switch.
+</Accordion>
+
+<Accordion title="What happens if EDGEBIC cannot connect to its database at startup?">
+A recovery window opens instead of the main application. It shows the error, embeds the data-source editor so you can fix the connection on the spot, and offers four actions: retry the same connection, reset to the default local database, repair the database's internal version history (data is not changed), or exit. Startup failures also log to a file support can read.
+</Accordion>

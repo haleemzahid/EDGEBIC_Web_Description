@@ -1,0 +1,91 @@
+---
+title: "Attend Fraction Explained: One Operator, Seven Machines"
+description: "Operator attend fraction defines how much human attention a machine-hour consumes: 0 for lights-out, 0.5 for one person tending two machines, 2.0 for a crew."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - operator attend fraction scheduling
+  - attend fraction definition
+  - one operator multiple machines scheduling
+  - lights-out machining scheduling
+  - operator capacity manufacturing
+  - labor constrained scheduling
+targetPhrase: "operator attend fraction scheduling"
+wordCount: 1180
+readingTime: 6
+faqQuestions:
+  - question: "What is an attend fraction in operator scheduling?"
+    answer: "The attend fraction is a number on a routing step that states how much operator attention each machine-hour of the run consumes: 0.0 means the run needs nobody (setup only), 0.5 means one person tends two machines, 1.0 means fully attended, and 2.0 means a two-person crew. Setup always requires a full person regardless of the fraction."
+  - question: "How does one operator run seven machines at once?"
+    answer: "With an attend fraction of zero, each job charges the operator only for its setup. Seven jobs with one-hour setups book seven operator-hours against an eight-hour day, and all seven machines then run unattended while the operator remains free for other setups. The eighth setup still fits the day; the ninth waits for tomorrow, because setups always need a real person."
+  - question: "Why does setup always book a full operator even when the attend fraction is zero?"
+    answer: "Because a machine cannot set itself up. The fraction describes attention during the run phase, where automation can genuinely replace a person; fixturing, loading a program, and first-piece checks need hands regardless. Booking setup at a full 1.0 keeps the lights-out model honest: unstaffed days can host runs, but never starts."
+  - question: "What happens with an attend fraction above 1.0?"
+    answer: "A fraction above 1.0 models a crew: at 2.0, every machine-hour books two operator-hours. With only one qualified person on the roster, a machine's day caps at the person's hours divided by 2, so an 8-hour pool affords 4 run hours and the operation splits or slides. The schedule reflects the real cost of crewed operations instead of pretending one person is two."
+qaQuestions:
+  - question: "Our CNC cell has 7 mills. Each job is 1 hour of setup plus 9 hours of unattended run, and Joe is our only setup-qualified machinist on an 8-hour day. How many jobs can start per day?"
+    answer: "Eight. Each job costs Joe exactly 1 hour (the setup; the 9 run hours book zero attention at fraction 0.0), so seven jobs consume 7 of his 8 pool hours, machines running themselves into the evening. An eighth setup fits his last hour. The ninth setup slides to tomorrow: this exact case is a locked regression test in the EDGEBIC engine suite. The ledger never oversells Joe, and the cell still starts a lights-out night on schedule."
+  - question: "Same cell, but we change the fraction to 0.5 because the mills need occasional tending. How much machine time does Joe's day now buy?"
+    answer: "Fifteen machine-hours per day per machine chain, by the documented affordability math: the first hour of a job covers setup at full attention, and the remaining 7 pool hours each buy 2 run machine-hours at fraction 0.5, giving 1 + 7 ÷ 0.5 = 15. The scheduling engine applies the same inverse formula when it clamps each day's allocation, so what the plan claims and what one person can genuinely cover always match."
+---
+
+**The attend fraction is a routing-step setting that states how much operator attention each machine-hour of a run consumes: 0.0 means the machine runs itself once set up, 0.5 means one person can tend two machines, 1.0 means someone stands at the machine the whole run, and 2.0 means a two-person crew.** It is the single number that lets a scheduler tell the difference between a lights-out CNC cell and a hand-fed press, and without it, labor-aware scheduling either oversells people or pretends automation does not exist.
+
+This entry is part of the EDGEBIC glossary; the wider dictionary lives in the [manufacturing glossary](/blog/manufacturing-glossary).
+
+## How It Works
+
+Operator-aware scheduling in [EDGEBIC by User Solutions](/edgebic) runs on an hours ledger: each qualified operator contributes a pool of hours per shift per day, and every scheduled operation draws from that pool. The attend fraction decides the exchange rate, with one fixed rule on top:
+
+**Setup always books at 1.0.** A person fixtures the machine, loads the program, and proves the first piece regardless of how automated the run is. The fraction only scales the run phase.
+
+Per scheduled slice, the operator cost is: setup hours at full attention, plus remaining run hours times the fraction.
+
+| Fraction | Meaning | What 8 pool-hours afford |
+|---|---|---|
+| 0.0 (default) | Setup-only; the run books nobody | Unlimited run hours, but each setup still costs its full time |
+| 0.5 | One person tends two machines | 16 run machine-hours |
+| 1.0 | Fully attended | 8 run machine-hours: the classic one-to-one ledger |
+| 2.0 | Two-person crew | 4 run machine-hours; each machine-hour books 2 operator-hours |
+
+Two consequences of the 0.0 default are deliberate. First, a run with zero attention may legitimately execute on completely unstaffed days: the machine runs itself overnight, which is the entire economics of lights-out machining. Second, a step with setup can never *start* unstaffed, because the setup needs a human; a skill nobody on the roster holds fails loudly at scheduling time instead of silently pretending. And the default errs on the visible side: a forgotten fraction under-books people, which shows up immediately, rather than silently overselling them.
+
+## The Worked Example: One Operator, Seven Machines
+
+From the EDGEBIC documentation. A cell of seven CNC mills, one instance each, on an 8-hour day shift. Every job's step: 1 hour of setup, 9 hours of run, a setup skill required, attend fraction 0.0. Joe is the only qualified operator, with 8 pool hours per day.
+
+- Each job costs Joe exactly **1 hour**: 1 setup hour × 1.0 + 9 run hours × 0.0.
+- Jobs 1 through 7 all start Monday. Seven machines running; Joe has spent 7 of his 8 hours. The runs continue into the unstaffed evening, because at fraction zero the run phase is unconstrained by people.
+- An **8th** job's setup still fits Joe's last hour.
+- A **9th** setup slides to Tuesday. There is no ninth hour of Joe.
+
+One person legitimately launches a seven-machine lights-out cell, and the ledger never claims more of him than exists. Change the fraction to 0.5 and the same 8 pool hours afford 1 + 7 ÷ 0.5 = 15 machine-hours per day; change it to a 2.0 crew with only Joe qualified, and each machine's day caps at (8 − setup) ÷ 2 run hours, so the work splits and slides until a second qualified person joins the roster.
+
+## How EDGEBIC Implements It
+
+- **Where it lives:** on the routing step, next to the required skill. The fraction editor activates only when a skill is set, and free-text entry accepts any non-negative value, so 0.3 or 1.5 are as valid as the standard four.
+- **How it gates:** the engine checks operator availability at the same chokepoint as machine capacity: a day only offers an operation hours that both the machine and the qualified-operator pool can cover, and each day's allocation is clamped to what the pool affords under the fraction. Multi-day jobs spill cleanly: an 8-hour pool against a 12-hour fully attended job books 8 hours Monday and 4 Tuesday, never overselling either day.
+- **The involvement rule:** a step with zero setup and fraction 0.0 has no operator involvement at all, so the constraint is skipped entirely for that step, and the scheduling log records the skip.
+- **Composition:** the fraction stacks with everything else. Machine calendars, holidays, and downtime are checked first; the operator gate asks its question only about days the machine could work. Pinning a named operator to the step narrows the pool to that one person, so their vacation becomes visible schedule slip rather than a silent substitution. Steps routed to a machine pool pick their machine with staffability included, so a fast machine whose shift nobody qualified can cover loses to a slower one that can actually be staffed.
+- **The optimizer stays honest:** jobs carrying operator constraints are locked during mathematical optimization and reproduced exactly as the standard engine scheduled them, so no proposed plan can ever violate a people constraint the model does not represent. Details in the [optimizer guide](/blog/edgebic-optimizer-guide).
+
+The attend fraction is one of several places where EDGEBIC's [scheduling engine](/blog/edgebic-scheduling-engine-guide) chooses an hours-based model over a simpler presence flag; the payoff is that plans respect the difference between having a person and having enough of a person.
+
+<Accordion title="What is an attend fraction in operator scheduling?">
+The attend fraction is a number on a routing step that states how much operator attention each machine-hour of the run consumes: 0.0 means the run needs nobody (setup only), 0.5 means one person tends two machines, 1.0 means fully attended, and 2.0 means a two-person crew. Setup always requires a full person regardless of the fraction.
+</Accordion>
+
+<Accordion title="How does one operator run seven machines at once?">
+With an attend fraction of zero, each job charges the operator only for its setup. Seven jobs with one-hour setups book seven operator-hours against an eight-hour day, and all seven machines then run unattended while the operator remains free for other setups. The eighth setup still fits the day; the ninth waits for tomorrow, because setups always need a real person.
+</Accordion>
+
+<Accordion title="Why does setup always book a full operator even when the attend fraction is zero?">
+Because a machine cannot set itself up. The fraction describes attention during the run phase, where automation can genuinely replace a person; fixturing, loading a program, and first-piece checks need hands regardless. Booking setup at a full 1.0 keeps the lights-out model honest: unstaffed days can host runs, but never starts.
+</Accordion>
+
+<Accordion title="What happens with an attend fraction above 1.0?">
+A fraction above 1.0 models a crew: at 2.0, every machine-hour books two operator-hours. With only one qualified person on the roster, a machine's day caps at the person's hours divided by 2, so an 8-hour pool affords 4 run hours and the operation splits or slides. The schedule reflects the real cost of crewed operations instead of pretending one person is two.
+</Accordion>

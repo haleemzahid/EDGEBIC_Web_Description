@@ -1,0 +1,111 @@
+---
+title: "Work Center Showing Overload: Causes and Fixes"
+description: "A work center overloaded beyond its capacity is either a data error, planned overtime, or synchronized parallel work. How to tell which, and the fix for each."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - work center overloaded schedule
+  - work center over capacity
+  - machine overbooked production schedule
+  - capacity overload manufacturing
+  - finite capacity scheduling overload
+  - shift capacity exceeded
+targetPhrase: "work center overloaded schedule"
+wordCount: 1330
+readingTime: 7
+faqQuestions:
+  - question: "Why does my work center show more hours booked than it has capacity?"
+    answer: "A work center showing more booked hours than capacity usually has one of four causes: the machine-instance count in the master data is lower than the real number of machines, the booking exceeds the shift design but not the physical limit (planned or accidental overtime), synchronized parallel operations that legitimately book multiple machines against one step, or stale duplicate allocations left over from repeated reschedules."
+  - question: "What is the difference between a physical capacity cap and a shift-design cap?"
+    answer: "The physical cap is the hard ceiling: 24 hours per day multiplied by the number of machine instances. Nothing real can exceed it. The shift-design cap is softer: the sum of each shift's maximum daily hours times instances. Bookings between the two caps mean the schedule assumes time beyond the configured shifts, which is either intentional overtime or a configuration to review."
+  - question: "Can synchronized parallel operations legitimately exceed 100% utilization?"
+    answer: "Yes. When one routing step runs on several machines at once in synchronized (dependent) parallel mode, each mirrored machine books its share of hours for the same time window. The combined booking can read as well over 100% of a single work center's window, and that is by design: three synchronized drills genuinely work simultaneously on the same operation."
+  - question: "How do I find overload problems before the shop floor does?"
+    answer: "Run the built-in anomaly report after every scheduling run. It compares every work center's daily bookings against both the physical cap and the shift-design cap, lists the exact dates, jobs, and hours over, and separates hard violations from soft warnings. Reviewing it takes a minute and catches overloads while they are still a planning problem rather than a floor problem."
+qaQuestions:
+  - question: "The anomaly report says one work center is booked 14.5 hours against a 12-hour cap on Tuesday. Where do I start?"
+    answer: "Start with the instance count, because it is the most common root cause and the cheapest fix. If the work center row says 1 instance but the cell physically has 2 machines, the true daily cap is double what the schedule assumed, and the overload may not be real. If the count is right, read the detail line: the report lists which jobs contribute the 14.5 hours. Check whether one of them is a synchronized parallel mirror, which legitimately over-books. If neither applies, re-run scheduling for the affected jobs; a clean re-plan rebuilds the bookings against the true cap."
+  - question: "We run planned overtime on our bottleneck every week. How do we stop that showing up as an overload warning?"
+    answer: "Make the shift design tell the truth. If the bottleneck genuinely works 10 hours a day, extend the shift's maximum daily hours to 10 rather than leaving an 8-hour shift and absorbing a weekly warning. The soft warning exists to flag bookings beyond the configured working day; once the configuration matches reality, the warning disappears and the remaining warnings regain their meaning. Keeping a known-false warning around trains everyone to ignore the report."
+---
+
+**A work center showing overload means the schedule has booked more hours onto it than its configured capacity, and the cause is almost always one of four things: an understated machine count, bookings beyond the shift design, synchronized parallel work that over-books by design, or stale allocations from repeated reschedules.** Only one of the four calls for a real capacity decision. The other three are data corrections you can make in minutes once you know which one you are looking at.
+
+[EDGEBIC by User Solutions](/edgebic) checks every schedule it produces against two distinct ceilings, which is the key to fast diagnosis. This post walks through both ceilings, the four causes, and how to confirm and fix each one. It is part of our wider [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide).
+
+## Two Ceilings, Two Meanings
+
+EDGEBIC's built-in anomaly report evaluates work center load against two different caps, and the distinction tells you how serious the finding is:
+
+| Ceiling | Formula | Meaning when exceeded |
+|---|---|---|
+| Physical cap | 24 hours × number of machine instances | Physically impossible. A hard error to fix, never to accept |
+| Shift-design cap | Sum of each shift's maximum daily hours × instances | Booked beyond the configured working day. Either planned overtime or a config to review |
+
+A booking over the shift-design cap but under the physical cap is a warning: the machines could run those hours, but only outside the shifts you defined. A booking over the physical cap means the data, not the machines, is wrong.
+
+## Cause 1: The Instance Count Is Understated
+
+The most common cause and the first thing to check. If a milling cell physically contains three machines but the work center record says one instance, every capacity formula runs at a third of reality. The scheduler either refuses work the cell could do, or, when other paths push hours onto it, the report flags an overload that is not real.
+
+**How to confirm:** open the work center and compare its instance count against the machines on the floor. Then check the anomaly detail: the report shows booked hours against the cap it computed, so you can see exactly which number the calculation used.
+
+**The fix:** set the instance count to the real machine count and re-run scheduling. Capacity, load, and the overload finding all correct themselves. If the machines are genuinely different from each other (a fast mill and a slow backup rather than three identical units), model them as separate work centers in a machine pool instead of instances, so each keeps its own speed and calendar.
+
+## Cause 2: Bookings Beyond the Shift Design
+
+The schedule fits inside 24 hours per machine but exceeds the shifts you configured. Common paths here:
+
+- **Planned overtime** that everyone knows about but the shift record does not.
+- **A utilization percentage below 100** on the work center, which lowers effective capacity below what the shift hours suggest, so even normal-looking bookings cross the line.
+- **Synchronized parallel mirrors** pushing shared hours past shift limits (see cause 3).
+
+**How to confirm:** the anomaly report separates this softer finding from the physical-cap error and lists the daily totals.
+
+**The fix:** make the configuration honest. Extend the shift's maximum daily hours if overtime is standing policy, add a second shift if the plant really works one, or accept the warning consciously for a one-off overtime week. A [production bottleneck](/blog/production-bottleneck-identification) that lives permanently above its shift design is telling you it needs either more configured hours or offloading to an alternate resource.
+
+## Cause 3: Synchronized Parallel Work Over-Books by Design
+
+Some operations physically require several machines at once: multi-spindle drilling, synchronized welding, paired presses. In EDGEBIC's dependent-parallel mode, the parent machine's schedule is mirrored onto each partner machine with identical start and end times, and hours scaled by each partner's factor. Three synchronized drills each booking a full 8-hour window put 24 hours of bookings into one 8-hour day, and that is correct: all three machines really are occupied.
+
+**How to confirm:** check whether the step behind the overload is configured as dependent parallel in its routing. The anomaly report's stricter capacity gates already exclude these mirrors so they do not raise false alarms; if a mirror still trips the physical cap, the scaling factor is too large for the machine count, which is a genuine configuration error.
+
+**The fix:** usually nothing; this is the design working. If the physical cap is exceeded, reduce the parallel factor or add instances so the mirrored hours fit inside 24 hours per machine.
+
+## Cause 4: Stale Allocations From Repeated Reschedules
+
+If a schedule's total booked hours exceed its own time window times the instance count, the likely culprit is duplicate resource rows accumulated across reschedule cycles rather than any real demand. EDGEBIC's persist pipeline deduplicates allocations on every run, so this finding on current data points to something that bypassed the normal path.
+
+**How to confirm:** the anomaly report flags schedules whose booked hours exceed their window, distinct from the daily caps above.
+
+**The fix:** re-run scheduling for the affected job. The re-plan deletes and rebuilds the allocations for non-completed work, collapsing any duplicates. If the finding returns run after run, capture the report detail and send it to support; the detail lines carry the exact schedule, dates, and hours needed to trace it.
+
+## A Five-Minute Diagnostic Routine
+
+1. Open the anomaly report after your scheduling run and look at the capacity section.
+2. For each flagged work center: verify the instance count against the floor.
+3. Read the detail line for the contributing jobs and check for dependent-parallel steps.
+4. Compare the finding against the two ceilings: physical-cap findings get fixed today, shift-design findings get a policy answer.
+5. Re-run scheduling after any master-data correction and confirm the finding clears.
+
+Overload findings are also worth watching after big data loads. If you [import work centers and routings from your ERP](/edgebic-erp-integration), an import that lands instance counts or shift links wrong announces itself here first. And if a job jumped dates in the same run that produced the overload, the two symptoms usually share a cause; see [why a job moves after a reschedule](/blog/why-did-my-job-jump-after-a-reschedule-edgebic).
+
+<Accordion title="Why does my work center show more hours booked than it has capacity?">
+A work center showing more booked hours than capacity usually has one of four causes: the machine-instance count in the master data is lower than the real number of machines, the booking exceeds the shift design but not the physical limit (planned or accidental overtime), synchronized parallel operations that legitimately book multiple machines against one step, or stale duplicate allocations left over from repeated reschedules.
+</Accordion>
+
+<Accordion title="What is the difference between a physical capacity cap and a shift-design cap?">
+The physical cap is the hard ceiling: 24 hours per day multiplied by the number of machine instances. Nothing real can exceed it. The shift-design cap is softer: the sum of each shift's maximum daily hours times instances. Bookings between the two caps mean the schedule assumes time beyond the configured shifts, which is either intentional overtime or a configuration to review.
+</Accordion>
+
+<Accordion title="Can synchronized parallel operations legitimately exceed 100% utilization?">
+Yes. When one routing step runs on several machines at once in synchronized (dependent) parallel mode, each mirrored machine books its share of hours for the same time window. The combined booking can read as well over 100% of a single work center's window, and that is by design: three synchronized drills genuinely work simultaneously on the same operation.
+</Accordion>
+
+<Accordion title="How do I find overload problems before the shop floor does?">
+Run the built-in anomaly report after every scheduling run. It compares every work center's daily bookings against both the physical cap and the shift-design cap, lists the exact dates, jobs, and hours over, and separates hard violations from soft warnings. Reviewing it takes a minute and catches overloads while they are still a planning problem rather than a floor problem.
+</Accordion>

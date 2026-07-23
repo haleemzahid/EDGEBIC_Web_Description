@@ -1,0 +1,105 @@
+---
+title: "Idle Gaps in the Schedule: Waste or By Design?"
+description: "Gaps in a production schedule can be queue buffers, shift boundaries, or real waste. How to tell intentional gaps from lost capacity, and what to do about each."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - gaps in production schedule
+  - idle time between jobs scheduling
+  - machine idle gap capacity waste
+  - queue time production schedule
+  - schedule white space gantt
+  - unexplained gap between operations
+targetPhrase: "gaps in production schedule"
+wordCount: 1240
+readingTime: 6
+faqQuestions:
+  - question: "Are gaps in a production schedule always a problem?"
+    answer: "No. Many gaps are deliberate: queue time for curing or inspection between steps, transit days for outside processing, shift boundaries where a job could not finish before end of shift, and capacity reserved by other jobs. A gap is only waste when a machine sits free with released work available and no rule explains the wait."
+  - question: "What causes idle time between two jobs on the same machine?"
+    answer: "The usual causes are: the second job arrived at the machine after the first finished (upstream timing, not machine waste), the allocator moved to the next shift boundary because the remaining window was too small, buffer time configured on the routing pushed the start, or a partially completed job's remainder was moved forward and left the rest of the original day unused."
+  - question: "How big does a gap have to be before it matters?"
+    answer: "EDGEBIC's built-in anomaly report uses half an hour as the floor: idle stretches shorter than 0.5 hours between consecutive jobs on the same machine are treated as normal scheduling texture and not reported. It also separately flags sequential steps of the same job more than 4 days apart with no queue, overlap, or transit setting to explain the distance."
+  - question: "How do I reduce genuine idle gaps on a bottleneck machine?"
+    answer: "Three levers work in order of effort: reduce configured queue times on routings where the buffer is bigger than the physical need, resequence so that jobs feeding the bottleneck arrive before it goes idle, and add a lower-priority fill job the machine can absorb between committed jobs. On changeover-heavy machines, sequencing similar jobs together with a setup matrix recovers the most hours."
+qaQuestions:
+  - question: "My Gantt shows a 2-hour hole on our bottleneck mill every Tuesday. Same slot, every week. Where do I look?"
+    answer: "A repeating same-slot gap is almost always structural, not random. Check three records in order: a recurring downtime event on that machine for Tuesdays (a PM window someone entered and forgot), a shift definition whose Tuesday hours differ from other weekdays, and a routing feeding the mill whose queue time lands its output at the same clock time every cycle. A one-off gap is a scheduling artifact; a weekly one is configuration, and the anomaly report's detail line for the idle finding names the neighboring jobs so you can see what the machine was waiting for."
+  - question: "Step 2 ends Monday and step 3 starts Friday. Nothing on the routing explains 4 days. Is the engine broken?"
+    answer: "Probably not, and there is a specific check for exactly this shape. First look at the downstream machine's load: if a competing job holds it Tuesday through Thursday, your step 3 is simply queued behind it, and the schedule is correct. EDGEBIC's large-gap finding excludes gaps explained by a competing job blocking the downstream work center. If the machine shows free and the routing carries no queue, transit, or overlap settings, re-run scheduling for that job and check whether the gap survives; a surviving unexplained gap is worth a support ticket with the anomaly detail attached."
+---
+
+**A gap in a production schedule is only a problem when nothing explains it: most schedule white space is queue buffers, shift boundaries, transit time, or capacity held by other jobs, all doing exactly what they were configured to do.** The skill is separating the explained gaps from the genuine waste, and a finite capacity system gives you the tools to do that in minutes instead of eyeballing a Gantt chart and guessing.
+
+[EDGEBIC by User Solutions](/edgebic) flags idle stretches automatically and, more importantly, tells you which neighboring jobs and rules surround each one. This post covers the by-design gaps, the wasteful ones, how to tell them apart, and what to do about each. It belongs to the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide).
+
+## The Gaps That Are Supposed to Be There
+
+Four kinds of white space are features, not bugs:
+
+**Queue time.** A routing step can carry a configured buffer between itself and the next step: staging, cooling, curing, inspection. A 2-hour queue after milling means assembly starts 2 hours after milling ends, by instruction. A 24-hour queue adds a full day, which is usually intentional (paint curing, adhesive setting) and looks alarming on a Gantt until you check the routing.
+
+**Transit days.** Parts sent to an outside process (heat treat, plating) carry transit time measured in calendar or working days. The downstream machine's "idle" days are the truck and the vendor, not waste.
+
+**Shift boundaries.** If a job needs 3 hours and only 1 hour remains in the shift, the allocator may place it at the next shift's start rather than splitting it awkwardly. The machine shows an hour of idle at end of shift; the alternative was a fragment that helps nobody.
+
+**Capacity held by other jobs.** On a shared machine, your job's gap is often another job's runtime. The machine is not idle at all; it is busy with something else, and your job's two operations simply bracket that work.
+
+There is a fifth, subtler case: **deliberate overlap settings make gaps move rather than disappear**. With [lot streaming](/blog/lot-streaming-overlap-walkthrough-edgebic), a downstream step starts while the upstream step still runs, which compresses the job but can shift apparent idle elsewhere on the timeline.
+
+## The Gaps That Are Waste
+
+Genuine waste has a specific shape: a machine sits free, released work exists that could run on it, and no rule explains the wait. EDGEBIC's built-in anomaly report looks for exactly this shape in two ways:
+
+| Finding | What it flags | Threshold |
+|---|---|---|
+| Idle gap between jobs | Free time between two consecutive jobs on the same machine instance on the same day | Gaps over 0.5 hours (shorter stretches are normal texture) |
+| Large sequential gap | Two sequential steps of the same job more than 4 days apart with no queue, overlap, or transit setting to explain it | 4 days, excluding gaps explained by a competing job blocking the downstream machine |
+
+Both findings come with detail: the machine, the date, the two neighboring jobs, and the size of the gap. That context is what turns "the Gantt looks loose" into a specific, answerable question.
+
+## How to Diagnose a Specific Gap
+
+Work through this order; each step takes under a minute:
+
+1. **Check the routing step that precedes the gap.** Queue time, transit days, or an overlap setting on that step explains the majority of single-job gaps immediately.
+2. **Check the machine's other jobs that day.** If another job occupies the "gap," there is no gap.
+3. **Check the shift calendar.** A gap that starts at 16:00 and ends at 08:00 is the night, not a defect. A gap aligned with a recurring window is downtime configuration.
+4. **Check for a partial completion.** When an operator closes a step short and policy moves the remaining hours forward, the original day keeps an unused remainder that reads as idle. The hours were not lost; they moved.
+5. **Run the anomaly report.** Whatever survives steps 1 through 4 appears there with detail attached, and whatever does not appear was explained.
+
+## What to Do About Real Waste
+
+Once a gap is confirmed unexplained, three levers close it, cheapest first:
+
+**Trim oversized buffers.** Queue times often start life generous and never get revisited. If the physical process needs 30 minutes and the routing says 2 hours, every job through that step donates 90 minutes. Review the routings that feed your busiest machines first; buffer trimmed on a [bottleneck](/blog/production-bottleneck-identification) is capacity gained for the whole plant.
+
+**Resequence.** If the machine idles because its next job has not arrived from upstream, the fix is upstream: reorder so short feeder operations run early. This is precisely the class of improvement the [EDGEBIC optimizer](/blog/edgebic-optimizer-guide) searches for: in the documentation's worked example, moving a 2-hour cut ahead of a 6-hour cut eliminated 6 hours of downstream idle and turned two late jobs into zero.
+
+**Fill deliberately.** A standing low-priority job (rework, stock replenishment, samples) gives the machine something useful to absorb the residual gaps that sequencing cannot remove.
+
+On changeover-heavy equipment, one more lever dominates all three: sequencing similar products together. A [paint shop that sequences light-to-dark](/blog/paint-shop-changeover-sequencing-example-edgebic) cut its setup minutes by 73% in the documented example, and setup time is idle time with extra steps.
+
+## Keep One Principle in View
+
+A schedule packed to 100% with zero white space is not the goal; it is fragile. Buffers absorb variation, and a plant with no slack turns every hiccup into a cascade of misses. The goal is that every gap has a reason you can name. Explained gaps are protection. Unexplained gaps are the only waste, and now you can find them on a report instead of hunting pixels on a Gantt.
+
+<Accordion title="Are gaps in a production schedule always a problem?">
+No. Many gaps are deliberate: queue time for curing or inspection between steps, transit days for outside processing, shift boundaries where a job could not finish before end of shift, and capacity reserved by other jobs. A gap is only waste when a machine sits free with released work available and no rule explains the wait.
+</Accordion>
+
+<Accordion title="What causes idle time between two jobs on the same machine?">
+The usual causes are: the second job arrived at the machine after the first finished (upstream timing, not machine waste), the allocator moved to the next shift boundary because the remaining window was too small, buffer time configured on the routing pushed the start, or a partially completed job's remainder was moved forward and left the rest of the original day unused.
+</Accordion>
+
+<Accordion title="How big does a gap have to be before it matters?">
+EDGEBIC's built-in anomaly report uses half an hour as the floor: idle stretches shorter than 0.5 hours between consecutive jobs on the same machine are treated as normal scheduling texture and not reported. It also separately flags sequential steps of the same job more than 4 days apart with no queue, overlap, or transit setting to explain the distance.
+</Accordion>
+
+<Accordion title="How do I reduce genuine idle gaps on a bottleneck machine?">
+Three levers work in order of effort: reduce configured queue times on routings where the buffer is bigger than the physical need, resequence so that jobs feeding the bottleneck arrive before it goes idle, and add a lower-priority fill job the machine can absorb between committed jobs. On changeover-heavy machines, sequencing similar jobs together with a setup matrix recovers the most hours.
+</Accordion>

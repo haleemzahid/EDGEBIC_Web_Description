@@ -1,0 +1,169 @@
+---
+title: "A Machine Breaks at 10 AM: Rescheduling Without Losing the Morning"
+description: "How to reschedule production after machine breakdown: a walkthrough where logged work stays frozen, the down day is skipped, and the job still ships early."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - reschedule production after machine breakdown
+  - machine breakdown scheduling
+  - reschedule with actuals
+  - production rescheduling example
+  - work center downtime scheduling
+  - preserve completed work reschedule
+  - mid-job machine failure
+targetPhrase: "reschedule production after machine breakdown"
+wordCount: 2060
+readingTime: 10
+faqQuestions:
+  - question: "What happens to completed work when a production schedule is regenerated?"
+    answer: "Completed work is never moved by a reschedule. EDGEBIC classifies every operation before replanning: steps with logged start and end times are frozen exactly as the operators recorded them, and only unfinished work is placed into new time slots. In this walkthrough the finished saw step and 10.5 logged milling hours survive the reschedule byte for byte while the remaining 20.5 milling hours move around the breakdown day."
+  - question: "How do you tell the scheduler a machine is down for a day?"
+    answer: "You block the date on that one work center. In this walkthrough the supervisor opens the mill's calendar and adds a blocked date for the breakdown day, which zeroes that machine's capacity for the day without touching any other work center. The next reschedule simply never offers slots on the mill for that date, and remaining work flows to the first available day instead."
+  - question: "How does the scheduler know how much work is left on a half-finished operation?"
+    answer: "It subtracts logged actual hours from the planned total. The milling step in this walkthrough planned 31 hours; operators had logged 2.5 hours on Monday and 8 on Tuesday, so the engine computes 20.5 hours remaining and schedules exactly that, not the full 31. The resume point is anchored to the last day with logged hours, so new work queues immediately behind reality."
+  - question: "Does a mid-week breakdown always make the job late?"
+    answer: "No, and this walkthrough is a concrete counterexample. Losing a full milling day pushed final completion from Monday to Wednesday, a slip of two working days, yet the job still finished two days before its Friday due date. Whether a breakdown breaks a promise depends on the float in the schedule, and a reschedule shows you the new completion date in minutes instead of leaving you to guess."
+qaQuestions:
+  - question: "We have 15 jobs running. If one machine goes down, do I have to reschedule the whole plant?"
+    answer: "No. You can scope the reschedule to just the affected job, and the other 14 jobs' schedules stay untouched in the database. EDGEBIC keeps every other job's capacity reservations in place, so the rescheduled job competes only for genuinely free time on the shared machines. That is the difference between a surgical replan and the whole-plant churn that makes foremen distrust the printed schedule by Wednesday."
+  - question: "The operator had only punched a start on the mill, no hours yet. What does the reschedule do then?"
+    answer: "The engine treats logged hours as the truth, so with zero actual hours recorded it forward-shifts the entire 31-hour block to the first available day after the breakdown. The step keeps its actual start date as history, but all the work moves. That is also your incentive to keep kiosk punching current: in this walkthrough the 10.5 logged hours were what let the engine schedule only 20.5 remaining hours instead of repeating work already done."
+---
+
+**When you reschedule production after machine breakdown, the two things you cannot afford to lose are the hours already worked and the trust of the people who worked them.** This walkthrough shows how [EDGEBIC by User Solutions](/edgebic) handles a mid-job spindle failure: two operations' worth of logged work stays frozen exactly as the operators recorded it, the broken machine's down day vanishes from the calendar, and the remaining work cascades to the first honest slot. The job slips two days and still ships early. It is part of our [worked examples series](/blog/edgebic-worked-examples), where every claim comes with its arithmetic.
+
+## The Setup: One Job, Four Operations, One Bad Bearing
+
+Meridian Fabrication is running a 20-piece bearing housing order, due Friday, July 25. The routing is four sequential steps, each on its own single-instance work center, all on one 8-hour day shift (Monday to Friday, 08:00 to 16:00):
+
+| Step | Work center | Per-piece time | Setup | Total hours |
+|---|---|---|---|---|
+| 1. Saw | SAW-1 | 0.25 h | 0.5 h | **5.5 h** |
+| 2. Mill | MILL-2 | 1.50 h | 1.0 h | **31.0 h** (about 4 days) |
+| 3. Grind | GRND-1 | 0.50 h | 0.5 h | **10.5 h** |
+| 4. Inspect | INSP-1 | 0.10 h | 0 | **2.0 h** |
+
+The original schedule, committed the previous week, reads:
+
+| Operation | Planned start | Planned end |
+|---|---|---|
+| Saw | Mon Jul 14, 08:00 | Mon Jul 14, 13:30 |
+| Mill | Mon Jul 14, 13:30 | Fri Jul 18, 12:30 |
+| Grind | Fri Jul 18 | Mon Jul 21 |
+| Inspect | Mon Jul 21, 08:00 | Mon Jul 21, 10:00 |
+
+Finish Monday the 21st, due Friday the 25th: four days of float. Hold that number.
+
+## Monday and Tuesday: The Shop Floor Writes History
+
+The week starts exactly to plan. The saw operator punches in at the shop-floor kiosk Monday at 08:00 and punches complete at 13:30: 5.5 actual hours against 5.5 planned, a perfect step. The milling operator starts at 13:30 the same day and logs 2.5 hours before the shift ends. Tuesday adds a full 8 hours on the mill.
+
+By Tuesday night the milling step's ledger reads: 31.0 hours planned, **10.5 hours logged, 20.5 hours to go**. Every one of those numbers came from operator punches, not from a planner's estimate. (The punching workflow itself is covered in the [shop-floor guide](/blog/edgebic-shop-floor-guide).)
+
+## Wednesday Morning: The Spindle Bearing Fails
+
+Early Wednesday the mill's spindle bearing lets go. Maintenance says the machine is down for the day. Whether the bad news arrives before the shift or at ten in the morning, the planner's problem is identical: a 20.5-hour block of milling is sitting on a machine that cannot run, and two downstream operations are queued behind it.
+
+The supervisor's first move takes under a minute: open the mill's calendar and **block Wednesday, July 16** for that one work center, labeled "Bearing failure." This is the honest way to model a breakdown. It zeroes MILL-2's capacity for exactly that date and touches nothing else: the saw, grinder, and inspection bench keep their normal calendars, and no other job is affected.
+
+```
+MILL-2 capacity by day:
+Mon 14   Tue 15   Wed 16     Thu 17   Fri 18   Mon 21
+[8.0h]   [8.0h]   [BLOCKED]  [8.0h]   [8.0h]   [8.0h]
+```
+
+## The Reschedule: Sorting History From Plan
+
+The planner selects the job and clicks Re-Schedule. Before placing a single hour, the engine sorts every operation of this job into one of three buckets:
+
+1. **Fully complete.** The saw step has a logged start, a logged end, and 5.5 actual hours against 5.5 planned. Verdict: frozen. It is removed from the replanning set entirely and passed through to the new schedule untouched.
+2. **In progress.** The mill step has a logged start but no end, with 10.5 of 31 hours recorded. Verdict: split. The 10.5 logged hours become a preserved historical record; the remaining **20.5 hours** become the work to be replanned, anchored to resume after Tuesday, the last day with logged hours.
+3. **Not started.** Grind and inspect have no actuals at all. Verdict: released. Their old reservations are dropped so they can land wherever the new mill finish pushes them.
+
+One subtlety keeps the capacity math honest: the hours already consumed are replayed into the capacity ledger before the search begins. Monday and Tuesday on the mill show as genuinely used, so the engine cannot accidentally double-book time that reality already spent.
+
+## Where the Remaining Work Lands
+
+Now the engine searches forward for 20.5 hours of mill time, starting from the resume point:
+
+| Date | Mill availability | Engine decision |
+|---|---|---|
+| Tue Jul 15 | 0 h free (fully consumed by the 8 logged actual hours) | Skip |
+| Wed Jul 16 | Blocked (breakdown) | **Skip** |
+| Thu Jul 17 | 8 h free | Allocate 8 h |
+| Fri Jul 18 | 8 h free | Allocate 8 h |
+| Mon Jul 21 | 8 h free | Allocate the final 4.5 h |
+
+The remaining milling now runs Thursday 08:00 through Monday 12:30. The downstream steps cascade off that new finish, exactly as [forward scheduling](/blog/forward-vs-backward-scheduling) should:
+
+- **Grind** starts the moment milling ends, Monday 12:30, uses the 3.5 hours left in Monday's shift, and finishes with 7 more hours on Tuesday at 15:00.
+- **Inspect** takes the last hour of Tuesday and one hour Wednesday morning, completing Wednesday, July 23 at 09:00.
+
+## The Result: Two Days Slower, Still Two Days Early
+
+| Milestone | Original plan | After reschedule | Slip |
+|---|---|---|---|
+| Job start | Mon Jul 14, 08:00 | Mon Jul 14, 08:00 | 0 |
+| Milling complete | Fri Jul 18, 12:30 | Mon Jul 21, 12:30 | +3 working days |
+| Grinding complete | Mon Jul 21 | Tue Jul 22, 15:00 | +1.5 days |
+| Final completion | Mon Jul 21, 10:00 | **Wed Jul 23, 09:00** | **+2 working days** |
+| Due date | Fri Jul 25 | Fri Jul 25 | Still 2 days early |
+
+The Gantt after the reschedule tells the whole story on one screen. The saw bar sits untouched with its completed shading. The mill shows **two** bars: the Monday-Tuesday historical bar carrying the 10.5 logged hours, and a new Thursday-to-Monday bar carrying the 20.5 remaining hours, with a visible gap where Wednesday's breakdown sits. Grind and inspect trail behind in their new slots.
+
+```
+        Mon 14     Tue 15     Wed 16      Thu 17    Fri 18    Mon 21    Tue 22    Wed 23
+SAW-1:  [done 5.5]
+MILL-2: [done 2.5] [done 8.0] [BREAKDOWN] [8.0h]    [8.0h]    [4.5h]
+GRND-1:                                                       [3.5h]    [7.0h]
+INSP-1:                                                                 [1h]      [1h]
+```
+
+And the immutability claim is checkable, not rhetorical: query the saw operation after the reschedule and its actual start (July 14, 08:00) and actual end (July 14, 13:30) are byte-identical to what the operator punched. Completed work is never moved by a reschedule. That single guarantee is why operators keep trusting the schedule after it changes; the alternative, where a replan rewrites history, is how shops end up running from a stale printout. If your schedules seem to move for reasons nobody can explain, the companion piece on [why a job jumps after a reschedule](/blog/why-did-my-job-jump-after-a-reschedule-edgebic) walks the diagnostic.
+
+## What This Run Proves
+
+1. **A breakdown is one calendar edit.** Block the date on the affected work center; no global surgery required.
+2. **History and plan are separated before replanning.** Complete, in-progress, and not-started operations each get the correct treatment automatically.
+3. **Remaining work is computed, not guessed.** 31 planned minus 10.5 logged equals 20.5 rescheduled. The engine schedules the remainder, never a repeat of finished work.
+4. **The down day is skipped, not squeezed.** No hours land on the blocked Wednesday, and nothing overflows onto other machines unless you configure alternates.
+5. **Downstream operations cascade automatically.** Grinding and inspection follow the new mill finish without anyone dragging bars.
+6. **The new promise date appears in minutes.** Wednesday, July 23 against a July 25 due date: the planner can tell the customer the truth before lunch.
+
+## Variations Worth Trying
+
+**The breakdown lasts two days.** Block Thursday as well and rerun. The remaining milling shifts to Friday, Monday, and Tuesday; final completion moves to Thursday, July 24, still inside the due date. Float absorbs the second day too, barely.
+
+**No hours were logged on the mill.** If the kiosk recorded only a start punch and zero hours, the engine forward-shifts the entire 31-hour block. The lesson runs the other way: every logged hour is work the reschedule does not have to re-plan.
+
+**The grinder has an alternate.** Give the grind step an alternative work center and, if the alternate is free sooner, the engine can swap the operation to it during the reschedule and pull completion back by hours.
+
+**Short-confirmed completion.** If the operator had tapped Done on the mill with only 10.5 of 31 hours logged, configurable behavior decides the outcome: forward-shift the remaining 20.5 hours (the default, matching this walkthrough), or trust the operator's completion and let grinding start almost a week early. That policy choice, and the deeper mechanics of partially finished operations, get their own [partial completion walkthrough](/blog/partial-completion-reschedule-walkthrough-edgebic).
+
+## The Bigger Point: Breakdowns Are a Scheduling Test You Can Study For
+
+Machine failures are one of the classic [job shop scheduling challenges](/blog/job-shop-scheduling-challenges), and they are precisely where whiteboards and spreadsheets fail: nobody can hand-recompute a four-step cascade around a blocked day while preserving 10.5 logged hours, at least not before the customer calls. A finite capacity engine does it in one run because the data was structured for it all along: planned hours, logged actuals, and calendars live in one place.
+
+User Solutions has been building scheduling tools around that discipline since 1991, for operations where breakdowns are not hypothetical: the US Navy, GE, BAE Systems, and Cummins among them. The USS Nimitz overhaul tracked 26,000+ tasks through exactly this kind of replan-without-losing-history pressure. EDGEBIC carries that lineage into a modern engine; if you are running RMDB today, the [upgrade path is documented here](/rmdb-to-edgebic).
+
+Next time a spindle lets go at 10 AM, the question should not be "how bad is it?" but "when does the job finish now?" [Contact US](/contact-us) and we will run a breakdown drill on your own routing data.
+
+<Accordion title="What happens to completed work when a production schedule is regenerated?">
+Completed work is never moved by a reschedule. EDGEBIC classifies every operation before replanning: steps with logged start and end times are frozen exactly as the operators recorded them, and only unfinished work is placed into new time slots. In this walkthrough the finished saw step and 10.5 logged milling hours survive the reschedule byte for byte while the remaining 20.5 milling hours move around the breakdown day.
+</Accordion>
+
+<Accordion title="How do you tell the scheduler a machine is down for a day?">
+You block the date on that one work center. In this walkthrough the supervisor opens the mill's calendar and adds a blocked date for the breakdown day, which zeroes that machine's capacity for the day without touching any other work center. The next reschedule simply never offers slots on the mill for that date, and remaining work flows to the first available day instead.
+</Accordion>
+
+<Accordion title="How does the scheduler know how much work is left on a half-finished operation?">
+It subtracts logged actual hours from the planned total. The milling step in this walkthrough planned 31 hours; operators had logged 2.5 hours on Monday and 8 on Tuesday, so the engine computes 20.5 hours remaining and schedules exactly that, not the full 31. The resume point is anchored to the last day with logged hours, so new work queues immediately behind reality.
+</Accordion>
+
+<Accordion title="Does a mid-week breakdown always make the job late?">
+No, and this walkthrough is a concrete counterexample. Losing a full milling day pushed final completion from Monday to Wednesday, a slip of two working days, yet the job still finished two days before its Friday due date. Whether a breakdown breaks a promise depends on the float in the schedule, and a reschedule shows you the new completion date in minutes instead of leaving you to guess.
+</Accordion>

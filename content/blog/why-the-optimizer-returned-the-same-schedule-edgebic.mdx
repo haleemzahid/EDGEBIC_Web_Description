@@ -1,0 +1,110 @@
+---
+title: "Why the Optimizer Returned the Same Schedule (And When That's Correct)"
+description: "A schedule optimizer showing no improvement is not always broken. The never-worse rule, locked jobs, and time budgets explain it, and each has a check."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - schedule optimizer no improvement
+  - optimizer returned same schedule
+  - production schedule optimization results
+  - never worse optimization guarantee
+  - optimality gap scheduling
+  - schedule optimizer troubleshooting
+targetPhrase: "schedule optimizer no improvement"
+wordCount: 1450
+readingTime: 7
+faqQuestions:
+  - question: "Why did the schedule optimizer return my original schedule unchanged?"
+    answer: "An optimizer that returns the original schedule found no candidate strictly better under your chosen goal, and its never-worse rule requires it to keep the baseline in that case. The three usual reasons are: the baseline was already good or provably optimal, the jobs use features the solver holds fixed for safety, or the time budget was too short to find an improvement."
+  - question: "Is a schedule optimizer broken if it never improves anything?"
+    answer: "Not necessarily, and sometimes the opposite. With a mathematical solver, returning your schedule with a proven optimality gap of 0% means no better schedule exists under that goal: the strongest possible endorsement of your current plan. If jobs are being held fixed for safety, the explanation panel lists the reason per job, which tells you whether there was anything to improve at all."
+  - question: "What does the never-worse guarantee mean in schedule optimization?"
+    answer: "The never-worse guarantee means an optimized schedule is compared directly against the baseline schedule under the requested goal, and if it is not strictly better, the baseline is returned. Accepting an optimizer result can therefore never degrade your plan. The trade-off is that a returned baseline looks like nothing happened, when in fact the search ran and lost honestly."
+  - question: "Why are some jobs locked during optimization?"
+    answer: "Jobs are locked when their routing uses a capability the exact solver does not yet model natively, such as multi-machine instances, lot streaming, synchronized parallel steps, alternate machines, or operator constraints. A locked job is reproduced exactly as the standard engine scheduled it, so the optimizer can never output an invalid plan for a feature it does not model. The per-job reasons appear in the explanation panel."
+qaQuestions:
+  - question: "We ran the optimizer on 40 jobs with a 10-second budget and got the baseline back. Worth trying again?"
+    answer: "Yes, with two changes. First, raise the time budget: EDGEBIC offers 10, 30, and 60 seconds, and a 40-job search space deserves the longer setting. Second, check the explanation panel for locked jobs; if most of the 40 use features held fixed for safety, the searchable space is small no matter the budget. Also confirm the goal preset matches your intent: a plan that already has zero late jobs gives an on-time-first search nothing to win on, while a makespan or setup goal might still find hours."
+  - question: "The comparator says 'best of 24 schedules tried' but zero improvement. Did it actually do anything?"
+    answer: "It did exactly what it reported: it built up to 24 complete alternative schedules with different job orderings, scored every one against your goal, and none beat the baseline strictly. With small job counts this is common and meaningful; at 4 jobs or fewer the multi-run search tries every possible ordering, so a returned baseline means no ordering of your jobs does better. The result panel also shows the nearest challenger and how close it came, so you can see whether the baseline won by a mile or a whisker."
+---
+
+**A schedule optimizer that returns your original schedule unchanged is not failing: it is honoring a never-worse rule that only replaces your plan when a candidate is strictly better under the goal you chose, and there are three legitimate reasons no candidate won.** Either the baseline was already good (sometimes provably optimal), the jobs use features the solver deliberately holds fixed for safety, or the search did not get enough time. Each reason has a visible check, and one of them is actually the best news a planner can get.
+
+The optimizer in [EDGEBIC by User Solutions](/edgebic) proposes a complete alternative plan, shows a side-by-side comparison, and persists nothing until you click Accept. When the proposal equals the baseline, here is how to read it. This post is part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide); for the full feature tour, see the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide).
+
+## First, Understand the Contract
+
+EDGEBIC ships two optimizer layers, selectable per site:
+
+| Layer | How it searches | What it can claim |
+|---|---|---|
+| Multi-run search (default) | Runs the production scheduling engine repeatedly with different global job orderings (every permutation when 4 or fewer jobs; due-date, shortest-work, longest-work, and critical-ratio orderings plus seeded shuffles beyond that) and scores each complete schedule | "Best of N schedules tried." Guaranteed never worse than the baseline |
+| Mathematical solver | Encodes the scheduling problem for an exact solver, warm-started from the standard plan, and returns a plan plus a proven lower bound | Mathematical optimization with a proven optimality gap: "proven within X% of optimal," where 0% means proven optimal |
+
+Both layers end the same way: the candidate's measured results are compared directly against the baseline under your chosen goal. Not strictly better means the baseline is returned. That comparison is the never-worse rule, and it is enforced as a hard check, not assumed.
+
+The consequence: **a returned baseline is a defined, correct outcome**, not an error state. The question is which of the following reasons produced it.
+
+## Reason 1: Your Schedule Was Already Good (Maybe Provably)
+
+With few jobs, the multi-run layer tries every ordering. Three jobs means six orderings; if the engine's default order already wins, no alternative exists to find. At larger counts, a plan with zero late jobs gives an on-time-first goal literally nothing to improve, and the search can only tie.
+
+With the mathematical solver the story gets better: the result carries an optimality gap. A gap of 0% on a returned baseline is a proof that no schedule beats yours under that goal. That badge is not a consolation prize; it is the answer every planner wants and few systems can give. For contrast, in the documentation's worked three-job example the same solver takes a baseline with 3 hours of lateness and returns a reordering with zero late jobs, proven optimal. When there is something to win, it wins it.
+
+**How to confirm:** read the result panel. It reports the best challenger even when the challenger lost, and how close it came. A baseline that won by a wide margin over 24 tried schedules is a plan that has earned its place: the alternatives were evaluated and beaten.
+
+**What to do:** accept the compliment. Optionally try a different goal preset; a schedule that cannot improve on due dates may still have setup hours or total span to recover.
+
+## Reason 2: The Jobs Are Locked for Safety
+
+The exact solver models plain single-machine, sequential routings natively. A job whose routing uses anything beyond that (multi-machine instances, one-job-per-day rules, transit days, lot streaming, synchronized or independent parallel steps, alternate machines, or operator skill requirements) is **locked**: reproduced exactly as the standard engine scheduled it, still consuming its machine time so other jobs schedule around it honestly. Locking is why the solver can never emit an invalid plan for a capability it does not model; correctness comes before optimization scope.
+
+If every job in the run is locked, the optimizer verifies the plan and changes nothing, and it says so plainly rather than claiming any optimality.
+
+**How to confirm:** open the Explain panel on the result. It lists each locked job with its specific reason ("multi-instance work center," "lot streaming," and so on), so you can see exactly why the optimizer left a job alone.
+
+**What to do:** nothing is wrong. If most of your work is locked, the multi-run layer is the better engine choice for now: it runs the full production engine per candidate, so every feature participates in every candidate schedule. Switching engines is a two-click setting and both layers keep the never-worse rule.
+
+## Reason 3: The Search Ran Out of Time
+
+Optimization is time-boxed: 10, 30, or 60 seconds, your pick. A short budget over a large job set evaluates fewer candidates, and an interrupted exact solve returns its best-so-far with a wider gap. Neither ever returns something worse than the baseline, but both can honestly come up empty.
+
+**How to confirm:** the result records how many candidate schedules were evaluated and the elapsed time. A 10-second run that evaluated a handful of candidates over 40 jobs has not seen much of the space.
+
+**What to do:** re-run at 60 seconds. Results are reproducible: the same inputs and settings produce the same plan, so a re-run with more time is a genuinely bigger search, not a dice roll.
+
+## Two Non-Reasons Worth Ruling Out
+
+- **"It ignored my constraints to find nothing."** The opposite: every candidate in the multi-run layer is a complete real schedule from the same engine that runs production, so shift calendars, [bottlenecks](/blog/production-bottleneck-identification), and every configured rule hold in every candidate. Constraint compliance is why the search space is honest, and honest spaces sometimes contain no better plan.
+- **"It changed things without telling me."** Nothing persists until Accept, completed work passes through untouched, and an accepted result writes a full audit record with the goal, the numbers before and after, and the explanation. A returned baseline plus Discard leaves the database byte-identical.
+
+## The Practical Checklist
+
+1. Read the badge: "best of N tried" (heuristic search) versus "proven within X%" (mathematical proof). A 0% gap means stop; you are done.
+2. Open Explain and count locked jobs. Mostly locked: switch to the multi-run engine or accept the verification.
+3. Check the goal preset. Zero late jobs plus an on-time goal equals nothing to win; try least-setup or fastest-finish.
+4. Raise the time budget to 60 seconds and re-run.
+5. If setup time is your real target, populate the sequence-dependent setup matrix first; the least-setup goal stays hidden until changeover data exists, and with it the solver can recover hours the standard engine cannot see. The [paint shop sequencing example](/blog/paint-shop-changeover-sequencing-example-edgebic) shows what that looks like with real numbers.
+
+An optimizer you can trust to say "your plan stands" is the same optimizer you can trust when it says "this plan is better." The two claims are one contract.
+
+<Accordion title="Why did the schedule optimizer return my original schedule unchanged?">
+An optimizer that returns the original schedule found no candidate strictly better under your chosen goal, and its never-worse rule requires it to keep the baseline in that case. The three usual reasons are: the baseline was already good or provably optimal, the jobs use features the solver holds fixed for safety, or the time budget was too short to find an improvement.
+</Accordion>
+
+<Accordion title="Is a schedule optimizer broken if it never improves anything?">
+Not necessarily, and sometimes the opposite. With a mathematical solver, returning your schedule with a proven optimality gap of 0% means no better schedule exists under that goal: the strongest possible endorsement of your current plan. If jobs are being held fixed for safety, the explanation panel lists the reason per job, which tells you whether there was anything to improve at all.
+</Accordion>
+
+<Accordion title="What does the never-worse guarantee mean in schedule optimization?">
+The never-worse guarantee means an optimized schedule is compared directly against the baseline schedule under the requested goal, and if it is not strictly better, the baseline is returned. Accepting an optimizer result can therefore never degrade your plan. The trade-off is that a returned baseline looks like nothing happened, when in fact the search ran and lost honestly.
+</Accordion>
+
+<Accordion title="Why are some jobs locked during optimization?">
+Jobs are locked when their routing uses a capability the exact solver does not yet model natively, such as multi-machine instances, lot streaming, synchronized parallel steps, alternate machines, or operator constraints. A locked job is reproduced exactly as the standard engine scheduled it, so the optimizer can never output an invalid plan for a feature it does not model. The per-job reasons appear in the explanation panel.
+</Accordion>

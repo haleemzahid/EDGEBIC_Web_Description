@@ -1,0 +1,142 @@
+---
+title: "Consume From Stock: How EDGEBIC Nets Demand Against Inventory"
+description: "Inventory netting production scheduling walkthrough: three orders, 80 units on hand, and how EDGEBIC decides which jobs build and which consume stock."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - inventory netting production scheduling
+  - consume from stock scheduling
+  - make to stock vs make to order scheduling
+  - satisfied from stock
+  - time-phased inventory netting
+  - inventory ledger manufacturing
+  - build to inventory
+targetPhrase: "inventory netting production scheduling"
+wordCount: 2250
+readingTime: 11
+faqQuestions:
+  - question: "What is inventory netting in production scheduling?"
+    answer: "Inventory netting is the check a scheduler runs before committing shop-floor capacity to an order: does finished stock already cover this demand? If on-hand quantity at the order's need date covers the full quantity, the order is satisfied from stock, consumes no machine hours, and the schedule shows it as an instant fulfillment. If stock falls short, the order is scheduled onto the floor normally."
+  - question: "How does EDGEBIC decide whether an order consumes stock or gets built?"
+    answer: "EDGEBIC compares the order's quantity against available stock as of the order's need date, in run order. In the walkthrough, an order for 60 units finds 80 on hand and is satisfied from stock; availability drops to 20, so the next order for 30 units finds only 20 and is scheduled onto the shop floor. Each decision decrements availability so two orders can never consume the same units."
+  - question: "What happens to the inventory ledger when an order is satisfied from stock?"
+    answer: "EDGEBIC posts an issue transaction to the inventory ledger for the consumed quantity, tied to the specific manufacturing order. In the example the ledger shows an opening balance of plus 80 and an issue of minus 60 for Job-002, leaving a running balance of 20. On a reschedule the prior issue is reversed with an offsetting entry rather than deleted, so the audit trail stays complete."
+  - question: "Can a job consume stock that another job in the same run will produce?"
+    answer: "Yes, with time-phased forward netting. EDGEBIC places a build-to-inventory job's output on a timeline at its scheduled completion, and a consumer whose need date falls after that completion can draw from it. In the walkthrough a producer finishes 50 units at 10:00; a consumer needing parts at 08:00 the same day just misses them and builds, while moving its need to 11:00 lets it consume from the fresh receipt instead."
+qaQuestions:
+  - question: "We have 80 seal kits on the shelf and two orders came in for 60 and 30. Will the scheduler really build only what stock can't cover?"
+    answer: "Yes, and the arithmetic in this walkthrough is exactly your case. The 60-unit order is checked first, finds 80 available, and is satisfied from stock without touching a machine; availability drops to 20. The 30-unit order then finds 20 available, which is short, so it is scheduled onto the shop floor for the full 30. You build 30 units instead of 90, the ledger shows the 60-unit issue against the first order, and on-hand ends at 20."
+  - question: "If I reschedule after an order consumed stock, do I end up double-counting the inventory?"
+    answer: "No. Before re-netting, EDGEBIC reverses the prior consume issue with an offsetting ledger entry, restoring availability to its pre-run level, then runs the netting decision fresh. The order that qualified before will typically qualify again and a new issue posts. You end with an issue, a reversal, and a re-issue on the ledger: more rows, but a complete history, and the running balance is always right."
+---
+
+**Inventory netting in production scheduling is the decision, made per order and in sequence, of whether demand is covered by stock on the shelf or must be built on the shop floor.** Get it wrong in one direction and you build parts you already own; get it wrong in the other and you promise stock to two customers at once. EDGEBIC by User Solutions makes this decision inside the scheduling run itself, decrementing availability as each order consumes it and posting every consumption to an auditable inventory ledger. This walkthrough traces three orders for one stocked product through the whole decision, with every quantity and timestamp shown.
+
+If scheduling terminology like routing and work center is new territory, start with [what production scheduling is](/blog/what-is-production-scheduling) and come back; this post goes straight to the numbers.
+
+## The Cast: One Product, 80 Units, Three Orders
+
+The product is a Hydraulic Seal Kit, a stocked item with **80 units on hand**. Its build policy is make-to-order, meaning orders for it normally get scheduled onto the floor, but individual orders can be flagged build-to-inventory to act as stock producers.
+
+Three manufacturing orders arrive in the same scheduling run:
+
+| Job | Role | Qty | Need date | Priority |
+|---|---|---|---|---|
+| Job-001 | Producer, flagged build-to-inventory | 50 | Mon Jun 16, 08:00 | 1 |
+| Job-002 | Consumer | 60 | Wed Jun 18, 08:00 | 2 |
+| Job-003 | Consumer | 30 | Thu Jun 19, 08:00 | 3 |
+
+The producer's routing is one assembly step: 1 hour of setup plus 0.5 hours per unit, so 50 units cost 26 hours of shop time. The consumers have the same routing available, but whether they ever touch it is exactly what netting decides.
+
+The inventory ledger opens with a single entry: opening balance, plus 80, running balance 80.
+
+## Producers Schedule First, and Never Consume
+
+When a scheduling run contains a build-to-inventory producer, EDGEBIC sorts producers ahead of consumers so supply is on the timeline before demand asks for it. Job-001 goes first.
+
+A producer never consumes stock, by rule; it exists to create it. So Job-001 skips the netting check entirely and schedules as ordinary shop work: 26 hours on Assembly-1 across four days, finishing **Thursday June 19 at 10:00**. That completion matters later, because with forward netting the engine registers the 50 finished units as a future receipt on the product's availability timeline, dated to the moment the producer completes. Stock on the shelf is available to anyone at any date; the producer's 50 units are available only to consumers whose need date falls at or after Thursday 10:00.
+
+## Job-002: Satisfied From Stock
+
+Job-002 needs 60 units on Wednesday June 18 at 08:00. Before expanding its routing, the engine runs the netting check: how many units are available as of Wednesday 08:00?
+
+The shelf holds 80. The producer's 50 do not count, because they arrive Thursday, after this need date. Available is 80, need is 60, and 80 covers 60, so Job-002 is **satisfied from stock**:
+
+- **No shop-floor work is scheduled.** The engine emits a single instant fulfillment row, work center "Inventory", zero hours, start and end both Wednesday 08:00. On the Gantt it appears as a point with a stock icon rather than an operation bar.
+- **Availability decrements immediately.** 80 minus 60 leaves 20, and that 20 is what every later order in the run will see. Two orders can never spend the same units.
+- **The order's status changes** to Satisfied From Stock, and the order list shows an inventory badge instead of a schedule of operations.
+
+After the run persists, the consumption becomes a ledger fact: an issue of minus 60 posts against Job-002 with the comment "Schedule Transaction", the running balance moves to 20, and the product's on-hand count updates to match. Sixty units of demand were met with zero machine hours, and there is a row in the ledger that says exactly when, for whom, and why.
+
+## Job-003: Twenty Is Not Thirty
+
+Job-003 needs 30 units on Thursday June 19 at 08:00. The netting check runs again, against the decremented state: 20 units remain on the shelf. The producer's 50 arrive at 10:00 Thursday, two hours **after** this order's need date, so they still do not count.
+
+Available is 20, need is 30, and 20 falls short. EDGEBIC does not partially net in this decision: the order fails the full-coverage check and is scheduled onto the shop floor for its whole quantity, 30 units of normal assembly work, queued behind the producer on Assembly-1 and starting once that work center frees up. Its status is Scheduled, its ledger footprint is zero, and its diagnostic record notes that 50 units of future receipts existed but arrived too late to use.
+
+That two-hour miss is the sharpest lesson in this walkthrough. Netting is not just about quantity; it is about quantity **at a date**. Which leads to the most useful what-if in the whole scenario.
+
+## Move the Need Date Two Hours, Change the Answer
+
+Suppose Job-003's need date were Thursday at 11:00 instead of 08:00. Now the availability check as of 11:00 sees both supplies: 20 remaining on the shelf plus the producer's 50 landing at 10:00, for 70 available against a need of 30. Job-003 would be satisfied from stock too, drawing on units that did not exist when the run started, and a second issue would post to the ledger.
+
+This is what time-phased forward netting buys you: the scheduler can plan a consumer against a producer's output **in the same run**, as long as the dates genuinely line up. A simple point-in-time snapshot of on-hand stock can never see that receipt; it either overpromises stock that is not there yet or forces a build the shelf will shortly make unnecessary. EDGEBIC's netting reads supply as a timeline, which is the same reasoning a good planner does on paper, executed consistently across every order in the run. This is netting as a planning capability inside the scheduler; it is the scheduling half of the make-to-stock story, and it works with however demand reaches EDGEBIC, whether entered directly or brought in from your ERP through [Excel, CSV, or database import masks](/edgebic-erp-integration).
+
+## The Ledger Keeps the Whole Story
+
+Everything netting does lands in the inventory ledger as append-only transactions:
+
+| Entry | Type | Qty | Running balance | Tied to |
+|---|---|---|---|---|
+| 1 | Opening balance | +80 | 80 | |
+| 2 | Issue | -60 | 20 | Job-002 |
+
+Two properties are worth calling out for anyone who has fought phantom inventory:
+
+**Reschedules reverse, they never delete.** If you reschedule after Job-002 consumed its 60, the engine first posts an offsetting reversal of plus 60, restoring availability to 80, then re-runs the netting decision from scratch. Job-002 qualifies again and a fresh issue posts. The ledger ends with three rows instead of one, and that is the point: every consumption and every un-consumption is a dated, order-linked fact you can audit months later.
+
+**On-hand always reconciles to the ledger.** The product's on-hand number is a cache of the ledger's running balance, and a built-in consistency check flags any drift between them. When the count says 20, you can trace precisely which orders took the other 60.
+
+## What You See in EDGEBIC
+
+The final state of the three orders, as the planner sees it:
+
+| Job | Status | Shop hours scheduled | Stock consumed |
+|---|---|---|---|
+| Job-001 | Scheduled | 26 h on Assembly-1 | 0 |
+| Job-002 | **Satisfied From Stock** | 0 | 60 |
+| Job-003 | Scheduled | 16 h on Assembly-1 | 0 |
+
+In the order list, Job-002 wears an inventory badge with the tooltip "Satisfied from stock, 60 units." The product's transaction history shows the opening balance and the issue, color-coded. The on-hand tile reads 20. And the scheduling diagnostic log carries one line per netting decision, recording need, availability, quantity used, and quantity still to build, so the reasoning behind every yes and every no is written down, not folded silently into the plan.
+
+Compare that with what most shops actually do: someone checks the stock screen in the morning, remembers there were 80, and two order-entry clerks promise the same units to different customers by lunchtime. Netting inside the scheduler removes the race, because the decrement and the decision happen in one place, in one order, every run. Manufacturers running the predecessor products from User Solutions have leaned on this kind of single-source discipline for decades; Cummins coordinates planning across 33 locations on the strength of it, and EDGEBIC carries the approach forward with the netting arithmetic built into the engine.
+
+## Three Rules to Take Away
+
+1. **Producers first, and producers never consume.** Build-to-inventory orders are sorted ahead of consumers so their output is on the timeline before demand nets against it.
+2. **Availability is checked at the need date, and decremented in run order.** 80 covered Job-002; the remaining 20 could not cover Job-003; and a two-hour shift in a need date can flip the answer.
+3. **Every consumption is a ledger transaction, reversible and order-linked.** No deletes, no phantom stock, no arguing about where the units went.
+
+This walkthrough is part of the [EDGEBIC worked examples](/blog/edgebic-worked-examples) series; if you are setting up products, routings, and work centers for the first time, the [greenfield setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough) builds the master data these runs depend on. To see the full platform picture, start at [EDGEBIC](/edgebic).
+
+Have a stocked product and a stack of orders of your own? [Bring your on-hand counts and open orders to a demo](/contact-us) and we will run the netting decision live on your numbers.
+
+<Accordion title="What is inventory netting in production scheduling?">
+Inventory netting is the check a scheduler runs before committing shop-floor capacity to an order: does finished stock already cover this demand? If on-hand quantity at the order's need date covers the full quantity, the order is satisfied from stock, consumes no machine hours, and the schedule shows it as an instant fulfillment. If stock falls short, the order is scheduled onto the floor normally.
+</Accordion>
+
+<Accordion title="How does EDGEBIC decide whether an order consumes stock or gets built?">
+EDGEBIC compares the order's quantity against available stock as of the order's need date, in run order. In the walkthrough, an order for 60 units finds 80 on hand and is satisfied from stock; availability drops to 20, so the next order for 30 units finds only 20 and is scheduled onto the shop floor. Each decision decrements availability so two orders can never consume the same units.
+</Accordion>
+
+<Accordion title="What happens to the inventory ledger when an order is satisfied from stock?">
+EDGEBIC posts an issue transaction to the inventory ledger for the consumed quantity, tied to the specific manufacturing order. In the example the ledger shows an opening balance of plus 80 and an issue of minus 60 for Job-002, leaving a running balance of 20. On a reschedule the prior issue is reversed with an offsetting entry rather than deleted, so the audit trail stays complete.
+</Accordion>
+
+<Accordion title="Can a job consume stock that another job in the same run will produce?">
+Yes, with time-phased forward netting. EDGEBIC places a build-to-inventory job's output on a timeline at its scheduled completion, and a consumer whose need date falls after that completion can draw from it. In the walkthrough a producer finishes 50 units at 10:00; a consumer needing parts at 08:00 the same day just misses them and builds, while moving its need to 11:00 lets it consume from the fresh receipt instead.
+</Accordion>

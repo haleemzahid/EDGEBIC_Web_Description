@@ -1,0 +1,110 @@
+---
+title: "A Work Center Shows Zero Capacity: The Checklist"
+description: "Work center zero capacity is almost always configuration: instances, shifts, daily hours, calendars, or utilization. The six-point checklist that finds it fast."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - work center zero capacity scheduling
+  - no available capacity work center
+  - work center not scheduling jobs
+  - machine shows no capacity
+  - shift configuration scheduling error
+  - capacity checklist manufacturing
+targetPhrase: "work center zero capacity scheduling"
+wordCount: 1290
+readingTime: 6
+faqQuestions:
+  - question: "Why does a work center show zero capacity in my scheduling software?"
+    answer: "Zero capacity on a work center is almost always one of six configuration gaps: an instance count of zero, no shift assigned, a shift whose weekdays all have zero hours, calendars (holidays or downtime) blanketing the window, a utilization percentage at or near zero, or the work center itself deactivated. Real capacity exhaustion, where every day is genuinely booked, is the rare seventh case."
+  - question: "What does a no-available-capacity scheduling error actually mean?"
+    answer: "It means the engine searched its entire capacity window, roughly 300 days ahead by default, and found no slot for the operation on that work center. A ten-month search coming up empty is almost never real demand; it is a configuration that yields zero capacity every single day, most often zero instances, a missing shift, or a shift with no working hours defined."
+  - question: "What is the difference between an inactive work center and a deleted one?"
+    answer: "An inactive work center still exists in the database but is excluded from new scheduling, which produces clear inactive-work-center errors. A deleted one is worse: existing schedules that reference it become orphans that reports cannot resolve, and the anomaly report flags them as critical. Prefer deactivating over deleting whenever a machine has schedule history."
+  - question: "How does capacity get calculated for a work center?"
+    answer: "Daily capacity is the shift's working hours for that weekday, minus holidays and downtime, multiplied by the utilization percentage, multiplied by the number of machine instances, minus hours already allocated to other jobs. A zero anywhere in the multiplication chain (zero shift hours, zero utilization, zero instances) makes the whole day zero, which is why the checklist works through the factors in order."
+qaQuestions:
+  - question: "We added a brand-new work center yesterday and no job will schedule on it. Everything else about it looks right. What did we miss?"
+    answer: "Ninety percent of the time it is the shift link. A new work center needs either the use-global-shifts setting turned on, or at least one work-center-specific shift assigned; with neither, the engine has no working windows at all and every allocation attempt fails. Check next that the assigned shift actually has hours on the weekdays you expect (a shift record can exist with all seven days at zero), and that the instance count is at least 1. Those three cover nearly every new-work-center case."
+  - question: "The failure dialog says no capacity within the search window for our deburr station, but the load view shows it half empty. Both cannot be true, can they?"
+    answer: "They can, because they read different layers. The load view shows booked hours against configured shift time; the scheduler also applies utilization and calendars. A utilization percentage set to 10 leaves 90% of the visible shift time unusable to the scheduler, and a recurring downtime window can erase specific weekdays entirely. Check the station's utilization setting first (10 instead of 100 is a common data-entry slip), then its downtime records. The load view will keep looking half empty; the scheduler is the one telling the truth about what it may use."
+---
+
+**A work center showing zero capacity is almost never out of capacity: it is missing one factor in the capacity multiplication, and since capacity is shift hours × utilization × instances minus calendar blocks and existing load, a zero anywhere in that chain zeroes the whole day.** The fix is a six-point checklist that walks the chain in order. Five minutes with it resolves the overwhelming majority of "nothing will schedule on this machine" reports.
+
+[EDGEBIC by User Solutions](/edgebic) computes every work center's daily capacity from explicit configuration, and when scheduling fails it names the failing work center and the category of the problem in a failure dialog with a fix hint. This checklist, part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide), is the systematic version of those hints.
+
+## How Capacity Is Built (and Where Zeros Hide)
+
+For any work center and day:
+
+```
+capacity = shift hours for that weekday
+         − holiday / downtime blocks
+         × utilization %
+         × number of instances
+         − hours already allocated
+```
+
+Every factor is a place a zero can hide. The engine searches forward day by day, up to roughly 300 days by default; a "no available capacity" failure after a ten-month search means the configuration produced zero on every one of those days, which no real backlog does. That is why this error is nearly always configuration, and why the checklist below runs in order of likelihood.
+
+## The Six-Point Checklist
+
+### 1. Instance Count Above Zero
+
+The number of machine instances is a straight multiplier. Zero instances means zero capacity on every day forever, and the failure dialog calls this out with its own category. Open the work center and confirm the count is at least 1, and matches the machines on the floor.
+
+### 2. A Shift Is Actually Assigned
+
+A work center gets its working windows either from the global shift set (the use-global-shifts setting) or from shifts assigned specifically to it. With the global setting off and no specific shifts assigned, the work center has no windows at all. This is the number-one gap on newly created work centers, and EDGEBIC's anomaly report flags any scheduled work center that has no resolvable shift. Fix by turning on global shifts or assigning at least one shift.
+
+### 3. The Shift Has Hours on the Right Weekdays
+
+A shift can exist and still be empty: each weekday carries its own start and end times, and a shift whose relevant days read zero contributes nothing. The classic version is a job whose earliest start falls on a weekend while the shift only defines Monday to Friday, or a custom shift created with the days never filled in. Open the shift and confirm non-zero hours on the weekdays the work should run.
+
+### 4. Calendars Are Not Blanketing the Window
+
+Holidays (plant-wide, work-center-specific, and shift-level) and downtime events all subtract from capacity before anything schedules. A recurring downtime record accidentally set to cover every weekday, or a holiday range entered with the wrong year, can erase weeks at a stroke. Review the work center's calendar entries for the search window; the [holiday layers post](/blog/job-scheduled-on-a-holiday-edgebic) covers each type and its typical failure story.
+
+### 5. Utilization Is Set to a Real Number
+
+The utilization percentage scales available hours: 100 means the full shift is schedulable, 50 means half. Two slips produce mystery zeros: a utilization entered as 0 (total zero capacity while everything else looks perfect), and 10 entered where 100 was meant, which leaves the machine visibly empty on the load view while the scheduler refuses almost everything. If the load view and the scheduler seem to disagree, this setting is usually the referee.
+
+### 6. The Work Center Is Active
+
+An inactive work center is excluded from new scheduling and produces a clear inactive-work-center failure; reactivate it or reassign the routing step to an active machine. A deleted work center is the more painful cousin: schedules that still reference it become unresolvable orphans, flagged as critical by the anomaly report. When a machine has schedule history, deactivate rather than delete.
+
+## If All Six Pass: It Might Be Real
+
+With configuration clean, a capacity failure means the window is genuinely full. Now the tools change from checklists to decisions:
+
+- **Look at the load.** The resource load view shows what is consuming the machine. A true [bottleneck](/blog/production-bottleneck-identification) that stays booked solid for weeks is a strategic fact, not a bug.
+- **Free, add, or route around.** Reschedule lower-priority jobs, add an instance or a second shift, or let the routing offer alternates: an alternate work center or a machine pool lets the engine shop the work to whichever qualified machine is free.
+- **Check parallel groups separately.** Operations requiring several machines simultaneously search a shorter window (30 days) for a slot where all partners are free at once; one heavily loaded partner can fail the group even when the others sit idle. Aligning shifts across the group, or adding instances, restores a common window.
+
+## Make the Checklist Unnecessary
+
+Three habits prevent most zero-capacity surprises:
+
+1. **Use the pre-flight validation.** EDGEBIC validates orders before the engine runs: product exists, routing exists, every routed work center is active with at least one instance and one shift. Pre-flight failures are labeled as such in the failure dialog, so master-data gaps never cost you a full scheduling run.
+2. **Audit after imports.** If work centers and shifts [arrive via import from your ERP](/edgebic-erp-integration), run one scheduling pass and read the anomaly report; missing shift links and zero instance counts surface immediately.
+3. **Standardize new-machine setup.** Instance count, shift link, weekday hours, utilization, active flag: five fields, in that order, every time a machine is added. The checklist as a habit beats the checklist as a rescue. And where a family of similar machines is involved, defining them once as a machine pool keeps future routings from ever pinning work to a machine that is not ready.
+
+<Accordion title="Why does a work center show zero capacity in my scheduling software?">
+Zero capacity on a work center is almost always one of six configuration gaps: an instance count of zero, no shift assigned, a shift whose weekdays all have zero hours, calendars (holidays or downtime) blanketing the window, a utilization percentage at or near zero, or the work center itself deactivated. Real capacity exhaustion, where every day is genuinely booked, is the rare seventh case.
+</Accordion>
+
+<Accordion title="What does a no-available-capacity scheduling error actually mean?">
+It means the engine searched its entire capacity window, roughly 300 days ahead by default, and found no slot for the operation on that work center. A ten-month search coming up empty is almost never real demand; it is a configuration that yields zero capacity every single day, most often zero instances, a missing shift, or a shift with no working hours defined.
+</Accordion>
+
+<Accordion title="What is the difference between an inactive work center and a deleted one?">
+An inactive work center still exists in the database but is excluded from new scheduling, which produces clear inactive-work-center errors. A deleted one is worse: existing schedules that reference it become orphans that reports cannot resolve, and the anomaly report flags them as critical. Prefer deactivating over deleting whenever a machine has schedule history.
+</Accordion>
+
+<Accordion title="How does capacity get calculated for a work center?">
+Daily capacity is the shift's working hours for that weekday, minus holidays and downtime, multiplied by the utilization percentage, multiplied by the number of machine instances, minus hours already allocated to other jobs. A zero anywhere in the multiplication chain (zero shift hours, zero utilization, zero instances) makes the whole day zero, which is why the checklist works through the factors in order.
+</Accordion>

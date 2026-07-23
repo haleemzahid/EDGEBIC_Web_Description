@@ -291,7 +291,13 @@ before resuming.
 - ≥1 real EDGEBIC screenshot (per image plan); no stock-only posts in clusters 17–32.
 - ≥3 `faqQuestions`, ≥2 `qaQuestions` in frontmatter.
 - Links: its pillar, `/edgebic`, one sibling post, and (where a generic concept exists)
-  the cluster 1–16 generic post. No orphans.
+  the cluster 1–16 generic post. No orphans. Links are contextual with descriptive
+  anchor text, spread through the article where they genuinely guide the reader to the
+  next useful page; never dumped in one block or a bare "related links" list.
+- External citations: any industry statistic or bold general claim (not product
+  behavior) cites a credible, non-competitor source (APICS/ASCM, NIST MEP, peer-reviewed
+  scheduling literature, government manufacturing data). Product-behavior claims cite
+  nothing external; they are grounded in the FCP-Book. Never cite a competitor's blog.
 - Fact-consistency contract from strategy §7 (1991, 35+ years, customer names, category).
 - Honesty guardrails from strategy §5.
 - Passes the existing pre-publish checklist in SEO-CONTENT-STRATEGY.md §8.

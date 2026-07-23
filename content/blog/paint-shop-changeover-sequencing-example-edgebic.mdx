@@ -1,0 +1,166 @@
+---
+title: "The Paint-Booth Math: Sequence-Dependent Changeovers in EDGEBIC"
+description: "Sequence dependent setup time scheduling, worked in full: six paint jobs, one booth, and how EDGEBIC's setup matrix cuts changeover from 630 to 90 minutes."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - sequence dependent setup time scheduling
+  - setup matrix scheduling software
+  - changeover time reduction
+  - paint shop scheduling
+  - setup family scheduling
+  - campaign scheduling manufacturing
+  - job sequencing software
+targetPhrase: "sequence dependent setup time scheduling"
+wordCount: 2350
+readingTime: 12
+faqQuestions:
+  - question: "What is sequence-dependent setup time in production scheduling?"
+    answer: "Sequence-dependent setup time is changeover time that depends on what a machine ran before, not just what it runs next. A paint booth switching White to Black needs one 60-minute flush; switching Black to White needs a 240-minute solvent purge. A flat per-job setup number cannot express that difference, so schedules built on flat setups misstate real capacity whenever sequence matters."
+  - question: "How does EDGEBIC decide which setup time to use for a job?"
+    answer: "EDGEBIC looks up what the work center ran last, then resolves setup time through an ordered chain: same product means zero setup, then a product-to-product matrix entry, then a family-to-family matrix entry, and finally the flat routing default if no matrix cell matches. Every scheduled operation records which rule fired and why, visible in the Job View Setup Reason column."
+  - question: "What is a setup family?"
+    answer: "A setup family is a named group of products that behave identically during changeover on a work center, such as all light paint colors. Instead of entering a changeover time for every product pair, you enter times between families: light to dark 45 minutes, dark to light 200 minutes. Eight families covering 100 products collapse a ten-thousand-cell matrix to 64 cells, and product-level entries still override the family rule for exceptions."
+  - question: "How much time can changeover-aware sequencing actually save?"
+    answer: "In this worked example the same six paint jobs need 630 minutes of changeover in due-date order but only 90 minutes when campaigned light to dark: an 86 percent reduction. The queue that honestly needed two and a half shifts in due-date order finishes inside a single 8-hour shift with 30 minutes to spare. Your numbers depend on your matrix, but the mechanism is the same."
+qaQuestions:
+  - question: "My whiteboard schedule says all six booth jobs fit Monday, but we keep finishing Wednesday. Which number is lying?"
+    answer: "The flat setup number is lying. With a 30-minute default setup, six jobs at one paint-hour each claim 540 minutes of work: one shift plus an hour. But if your sequence alternates light and dark, the real changeover for that same queue is 630 minutes, more than three times what the plan shows, and the booth genuinely needs until Wednesday morning. Enter the real from-to times in a setup matrix and the schedule stops promising Monday; resequence light to dark and it earns Monday honestly."
+  - question: "We ran the Black job this morning and now a White job is next. If I reschedule mid-day, does the software remember the booth is contaminated with dark paint?"
+    answer: "Yes. On a reschedule EDGEBIC reads what physically ran last from the recorded actuals, not just from the plan. If Black completed at 11:30, the next White job still gets the full 240-minute purge, sourced from the actual history rather than the in-memory plan. The changeover cost survives the reschedule because the booth's state is real, whether or not the original schedule was."
+---
+
+**Sequence-dependent setup time scheduling means the changeover cost of a job depends on what the machine ran immediately before it, and a scheduler that ignores this is not simplifying your plan, it is falsifying it.** In a paint booth, White to Black is one 60-minute flush; Black to White is a 240-minute solvent purge. Same two colors, four times the cost, purely because of direction. EDGEBIC by User Solutions models this with a from-to setup matrix per work center, and this walkthrough runs one six-job queue through three schedules: the flat-setup plan that lies, the matrix plan that tells the truth, and the campaigned plan that wins the day back.
+
+## The Booth and the Queue
+
+The shop has one paint booth, PAINT-1: a single instance, one Day Shift from 08:00 to 16:00, 8 hours of capacity. Three products run through it, the colors White, Black, and Red. Every job takes 1.0 hour of painting, and the routing carries a flat default setup of 30 minutes, the number the schedule uses when nothing better is known.
+
+Six orders are due this week, one per day, all released Monday morning:
+
+| Job | Color | Paint time | Due |
+|---|---|---|---|
+| MO-2001 | White | 1.0 h | Tuesday |
+| MO-2002 | Black | 1.0 h | Wednesday |
+| MO-2003 | White | 1.0 h | Thursday |
+| MO-2004 | Red | 1.0 h | Friday |
+| MO-2005 | Black | 1.0 h | Saturday |
+| MO-2006 | White | 1.0 h | Sunday |
+
+Sorted by earliest due date, the booth sequence is White, Black, White, Red, Black, White. Alternating light and dark: the worst possible order for a paint booth, and exactly what a due-date sort produces.
+
+The real changeover times, measured at the booth, go into EDGEBIC's setup matrix for PAINT-1:
+
+| From | To | Minutes | Why |
+|---|---|---|---|
+| White | Black | 60 | Light to dark, one flush |
+| Black | White | **240** | Dark to light, full solvent purge |
+| White | Red | 30 | Light-family change |
+| Red | Black | 30 | Red to dark, moderate flush |
+
+Any pair not in the table falls back to the 30-minute routing default. Same color back to back costs zero.
+
+## Schedule 1: The Flat-Setup Plan That Lies
+
+With no matrix configured, every job gets the flat 30-minute setup. Six jobs at 1.5 hours each stack neatly down the Monday column:
+
+| Job | Start | End |
+|---|---|---|
+| MO-2001 White | Mon 08:00 | Mon 09:30 |
+| MO-2002 Black | Mon 09:30 | Mon 11:00 |
+| MO-2003 White | Mon 11:00 | Mon 12:30 |
+| MO-2004 Red | Mon 12:30 | Mon 14:00 |
+| MO-2005 Black | Mon 14:00 | Mon 15:30 |
+| MO-2006 White | Mon 15:30 | Mon 17:00 |
+
+Claimed finish: Monday 17:00, one shift plus an hour of overtime. The plan books 180 minutes of total setup.
+
+Walk the same sequence through the real matrix and the changeover alone is 630 minutes, more than three times what the plan claims. The Black-to-White purge appears twice in this order, at 240 minutes each. The schedule is internally consistent and completely wrong, and nobody finds out until Monday 11:30 when the booth is still running solvent and the afternoon's jobs have nowhere to go. This is the core failure mode we describe in [job shop scheduling challenges](/blog/job-shop-scheduling-challenges): a plan built on inputs that do not match the floor gets ignored, and the whiteboard takes over.
+
+## Schedule 2: The Honest Plan
+
+Now the matrix is loaded and EDGEBIC resolves setup per job by asking one question before each: what did this booth run last? The first job finds an empty booth, a cold start, and uses the 30-minute default. Every job after that gets a real from-to lookup:
+
+| Job | Previous color | Changeover | Total time | Start | End |
+|---|---|---|---|---|---|
+| MO-2001 White | (cold start) | 30 min | 1.5 h | Mon 08:00 | Mon 09:30 |
+| MO-2002 Black | White | 60 min | 2.0 h | Mon 09:30 | Mon 11:30 |
+| MO-2003 White | Black | **240 min** | 5.0 h | Mon 11:30 | **Tue 08:30** |
+| MO-2004 Red | White | 30 min | 1.5 h | Tue 08:30 | Tue 10:00 |
+| MO-2005 Black | Red | 30 min | 1.5 h | Tue 10:00 | Tue 11:30 |
+| MO-2006 White | Black | **240 min** | 5.0 h | Tue 11:30 | **Wed 08:30** |
+
+Look at MO-2003. Its 4-hour purge plus 1 hour of painting is 5 hours of work, but Monday only has 4.5 hours left after 11:30. The engine allocates 4.5 hours Monday afternoon and carries the remaining 30 minutes across the shift boundary to Tuesday morning. Setup is not a special case here; it is simply part of the work, and it spills across shifts like any other work would.
+
+Honest finish: Wednesday 08:30. Two and a half shifts for six jobs, with 630 minutes of total changeover. Nobody enjoys seeing that number, but it is the number the floor was always going to live, and now it is on the schedule before you promise anything against it.
+
+## Schedule 3: Campaign the Colors, Win Back the Day
+
+The matrix does more than make the schedule honest. It exposes the cost of the sequence, and the sequence is yours to change. Group the light colors first and the dark colors last, White, White, White, Red, Black, Black, and the expensive dark-to-light purge never happens at all.
+
+For this schedule the planner also switches from product-level entries to **setup families**, the abstraction you reach for when the color list grows. White and Red join a Light Colors family; Black is Dark Colors. Changeover is then entered between families: light to light 10 minutes, light to dark 45, dark to light 200, dark to dark 0. Product-level entries still override a family rule wherever a specific pair misbehaves. Our explainer on [setup families and sequence-dependent changeover](/blog/what-is-a-setup-family-sequence-dependent-changeover) covers when families pay for themselves; the short version is that eight families over 100 products replace ten thousand matrix cells with 64.
+
+The campaigned run:
+
+| Job | Color | Previous | Changeover | Start | End |
+|---|---|---|---|---|---|
+| MO-2001 | White | (cold start) | 30 min | Mon 08:00 | Mon 09:30 |
+| MO-2003 | White | White | **0 min** | Mon 09:30 | Mon 10:30 |
+| MO-2006 | White | White | **0 min** | Mon 10:30 | Mon 11:30 |
+| MO-2004 | Red | White | 30 min | Mon 11:30 | Mon 13:00 |
+| MO-2002 | Black | Red | 30 min | Mon 13:00 | Mon 14:30 |
+| MO-2005 | Black | Black | **0 min** | Mon 14:30 | Mon 15:30 |
+
+Finish: Monday 15:30, half an hour before end of shift. Total changeover: 90 minutes.
+
+## The Three Schedules, Side by Side
+
+| Schedule | Total changeover | Total work | Finish | Credible? |
+|---|---|---|---|---|
+| Flat setup, due-date order | 180 min claimed | 540 min | Claims Mon 17:00 | No: real changeover is 3.5x the claim |
+| Matrix, due-date order | 630 min | 990 min | Wed 08:30 | Yes |
+| Matrix, campaigned order | **90 min** | **450 min** | **Mon 15:30** | Yes, and 86% less changeover |
+
+Same six jobs, same booth, same paint hours. The only variables are whether the schedule knows the real changeover cost and whether the sequence respects it. The matrix turns a fictional Monday finish into an honest Wednesday one; the campaign turns the honest Wednesday into a real Monday. That second step is the one that pays: the booth just gained most of a working day of capacity without a dollar of capital.
+
+## Every Setup Number Explains Itself
+
+A schedule you cannot interrogate is a schedule you will not trust, so EDGEBIC stamps every scheduled operation with a setup source code and a plain-language reason, both visible as columns in the Job View:
+
+| Source code | Meaning |
+|---|---|
+| Cold start | Nothing ran on this work center before; routing default used |
+| Same product | Same product back to back; zero setup |
+| Product matrix | A from-to product pair matched, for example "Product matrix Black to White: 240 min" |
+| Family matrix | A from-to family pair matched |
+| Routing default | No matrix cell matched; flat setup used |
+
+When a supervisor asks why MO-2003 swallowed Monday afternoon, the answer is on the row: Black to White, 240 minutes, from the product matrix. And the audit survives rescheduling. If Black actually completed at 11:30 this morning and you reschedule, the engine reads the booth's last product from the recorded actuals, so the next White job still pays its full purge. The booth's contamination is physical; the schedule tracks it whether or not the original plan survived the morning.
+
+One more honest boundary: EDGEBIC schedules the sequence you give it and prices every changeover truthfully, and in this walkthrough the planner chose the light-to-dark campaign. Finding better sequences automatically is what the optimization layer is for; see the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide) for how multi-run search evaluates alternative orderings with a guarantee of never doing worse than the baseline schedule.
+
+## Where to Start in Your Own Shop
+
+You do not need to matrix the whole plant. Start with the one work center where sequence visibly hurts: the paint booth, the heat-treat furnace switching alloys, the extruder switching resins. Measure the from-to times you already know by heart, enter them in the Setup Matrix tab on that work center, and reschedule. The plan gets longer and truer on day one; the resequencing win comes the first time you group a campaign.
+
+This post is part of the [EDGEBIC worked examples](/blog/edgebic-worked-examples) series, where every claim traces to dated, hour-by-hour schedules. The same discipline runs through the rest of [EDGEBIC](/edgebic): finite capacity, real constraints, numbers you can check. User Solutions has been doing this for manufacturers since 1991, from job shops to the US Navy. If your booth, furnace, or press is losing shifts to changeovers the schedule cannot see, [bring your changeover times to a demo](/contact-us) and we will build all three of these schedules with your data.
+
+<Accordion title="What is sequence-dependent setup time in production scheduling?">
+Sequence-dependent setup time is changeover time that depends on what a machine ran before, not just what it runs next. A paint booth switching White to Black needs one 60-minute flush; switching Black to White needs a 240-minute solvent purge. A flat per-job setup number cannot express that difference, so schedules built on flat setups misstate real capacity whenever sequence matters.
+</Accordion>
+
+<Accordion title="How does EDGEBIC decide which setup time to use for a job?">
+EDGEBIC looks up what the work center ran last, then resolves setup time through an ordered chain: same product means zero setup, then a product-to-product matrix entry, then a family-to-family matrix entry, and finally the flat routing default if no matrix cell matches. Every scheduled operation records which rule fired and why, visible in the Job View Setup Reason column.
+</Accordion>
+
+<Accordion title="What is a setup family?">
+A setup family is a named group of products that behave identically during changeover on a work center, such as all light paint colors. Instead of entering a changeover time for every product pair, you enter times between families: light to dark 45 minutes, dark to light 200 minutes. Eight families covering 100 products collapse a ten-thousand-cell matrix to 64 cells, and product-level entries still override the family rule for exceptions.
+</Accordion>
+
+<Accordion title="How much time can changeover-aware sequencing actually save?">
+In this worked example the same six paint jobs need 630 minutes of changeover in due-date order but only 90 minutes when campaigned light to dark: an 86 percent reduction. The queue that honestly needed two and a half shifts in due-date order finishes inside a single 8-hour shift with 30 minutes to spare. Your numbers depend on your matrix, but the mechanism is the same.
+</Accordion>

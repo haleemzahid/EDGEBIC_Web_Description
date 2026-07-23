@@ -1,0 +1,121 @@
+---
+title: "Modeling Sub-Assemblies on the EDGEBIC Design Canvas"
+description: "Sub assembly routing scheduling in EDGEBIC: connect a component with its own routing into a parent and the scheduler explodes and times every level."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Visual Scheduling
+author: user-solutions
+cluster: edgebic-visual-scheduling
+pillarSlug: edgebic-visual-scheduling-guide
+keywords:
+  - sub assembly routing scheduling
+  - sub-assembly scheduling software
+  - multi-level routing
+  - bill of routing explosion
+  - component lead time scheduling
+  - nested routings manufacturing
+targetPhrase: "sub assembly routing scheduling"
+wordCount: 1900
+readingTime: 9
+faqQuestions:
+  - question: "What is a sub-assembly in a manufacturing routing?"
+    answer: "A sub-assembly is a component that has a routing of its own: it is not just consumed, it is manufactured. In EDGEBIC, when a component product on a routing carries its own Bill of Routing, it is marked with a star, and scheduling the parent order also explodes and schedules every step of the sub-assembly's routing, timed so the component is ready when the consuming step needs it."
+  - question: "How does EDGEBIC tell a plain material apart from a sub-assembly?"
+    answer: "By whether the component product has its own routing. A plain material step (a purchased casting, a bracket bought outside) carries a quantity and a lead time but books no machine time; the scheduler assigns it instantly. The moment you create a routing for that component product, its row gains the star marker automatically and it becomes a sub-assembly that gets exploded and scheduled at schedule time."
+  - question: "Do multi-level sub-assembly chains work, like a sub-assembly inside a sub-assembly?"
+    answer: "Yes, the explosion is recursive. If a frame sub-assembly itself consumes a component that has its own routing, that deeper routing explodes too. Each level is timed so its output is ready when the consuming step at the level above starts. You model each product's routing once, connect components where they are consumed, and the scheduler handles the depth."
+  - question: "Will adding a sub-assembly to a standard routing change jobs already on the schedule?"
+    answer: "No. Every scheduled job carries a frozen copy of the routing it was scheduled with, so adding a sub-assembly to the standard affects new orders and new quote simulations only. An in-progress job keeps building without the new component until you deliberately opt it in, either by ticking Use Global BOR on Reschedule for that job or by resetting its per-job copy."
+qaQuestions:
+  - question: "We build a welded frame in-house that goes into five different finished products. Do I model the frame routing five times?"
+    answer: "Once. Give the frame product its own routing (say Weld at 0.4 hours per unit, then Paint at 0.1 hours per unit), then drag the frame onto each of the five parent canvases and connect it into the step that consumes it, with the right quantity per parent unit. Each parent order explodes the same frame routing at schedule time with the right quantity: a 100-unit parent order needing one frame each plans 100 frames through Weld and Paint, timed to be ready at assembly."
+  - question: "Our purchased castings take 15 days to arrive. Is that a sub-assembly?"
+    answer: "No, that is a plain material step: the casting has no in-house routing, so there is nothing to explode. Set Quantity per unit and Lead Time (days) = 15 on the material row, and the scheduler accounts for availability without booking any machine time. Reserve sub-assembly modeling for components you actually manufacture; the star marker appears automatically the day you give a component product its own routing."
+---
+
+**A sub-assembly in EDGEBIC by User Solutions is a component you manufacture, not just consume: drop it onto the parent's routing canvas, connect it into the step that uses it, and the scheduler automatically explodes its own routing at schedule time, so one order for the finished product plans every operation at every level, timed so parts are ready exactly when needed.** No separate work orders to synchronize by hand, no spreadsheet gymnastics to figure out when the frame shop must start welding so final assembly does not stall.
+
+This post shows the whole pattern on the design canvas: how a component becomes a sub-assembly, how the star marker tells you what will explode, how the timing math works, and the interaction with live jobs that trips up new planners. It builds on the [graphical Designer tour](/blog/edgebic-graphical-bor-designer-tour); if the canvas itself is new to you, skim that first.
+
+## Two Kinds of Components, One Critical Difference
+
+On any routing, a product node means "this component is consumed here." But EDGEBIC treats two cases very differently:
+
+| | Plain material | Sub-assembly |
+|---|---|---|
+| The component's own routing | None; it is purchased or stocked | Has its own Bill of Routing |
+| Marker on the canvas and grid | None | Star (★) |
+| What the scheduler does | Assigns instantly; no machine time booked | Explodes the child routing into real, capacity-consuming scheduled steps |
+| Key fields | Quantity per unit, Lead Time (days) | Quantity per unit, plus everything on the child routing |
+
+The dividing line is nothing you toggle. The moment a component product gains its own routing, its row on every parent shows the star automatically, with the tooltip: sub-assembly, this product has its own BOR and is exploded at schedule time. A **View Subs** button in the step details lets you preview the child routing read-only without leaving the parent.
+
+That automation cuts both ways, so it is worth knowing: if you expected a star and see a plain material, the component has no routing yet. Create one and the star appears.
+
+## Building the Example: Frame-S Feeding Widget-A
+
+Take a finished product, Widget-A, whose routing runs Saw, Mill, Assembly. The frame it is assembled onto, Frame-S, is welded and painted in-house: Weld-1 at 0.4 hours per unit, then Paint-Booth-1 at 0.1 hours per unit. Here is the whole modeling job:
+
+1. **Give Frame-S its own routing first.** On the BOR tab, create Frame-S's Bill of Routing with its two steps, chained Weld-1 to Paint-Booth-1 to End Item. This is an ordinary routing; nothing about it says "sub-assembly."
+2. **Open Widget-A's routing in the Designer.** In the Toolbox on the left, open the Products group and drag **Frame-S** onto the canvas.
+3. **Connect it where it is consumed.** With Draw Connector active, draw the arrow from the Frame-S node into **Assembly-1**, the step that physically uses the frame.
+4. **Set the consumption quantity.** Select the Frame-S node and set Quantity in the Properties panel: how many frames per Widget-A. Here, 1. Add a lead time only if there is procurement delay on top of manufacturing.
+5. **Hover to confirm.** The tooltip identifies the node as a star sub-assembly because Frame-S has its own routing.
+6. **Click Update** to save the standard routing.
+
+That is the entire configuration. There is no "sub-assembly wizard," because the structure is the data: a component with a routing, connected into a consuming step.
+
+## What Happens at Schedule Time
+
+Schedule a new order for 100 Widget-A and the engine walks the whole tree:
+
+- Widget-A's three steps are planned as usual: setup plus hours-per-unit times 100 on each work center.
+- Frame-S explodes: 100 frames (100 units times quantity 1) are planned through Weld-1 (0.4 × 100 = 40 hours plus setup) and Paint-Booth-1 (0.1 × 100 = 10 hours plus setup), against those work centers' real shift calendars.
+- The levels are linked in time: the frame steps are placed so painted frames are ready when Assembly-1 needs them. Assembly cannot start before its inputs exist, and the [finite capacity engine](/blog/finite-vs-infinite-capacity-scheduling) enforces that with the same dependency logic it uses inside a single routing.
+
+And it is recursive. If Frame-S itself consumed a component with its own routing, that level would explode too, each level timed so its output is ready when the consuming step above it starts. You model each product once; depth is the scheduler's problem.
+
+On the [Gantt](/blog/reading-the-edgebic-gantt-planned-vs-actual), the exploded steps appear as real bars on real work center lanes. The frame shop sees welding and painting on its schedule; final assembly sees assembly. One order, one coherent plant-wide plan, which is precisely the coordination problem that makes [multi-level job shops hard to schedule](/blog/job-shop-scheduling-challenges) by hand.
+
+## The Live-Job Interaction Every Planner Must Know
+
+Here is the scenario that catches people. You add Frame-S to Widget-A's standard routing on Tuesday. Job JOB-2026-0101, a Widget-A order scheduled last week, is mid-production. Does it suddenly acquire a frame?
+
+**No.** Every scheduled job carries its own frozen copy of the routing, taken the moment it was first scheduled. Open that job on the Scheduled Job BOR tab and its copy still shows the routing without Frame-S, exactly what was true when the floor got its paperwork. Your standard-routing edit affects:
+
+| Surface | Effect |
+|---|---|
+| New orders for Widget-A | Explode Frame-S from the next Drive Schedule run |
+| New quote simulations | Use the updated routing immediately |
+| Already-scheduled jobs | Unchanged until you opt each one in deliberately |
+
+To pull the change into a specific live job, tick **Use Global BOR on Reschedule** on that job and reschedule, or reset its per-job copy. Both are deliberate, per-job acts, and both deserve care: the full mechanics, including the reset button that cannot be undone, are covered in [editing a live job's routing safely](/blog/editing-a-live-jobs-routing-in-edgebic). Completed steps are never re-planned in any case; work that already happened is preserved as-is.
+
+## Practical Standards for Sub-Assembly Modeling
+
+**Model the child routing before you connect it.** Connecting a routing-less component gives you a plain material step; the star, and the explosion, only exist once the child routing does.
+
+**Connect into the consuming step, not the end product.** The arrow from Frame-S goes to Assembly-1 because that is where frames are physically used. The connection point is what the timing math anchors on.
+
+**Get Quantity right; it multiplies everything.** Quantity is per unit of the parent. Two frames per widget on a 100-unit order means 200 frames through the weld shop, and 80 hours of welding instead of 40.
+
+**Use lead time for procurement, hours for manufacturing.** A purchased casting with a 15-day supplier lead time is a material step with Lead Time = 15, not a sub-assembly. Machine hours belong only on steps you actually run.
+
+**Preview with View Subs before scheduling.** Ten seconds of reading the child routing catches the wrong-rate or missing-step error before it becomes a hundred wrongly planned frames.
+
+**Keep shared sub-assemblies as one product.** A frame consumed by five finished products is one Frame-S with one routing, dragged onto five canvases. Fix the weld rate once and every parent's future schedules pick it up.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Component shows as plain material, no star | The component product has no routing of its own | Create its Bill of Routing; the star appears automatically |
+| Parent scheduled but no child steps appeared | The job predates the sub-assembly and runs on its frozen copy | Opt the job in with Use Global BOR on Reschedule, then reschedule |
+| Frame shop overloaded after one order | Quantity per unit higher than intended | Check the Quantity on the sub-assembly node; it multiplies by order quantity |
+| Assembly starts before frames are done on the Gantt | The connector goes to the wrong step | Draw the arrow into the step that truly consumes the component |
+
+## From One Level to the Whole Plant
+
+Sub-assembly explosion is where visual routing stops being a convenience and becomes a control system: one flow chart per product, and the scheduler assembles the plant-wide picture across levels, shops, and machines. That is the discipline User Solutions has brought to manufacturers since 1991, on scheduling problems as deep as the 26,000+ task carrier overhauls planned for the US Navy.
+
+[See the full EDGEBIC platform](/edgebic), read the [visual scheduling pillar](/blog/edgebic-visual-scheduling-guide) for how routings, the Gantt, and rescheduling fit together, or bring your deepest multi-level product to a demo and let US model it live.

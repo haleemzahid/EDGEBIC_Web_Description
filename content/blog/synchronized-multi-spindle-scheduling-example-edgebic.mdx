@@ -1,0 +1,176 @@
+---
+title: "Scheduling Synchronized Multi-Spindle Operations in EDGEBIC"
+description: "A synchronized machine scheduling walkthrough: three ganged drill heads start together, finish together, and mirror one parent schedule in EDGEBIC."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - synchronized machine scheduling
+  - multi-spindle scheduling
+  - dependent parallel work centers
+  - ganged machine scheduling
+  - mirrored schedule manufacturing
+  - parallel operations scheduling example
+  - lockstep machine operations
+targetPhrase: "synchronized machine scheduling"
+wordCount: 2120
+readingTime: 11
+faqQuestions:
+  - question: "What is dependent parallel scheduling in manufacturing?"
+    answer: "Dependent parallel scheduling models machines that must run in lockstep: they start at the same instant, run together, and finish together, like drill heads ganged on one gantry. The scheduler finds real capacity for one lead machine, then mirrors that schedule onto the dependent machines with identical start and end times. It differs from independent parallel work, where each machine is scheduled separately against its own capacity."
+  - question: "How does EDGEBIC keep synchronized machines starting and ending at the same time?"
+    answer: "By construction rather than by coincidence. Only the lead work center goes through the capacity search; the dependent work centers receive exact copies of the resulting schedule, timestamp for timestamp. In this walkthrough all three drill-head schedules read Monday 08:00 to Tuesday 08:30 because two of them are literal mirrors of the first. There is no way for a mirror to drift, because it is never independently placed."
+  - question: "What does the factor on a mirrored work center do?"
+    answer: "The factor scales how much work the mirrored machine records, not when it runs. A dependent head with factor 1.5 logs 1.5 times the parent's hours across the identical time span, which suits an older head that works harder to keep pace. In this walkthrough the parent tracks 8.5 hours while the factor-1.5 mirror tracks 12.75 hours, yet both start Monday 08:00 and finish Tuesday 08:30 together."
+  - question: "Why would a mirrored machine show more allocated hours than its shift contains?"
+    answer: "Because mirrored allocations deliberately bypass the capacity check. A dependent machine is physically committed to the parent's operation, so the scheduler copies the allocation even when the scaled hours exceed the shift's nominal capacity. In this walkthrough one head shows 12 allocated hours on an 8-hour day. That over-capacity is documented, intentional behavior for synchronized mirrors and is surfaced by an audit check rather than hidden."
+qaQuestions:
+  - question: "Our three-head gantry drills 300 holes in one setup. If I model the heads as three normal work centers, what goes wrong?"
+    answer: "Three independent work centers get three independent capacity searches, and nothing forces them to land on the same hours: head 2 could schedule Monday while head 1 lands Tuesday, which is physically impossible for a ganged gantry. Modeled as dependent parallel, the lead head is scheduled once against real capacity (8.5 hours in this walkthrough, spilling from Monday into Tuesday morning) and the other two heads mirror it timestamp for timestamp. The synchronization is structural, not hoped for."
+  - question: "What happens to the mirrors if the job grows from one frame to three?"
+    answer: "The parent's workload recomputes to 8 x 3 + 0.5 = 24.5 hours, which spreads across Monday to Thursday morning at 8 hours per day. The two dependent heads then mirror all four daily allocations with identical timestamps, so all three heads work Monday through Thursday 08:30 together. You change one quantity field; the lockstep behavior scales with it automatically."
+---
+
+**Synchronized machine scheduling exists for one physical reality: some machines cannot work independently because they are bolted to the same motion.** Three drill heads ganged on one gantry, twin welding robots on one frame, a filling line with slaved stations: all must start at the same instant and stop at the same instant. This walkthrough shows how [EDGEBIC by User Solutions](/edgebic) schedules exactly that case, with every hour and timestamp shown. It belongs to our [worked examples series](/blog/edgebic-worked-examples), where the engine is judged by its arithmetic.
+
+## The Physical Picture: One Gantry, Three Heads
+
+A job shop builds large structural frames. One routing step, multi-spindle drilling, must put 300 precision holes through a single workpiece using three drill heads mounted on one gantry. The gantry moves as one unit. You cannot run head 1 on Monday and head 2 on Tuesday; either all three run, or none do.
+
+The master data mirrors the physics:
+
+| Work center | Role | Instances | Factor |
+|---|---|---|---|
+| DRILL-HEAD-1 | Lead (parent) | 1 | 1.0 |
+| DRILL-HEAD-2 | Dependent mirror | 1 | 1.0 |
+| DRILL-HEAD-3 | Dependent mirror (older, slower head) | 1 | 1.5 |
+
+All three share one day shift: Monday to Friday, 08:00 to 16:00, 8 hours per day. The drilling step is configured on the lead head with **8.0 hours of run time per frame plus a 0.5-hour rig-up**, and the two other heads are attached to the step as dependent parallel work centers. That dependent flag is the whole trick: it tells the engine these are mirrors to be copied, not competitors to be scheduled.
+
+The order: one frame, due Friday.
+
+## Two Kinds of Parallel, One Critical Difference
+
+Before the walkthrough, the distinction that decides everything:
+
+| | Independent parallel | Dependent parallel (this walkthrough) |
+|---|---|---|
+| Capacity search | Every machine searched; all must have free capacity at the same time | **Only the lead machine is searched** |
+| Start/end times | Found by search, all machines together | Mirrors copy the lead's times exactly |
+| Capacity check on the others | Enforced; no slot means no schedule | **Bypassed by design** |
+| Physical model | Separate machines sharing a job | One mechanism with multiple heads |
+
+Independent parallel says "these machines can share the work if they are all free." Dependent parallel says "these machines are physically one thing." Choosing the wrong model produces either impossible schedules (mirrors placed on different days) or phantom bottlenecks (mirrors blocking a search they should never participate in). This is a place where [finite capacity logic](/blog/finite-vs-infinite-capacity-scheduling) needs to know when not to apply itself.
+
+## Step 1: The Lead Head Gets a Real Schedule
+
+The planner schedules the order. The engine walks the routing, reaches the drilling step, and recognizes the parallel configuration. It splits the attached work centers into the lead (DRILL-HEAD-1) and the dependents (HEAD-2 and HEAD-3), and because there are no independent parallels in the mix, it runs a completely ordinary capacity search **for the lead head only**.
+
+The workload: 8.0 hours per frame x 1 frame + 0.5 setup = **8.5 hours**. Monday's shift holds 8.0. So the allocator places 8.0 hours on Monday (08:00 to 16:00) and spills the final 0.5 hours to Tuesday morning (08:00 to 08:30). The lead head's schedule:
+
+| Field | Value |
+|---|---|
+| Work center | DRILL-HEAD-1 |
+| Start | Monday 08:00 |
+| End | Tuesday 08:30 |
+| Hours tracked | 8.50 |
+| Setup provenance | Cold start (no prior job on this head) |
+
+Note the setup provenance stamp. EDGEBIC records where every setup number came from; here the head had no prior job, so the routing's own 0.5-hour rig-up applied. That audit trail matters more in the sequence-dependent setup scenarios covered in the [paint shop changeover walkthrough](/blog/paint-shop-changeover-sequencing-example-edgebic).
+
+## Step 2: The Mirrors Are Copied, Not Scheduled
+
+Now the engine loops over the two dependent heads and creates each schedule by **copying the parent**, resource row by resource row:
+
+- Start and end timestamps: copied exactly. Monday 08:00 and Tuesday 08:30, identical on all three.
+- Allocated hours: multiplied by the head's factor.
+- Setup: mirrored one-to-one, never scaled (the heads rig together; rig-up is one physical event).
+- Setup provenance on the mirrors: stamped "mirrored from parent," so anyone auditing later can see these rows were copies, not independent placements.
+
+For DRILL-HEAD-2 (factor 1.0) the mirror is an exact twin: 8.0 hours Monday, 0.5 Tuesday, 8.50 tracked. For DRILL-HEAD-3 the factor changes the bookkeeping but not the clock:
+
+| | Parent (HEAD-1) | Mirror (HEAD-2, factor 1.0) | Mirror (HEAD-3, factor 1.5) |
+|---|---|---|---|
+| Monday hours | 8.0 | 8.0 | **12.0** |
+| Tuesday hours | 0.5 | 0.5 | **0.75** |
+| Hours tracked | 8.50 | 8.50 | **12.75** |
+| Start | Mon 08:00 | Mon 08:00 | Mon 08:00 |
+| End | Tue 08:30 | Tue 08:30 | Tue 08:30 |
+
+Read that third column twice, because it is the heart of the model. The factor scales **work recorded**, not **time elapsed**. The older head works 50 percent harder to keep pace with the gantry, so it logs 12.75 hours of effort across the identical Monday-to-Tuesday span. Its end time never moves, because physically it stops when the gantry stops.
+
+## Step 3: Over-Capacity, On Purpose
+
+Here is the part that makes capacity purists flinch, and it is deliberate: DRILL-HEAD-3's Monday allocation is 12.0 hours against an 8.0-hour shift. The mirroring step skips the capacity validation that every normal allocation must pass, because a dependent head is not competing for time; it is physically committed the moment the parent is.
+
+| Capacity ledger (Monday) | Allocated | Shift capacity | Over? |
+|---|---|---|---|
+| DRILL-HEAD-1 | 8.0 h | 8.0 h | No, exactly full |
+| DRILL-HEAD-2 | 8.0 h | 8.0 h | No, exactly full |
+| DRILL-HEAD-3 | 12.0 h | 8.0 h | **Yes, by design** |
+
+EDGEBIC does not hide this. The over-capacity condition on dependent mirrors is documented behavior with its own audit check, so a planner reviewing utilization reports can distinguish "this machine is double-booked by mistake" from "this mirror is carrying its factor." Honest over-capacity beats silent misrepresentation.
+
+## The Result: Three Bars, One Clock
+
+The committed schedule contains three operation rows, all referencing the same routing step:
+
+```
+DRILL-HEAD-1  Mon 08:00 ████████████████████ 16:00 | Tue 08:00 ██ 08:30
+DRILL-HEAD-2  Mon 08:00 ████████████████████ 16:00 | Tue 08:00 ██ 08:30
+DRILL-HEAD-3  Mon 08:00 ████████████████████ 16:00 | Tue 08:00 ██ 08:30
+
+              ↑ all three start together                ↑ all three finish together
+```
+
+On the Job Gantt you see three bars of identical length, stacked in the three work center rows. Hover the mirror bars and the setup reason reads "mirrored from parent." The order's start and end update to Monday 08:00 and Tuesday 08:30, and the synchronization is not a happy accident of the search: it is structurally guaranteed, because two of the three schedules are copies of the first.
+
+Verification is one query away for the skeptical: select the three operation rows and confirm identical start and end timestamps and a single shared routing step reference; select the resource rows and confirm HEAD-3 carries 12.0 and 0.75 hours where the parent carries 8.0 and 0.5.
+
+## What This Run Proves
+
+Six behaviors you can verify from this single one-frame order:
+
+1. **The dependent flag changes the algorithm, not just a label.** Mirrors never enter the capacity search; only the lead head is placed against real shift capacity.
+2. **Synchronization is structural.** All three schedules carry identical start and end timestamps because two of them are copies, not because a search happened to line up.
+3. **Factors scale effort, never elapsed time.** The factor-1.5 head records 12.75 tracked hours across the same Monday-to-Tuesday span as the parent's 8.50.
+4. **Setup is one physical event.** Rig-up hours are mirrored one-to-one and never multiplied by a factor, because the heads rig together.
+5. **Every mirror is auditable.** The setup provenance stamp reads "mirrored from parent" on both dependent rows, so no one mistakes a copy for an independent placement.
+6. **Over-capacity on mirrors is visible and intentional.** The capacity ledger shows the 12-hour Monday allocation openly instead of hiding the factor's cost.
+
+## Variations Worth Trying
+
+**A faster head instead of a slower one.** Set HEAD-2's factor to 0.5 and its mirror records 4.0 hours Monday and 0.25 Tuesday (4.25 tracked), with the time span unchanged. Factors express relative effort in either direction.
+
+**Quantity three instead of one.** The parent's workload becomes 8 x 3 + 0.5 = 24.5 hours, spread Monday through Thursday morning. The mirrors copy all four daily allocations with identical timestamps: three heads working Monday to Thursday 08:30 in lockstep. One field changed; the synchronization scales along.
+
+**A fourth, truly independent head.** Add DRILL-HEAD-4 configured as independent parallel and the engine's behavior changes fundamentally: now it searches for a slot where the lead **and** the independent head both have simultaneous free capacity, and only after both are placed do the two dependent mirrors copy on. If HEAD-4 is booked Monday, the whole group slides to Tuesday, mirrors included. That all-or-nothing search is the independent model doing its job.
+
+**Back-to-back frames and changeover.** Schedule a second frame of a different product right behind the first, and the lead head's next setup is resolved against the sequence-dependent setup matrix (what ran last on this head decides the changeover), while the mirrors continue to inherit their setup from the parent. The mechanics of that matrix get their own [changeover sequencing walkthrough](/blog/paint-shop-changeover-sequencing-example-edgebic).
+
+## Why Model It This Way at All?
+
+The lazy alternative is to schedule only the lead head and pretend the other two do not exist. That works until you look at a utilization report, a labor plan, or a costing rollup and find two-thirds of your gantry's effort missing. The dependent parallel model keeps the mirrors visible everywhere (Gantt, capacity ledger, tracked hours) while making it structurally impossible for them to drift out of sync with the machine they are bolted to. And when the gantry breaks mid-job, the [breakdown reschedule walkthrough](/blog/machine-breakdown-reschedule-walkthrough-edgebic) shows how logged hours on all three heads survive the replan.
+
+Ganged and slaved equipment is common in exactly the industries User Solutions has served since 1991: aerospace and defense (BAE Systems, the US Navy), heavy equipment (GE, Cummins), and job shops in between. EDGEBIC's dependent parallel model is the current generation of that experience; if you are on RMDB today, the [upgrade path is documented](/rmdb-to-edgebic).
+
+Have a gantry, a slaved line, or a multi-head machine that your current scheduler pretends is three separate resources? [Contact US](/contact-us) and we will model it as one, with your numbers.
+
+<Accordion title="What is dependent parallel scheduling in manufacturing?">
+Dependent parallel scheduling models machines that must run in lockstep: they start at the same instant, run together, and finish together, like drill heads ganged on one gantry. The scheduler finds real capacity for one lead machine, then mirrors that schedule onto the dependent machines with identical start and end times. It differs from independent parallel work, where each machine is scheduled separately against its own capacity.
+</Accordion>
+
+<Accordion title="How does EDGEBIC keep synchronized machines starting and ending at the same time?">
+By construction rather than by coincidence. Only the lead work center goes through the capacity search; the dependent work centers receive exact copies of the resulting schedule, timestamp for timestamp. In this walkthrough all three drill-head schedules read Monday 08:00 to Tuesday 08:30 because two of them are literal mirrors of the first. There is no way for a mirror to drift, because it is never independently placed.
+</Accordion>
+
+<Accordion title="What does the factor on a mirrored work center do?">
+The factor scales how much work the mirrored machine records, not when it runs. A dependent head with factor 1.5 logs 1.5 times the parent's hours across the identical time span, which suits an older head that works harder to keep pace. In this walkthrough the parent tracks 8.5 hours while the factor-1.5 mirror tracks 12.75 hours, yet both start Monday 08:00 and finish Tuesday 08:30 together.
+</Accordion>
+
+<Accordion title="Why would a mirrored machine show more allocated hours than its shift contains?">
+Because mirrored allocations deliberately bypass the capacity check. A dependent machine is physically committed to the parent's operation, so the scheduler copies the allocation even when the scaled hours exceed the shift's nominal capacity. In this walkthrough one head shows 12 allocated hours on an 8-hour day. That over-capacity is documented, intentional behavior for synchronized mirrors and is surfaced by an audit check rather than hidden.
+</Accordion>

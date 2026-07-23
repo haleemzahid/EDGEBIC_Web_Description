@@ -1,0 +1,124 @@
+---
+title: "Why Did My Job Jump 2 Days After a Reschedule?"
+description: "Your job moved after a reschedule and the new end date looks wrong. Here are the four real causes, how to confirm which one you have, and the fix for each."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - job moved after reschedule production
+  - reschedule moved my job
+  - production schedule changed unexpectedly
+  - rescheduling production jobs
+  - finite capacity rescheduling
+  - schedule jumped after update
+targetPhrase: "job moved after reschedule production"
+wordCount: 1490
+readingTime: 7
+faqQuestions:
+  - question: "Why did my production job move after a reschedule?"
+    answer: "A job moves after a reschedule for one of four reasons: the resume point derived from shop-floor actuals is later than the old plan assumed, the work center's next free slot is genuinely days away, a short-confirm policy re-planned unfinished hours, or the job followed its own stored routing snapshot instead of the master routing. The audit trail shows which one applied."
+  - question: "Can a reschedule move work that is already completed?"
+    answer: "No. Completed operations never move in a reschedule. An operation with a recorded actual start and actual end is treated as historical fact: no reschedule, no mode, and no setting will shift, shrink, or recompute it. Only remaining work is re-planned, starting from where the shop floor actually is."
+  - question: "How do I see exactly what a reschedule changed?"
+    answer: "Open the job's audit trail. Every reschedule writes an event with the old start and end beside the new start and end, along with who ran it and when. In EDGEBIC, click Job Audit on the Job View tab or right-click a bar on the Gantt and choose View Audit Trail. Thirty seconds there answers what moved and why."
+  - question: "Should I reschedule daily or only when something goes wrong?"
+    answer: "Reschedule on a rhythm, daily or once per shift, rather than only after a crisis. Steady small corrections keep promise dates honest and each move stays small. Shops that avoid rescheduling end up planning against fiction, and the eventual correction is the two-day jump that surprises everyone."
+qaQuestions:
+  - question: "Step 1 of my job finished only 90 minutes late, but the whole job now ends a day and a half later. How is that proportional?"
+    answer: "It often is proportional once shift calendars enter the math. In a worked example from the EDGEBIC documentation, a 4.5-hour cut step planned for Monday 08:00-12:30 actually ran 09:15-14:00. The 11-hour milling step behind it restarted at 14:00, ran to the end of Monday's shift, filled Tuesday, and finished Wednesday 09:00. Assembly then queued 2 hours behind milling and crossed a shift boundary, landing Thursday 09:30 instead of Wednesday 16:00. Each step only slid a few working hours, but shift ends and queue time turned those hours into calendar days."
+  - question: "We rescheduled and a job we never touched moved. Is that a bug?"
+    answer: "Check which button was used. A full reschedule re-plans every unfinished operation of every job against current capacity, so an untouched job can shift when a hotter job takes its slot. If you want surgical behavior, use the targeted Re-Schedule, which re-plans only jobs modified since the last run and leaves every other job's plan and reserved capacity exactly where it was. On a busy plant, targeted rescheduling is the polite default."
+---
+
+**A job that jumps two days after a reschedule almost never moved at random: it moved because the engine re-planned remaining work from where the shop floor actually is, and one of four specific things pushed the new dates out.** The four causes are a later-than-expected resume point, capacity genuinely held by other jobs or calendar blocks, a short-confirm policy that re-planned unfinished hours, and a job following its own routing snapshot instead of the master routing you edited. Each one leaves evidence you can check in under a minute.
+
+[EDGEBIC by User Solutions](/edgebic) treats a reschedule as a surgical operation, not a wipe-and-redo. Understanding what it can and cannot touch is the fastest way to diagnose a surprising move. This guide walks the symptom back to its cause, the same way our [troubleshooting guide](/blog/edgebic-troubleshooting-guide) approaches every schedule mystery: evidence first, guesses never.
+
+## What a Reschedule Actually Does
+
+Every operation on every job falls into one of three zones at reschedule time:
+
+| Zone | Definition | What a reschedule does |
+|---|---|---|
+| Completed | Actual start and actual end both recorded | Nothing. Preserved verbatim: dates, hours, machine |
+| In progress | Actual start recorded, no actual end | Logged hours stay locked on their real days; only the remainder gets a new slot, on the same work center |
+| Not started | No actuals | Fully re-planned against current capacity and calendars |
+
+The engine re-plans each job from its resume point: the real end of the last completed step, or the projected end of the step currently running. That resume point comes from your actuals, not from the old plan. This is the core of honest [production scheduling](/blog/what-is-production-scheduling): the plan follows reality, never the other way around.
+
+Keep that model in mind, because every "my job jumped" mystery is one of these zones behaving exactly as designed.
+
+## Cause 1: The Resume Point Is Later Than You Think
+
+The most common cause. An in-progress step drives the resume point with its projected end: its actual start plus its planned duration. If the operator started late, or started on time but logged fewer hours than have really elapsed, the projected end lands later than you expect, and every downstream step queues behind it.
+
+**How to confirm:** open the running step in the Job View and check its actual start and logged hours. If the logged hours lag reality, the resume point is wrong because the data is wrong.
+
+**The fix:** log reality, then reschedule again. The engine can only resume from the position your actuals describe.
+
+**How to prevent it:** log first, reschedule second. That single habit makes every reschedule trustworthy. Rescheduling against stale actuals re-plans the plant around fiction.
+
+## Cause 2: The Next Free Slot Really Is Days Away
+
+A step's predecessor ends today, yet the step lands Thursday. Before assuming a defect, check the work center itself. Two things legitimately push a step out:
+
+- **Other jobs hold the capacity.** Finite capacity means one machine, one job at a time. If higher-priority work fills the next two days, your step waits its turn.
+- **A holiday or downtime window blocks the days between.** A plant holiday, a work-center-specific holiday, or a maintenance window removes those days from the calendar entirely.
+
+**How to confirm:** open the work center's load view or the capacity dashboard and look at the days in question. A wall of other jobs, or a blocked calendar, answers it immediately. A [machine breakdown that forced the reschedule](/blog/machine-breakdown-reschedule-walkthrough-edgebic) is the classic version of this cause.
+
+**The fix:** if the wait is unacceptable, the options are the honest ones: raise the job's priority, route the step to an alternate work center or machine pool if the routing allows it, or add capacity with an extra shift. The schedule is telling you the truth about a constraint; the fix is a business decision, not a software setting.
+
+## Cause 3: Short-Confirm Hours Came Back
+
+An operator marked a step complete after logging fewer hours than planned. What happens next is a site policy set under Options, and the default surprises people: the missing hours are forward-shifted. The logged portion stays locked on its real days, and the gap between planned and actual hours is re-planned onto the next free slot. Downstream steps queue behind that, so a job you thought was nearly done grows a new tail.
+
+**How to confirm:** look at the step in question. If it shows more scheduled time than the operator reported, and your Partial-Confirm Behaviour policy is set to forward-shift (the default, and standard practice in finite capacity systems), this is your cause.
+
+**The fix:** decide which story is true. If the hours are genuinely still owed, the plan is now correct; leave it. If the routing was simply fat, trim the routing's hours, or switch the site policy to trust the operator's actual end, which writes unfinished hours off.
+
+## Cause 4: The Job Followed Its Own Routing Snapshot
+
+Every scheduled job in EDGEBIC carries its own copy of the routing that was in force when it was scheduled. Editing the master routing later does not silently rewrite jobs already on the floor. So if you changed the master routing and expected the reschedule to pick it up, the job re-planned against its stored snapshot instead, and the dates reflect the old routing.
+
+**How to confirm:** open the Scheduled Job BOR tab for the job and compare its snapshot against the master routing.
+
+**The fix:** adopt the change deliberately. Use Update this Job BOR to edit the snapshot, or Reset BOR from Global to re-copy the current master routing, then reschedule. There is also a per-job setting to always follow the live master routing.
+
+## A Worked Example: Small Slip, Big-Looking Move
+
+From the EDGEBIC documentation: JOB-2026-0125, three steps, one day shift 08:00-16:00. The cut step was planned Monday 08:00-12:30 but actually ran Monday 09:15-14:00 after a blade change. On reschedule:
+
+1. The cut step is classified completed and preserved at 09:15-14:00. It never moves a minute.
+2. The resume point becomes Monday 14:00, the cut's real end.
+3. Milling (11 hours) re-plans from 14:00: 2 hours Monday, 8 hours Tuesday, 1 hour Wednesday morning. New end: Wednesday 09:00.
+4. Assembly waits out its 2-hour queue and lands Wednesday 11:00 through Thursday 09:30.
+
+The job's end moved from Wednesday 16:00 to Thursday 09:30. Nothing jumped arbitrarily; a 1.5-working-hour slip crossed two shift boundaries and a queue buffer. And the new date is one you can actually promise.
+
+## Prevention: Three Habits
+
+1. **Log first, reschedule second.** Fresh actuals are the foundation of every honest re-plan.
+2. **Reschedule on a rhythm.** Daily or per shift. Steady small corrections beat rare huge ones, and every move stays small enough that nobody calls it a jump.
+3. **Prefer the targeted reschedule for daily corrections.** It re-plans only jobs you changed and cannot disturb anyone else's plan. Save the full reschedule for calendar and capacity changes that affect everyone.
+
+After any reschedule, spend thirty seconds on the audit trail of your critical jobs. Every run records old dates beside new dates, so "what moved and why" is answered before a customer asks. If your plant still reschedules by editing spreadsheets exported from your ERP, the [import-export path into EDGEBIC](/edgebic-erp-integration) replaces that ritual with one that keeps the audit trail for you.
+
+<Accordion title="Why did my production job move after a reschedule?">
+A job moves after a reschedule for one of four reasons: the resume point derived from shop-floor actuals is later than the old plan assumed, the work center's next free slot is genuinely days away, a short-confirm policy re-planned unfinished hours, or the job followed its own stored routing snapshot instead of the master routing. The audit trail shows which one applied.
+</Accordion>
+
+<Accordion title="Can a reschedule move work that is already completed?">
+No. Completed operations never move in a reschedule. An operation with a recorded actual start and actual end is treated as historical fact: no reschedule, no mode, and no setting will shift, shrink, or recompute it. Only remaining work is re-planned, starting from where the shop floor actually is.
+</Accordion>
+
+<Accordion title="How do I see exactly what a reschedule changed?">
+Open the job's audit trail. Every reschedule writes an event with the old start and end beside the new start and end, along with who ran it and when. In EDGEBIC, click Job Audit on the Job View tab or right-click a bar on the Gantt and choose View Audit Trail. Thirty seconds there answers what moved and why.
+</Accordion>
+
+<Accordion title="Should I reschedule daily or only when something goes wrong?">
+Reschedule on a rhythm, daily or once per shift, rather than only after a crisis. Steady small corrections keep promise dates honest and each move stays small. Shops that avoid rescheduling end up planning against fiction, and the eventual correction is the two-day jump that surprises everyone.
+</Accordion>

@@ -1,0 +1,195 @@
+---
+title: "From Operator Punch to Updated Plan: Shop Floor Execution in EDGEBIC"
+description: "Shop floor data collection scheduling in practice: kiosk punches, daily actuals, piece counts, and reschedules that never move completed work."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - shop floor data collection scheduling
+  - shop floor execution software
+  - operator kiosk manufacturing
+  - logging production actuals
+  - actuals-based rescheduling
+  - production progress tracking
+targetPhrase: "shop floor data collection scheduling"
+wordCount: 3150
+readingTime: 16
+faqQuestions:
+  - question: "What is shop floor data collection in a scheduling system?"
+    answer: "Shop floor data collection captures what really happened on each operation: when it started, how many hours ran each day, how many good pieces came off, and when it finished. In EDGEBIC that data arrives from operator kiosk punches, planner-entered daily grids, or file imports, and it is stored beside the plan rather than over it, so every screen can compare plan against reality and the next reschedule can plan forward from where work actually is."
+  - question: "Does logging actuals in EDGEBIC move the schedule?"
+    answer: "Not by itself. Actuals record reality; the plan for remaining work changes only when a reschedule runs. When it does, completed operations stay frozen exactly where they happened, in-progress operations keep their logged hours and only the remainder is re-planned, and not-started operations queue behind the real position of the work. Nothing you logged is ever moved or recomputed."
+  - question: "Can a reschedule ever move completed work?"
+    answer: "No. An operation with an actual start and an actual end is historical fact in EDGEBIC. No reschedule mode or setting will shift, shrink, or recompute it. Started operations also keep their machine: once work has begun on a work center, a reschedule will not move it elsewhere. Only work that has not started is freely re-planned."
+  - question: "Do operators need accounts or a separate server to use the EDGEBIC kiosk?"
+    answer: "No. The kiosk is a separate touch-first application that reads and writes the same database as the planner application, with no separate server. Each kiosk session binds to one work center and machine instance, and the operator types a name that is stamped on every punch. There is deliberately no schedule editing, job browsing, or offline mode on the kiosk: it is an execution terminal, kept small on purpose."
+  - question: "What happens when an operator marks a step complete with fewer hours than planned?"
+    answer: "That is a short confirm, and site policy decides the outcome. EDGEBIC offers three options: trust the operator's end stamp and write off the missing hours; forward-shift the remaining hours onto the next free slot (the default, matching mainstream APS practice); or trust the stamp except on routing steps a planner has flagged for strict tracking. The logged portion always stays locked on its real days."
+qaQuestions:
+  - question: "Our saw ran late Monday morning. What does the reschedule actually do to the rest of the job?"
+    answer: "The documented example covers exactly this. A three-step job planned saw 08:00 to 12:30, mill 12:30 onward, assembly Wednesday. The saw actually ran 09:15 to 14:00 and was logged at the kiosk. On reschedule, the engine preserves the saw step verbatim at its real times, sets the job's resume point to 14:00 (the real end, not the planned one), re-plans the mill from Monday 14:00 to a new end of Wednesday 09:00, and slides assembly behind the mill's two-hour queue to Wednesday 11:00 through Thursday 09:30. The job's end moves from Wednesday 16:00 to Thursday 09:30, and that is now a date you can promise. The saw's bar never moves a minute."
+  - question: "How do we stop auto-filled data from polluting our history when someone skips logging a step?"
+    answer: "EDGEBIC makes backfills loud instead of silent. When you log a later operation while earlier ones have no actuals, a warning lists the missing work centers; accepting it auto-logs their planned values as actuals, and every backfilled day wears an Auto-filled badge in the daily grid. The honest path is to cancel and log the real values, but when a backfill is the practical choice, the badge means you can find and correct those days later: edit the value and the badge clears, making the day a normal hand-entered record. Corrections to previously reported values also require a reason, which lands in an append-only history."
+---
+
+**Shop floor data collection scheduling** closes the loop between the plan and the plant: operators record what really ran (starts, hours, pieces, pauses, completions), and the scheduler plans remaining work forward from that reality instead of from last week's assumptions. In EDGEBIC by User Solutions, the loop has three moving parts: a touch-first operator kiosk at the machine, a planner-side daily actuals grid, and a rescheduling engine bound by one golden rule: completed work never moves.
+
+This pillar walks the whole cycle: how a punch becomes an actual, how actuals roll up to job progress, and exactly what a reschedule preserves and re-plans. The behaviors described here are documented product behavior in [EDGEBIC](/edgebic), built on 35+ years of scheduling experience at User Solutions, the company whose software helped GE Railcar lift on-time shipping from 30% to 90% and helped the US Navy coordinate 26,000+ tasks on the USS Nimitz.
+
+## Why Execution Data Is the Whole Game
+
+A schedule is a forecast. The moment the first shift starts, reality diverges: a blade change delays the saw, a coolant alarm pauses the mill, a step finishes early. A scheduling system that cannot absorb those facts daily forces a choice between two bad options: replan against fiction, or stop trusting the plan.
+
+EDGEBIC's design position is that actuals are not bookkeeping after the fact; they steer the next reschedule. Completed work is frozen exactly where it happened, and the engine plans the remaining work forward from where you really are. Shops that reschedule daily against fresh actuals keep promise dates honest; shops that avoid it end up planning around week-old reality. That principle shapes every screen described below.
+
+## The Kiosk: Punches, Not Paperwork
+
+The EDGEBIC kiosk is a separate touch-first application that lives at the machine and shares the planner's database directly; no separate server, no API layer between the floor and the plan. Each session binds to one work center and one physical machine instance, and the operator types a name that is stamped on every punch.
+
+Every tap opens or closes a **punch**: one uninterrupted stretch of setup, run, pause, or down time. Punch by punch, the kiosk builds the operation's true story.
+
+### A shift at the terminal
+
+The idle screen shows NEXT UP (the first queued job for this work center, with its scheduled start, due label, and priority), COMING UP (the queue behind it), and YOUR DAY (the operator's shift so far, with yesterday's numbers for comparison). The kiosk works its bound work center's queue; it is deliberately not a plant-wide browser, and operators cannot move, re-sequence, or reassign work. Execution stays on the floor; scheduling authority stays with the planner.
+
+Starting a job walks a real changeover, not a single button: tap START SETUP and advance through six named setup phases (tear down, fixture, tools, first article, QA hold, run-off), each timed separately for setup-variance reporting. On the last phase the button becomes START RUN, and that tap stamps the operation's actual start, visible on the planner's screens within seconds.
+
+During the run:
+
+- **Pieces count as they come off.** Tap the GOOD counter per finished piece; tap SCRAP for a bad one, and a reason picker requires a category (machine, material, quality, waiting) plus a specific reason before the scrap records. Every scrap piece carries a reason, which is what makes the scrap Pareto reports meaningful. A mis-tap has an undo window of about ten seconds, and the undo itself is logged.
+- **Pauses carry reasons too.** Tapping PAUSE opens the same four-category picker, closes the run punch, and opens a paused punch. Paused and down time is recorded as non-productive and never pollutes the job's production hours, so nobody's efficiency is judged on a coolant leak.
+- **Completion is one tap.** COMPLETE OPERATION closes the open punch, rolls the day-by-day production hours up, stamps the actual end, and returns to the idle screen with the next queued job.
+
+In the documented worked shift, an operator started setup at 08:00, ran from 08:50, logged one dimensional scrap, took a 40-minute machine pause for a coolant alarm, and completed at 15:40 with 20 good pieces. The shift handoff summary showed 0.9 hours setup, 5.9 hours run, 0.7 hours down, 20 good, 1 scrap, and the coolant pause listed with its reason: everything the oncoming shift inherits, on one screen.
+
+Only run time counts as production hours; setup, downtime, and idle time are kept separately for their own reporting. Timestamps come from the shared clock when the tap lands; nobody types times during normal use. When tap-as-you-go was not possible, MANUAL ENTRY offers the same day grid the planner uses, and a supervisor can correct closed punches in the history drawer, always with a reason, kept forever alongside the original.
+
+## The Planner Side: Daily Actuals, Honestly Labeled
+
+Not every shop starts with kiosks, and even kiosk shops need planner-side corrections. The Log Actuals dialog is the planner's equivalent surface: one row per calendar day of the operation's window, with scheduled hours and pieces beside editable actual hours and pieces.
+
+Three behaviors make this grid trustworthy:
+
+**Hours and pieces are two views of one number.** Each operation carries a rate in pieces per hour, and with auto-calculation on, typing one side derives the other. Log 6 hours on a 2-pieces-per-hour operation and 12 pieces fill in. Shops log whichever side they actually count.
+
+**Backfilled data is labeled, not hidden.** If you log a later operation while earlier steps have no actuals, EDGEBIC warns you ("No actual dates logged to prior workcenters!"), lists the missing steps, and offers to auto-log their planned values. Accepted backfills wear an Auto-filled badge in the grid's source column. Edit the value and the badge clears; the day becomes yours. The system never lets a guess masquerade as a measurement.
+
+**Edits require reasons and keep history.** Change a value that was previously reported and EDGEBIC asks for a reason before saving; an empty reason cancels the save. The history view shows every entry and edit: who, when, old value, new value, reason. History is append-only; corrections are added, never erased.
+
+Completion follows the same discipline. Logging hours does not close an operation; completion is an explicit statement. EDGEBIC refuses an actual end that is not after the actual start (an inverted pair is always a data-entry error), and when completion is recorded without an explicit end time, the end snaps to the close of the last day with logged hours, so a job started at 08:00 and completed the same day never reads as finished before it began.
+
+Progress rolls up one level too: a job reports an actual end, and 100%, only when all of its operations are done. Finishing one step early never flags the whole job complete. The Job View header (total, actual, remaining, percent complete) and the read-only Actual Live view (a live progress card on every routing step, with status badges, logged-versus-planned hours, and a projected finish) both read this same roll-up, and both refresh automatically when a kiosk save lands.
+
+One subtlety for shops with synchronized parallel machines: you only ever log the primary step. The parallel sibling's dates mirror the primary one-to-one and its hours scale by the configured factor, automatically, on every save. Edit the sibling directly and the next save overwrites it from the primary again, by design.
+
+## The Reschedule: Three Zones, Five Golden Rules
+
+Everything above exists to feed one moment: the reschedule. In many systems "reschedule" means wipe the plan and start over. In EDGEBIC it is a surgical operation governed by a zone model. At reschedule time, every operation of every job falls into exactly one zone:
+
+```
+Step 1  ██████████  actual start + actual end        →  COMPLETED    (frozen)
+Step 2  ███░░░░░░░  started, 3 h of 11 h logged      →  IN PROGRESS  (3 h locked, 8 h re-planned)
+Step 3  ··········  no actuals                       →  NOT STARTED  (fully re-planned)
+```
+
+Five golden rules govern what happens next:
+
+1. **Completed work never moves.** An operation with both actual dates is historical fact. No reschedule, no mode, no setting will shift, shrink, or recompute it.
+2. **Started operations keep their machine.** Once work has begun on a work center, a reschedule will not move it to a different one.
+3. **Remaining work re-plans from where you actually are.** Not-started steps queue behind the real finish of the last completed or running step, not behind the old plan.
+4. **Each job keeps its own routing snapshot.** The routing in force when the job was scheduled travels with the job, so a master-routing edit never silently reshapes a running job (see the [visual scheduling guide](/blog/edgebic-visual-scheduling-guide) for how those snapshots are managed).
+5. **Every reschedule leaves a trace.** Old dates, new dates, who and when, inspectable through the job audit trail.
+
+The flip side of rule 3 is the discipline the whole loop depends on: if actuals are missing or wrong, the reality the engine resumes from is wrong too. Log first, reschedule second.
+
+### The worked example, minute by minute
+
+A 20-unit widget job, three steps, day shift 08:00 to 16:00. The plan: saw Monday 08:00 to 12:30 (4.5 hours), mill Monday 12:30 to Tuesday 15:30 (11 hours), assembly Wednesday 09:30 to 16:00 (6.5 hours, after the routing's 2-hour queue behind the mill).
+
+Reality: the saw hit a blade change and actually ran Monday 09:15 to 14:00, logged at the kiosk. You press Schedule + Re-Schedule. The engine:
+
+1. Classifies the saw step as completed and preserves it verbatim at 09:15 to 14:00.
+2. Sets the job's resume point to Monday 14:00, the saw's real end.
+3. Re-plans the mill from 14:00: two hours Monday, eight Tuesday, one Wednesday morning, ending Wednesday 09:00.
+4. Re-plans assembly behind the mill's two-hour queue: Wednesday 11:00 to Thursday 09:30, respecting the assembly cell's shift calendar.
+
+The job's end moves from Wednesday 16:00 to Thursday 09:30, a date you can now promise with a straight face. The saw's bar never moved a minute. And a half-done operation never splits into two rows on your screens: the logged hours and the re-planned remainder merge back into one row per routing step, history and future together.
+
+For a longer disruption story (a machine down mid-week, and the targeted replan that follows), walk through the [machine breakdown reschedule walkthrough](/blog/machine-breakdown-reschedule-walkthrough-edgebic).
+
+### Full versus targeted reschedules
+
+Schedule + Re-Schedule on the Drive Schedule tab handles the whole plant: new jobs get scheduled, existing jobs get re-planned under the golden rules. But day-to-day, the polite option is the targeted Re-Schedule on the Gantt and Job View: it re-plans only the jobs you changed since the last run, and every untouched job's plan, including its reserved capacity, stays exactly where it was.
+
+### Short confirms: a site policy, not an accident
+
+When an operator marks a step complete having logged fewer hours than planned, what happens to the gap is a deliberate site decision, set once in Options:
+
+| Policy | The next reschedule |
+|---|---|
+| Trust the operator's Actual End | The stamp is truth; downstream queues behind the recorded end; unfinished hours are written off |
+| Forward-shift the remaining hours (default) | The logged portion stays locked on its real days; the gap is re-planned onto the next free slot, and downstream queues behind that |
+| Trust unless flagged short | Trust the stamp by default; forward-shift only steps the planner flagged for strict tracking |
+
+Forward-shifting is the mainstream APS default because it keeps unfinished hours visible in the plan. Trusting the stamp fits shops where the floor's close-out is final. The flagged variant lets you be strict on a few critical operations only.
+
+## Verifying, Auditing, and the Common Surprises
+
+Trust, then verify: thirty seconds after every run on your critical jobs. Check that actual hours are unchanged by the reschedule (only timing moves, never logged history), compare the actual date columns against what the floor reported, and open the job audit: the newest event is the reschedule with old and new dates side by side, above every manual drag and completion that led there.
+
+When a reschedule surprises you, the cause is usually one of a handful of documented patterns: a job "jumped two days" because an in-progress step's projected end drives the resume point; a step landed days out because the work center's next free slot genuinely is days away; extra hours appeared on a "finished" step because the short-confirm policy forward-shifted a gap; or the job re-planned onto an unexpected routing because it follows its own snapshot rather than the freshly edited master. Each has a specific check and fix, catalogued in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and its reschedule section; the point here is that none of them are mysteries, because every input to the reschedule is a visible, logged fact.
+
+Actuals can also arrive by file: the import masks accept one row per job, work center, and day, with hours and pieces, and re-running an import is safe by design; days the file carries are overwritten with the file's values, days it does not mention are preserved. That path matters for shops feeding execution data from an ERP or a time system; the [admin guide](/blog/edgebic-admin-guide) covers import mask setup, and [ERP integration](/edgebic-erp-integration) explains the wider export-import architecture.
+
+## What Supervisors and Planners See, Surface by Surface
+
+The value of the loop shows up in how quickly floor events become planning facts. The documented mapping from kiosk action to planner screen:
+
+| Kiosk action | What appears in EDGEBIC |
+|---|---|
+| First START RUN on an operation | The operation's actual start; the Gantt bar shifts to reality and shows the in-progress state |
+| Run time between taps | Daily actual hours on the operation, visible in the Job View grid, the Log Actuals dialog, the Actual Live cards, and progress reports |
+| GOOD taps | Daily actual pieces (good pieces only; scrap reports separately with its reasons) |
+| Setup, pause, and down time | Kept out of production hours; feeds setup-variance and downtime reporting and the shift handoff summary |
+| COMPLETE OPERATION | The operation's actual end; it counts as completed everywhere, and the next reschedule will not move it |
+| Accepting the prior-work-centers prompt | Earlier steps auto-filled from plan, wearing the Auto-filled badge for planner review |
+
+The timing is the point: in the documented walkthrough, an operator taps START RUN at 10:00, and within seconds the planner's Job View shows the actual start and the Actual Live card flips to Running. Six run hours and twelve good pieces later, the completion tap flips the card to Complete, and that night's reschedule plans the paint booth forward from the mill's real finish rather than the plan's guess. Open Job View and Actual Live screens refresh automatically when a kiosk save lands; nobody presses a refresh button to see the floor.
+
+## Building the Daily Rhythm
+
+The mechanics above condense into a routine any shop can run:
+
+1. **Operators punch in real time.** Live punches carry phase-level detail (setup versus run versus down) that typed-in totals cannot reconstruct. Manual entry is the fallback, not the habit.
+2. **Honest reasons, always.** The four-category pause and scrap taxonomy is the industry-standard downtime split that makes Pareto analysis work. "Waiting" tapped for a broken spindle sends maintenance nowhere.
+3. **Planners log or review daily, not weekly.** Five minutes at shift end keeps every downstream promise honest. Revisit any auto-filled day you accepted under time pressure.
+4. **Reschedule on a rhythm.** Daily or per shift, rather than after every hiccup: steady small corrections beat rare huge ones, and dates stay believable for customers.
+5. **Complete deliberately.** Completion is a statement, not a side effect. Reports and reschedules treat completed work as immovable fact, so stamp ends when they are true.
+6. **Glance at the audit trail on critical jobs.** Thirty seconds answers "what moved and why" before a customer asks.
+
+The payoff compounds: honest actuals make honest reschedules, honest reschedules make honest promise dates, and honest promise dates are what [on-time delivery performance](/blog/on-time-delivery-with-scheduling) is built from. The [results guide](/blog/edgebic-results-guide) connects these mechanics to the outcome numbers manufacturers track.
+
+Want to see the punch-to-plan loop on your own floor? [Contact US for a demo](/contact-us): one kiosk terminal, one work center, and one honest week of punches is enough to show your schedule planning forward from reality instead of hope. For the full platform picture around this pillar, start at the [complete EDGEBIC guide](/blog/edgebic-complete-guide).
+
+<Accordion title="What is shop floor data collection in a scheduling system?">
+Shop floor data collection captures what really happened on each operation: when it started, how many hours ran each day, how many good pieces came off, and when it finished. In EDGEBIC that data arrives from operator kiosk punches, planner-entered daily grids, or file imports, and it is stored beside the plan rather than over it, so every screen can compare plan against reality and the next reschedule can plan forward from where work actually is.
+</Accordion>
+
+<Accordion title="Does logging actuals in EDGEBIC move the schedule?">
+Not by itself. Actuals record reality; the plan for remaining work changes only when a reschedule runs. When it does, completed operations stay frozen exactly where they happened, in-progress operations keep their logged hours and only the remainder is re-planned, and not-started operations queue behind the real position of the work. Nothing you logged is ever moved or recomputed.
+</Accordion>
+
+<Accordion title="Can a reschedule ever move completed work?">
+No. An operation with an actual start and an actual end is historical fact in EDGEBIC. No reschedule mode or setting will shift, shrink, or recompute it. Started operations also keep their machine: once work has begun on a work center, a reschedule will not move it elsewhere. Only work that has not started is freely re-planned.
+</Accordion>
+
+<Accordion title="Do operators need accounts or a separate server to use the EDGEBIC kiosk?">
+No. The kiosk is a separate touch-first application that reads and writes the same database as the planner application, with no separate server. Each kiosk session binds to one work center and machine instance, and the operator types a name that is stamped on every punch. There is deliberately no schedule editing, job browsing, or offline mode on the kiosk: it is an execution terminal, kept small on purpose.
+</Accordion>
+
+<Accordion title="What happens when an operator marks a step complete with fewer hours than planned?">
+That is a short confirm, and site policy decides the outcome. EDGEBIC offers three options: trust the operator's end stamp and write off the missing hours; forward-shift the remaining hours onto the next free slot (the default, matching mainstream APS practice); or trust the stamp except on routing steps a planner has flagged for strict tracking. The logged portion always stays locked on its real days.
+</Accordion>

@@ -1,0 +1,158 @@
+---
+title: "Half-Done Is Not Undone: Rescheduling Partially Completed Jobs in EDGEBIC"
+description: "How to reschedule a partially completed production order: EDGEBIC locks 4 logged hours as history and forward-shifts the remaining 15.2, step by step."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - reschedule partially completed production order
+  - partial completion scheduling
+  - rescheduling with actuals
+  - shop floor actuals scheduling
+  - production schedule update
+  - work in progress rescheduling
+  - actuals-preserving reschedule
+targetPhrase: "reschedule partially completed production order"
+wordCount: 2200
+readingTime: 11
+faqQuestions:
+  - question: "What happens when you reschedule a partially completed production order?"
+    answer: "A good scheduler splits the operation in two: the hours already worked become locked history that never moves, and only the unfinished remainder is replanned forward from where the actuals ended. In this EDGEBIC walkthrough, an operation planned for 19.2 hours with 4 hours logged keeps its 4-hour Monday history untouched while the remaining 15.2 hours shift to Tuesday and Wednesday."
+  - question: "How does EDGEBIC know an operation is partially complete?"
+    answer: "It compares logged actual hours against planned hours for the operation. The walkthrough operation was planned at 19.2 hours and the operator logged 4.0 before pressing Done, leaving a 15.2-hour gap. Because the gap exceeds tolerance, EDGEBIC classifies the confirmation as partial rather than complete and keeps the operation in the reschedule with the remaining hours, instead of writing off unfinished work."
+  - question: "Does a reschedule ever move work that was already performed?"
+    answer: "No. Completed and in-progress history is never moved by a reschedule in EDGEBIC. Actual start times, actual hours, and the work center where the work physically happened are preserved exactly, and the engine plans only remaining work forward from the end of the recorded actuals. Rerunning the reschedule with no new actuals produces an identical result, so repeated replanning cannot drift or duplicate history."
+  - question: "What if the operator logs more hours than the plan called for?"
+    answer: "The remaining work clamps to effectively zero. If 22 hours are logged against a 19.2-hour plan, the remainder calculation cannot go negative; the operation carries its full actual history and only a token forward allocation, which merges away. The schedule then shows roughly 22 actual hours against an adjusted plan, and the overrun is visible for variance review instead of distorting future capacity."
+qaQuestions:
+  - question: "An operator ran 4 hours on a 19-hour milling job Monday, then got pulled to a rush order. When I reschedule Tuesday morning, what exactly does the plan look like?"
+    answer: "One operation bar spanning Monday through Wednesday, with the history and the plan stitched together. Monday shows 4.0 planned and 4.0 actual hours, exactly what was worked. Tuesday shows a full 8-hour planned day and Wednesday the remaining 7.2 hours, finishing at 15:12. The actual start of Monday 08:00 is preserved on the record; the machine, the quantities, and the logged hours are untouched. Only the unfinished 15.2 hours moved."
+  - question: "The planner cut the order quantity from 100 to 80 pieces after we'd already logged 4 hours. Does the reschedule use the old plan or the new quantity?"
+    answer: "The new quantity. EDGEBIC recomputes remaining work from the current order at reschedule time: 80 pieces at 0.192 hours each is 15.36 planned hours, minus the 4.0 already worked leaves 11.36 hours to forward-shift, rather than the 15.2 the original 100-piece plan implied. Quantity changes flow into the remainder automatically, and the 4 logged hours stay locked in history either way."
+---
+
+**Rescheduling a partially completed production order means splitting one operation into two truths: the hours already worked, which are history and must never move, and the hours still remaining, which are the only thing the scheduler is allowed to replan.** EDGEBIC by User Solutions does this split automatically. This walkthrough follows a single milling job where an operator logged 4 hours against a 19.2-hour plan and then hit Done, and shows exactly what the reschedule preserves, what it moves, and why the result stays clean no matter how many times you rerun it.
+
+## The Setup: One Job, One Mill, Three Planned Days
+
+The job is order t1: 100 pieces of Widget-A across a single routing step on CNC-MILL-1, a one-machine work center running a Day Shift, Monday to Friday, 08:00 to 16:00. The run rate is 0.192 hours per piece with no setup, so the planned workload is:
+
+> 0.192 h/piece x 100 pieces = **19.2 hours**
+
+Against an 8-hour shift, the original schedule spreads that across three days in late May:
+
+| Day | Planned hours |
+|---|---|
+| Mon May 26 | 8.0 |
+| Tue May 27 | 8.0 |
+| Wed May 28 | 3.2 |
+
+Planned start Monday 08:00, planned finish Wednesday 15:12. No actuals yet. So far, an ordinary schedule.
+
+## Monday Reality: 4 Hours and a Done Button
+
+Monday does not go to plan. The operator works the mill for 4 hours, produces 6 pieces, and at end of shift taps Log Hours on the shop-floor kiosk, enters 4.0 actual hours against the operation, and presses **Done**.
+
+That Done press is what schedulers call a short confirm: the operation is confirmed finished while its logged hours fall far short of plan. EDGEBIC records three facts:
+
+- Actual start: Monday May 26, 08:00
+- Actual hours on May 26: 4.0 (and 6 actual pieces)
+- Actual end: Monday May 26, end of day
+
+One detail worth noticing: the actual end is snapped to the end of the calendar day rather than the raw punch time. That guarantees a same-day partial can never produce an actual end earlier than its actual start, a data corruption that plagues systems taking timestamps at face value, and one that EDGEBIC's validation refuses at the door.
+
+The kiosk entry itself is standard shop-floor practice in EDGEBIC; the same actuals pipeline feeds the [machine breakdown reschedule walkthrough](/blog/machine-breakdown-reschedule-walkthrough-edgebic), where a mid-week failure makes preserved history even more consequential.
+
+## The Classification: Complete, or Only Confirmed?
+
+Tuesday morning the planner runs a reschedule. Before touching the calendar, EDGEBIC examines every operation that carries actuals and asks a blunt question: does the logged work match the plan?
+
+> Planned total: 19.2 h. Actual total: 4.0 h. Gap: **15.2 h**.
+
+A 15.2-hour gap is far beyond tolerance, so the operation is classified as **partially completed** despite the Done press. Under the default site policy, forward-shift remaining, the engine keeps the operation in the reschedule with exactly 15.2 hours of remaining work, rather than trusting the Done button and silently writing off two days of milling.
+
+That default is a deliberate stance. Operators press Done for many reasons: shift end, a rush order pulling them away, a habit of confirming whatever screen is open. The policy is configurable; a site that wants the Done button to be the final word can choose to trust it, in which case the gap is written off and the operation closes at 4 hours. But the out-of-the-box behavior protects the 15.2 hours, because unfinished work that vanishes from the schedule does not vanish from the shop.
+
+One subtlety separates a good implementation here: the remaining work is recomputed from the current order, not read off the old plan. Remaining equals hours per piece times current quantity, minus actual hours logged. With quantity unchanged that is 19.2 minus 4.0, the same 15.2. But if the planner had meanwhile cut the order from 100 to 80 pieces, the calculation would pick up the new quantity automatically: 15.36 planned minus 4.0 leaves 11.36 hours to place. Stale plans never drive the remainder.
+
+## The Reschedule: History Locked, Remainder Forward
+
+The engine now builds the new plan in two parts.
+
+**The historical part is locked.** Monday's record is preserved exactly as worked: actual start 08:00, 4.0 actual hours, 6 pieces, on CNC-MILL-1. Nothing about it is recomputed, resized, or relocated. This is the rule that makes rescheduling safe to do daily: completed work is never moved by a reschedule.
+
+**The remainder is placed forward.** The 15.2 unfinished hours are scheduled from the end of the recorded actuals, which means the search for capacity starts after Monday. On a one-machine, 8-hour-shift work center:
+
+| Day | Allocated |
+|---|---|
+| Tue May 27 | 8.0 h |
+| Wed May 28 | 7.2 h |
+
+The remainder finishes Wednesday at 15:12.
+
+Internally the engine briefly holds these as two records, a history row and a forward row for the same operation. At save time they are merged into **one** clean operation record, and that merge is what keeps the database and every screen downstream sane: one bar on the Gantt, one row in the job grid, no phantom twin operations for the same routing step.
+
+## What the Planner Sees Afterward
+
+The final state, as one merged operation:
+
+| Field | Value |
+|---|---|
+| Scheduled window | Mon May 26, 08:00 to Wed May 28, 15:12 |
+| Actual start | Mon May 26, 08:00 |
+| Total hours | 19.2 (4.0 actual + 15.2 planned) |
+
+And the daily breakdown, where the stitch line between history and plan is visible:
+
+| Date | Planned | Actual |
+|---|---|---|
+| Mon May 26 | 4.00 | **4.00** |
+| Tue May 27 | 8.00 | 0 |
+| Wed May 28 | 7.20 | 0 |
+
+Notice Monday's planned figure now reads 4.0, not the original 8.0. The history row records what actually happened, and what happened is 4 hours; the other 4 hours Monday was supposed to contribute did not evaporate, they are part of the 15.2 now sitting on Tuesday and Wednesday. Planned and actual agree on every closed day, and the open days carry pure plan. Anyone reading this grid in a month can reconstruct the story without asking a single question.
+
+Behind the scenes, EDGEBIC's built-in consistency checks confirm the shape is clean: exactly one operation record per routing step, no orphaned daily entries showing actual hours against zero plan, no duplicated dates. These are the same automated validations that guard every reschedule, and this walkthrough leaves all of them at zero findings.
+
+## Run It Again: Nothing Changes
+
+Here is the property that makes this trustworthy rather than merely tidy: **the cycle is idempotent**. Reschedule again on Wednesday with no new actuals logged, and the engine re-reads the merged record, re-derives the same 15.2-hour gap, re-places the same Tuesday and Wednesday hours, and re-merges to a structurally identical result. Ten reschedules produce the same schedule as one.
+
+That sounds like a small thing until you have lived with a scheduler where it is false, where every replanning pass nudges history, duplicates a row, or grows the job by a phantom hour. Planners stop rescheduling systems like that, and a schedule nobody dares refresh is a schedule that drifts from reality within a week. The whole point of [production scheduling](/blog/what-is-production-scheduling) is a plan you can regenerate any time the floor changes; partial-completion handling is where that promise is either kept or broken.
+
+## The Edge Cases, Handled
+
+Real shops produce messier inputs than one clean short confirm, and the same machinery covers them:
+
+**No Done press at all.** If the operator logs 4 hours but leaves the operation open, it classifies as in-progress rather than partial. The arithmetic is identical, 15.2 hours forward-shifted, but the record keeps an open actual end, and the Gantt shows a started, unfinished operation. The next reschedule re-classifies it the same way until someone closes it.
+
+**Over-logging.** An operator logs 22 hours against the 19.2-hour plan. The remainder calculation clamps at effectively zero, the operation carries its full 22 actual hours, and no meaningful forward work is scheduled. The overrun stays visible for variance review instead of leaking into future capacity.
+
+**Several partial steps in one job.** A three-step routing with two short-confirmed steps produces two locked histories and two forward remainders, each merged independently. The job ends with exactly one record per step, whatever combination of done, partial, and untouched its steps are in.
+
+**A different site policy.** Under the trust-the-Done policy, the same Monday scenario closes the operation at 4 hours, removes the step from the reschedule set, and writes off the gap. The choice between protecting hours and trusting confirmations is yours; the engine executes either consistently.
+
+## Why This Matters Beyond One Job
+
+Partial completion is the normal condition of a live shop, not the exception. On any given morning, half your open operations have some hours logged and some remaining, and every reschedule you run must thread all of them: preserving what the shop did, replanning what it has not, and never confusing the two. That is the discipline User Solutions has been building into scheduling tools since 1991, refined across users from job shops to the US Navy, where a carrier overhaul program coordinated 26,000-plus tasks on this style of actuals-respecting plan.
+
+This post is one of the [EDGEBIC worked examples](/blog/edgebic-worked-examples); the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide) covers the full reschedule pipeline this walkthrough passes through, and the [EDGEBIC product page](/edgebic) shows where kiosk actuals, scheduling, and reporting meet. If your current system makes you choose between rescheduling and keeping history straight, [bring a half-finished job to a demo](/contact-us) and watch the split happen on your own numbers.
+
+<Accordion title="What happens when you reschedule a partially completed production order?">
+A good scheduler splits the operation in two: the hours already worked become locked history that never moves, and only the unfinished remainder is replanned forward from where the actuals ended. In this EDGEBIC walkthrough, an operation planned for 19.2 hours with 4 hours logged keeps its 4-hour Monday history untouched while the remaining 15.2 hours shift to Tuesday and Wednesday.
+</Accordion>
+
+<Accordion title="How does EDGEBIC know an operation is partially complete?">
+It compares logged actual hours against planned hours for the operation. The walkthrough operation was planned at 19.2 hours and the operator logged 4.0 before pressing Done, leaving a 15.2-hour gap. Because the gap exceeds tolerance, EDGEBIC classifies the confirmation as partial rather than complete and keeps the operation in the reschedule with the remaining hours, instead of writing off unfinished work.
+</Accordion>
+
+<Accordion title="Does a reschedule ever move work that was already performed?">
+No. Completed and in-progress history is never moved by a reschedule in EDGEBIC. Actual start times, actual hours, and the work center where the work physically happened are preserved exactly, and the engine plans only remaining work forward from the end of the recorded actuals. Rerunning the reschedule with no new actuals produces an identical result, so repeated replanning cannot drift or duplicate history.
+</Accordion>
+
+<Accordion title="What if the operator logs more hours than the plan called for?">
+The remaining work clamps to effectively zero. If 22 hours are logged against a 19.2-hour plan, the remainder calculation cannot go negative; the operation carries its full actual history and only a token forward allocation, which merges away. The schedule then shows roughly 22 actual hours against an adjusted plan, and the overrun is visible for variance review instead of distorting future capacity.
+</Accordion>

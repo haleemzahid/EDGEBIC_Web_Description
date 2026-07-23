@@ -1,0 +1,177 @@
+---
+title: "The EDGEBIC How-To Library: Every Scheduling Task, Step by Step"
+description: "How to use EDGEBIC for every scheduling task: master data setup, routings, running the scheduler, actuals, and reschedules, organized by task family."
+published: 2026-07-23T12:00:00.000Z
+modified: 2026-07-23T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - how to use EDGEBIC
+  - EDGEBIC tutorial
+  - EDGEBIC setup guide
+  - production scheduling how-to
+  - create work center scheduling software
+  - build routing scheduling software
+  - run production scheduler
+targetPhrase: "how to use EDGEBIC"
+wordCount: 2500
+readingTime: 13
+faqQuestions:
+  - question: "How do I use EDGEBIC to schedule my first job?"
+    answer: "Set up your master data in dependency order: shifts first, then products, then work centers, then a Bill of Routing, then a manufacturing order. The First Time Setup Wizard walks you through all six steps on a fresh database. Once the order exists, open Schedule, run Drive Schedule in Incremental New mode, and read the result on the Job View Gantt."
+  - question: "What order should I set up master data in EDGEBIC?"
+    answer: "Follow the dependency chain: shifts and calendars first (nothing can be scheduled without working time), then products, then work centers with their shift assignments, then Bills of Routing that reference both, and finally manufacturing orders. Each layer depends on the ones before it, which is exactly the order the First Time Setup Wizard enforces."
+  - question: "Can I import my master data into EDGEBIC instead of typing it?"
+    answer: "Yes. Products, work centers, routing steps, orders, and even setup matrices load from Excel or CSV files through import masks. This is the standard path for ERP integration: export the lists from your existing system, map the columns once, and re-import whenever the source data changes. Most shops load hundreds of records in minutes this way."
+  - question: "Which scheduling mode should I run day to day?"
+    answer: "Use Incremental New for the daily routine: it schedules only orders that have no schedule yet and leaves everything else untouched. Reach for Incremental All or a targeted Reschedule when actuals have shifted the plan, and save Full Reschedule for after major routing or capacity changes, since it rebuilds every job from scratch."
+qaQuestions:
+  - question: "I need one machine to run only one job per day because changeover eats the whole morning. How do I set that up?"
+    answer: "Open the work center and enable its one-per-day flag. From then on the engine dedicates each instance of that work center to a single job per day, and a job that spans shifts keeps the same instance rather than hopping machines. This is the standard configuration for furnaces, paint booths, and long-setup machines. If the real issue is that changeover time depends on the product sequence (30 minutes for like colors, 4 hours dark to light), configure a setup matrix instead: define setup families, enter the from-to changeover minutes per work center, and the engine charges the true changeover automatically."
+  - question: "An operator finished a step early and the rest of the job's plan is now stale. What is the fastest correct fix?"
+    answer: "Log the actuals on the step (actual start, actual end, hours) or let the kiosk punches do it, then run a Reschedule for that one job. The engine preserves the completed step exactly as logged, releases the job's stale future reservations, and pulls the remaining steps forward to the first available capacity. Do not drag the remaining bars around by hand first; reschedule from the actuals and let the dependencies cascade, then fine-tune with drags if you still want to."
+---
+
+**Learning how to use EDGEBIC comes down to five task families: describing your plant (master data), building routings, running the scheduler, executing against the plan with actuals, and reading the results.** This page is the map of the whole how-to library for EDGEBIC by User Solutions: what each family covers, the tasks inside it, and the order that makes everything easier. Bookmark it; every task below is a thing you will do in your first ninety days.
+
+New here? The [complete EDGEBIC guide](/blog/edgebic-complete-guide) explains what the platform is before you start doing things with it. And every task family below assumes one golden rule: **set up in dependency order.** Shifts before work centers, work centers before routings, routings before orders. The First Time Setup Wizard enforces this order on a fresh database for exactly this reason.
+
+## Family 1: Products, Customers, and the Basics
+
+The simplest master data comes first, and most of it is a form and a save.
+
+**Products.** Create a finished good with its name, unit of measure, cost, and price. Beyond the basics, the tasks you will actually revisit are: cloning a product to create a variant, deactivating one (a soft delete that preserves history), attaching categories and tags for filtering, and setting the planning attributes that matter later: build method (make-to-order versus make-to-stock), lead time, yield for scrap inflation, and safety stock with reorder point and quantity for stocked items.
+
+**Customers and departments.** Customers attach to orders and quotes and flow through to reports. Departments group work centers for reporting rollups (location, manager, status); the scheduler itself does not branch on them, so treat departments as an organizational lens, not a scheduling control.
+
+**Units of measure and categories.** Two-minute tasks, but do them before importing products so the references resolve.
+
+**Import instead of typing.** Every list on this page loads from Excel or CSV through an import mask: products, work centers, routing steps, orders. If the data already lives in your ERP, export it there and import it here; that round trip is the heart of [EDGEBIC's ERP integration](/edgebic-erp-integration).
+
+## Family 2: Work Centers, Shifts, and Capacity
+
+This family defines what capacity exists, which is the raw material of every schedule.
+
+**Create shifts first.** A standard 8-hour day shift takes a minute: name it, set the daily start and end times per weekday, and set the break. Add a night shift the same way. Then handle the exceptions: plant-wide holidays (single or recurring annual), shift-specific holidays, and downtime events for planned maintenance.
+
+**Create work centers.** A standard hours-based work center needs a name, a number of instances (how many identical machines it contains), a utilization percentage, and its shift assignments (global shifts, or work-center-specific hours that override them). Pieces-based work centers exist for output-rate resources. Then the behavior flags, each of which changes how the engine treats the resource:
+
+| Flag or setting | What it changes |
+|---|---|
+| One-per-day | Each instance takes one job per day; jobs keep their instance across shifts. For furnaces and paint booths |
+| Bottleneck | Marks the constraint for Theory of Constraints anchor scheduling and load analysis |
+| Continuous process | Disables piece-count lot streaming on this resource (pieces are meaningless for paint or chemicals) |
+| Utilization % | Scales offered capacity: 2 instances at 8 hours and 80% offer 12.8 hours per shift |
+| Rate ($/h) | Feeds the quote cost rollup |
+
+**Capacity overrides.** When one specific Saturday gets authorized overtime, override that work center's capacity for that date alone. The override wins over the formula for that day and disappears when you remove it. This is the correct tool for one-off exceptions; changing the standing shift is the tool for permanent ones.
+
+The arithmetic behind all of this is worth internalizing once, because every schedule you ever read rests on it: a shift slot's capacity is shift hours, times the work center's instances, times its utilization percentage, minus downtime and partial holidays. Two instances on a 7-hour shift at 80% offer 11.2 hours; a half-day maintenance window takes its bite before the multipliers. When a schedule surprises you, this formula is the first thing to recompute.
+
+**Audit before you schedule.** Two five-minute checks prevent the two most common first-run failures: find work centers with no assigned shifts (they are scheduling dead ends) and find products with no routing (the scheduler will skip them and tell you).
+
+## Family 3: Bills of Routing
+
+The routing family is the deepest, because the routing is where scheduling behavior is configured step by step.
+
+**Build the routing.** Create a BOR list for the product, then add steps: work center, sequence number, hours per unit, setup time, queue time, and the link to the next step. You can work in the grid or draw the routing as a flow chart in the graphical designer, which is the better tool the moment you have branches, joins, or sub-assemblies. The designer gets its own walkthrough in [how to build a routing as a flow chart](/blog/how-to-build-a-routing-as-a-flow-chart-in-edgebic).
+
+**Add material steps.** A component or raw-material step carries a lead time instead of machine hours; the engine shifts its bar backward so material is ordered before it is needed, and any step depending on it waits for availability.
+
+**Configure the advanced knobs per step, when a step needs them:**
+
+- **Lot streaming:** set a transfer batch size (downstream starts when that many pieces are done) or a start-to-start lag in hours for continuous processes, plus an optional transfer delay for material handling.
+- **Transit days:** calendar or working days for parts that leave the building between steps.
+- **Alternative work centers:** a true-alternative fallback the engine may swap to, an independent parallel machine that shares the work simultaneously, or a dependent parallel machine that mirrors the primary in lockstep.
+- **Finite versus infinite:** individual steps can be flagged for finite capacity checking.
+
+**Maintain routings safely.** Cloning a routing to make a variant, reordering steps by resequencing, deleting a step, and verifying chain integrity (no circular dependencies) are all first-class tasks, and the integrity check is worth running after any bulk edit.
+
+**Setup families and the changeover matrix.** If changeover time on a machine depends on what ran before (paint colors, alloys, allergens), build the setup matrix: create setup families, assign products to them, enter the from-to changeover minutes per work center at the family level, and add product-level overrides only for special pairs. You can paste a whole matrix from Excel. From then on the engine charges the true sequence-dependent changeover on every run and records where each setup number came from, so you can audit any job's setup in the Job View.
+
+## Family 4: Orders and Running the Scheduler
+
+Now the daily work.
+
+**Create manufacturing orders.** Product, quantity, due date, start date, priority. The useful extras: linking an order to a sales order, marking an order build-to-inventory, setting a target start date (which is also how you pin an anchor job's constraint step), and adjusting priority inline, since priority is the first key the scheduler sorts by.
+
+**Choose the mode, then run.** The mode decides which orders the run touches:
+
+| Task | Mode |
+|---|---|
+| Daily intake of new jobs | Incremental New |
+| Re-plan unstarted work after changes | Incremental All |
+| Rebuild everything after routing or capacity changes | Full Reschedule |
+| Re-plan one job after actuals or a disruption | Reschedule (targeted) |
+| Re-plan but freeze the near term | Smart Incremental |
+
+Before the engine runs, pre-flight validation catches orders that cannot schedule (no routing, inactive work center, no active shifts) and drops them from the run with a readable reason, so one broken order never blocks the rest. When a run finishes, the failure dialog lists any job that could not be placed, with a category and a fix hint.
+
+**Targeted operations.** Schedule a single order without touching the others; clear schedules for selected jobs only; clear everything for a clean-sheet test. Throttle one job to less than 100% of a work center's capacity when you want it to share the resource.
+
+## Family 5: Reading Results, Actuals, and Reschedules
+
+**Read the Gantt.** The Job View shows every operation as a bar, color-coded by state, with filters to isolate jobs. Drag a bar to adjust it manually: changes stage as pending until you save, and you can discard the pending set. Step-level detail (dates, hours per day, utilization per step, which instance ran the work, where the setup time came from) lives one click deeper. The full tour is in the [visual scheduling guide](/blog/edgebic-visual-scheduling-guide).
+
+**Log actuals.** Operators punch in and out at the kiosk, or a planner logs actual start, end, and hours in the grid. Marking a step complete snaps its history into place. From that moment the step is immutable: no reschedule will ever move it.
+
+**Reschedule with confidence.** The end-of-day pattern is: actuals posted, run a reschedule, and let remaining work cascade forward from where the floor actually is, with completed steps preserved verbatim. The deeper mechanics are in the [engine guide](/blog/edgebic-scheduling-engine-guide), and the disruption pattern (machine down, work in progress) is walked through in the [breakdown walkthrough](/blog/machine-breakdown-reschedule-walkthrough-edgebic).
+
+**Know where things live.** The main window keeps the geography simple, and knowing it saves more time than any single recipe. Master data sits in its own tabs (Customers, Daily Hours for shifts and holidays, Product, the Work Center tab, and BOR for routings). Everything operational lives inside the Schedule tab's sub-tabs: Quote, Drive Schedule for orders and runs, Job View for the Gantt, Resource Calendar for capacity, and the step-level detail views. Analysis is under Dashboard and Reports, and administration (data source, imports, security, scheduling policy) is under Settings.
+
+**Let the grids work for you.** Every grid remembers your personal column layout automatically: widths, order, visibility, sorting, grouping, and filters, restored when you open a screen and saved when you leave. Group the orders grid by customer once and it comes back that way every launch. The flip side is worth knowing too: if a grid ever shows odd columns or a filter you do not remember, a saved layout is usually the reason, and Settings has a one-click reset of all layouts to factory defaults.
+
+## Your First 90 Days with EDGEBIC
+
+Task families are the map; here is the itinerary that works for most shops.
+
+**Weeks 1 to 2: build the world.** Families 1 through 3, in dependency order, using imports wherever a list already exists in your ERP or spreadsheets. Finish with the two audits (no work center without a shift, no product without a routing) so week 3 starts clean. Resist configuring advanced knobs you do not need yet; a plain, correct routing beats a sophisticated wrong one.
+
+**Weeks 3 to 4: establish the daily rhythm.** Run Incremental New every morning, read the failure dialog, fix master data as failures surface it, and publish the Gantt. Your goal in this fortnight is not a perfect schedule; it is a trusted routine.
+
+**Weeks 5 to 8: close the loop with actuals.** Bring the kiosk or the actuals grid into daily use, and add the end-of-day reschedule. This is the point where the schedule stops being a morning prediction and becomes a live document, and it is also where trust either takes root or does not, so protect the actuals-first-then-reschedule habit fiercely.
+
+**Weeks 9 to 12: add the capabilities your plant actually needs.** Now configure the advanced features with real usage behind your choices: a setup matrix if changeovers dominate, work center groups if machines are interchangeable, lot streaming on long lots, operator skills if people are the constraint. One capability at a time, validated with the anomaly report after each change. When the daily schedule is stable, try the [optimizer](/blog/edgebic-optimizer-guide) on a copy of a busy week and see what it finds.
+
+## The Workflows That Tie It Together
+
+Individual tasks compose into a small number of rhythms that healthy EDGEBIC shops settle into:
+
+1. **The daily morning workflow.** Review new orders, set priorities, run Incremental New, scan the failure dialog, check the Gantt for surprises, release the day to the floor.
+2. **The end-of-day reschedule.** Confirm actuals are posted (kiosk or grid), run a reschedule, review what moved.
+3. **The weekly full reschedule.** In a quiet window, run Full Reschedule to shake out accumulated drift, then compare utilization before and after.
+4. **The BOR-change validation.** After editing a routing, run the anomaly report and reschedule affected jobs; never let a routing edit meet the schedule for the first time on a rush order.
+5. **The breakdown response.** Record downtime on the work center, reschedule affected jobs, communicate the new dates: minutes, not hours, because the engine does the cascading.
+
+## Where the Deep Dives Live
+
+This hub stays at the task-family level on purpose. When you need the next layer down:
+
+- Concepts and mechanisms: the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide)
+- Full end-to-end scenarios with numbers: the [worked examples library](/blog/edgebic-worked-examples)
+- When a schedule looks wrong: the [troubleshooting guide](/blog/edgebic-troubleshooting-guide)
+- Optimizing a working schedule: the [optimizer guide](/blog/edgebic-optimizer-guide)
+- Quoting and promise dates: the [quoting guide](/blog/edgebic-quoting-guide)
+- Users, security, imports, and configuration: the [administration guide](/blog/edgebic-admin-guide)
+
+And if you are still weighing whether structured scheduling is worth the setup effort at all, the general case is made in [what production scheduling is](/blog/what-is-production-scheduling), and the payoff is quantified in the [results guide](/blog/edgebic-results-guide).
+
+Ready to try the tasks on your own data? [Request a demo of EDGEBIC](/edgebic) and start with Family 1. By Family 4 you will be scheduling.
+
+<Accordion title="How do I use EDGEBIC to schedule my first job?">
+Set up your master data in dependency order: shifts first, then products, then work centers, then a Bill of Routing, then a manufacturing order. The First Time Setup Wizard walks you through all six steps on a fresh database. Once the order exists, open Schedule, run Drive Schedule in Incremental New mode, and read the result on the Job View Gantt.
+</Accordion>
+
+<Accordion title="What order should I set up master data in EDGEBIC?">
+Follow the dependency chain: shifts and calendars first (nothing can be scheduled without working time), then products, then work centers with their shift assignments, then Bills of Routing that reference both, and finally manufacturing orders. Each layer depends on the ones before it, which is exactly the order the First Time Setup Wizard enforces.
+</Accordion>
+
+<Accordion title="Can I import my master data into EDGEBIC instead of typing it?">
+Yes. Products, work centers, routing steps, orders, and even setup matrices load from Excel or CSV files through import masks. This is the standard path for ERP integration: export the lists from your existing system, map the columns once, and re-import whenever the source data changes. Most shops load hundreds of records in minutes this way.
+</Accordion>
+
+<Accordion title="Which scheduling mode should I run day to day?">
+Use Incremental New for the daily routine: it schedules only orders that have no schedule yet and leaves everything else untouched. Reach for Incremental All or a targeted Reschedule when actuals have shifted the plan, and save Full Reschedule for after major routing or capacity changes, since it rebuilds every job from scratch.
+</Accordion>

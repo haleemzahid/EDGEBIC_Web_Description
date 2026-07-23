@@ -40,23 +40,23 @@
 
 | Cluster | Slug | Target | Written | Published | Indexed |
 |---|---|---|---|---|---|
-| 17 | edgebic-platform | 180 | 0 | 0 | 0 |
-| 18 | edgebic-scheduling-concepts | 200 | 0 | 0 | 0 |
-| 19 | edgebic-how-to | 500 | 0 | 0 | 0 |
-| 20 | edgebic-walkthroughs | 50 | 0 | 0 | 0 |
-| 21 | edgebic-erp-integration | 150 | 0 | 0 | 0 |
-| 22 | edgebic-industry | 110 | 0 | 0 | 0 |
-| 23 | edgebic-glossary | 350 | 0 | 0 | 0 |
-| 24 | edgebic-troubleshooting | 120 | 0 | 0 | 0 |
-| 25 | edgebic-outcomes | 100 | 0 | 0 | 0 |
-| 26 | edgebic-optimization | 60 | 0 | 0 | 0 |
-| 27 | edgebic-visual-scheduling | 40 | 0 | 0 | 0 |
-| 28 | edgebic-shop-floor | 60 | 0 | 0 | 0 |
-| 29 | edgebic-quoting | 40 | 0 | 0 | 0 |
-| 30 | edgebic-planning | 80 | 0 | 0 | 0 |
+| 17 | edgebic-platform | 180 | 1 | 0 | 0 |
+| 18 | edgebic-scheduling-concepts | 200 | 1 | 0 | 0 |
+| 19 | edgebic-how-to | 500 | 1 | 0 | 0 |
+| 20 | edgebic-walkthroughs | 50 | 11 | 0 | 0 |
+| 21 | edgebic-erp-integration | 150 | 6 | 0 | 0 |
+| 22 | edgebic-industry | 110 | 1 | 0 | 0 |
+| 23 | edgebic-glossary | 350 | 5 | 0 | 0 |
+| 24 | edgebic-troubleshooting | 120 | 9 | 0 | 0 |
+| 25 | edgebic-outcomes | 100 | 1 | 0 | 0 |
+| 26 | edgebic-optimization | 60 | 1 | 0 | 0 |
+| 27 | edgebic-visual-scheduling | 40 | 9 | 0 | 0 |
+| 28 | edgebic-shop-floor | 60 | 1 | 0 | 0 |
+| 29 | edgebic-quoting | 40 | 1 | 0 | 0 |
+| 30 | edgebic-planning | 80 | 1 | 0 | 0 |
 | 31 | edgebic-migration | 40 | 0 | 0 | 0 |
-| 32 | edgebic-admin | 40 | 0 | 0 | 0 |
-| | **TOTAL** | **2,120** | **0** | **0** | **0** |
+| 32 | edgebic-admin | 40 | 1 | 0 | 0 |
+| | **TOTAL** | **2,120** | **50** | **0** | **0** |
 
 **"Written" count is derivable from disk** (don't trust memory, count files):
 PowerShell: `Select-String -Path content/blog/*.mdx -Pattern "cluster: 'edgebic-" | Group-Object { ($_.Line -split "'")[1] } | Sort-Object Name | Format-Table Name, Count`
@@ -65,7 +65,7 @@ PowerShell: `Select-String -Path content/blog/*.mdx -Pattern "cluster: 'edgebic-
 
 | Date | Wave | Posts added | Clusters touched | Commit | Notes |
 |---|---|---|---|---|---|
-| — | — | — | — | — | — |
+| 2026-07-23 | 1 | 50 | 15 of 16 (all but migration) | see git log | 7 parallel agents; 13 pillars + 10 walkthroughs + 8 visual + 6 ERP + 8 troubleshooting + 5 glossary; QA pass fixed 2 claims; ~110k words; no heroImage yet (screenshots pending) |
 
 ## SCREENSHOT TRACKER
 
