@@ -2,6 +2,7 @@ import * as React from 'react';
 
 import { ChallengesBenefitsSection } from '@/components/marketing/sections/challenges-benefits-section';
 // import { AwardsSection } from '@/components/marketing/sections/awards-section';
+import { EdgebicAnnouncement } from '@/components/marketing/sections/edgebic-announcement';
 import { ManufacturingFeatureSection } from '@/components/marketing/sections/manufacturing-feature-section';
 import { NTClipboardHero } from '@/components/marketing/sections/ntclipboard-hero';
 import { NTClipboardSummary } from '@/components/marketing/sections/ntclipboard-summary';
@@ -15,7 +16,7 @@ export const metadata = createPageMetadata({
     'Excel-native finite capacity scheduling trusted by GE, Cummins, BAE Systems & the US Navy for 35+ years. No ERP replacement needed. Works with SAP, QuickBooks, Epicor. Free trial.',
   path: '/',
   keywords:
-    'production planning software, production scheduling software, RMDB, Resource Manager DB, manufacturing scheduling, finite capacity planning, MRP software, production tracking, manufacturing software, EDGEBI, User Solutions',
+    'production planning software, production scheduling software, RMDB, Resource Manager DB, manufacturing scheduling, finite capacity planning, MRP software, production tracking, manufacturing software, EDGEBI, EDGEBIC, User Solutions',
   absoluteTitle: true
 });
 
@@ -23,6 +24,7 @@ export default function IndexPage(): React.JSX.Element {
   return (
     <>
       <NTClipboardHero />
+      <EdgebicAnnouncement />
       <ChallengesBenefitsSection />
       {/* <NTClipboardSummary /> */}
       <ManufacturingFeatureSection />

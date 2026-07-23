@@ -10,6 +10,7 @@ import { listCompetitorSlugs } from '@/lib/programmatic/competitors';
 
 // High-priority pages that should be crawled more frequently
 const HIGH_PRIORITY_PAGES = new Set([
+  'edgebic',
   'resource-manager-db-2',
   'production-planning-scheduling-solutions',
   'features',
@@ -20,6 +21,8 @@ const HIGH_PRIORITY_PAGES = new Set([
 ]);
 
 const MEDIUM_PRIORITY_PAGES = new Set([
+  'rmdb-to-edgebic',
+  'edgebic-erp-integration',
   'contact-us',
   'consulting',
   'edgebi',

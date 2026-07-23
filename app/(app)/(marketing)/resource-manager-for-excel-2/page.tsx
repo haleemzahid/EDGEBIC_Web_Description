@@ -7,6 +7,7 @@ import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { YouTubeFacade } from '@/components/ui/youtube-facade';
+import { EdgebicSuccessorCallout } from '@/components/marketing/sections/edgebic-successor-callout';
 import { RMXQuickStartContent } from '@/components/marketing/rmx-quick-start-content';
 
 // Lazy load In Depth content
@@ -307,6 +308,8 @@ export default function ResourceManagerForExcel2Page() {
           )}
         </div>
       </section>
+
+      <EdgebicSuccessorCallout variant="rmx" />
     </div>
   );
 }
