@@ -1,0 +1,138 @@
+---
+title: "Shop Floor Tracking That Feeds the Machine Shop Schedule"
+description: "Machine shop job tracking software: kiosk punches, piece counts, and reason codes that roll into daily hours the scheduler reads on the next reschedule."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - machine shop job tracking software
+  - shop floor data collection
+  - production kiosk time tracking
+  - actual hours vs planned hours
+  - downtime reason codes
+  - piece count tracking manufacturing
+  - reschedule with actuals
+targetPhrase: "machine shop job tracking software"
+wordCount: 1800
+readingTime: 9
+faqQuestions:
+  - question: "What does an operator actually do at the kiosk?"
+    answer: "The kiosk shows the next queued job at that work center. The operator taps Setup, then Start Run, then increments good and scrap counters as pieces come off, then taps Complete. Each tap closes the previous state segment and opens the next one, so the elapsed time is captured without anyone writing a number down. Pauses ask for a reason code from four categories: machine, material, quality, and waiting."
+  - question: "Which punch types count toward the job's actual hours?"
+    answer: "Only closed Run and Rework punches roll into the daily hour breakdown that the scheduler and reports read. Setup, Idle, Down, and Teardown are captured separately and feed availability and loss analysis rather than production hours. That separation is why a two-day job showing 9.08 actual hours against 7 planned can still tell you exactly where the extra time went."
+  - question: "Does logging actuals move work that is already finished?"
+    answer: "No. Completed work is never moved by a reschedule. Once an operation carries an actual end date, its dates are historical fact, and later scheduling runs preserve them and reschedule only the remaining steps from where the job actually stands. That contract is what makes it safe to reschedule daily."
+  - question: "How are supervisor corrections handled?"
+    answer: "A supervisor editing a closed punch writes an append-only adjustment record carrying the old value, the new value, the field changed, who made the change, and a mandatory reason. The original punch is not silently rewritten, and the daily breakdown is rebuilt from the corrected values. An operator undo of a mis-tapped piece count writes the same kind of record, so counts cannot be quietly cleaned up."
+qaQuestions:
+  - question: "Our operators fill in a paper traveler and somebody keys it the next morning. What actually improves if we put a terminal at the machine?"
+    answer: "Two things, and the second is the one that pays. First, the times get real: the kiosk stamps a server-side timestamp on every state change, so setup, run, and downtime are separated by taps rather than reconstructed from memory at the end of a shift. Second, the schedule stops being a day behind. The reschedule reads actual start and end dates and the per-day hour breakdown directly, so remaining steps replan from where the job actually stands rather than where the plan assumed it would be. The paper traveler tells you what happened. The kiosk tells the scheduler, which is a different and more useful thing."
+  - question: "We want piece counts but our operators will not stand there tapping a counter all day. Is there a middle ground?"
+    answer: "Yes, and it is a setting rather than a compromise. Entry mode governs what the operator drives. In hours-primary mode the clock is the input and pieces are derived from a rate snapshot taken when the punch opened. In pieces-primary mode the counters drive and hours are derived. In both mode the system accepts each independently and the difference becomes a variance you can actually analyze. The rate snapshot matters: it is frozen at punch open, so editing the routing next month does not retroactively change what historical punches say happened."
+---
+
+**Shop floor tracking earns its place when the numbers it captures change the next schedule, not just the next report.** EDGEBIC by User Solutions captures operator time and piece counts at a touchscreen terminal beside the machine, rolls them into a per-day hour breakdown, and feeds that straight into the next scheduling run, where completed work is preserved and only the remaining steps replan. For a machine shop running paper travelers, that is the difference between a schedule that describes yesterday and one that describes today.
+
+The full mechanism, including the punch lifecycle and the audit model, is documented in [actuals tracking explained](/blog/edgebic-actuals-tracking-explained). This post is about what a machine shop gets out of it.
+
+## Why the Paper Traveler Loses
+
+The traveler is not wrong. It is late, and it is aggregated.
+
+Late, because hours get keyed the next morning at the earliest, so every scheduling run is planning against a picture of the shop that is at least one shift old. Aggregated, because a traveler line that says "6.5 hours" cannot tell you that 0.9 of it was setup, 1.25 was a coolant failure, and the rest was cutting. Both problems are structural. No amount of discipline fixes them.
+
+A terminal at the machine fixes both by construction. Each tap closes one state segment and opens the next, and every timestamp is taken on the server rather than the terminal's clock, so a kiosk whose time drifted last month does not corrupt the record.
+
+## One Shift, Captured
+
+Here is a real CNC run: a turbine shaft job, 50 pieces, on a machine and instance the operator selects. The routing says 0.14 hours per piece with a pieces-per-unit of one, which gives an effective rate of 7.14 pieces per hour, snapshotted onto the punch the moment it opens.
+
+| Time | Operator action | What is captured |
+|---|---|---|
+| 08:00 | Tap Setup | Setup punch opens. Standard setup hours from the routing are frozen on the punch for later variance. |
+| 08:28 | Tap Start Run | Setup closes at 0.47 hours. Run opens. The job's actual start date is stamped. |
+| 09:00 | Tap good pieces | Counter increments on the open Run punch. |
+| 10:15 | Tap Scrap, pick "dimensional reject" | Scrap count and its quality reason code land on the punch. |
+| 16:00 | Tap Complete | Run closes at 7.53 hours. The job's actual end date is stamped. |
+
+The rollup that reaches the scheduler and the reports is one row: 7.00 planned hours, 7.53 actual hours, 42 actual pieces, and an observed rate of 5.58 pieces per hour against a standard of 7.14.
+
+Read that last pair again, because it is the whole argument for piece counting. The hours look close to plan. The rate says the shift lost roughly an hour and a half somewhere, and the scrap event and its quality hold explain where. Neither number alone tells you that.
+
+Two rules govern what lands in the rollup. Scrap is **not** counted in actual pieces, only good pieces are. And the 0.47 hours of setup does **not** appear in the daily production hours, because setup is tracked separately.
+
+## Where the Time Actually Went
+
+Six punch states are available, and only two of them feed production hours.
+
+| State | Feeds daily production hours? | What it tells you |
+|---|---|---|
+| Setup | No | Changeover time, compared against the routing standard |
+| Run | **Yes** | Productive machining |
+| Rework | **Yes** | Recovery work, with a reason |
+| Idle | No | Availability loss, with a reason |
+| Down | No | Availability loss, with a reason |
+| Teardown | No | Changeover time |
+
+Take a two-day paint booth job as the pattern. Day one: setup 07:50 to 08:45 (0.92 hours), run to 10:30 (1.75 hours), a machine-down pause for a coolant issue from 10:30 to 11:45 (1.25 hours), run again to 16:00 (4.25 hours), then idle overnight. Day two: resume at 07:55, complete at 11:00 (3.08 hours).
+
+The daily breakdown reads 6.00 hours on day one and 3.08 on day two. The 0.92 hours of setup, the 1.25 hours of downtime, and the 15.92 hours of overnight idle are all captured and all excluded from production hours. The planner sees 9.08 actual hours against 7 planned, and can point at the coolant reason code as the 1.25-hour piece of the gap.
+
+That is a supervisor conversation with evidence in it. Sixteen reason codes ship by default across four categories (machine, material, quality, waiting), and you can add work-center-specific codes that appear alongside the global ones.
+
+## Setup Variance a Machine Shop Can Use
+
+Setup is where machine shops lose time they never see, so the kiosk lets an operator advance through sub-phases within a setup punch: teardown, fixture, tools, first article, QA hold, run-off.
+
+A changeover recorded that way might read: teardown 0.33 hours, fixture 0.17, tools 0.50, first article 0.33. Total 1.33 hours against a 0.75-hour standard, which is a 0.58-hour variance. And the breakdown says the teardown alone consumed most of what the standard allowed for the whole changeover.
+
+That is actionable in a way "setup ran long" never is. If your sequencing costs you setup hours, [cutting CNC setup time by sequencing](/blog/edgebic-for-cnc-shops-setup-sequencing) covers the scheduling side of the same problem, and the measured variance here is what tells you whether your matrix values match reality.
+
+## The Guardrails That Keep the Data Usable
+
+Four rules protect the record, and each exists because the alternative caused a real problem.
+
+**End cannot precede start.** A validator runs at every write path (grid edit, mark complete, actual start capture) and rejects an actual end at or before the actual start. Before it existed, a mistyped date persisted silently and then corrupted every downstream reschedule by looking like a completed step with an impossible range.
+
+**Same-day completion is safe.** When a planner marks complete without typing an explicit end time, the end snaps to the last moment of the last day that carries actual activity. Without that, a job started at 08:00 and completed the same day would resolve an end of midnight, which is before the start, and trip the validator on the next run.
+
+**Corrections are appended, not overwritten.** A supervisor fixing a punch (an operator tapped Complete an hour early, so 4.83 hours should read 5.83) writes an adjustment record carrying the field, the old value, the new value, who changed it, and a mandatory reason. The daily breakdown is then rebuilt. The same applies to an operator's own piece-count undo, which is recorded rather than silently absorbed.
+
+**System-filled days are visibly marked.** When an operator starts a step whose prior steps have no actual dates, the kiosk asks before continuing. Accepting back-fills the missing steps from their planned dates and tags those days as system-filled, and the planner's log grid shows an "auto-filled" pill on exactly those rows. The pill clears the moment somebody edits the value. You always know which numbers a human typed.
+
+## What the Scheduler Does With It
+
+This is the part that separates tracking from scheduling.
+
+On the next run, the engine reads which steps have actual dates and classifies them. Completed steps are preserved with their real dates and are not rescheduled. In-progress steps keep their machine and their start. Remaining steps replan forward from where the job actually stands, not from where the original plan assumed it would be by now.
+
+**Completed work is never moved by a reschedule.** That is a hard contract, and it is what makes daily rescheduling safe for a shop with work in process. Your operator does not arrive to find that last week's finished operations have been re-dated.
+
+Two related behaviors are worth knowing. A step configured with a parallel work center produces two schedule rows, and the parallel row's actuals always follow the primary at log time rather than being entered twice, with hours scaled by the configured factor. And when the routing has drifted since the job was scheduled (a work center changed, a cycle time changed), the kiosk shows a non-blocking banner before the operator starts so they can flag it to the planner. See [routing snapshots](/blog/edgebic-routing-snapshots-explained) for why that drift is visible at all.
+
+## Starting Small
+
+You do not need every machine wired on day one. Put a terminal at the constraint and one busy cell, run it for two weeks, and compare the daily breakdown against what the travelers said. The gap between those two numbers is your business case, and it is usually in the downtime reason codes rather than in the run hours.
+
+For the category fundamentals, [machine shop scheduling](/blog/machine-shop-scheduling) covers the ground and the [machine shop scheduling software](/machine-shop-scheduling-software) page is the shorter read. Once actuals flow, the [quoting side](/blog/edgebic-for-machine-shops-quoting-capacity) gets sharper, because quoted hours can finally be compared against what jobs really took. The [industry fit guide](/blog/edgebic-by-industry) maps features to shop types, and [EDGEBIC](/edgebic) is the product hub.
+
+Ready to see the terminal? [Contact US for a demo](/contact-us) and bring one job's travelers so we can compare.
+
+<Accordion title="What does an operator actually do at the kiosk?">
+The kiosk shows the next queued job at that work center. The operator taps Setup, then Start Run, then increments good and scrap counters as pieces come off, then taps Complete. Each tap closes the previous state segment and opens the next one, so the elapsed time is captured without anyone writing a number down. Pauses ask for a reason code from four categories: machine, material, quality, and waiting.
+</Accordion>
+
+<Accordion title="Which punch types count toward the job's actual hours?">
+Only closed Run and Rework punches roll into the daily hour breakdown that the scheduler and reports read. Setup, Idle, Down, and Teardown are captured separately and feed availability and loss analysis rather than production hours. That separation is why a two-day job showing 9.08 actual hours against 7 planned can still tell you exactly where the extra time went.
+</Accordion>
+
+<Accordion title="Does logging actuals move work that is already finished?">
+No. Completed work is never moved by a reschedule. Once an operation carries an actual end date, its dates are historical fact, and later scheduling runs preserve them and reschedule only the remaining steps from where the job actually stands. That contract is what makes it safe to reschedule daily.
+</Accordion>
+
+<Accordion title="How are supervisor corrections handled?">
+A supervisor editing a closed punch writes an append-only adjustment record carrying the old value, the new value, the field changed, who made the change, and a mandatory reason. The original punch is not silently rewritten, and the daily breakdown is rebuilt from the corrected values. An operator undo of a mis-tapped piece count writes the same kind of record, so counts cannot be quietly cleaned up.
+</Accordion>

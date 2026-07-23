@@ -1,0 +1,159 @@
+---
+title: "Traceable Routings for Aerospace and Defense Work"
+description: "Aerospace routing traceability scheduling: every job keeps the exact routing it was scheduled with, so an engineering change cannot silently re-route live work."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - aerospace routing traceability scheduling
+  - routing snapshot manufacturing
+  - engineering change control production
+  - as-planned versus as-built routing
+  - configuration control scheduling
+  - job level routing preservation
+  - reschedule routing stability
+targetPhrase: "aerospace routing traceability scheduling"
+wordCount: 1780
+readingTime: 9
+faqQuestions:
+  - question: "What is a routing snapshot?"
+    answer: "An exact copy of the routing a job was scheduled with, captured the first time the job is scheduled and stored against that job. Later scheduling runs read the snapshot rather than the live routing, so the job keeps the work centers, times, alternates, and parallel configuration it was planned with even after engineering changes the master routing."
+  - question: "How do I make a live job pick up an engineering change?"
+    answer: "Tick the option to use the current routing on the next reschedule for that job. The next run reads the live master routing instead of the snapshot, schedules from it, and refreshes the snapshot to match, so future runs lock to the updated version. The default is off, which means a job never adopts a routing change by accident."
+  - question: "Can a job adopt a validated time improvement without adopting a routing change?"
+    answer: "Yes, that is what the hybrid merge does. It keeps identity and structure from the snapshot while selectively adopting timing improvements from the live routing, using thresholds so that noise-level edits are ignored. A cycle time cut from 10.0 to 4.8 hours is adopted; a change from 2.0 to 2.08 hours is not."
+  - question: "What happens if somebody changes the routing while a job is running?"
+    answer: "The running job keeps its snapshot, and the operator terminal shows a non-blocking banner when the live routing differs from what the job was scheduled with. Four fields are compared: the work center, the setup time, the cycle time, and the queue time. The operator sees the difference before starting and can flag it, rather than discovering it mid-setup."
+qaQuestions:
+  - question: "An engineer moved a final inspection step from one cell to another while three jobs were mid-build. What does the system do?"
+    answer: "Nothing to those three jobs, which is the correct answer. Each was scheduled against a snapshot that still names the original cell and the original hours, and every later reschedule reads that snapshot. Consider a job where the final step was captured as one hour on a QC bay and the master routing has since changed it to a different cell at 0.75 hours: the reschedule still allocates the QC bay for one hour. The operator has tooling and instructions set for that bay, and silently re-routing a job in flight would invalidate work instructions without warning. When the change should apply, the planner ticks the option for that job and the next run adopts it deliberately."
+  - question: "For a first-article or a government contract we have to be able to say which routing we actually built to. Where does that come from?"
+    answer: "From the snapshot itself plus the comparison report. The snapshot is captured at scheduling time and carries the step sequence, the work center assignments, sequence and dependency links, setup, run, queue and yield values, status flags, and the alternates configured at that moment, alongside metadata: which master routing it came from, the product, the capture timestamp, the reason for capture, and a version number. The comparison report then walks the snapshot against today's live routing field by field and reports exactly what changed. That pairing answers both halves of the traceability question: what we planned to build to, and how the master has moved since."
+---
+
+**In a regulated shop, a routing that changes underneath a live job is not an improvement, it is a deviation nobody signed.** EDGEBIC by User Solutions captures an exact copy of the routing at the moment a job is first scheduled and reads that copy on every later run, so an engineering change to the master routing cannot silently re-route work already in flight. For aerospace and defense manufacturers, that turns "which routing did we actually build to" from an archaeology problem into a stored record.
+
+The mechanism is documented in [routing snapshots explained](/blog/edgebic-routing-snapshots-explained). This post is about the traceability and configuration-control case.
+
+## The Problem With a Single Live Routing
+
+Most systems hold one routing per product. It is the current one, and every scheduling run reads it.
+
+That is fine until the routing changes mid-order, which in aerospace it always does: a process improvement, a supplier change, an approved deviation, a corrective action. The moment the master changes, every open job silently inherits it on the next scheduling run.
+
+Three things break at once. The traveler on the floor no longer matches the plan. The operator has tooling set for an operation the system has quietly moved. And the record of what you actually planned to build to is gone, because the only copy was overwritten.
+
+None of those failures announce themselves. They are found by a supervisor, an auditor, or a customer.
+
+## What Gets Captured, and When
+
+The first time a job is scheduled, the routing used is deep-copied and stored against that job. From that point, that copy is what later scheduling runs read.
+
+The snapshot is structural, not a screenshot. It carries:
+
+| Captured | Why it matters later |
+|---|---|
+| Step sequence and sequence numbers | The order of operations as planned |
+| Work center assignment per step | Which cell the job was planned for |
+| Setup, run, queue times and yield | The times the plan and the promise were built on |
+| Next-in-sequence links and dependency type | The routing graph, not just a list |
+| Status flags: completed, optional, parallel, skippable | The step's planned character |
+| Alternate work centers configured at that moment | What the plan considered as fallbacks |
+| Metadata: source routing, product, capture timestamp, reason, version number | The provenance of the copy |
+
+The version number and the capture reason are what make it auditable. A snapshot captured for a production schedule and a snapshot captured for a reschedule are distinguishable, and successive snapshots of the same source routing carry increasing versions.
+
+## What Happens When Engineering Changes the Master
+
+Here is the case that matters, worked.
+
+A three-step job is scheduled: turn on a lathe at 4.0 hours with 0.5 setup, mill at 6.0 hours with 1.0 setup, and a final inspection on a QC bay at 1.0 hours. The snapshot is captured with exactly those values.
+
+The job reaches 60 percent complete, with the first two steps carrying actuals. An engineer then changes the master routing: final inspection moves from the QC bay to a test cell, and the time drops from 1.0 to 0.75 hours.
+
+The next full reschedule runs:
+
+1. The job's snapshot is loaded and still shows the QC bay at 1.0 hours.
+2. The option to use the current routing is off, which is the default, so the snapshot is used.
+3. Completed steps are classified from actuals and preserved.
+4. The final step is allocated on the **QC bay for 1.0 hours**, exactly as originally planned.
+
+The operator's tooling and work instructions are for the QC bay. Silently re-routing to the test cell mid-order would invalidate those instructions without warning, and would do it in a way no report would flag. The snapshot prevents it structurally.
+
+## Adopting a Change Deliberately
+
+When the change should apply, the planner ticks the option for that job to use the current routing on the next reschedule. Then:
+
+1. The run reads the live master routing instead of the snapshot, so the final step becomes the test cell at 0.75 hours.
+2. The snapshot is **refreshed** to the new version.
+3. The flag resets, so future runs lock to the updated routing.
+
+The adoption is a decision with a record, taken per job, on a date, by a planner. That is what change control means in practice, and it is the opposite of an implicit global rollout.
+
+## The Middle Path: Adopting Timing Without Adopting Routing
+
+There is a third mode for a real situation: engineering validates a genuine cycle-time improvement on the same machine, and you want live jobs to benefit without re-routing anything.
+
+The hybrid merge keeps identity and structure from the snapshot and selectively adopts timing from the live routing, using thresholds so noise does not propagate.
+
+| Rule | Condition | Effect |
+|---|---|---|
+| Work center changed | The live routing names a different work center | Always adopt the live value: engineering changed the routing |
+| Run time improved | Difference over 0.1 hours **and** more than a 10 percent reduction, or under a 5 percent increase | Adopt the live run time |
+| Setup improved | Difference over 0.05 hours **and** more than a 5 percent reduction, or under a 10 percent increase | Adopt the live setup |
+| Sequence restructured | Sequence numbers differ | Update the sequence |
+
+Worked: a step captured at 10.0 hours on a press, with the live routing now at 4.8 hours after a validated improvement, has an improvement ratio above the threshold, so the hybrid step becomes 4.8 hours on the same press. A second step whose live value drifted from 2.0 to 2.08 hours, a four percent increase, is **not** adopted, because that is noise rather than an improvement and propagating it would make every reschedule jitter.
+
+New steps present in the live routing but absent from the snapshot are appended and tagged as new, so they are identifiable rather than blended in.
+
+## Proving What Changed
+
+Two surfaces answer an auditor.
+
+The **comparison report** walks the snapshot against today's live routing step by step and reports which fields differ. That is the direct answer to "how has the master moved since we planned this job."
+
+The **integrity check** runs when snapshots are loaded and flags structural problems: a missing name, an invalid product, an empty step list, a step with neither a valid work center nor a product, a negative run time, a work center reference with no name. Those are the conditions that would make a snapshot untrustworthy, and they surface at load rather than at allocation.
+
+Each snapshot also carries reschedule metadata, so how many times a job has been replanned against its preserved routing is a stored number rather than an estimate.
+
+## Drift Visible at the Machine
+
+The operator terminal compares the routing the job was scheduled with against the live routing at the moment the operator picks up the job, and shows a non-blocking banner when they differ. Four fields are checked: the work center, the setup time, the cycle time, and the queue time.
+
+The banner does not stop the operator. It tells them, before setup, that engineering has moved something so they can raise it with the planner. That is the point at which a routing change is cheapest to catch, and it is exactly the moment most systems say nothing.
+
+See [shop floor tracking](/blog/edgebic-for-machine-shops-actuals-tracking) for the surrounding kiosk workflow, and note the companion guarantee: completed work is never moved by a reschedule, so the as-built dates of finished operations are as stable as the as-planned routing.
+
+## Two Rules Worth Knowing Up Front
+
+**Preserving is the default.** The option to use the live routing is off unless somebody ticks it, per job. Nothing adopts a change by accident.
+
+**A snapshot with no steps falls through to the live routing.** If a snapshot is somehow empty, the run uses the current master rather than scheduling nothing. That is a safety fallback rather than a feature: the integrity check exists to surface the condition, and an empty snapshot is worth investigating rather than living with.
+
+## Where This Fits in an Aerospace Program
+
+Routing snapshots answer the configuration-control half of traceability. The delivery half is covered by [protecting delivery dates on long routings](/blog/edgebic-for-aerospace-toc-scheduling), and the labor-qualification half by [scheduling certified operators](/blog/edgebic-for-aerospace-operator-certifications). Together they give you three answers most schedules cannot give: which routing, which constraint protected the date, and which qualified person.
+
+For the category background, [aerospace and defense scheduling](/blog/aerospace-defense-scheduling) covers the fundamentals, [audit-ready scheduling](/blog/audit-ready-scheduling) and [change control in scheduling](/blog/change-control-scheduling) cover the practice, and the [defense and aerospace manufacturing scheduling](/defense-aerospace-manufacturing-scheduling) page is the shorter evaluation read. The [industry fit guide](/blog/edgebic-by-industry) maps the rest, and [EDGEBIC](/edgebic) is the product hub.
+
+Ready to make your routings traceable? [Contact US for a demo](/contact-us) and bring the last engineering change that surprised the floor.
+
+<Accordion title="What is a routing snapshot?">
+An exact copy of the routing a job was scheduled with, captured the first time the job is scheduled and stored against that job. Later scheduling runs read the snapshot rather than the live routing, so the job keeps the work centers, times, alternates, and parallel configuration it was planned with even after engineering changes the master routing.
+</Accordion>
+
+<Accordion title="How do I make a live job pick up an engineering change?">
+Tick the option to use the current routing on the next reschedule for that job. The next run reads the live master routing instead of the snapshot, schedules from it, and refreshes the snapshot to match, so future runs lock to the updated version. The default is off, which means a job never adopts a routing change by accident.
+</Accordion>
+
+<Accordion title="Can a job adopt a validated time improvement without adopting a routing change?">
+Yes, that is what the hybrid merge does. It keeps identity and structure from the snapshot while selectively adopting timing improvements from the live routing, using thresholds so that noise-level edits are ignored. A cycle time cut from 10.0 to 4.8 hours is adopted; a change from 2.0 to 2.08 hours is not.
+</Accordion>
+
+<Accordion title="What happens if somebody changes the routing while a job is running?">
+The running job keeps its snapshot, and the operator terminal shows a non-blocking banner when the live routing differs from what the job was scheduled with. Four fields are compared: the work center, the setup time, the cycle time, and the queue time. The operator sees the difference before starting and can flag it, rather than discovering it mid-setup.
+</Accordion>

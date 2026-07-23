@@ -1,0 +1,159 @@
+﻿---
+title: "Scheduling Ovens, Baths and Other Continuous-Process Equipment"
+description: "Continuous process work center scheduling in EDGEBIC: the flag that switches overlap from piece counts to an hour lag, and which equipment truly qualifies."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - continuous process work center scheduling
+  - paint line scheduling software
+  - chemical process scheduling
+  - start to start lag scheduling
+  - batch oven scheduling
+  - overlap model selector
+targetPhrase: "continuous process work center scheduling"
+wordCount: 2085
+readingTime: 10
+faqQuestions:
+  - question: "What does the continuous-process flag on a work center actually change?"
+    answer: "It changes which overlap model applies to every operation routed to that machine. With the flag off, an operation carrying a transfer batch overlaps by piece count: the next operation starts once that many pieces exist. With the flag on, piece counts are ignored entirely and overlap is expressed as an hour lag after the upstream operation starts. Nothing else about the machine changes: shifts, instances, utilization and setup all behave the same."
+  - question: "Why is the continuous-process setting on the machine rather than on the routing operation?"
+    answer: "Because it describes physical equipment rather than a product decision. A chemical reactor is continuous by nature and a mill is discrete by nature, and that does not change because of which part is running. Putting it on the machine also means it is set once when the equipment is added rather than maintained on every routing operation that passes through it."
+  - question: "Is a batch oven a continuous-process work center?"
+    answer: "Usually not. A batch furnace loads a charge, runs a cycle, and unloads: that is a discrete operation with a long cycle, and the right tool is the one-job-per-instance-per-day setting rather than the continuous flag. Reserve the continuous flag for equipment producing a genuine stream, such as a coating line, an extruder, a plating bath running continuously, or a reactor."
+  - question: "What happens if I set a transfer batch on a continuous-process machine?"
+    answer: "The transfer batch is ignored and the hour lag governs instead. Nothing errors and no schedule is wrong, but the configuration says one thing and the engine does another. The anomaly report carries a dedicated check for this exact pairing so it surfaces rather than sitting silently in the routing. Either clear the continuous flag or clear the transfer batch, depending on which was the real intent."
+  - question: "How do I choose the number of hours for the lag?"
+    answer: "Ask how long after the upstream operation starts there is enough material accumulated for the next operation to run without starving. On a coating line that fills a cure rack, that is the time to fill the first rack. The lag is independent of quantity and of the routing's hours per unit, so it is a physical property of the handoff rather than something to compute from the order size."
+qaQuestions:
+  - question: "Our coater runs 08:00 to 16:00 and the cure oven can start once about two hours of coated material has built up. What do I set?"
+    answer: "Flag the coater as continuous process and set the flow lag on the coating operation to 2. The cure oven's earliest start becomes 10:00, two hours after the coater starts, and the two operations overlap for the rest of the coating run. Leave the transfer batch at zero on that operation so the piece-count branch cannot fire, and put any physical handling wait in the transfer delay rather than in queue time."
+  - question: "We set both a cooling queue and a flow lag on the same paint operation and the cooling seems to have vanished."
+    answer: "It has. Whenever an overlap model fires, its result becomes the successor's gate and replaces whatever the queue calculation produced, so the queue hours are discarded. That interaction has its own anomaly check precisely because it surprises people. Move the cooling wait into the transfer delay, which is added on top of the lag, or put the queue time on the downstream operation where it applies after that operation's own work."
+---
+
+**The continuous-process flag in [EDGEBIC by User Solutions](/edgebic) is an overlap model selector, not a different scheduler.** Turn it on and every operation routed to that machine stops overlapping by piece count and starts overlapping by an hour lag measured from the upstream operation's start. Everything else about the machine is unchanged.
+
+That is the whole feature, and stating it plainly avoids two opposite errors: expecting the flag to do more than it does, and setting it on equipment that does not qualify.
+
+For the two overlap models themselves, read [lot streaming explained](/blog/edgebic-lot-streaming-explained) and [transfer batch vs flow overlap](/blog/piece-count-vs-time-lag-overlap-in-edgebic). This post is about the machine-level decision.
+
+## What the Flag Selects Between
+
+Every operation's handoff to the next operation is decided by one of three behaviors.
+
+**Piece-count overlap** fires when the operation carries a transfer batch above zero **and** its machine is not flagged continuous. The next operation may start once the resolved changeover plus the transfer batch's run time has elapsed from the upstream start, plus any transfer delay.
+
+**Hour-lag overlap** fires when the piece-count branch did not, which happens either because the transfer batch is zero or because the machine is flagged continuous. The next operation may start a fixed number of hours after the upstream operation starts. Run hours, order quantity and setup play no part.
+
+**No overlap** is what happens when neither is configured. The next operation waits for the upstream operation's full completion.
+
+So the flag's only job is to force the second branch on a machine where counting discrete pieces is meaningless. On a coating line, "the first fifty pieces" is not a thing you can point at. "Two hours in, there is enough coated material in the rack for curing to begin" is.
+
+## Why It Lives on the Machine
+
+The flag describes physical equipment. A reactor is continuous by nature; a mill is discrete by nature. That character does not change because a different part number is running through it.
+
+Putting the flag on the machine has two practical consequences worth knowing.
+
+It is **set once and forgotten**. A shop with a few dozen machines and hundreds of routing operations sets the flag when the equipment record is created, and never touches it again. The alternative, a per-operation setting, would need the same value maintained on every routing that passes through that machine, and the first time somebody missed one, the same machine would use two different overlap models on two different products.
+
+It is also **plant-wide in effect**. Every operation routed to that machine gets the hour-lag model, including operations somebody configured a transfer batch on. That is deliberate, and it is why the pairing is checked rather than allowed to sit silently.
+
+## What the Lag Means, Precisely
+
+The flow lag is hours after the upstream operation **starts**, not hours after it finishes.
+
+Take a spray booth running a 500-panel order from 08:00 to 12:00, with a lag of 1 on the coating operation. The cure oven's earliest start is 09:00. The two overlap for three hours. Without the lag, curing would wait until 12:00, so the compression is three hours on a four-hour operation.
+
+A lag longer than the upstream run behaves as a pure start-to-start delay that happens to end after the upstream finishes. A lag of 6 on that same four-hour booth run puts the oven's gate at 14:00, two hours after the booth is done. That is a legitimate configuration for a handoff that genuinely needs time to settle, and it is why the field is described as a lag rather than as an overlap.
+
+The lag is independent of quantity and of hours per unit. A 500-panel order and a 50-panel order with the same lag both hand off one hour after the booth starts. That independence is the point: on continuous equipment, the accumulation rate is a property of the process, not of the order.
+
+## Choosing the Lag Number
+
+Ask one question: how long after this operation starts is there enough material accumulated for the next operation to run without starving?
+
+On a coating line feeding a cure rack, that is the time to fill the first rack. On an extruder feeding a cut-to-length saw, it is the time to produce the first usable length plus whatever the saw needs in its infeed. On a plating line feeding a rinse, it is close to zero.
+
+Two sanity checks help. If the number you arrive at is longer than the upstream operation typically runs, you are describing a delay rather than an overlap, and that is fine but worth naming as such. If the number depends on how big the order is, the process is probably not continuous and the piece-count model is the better fit.
+
+## Which Equipment Actually Qualifies
+
+This is where most misconfiguration happens, because "batch" and "continuous" are used loosely on a shop floor.
+
+| Equipment | Continuous flag | Better tool |
+|---|---|---|
+| Coating or paint line, conveyorized | Yes | Hour lag on the coating operation |
+| Extruder | Yes | Hour lag |
+| Continuously-run plating or wash bath | Yes | Hour lag |
+| Chemical reactor producing a stream | Yes | Hour lag |
+| Batch heat-treat furnace | No | One job per instance per day |
+| Batch paint booth with a color change per job | No | One job per instance per day, plus a changeover matrix |
+| Autoclave with a fixed cycle per load | No | Ordinary hours capacity; the cycle is the operation |
+| CNC mill, lathe, drill | No | Piece-count overlap if the next operation can start early |
+
+The batch furnace row is worth expanding, because it is the most common mistake. A furnace that loads a charge, runs a cycle, and unloads is a discrete operation with a long duration. Its scheduling problem is that a chamber is occupied for the whole day by one job, and the tool for that is the one-job-per-instance-per-day setting, not the continuous flag. A three-chamber furnace with that setting runs three jobs a day, one per chamber, and a fourth waits for tomorrow. [How EDGEBIC picks an instance](/blog/how-edgebic-picks-an-instance-load-balancing-vs-one-per-day) covers the mechanics.
+
+Similarly, a paint booth that changes color between jobs is a batch operation whose real scheduling problem is changeover cost. The right tools there are the one-job-per-instance-per-day setting and a sequence-dependent changeover matrix, which together let the plan reflect what a color change actually costs. [The setup matrix explained](/blog/edgebic-setup-matrix-explained) covers that side.
+
+## What Does Not Change
+
+A continuous-process machine is an ordinary work center in every other respect:
+
+- Its shifts, holidays and downtime apply as normal.
+- Its instance count and utilization percentage feed the same capacity formula.
+- Its changeover matrix still resolves the operation's own setup time, which counts toward the operation's duration. It just does not feed the lag, because the lag is not derived from setup.
+- Its actuals are logged, preserved on reschedule, and reported the same way.
+- Its operations still compete for capacity with everything else routed there.
+
+The one behavior that does change downstream is the anomaly check for unexpected gaps between sequential operations. Operations carrying an overlap are exempt from the unexpected-overlap flag, because producing an overlap is precisely what they were configured to do.
+
+## Two Interactions That Surprise People
+
+**A transfer batch on a continuous machine is ignored.** Nothing errors and no schedule is wrong; the configuration simply says one thing and the engine does another. Because that is exactly the kind of silent disagreement that survives for months, the anomaly report carries a dedicated check for a transfer batch set on an operation routed to a continuous-process machine. Run it after you flag a machine and clear whatever it names.
+
+**Queue time on an operation with a lag is discarded.** Whenever an overlap model fires, its result becomes the successor's gate, replacing whatever the queue calculation produced. So a cooling queue configured alongside a lag has no effect at all. The report has a check for that pairing too. The fix is to express the wait as a transfer delay, which is added on top of the lag, or to move the queue time onto the downstream operation where it applies after that operation's own work.
+
+Both checks exist because both combinations are legal to enter and ambiguous in intent. [What the anomaly checks actually look for](/blog/what-the-edgebic-anomaly-checks-actually-look-for) covers the full catalogue, and [lot streaming mistakes](/blog/lot-streaming-mistakes-edgebic) covers the symptoms with fixes.
+
+## Setting One Up
+
+1. Open the work center and set the continuous-process flag. Save.
+2. Open the routing operation that runs on it and set the flow lag in hours. Leave the transfer batch at zero.
+3. If a physical handling wait applies after the lag, set the transfer delay in hours on the same operation. Leave queue time at zero there.
+4. Reschedule and check the downstream operation's placed start against the upstream operation's start plus the lag, allowing for the allocator moving it forward to a feasible slot.
+5. Run the anomaly report and confirm nothing is flagged on that machine.
+
+Step four deserves a note. The lag produces an earliest start, not a booking. If the downstream machine has no capacity at that moment, the allocator searches forward and places it at the next feasible slot. The gap you see on the Gantt can therefore be longer than the lag you typed, and that is capacity talking rather than the lag misbehaving.
+
+## On a Reschedule
+
+The lag is geometry rather than a piece count, so it is recomputed from wherever the upstream operation's start lands on the new plan. If the upstream operation moves two days out, its successor's gate moves with it by the same two days.
+
+That contrasts with piece-count overlap, which consults real logged piece counts on an in-progress upstream operation and can set the downstream start from the day the threshold was actually crossed. Continuous equipment does not have that behavior because it does not have countable pieces to consult, which is the same reason the flag exists.
+
+Completed operations are never moved by a reschedule on either model. Only remaining work is re-placed.
+
+## When the Same Machine Does Both
+
+Some equipment genuinely runs continuously for one product family and in discrete batches for another. The flag does not support a per-product exception, and that is a deliberate design choice rather than an oversight: a per-operation override would have to be maintained on every routing that touches the machine, and the first time one was missed the same machine would use two overlap models on two products with nothing to indicate why.
+
+The practical answers, in order of preference:
+
+1. **Decide which behavior dominates** and set the flag for that. The minority products lose their overlap and wait for full completion, which is the conservative outcome rather than a wrong one.
+2. **Model the two uses as two work centers** if the equipment genuinely has two operating modes with different capacity, different calendars, or different rates. Two records with clear names cost nothing and make both behaviors explicit.
+3. **Express the minority case as an hour lag** on its operations. The lag model works on a continuous-flagged machine regardless of the product, so a discrete product routed there can still overlap; it just overlaps by time rather than by piece count.
+
+Option three is usually enough. A lag chosen to match the time it takes for a workable quantity of the discrete product to accumulate gives most of the compression a transfer batch would have, without a second machine record to maintain.
+
+## Where This Fits
+
+Continuous-process equipment is the reason the hour-lag model exists at all. Piece counts are the industry-standard model and the one most shops should reach for on discrete machines, but they are meaningless on a stream, and forcing a stream into a piece-count model produces either a fictional batch size or no overlap at all.
+
+Flagging the handful of machines that genuinely qualify, and expressing their handoffs as hours, gives those operations the same compression that transfer batches give discrete ones. For a plant that runs both, the two models coexist on one routing without any special handling: the flag decides per machine, and each operation gets the model that matches its physics.
+
+For process-industry context, see [chemical manufacturing scheduling](/blog/chemical-manufacturing-scheduling). For the overlap configuration walkthrough, see [how to overlap operations](/blog/how-to-overlap-operations-in-edgebic). For the whole feature map, see the [complete guide](/blog/edgebic-complete-guide).

@@ -1,0 +1,152 @@
+---
+title: "Overlapping Cut, Form and Weld with Lot Streaming"
+description: "Metal fabrication lot streaming: set a transfer batch so forming starts on the first 20 pieces instead of waiting for the laser to finish all 100."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - metal fabrication lot streaming
+  - transfer batch scheduling
+  - overlapping operations fabrication
+  - reduce manufacturing lead time
+  - cut form weld overlap
+  - one piece flow scheduling
+  - work in process reduction
+targetPhrase: "metal fabrication lot streaming"
+wordCount: 1900
+readingTime: 10
+faqQuestions:
+  - question: "What is a transfer batch in scheduling?"
+    answer: "The number of finished pieces that must accumulate at an upstream operation before the downstream operation is allowed to start. It is a subset of the process batch, which is the full order quantity. Setting a transfer batch of 20 on a 100-piece order means forming may begin once the laser has produced 20 pieces, rather than waiting for all 100."
+  - question: "How much lead time does lot streaming actually save?"
+    answer: "It depends on the batch size and the cycle times, and the arithmetic is explicit. A 100-piece turning operation at 0.5 hours per piece with 2 hours of setup takes 52 hours end to end. With a transfer batch of 20 and half an hour of handling delay, the downstream drill may start 12.5 hours in rather than 52, saving 15.5 hours on that handoff and compressing the job from about 52 hours to about 37."
+  - question: "Does lot streaming apply to continuous processes like paint or coating?"
+    answer: "Piece counting does not, because a continuous process has no meaningful discrete piece. Mark that work center as a continuous process and the scheduler ignores any transfer batch on steps routed there, falling back to a start-to-start lag expressed in hours. A one-hour lag on a spray operation running 08:00 to 12:00 lets the next step start at 09:00."
+  - question: "Is lot streaming safe to turn on for an existing shop?"
+    answer: "Yes, because it is opt-in per routing step and defaults to off. Every routing step starts with a transfer batch of zero, and the piece-count branch cannot fire on a zero value, so existing jobs schedule exactly as before until a planner deliberately sets a batch size on a specific step. There is no global flag and no restart."
+qaQuestions:
+  - question: "Our laser cuts 500 brackets, then the press brake waits for the whole nest before it starts. Everyone knows it is wasteful. What does the schedule have to know to fix it?"
+    answer: "It has to know how many pieces the brake needs before it can start, and how long it takes the laser to make them. Set the transfer batch on the cutting step and the scheduler computes the handoff as setup plus the batch multiplied by the per-piece time. On a 100-piece job at 0.5 hours per piece with 2 hours of setup and a batch of 20, that is 2 plus 10, which is 12 hours, plus any handling delay. Downstream starts 12 hours in rather than 52, and the two operations run concurrently for the rest of the job. The saving is not theoretical: it is the difference between two serial blocks and two overlapping ones on the same Gantt."
+  - question: "What stops the scheduler from waiting for a piece that will never exist on a short order?"
+    answer: "A cap, and an anomaly check that tells you it fired. If the transfer batch on the routing is 100 because it was set for typical 200-piece runs, and today's order is 30 pieces, the effective batch is capped at 30. Without the cap the plan would wait for piece 100 and the downstream step would never start. The behavior is then identical to no streaming at all, which is safe but pointless, so the anomaly report flags every case where the transfer batch is greater than or equal to the order quantity, so a planner can lower it for that order and get the benefit back."
+---
+
+**Lot streaming is the difference between a fab shop's Gantt showing three long serial bars and the same job showing three overlapping ones.** EDGEBIC by User Solutions lets a routing step declare how many finished pieces the next operation needs before it can start, then computes the handoff from that number and lets forming begin while cutting is still running. For a shop where the press brake waits for the whole nest, this is the shortest path to a shorter lead time without touching a single machine.
+
+The mechanism is documented in [lot streaming explained](/blog/edgebic-lot-streaming-explained), and the concept in [what a transfer batch is](/blog/what-is-a-transfer-batch). This post is about the cut, form, and weld sequence.
+
+## The Cost of Waiting for the Whole Nest
+
+A 500-piece bracket order goes to the laser, then to the press brake, then to the weld cell. In a plan without streaming, each operation waits for the one before it to finish completely. Three serial blocks, and the job's lead time is their sum.
+
+Everyone on the floor knows this is wasteful. The first bracket off the laser is a finished bracket; there is no physical reason the brake cannot start on it. What is missing is not shop-floor sense, it is a way to tell the scheduler how many pieces the brake actually needs before it is worth starting, and how long the laser takes to make them.
+
+Two numbers answer that: the **transfer batch** in pieces, and the per-piece time already in the routing.
+
+## The Formula, and a Worked Handoff
+
+When a routing step carries a transfer batch, the scheduler computes when the downstream step may begin as:
+
+**setup + min(transfer batch, order quantity) × per-piece hours**
+
+Take a 100-piece turning job feeding a drill.
+
+| Parameter | Value |
+|---|---|
+| Setup on the upstream step | 2 h |
+| Per-piece time | 0.5 h |
+| Transfer batch | 20 pieces |
+| Effective batch | min(20, 100) = 20 |
+| Handoff time | 2 + (20 × 0.5) = **12 h** |
+| Handling delay after transfer | 0.5 h |
+| Downstream may start at | upstream start + **12.5 h** |
+
+The upstream operation itself runs 52 hours end to end. Without streaming, the drill waits all 52. With it, the drill starts 12.5 hours in and the two operations overlap for the remaining 39.5 hours. **That single handoff saves 15.5 hours**, and the job's elapsed time compresses from roughly 52 hours to roughly 37.
+
+Chain the same logic across cut, form, and weld and the compounding is where the real number comes from.
+
+## One-Piece Flow, Where the Cell Supports It
+
+Set the transfer batch to 1 and you get the lean ideal: the downstream station starts as soon as the first good piece exists.
+
+A 50-unit sub-assembly with 0.25 hours per unit and half an hour of setup makes its first piece at setup plus one cycle, which is 0.75 hours. The test station starts at 08:45 while soldering continues through piece 50. Serial, that job is 13 hours of soldering plus 5 hours of test, 18 hours total. Streamed, soldering finishes at 21:00 and test finishes at 13:45, roughly **13.75 hours, a 24 percent compression**.
+
+One-piece flow demands material handling that runs continuously, which is why it belongs in dedicated cells rather than across a whole shop. But the parameter is the same one; only the value changes.
+
+## The Physical Lag Between Stations
+
+Streaming assumes pieces can move. Often they cannot move immediately, and the scheduler needs to know that too.
+
+A **transfer delay** is a flat hour offset added on top of the streaming time, for the physical reality between stations: forklift travel, a cooling period before castings can be machined, incoming inspection. It is the right mechanism for a short handling lag.
+
+Precision castings moving from foundry to machining show the shape: batch of 25, 0.8 hours per piece, one hour of setup, and two hours of cooling before the parts can be handled. The streaming time is 1 plus 20, which is 21 hours; the transfer delay pushes machining to 23 hours after the foundry starts. That two-hour cooling constraint is now in the plan rather than in somebody's head.
+
+For multi-day transit, for instance parts going out to a coater and coming back, use transit days rather than transfer delay. Transit days are calendar or working-day aware and compose after the streaming calculation.
+
+## Continuous Processes Need a Different Model
+
+Some fabrication operations have no meaningful piece count. A powder line, a wash and phosphate stage, a continuous coating booth: output is a stream, not a countable set.
+
+Mark that work center as a continuous process and the scheduler ignores any transfer batch on steps routed there, using instead a **start-to-start lag in hours**. A lag of 1 on a spray operation running 08:00 to 12:00 lets the next operation start at 09:00, independent of quantity, per-piece time, or setup. Three hours of compression on a four-hour operation.
+
+The two models are alternatives, not layers. When both are configured on the same step, the piece-count model wins on a discrete work center and the lag is ignored, which the anomaly report flags because the planner's intent is ambiguous. Clear one of the two.
+
+## What Composes With What
+
+Order matters here, and getting it wrong is the most common surprise.
+
+1. **Queue time** is applied to the upstream end first, as a shift-aware buffer.
+2. **Lot streaming replaces that result** with the streaming time. This is the point of streaming: the downstream start can be *earlier* than the upstream end, so a value computed from the upstream end is exactly what has to be discarded.
+3. **Transit days** are applied after, on top of whichever streaming model fired.
+
+The middle step is the one that surprises planners. A queue time on the same step as a streaming parameter is discarded when streaming fires, because the streaming time is the successor's gate. If you want a handling lag on top of the streamed start, that is what the transfer delay is for. The anomaly report flags every routing step carrying both a lag and a queue time so you can confirm which behavior you meant.
+
+## Four Checks That Catch Misconfiguration
+
+The anomaly report runs these automatically, and each corresponds to a real way this gets configured wrong.
+
+| Check | What it flags | Why it matters |
+|---|---|---|
+| Both a start-to-start lag and a queue time on one step | The queue buffer is discarded when the lag fires | Confirms intent rather than leaving a surprise |
+| Both a lag and a transfer batch on one step | Piece count wins on a discrete work center; the lag is ignored | Ambiguous configuration, clear one |
+| Transfer batch at or above the order quantity | The batch caps at the order quantity, so the step behaves as serial | Lower the batch for that order to get the benefit back |
+| Transfer batch set on a continuous-process work center | Piece count is silently ignored there | Planner thinks streaming is active when it is not |
+
+That third one deserves a note. A routing carrying a batch of 100 because it was set for typical 200-piece runs, applied to a 30-piece rush order, would otherwise plan to wait for a piece that never exists. The cap prevents the deadlock; the check tells you it happened.
+
+## Streaming a Job That Is Already Running
+
+Turning streaming on mid-job is handled rather than blocked. When the upstream step is in progress, the scheduler sums the actual piece counts logged day by day. If the accumulated pieces have already crossed the transfer batch, the downstream start is set from the crossing day rather than from a projection. If the threshold has not been crossed, the formula projects forward from the actual start.
+
+The crossing time is taken conservatively as end of shift on the crossing day, because pieces trickling in through the day do not mean the batch was physically staged for movement at the moment the count ticked over. See [shop floor tracking](/blog/edgebic-for-machine-shops-actuals-tracking) for how those piece counts arrive.
+
+## Turning It On Safely
+
+Streaming is opt-in per routing step and defaults to off. Every step starts with a transfer batch of zero, the piece-count branch cannot fire on zero, and existing jobs schedule exactly as they did before. No global flag, no restart, no migration risk.
+
+A sensible rollout: pick the one handoff where the wait is most visible, usually cut to form. Set a transfer batch that matches how your material handler actually moves parts, which is often a cart or a pallet quantity rather than a theoretical minimum. Add a transfer delay if there is a real physical lag. Reschedule and read the overlap on the Gantt. Then move to the next handoff.
+
+The number to watch is not the operation's own duration, which does not change, but the downstream step's start date. That is where the lead time comes from.
+
+For the category background, [metal fabrication scheduling](/blog/metal-fabrication-scheduling) covers the fundamentals and the [metal fabrication scheduling software](/metal-fabrication-scheduling-software) page is the shorter evaluation read. If the real constraint is one machine setting the pace, [scheduling a fab shop around its bottleneck](/blog/edgebic-for-metal-fabrication-bottleneck-scheduling) is the companion, and if one operation genuinely needs two machines at once, [running fabrication operations in parallel](/blog/edgebic-for-metal-fabrication-parallel-work-centers) covers that. The [industry fit guide](/blog/edgebic-by-industry) maps the rest, and [EDGEBIC](/edgebic) is the product hub.
+
+Ready to overlap your handoffs? [Contact US for a demo](/contact-us) and bring the job where the brake waits for the laser.
+
+<Accordion title="What is a transfer batch in scheduling?">
+The number of finished pieces that must accumulate at an upstream operation before the downstream operation is allowed to start. It is a subset of the process batch, which is the full order quantity. Setting a transfer batch of 20 on a 100-piece order means forming may begin once the laser has produced 20 pieces, rather than waiting for all 100.
+</Accordion>
+
+<Accordion title="How much lead time does lot streaming actually save?">
+It depends on the batch size and the cycle times, and the arithmetic is explicit. A 100-piece turning operation at 0.5 hours per piece with 2 hours of setup takes 52 hours end to end. With a transfer batch of 20 and half an hour of handling delay, the downstream drill may start 12.5 hours in rather than 52, saving 15.5 hours on that handoff and compressing the job from about 52 hours to about 37.
+</Accordion>
+
+<Accordion title="Does lot streaming apply to continuous processes like paint or coating?">
+Piece counting does not, because a continuous process has no meaningful discrete piece. Mark that work center as a continuous process and the scheduler ignores any transfer batch on steps routed there, falling back to a start-to-start lag expressed in hours. A one-hour lag on a spray operation running 08:00 to 12:00 lets the next step start at 09:00.
+</Accordion>
+
+<Accordion title="Is lot streaming safe to turn on for an existing shop?">
+Yes, because it is opt-in per routing step and defaults to off. Every routing step starts with a transfer batch of zero, and the piece-count branch cannot fire on a zero value, so existing jobs schedule exactly as before until a planner deliberately sets a batch size on a specific step. There is no global flag and no restart.
+</Accordion>

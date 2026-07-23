@@ -1,0 +1,134 @@
+---
+title: "Any Mill Will Do: Machine Pool Scheduling for Machine Shops"
+description: "Machine shop scheduling software pools let a routing say ANY MILL instead of Mill-1, so the scheduler picks the member with real capacity on every run."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - machine shop scheduling software pools
+  - machine pool scheduling
+  - interchangeable machines routing
+  - job shop machine selection
+  - alternate work center scheduling
+  - capacity aware routing
+  - machine shop capacity planning
+targetPhrase: "machine shop scheduling software pools"
+wordCount: 1900
+readingTime: 10
+faqQuestions:
+  - question: "How does a machine pool decide which mill runs the job?"
+    answer: "The scheduler explodes the pool into a candidate list at schedule time and compares each member against live capacity, then picks by the pool's selection strategy. EarliestCompletion picks the member that finishes soonest counting both speed and current queue. PrimaryFirst always tries the designated machine and spills only when it is full. EarliestStart picks whichever member can begin soonest, evaluated day by day."
+  - question: "Will a machine pool move a job that already started?"
+    answer: "No. Once an operation has an actual start date, the machine it started on is locked and the scheduler keeps it there on every later run, whatever the pool strategy says. Only operations that have not started re-shop the pool against current capacity. Completed work is never moved by a reschedule."
+  - question: "Do faster and slower machines need separate routings?"
+    answer: "No. Each membership row carries an efficiency factor applied to run time only, so one routing step with base hours covers machines of different speeds. A step planned at 0.04 hours per unit runs at 0.02 on a member with factor 0.5 and 0.06 on a member with factor 1.5. Setup is never scaled by the factor and gets its own per-member override when a machine sets up faster or slower."
+  - question: "What happens when a pooled machine goes down for a retrofit?"
+    answer: "Set that membership inactive. The machine drops out of every pooled step's candidate list on the next scheduling run, so new work routes around it without touching a single routing. Work already started on that machine stays where it is. Reactivate the membership when the machine comes back and it rejoins the pool immediately."
+qaQuestions:
+  - question: "We run three mills of different ages and every routing says Mill-1 because that is where the programs were proved. Mill-3 idles while Mill-1 has a four-day queue. What actually changes if we pool them?"
+    answer: "The routing stops naming a machine and starts naming a capability. At schedule time the pool becomes a candidate list, and the scheduler compares projected finish times using each member's own calendar, instance count, and speed factor. Take a step at 0.04 hours per unit with 0.5 hours of setup on a 100-piece order: Mill-1 at factor 1.0 needs 4.5 hours, Mill-2 at factor 0.5 needs 2.5 hours, Mill-3 at factor 1.5 with a 0.25-hour setup override needs 6.25 hours. With everything free Monday, Mill-2 wins and finishes 10:30. With Mill-2 booked solid until Wednesday, Mill-1 wins and finishes Monday 12:30. That second case is the whole point: the fastest machine loses to the available one, and your four-day queue stops being a routing decision nobody revisits."
+  - question: "Our quality system requires that specific customer's parts run on the machine we validated. Does pooling force us to give that up?"
+    answer: "No, and there are two separate answers depending on how hard the requirement is. If the requirement is a preference, flag that machine as Primary on its membership row and set the pool strategy to PrimaryFirst: the scheduler books it whenever it has capacity on the target day and spills to the others only when it is full. If the requirement is absolute for one job, pin that job's step to a specific member. A planner pin beats the strategy unconditionally and survives every later reschedule. And if the part may only ever run on one machine, leave that step pinned to a single work center and pool only the steps where any machine genuinely qualifies."
+---
+
+**A machine pool lets a routing step say "any active member of MILLING" instead of "Mill-1", and EDGEBIC by User Solutions resolves that into a specific machine on every scheduling run using live capacity.** For a machine shop, that single change turns the oldest unexamined assumption in the routing file, that whoever proved the program owns the work forever, into a decision the scheduler makes again every time it runs. This post is about what that does to a real job shop floor, and what it does not do.
+
+The mechanism itself, including the domain model and the four ways to model interchangeable machines, is covered in [work center groups explained](/blog/edgebic-work-center-groups-explained). The plain definition lives in [what a work center group is](/blog/what-is-a-work-center-group-machine-pool). Here we stay on the shop floor.
+
+## The Problem Every Multi-Machine Shop Recognizes
+
+You have three vertical mills. They are not identical: one is a 2015 machine, one is a 2024 machine that runs roughly twice as fast on the same part, and one is a 1998 knee mill that still earns its keep on simple work. Any of them can cut the bracket family that pays the bills.
+
+Before pooling, the routing file gives you three unsatisfying choices, and shops usually end up with the first one by accident:
+
+| What the routing says | What actually happens |
+|---|---|
+| "Step 20 runs on Mill-1" | Mill-1 grows a queue while the other two idle. Nobody rewrites the routing because rewriting it means re-proving it. |
+| "Mill-1, alternates Mill-2 and Mill-3" on every step | Correct until you buy a fourth mill or retire one. Then the same three-machine list has to be edited on dozens of routings, and it drifts the first time somebody misses one. |
+| "Mill Cell has 3 instances" | Only correct when the machines are genuinely identical. Instances share one shift calendar, one utilization percentage, and one speed. Three different mills are not three instances. |
+
+The pool is the fourth answer. Define the list once, bind any number of routing steps to it, and let the scheduler shop it on every run. Add a fourth mill to the pool and every pooled step in every routing considers it immediately, with no routing edits at all.
+
+## What the Scheduler Actually Does With a Pool
+
+The pool never holds capacity of its own. This matters more than it sounds. Every scheduled hour lands on a real machine with that machine's own shifts, holidays, instances, and utilization percentage. What the scheduler does at run time is expand the pooled step into a concrete candidate list, one entry per active member, each carrying its own effective hours, and then run the same machine-selection logic that has always handled alternate work centers.
+
+Take a bracket step: 0.04 hours per unit, 0.5 hours of setup, order quantity 100.
+
+| Candidate | Efficiency factor | Effective run time | Setup | Total for 100 pieces |
+|---|---|---|---|---|
+| Mill-1 (2015) | 1.0 | 0.04 h/unit | 0.5 h | **4.5 h** |
+| Mill-2 (2024) | 0.5 | 0.02 h/unit | 0.5 h | **2.5 h** |
+| Mill-3 (1998) | 1.5 | 0.06 h/unit | 0.25 h (override) | **6.25 h** |
+
+Two details in that table are worth pausing on. The factor applies to run time only, never to setup, because a changeover costs what it costs regardless of how fast the machine cuts. And Mill-3 carries a setup override of 0.25 hours because its fixturing is simpler, which is exactly the kind of real difference a per-step alternate list makes tedious to maintain and a pool makes routine.
+
+The effective hours are always computed from the base hours a planner entered, on every run. That is why factors can never compound across reschedules: a job rescheduled five times still resolves Mill-2 as 0.04 multiplied by 0.5, not as last run's 0.02 multiplied by 0.5 again.
+
+## Three Strategies, Three Different Shops
+
+The pool carries one selection strategy, and the right one depends on how your shop actually thinks.
+
+**EarliestCompletion** is the default and the answer for most job shops. The scheduler projects a finish time for each member and takes the earliest. With all three mills free Monday morning, the projections are Mill-2 at 10:30, Mill-1 at 12:30, and Mill-3 at 14:15, so Mill-2 gets the work.
+
+Now book Mill-2 solid until Wednesday and run the same job. The projections become Mill-1 Monday 12:30, Mill-3 Monday 14:15, and Mill-2 Wednesday 10:30. Mill-1 wins. **The fastest machine loses to the available one**, which is the entire argument for capacity-aware pooling over a static routing preference.
+
+**PrimaryFirst** is for shops where predictable routing beats cycle time. Flag one member as Primary and the scheduler tries it first every time, spilling to the others only when it has no capacity on the target date. Even in the all-free case above, PrimaryFirst sends the job to Mill-1 and gives up the two hours.
+
+**EarliestStart** is for shops that care most about getting work moving today. It is evaluated day by day, so a member that can start this afternoon beats a faster member that can only start tomorrow, even when the faster machine would finish first. If your bottleneck is really "parts sitting in the rack," this is your strategy.
+
+## What Happens on the Next Reschedule
+
+This is where pooling either earns trust on the floor or loses it, so the rules are worth stating plainly.
+
+An operation that has **already started** keeps its machine. The moment an operator logs an actual start, that member is locked and every later scheduling run matches it among the candidates and keeps the step there, whatever the strategy would otherwise prefer. Completed work is never moved by a reschedule. Your operator does not come in Tuesday to find that the system moved a half-finished job to a different table.
+
+An operation that has **not started** re-shops the pool against Tuesday's capacity picture. It can legitimately land on a different member, and when it does, the change surfaces through the same "Replaced: Mill-1 to Mill-2" indicator you already read for manual alternates. Nothing moves silently.
+
+The routing keeps its pool binding through every reschedule, which is what makes the re-shopping possible in the first place. What you see on the Gantt and in reports after scheduling is always the resolved machine, never the pool name, because the supervisor needs to know which table to walk to.
+
+## Taking a Machine Out of Rotation
+
+A mill goes down for a spindle retrofit for three weeks. Set its membership inactive. On the next scheduling run it drops out of every pooled step's candidate list across every routing, and work reroutes to the remaining members with no routing edits and no planner remembering which jobs used that machine. Work already started on it stays put. Reactivate the membership when it returns.
+
+Compare that to the per-step alternate approach, where taking a machine out means finding every routing that lists it. That maintenance difference, not the scheduling math, is usually what convinces a shop to pool.
+
+If the pool goes empty (every member inactive, or the pool itself deactivated), the step fails work-center resolution visibly rather than scheduling on the wrong machine. A loud failure beats a silent one, and this is the one case where you want the scheduler to stop and ask.
+
+## Where Pools Stop and Other Tools Start
+
+Pools answer one question: which interchangeable machine. They deliberately do not answer others.
+
+- **Which qualified person** is the operator and skill layer, a separate dimension that composes with pools on the same step. Do not build a "Certified Welders" pool. See [operator and skill scheduling](/blog/edgebic-operator-and-skill-scheduling-explained).
+- **Two machines at once on the same operation** is parallel work centers, not a pool. See [parallel work centers](/blog/edgebic-parallel-work-centers-explained).
+- **One machine that is the plant constraint** is anchor scheduling. See [production bottleneck identification](/blog/production-bottleneck-identification) for the diagnosis and [scheduling around a bottleneck](/blog/edgebic-for-metal-fabrication-bottleneck-scheduling) for the mechanism.
+- **A department** is a reporting rollup that the scheduler ignores entirely. If you have been grouping machines by department and wondering why routing never changes, that is why.
+
+A pool binding and a hand-maintained alternate list on the same step are mutually exclusive by design: the pool **is** the alternate list, so binding a step to a pool clears any manual alternates it carried. Two competing sources of "what else could run this" would have no defined meaning.
+
+## Getting There From Where You Are
+
+Start with one pool and one part family. Pick the three or four machines that genuinely interchange for that family, create the pool, set factors only where machines really differ in speed for that class of work (leave them at 1.0 for a homogeneous set), and bind the steps of one product. Run a schedule and read which member the scheduler picked and why. Then expand.
+
+For a broader view of how machine selection sits inside the whole pipeline, the [industry fit guide](/blog/edgebic-by-industry) maps features to constraints across shop types, and the [machine shop scheduling](/blog/machine-shop-scheduling) primer covers the category fundamentals. If you are evaluating tools rather than configuring one, the [machine shop scheduling software](/machine-shop-scheduling-software) page is the shorter read. The [quoting side of the same capacity picture](/blog/edgebic-for-machine-shops-quoting-capacity) is worth a look once your pools are live, because promise dates get noticeably better when the quote simulation can shop the same pools your production schedule does. For the whole feature map in one place, [EDGEBIC](/edgebic) is the product hub.
+
+Ready to see it against your routings? [Contact US for a demo](/contact-us) and bring the routing where the same three machines keep showing up.
+
+<Accordion title="How does a machine pool decide which mill runs the job?">
+The scheduler explodes the pool into a candidate list at schedule time and compares each member against live capacity, then picks by the pool's selection strategy. EarliestCompletion picks the member that finishes soonest counting both speed and current queue. PrimaryFirst always tries the designated machine and spills only when it is full. EarliestStart picks whichever member can begin soonest, evaluated day by day.
+</Accordion>
+
+<Accordion title="Will a machine pool move a job that already started?">
+No. Once an operation has an actual start date, the machine it started on is locked and the scheduler keeps it there on every later run, whatever the pool strategy says. Only operations that have not started re-shop the pool against current capacity. Completed work is never moved by a reschedule.
+</Accordion>
+
+<Accordion title="Do faster and slower machines need separate routings?">
+No. Each membership row carries an efficiency factor applied to run time only, so one routing step with base hours covers machines of different speeds. A step planned at 0.04 hours per unit runs at 0.02 on a member with factor 0.5 and 0.06 on a member with factor 1.5. Setup is never scaled by the factor and gets its own per-member override when a machine sets up faster or slower.
+</Accordion>
+
+<Accordion title="What happens when a pooled machine goes down for a retrofit?">
+Set that membership inactive. The machine drops out of every pooled step's candidate list on the next scheduling run, so new work routes around it without touching a single routing. Work already started on that machine stays where it is. Reactivate the membership when the machine comes back and it rejoins the pool immediately.
+</Accordion>

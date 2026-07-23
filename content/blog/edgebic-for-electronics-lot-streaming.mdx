@@ -1,0 +1,161 @@
+---
+title: "Overlapping Board Build and Test"
+description: "Electronics manufacturing lot streaming: let test start after the first 20 boards instead of the last, with the piece-count formula and the numbers."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - electronics manufacturing lot streaming
+  - overlap board build and test
+  - transfer batch pcb assembly
+  - one piece flow electronics scheduling
+  - reduce makespan electronics
+  - operation overlap scheduling
+targetPhrase: "electronics manufacturing lot streaming"
+wordCount: 1800
+readingTime: 9
+faqQuestions:
+  - question: "How does a scheduler let test start before the whole board lot is built?"
+    answer: "EDGEBIC by User Solutions supports piece-count lot streaming. You set a transfer batch size on the upstream operation, and the scheduler computes when that many pieces will be complete: setup time plus the transfer batch multiplied by the per-piece run time. The downstream operation is offered a start from that moment rather than from the upstream operation's end, so build and test genuinely overlap."
+  - question: "What is the formula the scheduler uses for overlap?"
+    answer: "Flow time equals setup plus the smaller of the transfer batch size and the order quantity, multiplied by the per-piece run time. The batch is capped at the order quantity so the plan never waits for a piece that will not exist. Any material handling delay configured on the step is added on top, and the result becomes the downstream operation's earliest start."
+  - question: "Does lot streaming work on jobs that are already running?"
+    answer: "Yes. When the upstream operation is in progress, the scheduler sums the piece counts actually logged day by day. If the transfer threshold has already been crossed, the downstream start is set to the end of the crossing day rather than to a projected formula result. If it has not been crossed, the schedule projects forward from the real start. Completed upstream operations release the downstream immediately."
+  - question: "Is lot streaming on by default?"
+    answer: "No. Transfer batch size defaults to zero, which means no piece-count streaming, and every existing routing keeps the behavior it had. The piece-count branch cannot fire until a planner sets a non-zero value on a specific operation. That makes it safe to pilot on one product family without touching anything else in the plan."
+qaQuestions:
+  - question: "We build 50 boards, solder is 15 minutes a board with 30 minutes of setup, and test is 6 minutes a board. Serial says 18 hours. What does one-piece flow give us?"
+    answer: "About 13.75 hours, roughly a 24 percent cut in elapsed time, and the arithmetic is worth walking.\n\nSerial: solder is 0.5 plus 50 times 0.25, so 13 hours. Test is 50 times 0.1, so 5 hours. Total 18.\n\nWith a transfer batch of one, the flow time is 0.5 plus 1 times 0.25, so 0.75 hours. Solder starts 08:00 and the first board is out at 08:45. Test is offered a start at 08:45 and finishes 5 hours later at 13:45. Solder continues in parallel and finishes at 21:00. The job's elapsed time is set by whichever branch ends last rather than by the sum, which is the whole point."
+  - question: "We set a transfer batch of 100 on a routing built for 200-piece runs. Now a 30-piece rush order shows no overlap at all. Why?"
+    answer: "Because the engine caps the transfer batch at the order quantity. On a 30-piece order the effective batch becomes 30, so the flow time is the whole run and the downstream step waits for everything. Without that cap the plan would sit waiting for piece 100 on a 30-piece order and the downstream step would never start, so the cap is protecting you from something worse.\n\nThe schedule anomaly checks flag exactly this condition: a transfer batch greater than or equal to the order quantity means the operation behaves as if streaming were off. The fix is to lower the transfer batch on that routing so it makes sense across your real order sizes, or to accept serial behavior on short runs and know why."
+---
+
+**A board lot does not have to be finished before test can start.** EDGEBIC by User Solutions computes when the first transfer batch will physically exist and offers the downstream operation a start from that moment, so build and test overlap instead of queuing. On a 50-board job with a 15-minute cycle, that is the difference between 18 hours and roughly 13.75.
+
+If the term itself is new, the definition lives in [what is a transfer batch](/blog/what-is-a-transfer-batch). This post is about what it does to an electronics schedule and how to configure it without breaking anything.
+
+## The Pain: Waiting for the Last Board
+
+The default assumption in most scheduling systems is that an operation must complete before its successor starts. It is a reasonable default and it is wrong for most of an electronics floor.
+
+Consider a 200-board run. Placement and reflow take a day and a half. Functional test takes half a day. Under strict sequencing the test station is idle for a day and a half, then works for half a day, and the job takes two days.
+
+But board 1 is testable within minutes of the line starting. Board 50 is testable long before board 200 exists. The physical constraint is not "the lot must be complete". It is "this specific board must be complete".
+
+The gap between those two statements is pure elapsed time, and in high-mix electronics it compounds across every routing level. Each unnecessary wait pushes the module join later, which pushes burn-in later, which pushes the ship date later. The pattern is discussed generally in the [electronics manufacturing scheduling overview](/blog/electronics-manufacturing-scheduling).
+
+## The Mechanism: A Piece Count, Not a Percentage
+
+The scheduler supports two overlap models. The one that fits discrete electronics is piece-count.
+
+You set a transfer batch size on the upstream operation. The engine computes:
+
+**flow time = setup + the smaller of (transfer batch, order quantity) x run time per piece**
+
+That value, measured from the upstream operation's earliest resource start, is when the first transfer batch physically exists. The downstream operation is offered a start from that point, plus any material handling delay configured on the step. The downstream capacity allocator then finds a real slot at or after that time, so the overlap is a genuine plan rather than an assumption.
+
+Two guards are built in. The batch is capped at the order quantity, so the plan can never wait for a piece that will not be made. And the model only applies when the work center is a discrete-process station: a station flagged as continuous process ignores the piece count entirely, because pieces are not a meaningful unit there.
+
+The second model, a start-to-start lag measured in hours, exists for exactly those continuous stations: a conformal coat line, a cure tunnel, a wave machine where output is a stream rather than a count. A lag of one hour on a step running 08:00 to 10:00 lets the successor start at 09:00. Full detail on both models is in [lot streaming explained](/blog/edgebic-lot-streaming-explained).
+
+## Worked Example One: Transfer Batches Between Turning and Drilling
+
+The clearest arithmetic comes from a mechanical example, and it transfers directly to any two-station electronics pair.
+
+| Parameter | Value |
+|---|---|
+| Order quantity | 100 pieces |
+| Upstream run time | 0.5 h per piece |
+| Upstream setup | 2 h |
+| Transfer batch | 20 pieces |
+| Handling delay | 0.5 h |
+
+Effective batch is the smaller of 20 and 100, so 20. Flow time is 2 plus 20 times 0.5, so 12 hours. Add the 0.5-hour handling delay and the downstream operation is offered a start 12.5 hours after the upstream starts.
+
+The upstream operation itself runs 2 plus 100 times 0.5, so 52 hours. Under strict sequencing the downstream station would wait all 52. With streaming it starts at 12.5. That is roughly 15.5 hours of elapsed time removed from a single handoff, and total job elapsed time drops from about 52 hours to about 37.
+
+## Worked Example Two: One-Piece Flow in a Board Cell
+
+Now the electronics case, at the lean extreme.
+
+| Parameter | Value |
+|---|---|
+| Order quantity | 50 units |
+| Solder run time | 0.25 h per unit |
+| Solder setup | 0.5 h |
+| Transfer batch | 1 |
+| Test run time | 0.1 h per unit |
+
+Effective batch is 1. Flow time is 0.5 plus 1 times 0.25, so 0.75 hours.
+
+Solder starts 08:00. The first board is complete at 08:45. Test is offered a start at 08:45 and, running 5 hours, finishes at 13:45. Solder continues in parallel and finishes at 21:00.
+
+Serial elapsed time would be 13 hours of solder plus 5 hours of test, so 18. Streaming elapsed time is set by the branch that ends last rather than by the sum, giving roughly 13.75 hours. That is about a 24 percent reduction from one configuration field.
+
+One-piece flow is not free. It requires the handling between stations to run continuously, which is a floor-layout and staffing question rather than a software one. A transfer batch of 10 or 25 captures most of the benefit with far less handling pressure, which is why sublot streaming is the common practical setting.
+
+## Choosing a Transfer Batch Size
+
+There is no universal number, but there is a method.
+
+Start from what physically moves. If boards travel in magazines of 25, a transfer batch of 25 matches reality and needs no new handling discipline. If they travel on a conveyor, small batches are cheap.
+
+Then sanity-check against your real order sizes. A transfer batch that works for a 200-piece run behaves as serial on a 30-piece rush order, because of the cap. If your mix spans both, either pick a number that makes sense at the low end or accept serial behavior on short runs deliberately.
+
+Finally, check what the downstream station does with the earlier arrival. Pulling test forward is only valuable if the test station is available then. If test is your constraint, streaming into it changes the queue location rather than the finish date. Identify the constraint first: [production bottleneck identification](/blog/production-bottleneck-identification).
+
+## Where the Composition Order Matters
+
+Overlap does not exist in isolation. Three fields can affect the gap between two operations, and the order they are applied in is fixed.
+
+First, queue time is added to the upstream operation's end. It is a shift-aware buffer measured in hours: a cool-down, an inspection window, a rest period.
+
+Second, the lot-streaming calculation runs. Whichever model fires, its result **replaces** the queue-adjusted end rather than adding to it, because the whole point of overlap is that the downstream operation may start earlier than the upstream one finished. This replacement is the single behavior that surprises planners most, and it is why the F2 check exists.
+
+Third, transit days are added on top, for material genuinely travelling to an outside processor.
+
+The practical rule that falls out of this: if you want a handling lag on top of an overlap, use the handling delay field rather than queue time. Queue time will be discarded once streaming fires; the handling delay is added to the streaming result and survives.
+
+One more interaction is worth knowing if your upstream operation carries a sequence-dependent changeover. The overlap formula uses the resolved changeover value rather than the flat routing setup, so if a board line pays four hours going from one product family to another, the first transfer batch is correctly four hours further out. The two mechanisms agree instead of contradicting each other. See [the setup matrix explained](/blog/edgebic-setup-matrix-explained).
+
+## What the Anomaly Checks Catch
+
+Four automated checks exist specifically because lot-streaming configuration goes wrong in predictable ways.
+
+| Check | Condition | What it means |
+|---|---|---|
+| F2 | A start-to-start lag and a queue time on the same step | The lot-streaming result replaces the queue-adjusted end, so the queue buffer is discarded. Use the handling delay field instead if you want a lag on top |
+| F3 | Both a lag and a transfer batch on the same step | Intent is ambiguous. Piece-count wins on a discrete station and the lag is ignored. Clear one field |
+| F4 | Transfer batch greater than or equal to the order quantity | The cap makes the step behave as serial. Lower the transfer batch or accept it knowingly |
+| C1 | Transfer batch set on a continuous-process station | The piece count has no effect there. Use the lag model instead |
+
+None of these are errors that stop a run. They are warnings that a configuration does not mean what someone thought it meant, which is a far more common failure than a crash. The full catalogue is in [what the anomaly checks look for](/blog/what-the-edgebic-anomaly-checks-actually-look-for).
+
+## Overlap on Jobs Already Running
+
+Lot streaming is not only a planning-time idea. When a job is rescheduled mid-run, the engine handles three states of the upstream operation:
+
+If it is fully complete, the downstream start is its actual end plus any handling delay. The threshold is irrelevant because every piece exists.
+
+If it is in progress, the engine sums the piece counts actually logged day by day. If the cumulative count has already crossed the transfer batch, the downstream start is set to the end of the crossing day, which is deliberately conservative: pieces trickling in through a day are not necessarily available for movement at the moment they were logged. If the threshold has not been crossed, the schedule projects forward from the real start.
+
+If there are no actuals yet, the planned formula applies.
+
+That behavior means a partly built lot reschedules against physical reality rather than against an original estimate. Completed operations are never moved by the reschedule, which is covered in [rescheduling explained](/blog/edgebic-rescheduling-explained).
+
+## Rolling It Out Safely
+
+Transfer batch size defaults to zero on every routing, and the piece-count branch cannot fire until somebody sets a non-zero value. That makes the rollout genuinely low risk.
+
+1. Pick one product family with a clear two-station handoff and a real queue between them.
+2. Set the transfer batch on the upstream operation to the quantity that physically moves.
+3. Reschedule and compare the finish date against the previous plan.
+4. Read the anomaly report to confirm no F2, F3, F4, or C1 condition fired.
+5. Watch the handoff on the floor for a week before expanding.
+
+Where the overlap gain matters most is upstream of a join. A board branch that finishes earlier pulls a module assembly step earlier, which is where [multi-level assembly scheduling](/blog/edgebic-for-electronics-sub-assemblies) and lot streaming compound.
+
+For scheduling practice across electronics, see the [electronics manufacturing scheduling overview](/blog/electronics-manufacturing-scheduling) and the [electronics manufacturing scheduling software page](/electronics-manufacturing-scheduling-software). For the rest of this series, see [EDGEBIC by industry](/blog/edgebic-by-industry), and for the product, [EDGEBIC](/edgebic).

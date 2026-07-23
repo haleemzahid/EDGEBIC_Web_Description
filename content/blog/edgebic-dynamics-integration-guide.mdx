@@ -1,0 +1,152 @@
+---
+title: "EDGEBIC + Microsoft Dynamics: The Complete Scheduling Integration Guide"
+description: "Dynamics production scheduling integration with EDGEBIC: export items, work centers, routings and orders, map columns once, schedule at finite capacity."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - Dynamics production scheduling integration
+  - Dynamics finite capacity scheduling
+  - Dynamics scheduling add-on
+  - EDGEBIC Dynamics integration
+  - Business Central scheduling integration
+  - import mask ERP integration
+  - Dynamics 365 shop floor scheduling
+targetPhrase: "Dynamics production scheduling integration"
+wordCount: 2260
+readingTime: 11
+faqQuestions:
+  - question: "Does EDGEBIC have a certified Microsoft Dynamics connector?"
+    answer: "No, and that is a deliberate design choice. EDGEBIC integrates with Dynamics through reusable Excel, CSV, and database import masks rather than a certified per-ERP connector. You map the columns of a Dynamics export once, and every later run is two clicks. Nothing is installed inside the ERP, no extension is deployed, and no interface object enters your change-control or update path."
+  - question: "Does this work with Business Central as well as Finance and Operations?"
+    answer: "Yes, and with older Dynamics generations too, because the interface is a file rather than an API. The masks read what an export produces, not what a platform version exposes. If your environment can save an item list, a work center list, a routing list, and an open production order list to Excel or CSV, the import masks work. There is no per-edition connector to select, license, or upgrade."
+  - question: "What Dynamics data does EDGEBIC need to build a finite capacity schedule?"
+    answer: "Four exports carry a complete scheduling model: items, work centers with capacity detail, routings with operation sequence and run and setup times, and open production orders with quantities and dates. A fifth optional export carries reported hours from the floor. Each one goes through its own import mask, and every row returns as Created, Updated, Reused, or Failed with a per-run log."
+  - question: "What happens to the integration when Dynamics takes an update?"
+    answer: "Nothing, in almost every case, because there is no connector version to match. The interface is a file, so as long as the platform still produces item, work center, routing, and order exports, the masks keep running. If an update renames a column heading in an export, you re-map that column in the mask once, which takes minutes rather than a re-certification or a redeployed extension."
+qaQuestions:
+  - question: "Our team already lives in Excel because Dynamics exports so easily. Does that help or is it the problem you are replacing?"
+    answer: "It helps, and only one part of it gets replaced. The exporting habit is exactly the skill this integration needs, because the four files you already know how to produce are the interface. What gets replaced is the second spreadsheet: the hand-maintained load sheet where someone decides which job runs on which machine this week. That one cannot survive contact with 60 work centers, machine counts, changeover sequences, and a rush order, which is why its dates drift from the ERP's. Keep the export habit, retire the scheduling spreadsheet, and the two systems stop disagreeing."
+  - question: "We are a Business Central shop with two people in IT and no appetite for a middleware project. What is the actual technical footprint?"
+    answer: "Four saved reports on the ERP side and nothing else. No server is stood up, no extension is published, no integration user is created, and no service account holds standing credentials against your ERP. IT is involved once, to turn the four exports into saved reports that land in a known folder with stable file names, which is usually an afternoon. After that the planner runs the routine without IT: export, run the saved masks, run the scheduler, publish the dispatch lists, about twenty minutes each morning. That footprint is the reason a file interface clears a small-team review faster than an integration project."
+---
+
+**Integrating Microsoft Dynamics with EDGEBIC means exporting the items, work centers, routings, and open production orders your ERP already holds to Excel or CSV, mapping those columns once with a reusable import mask, and letting EDGEBIC schedule the work against finite capacity: real shift hours, real machine counts, and sequence-dependent setups.** Executable dates then export back for the ERP and your customers. There is no middleware server, no extension deployed inside the ERP, and no certified connector to maintain through a platform update.
+
+EDGEBIC by User Solutions is the newest generation of a scheduling line that has integrated with ERPs this way since 1991. Across 35+ years the same approach has fed schedules for the US Navy, GE, BAE Systems, and Cummins, including Cummins scheduling across 33 locations from AS400-era data. This guide covers the Dynamics case: what to export, how the masks work, what the engine does with the result, and what a realistic first two weeks looks like.
+
+## Why the edition does not matter
+
+Dynamics is a family rather than one product, and manufacturers run several generations of it side by side, sometimes in the same group of companies. A file interface makes that irrelevant. The masks read what an export produces, not what a platform version exposes, so the same method serves Business Central, Finance and Operations, and the older generations a plant may still be running after an acquisition.
+
+That matters more here than in most ERP families, because Dynamics estates change shape. Platforms move forward on a vendor cadence, partners add extensions, and companies migrate between editions. A connector would have to be re-qualified at each of those moments. A file has nothing to re-qualify. The general category view is in the older [Microsoft Dynamics scheduling integration overview](/blog/dynamics-scheduling-integration), which covers integration approaches other than this one.
+
+## Where Dynamics stops and detailed scheduling starts
+
+An ERP is built to be right about material, cost, and commitments, and that work belongs there. The gap most Dynamics plants report is further downstream, in the questions a planner answers every morning:
+
+- Which of these 90 open orders actually fits on the constraint work center this week?
+- If the expedite jumps the queue, which promised dates slip and by how much?
+- Is the paint line loaded to 85 percent or 145 percent next Tuesday?
+
+Those are finite capacity questions. Answering them means modeling shifts, machine instances, changeover sequences, and operator skills against every open order at once, which is a different computational problem from planning material. The discipline split between planning material and scheduling capacity is standard in the operations management body of knowledge maintained by [ASCM](https://www.ascm.org). The general argument is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling), and the gap-by-gap version for this ERP is the companion post on [Dynamics scheduling gaps and how EDGEBIC fills them](/blog/dynamics-scheduling-gaps-and-how-edgebic-fills-them).
+
+## The integration in one table
+
+The [EDGEBIC ERP integration architecture](/edgebic-erp-integration) is identical for every ERP, Dynamics included:
+
+| Direction | Data | How it moves |
+|---|---|---|
+| Dynamics → EDGEBIC | Items | Excel or CSV export → Product import mask |
+| Dynamics → EDGEBIC | Work centers | Export → Workcenter import mask |
+| Dynamics → EDGEBIC | Routings / operations | Export → BOR (bill of routing) import mask, two-pass |
+| Dynamics → EDGEBIC | Open production orders | Export → SalesOrder import mask |
+| Dynamics → EDGEBIC | Reported hours (optional) | Export → Actuals import mask |
+| EDGEBIC → Dynamics | Executable start and end dates, dispatch lists | Excel export from Job View and reports |
+
+An **import mask** is a saved recipe. It remembers which kind of data you are importing, what format it arrives in (an Excel workbook, or comma, semicolon, tab, or space delimited text), whether the first row carries headings, and how each column of your file maps onto an EDGEBIC field. You build it once by dragging your file's column headings onto EDGEBIC's target fields. Every run after that is two clicks: pick the mask, press Do It.
+
+Every row in your file produces exactly one outcome: **Created**, **Updated**, **Reused** (found and deliberately left alone), or **Failed** (rejected, with the reason recorded). A result dialog shows the counts and a per-run log file records every row. Nothing half-imports silently, which matters when someone asks what a run actually changed.
+
+## Step 1: the four exports
+
+You do not need everything Dynamics knows. Four exports carry a complete scheduling model.
+
+1. **Items.** The item identifier, description, unit of measure, and any cost or lead-time columns you want visible. The identifier is the natural key and matching is case-insensitive, so `PUMP-A` in the file finds `Pump-A` in the database.
+2. **Work centers.** The work center identifier, how many identical machines it holds, default setup hours, efficiency, and an hourly rate if you want cost rollups. Bottleneck and shift assignment flags can ride along in the same file.
+3. **Routings.** One row per operation: end product, work center, sequence number, hours per unit, setup time, queue time.
+4. **Open production orders.** Product, quantity, order reference, and dates.
+
+Any list, report, or query in your Dynamics environment that saves to Excel or CSV is a valid source. You are not writing an extension, not calling an API, and not standing up a middleware service. The file is the interface, which is exactly why nothing here enters your ERP's update path.
+
+## Step 2: map the columns once
+
+Build one mask per file. Name it after the routine rather than the file: `Weekly Dynamics Work Orders` outlives `orders-week29.xlsx`. Mandatory fields are flagged in the mask editor, and the run refuses to start until they are mapped, so a half-built mask fails before it reads a single row rather than half-way through.
+
+Two mask features carry most of the weight in a Dynamics integration:
+
+**Unit conversion.** ERPs and schedulers disagree about units constantly. Set a conversion factor on any numeric column and the multiplication happens before the value is stored. Minutes to hours is `0.016667`. Seconds to hours is `0.000278`. A standard time quoted per lot of 100 pieces becomes per piece with `0.01`. Different columns in one file can carry different factors, so a routing export mixing per-lot run times with per-changeover setup minutes lands correctly in one run.
+
+**Blank-cell preservation.** On an update run, a blank cell keeps the existing value instead of wiping it. A file carrying only item number and price refreshes prices and touches nothing else. Note the matching rule: a zero is a value, not a blank, so leave a column out rather than filling it with zeros you do not mean.
+
+## Step 3: the routing import, and why it takes two passes
+
+Routings are the hardest data to move between systems because operations reference each other: step 10 feeds step 20 feeds step 30. A naive row-by-row import cannot wire those links, because step 20 does not exist yet when step 10 is written.
+
+EDGEBIC's routing import therefore runs in **two passes**. Pass one reads and validates every row, auto-creates any work center or product the file names that does not exist yet, and buffers the steps. Pass two groups the buffered rows by end product, sorts them by sequence number, writes them, and then wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished product so the routing renders as one connected flow in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour).
+
+Three conventions save time later:
+
+- **Number sequences in gaps of 10.** When engineering inserts a deburr step next quarter it becomes 25 and nothing renumbers.
+- **Keep all of one product's steps in one file.** A routing import wipes and recreates that product's steps once per run, which is what makes re-imports idempotent. Splitting one product across two runs means the second run's wipe deletes the first run's steps.
+- **Re-importing is safe for running orders.** Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing change applies to future jobs and leaves work in progress untouched.
+
+## Step 4: orders in, then run the scheduler
+
+The order import maps product, quantity, reference, and dates. When your export carries an order reference, rows sharing that reference group under one sales order and their jobs auto-number as `{Ref}-{line}`, which keeps a multi-line order together instead of scattering it.
+
+One rule matters more than any other: **imports never schedule anything.** After the run, imported orders sit as unscheduled demand. You then run the scheduler, which states its scope before it plans (how many jobs are new and how many existing jobs are being rescheduled), and the new work slots around everything already committed on the floor. Data movement and planning stay separate on purpose, so an import can never silently rearrange a plant.
+
+Once the data is in, the whole engine applies to your Dynamics work: finite capacity across multiple shifts and machine instances, [work center groups that re-shop the machine pool on every reschedule](/blog/edgebic-work-center-groups-explained), a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained), lot streaming with transfer batches, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine.
+
+## Step 5: sending executable dates back
+
+The return trip is Excel. The Job View grid exports the job schedule as a workbook with colored cells and a legend sheet. The work center schedule exports the same way, and every report dialog exports to Excel or PDF using the column layout you saved, which turns a dispatch list into a saved report rather than a document someone rebuilds each morning.
+
+From there, revised dates go back into Dynamics through the date-maintenance path your order process already uses. There is no automated write-back, which is deliberate: your ERP data stays under your team's control and inside your existing approval process. The category framing for this split is on the [ERP scheduling add-on page](/erp-scheduling-add-on).
+
+## A realistic first two weeks
+
+The method behind this guide has a documented benchmark in the User Solutions lineage: at Plastilite Corporation the ERP vendor itself recommended User Solutions scheduling, and the team went from first export to a complete optimized schedule with ERP integration in 5 days. A single-site Dynamics plant with clean routings can move at close to that pace.
+
+| Days | Work |
+|---|---|
+| 1 to 2 | Export items and work centers; build and run those two masks; verify counts against the ERP |
+| 3 to 4 | Export routings; build the routing mask with unit conversions; import and review the routing designer |
+| 5 | Export open orders; import; run the first full finite capacity schedule |
+| 6 to 8 | Compare EDGEBIC dates to current promises; correct instance counts, shifts, and setups where reality disagrees |
+| 9 to 10 | Lock the weekly rhythm: saved masks, import order, scheduler run, exports back |
+
+If you are starting from an empty database, the [green-field setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough) covers the sequence in detail, and the [Dynamics to EDGEBIC data mapping reference](/blog/dynamics-to-edgebic-data-mapping-reference) is the field-level lookup you keep open while building masks.
+
+## Prove it with your own export
+
+The fastest evaluation is not a feature list, it is your own file. Export this week's open production orders and a routing file, then [bring them to a demo](/contact-us). Mapping them live takes minutes, and you leave having watched your own plant scheduled against its own capacity. Shops comparing several ERPs at once can also read the [Infor](/blog/edgebic-infor-integration-guide) and [Global Shop Solutions](/blog/edgebic-global-shop-integration-guide) versions of this guide: the method is identical, which is the point. The questions that usually come up first are answered in the [Dynamics integration FAQ](/blog/edgebic-dynamics-integration-faq).
+
+<Accordion title="Does EDGEBIC have a certified Microsoft Dynamics connector?">
+No, and that is a deliberate design choice. EDGEBIC integrates with Dynamics through reusable Excel, CSV, and database import masks rather than a certified per-ERP connector. You map the columns of a Dynamics export once, and every later run is two clicks. Nothing is installed inside the ERP, no extension is deployed, and no interface object enters your change-control or update path.
+</Accordion>
+
+<Accordion title="Does this work with Business Central as well as Finance and Operations?">
+Yes, and with older Dynamics generations too, because the interface is a file rather than an API. The masks read what an export produces, not what a platform version exposes. If your environment can save an item list, a work center list, a routing list, and an open production order list to Excel or CSV, the import masks work. There is no per-edition connector to select, license, or upgrade.
+</Accordion>
+
+<Accordion title="What Dynamics data does EDGEBIC need to build a finite capacity schedule?">
+Four exports carry a complete scheduling model: items, work centers with capacity detail, routings with operation sequence and run and setup times, and open production orders with quantities and dates. A fifth optional export carries reported hours from the floor. Each one goes through its own import mask, and every row returns as Created, Updated, Reused, or Failed with a per-run log.
+</Accordion>
+
+<Accordion title="What happens to the integration when Dynamics takes an update?">
+Nothing, in almost every case, because there is no connector version to match. The interface is a file, so as long as the platform still produces item, work center, routing, and order exports, the masks keep running. If an update renames a column heading in an export, you re-map that column in the mask once, which takes minutes rather than a re-certification or a redeployed extension.
+</Accordion>

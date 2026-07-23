@@ -1,0 +1,160 @@
+---
+title: "Scheduling a Fab Shop Around Its Bottleneck"
+description: "Fabrication bottleneck scheduling: pin the constraint operation to its target date, plan upstream backward to feed it, and plan downstream forward from it."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - fabrication bottleneck scheduling
+  - theory of constraints scheduling
+  - anchor scheduling manufacturing
+  - constraint work center planning
+  - drum buffer scheduling
+  - press brake bottleneck
+  - subordinate work centers scheduling
+targetPhrase: "fabrication bottleneck scheduling"
+wordCount: 1900
+readingTime: 10
+faqQuestions:
+  - question: "What actually triggers bottleneck scheduling for a job?"
+    answer: "Two things together, and this catches most people out. The work center must be flagged as the bottleneck, and a target start date must be set on that job's schedule row for that operation. Flagging a work center as the bottleneck on its own has no scheduling effect at all: without a target start date the job falls through to standard forward scheduling."
+  - question: "How does the scheduler decide upstream from downstream?"
+    answer: "It splits the routing around the pinned operation using three methods in order. Routing level first, then sequence number, then following the next-in-sequence links through the graph. At least one of the three must be populated, which is why sequence numbers should always be entered in order when a routing is built."
+  - question: "Does anchoring change the customer due date?"
+    answer: "No. The scheduler never writes to the order's due date, which is the planner's customer promise. The computed completion lands on the schedule's own end date and is what the grid shows. If you see a due date change after a scheduling run, something other than the scheduler wrote it."
+  - question: "What happens if the constraint operation has already been completed?"
+    answer: "The job falls back to standard forward scheduling for the remaining steps. Completed steps are filtered out before the anchor is looked for, so the pinned operation is no longer among them and the match fails. That is correct behavior: you cannot backward-plan feeder work to an operation that already happened, and the completed step's actual dates are preserved regardless."
+qaQuestions:
+  - question: "Our press brake is obviously the constraint. Work piles up in front of it, and yet it still starves some mornings. How does anchoring change that?"
+    answer: "It inverts the planning direction. A push scheduler fills every work center as fast as it can, which is exactly what builds the pile and does nothing to guarantee the brake is fed when it opens. Anchoring pins the brake operation to its target date, gives it maximum scheduling priority so its capacity is claimed before anything else competes for the same slots, then plans the feeding operations backward from that pin and the downstream operations forward from it. Upstream work now has a hard deadline rather than a vague ambition to be early, and the brake's slot is reserved rather than hoped for."
+  - question: "How do the buffers get sized, and should we turn them on?"
+    answer: "When dynamic buffers are enabled and the anchored work center is genuinely the highest-loaded resource for that job, the constraint buffer is half the total upstream path with a one-hour floor, the shipping buffer is a quarter of the downstream path with a two-hour floor, and a feeding buffer of ten percent of the upstream path is applied to the step that directly feeds the constraint. On a routing with 30.5 upstream hours and 16.5 downstream, that gives 15.25 hours, 4.125 hours, and 3.05 hours. When the anchor is not the highest-loaded resource, fixed and much smaller values of two, four, and one hour are used instead. Buffers default to off, so a shop that never sets the flag runs anchored but tight, with the pin honored and no protection against variation."
+---
+
+**Every fab shop has one resource that sets the pace, and scheduling as if it were just another work center is why work piles up in front of it and it still starves some mornings.** EDGEBIC by User Solutions supports anchor scheduling: pin the constraint operation to the date it must begin, plan every feeding operation backward to that pin, and plan everything after it forward from the pin. That is Goldratt's Theory of Constraints applied to a finite capacity schedule, and for a shop with one press brake, one paint line, or one heat-treat oven, it changes the shape of the whole plan.
+
+The mechanism is documented in [anchor scheduling explained](/blog/edgebic-toc-anchor-scheduling-explained). Finding your constraint in the first place is covered in [production bottleneck identification](/blog/production-bottleneck-identification). This post is about the fab shop case.
+
+## Why a Push Scheduler Starves the Constraint
+
+A conventional forward scheduler loads every work center as early as it can. That sounds efficient and it produces two problems at once.
+
+Work-in-process piles up in front of the constraint, because upstream operations run at their own maximum rather than at the constraint's rhythm. Money sits in the aisle and lead times inflate because every job queues.
+
+And despite that pile, the constraint still idles, because nothing in the plan guaranteed that the *right* job was fed to it at the *right* time. A queue of the wrong work is not the same thing as being fed.
+
+Anchoring inverts the logic. The constraint's slot is claimed first, at maximum priority, and everything else is timed to serve it. Feeding operations get a hard deadline. Downstream operations get a start that follows the constraint's end. Nothing else competes for the constraint's capacity.
+
+## The Two Flags You Must Both Set
+
+This is the single most common configuration mistake with this feature, so it goes first.
+
+**Flagging a work center as the bottleneck does not, by itself, turn on anchor scheduling.** The engine looks for a job whose schedule row for an operation carries a **target start date**, then matches that operation back to the routing. Without a target start date on the row, the job falls through to standard forward scheduling even when the work center is flagged.
+
+So the setup is two steps:
+
+1. Mark the work center as the bottleneck in the work center editor. This affects how the buffers are sized.
+2. Set a target start date on that job's schedule row for the constraint operation. This is what activates the mode.
+
+If you have flagged the brake and nothing changed, that is why.
+
+## What the Scheduler Does Once Anchored
+
+Once a target date is found and matched, four things happen in order.
+
+**It checks whether the anchor really is the constraint.** A load factor is computed for every work center in the routing as demand hours divided by daily available capacity. Take a 200-piece routing:
+
+| Operation | Work center | Load factor |
+|---|---|---|
+| Turn | Lathe-1 | 17 ÷ 16 = 1.06 |
+| Mill | Mill-2 | 10.5 ÷ 8 = 1.31 |
+| **Heat treat** | **HeatTreat** | **22 ÷ 8 = 2.75** |
+| Grind | Grind-1 | 12.5 ÷ 16 = 0.78 |
+| Inspect | Inspect | 4 ÷ 4 = 1.00 |
+
+Heat treat carries the highest load, so it is confirmed as the constraint for this job at this quantity. That confirmation is what enables demand-proportional buffer sizing rather than small fixed values.
+
+**It splits the routing.** Operations before the anchor are pre-anchor; operations after are post-anchor. The split uses routing level first, then sequence number, then the next-in-sequence links. At least one has to be populated, which is the practical reason to always enter sequence numbers in order.
+
+**It schedules the anchor at maximum priority** with a utilization-maximizing strategy, so its capacity is claimed before any subordinated step can take the same slots. Priority is restored afterward.
+
+**It plans outward.** Pre-anchor operations are scheduled backward in reverse dependency order from the anchor's start; post-anchor operations forward from the anchor's end.
+
+## A Worked Five-Step Routing
+
+Same 200-piece job, buffers off, target start Monday 07:00.
+
+| Phase | Operation | Scheduled |
+|---|---|---|
+| Anchor | Heat treat (22 h) | **Mon 07:00 to Tue 05:00** |
+| Backward | Mill (11.5 h) | starts Sun 19:30 |
+| Backward | Turn (19 h) | starts Sat around 00:30 |
+| Forward | Grind (12.5 h) | Tue 05:00 to Tue 17:30 |
+| Forward | Inspect (4 h) | Tue 17:30 to Tue 21:30 |
+
+The oven starts exactly at the planner's target. The lathe and the mill are back-calculated to their latest acceptable start times so they finish just in time rather than as early as possible. Grind and inspect chain forward. No capacity is wasted at the constraint, and upstream work is not released earlier than it needs to be.
+
+Notice that upstream operations may start before the order's nominal start date. That is expected and correct for backward planning. If upstream capacity is not available that early (a holiday, a full machine), those steps get pushed to the next available slot and the buffer window shortens, but the constraint keeps its pinned slot regardless.
+
+## What Buffers Buy, and What They Cost
+
+Buffers default to **off**, which means an anchored job runs tight: the pin is honored and there is no protection against variation. Turning them on gives the plan a safety structure.
+
+When enabled and the anchor is confirmed as the highest-loaded resource:
+
+| Buffer | Sizing | On a 30.5 h upstream, 16.5 h downstream routing |
+|---|---|---|
+| **Constraint buffer** | 50 percent of the upstream path, minimum 1 hour | 15.25 h |
+| **Shipping buffer** | 25 percent of the downstream path, minimum 2 hours | 4.125 h |
+| **Feeding buffer** | 10 percent of the upstream path, on the direct feeder only | 3.05 h |
+
+Applied to the same job with the anchor still at Monday 07:00: the pre-anchor deadline becomes Sunday 15:45, the direct feeder starts Sunday 01:12 (its own 11.5 hours plus the 3.05-hour feeding buffer), and the first operation starts Friday 06:12. Downstream starts Tuesday 09:08 and the job completes Wednesday 01:38.
+
+What that buys: if the first operation runs an hour late, the constraint buffer absorbs it and the oven still starts Monday 07:00. If the oven finishes two hours early, the shipping buffer means grinding still starts at the planned time with a cushion, and Wednesday 01:38 becomes a committed date rather than an optimistic one.
+
+What it costs: the job starts earlier and holds material longer. That is the trade, and it is a business decision rather than a technical one.
+
+When the anchored work center is **not** the highest-loaded resource for that job, smaller fixed values are used instead (two hours, four hours, and one hour), because the demand-proportional sizing is only justified when the pinned operation genuinely is the constraint.
+
+## Rules That Protect the Plan
+
+**The due date is never rewritten.** The scheduler computes an end date on the schedule; the order's due date stays the planner's customer promise. If you see a due date change after a run, something else wrote it.
+
+**The anchor outranks everything else.** A job can also carry a whole-order backward direction, and a planner can drag operations to explicit planned start dates. When a job carries a target start date as well, the anchor wins, because a pinned operation is a user-placed constraint that is harder than the due date, and the anchor path already performs its own backward and forward split around the pin. The resolution order is: anchor, then actuals, then planned pins, then whole-order backward, then plain forward. See [forward versus backward scheduling](/blog/forward-vs-backward-scheduling) for the underlying concepts.
+
+**Once the job starts, forward wins.** As soon as any operation carries an actual date, the remaining operations plan forward from the resume point, because "start as late as possible" has no meaning for a job already running.
+
+**A completed anchor releases the mode.** If the constraint operation itself is finished, it is filtered out before the anchor is looked for, the match fails, and the remaining steps schedule forward. The completed operation's actual dates are preserved either way, because completed work is never moved by a reschedule.
+
+## Two Traps Worth Knowing
+
+**Near-miss constraints.** The confirmation compares the anchor's load factor against the maximum with a very tight tolerance. An anchor at 1.80 when another work center sits at 1.81 is **not** confirmed as the constraint, and gets the small fixed buffers rather than the proportional ones. If your two heaviest resources are close, check which one the load calculation actually picked before assuming the buffers are large.
+
+**Empty splits.** If every routing operation shares the same level and the same sequence number and none use next-in-sequence links, both the pre-anchor and post-anchor lists come back empty. The anchor is scheduled at its target and nothing else is placed. Populating sequence numbers in order prevents this entirely.
+
+## Where This Sits in a Fab Shop's Toolkit
+
+Anchoring answers "how does the whole shop serve the constraint." It composes with the other fabrication tools rather than replacing them: [lot streaming](/blog/edgebic-for-metal-fabrication-lot-streaming) shortens the handoffs feeding the constraint, [parallel work centers](/blog/edgebic-for-metal-fabrication-parallel-work-centers) can relieve a constraint by using two machines where one was used before, and elevating the constraint (adding capacity) remains a management decision the schedule surfaces rather than makes.
+
+For the category background, [metal fabrication scheduling](/blog/metal-fabrication-scheduling) covers the fundamentals and the [metal fabrication scheduling software](/metal-fabrication-scheduling-software) page is the shorter evaluation read. The [industry fit guide](/blog/edgebic-by-industry) maps the rest of the feature set, and [EDGEBIC](/edgebic) is the product hub.
+
+Ready to schedule around your constraint? [Contact US for a demo](/contact-us) and bring the routing that runs through it.
+
+<Accordion title="What actually triggers bottleneck scheduling for a job?">
+Two things together, and this catches most people out. The work center must be flagged as the bottleneck, and a target start date must be set on that job's schedule row for that operation. Flagging a work center as the bottleneck on its own has no scheduling effect at all: without a target start date the job falls through to standard forward scheduling.
+</Accordion>
+
+<Accordion title="How does the scheduler decide upstream from downstream?">
+It splits the routing around the pinned operation using three methods in order. Routing level first, then sequence number, then following the next-in-sequence links through the graph. At least one of the three must be populated, which is why sequence numbers should always be entered in order when a routing is built.
+</Accordion>
+
+<Accordion title="Does anchoring change the customer due date?">
+No. The scheduler never writes to the order's due date, which is the planner's customer promise. The computed completion lands on the schedule's own end date and is what the grid shows. If you see a due date change after a scheduling run, something other than the scheduler wrote it.
+</Accordion>
+
+<Accordion title="What happens if the constraint operation has already been completed?">
+The job falls back to standard forward scheduling for the remaining steps. Completed steps are filtered out before the anchor is looked for, so the pinned operation is no longer among them and the match fails. That is correct behavior: you cannot backward-plan feeder work to an operation that already happened, and the completed step's actual dates are preserved regardless.
+</Accordion>

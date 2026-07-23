@@ -1,0 +1,163 @@
+---
+title: "Batch and Overlap Scheduling in Textile Production"
+description: "Textile batch production scheduling: sublots through cut and sew, start-to-start lags on continuous dye ranges, and the handling delay that stops both lying."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - textile batch production scheduling
+  - sublot scheduling garment
+  - continuous process dye range scheduling
+  - transfer batch cut and sew
+  - overlap scheduling textiles
+  - dye lot planning
+targetPhrase: "textile batch production scheduling"
+wordCount: 1790
+readingTime: 9
+faqQuestions:
+  - question: "How do you schedule sublots through a cut and sew line?"
+    answer: "By setting a transfer batch on the upstream operation equal to the sublot size. EDGEBIC by User Solutions computes when that many pieces will physically exist, from setup plus the sublot multiplied by the per-piece run time, and offers the downstream operation a start from that moment. Dividing a 200-piece order into four sublots means a transfer batch of 50, so sewing starts once the first 50 are cut."
+  - question: "Why does a piece count not work on a dye range?"
+    answer: "Because output on a continuous process is a stream rather than a countable piece. A work center flagged as continuous process ignores any transfer batch configured on a routing step, and the scheduler uses a start-to-start lag measured in hours instead. That lag says the downstream operation may begin a fixed number of hours after the upstream one starts, which matches how a range, a coating line or a cure tunnel actually feeds its successor."
+  - question: "What does a start-to-start lag actually mean in hours?"
+    answer: "It means the successor may begin that many hours after the upstream operation starts, independent of run time, quantity and setup. A lag of one hour on a step running 08:00 to 10:00 lets the successor start at 09:00. A lag larger than the upstream run behaves as a pure delay ending after the upstream finishes, which is how you model a process that must complete before anything else moves."
+  - question: "How do you model cooling or relax time between batches?"
+    answer: "With the handling delay field on the upstream step, which is added on top of whichever overlap model fires. It is a flat number of hours, distinct from queue time, which is shift-aware, and from transit days, which are counted in whole days. Cooling before goods can be moved, a forklift run between buildings, or a short incoming check are all handling delays."
+qaQuestions:
+  - question: "We dye 500 metres in a 4-hour run, then cure. Curing waits for the whole run today. What does a one-hour lag change?"
+    answer: "It releases the cure tunnel three hours earlier.\n\nThe dye range is a continuous process, so any transfer batch on the step is ignored and the lag model applies. With a lag of one hour, the range starts at 08:00 and cure is offered a start at 09:00 rather than at 12:00 when the range finishes. Three hours of elapsed time come out of the chain.\n\nOne detail worth knowing before you set it: when a lag fires, the resulting time replaces any queue buffer configured on the same step rather than adding to it. If you also need a cooling gap on top, put it in the handling delay field instead of in queue time, and the anomaly report will flag the combination so nobody is surprised."
+  - question: "We set a transfer batch of 100 because most runs are 200 pieces. A 30-piece sample order now shows no overlap at all. What happened?"
+    answer: "The engine capped the effective batch at 30, so the flow time became the whole run and the downstream step waited for everything.\n\nThat cap is protecting you. Without it the plan would sit waiting for piece 100 on a 30-piece order, and the downstream step would simply never start. The anomaly checks flag exactly this condition: a transfer batch at or above the order quantity means the operation behaves as though overlap were switched off.\n\nThe practical fix is to size the transfer batch against your smallest realistic run rather than your typical one, or to accept serial behavior on sample orders knowing why it happens."
+---
+
+**Textile production runs in batches, and the batch that moves is not the batch that is being made.** EDGEBIC by User Solutions models both: a piece-count transfer batch for discrete stages such as cut and sew, and a start-to-start lag in hours for continuous stages such as a dye range or a coating line. Getting the right model on the right stage is what turns a chain of waiting into a chain of overlap.
+
+## The Pain: Every Stage Waits for the Whole Lot
+
+The default in most planning systems is that an operation must finish before its successor starts. For a textile chain that assumption is expensive at every link.
+
+A 500-piece cut lot does not have to be complete before sewing can start. The first bundle is sewable within an hour. A dye range does not have to finish its full run before the cure tunnel can accept fabric; the fabric is moving continuously. A finishing operation does not have to wait for the whole sew batch when goods move in cartons of fifty.
+
+Add those waits together across cut, sew, finish, press and pack and the elapsed time roughly doubles against what the process physically requires. Nobody sees it, because each individual wait looks reasonable in isolation.
+
+The industry-level treatment is in the [textile and garment scheduling overview](/blog/textile-garment-scheduling). What follows is how to remove the waits without pretending.
+
+## Two Models, Two Kinds of Stage
+
+The distinction is physical, not preferential.
+
+| Stage type | Model | Trigger |
+|---|---|---|
+| Discrete: cutting, sewing, pressing, packing | Piece-count transfer batch | A transfer batch is set on the step and the work center is not flagged continuous |
+| Continuous: dye range, coating, calendering, cure tunnel | Start-to-start lag in hours | The work center is flagged as continuous process, or no transfer batch is set |
+| Neither configured | Serial | Downstream waits for the full upstream finish |
+
+A work center flagged as continuous process ignores any transfer batch on a routing step entirely. That is deliberate: a piece count is not meaningful where output is a stream. If somebody configures a transfer batch on a continuous stage, the anomaly report flags it so nobody assumes it is doing something. Full mechanism detail is in [lot streaming explained](/blog/edgebic-lot-streaming-explained), and the term itself in [what is a transfer batch](/blog/what-is-a-transfer-batch).
+
+## Sublots Through Cut and Sew
+
+The piece-count model computes when the first transfer batch physically exists:
+
+**flow time = setup + the smaller of (transfer batch, order quantity) x run time per piece**
+
+Measured from the upstream operation's earliest start, that is when the sublot is ready. The downstream stage is offered a start from that moment, plus any handling delay, and the capacity allocator then finds a real slot at or after it.
+
+The practical way to choose a transfer batch in textiles is to divide the order by the number of sublots you actually want. A 200-piece order in four sublots means a transfer batch of 50. Sewing starts once the first 50 are cut and runs concurrently with the remaining 150.
+
+Take a concrete pair. A run of 100 pieces on a stage with 0.5 hours per piece and 2 hours of setup, with a transfer batch of 20 and a half-hour handling delay:
+
+```
+effective batch = min(20, 100) = 20
+flow time       = 2 + 20 x 0.5 = 12 h
+plus handling   = 12.5 h
+```
+
+The upstream stage itself runs 2 plus 100 times 0.5, so 52 hours. Serial, the downstream stage waits all 52. With the sublot, it starts at 12.5. Roughly 15.5 hours come out of a single handoff, and the job's total elapsed time drops from about 52 hours to about 37.
+
+Note where the setup sits. It is inside the flow time, because the first piece cannot exist before setup is done. If your stage carries a sequence-dependent changeover rather than a flat setup, the resolved changeover value is what the overlap calculation uses, so the two mechanisms stay consistent. See [the setup matrix explained](/blog/edgebic-setup-matrix-explained).
+
+## Lags on a Continuous Range
+
+A dye range is the other half of the picture.
+
+Take a 500-metre dye run, four hours on the range, feeding a cure tunnel. The range is flagged as a continuous process, so any transfer batch on the step is ignored and the lag model applies.
+
+With a lag of one hour:
+
+```
+range starts   08:00
+range finishes 12:00
+cure offered   08:00 + 1 h = 09:00
+```
+
+Three hours of elapsed time removed from the handoff, and the number reflects the physical reality that fabric starts arriving at the tunnel long before the range is done.
+
+Two properties of the lag are worth internalizing. It is measured in hours and it is independent of run time, quantity and setup: a lag of one hour is one hour whether the run is four hours or forty. And a lag larger than the upstream run acts as a pure delay ending after the upstream finishes, which is how you model a stage that genuinely must complete before anything moves.
+
+There is one interaction to know about. When a lag fires, the resulting time replaces any queue buffer configured on the same step rather than adding to it. The lot-streaming time is the gate. If you also need a cooling gap on top, put it in the handling delay field. The anomaly report flags any step with both a lag and a queue time set, precisely because the replacement surprises people.
+
+## Handling Delay: The Gap After the Batch Is Ready
+
+The handling delay is a flat number of hours added on top of whichever model fired. It is the right field for physical movement and short waits.
+
+A worked case. Goods move between a wet stage and a dry stage with a transfer batch of 25, 0.8 hours per piece, one hour of setup, and two hours of cooling before they can be handled, on a 50-piece order:
+
+```
+effective batch = min(25, 50) = 25
+flow time       = 1 + 25 x 0.8 = 21 h
+handling delay  = 2 h
+downstream may start 23 h after the upstream begins
+```
+
+The two-hour cooling constraint is enforced without borrowing queue time, which is shift-aware and would behave differently, and without borrowing transit days, which count whole days. Three fields, three distinct behaviors, and using the right one is what keeps a plan legible six months later. See [queue and transit times explained](/blog/edgebic-queue-and-transit-times-explained).
+
+## Sizing a Transfer Batch Without Getting Caught
+
+Two rules cover most of it.
+
+**Size to what physically moves.** If goods travel in cartons of 50 or on bins of 24, that number needs no new handling discipline. If they move on a conveyor or a rail, small batches are cheap and one-piece flow becomes realistic.
+
+**Size against your smallest realistic run, not your typical one.** The engine caps the effective batch at the order quantity, because waiting for a piece that will never exist would leave the downstream stage waiting forever. On a 30-piece sample order a transfer batch of 100 caps to 30, the flow time becomes the whole run, and the plan behaves as though overlap were off.
+
+The second case is common enough that it has its own check. The anomaly report flags a transfer batch at or above the order quantity, so the condition is visible rather than mysterious. Two related checks flag a transfer batch and a lag set on the same step, where the piece count wins and the lag is silently ignored, and a transfer batch set on a continuous-process work center, where it has no effect at all. The catalogue is in [what the anomaly checks look for](/blog/what-the-edgebic-anomaly-checks-actually-look-for).
+
+## How Many Sublots Is the Right Number
+
+More sublots means more overlap and more handling. The formula makes the tradeoff arithmetic rather than opinion.
+
+Take a 200-piece order on a stage with 0.4 hours per piece and 2 hours of setup, so 82 hours of upstream work. The downstream stage is offered a start at setup plus the sublot times the per-piece time:
+
+| Sublots | Transfer batch | Downstream may start after | Handoffs to manage |
+|---|---|---|---|
+| 1 (serial) | 200 | 82 h | 1 |
+| 2 | 100 | 42 h | 2 |
+| 4 | 50 | 22 h | 4 |
+| 8 | 25 | 12 h | 8 |
+| 200 (one piece) | 1 | 2.4 h | 200 |
+
+The gain is steep at first and then flattens. Going from serial to four sublots removes 60 hours from the handoff. Going from four to eight removes another 10. Going from eight to one-piece flow removes 9.6 more and multiplies the handling by 25.
+
+That shape is the practical argument for sublots over one-piece flow in most textile operations. Four to eight sublots captures the large majority of the compression at a handling frequency a floor can actually sustain, which is why sizing to the carton, bin or bundle you already move is usually the right answer rather than a coincidence.
+
+## Overlap on Jobs Already Running
+
+Batches in progress are handled against physical reality rather than a formula.
+
+If the upstream stage is complete, the downstream start is its actual end plus any handling delay, because every piece exists. If it is in progress, the engine sums the piece counts logged day by day: once the cumulative count crosses the transfer batch, the downstream start is set to the end of the crossing day, which is deliberately conservative because pieces logged through a day are not necessarily available for movement at the moment they were entered. If the threshold has not been crossed, the schedule projects forward from the real start.
+
+Completed operations are never moved by a reschedule, so a partly finished lot replans forward from where it actually stands. See [rescheduling explained](/blog/edgebic-rescheduling-explained).
+
+## Rolling It Out
+
+Transfer batch defaults to zero on every routing, so nothing overlaps until somebody configures it. That makes a pilot genuinely safe.
+
+1. Pick one style with a clear cut-to-sew handoff and a visible queue between the two.
+2. Set the transfer batch to the quantity that physically moves.
+3. Flag your genuinely continuous work centers, then set lags on the stages that feed from them.
+4. Put cooling and handling gaps in the handling delay field rather than in queue time.
+5. Reschedule, compare the finish date, and read the anomaly report before expanding.
+
+For the routing structure underneath all of this, see [routing fabric through dye, cut and sew](/blog/edgebic-for-textiles-multi-stage-routing). For the industry picture, see the [textile and garment scheduling overview](/blog/textile-garment-scheduling) and the [textile and garment manufacturing software page](/textile-garment-manufacturing-software). For the rest of this series, see [EDGEBIC by industry](/blog/edgebic-by-industry), and for the product, [EDGEBIC](/edgebic).

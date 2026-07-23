@@ -1,0 +1,156 @@
+---
+title: "Deciding What Runs First"
+description: "Production job priority sequencing in EDGEBIC works in three layers: the dispatch order, the slot strategy inside a machine, and the optimizer's orderings."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - production job priority sequencing
+  - job dispatch order scheduling
+  - slot selection strategy
+  - earliest due date dispatching
+  - shortest processing time rule
+  - scheduling priority numbering
+targetPhrase: "production job priority sequencing"
+wordCount: 1920
+readingTime: 10
+faqQuestions:
+  - question: "What decides which job gets scheduled first in EDGEBIC?"
+    answer: "A fixed three-key sort: priority first, with lower numbers dispatching earlier, then the job's earliest start date, then its due date. That order is deterministic, so the same data always produces the same sequence. Priority is a queue position for claiming capacity, not a promise about finish dates: the first job placed gets first pick of open slots on every machine its routing touches."
+  - question: "Does changing a job's priority reschedule anything by itself?"
+    answer: "No. Priority is edited inline in the orders grid, has to be saved explicitly, and takes effect on the next scheduling run. Nothing reshuffles the moment you type a number, and navigating away without saving loses the edit. That separation is deliberate: it lets you set several priorities together and then run once, rather than triggering a run per keystroke."
+  - question: "What is the difference between the dispatch order and the slot selection strategy?"
+    answer: "The dispatch order decides which job is placed first. The slot strategy decides which open window an individual operation takes once its turn arrives. The default takes the earliest available slot, and the alternatives prefer the least-loaded machine instance, minimize changeover, pack capacity tightly, or favor the earliest due date. They answer different questions and both matter."
+  - question: "Does the scheduler resequence jobs on a machine to reduce changeover time?"
+    answer: "Not on its own under the default settings. The changeover matrix makes the cost of a sequence visible and correct, but the placement order still follows the dispatch keys. To have sequence actively chosen for changeover cost, either set the run's slot strategy to minimize setup, or run the optimizer with the least-setup goal, which needs changeover data populated before it appears."
+  - question: "Can the optimizer change the order jobs are scheduled in?"
+    answer: "Yes, and that is precisely what the multi-run layer does. It re-runs the same engine with different global job orderings, scores every resulting complete schedule against the chosen goal, and returns the best one. It is clamped never to return something worse than the ordinary run, and it persists nothing until a planner accepts the proposal."
+qaQuestions:
+  - question: "Every job in our shop is priority 1. Is that a problem?"
+    answer: "It removes your top-level lever and pushes every decision onto the tie-breakers, which are earliest start then due date. That is not a disaster, since due-date ordering is a reasonable default, but it means you cannot express that one job matters more than another with the same dates. Number in tens rather than ones so you can insert a rush job at 15 without renumbering the queue, and reserve the lowest band for jobs that genuinely displace others."
+  - question: "We changed priorities but the schedule looks identical. What happened?"
+    answer: "Check three things in order. Did the inline edits get saved, since the grid holds them until you click save. Did the run use a mode that touches those jobs, since the incremental modes deliberately leave already-scheduled work alone. And is the capacity actually contested, because reordering only changes outcomes where two jobs compete for the same window. Jobs on unloaded machines finish where they would have anyway."
+---
+
+**Sequencing in [EDGEBIC by User Solutions](/edgebic) happens in three layers, and they are frequently confused: the dispatch order that decides which job enters the plan first, the slot strategy that decides which window an individual operation takes, and the optimizer that proposes an entirely different dispatch order.** Knowing which layer you are looking at is most of the skill.
+
+Generic dispatching theory is covered in [priority dispatching rules for job shops](/blog/priority-rules-job-shop). This post is about how the three layers behave in practice, in what order, and where each one can and cannot help.
+
+## Layer One: The Dispatch Order
+
+Every run sorts the job list before placing anything, using three keys:
+
+1. **Priority**, ascending. Lower numbers go first.
+2. **Earliest start date**, ascending.
+3. **Due date**, ascending.
+
+That is the whole rule and it is deterministic. The same data produces the same sequence every time, which matters more than it sounds: a plan you cannot reproduce is a plan you cannot debug.
+
+There is one conditional fourth key. When forward netting is active, a leading key places build-to-stock producers ahead of consumers, so a job that builds a stock buffer is placed before a job that might consume that buffer in the same run. Without it, the consumer would net against stock that had not been planned yet.
+
+What priority actually buys you is **first pick of capacity**. The first job placed sees every machine empty and takes the slots it wants. The second job sees what the first left. There is no reservation, no bidding, no revisiting: the engine places one job completely, then the next.
+
+That has an important consequence. Priority does not promise a finish date. A priority-1 job with a long routing through loaded machines can still finish after a priority-9 job with two short operations on idle equipment. Priority governs the order of claiming, not the outcome.
+
+## Editing Priority Without Surprises
+
+Priority is edited inline in the orders grid. The edit is held until you click save, and it triggers no rescheduling by itself. It takes effect on the next run.
+
+Two habits avoid most friction here.
+
+**Number in tens.** Using 10, 20, 30 rather than 1, 2, 3 means a rush job slots in at 15 without renumbering anything. Renumbering a whole queue to insert one job is how priority schemes decay into everything being priority 1.
+
+**Save before you navigate.** There is no auto-save on the grid, and leaving the view discards pending edits. The save button highlights when edits are pending, which is the cue.
+
+A related check: the scheduling mode has to actually touch the jobs whose priority you changed. The incremental modes deliberately leave already-scheduled jobs alone. If you reprioritized work that is already on the plan and ran an incremental mode, nothing moved because nothing was supposed to. [Scheduling modes explained](/blog/edgebic-scheduling-modes-explained) covers which mode reaches which jobs.
+
+## Layer Two: The Slot Strategy
+
+Once a job's turn arrives, each of its operations has to pick a window on its machine. The run's slot strategy decides how.
+
+| Strategy | Behavior | Good for |
+|---|---|---|
+| First available | Take the earliest open slot on any qualifying instance | The default; shortest lead time per job |
+| Load balancing | Prefer the instance with the lowest current load | Spreading wear and keeping every instance moving |
+| Minimize setup | Prefer the instance whose last job makes the changeover cheapest | Machines with a populated changeover matrix |
+| Maximize utilization | Pack capacity as tightly as possible | Squeezing a constrained resource |
+| Earliest due date | Favor the slot that supports the earliest due date in the queue | Due-date-driven shops |
+
+Two of those interact with features covered elsewhere. Minimize setup only has anything to work with once a [sequence-dependent changeover matrix](/blog/edgebic-setup-matrix-explained) is populated: without it, every changeover looks identical and the strategy has nothing to prefer. Maximize utilization is also what the anchored path switches to automatically while it places a pinned constraint operation, so that operation's window is secured before subordinated work can compete for it.
+
+The distinction from layer one is worth restating. The dispatch order decides **which job** gets to choose. The slot strategy decides **which window it chooses**. Changing the strategy without changing the dispatch order produces different placements for the same job order, which is often exactly what a shop needs.
+
+## Layer Three: Letting the Optimizer Propose an Order
+
+The dispatch sort is a heuristic. It is a good one and it is predictable, but it commits each job's whole routing before looking at the next job, which is where measurable time gets lost: a long first operation can block a machine while a short job that would have fed the next work center waits.
+
+The multi-run optimizer attacks exactly that. It re-runs the same engine with different global job orderings, scores each resulting complete schedule against the goal you picked, and returns the best. The orderings it tries are the classical dispatching rules plus seeded shuffles:
+
+- **Earliest due date**, and priority-then-due-date
+- **Shortest processing time** first, and longest first
+- **Critical ratio**, which is remaining time divided by remaining work
+- Seeded random permutations up to the candidate cap
+
+For four jobs or fewer it simply tries every permutation. Earliest due date and shortest processing time are long-standing dispatching rules in production planning practice, documented by bodies such as [ASCM](https://www.ascm.org); the value here is that each candidate ordering is turned into a complete real schedule by the same engine that runs production, so constraint compliance is total by construction.
+
+Two guarantees make this safe to run casually. The result is clamped **never worse** than the ordinary run under the chosen goal, so a run can only help or return the baseline unchanged. And nothing is written until a planner clicks accept, so the comparison is free. [The optimizer guide](/blog/edgebic-optimizer-guide) covers the flow, and [optimizer goals and presets](/blog/edgebic-optimizer-goals-and-presets-explained) covers what each goal optimizes for.
+
+When the optimizer returns the baseline, that is a real answer rather than a failure: it means no candidate ordering it tried beat your existing sequence on the goal you asked for. [Why the optimizer returned the same schedule](/blog/why-the-optimizer-returned-the-same-schedule-edgebic) covers the reasons in detail.
+
+## How Sequencing Interacts With Direction
+
+Scheduling direction does not change a job's position in the dispatch queue. A backward job and a forward job with the same priority and dates are placed in the same relative order.
+
+What direction changes is how each job claims slots once its turn comes. A backward job searches right-aligned from a deadline instead of left-aligned from an earliest start. An anchored job places its pinned constraint operation first at maximum priority with the capacity-packing strategy, then plans upstream and downstream around it.
+
+The practical read for a mixed plan: an anchored job whose constraint operation is a machine your other jobs also use will claim its constraint window aggressively when its turn comes. If that machine is genuinely the plant constraint, that is correct. [Bottleneck scheduling and due-date scheduling in the same plan](/blog/combining-toc-anchor-and-backward-scheduling-edgebic) covers the interaction properly.
+
+## Sequencing and Changeover Are Two Decisions
+
+A frequent expectation is that populating a changeover matrix will make the scheduler group like products together. It does not, by default.
+
+The matrix makes the **cost** of a sequence visible and correct: a plan that runs white, black, white now carries the real four-hour flush rather than a flat thirty minutes on each. That alone changes plans, because an honest plan slips where a dishonest one fitted.
+
+Actively **choosing** a cheaper sequence is a separate decision, and there are two ways to ask for it: set the run's slot strategy to minimize setup, or run the optimizer with the least-setup goal. The second is a whole-plan search and is usually the more effective of the two, but it only appears in the goal list once changeover data exists, because a goal with no data to optimize would be a lie.
+
+The size of the prize is easy to underestimate. On a three-job paint example from the product documentation, an honest plan under due-date order needs 330 minutes of changeover and overflows an eight-hour shift; the same three jobs sequenced light-before-dark need 90 minutes and finish with three hours to spare. Same work, same machine, same day: one decision.
+
+## Where Sequencing Cannot Help
+
+Two situations look like sequencing problems and are not, and recognizing them saves a lot of fruitless reordering.
+
+**Uncontested capacity.** Reordering only changes outcomes where two jobs want the same window. On a machine with plenty of headroom, every dispatch order produces the same placements, and a priority change that appears to do nothing genuinely did nothing. Before reordering, check whether the machine in question is actually loaded.
+
+**A routing that is simply too long.** If a job's own operations sum to more elapsed time than the gap between its start and its due date, no queue position rescues it. Sequencing decides who waits behind whom; it cannot compress a routing. The levers there are different ones: overlap between operations, a machine pool so the work can shop for capacity, additional instances, or a higher utilization percentage on a machine that has been deliberately derated.
+
+The practical test is quick. Add up the job's operation durations plus its queue and transit times, compare against the available window, and if the routing does not fit even on an empty plant, stop reordering and start looking at the routing.
+
+## An Anti-Pattern and a Better Scheme
+
+The failure mode is everything at priority 1. It removes the top-level lever entirely and pushes every decision onto the tie-breakers, which are earliest start and then due date. Due-date ordering is a defensible default, so nothing catches fire, but you have lost the ability to say that one job matters more than another with identical dates.
+
+A workable scheme looks like this:
+
+| Band | Meaning |
+|---|---|
+| 1 to 9 | Genuine expedites that should displace other work |
+| 10 to 49 | Committed customer orders, numbered in tens by relative importance |
+| 50 to 89 | Normal work |
+| 90 plus | Fill-in, stock replenishment, internal work |
+
+The bands matter less than having them at all. Two properties are what you are buying: room to insert without renumbering, and a shared vocabulary so "that is a 15" means something to the next planner.
+
+## Reading the Result
+
+After a run, three questions answer most sequencing puzzles.
+
+**Did the job get placed in the order I expected?** The dispatch keys are priority, earliest start, due date. Check all three, not just priority: two jobs at the same priority order by their earliest start dates, and a start date somebody set months ago will beat a due date you care about today.
+
+**Was capacity actually contested?** Reordering only changes outcomes where two jobs want the same window. On an unloaded machine, every order produces the same answer, and a priority change that appears to do nothing may simply have had nothing to do.
+
+**Did the mode reach the job?** Incremental modes leave scheduled work alone by design. If you need a reprioritized queue to actually re-place, a full reschedule is the mode that does it. [How to run the scheduler](/blog/how-to-run-the-scheduler-in-edgebic) covers the choices, and [scheduling run mistakes](/blog/scheduling-run-mistakes-edgebic) covers the ones that quietly produce nothing.
+
+For the wider engine behavior, see the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide) and the [complete guide to EDGEBIC](/blog/edgebic-complete-guide).

@@ -1,0 +1,139 @@
+---
+title: "Keeping Promises When a Machine Goes Down"
+description: "Production recovery after machine breakdown depends on rescheduling from what actually happened. The worked arithmetic of one failure, and the honest limits."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Outcomes & ROI
+author: user-solutions
+cluster: edgebic-outcomes
+pillarSlug: edgebic-results-guide
+keywords:
+  - production recovery after machine breakdown
+  - machine downtime rescheduling
+  - disruption recovery manufacturing
+  - reschedule preserve actuals
+  - unplanned downtime schedule impact
+  - protect delivery dates breakdown
+targetPhrase: "production recovery after machine breakdown"
+wordCount: 1730
+readingTime: 9
+faqQuestions:
+  - question: "What happens to the schedule when a machine breaks down?"
+    answer: "In EDGEBIC, the supervisor blocks the machine for the affected dates and the planner reschedules. Completed operations are preserved exactly as recorded, the interrupted operation is replanned for its remaining hours only, and every downstream operation cascades off the new finish. In the documented case, a mill failure on a Wednesday moved final completion from July 21 to July 23 against a July 25 due date, so the order stayed on time."
+  - question: "Does rescheduling after a breakdown lose the hours already worked?"
+    answer: "No. Logged hours are preserved and the operation is replanned only for what remains. In the documented case, a milling operation planned for 31 hours had 10.5 logged across two days before the failure, so the reschedule placed the outstanding 20.5 hours in the next available window. Completed operations upstream were not touched at all, and their actual dates remain exactly as the floor recorded them."
+  - question: "How quickly can a plant recover from unplanned downtime?"
+    answer: "The recalculation itself is a single scheduling run, so the limit is how fast the downtime gets recorded and how fast a planner reviews the result. What that replaces is an afternoon of manual cascade work that nobody can fully verify. The recovery of the physical machine is a separate matter entirely, and no scheduling system shortens it."
+  - question: "Can a schedule absorb downtime without the customer noticing?"
+    answer: "Sometimes, and whether it can is a question the plan answers immediately. If the remaining work fits before the due date, the disruption is absorbed and nothing needs to change downstream. If it does not, the schedule reports exactly how late the job will now be, which is far more useful than an optimistic guess because it lets you call the customer with a real date while options still exist."
+qaQuestions:
+  - question: "Our mill is down for two days. How do I find out which orders are actually at risk?"
+    answer: "Block the machine for those dates and reschedule, then read the Late Jobs report. Blocking makes the engine skip those days entirely when searching for slots on that resource, so every job routed through it moves, and the cascade to downstream operations happens automatically. The Late Jobs report then lists only the orders whose planned end now passes their due date, ranked most-overdue first, with percent complete and a blocker hint. That list is your real exposure. In most two-day outages it is much shorter than the list of jobs that moved, because jobs with due-date slack absorb the delay silently."
+  - question: "The machine that broke has a twin sitting idle. Can the schedule use it automatically?"
+    answer: "Yes, if the routing step targets a pool rather than one machine. A work center group lets the step name a set of interchangeable machines, each with its own efficiency factor and setup override, and the scheduler picks the member that completes soonest given current load. In the documented three-mill example, when the fastest mill is unavailable the job goes to whichever member is genuinely free rather than queueing, and the Job View shows the resolved machine with a replacement indicator so the change is visible rather than silent. Set the pool up before the breakdown, not during it."
+---
+
+**A breakdown does not break the delivery date. Failing to recompute the plan from what actually happened does.** The difference between an outage that costs a customer and an outage that costs a Wednesday is whether the schedule can be rebuilt from logged reality in one run, or has to be reconstructed by hand from memory and optimism.
+
+EDGEBIC by User Solutions rebuilds it. Completed work is preserved exactly, the interrupted operation is replanned for its remaining hours only, and every downstream operation cascades. This post walks the outcome arithmetic of one documented failure, the mechanisms that produced it, and the several things the software cannot fix. It sits under the [EDGEBIC results guide](/blog/edgebic-results-guide). For the full step-by-step trace of the same case, see the [machine breakdown walkthrough](/blog/machine-breakdown-reschedule-walkthrough-edgebic).
+
+## One Failure, Fully Costed
+
+The documented scenario: order MO-42, 20 bearing housings, four sequential operations, a single day shift running 08:00 to 16:00 Monday through Friday with no weekend production. Due date Friday July 25.
+
+| Operation | Work center | Planned hours | Original plan |
+|---|---|---|---|
+| Cut | Saw | 5.5 | Jul 14, 08:00 to 13:30 |
+| Mill | Mill | 31.0 | Jul 14 13:30 to Jul 18 12:30 |
+| Grind | Grinder | 10.5 | Jul 18 to Jul 21 |
+| Inspect | Inspection | 2.0 | Jul 21, 08:00 to 10:00 |
+
+The saw operation finishes on schedule Monday. Milling starts Monday afternoon and logs 2.5 hours that day and 8.0 on Tuesday, for 10.5 of its 31 hours. **Wednesday 06:45, the mill's spindle bearing fails.**
+
+## What the Recovery Actually Does
+
+The supervisor records the outage on the machine for that date, which makes the engine skip Wednesday entirely when searching for slots on that resource. The planner reschedules the job. Five things happen, and the ordering matters:
+
+1. **The finished saw operation is untouched.** Its actual dates stay exactly as recorded.
+2. **The 10.5 logged milling hours are preserved** as a historical portion, with their per-day entries intact (2.5 hours Monday, 8.0 Tuesday).
+3. **The outstanding 20.5 hours are replanned** from Thursday July 17, skipping the blocked Wednesday, and land July 17 08:00 to July 21 12:30.
+4. **Grinding and inspection cascade** off the new milling end, moving to July 21 to 22 and July 22 to 23 respectively.
+5. **The change is recorded** with old and new dates in the audit log, so the Reschedule History report can answer who moved the job and by how many days.
+
+The outcome:
+
+| | Original plan | After the breakdown | Change |
+|---|---|---|---|
+| Milling complete | Jul 18 12:30 | Jul 21 12:30 | +3 working days |
+| Final completion | Jul 21 10:00 | Jul 23 09:00 | +2 working days |
+| Due date | Jul 25 | Jul 25 | Still 2 days early |
+
+**The job stayed on time**, which is the only test that matters and the one your [on-time delivery number](/blog/on-time-delivery-kpi) records. Not because the breakdown was small, but because the plan had room and the recalculation found it in a single run. Nothing was expedited, no overtime was authorized, and no customer call was needed. That is what the outcome looks like when a disruption is absorbed instead of managed.
+
+## Mechanism One: History Is Not Rescheduled
+
+The single most important property is one that sounds procedural and is actually load-bearing: [completed work is preserved and never moved](/blog/how-edgebic-preserves-completed-work-on-reschedule) by a reschedule.
+
+Without it, every recovery is a gamble. Replanning a job that is half done from the original start date produces a plan that contradicts what the floor already did, and the floor stops trusting the system precisely when it needs to be trusted most.
+
+The partial handling matters just as much. An operation with logged hours is not treated as unstarted or as complete: the engine computes remaining hours (31 planned less 10.5 logged equals 20.5) and schedules only those. That single number is the difference between an honest recovery and a plan that either repeats finished work or assumes the operation is done.
+
+## Mechanism Two: Blocking the Resource, Not Guessing Around It
+
+The outage itself is data. Recording it on the work center for the affected dates makes the engine skip those days for that resource when searching for capacity, so the replanned hours land on real available days rather than on a Wednesday that does not exist.
+
+The same mechanism covers planned maintenance, partial-day downtime, and holidays. The general principle is that anything which removes hours from a machine should live in the calendar rather than in a planner's memory, because the calendar participates in the arithmetic and memory does not. See [shifts, holidays and downtime](/blog/edgebic-shifts-and-calendars-explained).
+
+## Mechanism Three: Reroute Where a Pool Exists
+
+Sometimes the best recovery is not waiting for the machine. If the operation can run elsewhere, [work center groups](/blog/edgebic-work-center-groups-explained) let the routing step target a pool of interchangeable machines instead of naming one.
+
+Each member carries its own efficiency factor and can carry its own setup override, so the schedule charges real hours per machine rather than pretending they are identical. In the documented three-mill example, 100 units at a base of 0.04 hours each require 4.5 hours on one mill, 2.5 on a newer one, and 6.25 on an older one, and the earliest-completion strategy picks whichever member finishes soonest given current load. When the preferred machine is unavailable, the work moves automatically, and the resolved machine is shown with a replacement indicator so the substitution is visible rather than silent.
+
+The important caveat: pools have to exist before the outage. Configuring an alternate route during a breakdown is a data-entry exercise performed under pressure, which is when mistakes happen.
+
+## Mechanism Four: Buffers Where the Constraint Is Involved
+
+When the failure hits the pacing resource, the plant's exposure is different in kind, because there is no slack anywhere else that helps.
+
+[Anchor scheduling](/blog/edgebic-toc-anchor-scheduling-explained) sizes protection from the work itself. In the documented heat treatment example, upstream work totalling 30.5 hours produces a 15.25-hour constraint buffer and a 4.125-hour shipping buffer. The practical meaning: an upstream operation running an hour late does not delay the constraint's start, and a constraint finishing two hours late does not move the committed completion date.
+
+That protection is bought with time, which is why it belongs in the plan rather than in a recovery. A buffer you sized before the disruption absorbs it; a buffer you wish you had sized does not.
+
+## When the Answer Is Bad News
+
+Not every disruption is absorbable, and the honest behavior matters as much as the recovery.
+
+If the remaining work no longer fits before the due date, the schedule reports how late the job will now be rather than compressing the plan to make it look acceptable. The Late Jobs report ranks affected orders most-overdue first with percent complete and a blocker hint, so the exposure list is specific.
+
+A specific number, delivered the morning of the failure, is worth considerably more than an optimistic estimate delivered two weeks later. It supports a real conversation: this order slips two days, that one needs a Saturday, this third one should be split. All three are decisions somebody can make while options exist.
+
+## What the Software Cannot Do Alone
+
+**It cannot fix the machine.** Everything above is arithmetic about time. The spindle bearing is a maintenance problem with its own clock, and the schedule simply respects it.
+
+**It cannot create capacity that does not exist.** If the outage removes more hours than the plan had spare, something slips. The recalculation tells you precisely what and by how much, which is the useful contribution.
+
+**It cannot recover without actuals.** The whole recovery depends on knowing that 10.5 hours were logged before the failure. Without [actuals from the floor](/blog/edgebic-actuals-tracking-explained), the reschedule has to assume, and assumptions either repeat work or skip it.
+
+**It cannot record the outage for you.** Somebody has to enter the downtime on the work center. A breakdown that lives only in a phone call is invisible to every calculation.
+
+**It cannot decide who takes the hit.** When two orders compete for the recovered capacity, choosing which customer waits is a commercial judgement. The software puts both consequences on the screen at the same time, which is the most any tool should do with that decision.
+
+Want to see how your own plan absorbs a two-day outage? [Bring your open orders and pick a machine to fail at a demo](/edgebic), and we will reschedule it live and read the exposure list together.
+
+<Accordion title="What happens to the schedule when a machine breaks down?">
+In EDGEBIC, the supervisor blocks the machine for the affected dates and the planner reschedules. Completed operations are preserved exactly as recorded, the interrupted operation is replanned for its remaining hours only, and every downstream operation cascades off the new finish. In the documented case, a mill failure on a Wednesday moved final completion from July 21 to July 23 against a July 25 due date, so the order stayed on time.
+</Accordion>
+
+<Accordion title="Does rescheduling after a breakdown lose the hours already worked?">
+No. Logged hours are preserved and the operation is replanned only for what remains. In the documented case, a milling operation planned for 31 hours had 10.5 logged across two days before the failure, so the reschedule placed the outstanding 20.5 hours in the next available window. Completed operations upstream were not touched at all, and their actual dates remain exactly as the floor recorded them.
+</Accordion>
+
+<Accordion title="How quickly can a plant recover from unplanned downtime?">
+The recalculation itself is a single scheduling run, so the limit is how fast the downtime gets recorded and how fast a planner reviews the result. What that replaces is an afternoon of manual cascade work that nobody can fully verify. The recovery of the physical machine is a separate matter entirely, and no scheduling system shortens it.
+</Accordion>
+
+<Accordion title="Can a schedule absorb downtime without the customer noticing?">
+Sometimes, and whether it can is a question the plan answers immediately. If the remaining work fits before the due date, the disruption is absorbed and nothing needs to change downstream. If it does not, the schedule reports exactly how late the job will now be, which is far more useful than an optimistic guess because it lets you call the customer with a real date while options still exist.
+</Accordion>

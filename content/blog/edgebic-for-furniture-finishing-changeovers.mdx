@@ -1,0 +1,188 @@
+---
+title: "Sequencing Stain and Finish Work"
+description: "Furniture finishing scheduling that knows a dark-to-light changeover costs four hours and a light-to-light costs nothing, then plans on real numbers."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - furniture finishing scheduling
+  - stain changeover sequencing
+  - sequence dependent setup furniture
+  - finish room scheduling
+  - spray booth changeover planning
+  - woodworking setup time scheduling
+targetPhrase: "furniture finishing scheduling"
+wordCount: 1800
+readingTime: 9
+faqQuestions:
+  - question: "Why does a flat setup time break finish room scheduling?"
+    answer: "Because a changeover in a finish room depends on what ran before. Going from one light stain to another may cost nothing, while going from a dark stain back to a light one can cost four hours of purging and color matching. A single flat setup value on the routing is wrong in both directions at once: it overstates the cheap changeovers and badly understates the expensive ones, so the plan promises a shift's work that actually takes most of a day."
+  - question: "How does EDGEBIC know the real changeover cost between two finishes?"
+    answer: "Through a setup matrix held per work center. You enter the changeover time in minutes for each from-and-to pair, normally at the family level rather than the individual product level. At schedule time the engine looks up what that booth ran most recently, finds the matching cell, and uses that value as the operation's setup instead of the flat routing figure."
+  - question: "Do we have to enter a cell for every pair of products we finish?"
+    answer: "No, and you should not try. Products are grouped into setup families, such as light stains, dark stains, and clear coats, and the matrix is built between families. A shop with 100 finishes and eight families needs 64 family cells instead of 10,000 product pairs. Individual product pairs can still be overridden where the physics genuinely differ from the family rule."
+  - question: "Does the matrix reorder jobs automatically?"
+    answer: "The matrix makes the plan honest about changeover cost; it does not by itself reorder the queue. What it does is give both the planner and the optimizer a real cost to work against, so grouping like finishes together stops being a rule of thumb and becomes a measurable decision. The published sequencing gain in the worked example below comes from ordering light work before dark once the true costs are visible."
+qaQuestions:
+  - question: "Our finish room shows three jobs comfortably fitting one shift and it always takes most of a day. Where is the time going?"
+    answer: "Almost certainly into changeovers the plan never counted. Take three jobs at 30 minutes of flat setup each: white for 1.0 hour of spray, black for 1.5, white again for 0.75. The plan says 08:00 to 12:45.\n\nThe floor pays the real changeovers instead: cold start 30 minutes, white to black 60 minutes, black to white 240 minutes. Total elapsed becomes roughly 11 hours. The plan was not slightly optimistic, it was wrong by half a day, and it was wrong the same way every week. With the matrix configured, the same sequence plans as 08:00 to 16:45, which is honest and lets you decide whether to resequence or add hours."
+  - question: "If we resequence to run all the lights before the darks, how much do we actually get back?"
+    answer: "In the same three-job example, the setup total drops from 330 minutes to 90, a 73 percent reduction, and all three jobs fit one shift with more than three hours to spare.\n\nThe sequence becomes white, white, black. The first job is a cold start at 30 minutes. The second is light to light, which the matrix values at zero, so it starts the moment the first finishes. The third is light to dark at 60 minutes. Plan: 08:00 to 12:45, and unlike the flat-setup version that number is real. The gain came entirely from ordering, but it was only visible because the matrix put a price on each transition."
+---
+
+**In a finish room, the cost of the next job depends entirely on the last one.** EDGEBIC by User Solutions holds those costs in a setup matrix per work center, so a light-to-light changeover can be zero, a light-to-dark can be an hour, and a dark-to-light can be four hours, and the schedule uses the right number every time. If the underlying idea is new, start with [what a setup family is](/blog/what-is-a-setup-family-sequence-dependent-changeover).
+
+## The Pain: One Setup Number for Every Changeover
+
+Every routing field for setup time assumes a single value. For a mill or a saw that is usually close enough. For a spray booth it is not close to anything.
+
+Ask a finish room supervisor what the changeover costs and you will get a table, not a number. Same color, next job: no changeover at all. One light stain to another: rinse and go. Light to dark: mask, purge, extra coat. Dark back to light: solvent flush, color match, test panels, and most of the morning.
+
+A scheduling system holding one number per routing step is wrong twice. It charges 30 minutes for a changeover that costs nothing, and it charges 30 minutes for one that costs four hours. The second error is the one that hurts, because it is the one that makes the plan a lie.
+
+The consequence is familiar in almost every furniture shop. The finish room is always behind, everybody knows the finish room is always behind, and no report ever shows why. The general shape of this problem across the industry is covered in the [furniture and woodworking scheduling overview](/blog/furniture-woodworking-scheduling).
+
+## Scenario A: What a Flat Setup Actually Produces
+
+Take one booth on a day shift, three jobs sorted by due date, and a flat 30-minute setup on the routing.
+
+| Job | Finish | Spray hours |
+|---|---|---|
+| First | White | 1.0 |
+| Second | Black | 1.5 |
+| Third | White | 0.75 |
+
+With 30 minutes of setup each, the plan reads:
+
+```
+08:00  first  (1.5 h)  09:30
+09:30  second (2.0 h)  11:30
+11:30  third  (1.25 h) 12:45
+```
+
+Three jobs, done before lunch, plenty of shift left.
+
+The floor pays something else entirely. Cold start into white: 30 minutes, which the plan got right. White to black: 60 minutes. Black to white: 240 minutes. Add the spray time and the day runs to roughly 11 hours.
+
+The plan did not miss by a margin. It missed by half a day, in the same direction, every single week. And because the miss lives inside setup rather than inside run time, no efficiency report catches it.
+
+## Scenario B: The Matrix, Same Sequence
+
+Now the planner configures the booth's matrix. Products are grouped into families first, because that is what keeps the data maintainable.
+
+| Family | Products |
+|---|---|
+| Light | White, cream |
+| Dark | Black, dark grey |
+
+The family matrix for that booth, in minutes:
+
+| From | To | Minutes |
+|---|---|---|
+| Light | Light | 0 |
+| Light | Dark | 60 |
+| Dark | Light | 240 |
+| Dark | Dark | 0 |
+
+Run the same three jobs in the same order. At each step the engine asks what the booth ran most recently and looks up the cell.
+
+| Job | Previous | Source | Setup | Total operation |
+|---|---|---|---|---|
+| First (white) | none, cold start | Routing default | 0.5 h | 1.5 h |
+| Second (black) | white, light to dark | Family matrix | 1.0 h | 2.5 h |
+| Third (white) | black, dark to light | Family matrix | 4.0 h | 4.75 h |
+
+```
+08:00  first  (1.5 h)   09:30
+09:30  second (2.5 h)   12:00
+12:00  third  (4.75 h)  16:45
+```
+
+The plan now runs to 16:45 and spills past the shift. Setup total: 330 minutes, which matches what the floor actually pays.
+
+That is not a worse plan. It is the first honest one. The planner can now see the problem in the schedule rather than discovering it in the booth, and can decide what to do about it.
+
+## Scenario C: Sequencing Against Real Costs
+
+Reorder to run the lights together before the dark job.
+
+| Job | Previous | Source | Setup | Total operation |
+|---|---|---|---|---|
+| First (white) | cold start | Routing default | 0.5 h | 1.5 h |
+| Third (white) | white, light to light | Family matrix | 0.0 h | 0.75 h |
+| Second (black) | white, light to dark | Family matrix | 1.0 h | 2.5 h |
+
+```
+08:00  first  (1.5 h)   09:30
+09:30  third  (0.75 h)  10:15
+10:15  second (2.5 h)   12:45
+```
+
+All three jobs inside one shift with more than three hours to spare. Setup drops from 330 minutes to 90, a 73 percent reduction, purely from the order of the queue.
+
+The comparison across all three scenarios is the argument in one table:
+
+| Scenario | Setup in the plan | Plan finish | Fits the shift | Honest |
+|---|---|---|---|---|
+| Flat setup, due-date order | 90 min claimed, 510 actual | 12:45 | Appears to | No |
+| Matrix, due-date order | 330 min | 16:45 | No | Yes |
+| Matrix, sequenced | 90 min | 12:45 | Yes, 3 h spare | Yes |
+
+Scenario A and Scenario C show the same finish time. Only one of them is real.
+
+## How the Lookup Resolves
+
+The engine walks a fixed chain and takes the first hit.
+
+1. **Cold start.** No previous product is known, so there is no changeover, but the machine still needs its initial preparation. The routing's setup value is used, not zero.
+2. **Same product.** Zero. Running the same finish back to back costs nothing.
+3. **Product-level cell.** A specific from-and-to product pair, if one has been entered for that work center.
+4. **Family-level cell.** The families of both products are looked up, and the family pair's cell is used.
+5. **No cell found.** The routing setup value, or the work center default.
+
+Matrix values are entered in minutes, which is how finish room supervisors actually talk, and converted to hours internally. The resolved value is also what the schedule uses for the operation's real setup, and it feeds the overlap calculation if the step also streams work downstream. Full mechanism detail is in [the setup matrix explained](/blog/edgebic-setup-matrix-explained).
+
+## Building the Matrix Without Drowning in Cells
+
+The reason to work at family level is arithmetic. A shop with 100 finishes has close to 10,000 ordered product pairs per booth. The same shop with eight families has 64 cells, and 64 cells is an afternoon.
+
+A practical build order:
+
+1. **Name the families the way the floor does.** Lights, darks, clears, stains, glazes, specials. If your supervisor already sorts a whiteboard into groups, those are your families.
+2. **Assign every finish to a family.** This step is the one people skip, and it has a consequence worth knowing: the family lookup requires both products to have a family. If only one is assigned, the lookup silently falls through to the routing default and you never find out. When the matrix seems not to be firing, unassigned products are the first thing to check.
+3. **Fill the family grid, per booth.** Different booths have different physics. A booth with a dedicated dark gun does not pay the same purge as one without.
+4. **Enter the zero cells deliberately.** Two different products inside the same family need an explicit family-to-family cell set to zero if you want zero. Without it the routing default applies.
+5. **Add product overrides sparingly.** One notorious pair that behaves differently from its family is worth an override. A hundred of them means your families are wrong.
+
+Negative values are rejected, and the engine clamps defensively, so a typo cannot produce a negative changeover.
+
+## Changeovers on Jobs Already Running
+
+A finish room reschedules constantly, and the matrix has to behave when it does.
+
+The rule is that a changeover already paid is historical fact and is never recomputed. When a job is rescheduled, operations already logged as complete keep the setup they actually consumed. What the engine then needs is an anchor: for the first remaining operation on each booth, what did that booth physically run last?
+
+That anchor comes from the last completed operation on the booth rather than from a projection. So a booth that finished a dark job on Tuesday afternoon starts Wednesday's plan with dark as its previous product, and a light job scheduled next correctly carries the full dark-to-light changeover. Without the anchor the engine would either treat the reschedule as a cold start, undercharging the change, or reuse a stale value from a plan that no longer applies.
+
+Two smaller behaviors follow from the same design. The resolved changeover for a step is cached for the duration of a run, so if that step also overlaps work downstream, the overlap calculation uses the same figure rather than re-deriving a different one. And a machine mirroring another in lockstep inherits the parent's changeover by definition rather than resolving its own, which is correct: two chambers running as one process share one changeover.
+
+## What Changes Once the Numbers Are Real
+
+Three things, in order of how quickly you notice them.
+
+**The plan stops lying.** Finish room dates become dates you can quote from. That alone usually repays the configuration effort.
+
+**Sequencing becomes a measurable decision.** Grouping like finishes together stops being an instinct the supervisor applies when they have time and becomes a visible tradeoff between changeover hours and due dates.
+
+**The optimizer has something to work with.** Once each transition carries a real cost, minimizing total setup across a queue becomes a well-posed problem rather than a guess. See [optimizer goals and presets](/blog/edgebic-optimizer-goals-and-presets-explained).
+
+One boundary worth stating. Grouping by finish family and hitting due dates pull in opposite directions, and no configuration removes that tension. What the matrix does is make the tradeoff explicit so a human decides it, rather than the plan hiding it and the floor absorbing it.
+
+## Where to Start
+
+Pick your worst booth. Build four or five families, fill one grid, and reschedule. Compare the new finish room dates against last month's actual performance rather than against last month's plan, because last month's plan is the thing being corrected.
+
+For make-to-order timing on the same jobs, see [scheduling custom furniture to a promised date](/blog/edgebic-for-furniture-make-to-order-scheduling). For the industry picture, see the [furniture and woodworking scheduling overview](/blog/furniture-woodworking-scheduling) and the [furniture manufacturing software page](/furniture-manufacturing-software). For the rest of this series, see [EDGEBIC by industry](/blog/edgebic-by-industry), and for the product, [EDGEBIC](/edgebic).

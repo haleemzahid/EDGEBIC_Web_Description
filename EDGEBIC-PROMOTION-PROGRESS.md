@@ -40,15 +40,15 @@
 
 | Cluster | Slug | Target | Written | Published | Indexed |
 |---|---|---|---|---|---|
-| 17 | edgebic-platform | 180 | 145 | 0 | 0 |
+| 17 | edgebic-platform | 180 | 155 | 0 | 0 |
 | 18 | edgebic-scheduling-concepts | 200 | 1 | 0 | 0 |
 | 19 | edgebic-how-to | 500 | 1 | 0 | 0 |
 | 20 | edgebic-walkthroughs | 50 | 11 | 0 | 0 |
-| 21 | edgebic-erp-integration | 150 | 30 | 0 | 0 |
-| 22 | edgebic-industry | 110 | 1 | 0 | 0 |
+| 21 | edgebic-erp-integration | 150 | 42 | 0 | 0 |
+| 22 | edgebic-industry | 110 | 37 | 0 | 0 |
 | 23 | edgebic-glossary | 350 | 5 | 0 | 0 |
 | 24 | edgebic-troubleshooting | 120 | 9 | 0 | 0 |
-| 25 | edgebic-outcomes | 100 | 1 | 0 | 0 |
+| 25 | edgebic-outcomes | 100 | 25 | 0 | 0 |
 | 26 | edgebic-optimization | 60 | 1 | 0 | 0 |
 | 27 | edgebic-visual-scheduling | 40 | 9 | 0 | 0 |
 | 28 | edgebic-shop-floor | 60 | 1 | 0 | 0 |
@@ -56,7 +56,7 @@
 | 30 | edgebic-planning | 80 | 1 | 0 | 0 |
 | 31 | edgebic-migration | 40 | 0 | 0 | 0 |
 | 32 | edgebic-admin | 40 | 9 | 0 | 0 |
-| | **TOTAL** | **2,120** | **218** | **0** | **0** |
+| | **TOTAL** | **2,120** | **300** | **0** | **0** |
 
 **"Written" count is derivable from disk** (don't trust memory, count files):
 PowerShell: `Select-String -Path content/blog/*.mdx -Pattern "cluster: 'edgebic-" | Group-Object { ($_.Line -split "'")[1] } | Sort-Object Name | Format-Table Name, Count`
@@ -68,7 +68,8 @@ PowerShell: `Select-String -Path content/blog/*.mdx -Pattern "cluster: 'edgebic-
 | 2026-07-23 | 1 | 50 | 15 of 16 (all but migration) | 917bdc3 | 7 parallel agents; 13 pillars + 10 walkthroughs + 8 visual + 6 ERP + 8 troubleshooting + 5 glossary; QA pass fixed 2 claims; ~110k words; no heroImage yet (screenshots pending) |
 | 2026-07-23 | 1 fix | 0 | erp-integration | c721268 | Corrected "new-jobs-only mode" claim in 4 Wave 1 posts (no user-facing mode picker exists) |
 | 2026-07-24 | 2 / flight 1 | 84 | platform (72), erp-integration (12) | 19e620c | 7 parallel agents, 4 angles x 18 chapters + 12 ERP; ~150k words; QA: 0 banned/em-dash/FCP hits, 0 dup slugs, 151/151 internal links resolve, 0 existing files touched |
-| 2026-07-24 | 2 / flight 2 | 84 | platform (72), erp-integration (12), admin (8) | see git log | 7 parallel agents; actuals/reschedule/snapshots, BOR authoring/diagnostics/import, inventory/ATP/forecast, MPS/quotes/scenarios, reports/dashboards/column glossary, security/deployment/config, SAP+NetSuite+Sage; ~155k words; QA: all scans clean, 176/176 links resolve, 1 cross-post numeric contradiction reconciled (anomaly-check count) |
+| 2026-07-25 | 2 / flight 3 | 82 | industry (36), outcomes (24), erp-integration (12), platform (10) | see git log | 7 parallel agents; machining/process/regulated industry sets, outcome mechanisms, ROI + buyer decision content, Infor/Dynamics/Global Shop, advanced feature interactions; ~150k words; QA: all scans clean, 221/221 links resolve, 13 files normalized from British to US spelling. **WAVE 2 COMPLETE (250 posts).** |
+| 2026-07-24 | 2 / flight 2 | 84 | platform (72), erp-integration (12), admin (8) | 5cf3bc0 | 7 parallel agents; actuals/reschedule/snapshots, BOR authoring/diagnostics/import, inventory/ATP/forecast, MPS/quotes/scenarios, reports/dashboards/column glossary, security/deployment/config, SAP+NetSuite+Sage; ~155k words; QA: all scans clean, 176/176 links resolve, 1 cross-post numeric contradiction reconciled (anomaly-check count) |
 
 ## SCREENSHOT TRACKER
 
@@ -100,6 +101,15 @@ JobBOSS?" — log which of our URLs each major assistant cites.
 | Date | Assistant | Cited our URL? | Which | Notes |
 |---|---|---|---|---|
 | — | — | — | — | — |
+
+## HOUSE STYLE ADDENDUM (added after Wave 2 flight 3)
+
+**US spelling is house style.** A flight-3 batch shipped British forms (utilisation,
+optimisation, flavour, behaviours, programmes, organisations, recognises, minimises).
+All were normalized before commit. This matters beyond taste: US buyers search
+"capacity utilization" and "optimization", so the British forms lose the keyword match.
+Add a US-spelling check to every future QA pass, and beware the false positives
+(optimistic, optimism, analysis are correct US spellings).
 
 ## OPEN QUESTIONS FOR THE PRODUCT / BUSINESS OWNER
 

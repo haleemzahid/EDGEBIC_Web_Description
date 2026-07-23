@@ -1,0 +1,135 @@
+---
+title: "Getting More Out of the Machine That Sets Your Pace"
+description: "Bottleneck utilization improvement comes from protecting the constraint, not pushing it. Load ratios, the anchor mechanism, and what scheduling cannot fix."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Outcomes & ROI
+author: user-solutions
+cluster: edgebic-outcomes
+pillarSlug: edgebic-results-guide
+keywords:
+  - bottleneck utilization improvement
+  - constraint scheduling throughput
+  - theory of constraints scheduling
+  - bottleneck capacity planning
+  - work center utilization report
+  - protect the constraint manufacturing
+targetPhrase: "bottleneck utilization improvement"
+wordCount: 1750
+readingTime: 9
+faqQuestions:
+  - question: "How do you improve bottleneck utilization?"
+    answer: "You improve bottleneck utilization by removing the reasons the constraint stops: waiting for feed, waiting for a changeover it should not have needed, and waiting for a decision. Anchor scheduling pins the constraint's operation to a target time and back-schedules upstream work to arrive before it, so the constraint is never starved. An hour recovered at the constraint is an hour of plant throughput; an hour recovered anywhere else is not."
+  - question: "How does EDGEBIC identify the bottleneck?"
+    answer: "EDGEBIC computes a load ratio per work center: required hours divided by available hours over the horizon. In the documented five-step heat treatment example, the oven carries a ratio of 2.75 against 1.31 for the next highest resource, which identifies it unambiguously. Planners can also set an explicit bottleneck flag on a work center, and the utilization report rates anything above 100% as critical and 85 to 100% as high."
+  - question: "Why does protecting the constraint matter more than keeping everything busy?"
+    answer: "Because the plant produces at the pace of its slowest linked resource. Running a non-constraint machine at 95% adds inventory in front of the constraint rather than output at the shipping dock. EDGEBIC's anchor scheduling reflects this: upstream steps are placed to finish just in time to feed the constraint, and downstream steps chain forward from it, so effort concentrates where throughput is actually decided."
+  - question: "Does a setup matrix help at the bottleneck?"
+    answer: "It helps most at the bottleneck, because setup hours there are throughput hours lost. In EDGEBIC's documented paint case, resequencing recovered 240 minutes of changeover on a single machine in a single day. On a non-constraint that is convenience. On the constraint it is four hours of additional plant output, which is why sequencing the constraint is usually the highest-value scheduling change available."
+qaQuestions:
+  - question: "Our heat treat oven runs at 105% on paper and we still miss dates. What does that number even mean?"
+    answer: "It means the plan asks for more hours than exist, and the schedule is already telling you the answer. In the documented utilization example, a bottleneck showing 420 scheduled hours against 400 available lands in the critical band, and that 20-hour gap has to be resolved by a human: overtime, an alternate machine, an outside process, or a moved due date. What scheduling adds is timing. You see the overload weeks out rather than the week it bites, and you see exactly which jobs contribute to it in the per-work-center backlog drill-down, so the conversation is about four specific orders rather than a vague capacity problem."
+  - question: "If I protect the constraint, do the other machines just sit idle?"
+    answer: "Some of them will, and that is the intended result rather than a failure. A non-constraint running flat out produces inventory in front of the constraint, not shipments. EDGEBIC's anchor mode makes this explicit: in the documented heat treatment example, the lathe and the mill are back-calculated to their latest acceptable start times so they finish just in time to feed the oven, which means they are deliberately not started as early as they could be. Expect pushback the first time a supervisor sees planned idle time on a machine that could be running, and expect the shipping numbers to settle the argument."
+---
+
+**Bottleneck utilization improves when the constraint stops waiting, not when it works harder. Every hour the pacing machine sits idle waiting for feed, or burns on a changeover the sequence could have avoided, is an hour of plant throughput that no other machine can recover.** EDGEBIC by User Solutions identifies the constraint from load, schedules around it deliberately, and reports what it is actually doing.
+
+This post covers how the constraint gets identified, the four mechanisms that move its utilization, the arithmetic on documented examples, and the point where the software hands the decision back to you. For the metric itself, see [capacity utilization KPI](/blog/capacity-utilization-kpi), and for finding the constraint in the first place, [production bottleneck identification](/blog/production-bottleneck-identification). This post sits under the [EDGEBIC results guide](/blog/edgebic-results-guide).
+
+## First, Find It Properly
+
+Shops usually know which machine is the bottleneck, and they are usually right about half the time. The half they are wrong about costs the most, because effort goes to the loud machine instead of the limiting one.
+
+EDGEBIC computes a load ratio per work center: hours required divided by hours available over the horizon. The documented five-step heat treatment example (200 precision shafts through a lathe, mill, heat treat oven, grinder, and inspection) produces this:
+
+| Work center | Required hours | Available basis | Load ratio |
+|---|---|---|---|
+| Heat treat | 0.10 h per piece x 200, plus 2 h setup = 22 h | 8 h, 1 instance | **2.75** |
+| Mill | 0.05 x 200, plus 0.5 = 10.5 h | 8 h, 1 instance | 1.31 |
+| Lathe | 0.08 x 200, plus 1 = 17 h | 8 h, 2 instances | 1.06 |
+| Inspect | 0.02 x 200 = 4 h | 4 h, 1 instance | 1.00 |
+| Grind | 0.06 x 200, plus 0.5 = 12.5 h | 8 h, 2 instances | 0.78 |
+
+The oven is the constraint by a factor of two over its nearest rival. That is not an opinion, and it changes where every improvement dollar should go.
+
+The [work center utilization report](/blog/edgebic-reports-explained) does the same job continuously across the plant, rating each resource: critical above 100%, high at 85 to 100%, good at 60 to 85%, low at 30 to 60%, idle below 30%. In the documented eight-work-center example, plant utilization sits at 68.1% while one resource shows 420 scheduled hours against 400 available (105%, critical) and two others sit below 50%. A single plant average would have called that plant comfortable.
+
+## Mechanism One: Never Let It Starve
+
+The constraint's utilization is destroyed by idle time waiting for upstream work, and idle time at the constraint is unrecoverable. EDGEBIC's [anchor scheduling](/blog/edgebic-toc-anchor-scheduling-explained) exists for exactly this.
+
+Flag the work center as the constraint, set a target start on the constraining operation, and the engine splits the routing at that point. Upstream steps are scheduled *backward* from the anchor so they finish just in time to feed it. Downstream steps chain *forward* from it. The constraint gets scheduled first, at maximum priority, and everything else subordinates to that placement.
+
+In the documented example with the oven anchored at Monday 07:00, the mill is back-calculated to start Sunday 19:30 and the lathe to start Saturday, so both finish before the oven needs their output. The oven starts exactly at 07:00. No capacity wasted at the resource where capacity is the whole game.
+
+## Mechanism Two: Buffer the Variation Instead of Absorbing It
+
+Feeding the constraint just in time is efficient and fragile. If the lathe runs an hour long, the oven starts an hour late, and that hour is gone.
+
+With buffers enabled, the same example sizes protection from the work itself rather than a fixed guess:
+
+| Buffer | Basis | Value |
+|---|---|---|
+| Constraint buffer | 50% of 30.5 h of upstream work | 15.25 h |
+| Shipping buffer | 25% of 16.5 h of downstream work | 4.125 h |
+| Feeding buffer | 10% of upstream work, applied to the direct feeder | 3.05 h |
+
+The upstream deadline moves from Monday 07:00 back to Sunday 15:45, so upstream work now has 15.25 hours of cushion before it threatens the constraint's start. The oven still starts at 07:00 even when the lathe runs late. The completion date on the far side (Wednesday 01:38 in the worked example) becomes a genuine commitment rather than an optimistic one. See [TOC buffers and direction precedence](/blog/toc-buffers-and-direction-precedence-in-edgebic) for how buffers interact with the rest of the engine.
+
+## Mechanism Three: Stop Burning Constraint Hours on Changeover
+
+Setup at a non-constraint is inconvenience. Setup at the constraint is lost throughput, permanently.
+
+The documented paint booth case makes the scale visible. Three jobs, one booth. Scheduled in due-date order with a real changeover matrix, the day carries 330 minutes of setup and overflows the shift. Resequenced light-before-dark, the same three jobs carry 90 minutes and finish with more than three hours to spare.
+
+If that booth is your constraint, you did not save four hours of setup. You gained four hours of plant output. The [setup matrix](/blog/edgebic-setup-matrix-explained) is the mechanism, and the constraint is where it pays first. Sequence the constraint before you sequence anything else.
+
+## Mechanism Four: Take Work Off It Where You Legitimately Can
+
+Some constraint load does not have to be there. Where a second machine can genuinely do the operation, [work center groups](/blog/edgebic-work-center-groups-explained) let the routing target a pool and let the scheduler decide.
+
+The documented three-mill case shows the decision logic. For 100 units at a base of 0.04 hours each, the three members require 4.5, 2.5, and 6.25 hours respectively because of their efficiency factors. When everything is free, the fastest machine wins. When the fastest machine is booked until Wednesday, the *available* machine wins and the job finishes Monday. Capacity-aware pooling routes work away from a loaded resource automatically, which is precisely what you want happening around a constraint.
+
+The other legitimate offload is feed timing. [Lot streaming](/blog/edgebic-lot-streaming-explained) lets the constraint start on the first transfer batch instead of a complete upstream lot. In the documented 100-shaft case, the downstream station starts 12.5 hours into a 52-hour upstream run. Applied to a constraint, that is 39.5 hours it does not spend waiting.
+
+## The Measurement Loop
+
+Utilization claims are worth nothing without a before and an after, so instrument it:
+
+1. **Record the constraint's current load ratio and rating** from the utilization report, with the date range recorded.
+2. **Separate the two kinds of idle.** Idle because there was no work is a demand problem. Idle because work existed and had not arrived is the problem scheduling fixes.
+3. **Log setup hours on the constraint specifically.** This is the number the matrix moves, and it is usually never measured separately.
+4. **Re-measure after the constraint is anchored and sequenced**, using the plan-versus-actual variance view so you are comparing what happened, not what was planned.
+
+The heritage evidence for what constraint-aware scheduling reaches belongs to the User Solutions line that EDGEBIC succeeds: [Technical Glass Products recorded a 4% capacity increase alongside a two-week lead time reduction](/blog/case-study-technical-glass). Capacity increases of that shape come from a resource that stopped waiting, not from new equipment.
+
+## What the Software Cannot Do Alone
+
+**It cannot make the constraint faster.** Cycle time is engineering, tooling, and process. Scheduling only ensures the constraint spends its hours producing rather than waiting, and that ceiling is real.
+
+**It cannot elevate the constraint.** Buying a second oven, adding a shift, or outsourcing the operation are capital and staffing decisions. The schedule shows you the load ratio and the overload weeks in advance. Acting on it is management.
+
+**It cannot stop the constraint from moving.** Relieve one resource and another becomes the pacing machine. That is success, and it means the analysis has to be repeated rather than filed. See [bottleneck migration](/blog/bottleneck-migration-constraint-shifting) for the pattern.
+
+**It cannot survive bad data at the constraint.** If the oven's cycle time or instance count is wrong, the load ratio is wrong and every subordination decision built on it inherits the error. Check the constraint's numbers against [logged actuals](/blog/edgebic-actuals-tracking-explained) before trusting anything downstream of them.
+
+**It cannot win the argument about idle non-constraints.** Anchor scheduling deliberately leaves upstream machines idle rather than building inventory. Somebody has to defend that to a supervisor who measures his area by machine hours. The shipping numbers make the case eventually; the first month is a conversation.
+
+Want to know which machine is genuinely setting your pace? [Bring a month of orders and your work center list to a demo](/edgebic), and we will compute the load ratios on your own data.
+
+<Accordion title="How do you improve bottleneck utilization?">
+You improve bottleneck utilization by removing the reasons the constraint stops: waiting for feed, waiting for a changeover it should not have needed, and waiting for a decision. Anchor scheduling pins the constraint's operation to a target time and back-schedules upstream work to arrive before it, so the constraint is never starved. An hour recovered at the constraint is an hour of plant throughput; an hour recovered anywhere else is not.
+</Accordion>
+
+<Accordion title="How does EDGEBIC identify the bottleneck?">
+EDGEBIC computes a load ratio per work center: required hours divided by available hours over the horizon. In the documented five-step heat treatment example, the oven carries a ratio of 2.75 against 1.31 for the next highest resource, which identifies it unambiguously. Planners can also set an explicit bottleneck flag on a work center, and the utilization report rates anything above 100% as critical and 85 to 100% as high.
+</Accordion>
+
+<Accordion title="Why does protecting the constraint matter more than keeping everything busy?">
+Because the plant produces at the pace of its slowest linked resource. Running a non-constraint machine at 95% adds inventory in front of the constraint rather than output at the shipping dock. EDGEBIC's anchor scheduling reflects this: upstream steps are placed to finish just in time to feed the constraint, and downstream steps chain forward from it, so effort concentrates where throughput is actually decided.
+</Accordion>
+
+<Accordion title="Does a setup matrix help at the bottleneck?">
+It helps most at the bottleneck, because setup hours there are throughput hours lost. In EDGEBIC's documented paint case, resequencing recovered 240 minutes of changeover on a single machine in a single day. On a non-constraint that is convenience. On the constraint it is four hours of additional plant output, which is why sequencing the constraint is usually the highest-value scheduling change available.
+</Accordion>

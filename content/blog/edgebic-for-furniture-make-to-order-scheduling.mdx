@@ -1,0 +1,161 @@
+---
+title: "Scheduling Custom Furniture to a Promised Date"
+description: "Custom furniture production scheduling: work back from the delivery date so a finished piece is not in the warehouse for three weeks before the truck."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - custom furniture production scheduling
+  - make to order furniture planning
+  - backward scheduling furniture
+  - promised delivery date scheduling
+  - just in time furniture manufacturing
+  - furniture lead time planning
+targetPhrase: "custom furniture production scheduling"
+wordCount: 1790
+readingTime: 9
+faqQuestions:
+  - question: "What is backward scheduling for a make-to-order furniture job?"
+    answer: "Backward scheduling places the whole order as late as it can while still finishing by the due date. EDGEBIC by User Solutions works in reverse through the routing: the last operation is right-aligned to the deadline, each earlier operation is right-aligned to the placed start of the one it feeds, and no operation is allowed to start before the order's earliest start date. The result is slack in front of the job rather than finished goods waiting behind it."
+  - question: "What happens if a job cannot fit backward from its due date?"
+    answer: "The whole order rolls back and schedules forward from its earliest start instead. Backward never fails where forward would have succeeded. The job is also recorded as backward-infeasible, with the due date, the earliest start, the forward window it would occupy, and how many days late it would be. Site policy decides whether that fallback is accepted silently or held for a planner to review first."
+  - question: "How does delivery or finishing time after the last operation get modeled?"
+    answer: "Through an end-item lead time on the product, expressed in calendar days. It represents the tail between the last work center operation and being delivery-ready: outgoing inspection, cure or off-gas time, crating, and freight. The backward pass subtracts it from the due date before placing any work, so the manufacturing has to end early enough for the tail to land the finished piece on the promised day."
+  - question: "Does backward scheduling apply to jobs that are already running?"
+    answer: "No. Backward applies only to jobs with no existing schedule rows. A backward job that has already been scheduled reschedules forward from where it actually stands rather than being right-aligned to the due date again. That rule exists because re-pulling a partly built job toward its deadline would move work the floor has already started, and completed operations are never moved by a reschedule."
+qaQuestions:
+  - question: "We build to order but everything finishes two weeks early and sits in the warehouse taking up space. Does backward scheduling actually help or does it just add risk?"
+    answer: "It moves the slack, which is exactly the trade you are describing. Forward scheduling front-loads work, so a job with three weeks of runway finishes three weeks early and the finished piece occupies floor space, absorbs handling, and risks damage. Backward puts those three weeks in front of the job instead: material is cut later, work in progress is younger, and the piece completes close to when the truck comes.\n\nThe risk is real and worth naming. Backward leaves no downstream slack, so any disruption immediately threatens the promise. That is why it is opt-in per order rather than a global switch. Use it on stable routings with reliable material, keep rush and problem jobs forward, and the mix works."
+  - question: "A job has a due date of Friday July 17, needs 34 hours of work plus a 4-hour queue, and the product has a 2-day delivery lead time. Where does the schedule actually put it?"
+    answer: "Manufacturing ends Wednesday July 15 and starts Thursday July 9, with three days of slack sitting in front of it.\n\nThe arithmetic: the due date is date-only, so the anchor is end of Friday, midnight Saturday July 18. Subtract the 2-day lead time and all manufacturing must finish by Thursday July 16 at 00:00, meaning Wednesday's shift close. The 4-hour inspection lands Wednesday 12:00 to 16:00. The 8-hour sanding step ends by Wednesday 08:00 once its own 4-hour queue is honored, so it runs Tuesday 08:00 to 16:00. The 22-hour machining step ends by Tuesday 08:00, working back in 8-hour shifts: Monday, Friday, and the last 6 hours on Thursday July 9. Days late: zero."
+---
+
+**A custom piece that finishes three weeks early is not early. It is inventory.** EDGEBIC by User Solutions can schedule a make-to-order job backward from its promised date, placing the whole order as late as it can while still delivering on time, so the slack sits in front of the work rather than behind it as finished goods.
+
+## The Pain: Two Kinds of Early
+
+Custom furniture shops usually run forward, because that is what every scheduling tool does by default. Take the order, start as soon as material allows, push everything forward, and whatever runway exists piles up at the end.
+
+For a shop with tight lead times that is fine. For a shop quoting eight weeks and building in four, it produces two problems that look unrelated and are not.
+
+The first is space. A finished dining set, a conference table, a bedroom suite: these are large objects that have to go somewhere for three weeks. They get moved, wrapped, moved again, and occasionally damaged. Every touch after the last operation is cost with no value added.
+
+The second is commitment. Cut the veneer in week one for a delivery in week eight and you have committed material to a specification the customer can still change. Furniture orders change. A finish sample comes back wrong, a dimension is revised, a hardware selection moves. The earlier you commit, the more rework a change costs.
+
+Backward scheduling addresses both by moving the slack. The tradeoff is honest and worth stating plainly: forward scheduling minimizes risk at the cost of early spend and early inventory, and backward scheduling minimizes inventory at the cost of downstream slack. Neither is right for every order, which is why the choice belongs to the order rather than to the plant.
+
+The general practice for this industry is covered in the [furniture and woodworking scheduling overview](/blog/furniture-woodworking-scheduling).
+
+## How the Backward Pass Actually Works
+
+The mechanism is straightforward once the vocabulary is clear.
+
+The **floor** is the order's earliest start date. No operation of a backward job is ever placed before it.
+
+The **due anchor** is the deadline the last operation must end by. A date-only due date, which is what the date pickers store, means finish by the end of that day, so the anchor is the following midnight. A due date with a time on it is honored exactly.
+
+The pass then works in reverse. Operations are placed in reverse dependency order, successors first. Each operation is right-aligned to a deadline derived from what it feeds, meaning the capacity search runs backward from the deadline instead of forward from an earliest start. After placement the engine verifies that the operation's end, plus any queue or handoff time, still respects its successor's start, and tightens if not.
+
+If any operation cannot fit, the whole order rolls back and forward-schedules from the floor. That is a firm contract: backward never fails where forward would have succeeded. Full mechanics are in [backward scheduling explained](/blog/edgebic-backward-scheduling-explained), and the forward comparison is in [forward versus backward scheduling](/blog/forward-vs-backward-scheduling).
+
+## Worked Example: 40 Table Tops to a July 17 Promise
+
+Real arithmetic, because the value of this is entirely in the dates.
+
+**The order**
+
+| | Value |
+|---|---|
+| Quantity | 40 |
+| Direction | Backward |
+| Earliest start (floor) | Monday July 6, 00:00 |
+| Due date | Friday July 17, date-only |
+| Product lead time | 2 calendar days |
+| Shifts | Monday to Friday, 08:00 to 16:00, one machine per work center, no other load |
+
+**The routing**
+
+| Step | Work center | Run time | Setup | Queue | Total |
+|---|---|---|---|---|---|
+| Machine | Mill-1 | 0.5 h per piece | 2 h | 0 | 22 h |
+| Sand and deburr | Finish-1 | 0.2 h per piece | 0 | 4 h | 8 h |
+| Inspect and wrap | QC-1 | 0.1 h per piece | 0 | 0 | 4 h |
+
+**Step 1: the anchor with the lead-time reservation**
+
+The raw anchor is midnight Saturday July 18, the end of the due day. Subtract the 2-day product lead time and the manufacturing deadline becomes Thursday July 16 at 00:00. In practice that means all work center operations must be finished by Wednesday's shift close, so the 2-day tail lands the delivery-ready date on Friday July 17.
+
+**Step 2: place inspection**
+
+Reverse order puts inspection first. Four hours right-aligned inside the last shift before the deadline gives Wednesday July 15, 12:00 to 16:00. Its placed start, Wednesday 12:00, becomes the next deadline.
+
+**Step 3: place sanding**
+
+Sanding's deadline is Wednesday 12:00, less its own 4-hour queue handoff, so effectively Wednesday 08:00. Eight hours right-aligned ending by then gives Tuesday July 14, 08:00 to 16:00. Check: Tuesday 16:00 plus 4 hours of queue equals Wednesday 08:00, which is at or before Wednesday 12:00.
+
+**Step 4: place machining**
+
+Machining's deadline is sanding's placed start, Tuesday 08:00. Twenty-two hours right-aligned in 8-hour shifts working backward: Monday July 13 for 8 hours, Friday July 10 for 8, and the last 6 on Thursday July 9 from 10:00 to 16:00. Check: the end, Monday 16:00, is at or before Tuesday 08:00, and the start, Thursday 10:00, is at or after the Monday July 6 floor.
+
+**The result**
+
+Three days of slack, July 6 through 8, sit in front of the job. Days late is zero on every surface. No finished table top waits in the warehouse, because manufacturing ends two days before the promise and the tail covers the gap.
+
+## When It Does Not Fit
+
+Change the due date to Thursday July 9 and the same job cannot be built.
+
+The anchor becomes Friday July 10 at midnight less 2 days, so Wednesday July 8 at 00:00. Between the Monday July 6 floor and that anchor there are two shifts, 16 hours. The job needs 34 hours of work plus a 4-hour queue.
+
+The backward attempt fails on the machining step, the placements already made are rolled back, and the whole order forward-schedules from Monday July 6. The job is recorded as backward-infeasible with the due date, the earliest start, the forward window it would actually occupy, and the resulting lateness in days.
+
+Site policy decides what happens next. The default is to accept the forward fallback silently, which suits a shop where late is a reporting fact rather than a decision point. The alternative holds the run and shows the planner what happened before anything is written, so they can accept it, adjust the dates and re-run, or cancel. Nothing persists until they choose.
+
+That prompt is worth turning on in a make-to-order shop, because a job that cannot hit its promise is exactly the kind of thing that should interrupt somebody rather than appear quietly in a report.
+
+## What Overrides the Direction, and Why
+
+Backward is a preference, not a trump card. Five things can decide a job's direction, and they resolve in a fixed order.
+
+**A bottleneck anchor wins first.** If a job routes through a constraint work center that has been anchored, the schedule is built around that anchor in both directions. A constraint's timing is the plant's binding decision, not one order's preference.
+
+**Actuals win next.** Once a job has logged work, it reschedules forward from where it actually stands. Pulling a partly built job back toward its deadline would move work the floor has already started, and completed operations are never moved by a reschedule.
+
+**Planned pins win next.** An operation a planner has deliberately placed stays placed.
+
+**Then backward**, if the order asks for it and nothing above has overridden it.
+
+**Then forward**, which is the default and the fallback.
+
+The rule that catches people out is the second one, in its stricter form: backward applies only to jobs with no existing schedule rows at all. A backward job that has already been scheduled reschedules forward from its resume point rather than being right-aligned again. So the JIT placement is a decision made once, when the job first enters the plan, and the plan then behaves normally from there.
+
+That is the right behavior for a shop floor. It also means the direction is worth getting right at order entry rather than after the first run.
+
+## Lead Time Is Part of the Promise
+
+The end-item lead time deserves its own paragraph because furniture shops usually have a real one and rarely model it.
+
+It is a per-product value in calendar days covering everything after the last work center operation: final cure or off-gas, outgoing inspection, crating, and freight. The schedule splits the two dates explicitly. The **item start date** is the end of the last work center operation, when the piece physically exists. The **job end date** is that plus the lead time, when it is delivery-ready.
+
+On the Gantt the tail renders as a display-only bar between the two. It consumes no work center capacity, which is correct: freight does not occupy the finish room. And backward scheduling reserves it before placing any work, so the tail cannot silently eat into the promise.
+
+If your finishing schedule has ever been blown by forgetting that a lacquer needs 48 hours before it can be crated, this is the field that stops it happening again.
+
+## Which Orders Should Run Backward
+
+Backward is opt-in per order, and that is the right granularity. A practical policy:
+
+**Run backward** on stable routings with reliable material, long quoted lead times, bulky finished goods, and specifications that customers still adjust.
+
+**Run forward** on rush orders, first articles, anything with a new finish or an untested routing, and jobs with material risk. Slack behind the job is protection, and protection is what those orders need.
+
+Two rules govern how the choice behaves in practice. A site-wide default seeds new orders, and each order can override it. And backward applies only to jobs with no existing schedule rows: an already-scheduled backward job reschedules forward from its resume point rather than being re-pulled toward the deadline. Completed work is never moved by a reschedule in either direction.
+
+## Where to Start
+
+Pick a product family you quote long and build fast, set the site default to forward so nothing changes by accident, and switch three orders to backward. Compare the material issue dates and the finished-goods dwell time against the forward plan. If the warehouse gets quieter and nothing ships late, widen it.
+
+For the furniture-specific picture, see the [furniture and woodworking scheduling overview](/blog/furniture-woodworking-scheduling) and the [furniture manufacturing software page](/furniture-manufacturing-software). Sequencing the finish room is a separate problem with its own mechanism: see [sequencing stain and finish work](/blog/edgebic-for-furniture-finishing-changeovers). For the rest of this series, see [EDGEBIC by industry](/blog/edgebic-by-industry), and for the product, [EDGEBIC](/edgebic).

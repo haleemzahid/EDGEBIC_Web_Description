@@ -1,0 +1,148 @@
+---
+title: "Scheduling Multi-Level Electronic Assemblies"
+description: "Electronics sub assembly scheduling: how a board, a harness and a chassis with their own routings get timed as one job instead of three separate plans."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - electronics sub assembly scheduling
+  - multi level assembly production schedule
+  - pcba sub assembly routing
+  - component routing dependency scheduling
+  - electronics manufacturing routing levels
+  - box build scheduling
+targetPhrase: "electronics sub assembly scheduling"
+wordCount: 1720
+readingTime: 9
+faqQuestions:
+  - question: "How does a scheduler handle an assembly whose components have their own routings?"
+    answer: "EDGEBIC by User Solutions links the component's routing into the parent's routing as one connected graph. The component's final operation points at the component product, and the parent step that consumes it points onward. The scheduler follows those links rather than a numeric step order, so it schedules the component operations, then the parent operations that depend on them, as one timed job across every level."
+  - question: "What is the difference between a purchased part and a sub-assembly on a routing?"
+    answer: "A step with no work center and a product reference is a material step: the component is consumed rather than made, and the scheduler assigns it instantly without using capacity. A sub-assembly is a component that carries its own operations, so it consumes real work center capacity before the parent can proceed. Getting this distinction right is the difference between a plan that reserves board line time and one that quietly assumes boards appear."
+  - question: "How does the scheduler know which operation runs first across levels?"
+    answer: "It follows the dependency links between steps rather than the sequence numbers. Each step names what it feeds, using either the id of the next operation or a token pointing at a product. The engine builds a graph from those links and sorts it so no operation is scheduled before everything it depends on. Sequence numbers are a display aid; the links are what the scheduler actually reads."
+  - question: "Can two sub-assemblies feeding the same top level run at the same time?"
+    answer: "Yes, provided they use different work centers or the work centers have the capacity. Two independent branches of the routing graph have no dependency between them, so the scheduler places each as early as its own inputs and capacity allow. Where the two branches compete for the same machine, finite capacity decides: one runs, the other waits, and the join step waits for the later of the two."
+qaQuestions:
+  - question: "Our box build has three levels: bare board to PCBA, PCBA plus harness to module, module plus chassis to finished unit. Do we build one routing or three?"
+    answer: "Three routings, connected. Each product carries the operations that make it, and the connection is the dependency link: the PCBA routing's last operation points at the PCBA product, and the module routing's assembly step consumes that product and points onward.\n\nThe scheduler then treats it as one graph. If the PCBA takes 18 hours across placement, reflow, and test, and module assembly needs 6 hours, the module step is offered a start no earlier than the PCBA's finish plus any queue or handling time on that link. Keeping the routings separate also means the PCBA schedules the same way whether it feeds this module or a spare-parts order."
+  - question: "We keep seeing a step scheduled at the start of the job when it belongs in the middle. Where do we look?"
+    answer: "At the dependency link on that step, before anything else. If a step names nothing as its successor, or names something the engine cannot resolve, it has no predecessor pulling it later and it lands as early as capacity allows. That looks like a sequencing bug and is almost always a missing or broken link.\n\nTwo other causes are worth ruling out. A step added directly on a job's own routing copy needs to carry the end-item reference, or the engine's filter drops it. And a genuine start-to-start lag on the upstream step produces legitimate overlap: a one-hour lag on a step running 08:00 to 10:00 lets the successor start at 09:00 by design. Zero any lag out before you conclude the sequencing is wrong."
+---
+
+**A finished electronic unit is not one routing. It is a stack of them, and the schedule is only honest if it times every level as one job.** EDGEBIC by User Solutions connects a component's routing into its parent's through dependency links, then follows those links to schedule the whole graph: board operations, harness operations, module assembly, final test, in one pass with finite capacity applied at every level.
+
+## The Pain: Three Plans That Do Not Know About Each Other
+
+Box build is where scheduling systems usually reveal what they actually model.
+
+A finished unit needs a populated board. The board needs placement, reflow, inspection, and functional test. The unit also needs a cable harness with its own crimp and continuity operations. Then module assembly. Then burn-in. Then final test and pack.
+
+Plenty of shops manage this as three separate plans plus a supervisor holding the connections in their head. The board line has its queue. The harness bench has its queue. Final assembly has a date somebody promised. Nothing in the system says that the module cannot start until the board is out of test, so nothing in the system stops the plan from claiming it can.
+
+The failure is specific and familiar. Final assembly is scheduled for Thursday. The boards clear test Friday afternoon. Nobody discovers it until Thursday morning, and the recovery is overtime on the wrong operation.
+
+The general shape of this problem is covered in the [electronics manufacturing scheduling overview](/blog/electronics-manufacturing-scheduling). What follows is the mechanism that removes it.
+
+## Two Kinds of Component, One Important Difference
+
+Before the levels, one distinction decides whether a plan is real.
+
+A **material step** carries a product reference and no work center. It represents something consumed rather than made: a purchased connector, a reel of passives, a housing bought finished. The scheduler assigns it instantly and consumes no capacity, because there is no operation to perform.
+
+A **sub-assembly** is a component that carries its own operations. It consumes real machine and labor hours before the parent can proceed.
+
+Model a sub-assembly as a material step and the plan quietly assumes boards appear on demand. Model a purchased part as a sub-assembly and you reserve capacity that nothing will ever use. Neither error announces itself; both distort every date downstream. The full field reference is in the [bill of routing guide](/blog/edgebic-bill-of-routing-explained).
+
+## How the Levels Connect
+
+Each step names what it feeds. The link is either the id of the next operation or a token pointing at a product. The scheduler reads those links, not the sequence numbers.
+
+That distinction surprises people, so it is worth being blunt about it. Sequence numbers are a display and sorting aid for humans. The engine builds a directed graph from the dependency links and sorts it so that no operation is scheduled before everything it depends on has a finish time. Renumbering steps changes what the grid looks like; rewiring links changes what the schedule does.
+
+The engine also computes a level for each step by walking those links. A step that feeds the finished product sits at level zero. A step feeding that one sits at level one, and so on upstream. A token pointing at another product resolves into that product's routing and the walk continues into it, which is exactly what makes multi-level assemblies work. Cycles are detected rather than looping forever.
+
+Building these connections on the design canvas rather than in a grid is covered in [modeling sub-assemblies on the design canvas](/blog/sub-assemblies-in-the-edgebic-designer).
+
+## Worked Example: A Three-Level Unit
+
+Take a controller unit, 100 pieces.
+
+**Level 2: the populated board (PCBA-1)**
+
+| Step | Work center | Time per unit | Setup |
+|---|---|---|---|
+| Paste and place | SMT-1 | 0.06 h | 1.5 h |
+| Reflow and AOI | Reflow-1 | 0.03 h | 0.5 h |
+| Functional test | Test-1 | 0.05 h | 0.5 h |
+
+Board work totals 0.14 hours per unit plus 2.5 hours of setup, so 16.5 hours for 100 units.
+
+**Level 1: the module (MOD-1)**
+
+Module assembly consumes PCBA-1 and a harness, and runs 0.09 hours per unit plus 1 hour of setup on Assembly-1. That is 10 hours for 100.
+
+**Level 0: the finished unit**
+
+Burn-in on a rack, then final test and pack. Call it 8 hours plus 4 hours.
+
+The harness branch runs 0.04 hours per unit plus 0.5 hours of setup on Crimp-1, so 4.5 hours, and it depends on nothing the board branch needs.
+
+What the scheduler does with that:
+
+1. The board branch and the harness branch have no dependency between them, so both are offered the earliest start their own capacity allows. The harness finishes long before the boards.
+2. Module assembly is a join. Its earliest start is the later of the two branch finishes, which is the board branch, plus any queue or handling time configured on that link.
+3. Burn-in follows module assembly. Final test follows burn-in.
+
+If the board line is already loaded and cannot start until Wednesday, every downstream date moves with it automatically. Nobody has to notice. That is the entire value: the connection is in the data rather than in a supervisor's memory.
+
+## Joins, Levels, and Why Depth Is Computed
+
+Two structural details make deep routings behave predictably.
+
+**A step can feed more than one thing.** The dependency link accepts several targets, separated by commas, which is how a join or a split is expressed. A test operation that feeds both a rework loop entry and the next assembly step names both. The graph handles it; the sort simply has more edges to respect.
+
+**Depth is computed rather than declared.** The engine walks the links and assigns each step a level. A step feeding the finished product is level zero. A step feeding that one is level one, and so on upstream. Where a link points at another product, the walk resolves into that product's routing and continues, which is the mechanism that makes a three-level box build one connected graph rather than three disconnected ones.
+
+Levels matter in two places. They give the grid and the design canvas a sensible ordering for humans, so a deep routing reads top-down instead of arbitrarily. And they let the engine detect a circular chain: a link that loops back on itself is caught, both steps are anchored at the same depth, and the routing is flagged with a warning rather than looping forever.
+
+That warning is worth acting on when it appears. A cycle does not stop a schedule from being produced. It does mean the sort is treating two steps as equally deep when the routing intended an order, so the plan is quietly less meaningful than it looks.
+
+## Parallel Branches and Shared Machines
+
+Two branches with no dependency between them are free to overlap, and usually should. Where they collide is on shared capacity.
+
+If the harness branch and a second board variant both route through the same test station, finite capacity decides. One takes the window, the other waits, and the join step waits for the later of the two. That is the correct answer, and it is the answer a spreadsheet cannot give you, because a spreadsheet has no way to know that the test station cannot be in two places at once. The difference is laid out in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+Where the constraint is genuinely two machines doing the same operation at once, that is a different mechanism: see [parallel work centers explained](/blog/edgebic-parallel-work-centers-explained), and the electronics-specific treatment in [running parallel SMT and assembly lines](/blog/edgebic-for-electronics-parallel-lines).
+
+## Standards Worth Adopting
+
+Multi-level routings degrade quietly when nobody sets rules. Four that pay for themselves:
+
+**One routing per product, always.** Do not flatten a sub-assembly's operations into the parent. The moment that component ships as a spare or feeds a second parent, the flattened version has to be duplicated and the two copies drift.
+
+**Every step names its successor.** A step with no link has nothing pulling it later, so it schedules as early as capacity allows and looks like a sequencing bug. This is the single most common cause of "that step is in the wrong place".
+
+**Put handling time on the link, not in the operation.** Cure time, cool-down before handling, cart moves between buildings, and incoming inspection are properties of the handoff. Padding an operation's run time to cover them makes the operation's capacity consumption wrong forever, and capacity is what the whole plan rests on. Queue time and transit are the right fields: see [queue and transit times explained](/blog/edgebic-queue-and-transit-times-explained).
+
+**Keep purchased parts as material steps.** A material step documents the consumption without pretending an operation exists.
+
+## Where Sub-Assemblies Meet Live Jobs
+
+One interaction is worth internalizing before you build a deep routing.
+
+When a job is first scheduled, the full routing including every level is copied onto the job. Later reschedules read that copy, not the live master routing. So adding a level to a master routing does not retroactively change jobs already scheduled against it. New orders pick the change up immediately; open jobs adopt it only when a planner says so, one job at a time. That behavior and its reasoning are in [routing snapshots explained](/blog/edgebic-routing-snapshots-explained).
+
+There is a related trap worth knowing. A step added directly to a job's own routing copy has to carry the end-item reference, or the engine's filter drops it and the step never schedules. The system stamps that reference on save and heals older records on load, so this is mostly historical, but it is the first thing to check if a step you added to one job simply does not appear.
+
+## Where to Start
+
+If your board line, harness bench, and final assembly are three plans today, do not model the whole plant at once.
+
+Start with one product family and its real levels. Build the component routings first, then the parent, then connect them. Schedule it and compare the dates against what your current process would have promised. The gap between those two numbers is the size of the problem you have been absorbing in expedites.
+
+For scheduling practice across electronics manufacturing, see the [electronics manufacturing scheduling overview](/blog/electronics-manufacturing-scheduling) and the [electronics manufacturing scheduling software page](/electronics-manufacturing-scheduling-software). For the rest of this series, see [EDGEBIC by industry](/blog/edgebic-by-industry), and for the product, [EDGEBIC](/edgebic).

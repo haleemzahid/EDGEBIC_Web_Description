@@ -1,0 +1,155 @@
+---
+title: "Scheduling Sub-Assemblies That Feed Several Jobs"
+description: "Sub assembly scheduling manufacturing in EDGEBIC: one component routing feeding many parents, ordering on shared machines, and the build-to-stock decision."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - sub assembly scheduling manufacturing
+  - multi level routing scheduling
+  - component routing explosion
+  - shared sub assembly capacity
+  - make to stock sub assembly
+  - dependency ordering routings
+targetPhrase: "sub assembly scheduling manufacturing"
+wordCount: 2025
+readingTime: 10
+faqQuestions:
+  - question: "Do I model a shared sub-assembly's routing once or once per parent?"
+    answer: "Once. Give the component product its own routing, then connect it into each parent routing at the operation that consumes it, with the correct quantity per parent unit. Every parent order explodes the same component routing at schedule time and scales it by that order's quantity. Adding a sixth parent later is a connection on one canvas, not a sixth copy of the component's operations."
+  - question: "How does the scheduler keep two sub-assemblies straight when they share a work center?"
+    answer: "By identity rather than by name. Each routing step is a distinct row with its own identifier, successor links are resolved by identifier first, and each predecessor's finish is recorded under a key unique to the step that consumes it. Two sub-assemblies that both route through the same welder therefore cannot read each other's finish times. Name matching survives only as a fallback for steps that resolved no identifier link at all."
+  - question: "What happens when two feeder paths join at one assembly operation?"
+    answer: "The joining operation waits for the later of the two. Both feeders write their finish under the same successor key and the recorded value only moves forward, never backward, so the last one to finish sets the assembly's earliest start. That is the correct behavior for a join and it happens without any special configuration on the assembly operation."
+  - question: "Should a shared sub-assembly be made to order inside each parent, or made to stock?"
+    answer: "It depends on how many parents want it at once and how much variety they need. Exploding it inside each parent gives exact traceability and no inventory, at the cost of repeating setups on the component's machines. Building it to stock lets one longer run cover several parents and lets later orders consume the buffer instead of manufacturing again, at the cost of carrying inventory and forecasting demand."
+  - question: "Do sub-assembly operations compete with parent operations for the same machines?"
+    answer: "Yes, fully. An exploded component operation is an ordinary work-center operation that reserves capacity like any other. If the component's welding step and the parent's welding step use the same welder, they queue against each other exactly as two unrelated jobs would. That is usually the real reason a multi-level product takes longer than the sum of its operations suggests."
+qaQuestions:
+  - question: "We weld one frame that goes into five finished products. Two of those products got scheduled the same week and the frame shop is now the bottleneck. What is EDGEBIC actually doing?"
+    answer: "Each parent order exploded its own copy of the frame routing at that order's quantity, and both copies are competing for the same welder. Jobs are dispatched in priority order, so the higher-priority parent's frame work claims capacity first and the second parent's frame work queues behind it. If the frame is genuinely a shared constraint, consider building it to stock in one longer run rather than twice per week, or add the welder's neighbors to a machine pool so the frame work can shop for capacity."
+  - question: "One of our sub-assembly steps schedules before its predecessor. Where do I look?"
+    answer: "At the successor links, not at the sequence numbers. Operation order is driven by the links between steps, and sequence numbers only break ties among operations that are simultaneously ready. Check that each step's successor link points at the intended next step's identifier, that a fan-out uses a comma-separated list, and that a work center appearing twice in one routing carries distinct display names so a name fallback cannot wire the wrong occurrence."
+---
+
+**When one component with its own routing feeds several finished products, [EDGEBIC by User Solutions](/edgebic) explodes that component's routing inside every parent order at schedule time, and every exploded operation reserves real machine capacity.** Modeling it is a one-time job. Scheduling it well is about ordering, shared-machine contention, and one policy decision: build it inside each parent, or build it to stock.
+
+The modeling side is covered in [sub-assemblies on the design canvas](/blog/sub-assemblies-in-the-edgebic-designer). This post is the scheduling side: what the engine does with the exploded structure once it exists, and what changes when several jobs want the same component in the same week.
+
+## What Actually Gets Scheduled
+
+A routing step that names a component product with no work center is a **material step**. It consumes no capacity, is assigned instantly, and its bar is drawn shifted backward by the material's lead time to show when it must be ordered. Its purpose in the schedule is to gate whatever consumes it.
+
+A routing step that names a component product which itself has a routing is a **sub-assembly**. Its operations are exploded into the parent order and scheduled as ordinary work-center operations: they reserve capacity, they compete for instances, they respect shifts and holidays, and they appear on the Gantt on their own machines.
+
+That distinction decides everything downstream. A purchased casting with a fifteen-day lead time never causes machine contention. An in-house welded frame does, every time a parent order for it is scheduled.
+
+## One Routing, Many Parents
+
+The model is deliberately flat: the component product owns its routing, and each parent routing connects the component into the operation that consumes it, with a quantity per parent unit.
+
+The scaling follows the parent's order quantity. A 100-unit parent order needing one frame each plans 100 frames through the frame routing. A 40-unit order needing two frames each plans 80. Nothing about the frame routing changes; only the quantity fed into it does.
+
+The explosion is recursive. If the frame itself consumes a component that has its own routing, that deeper routing explodes too, timed so each level's output is ready when the level above needs it.
+
+The value shows up on the sixth parent. Adding another finished product that uses the frame is one connection on one canvas. Under a copy-per-parent approach, it would be a sixth duplicate of the frame's operations, and the seventh time somebody changes the weld time, one of the copies gets missed.
+
+## The Ordering Machinery, and Why Sub-Assemblies Test It Hardest
+
+Every routing is turned into a dependency graph before anything is placed. Edges come from each step's successor link, resolved by identifier first. A comma-separated link produces one edge per token, which is how a fan-out to two successors is expressed. Only when a step resolves no identifier edge at all does a name-based fallback try to match successor names against the step list, display name first and then bare work-center name.
+
+The graph is then sorted so every predecessor is emitted before its successors, with ties among simultaneously-ready operations keeping their list order. Steps that cannot be sorted, because of a genuine circular link, are appended rather than dropped, so nothing vanishes from a malformed routing.
+
+Sub-assemblies stress this machinery more than any other structure, for one reason: they routinely reuse the same work centers as their parents and as each other. Two sub-assemblies both routing through the same welder create two steps with the same work-center name in one exploded routing. If predecessor finish times were recorded by machine name, those two steps would read each other's finishes, and the second sub-assembly's work would be timed against the first one's completion for no reason at all.
+
+The current machinery avoids that by recording each predecessor's finish under a key unique to the step that consumes it. Every routing step is a distinct row with a distinct identifier, including exploded ones, which are re-keyed to unique identifiers during the explosion with their links rewritten to match. Name keys are still written alongside for compatibility, but the identity key is checked ahead of the bare-name fallback.
+
+Two practical rules follow:
+
+- **Let the editor populate successor links.** Every authoring path does this by default. A routing built by hand or by import that leaves links empty falls back to name matching, which is where the wrong-occurrence wiring can still bite.
+- **Give a repeated work center distinct display names.** If inspection appears at step 10 and step 40 of one routing, they need distinguishable display names so the name fallback cannot collapse them onto each other.
+
+If operations still schedule out of order, [steps scheduled out of sequence](/blog/steps-scheduled-out-of-sequence-edgebic) walks the diagnosis, and [how EDGEBIC orders operations](/blog/how-edgebic-orders-operations-dependency-graphs) explains the graph in depth.
+
+## Joins Take the Later of the Two
+
+A sub-assembly structure is a join by definition: the component's last operation and the parent's own preceding work both feed the assembly operation.
+
+Both feeders write their finish under the assembly operation's key, and a recorded finish only ever moves forward. The last feeder to finish is therefore the one the assembly waits for.
+
+Take a simple case: 10 units, two preparation paths on separate machines, then assembly.
+
+| Operation | Machine | Hours | Finishes |
+|---|---|---|---|
+| Prep A | Mill-1 | 40 h | Monday, week 2 |
+| Prep B | Mill-2 | 60 h | Thursday, week 2 |
+| Assembly | Assy-1 | 20 h | Starts Thursday, week 2 |
+
+Assembly correctly waits for the slower path. Neither path needs any configuration to make that happen; it falls out of the recording rule.
+
+The same rule is what makes a sub-assembly late when its own routing is under-resourced. The parent's assembly step will sit waiting, and the Gantt shows the gap. That gap is real information, not a scheduling artifact, and it points at the component's own machines rather than at the assembly cell.
+
+## Contention Between Parents
+
+Here is where the scheduling question stops being about one job.
+
+Each parent order explodes its own copy of the component routing. Two parents scheduled in the same week produce two independent sets of component operations, and both sets compete for the same component machines. They do not merge, and they do not know about each other beyond the capacity they each consume.
+
+Jobs are dispatched in a fixed order: priority first, then earliest start, then due date. So the higher-priority parent's component work claims capacity first, and the second parent's component work queues behind it. That is the correct and predictable behavior, and it is usually the real explanation when a multi-level product takes noticeably longer than the sum of its operation times.
+
+Three levers are available when the component machine becomes the constraint:
+
+1. **Priority.** Move the parent that must ship first up the queue. Lower numbers dispatch earlier. [Deciding what runs first](/blog/job-priority-and-sequencing-strategy-edgebic) covers the sequencing side properly.
+2. **A machine pool on the component's operations.** If two or three machines can do the frame welding, put them in a pool and let each parent's frame work shop for whichever has room. [Work center groups explained](/blog/edgebic-work-center-groups-explained) covers the setup.
+3. **Build to stock instead of per parent.** Cover several parents with one longer run rather than one setup per parent.
+
+## The Build-to-Stock Decision
+
+For a component many parents share, the make-to-order versus make-to-stock choice is a real scheduling decision rather than an accounting one.
+
+**Exploded per parent** gives exact traceability, no inventory, and no forecast risk. It costs one setup per parent order on every component machine, and it produces the contention described above.
+
+**Built to stock** lets one run cover several parents. Later orders can consume the on-hand buffer instead of manufacturing again, and completion of a build-to-stock job posts a receipt automatically. It costs inventory and requires a view of demand. [Make to stock vs make to order](/blog/make-to-stock-vs-make-to-order-in-edgebic) covers the policy fields, and [how EDGEBIC nets demand against stock](/blog/how-edgebic-nets-demand-against-stock) covers the netting arithmetic.
+
+One scheduling behavior is worth knowing before you make that choice. When forward netting is active, the dispatch order gains a leading key that places build-to-stock producers ahead of consumers. A job that builds the buffer is scheduled before a job that might consume the buffer in the same run, so the consumer sees the producer's output rather than an empty shelf. Without that ordering, a same-run consumer would net against stock that had not been planned yet.
+
+## Reporting Does Not Double-Count
+
+A multi-level job produces rows at more than one level, and hour rollups deliberately exclude the sub-assembly rollup row so a job's total hours are not counted twice. The same exclusion applies to the end-item progress projection, so a component finishing does not flip a parent job to complete.
+
+That matters when you are reading percentage-complete on a multi-level job. The number reflects the end item's own operations against the job's planned hours on the agreed basis, not a naive sum across every level. [The reports that answer "are we on time"](/blog/the-reports-that-answer-are-we-on-time-edgebic) covers the rollup rules.
+
+## What a Reschedule Does
+
+Every scheduled job carries a frozen copy of the routing it was scheduled with, including the exploded structure. A reschedule reads that copy by default, so a change to the component's standard routing does not silently restructure a job already on the floor.
+
+That is the intended protection, and it has a corollary: adding an operation to a shared component's routing affects new orders and new quote simulations only. In-flight parents keep building to the routing they started with until you deliberately opt them in. [Why frozen routings protect in-flight jobs](/blog/why-frozen-routings-protect-in-flight-jobs-edgebic) covers the mechanism and how to opt a job in.
+
+Completed component operations are preserved with their actual dates on every reschedule, and only the remaining work is re-placed. That holds at every level of the structure.
+
+## Reading a Multi-Level Job on the Gantt
+
+Two visual patterns are worth learning to recognize, because both look like defects and neither is.
+
+**A component operation starting before the parent's first operation.** That is normal and often correct. The component has to exist before the assembly step consumes it, so its operations are placed early enough to deliver. If the component's routing is long, its first operation can be the earliest thing on the job.
+
+**A material bar drawn before the job's official start.** Material steps consume no capacity, and their bars are shifted backward by the material's lead time to show when the order has to be placed. A casting with a fifteen-day lead time draws fifteen days ahead of the operation that consumes it. That is a procurement signal rather than a scheduling one.
+
+What is worth investigating is the opposite: an assembly operation starting at the job's start time rather than after its feeders. That usually means a successor link is missing, so the assembly operation never learned it had a predecessor and defaulted to the job's earliest start. Check the link on the feeding operation first.
+
+## A Practical Checklist
+
+Before you schedule a shared component for the first time:
+
+- The component product has its own routing, and every parent connects it at the operation that consumes it with the correct quantity per unit.
+- Every routing step has a successor link, and any work center appearing twice in one routing has distinguishable display names.
+- Component operations name real machines with real hours, not placeholder values, because they will reserve capacity.
+- You have decided make-to-order or make-to-stock for that component, and set the product's policy accordingly.
+- If two or more parents will regularly want the component in the same week, you have looked at whether its machines need a pool.
+
+After the first run, check three things: that component operations appear on the Gantt on their own machines, that the parent's assembly operation starts after the last feeder rather than at the job's start, and that the component machines are not sitting at 100 percent capacity across every parent order in the horizon.
+
+For the routing structure itself, [the bill of routing explained](/blog/edgebic-bill-of-routing-explained) is the reference. For the full feature map, see the [complete guide](/blog/edgebic-complete-guide).

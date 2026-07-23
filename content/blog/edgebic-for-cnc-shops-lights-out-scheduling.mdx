@@ -1,0 +1,138 @@
+---
+title: "Scheduling Lights-Out CNC Machining"
+description: "Lights out machining scheduling needs an operator model that books the setup and frees the run, so one attendant starts seven cells without being oversold."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - lights out machining scheduling
+  - unattended machining capacity
+  - operator attend fraction
+  - CNC labor constraint scheduling
+  - multi machine tending
+  - night shift CNC scheduling
+  - finite capacity labor model
+targetPhrase: "lights out machining scheduling"
+wordCount: 1800
+readingTime: 9
+faqQuestions:
+  - question: "How does a scheduler model a machine that runs unattended?"
+    answer: "By separating the operator cost of setup from the operator cost of the run. An attend fraction of zero means the run books no operator time at all, while setup still books one person for its duration. That lets post-setup hours execute on completely unstaffed evenings while still preventing a job from starting when nobody qualified is there to set it up."
+  - question: "What does an attend fraction of 0.5 mean in practice?"
+    answer: "It means one person can tend two machines at once, so every machine-hour of run time costs half an operator-hour. Eight staffed operator hours therefore buy about sixteen machine-hours of run time on that step. Values above one describe crews: a fraction of two books two operator-hours for each machine-hour, so a single qualified person caps that machine's day at roughly half the staffed hours."
+  - question: "Can the scheduler start more cells than one attendant can physically set up?"
+    answer: "No. Each committed slice of machine time books its operator cost against a per-person hours ledger, and a day can never oversell a person's staffed hours. With one attendant on eight hours and a one-hour setup per job, the eighth setup still fits and the ninth slides to the next day, even though nine machines are standing free."
+  - question: "Does the labor model change anything for shops that never configure operators?"
+    answer: "No. With no operators or certifications loaded, every operator gate is a no-op and scheduling behaves exactly as it would without the feature. Routing steps that carry no required skill are unaffected even when operator data is loaded, so the constraint applies only where you deliberately turn it on."
+qaQuestions:
+  - question: "We run seven mills into the night with one setup guy. Every scheduler we have tried either assumes the machines need nobody or assumes full attendance. What is the third option?"
+    answer: "Model the two phases separately, because they genuinely are separate. Set the routing step's attend fraction to zero, which is the default, and the run books no operator time while setup still books one person at full rate. With a one-hour setup and a nine-hour run per job, each job costs your attendant exactly one hour. He starts seven cells Monday inside seven of his eight hours, the machines carry on into the unstaffed evening under machine capacity alone, and the eighth job's setup still fits in his last hour. The ninth slides to Tuesday. That is the real constraint expressed honestly, and no schedule ever shows nine setups happening at once."
+  - question: "How does the labor constraint interact with a job that needs more hours than one shift has?"
+    answer: "The gate that asks whether a shift is usable is deliberately binary rather than quantitative, and that distinction is what keeps multi-shift jobs schedulable. A twelve-hour job asked about Monday, where the staffed pool is eight hours, would be rejected outright by a strict comparison, and since every shift is smaller than twelve hours the job would become unschedulable despite forty staffed hours in the week. Instead the gate asks only whether any staffed hours exist, and a separate clamp bounds the quantity: Monday takes eight hours, Tuesday takes the remaining four, the operator is booked eight and four, and no day is oversold."
+---
+
+**Lights-out machining breaks most schedulers because they model labor as either always present or never present, and an unattended cell is neither.** EDGEBIC by User Solutions separates the operator cost of setup from the operator cost of the run, so a routing step can say "one person for the changeover, nobody for the cut" and the schedule reflects what actually happens after the lights go off. For a CNC shop running pallet pools and bar feeders into the evening, that is the difference between a plan that fits and a plan that assumes seven simultaneous setups.
+
+The full operator model is documented in [operator and skill scheduling](/blog/edgebic-operator-and-skill-scheduling-explained), and the parameter itself in [what an attend fraction is](/blog/what-is-attend-fraction-operator-scheduling). This post is about the CNC case.
+
+## The Two Wrong Models
+
+Scheduling software usually takes one of two positions on labor, and both fail a lights-out cell.
+
+**Machines need nobody.** Capacity is machine hours, and the plan happily starts five setups at once on a shift with one setup technician. The schedule is fiction before the first tool touches metal, and the failure is silent: nothing in the plan says it is impossible.
+
+**Machines need somebody the whole time.** Capacity is min(machine hours, labor hours), so a nine-hour unattended run consumes nine hours of a person who went home at six. The plan under-books the cell by a factor of three and you lose the evening you built the pallet pool to get.
+
+A real CNC shop lives between these. Setup needs a person, fully. The run needs a person somewhere between zero and one, depending on the part, the machine, and whether anyone is walking the aisle at 9 PM.
+
+## Attend Fraction: One Number, Four Behaviors
+
+The routing step carries an attend fraction that scales the run phase's operator cost per machine-hour. Setup always books one full person per slice, because one person sets up a machine.
+
+| Fraction | What it describes | Effect on the plan |
+|---|---|---|
+| **0.0** (default) | Setup only, unattended run | The run books nobody. Post-setup hours may execute on completely unstaffed evenings. |
+| **0.5** | One person tends two machines | Eight staffed operator-hours buy roughly sixteen machine-hours of run time |
+| **1.0** | Fully attended | One operator-hour per machine-hour, the classic model |
+| **2.0** | Two-person crew | Each machine-hour books two operator-hours, so one qualified person caps that machine's day at about half the staffed hours |
+
+The default is zero, deliberately. A forgotten fraction under-books people visibly rather than silently overselling them, which is the safer failure. If you want the fully-attended behavior you say so.
+
+One more rule closes the loop: a step with zero setup **and** a fraction of zero has no operator involvement at all, so the constraint is skipped entirely and it schedules as if no skill were required. Nothing gets gated on a person who is not needed.
+
+## The Seven-Cell Worked Example
+
+Seven CNC mills, one instance each, an eight-hour day shift. Every job on those mills carries the same step shape: **1 hour of setup, 9 hours of run**, attend fraction 0.0, and a required skill of CNC setup. One qualified attendant, call him the day setup tech, works eight staffed hours.
+
+The operator cost of one job is: 1 hour of setup at full attendance, plus 9 hours of run at zero. **One hour of the attendant per job.**
+
+- Jobs one through seven all start Monday. Seven machines running, the attendant booked seven of his eight hours.
+- An eighth job's setup still fits in his last hour.
+- A **ninth setup slides to Tuesday**, because the pool is exhausted, even though a ninth machine is standing free.
+
+That is the honest answer. The machines are not the constraint on Monday morning; the attendant is, and only for the first hour of each job. After that the cells run themselves into unstaffed evening hours as far as machine capacity allows.
+
+Change one number and the picture changes with it. At a fraction of 0.5, the attendant's eight hours afford one hour of setup plus fourteen machine-hours of run (seven pool-hours divided by 0.5), so a single machine's day is bounded differently and the cell count that fits drops. At a fraction of 2.0 with only one qualified person, a machine's day caps at the staffed hours minus setup, divided by two, and long steps split or slide.
+
+## Why a Night Shift Does Not Fix It By Itself
+
+A common instinct is to add an unstaffed night shift to the machine calendar and let jobs flow into it. That gets you machine hours, and it is necessary, but on its own it produces the first wrong model again: nothing stops the plan from starting setups at 22:00 when nobody is there.
+
+The operator layer stacks **on top of** the machine calendar rather than replacing it. A window has to survive the machine availability check (holidays, downtime, weekends) and the capacity calculation (overrides, utilization) first. Only then does the operator gate ask whether anyone qualified can actually stand there. So the evening shift exists as machine capacity, unattended run hours flow into it, and setups do not, because setup books a person and the pool for that window is zero.
+
+Roster people by shift and weekday, record time off as inclusive date ranges, and the schedule reacts. For the mechanics of shift windows and how jobs spill across them, see [multi-shift scheduling](/blog/edgebic-multi-shift-scheduling-explained).
+
+## The Gate That Has To Be Binary
+
+There is one design decision underneath all of this that is worth understanding, because it explains behavior you will otherwise find odd.
+
+When a step needs more hours than one shift's staffed pool can cover, the check that asks "is this shift usable" receives the **full remaining requirement**, not the slice. A twelve-hour job asked about Monday, with an eight-hour staffed pool, would fail a strict comparison. So would Tuesday. So would every shift, because every shift is smaller than twelve hours. The job becomes unschedulable despite forty staffed hours available across the week.
+
+The shipped rule is that the gate is **binary**: a shift with any staffed hours at all passes. The quantity is bounded separately by a clamp applied when hours are actually allocated, so the machine never receives more hours than the pool affords for that window.
+
+Result for the twelve-hour job: Monday passes the gate, the clamp allows eight hours, four hours spill to Tuesday, the operator is booked eight and four, no day is oversold, and the job finishes Tuesday at noon. Both halves are needed. The gate answers "usable at all"; the clamp answers "how much."
+
+## The Ledger, and What It Does Not Track
+
+Operator availability is tracked as an hours ledger keyed by person, date, and shift. Joe has eight hours on Monday's day shift, full stop, regardless of how many certifications he holds or how many machines consume them.
+
+That last clause matters. A per-skill pool model would double-count a multi-skilled operator: someone certified in two skills would sell eight hours into each and the plan would believe in sixteen hours of one person. The ledger prevents that by construction, because it counts people rather than capabilities.
+
+The tradeoff is honest and worth stating. Two of one person's bookings on different machines may overlap wall-clock within a shift, exactly as machine allocations themselves are hour quantities per shift window rather than exact intervals. What can never happen is a day overselling a person's staffed hours. Interval-exact per-operator sequencing is not what this model provides, and for a lights-out cell it is not what you need: you need to know that the setups fit.
+
+## Turning It On Without Breaking Anything
+
+The constraint is opt-in at every level. With no operators or certifications configured, every gate is inert and scheduling is byte-identical to running without the feature. Routing steps that carry no required skill are unaffected even when operator data exists.
+
+A sensible rollout for a CNC shop:
+
+1. Create one skill that matters, usually CNC setup or a specific certification.
+2. Certify the people who hold it, with expiry dates where they exist. Expired certifications drop out of the pool automatically on the next run.
+3. Roster them by shift and weekday.
+4. Set the required skill on the routing steps for one cell, leaving the attend fraction at zero.
+5. Reschedule and read the staffing decisions in the session log.
+
+Then widen. The most common surprise on first run is a step that slides because the shift it wanted has no rostered qualified person, which is usually correct and occasionally reveals a roster gap nobody had written down.
+
+For the category background, [CNC machine scheduling](/blog/cnc-machine-scheduling) covers the fundamentals and the [CNC shop scheduling software](/cnc-shop-scheduling-software) page is the shorter evaluation read. If your night-shift problem is really about which machine rather than which person, [routing CNC work to the next available machine](/blog/edgebic-for-cnc-shops-alternate-machines) is the companion piece. The [industry fit guide](/blog/edgebic-by-industry) maps the rest of the feature set, and [EDGEBIC](/edgebic) is the product hub.
+
+Ready to model your evening? [Contact US for a demo](/contact-us) and bring the cell you run unattended.
+
+<Accordion title="How does a scheduler model a machine that runs unattended?">
+By separating the operator cost of setup from the operator cost of the run. An attend fraction of zero means the run books no operator time at all, while setup still books one person for its duration. That lets post-setup hours execute on completely unstaffed evenings while still preventing a job from starting when nobody qualified is there to set it up.
+</Accordion>
+
+<Accordion title="What does an attend fraction of 0.5 mean in practice?">
+It means one person can tend two machines at once, so every machine-hour of run time costs half an operator-hour. Eight staffed operator hours therefore buy about sixteen machine-hours of run time on that step. Values above one describe crews: a fraction of two books two operator-hours for each machine-hour, so a single qualified person caps that machine's day at roughly half the staffed hours.
+</Accordion>
+
+<Accordion title="Can the scheduler start more cells than one attendant can physically set up?">
+No. Each committed slice of machine time books its operator cost against a per-person hours ledger, and a day can never oversell a person's staffed hours. With one attendant on eight hours and a one-hour setup per job, the eighth setup still fits and the ninth slides to the next day, even though nine machines are standing free.
+</Accordion>
+
+<Accordion title="Does the labor model change anything for shops that never configure operators?">
+No. With no operators or certifications loaded, every operator gate is a no-op and scheduling behaves exactly as it would without the feature. Routing steps that carry no required skill are unaffected even when operator data is loaded, so the constraint applies only where you deliberately turn it on.
+</Accordion>

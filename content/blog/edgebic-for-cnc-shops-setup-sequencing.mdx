@@ -1,0 +1,158 @@
+---
+title: "Cutting CNC Setup Time by Sequencing Jobs Right"
+description: "CNC setup time reduction scheduling: a per-machine changeover matrix that prices every product-to-product transition, so the sequence stops costing you shifts."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - CNC setup time reduction scheduling
+  - sequence dependent setup
+  - changeover matrix scheduling
+  - setup family grouping
+  - CNC changeover reduction
+  - job sequencing setup time
+  - machine changeover planning
+targetPhrase: "CNC setup time reduction scheduling"
+wordCount: 1800
+readingTime: 9
+faqQuestions:
+  - question: "What is a sequence-dependent setup time?"
+    answer: "A changeover whose duration depends on both what the machine just finished and what it runs next, rather than on a single fixed number stored against the routing step. Going from a light product to a dark one may cost an hour while the reverse costs four, and a flat setup value in the routing cannot express that difference. The scheduler needs a lookup keyed by the pair."
+  - question: "Do I have to build a matrix cell for every pair of parts?"
+    answer: "No, and you should not try. Products are assigned to setup families, and the matrix is built family to family, so eight families covering a hundred products collapse a ten-thousand-cell problem to sixty-four cells. Product-level cells exist as an escape hatch for the specific pairs that do not follow their family rule, and those always win over the family value."
+  - question: "What setup time is used for the first job on a machine?"
+    answer: "The routing step's own setup time, or the work center's default when the step carries none. A cold start means no prior product is known, so no changeover exists, but the machine still needs its initial preparation. Only a genuine same-product run back to back returns zero, and that case needs no matrix cell because the resolver handles it automatically."
+  - question: "How do I tell which setup value a scheduled operation actually used?"
+    answer: "Every scheduled operation stores a short source code and a plain-sentence reason. The Job View shows matrix-sourced values at full brightness and fallback values in a muted style, so you can see at a glance which transitions were priced by the matrix and which fell back to the routing default. The reason reads like a sentence, for example a family transition and its minutes."
+qaQuestions:
+  - question: "Our setups are driven by fixture families and material, not colors. Does a changeover matrix actually apply to a CNC shop?"
+    answer: "It applies wherever the changeover cost depends on the pair rather than on the part alone, which covers most CNC shops that run mixed materials or shared fixtures. Group products by what actually drives the changeover: parts sharing soft jaws and a work offset belong in one family, parts needing a full fixture swap and a new tool list belong in another, and a material change that forces coolant work or chip clearing is its own transition. Then price the family-to-family cells from your own recorded changeovers. The mechanism does not care what the families mean; it cares that the cost is a function of from and to."
+  - question: "Where do we get honest matrix numbers instead of guesses?"
+    answer: "From the floor, using setup sub-phases. When an operator advances a setup punch through teardown, fixture, tools, and first article, you get a breakdown rather than a total. A changeover recorded as teardown 0.33 hours, fixture 0.17, tools 0.50, and first article 0.33 totals 1.33 hours against a 0.75-hour standard, a variance of 0.58 hours, and it tells you the teardown alone consumed most of what the standard allowed for the entire changeover. Capture a dozen real transitions per family pair and your matrix stops being an estimate."
+---
+
+**A flat setup time in the routing says a changeover costs the same no matter what the machine just finished, and on a CNC floor running mixed materials and shared fixtures that is simply false.** EDGEBIC by User Solutions prices every changeover from a per-machine lookup keyed by the pair of products, so the plan reflects what the transition actually costs and the sequence becomes a decision worth making. For a shop losing shifts to changeover order nobody controls, this is the configuration change that pays back fastest.
+
+The mechanism is documented in [the setup matrix explained](/blog/edgebic-setup-matrix-explained), and the grouping concept in [what a setup family is](/blog/what-is-a-setup-family-sequence-dependent-changeover). This post is about the CNC application and the arithmetic.
+
+## The Deception in a Flat Setup Number
+
+Consider a work center running three jobs today, sequenced by due date, each carrying a 30-minute flat setup from the routing.
+
+| Job | Product | Run hours | Setup claimed |
+|---|---|---|---|
+| First | Product A | 1.0 h | 0.5 h |
+| Second | Product B | 1.5 h | 0.5 h |
+| Third | Product A again | 0.75 h | 0.5 h |
+
+The plan reads 08:00 to 12:45, four and three quarter hours, comfortably inside one shift. On the floor, the A-to-B transition costs an hour of real changeover and the B-to-A transition costs four, because the return trip is the expensive one. The day actually runs closer to eleven hours.
+
+The plan did not lie deliberately. It used the only number it had. But every downstream promise built on that plan is wrong by half a day, and nobody finds out until the second shift.
+
+## What the Matrix Adds
+
+Configure the same work center with two families and a family-to-family matrix.
+
+| From family | To family | Setup minutes |
+|---|---|---|
+| Light | Light | 0 |
+| Light | Dark | 60 |
+| Dark | Light | **240** |
+| Dark | Dark | 0 |
+
+Now run the identical due-date sequence. The first job cold-starts and uses the routing default, 30 minutes. The second is a Light-to-Dark transition and gets 60 minutes. The third is Dark-to-Light and gets 240 minutes.
+
+The plan reads 08:00 to 16:45, eight and three quarter hours, and it **overflows the shift**. Total setup in the plan is 330 minutes, which matches floor reality.
+
+That is not a worse outcome. It is the first honest one. The planner can now see the overflow before it happens and decide: overtime, a different sequence, or a moved due date.
+
+## The Sequence Decision That Was Always Available
+
+Keep everything the same and reorder: run both Light jobs first, then the Dark one.
+
+| Position | Product | Transition | Setup minutes |
+|---|---|---|---|
+| 1 | Light A | Cold start | 30 |
+| 2 | Light A again | Same family | **0** |
+| 3 | Dark B | Light to Dark | 60 |
+
+The plan reads 08:00 to 12:45, four and three quarter hours, and this time it is true. Total setup is 90 minutes against 330, a **73 percent reduction**, purely from sequencing like to like.
+
+The three-scenario comparison is the whole argument in one table.
+
+| Scenario | Setup in plan | Total time | Fits one shift? | Honest? |
+|---|---|---|---|---|
+| Flat setup, due-date order | 90 min claimed, ~510 min real | Claims 4.75 h | Claims yes | No |
+| Matrix, due-date order | 330 min | 8.75 h | No | Yes |
+| Matrix, sequenced light to dark | 90 min | 4.75 h | Yes, with 3 h to spare | Yes |
+
+**The matrix turns a deceptive plan into an honest one. Sequencing turns an honest plan into an efficient one.** Both are needed, and in that order: you cannot sequence intelligently against a cost you have not measured.
+
+## Mapping This to a CNC Floor
+
+The example above uses light and dark products because the arithmetic is stark. On a CNC floor the same structure applies to whatever genuinely drives your changeover cost:
+
+- **Fixture families.** Parts sharing soft jaws, a work offset, and a tool list transition to each other in minutes. Parts needing a full fixture swap do not.
+- **Material groups.** Aluminum to steel may force a coolant concentration change, chip clearing, and a different tool set. The reverse may be cheaper, or not.
+- **Tolerance class or first-article requirement.** A transition into a tightly-toleranced family carries a first-article and QA hold that a transition within that family does not.
+
+Group by what actually drives the cost, not by part number similarity or by customer. The families exist so the matrix stays maintainable, and they only earn their place if the members really do behave the same way.
+
+## Why Families Instead of Product Pairs
+
+Scale is the reason. One work center with 100 products is a 10,000-cell product matrix. Five work centers is 50,000 cells. Nobody maintains that, and a half-maintained matrix is worse than none because the gaps fall back silently.
+
+Eight families covering those 100 products is **64 cells** per work center, 320 across five. That is a grid a planner fills in an afternoon from real changeover records, and updates when a process changes.
+
+Product-level cells remain available as an escape hatch, and they always win over the family value. Use them for the genuine exceptions: the one part whose transition into a family needs an extra flush, the one pair that shares nothing despite living in the same family.
+
+## How the Value Is Chosen
+
+The resolver runs a short chain and takes the first hit.
+
+1. **Cold start.** Nothing has run on the machine yet, so there is no changeover. Uses the routing step's setup, or the work center default. Cold start does **not** mean zero.
+2. **Same product back to back.** Returns zero. You never need to create a matrix cell for a same-product pair; those are dead data.
+3. **Product-level cell** for this machine and this exact pair. Wins over everything below.
+4. **Family-level cell** for this machine and the two products' families.
+5. **Fallback** to the routing step's setup, or the work center default.
+
+Two gotchas are worth knowing before you build. Matrix values are stored in **minutes**, the unit planners actually speak, and converted to hours internally. And the family lookup requires **both** products to have a family assigned: if only one does, the lookup falls through to the routing default silently. If a transition you expected to be priced is showing a default, an unassigned product is the first thing to check.
+
+## Reading What the Scheduler Did
+
+Every scheduled operation stores where its setup came from: a short source code and a plain-sentence reason. The Job View shows matrix-sourced values at full brightness and fallback values muted, so a glance down the column tells you how much of your plan is genuinely priced and how much is still running on the flat default.
+
+The reason reads like a sentence, for example a family transition from one family to another with its minutes. That is the sentence a supervisor can act on when a changeover ran long.
+
+On a reschedule, the "previous product" anchor comes from what **actually** ran on the machine per the recorded actuals, not from a planning guess. If a job finished on that machine yesterday, the next job's changeover is priced against that real product. See [shop floor tracking](/blog/edgebic-for-machine-shops-actuals-tracking) for how those records arrive and how setup sub-phases give you the numbers to build the matrix in the first place.
+
+## Building Your First Matrix
+
+Start on one machine, the one where changeover pain is loudest. Define three or four families that describe how that machine actually changes over. Assign the products that run there. Fill the family grid from real recorded changeovers, using zero for genuinely free transitions. Reschedule and read the setup source column.
+
+You will usually find two things: one transition costs far more than anyone thought, and one pair you assumed was expensive is nearly free. Both change how you sequence, and neither was visible before.
+
+The matrix can be exported and re-imported as a spreadsheet, so building it in a familiar grid and loading it back is a normal workflow rather than a data-entry marathon. You can also test a matrix without committing anything by running a [quote simulation](/blog/edgebic-quote-simulation-explained) against a hypothetical order, since the simulation uses the same lookup and the same resolver.
+
+For the category background, [CNC machine scheduling](/blog/cnc-machine-scheduling) covers the fundamentals, [changeover time reduction](/blog/changeover-time-reduction) covers the shop-floor practice, and the [CNC shop scheduling software](/cnc-shop-scheduling-software) page is the shorter evaluation read. If setup is not your constraint but people are, [lights-out CNC scheduling](/blog/edgebic-for-cnc-shops-lights-out-scheduling) is the companion. The [industry fit guide](/blog/edgebic-by-industry) maps the rest, and [EDGEBIC](/edgebic) is the product hub.
+
+Ready to price your changeovers? [Contact US for a demo](/contact-us) and bring last month's setup records for one machine.
+
+<Accordion title="What is a sequence-dependent setup time?">
+A changeover whose duration depends on both what the machine just finished and what it runs next, rather than on a single fixed number stored against the routing step. Going from a light product to a dark one may cost an hour while the reverse costs four, and a flat setup value in the routing cannot express that difference. The scheduler needs a lookup keyed by the pair.
+</Accordion>
+
+<Accordion title="Do I have to build a matrix cell for every pair of parts?">
+No, and you should not try. Products are assigned to setup families, and the matrix is built family to family, so eight families covering a hundred products collapse a ten-thousand-cell problem to sixty-four cells. Product-level cells exist as an escape hatch for the specific pairs that do not follow their family rule, and those always win over the family value.
+</Accordion>
+
+<Accordion title="What setup time is used for the first job on a machine?">
+The routing step's own setup time, or the work center's default when the step carries none. A cold start means no prior product is known, so no changeover exists, but the machine still needs its initial preparation. Only a genuine same-product run back to back returns zero, and that case needs no matrix cell because the resolver handles it automatically.
+</Accordion>
+
+<Accordion title="How do I tell which setup value a scheduled operation actually used?">
+Every scheduled operation stores a short source code and a plain-sentence reason. The Job View shows matrix-sourced values at full brightness and fallback values in a muted style, so you can see at a glance which transitions were priced by the matrix and which fell back to the routing default. The reason reads like a sentence, for example a family transition and its minutes.
+</Accordion>

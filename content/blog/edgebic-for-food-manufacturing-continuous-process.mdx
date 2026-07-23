@@ -1,0 +1,155 @@
+﻿---
+title: "Scheduling Continuous-Process Equipment in Food Plants"
+description: "Continuous process scheduling for food: why an extruder or pasteuriser needs a start-to-start lag instead of a piece count, and how to configure the difference."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - continuous process scheduling food
+  - continuous process work center
+  - food plant lot streaming
+  - extruder scheduling software
+  - bottling line scheduling
+  - start to start lag scheduling
+  - pieces per hour capacity scheduling
+targetPhrase: "continuous process scheduling food"
+wordCount: 1777
+readingTime: 9
+faqQuestions:
+  - question: "What is a continuous-process work center in scheduling terms?"
+    answer: "A continuous-process work center is one whose output is a stream rather than a countable set of pieces, such as an extruder, a pasteuriser, a spray line or a reactor. Piece counts are meaningless there, so the usual transfer-batch rule cannot fire. You flag the work center as continuous process, and the engine switches that station to a start-to-start lag measured in hours instead."
+  - question: "How does a start-to-start lag differ from a transfer batch?"
+    answer: "A transfer batch says the next step waits until a set number of finished pieces exists. A start-to-start lag says the next step may begin a fixed number of hours after the previous step starts, independent of quantity, run time and setup. On a continuous line the second model is correct: the cooling tunnel starts once material is flowing, not once 50 units are stacked on a cart."
+  - question: "Can a food plant mix both models in one routing?"
+    answer: "Yes, and most do. A routing can run pieces through a discrete filler using a transfer batch, then a continuous oven using a start-to-start lag, then a discrete cartoner using a transfer batch again. The model is selected per work center by its continuous-process flag, so each station behaves according to its own physics without splitting the routing or the order."
+  - question: "What happens if a transfer batch is set on a continuous-process station?"
+    answer: "The piece count is ignored and the lag model applies instead, which is correct but silent, so a built-in anomaly check flags the combination. The report entry tells the planner that a piece-count configuration exists on a station that cannot use it. Clearing the field or clearing the flag resolves it, and either way the schedule was already computing the right answer."
+qaQuestions:
+  - question: "Our extruder runs four hours and our cooling tunnel currently waits for the whole run. How much do we get back?"
+    answer: "Set the start-to-start lag to the number of hours after the extruder starts at which the tunnel can genuinely accept material. In the documented example a spray line runs four hours with a lag of one hour: the downstream station may begin at 09:00 instead of waiting until 12:00, which is three hours of compression on one handoff. The lag is not derived from the run length, so a longer order does not stretch it. That is the whole reason the model suits continuous equipment: the physical condition is that material is flowing, not that a quantity is complete."
+  - question: "We set both a queue time and a lag on the same step and the cooling wait vanished. Is that a bug?"
+    answer: "No, it is documented replace behavior, and there is an anomaly check that flags exactly this pair. The lot-streaming result is the successor gate: whatever the lag produces replaces the queue-adjusted end rather than adding to it. If you need a cooling or handling wait on top of the lag, use the transfer delay field instead, which is a flat hour offset applied after the lot-streaming trigger fires. Set the lag for the flow condition and the transfer delay for the physical wait, and both survive."
+---
+
+**Continuous process scheduling for food means telling the engine which stations produce a countable stack of pieces and which produce a flowing stream, because the two need different overlap rules.** A cartoner hands off 50 finished units. An extruder hands off product that is simply moving. [EDGEBIC by User Solutions](/edgebic) carries both models and picks between them with one flag on the work center, so a single routing can run a discrete filler, a continuous oven and a discrete case packer without any of them pretending to be something else.
+
+For the mechanism in general terms, read [lot streaming explained](/blog/edgebic-lot-streaming-explained). For this sector's broader constraint picture, see [food and beverage production scheduling](/blog/food-beverage-scheduling), and for the map of which capability fits which plant, [how different industries use EDGEBIC](/blog/edgebic-by-industry).
+
+## Two overlap models, one flag
+
+Without overlap, every step waits for the one before it to finish the whole order. That is the default and it is often badly wrong, because most of the material is ready long before the last piece is.
+
+EDGEBIC resolves overlap two ways.
+
+| Model | Fires when | Rule |
+|---|---|---|
+| Piece count (transfer batch) | A transfer batch is set and the station is not continuous process | Downstream starts after setup plus the batch quantity times the per-piece time |
+| Start-to-start lag | The station is flagged continuous process, or no transfer batch is set | Downstream may start a fixed number of hours after the upstream step starts |
+| No streaming | Neither is configured | Downstream waits for full upstream completion |
+
+The selector is `IsContinuousProcess` on the work center. Set it true and that station always uses the lag model, whatever the routing says about transfer batches. That is deliberate: the flag describes physical equipment, so it belongs to the machine rather than to the product running on it. A pasteuriser is continuous whether it is running juice or milk.
+
+If you want the piece-count concept on its own, [what a transfer batch is](/blog/what-is-a-transfer-batch) covers it.
+
+## Why the lag model is right for continuous equipment
+
+The lag is a start-to-start relationship measured in hours, and it is independent of quantity, run time and setup:
+
+```
+next step earliest start = upstream start + lag hours
+```
+
+That independence is the point. On a continuous line the condition for starting downstream is not "N units exist", it is "material has been flowing long enough to reach the next station and stabilise". A cooling tunnel accepts product roughly the same number of minutes after the oven starts whether the order is 500 kilograms or 5,000. A piece-count rule would stretch the wait with quantity and get the physics backwards.
+
+Here is the documented example, using a spray and cure line, which behaves identically to an extruder and cooling tunnel or a cooker and filler.
+
+**Setup.** 500 panels through a spray booth flagged continuous process. The booth runs four hours in total. The lag is set to 1 hour. The curing oven is next.
+
+```
+Spray booth: 08:00 to 12:00 (4 h)
+Lag: 1 h
+Curing oven may start: 08:00 + 1 h = 09:00
+Without streaming, the oven waits until 12:00.
+Compression on this handoff: 3 hours
+```
+
+Nothing ran faster. The plan simply stopped forcing the second station to wait for a condition that was never physically required.
+
+## Where the piece-count model still belongs
+
+Most food plants are hybrids, and it is worth being precise about which stations are which.
+
+Discrete stations, where the transfer batch is right: fillers with countable output, cartoners, case packers, labellers, tray sealers, hand-pack cells.
+
+Continuous stations, where the lag is right: extruders, ovens and dryers, cooling tunnels, pasteurisers and homogenisers, coating and enrobing lines, mixing and blending vessels, spray and cure lines.
+
+For a discrete station the piece-count formula is explicit:
+
+```
+flow time = setup + min(transfer batch, order quantity) x per-piece hours
+```
+
+Two details save planners from surprises. The batch is capped at the order quantity, so a transfer batch of 100 on a 30-piece order becomes 30 rather than waiting for a hundredth piece that never exists. And a transfer batch equal to or larger than the order quantity behaves exactly like no streaming at all, which the anomaly report flags so you can lower it for that order.
+
+## Capacity on a rate-driven line
+
+Continuous and semi-continuous food lines are usually described in units per hour rather than hours per unit, and the model supports that directly. A work center can measure capacity in hours, in pieces, or in both, where both means whichever constraint produces the longer duration.
+
+For a pieces-based line you set a base rate and an efficiency factor:
+
+```
+effective pieces per hour = base rate x efficiency factor
+```
+
+A bottling line rated at 120 bottles per hour with an efficiency factor of 0.9 offers 108 bottles per hour to the schedule. The efficiency factor is clamped to a sensible band so a typo cannot double a line's stated throughput. Choosing "both" is the honest setting for a line that is sometimes rate-limited and sometimes time-limited, because the engine then takes the longer of the two answers rather than the more flattering one.
+
+Worked through on a filler: a line rated at 120 bottles per hour with an efficiency factor of 0.9 offers 108 per hour. A 500-bottle order therefore needs about 4.6 hours of run time. If the routing also carries a time-per-unit figure and the work center is set to measure both, the engine computes the duration both ways and takes the longer one, so the plan is limited by whichever constraint actually binds that day. Setting a line to "both" is the honest option when the answer changes with the product.
+
+## The two configuration traps
+
+Both are documented and both have anomaly checks, which means the report tells you rather than the schedule quietly misbehaving.
+
+**A transfer batch on a continuous-process station.** The piece count is ignored and the lag applies. The schedule is correct, but a planner reading the routing sees a piece count that is doing nothing. The C1 check flags the combination so you can clear one field or the other.
+
+**A lag and a queue time on the same step.** The lot-streaming result replaces the queue-adjusted end rather than adding to it. If you set a lag of one hour and a queue time of two hours expecting three, you get one. The F2 check flags the pair. The fix is to use the transfer delay field for the physical wait, because that value is added on top of the lot-streaming time rather than replacing it. In practice: lag for the flow condition, transfer delay for cooling or handling, queue time only when no streaming applies. The composition rules are covered in more detail in [queue and transit times explained](/blog/edgebic-queue-and-transit-times-explained).
+
+## A worked hybrid routing
+
+A snack line with three stations shows the models working together.
+
+| Step | Station | Type | Overlap setting | Effect |
+|---|---|---|---|---|
+| 10 Extrude | Extruder | Continuous | Lag 1.0 h | Cooling may start 1 h after extrusion starts |
+| 20 Cool | Cooling tunnel | Continuous | Lag 0.5 h | Packing may start 30 min after cooling starts |
+| 30 Pack | Case packer | Discrete | Transfer batch 24 cases | Palletising starts after the first 24 cases exist |
+
+Step 30 is the interesting one. Once the routing reaches a station that produces countable output, the piece-count rule takes over and the plan starts reasoning in cases again. Nobody had to split the order or the routing to make that happen: each station simply used its own physics.
+
+## Getting it configured
+
+1. **Walk the line and label each station** continuous or discrete. Ask one question at each: does the next station wait for a quantity, or for flow to establish? The answer is the model.
+2. **Set the continuous-process flag** on every continuous station in the work center editor.
+3. **Set the lag in hours** on the routing step feeding each continuous handoff. Use the number the line operators give you, which is usually the observed minutes between starting one station and being able to start the next.
+4. **Set transfer batches** only on discrete stations, sized to the pallet, tray or case quantity that actually moves.
+5. **Add transfer delays** where a physical wait exists on top of the flow condition, such as a cooling hold before packing.
+6. **Run the anomaly report** and clear any F2, F4 or C1 entries. Each one names a specific field on a specific step.
+7. **Re-run the schedule and compare finish dates.** On a plant with three or four continuous handoffs the compression is usually visible immediately.
+
+None of this requires a global switch or a restart. Transfer batches default to zero, which means no existing routing changes behavior until a planner sets a value on a specific step.
+
+One question decides most of these settings, and it is worth asking it out loud at each station with the person who runs it: what has to be true before the next station can start? If the answer names a quantity, you want a transfer batch. If it names a condition ("once it is running", "once the tunnel is up to temperature and product is flowing"), you want the continuous flag and a lag. If the answer is "we wait for the whole batch because of the process", then neither applies and full-lot handoff is correct. Recording that answer per station takes an hour and settles the configuration for good.
+
+## What it buys
+
+Two things, and the second is the durable one.
+
+Shorter promised lead times, because the plan stops inserting waits the process does not require. On a routing with several continuous handoffs the compression compounds across steps.
+
+More importantly, a plan that matches how the line actually runs. Supervisors already know the cooling tunnel starts before the extruder finishes. When the schedule says otherwise, they stop trusting the schedule and start running from memory. Modeling the handoff correctly is what keeps the printed plan and the floor telling the same story.
+
+Continuous equipment is one of three constraints food plants usually need. The others are covered in [allergen and flavor changeover sequencing](/blog/edgebic-for-food-manufacturing-changeover-sequencing) and [scheduling around shifts, sanitation and holidays](/blog/edgebic-for-food-manufacturing-shift-calendars). Plants that also run reactors or blending vessels will recognize the same problem in [chemical manufacturing scheduling](/blog/chemical-manufacturing-scheduling).
+
+Bring one hybrid routing and its real handoff times to a demo of [food manufacturing scheduling software](/food-manufacturing-scheduling-software), and we will model the line the way it runs.

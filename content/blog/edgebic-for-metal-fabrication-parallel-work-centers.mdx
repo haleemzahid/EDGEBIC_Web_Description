@@ -1,0 +1,149 @@
+---
+title: "Running Fabrication Operations in Parallel"
+description: "Metal fabrication parallel scheduling: two weld cells splitting one operation, or three torches mirroring in lockstep, planned with real simultaneous capacity."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - metal fabrication parallel scheduling
+  - parallel work centers manufacturing
+  - simultaneous machine scheduling
+  - synchronized multi machine operation
+  - weld cell capacity planning
+  - fabrication throughput scheduling
+  - dependent parallel mirroring
+targetPhrase: "metal fabrication parallel scheduling"
+wordCount: 1800
+readingTime: 9
+faqQuestions:
+  - question: "What is the difference between independent and dependent parallel work centers?"
+    answer: "Independent parallel machines each have their capacity checked and consumed, and the work is split across them so the operation finishes sooner. Dependent parallel machines are mirrored from the primary: their start and end times are copied exactly, their hours are scaled by a factor, and their capacity is not separately checked because they physically cannot do anything else while the primary runs."
+  - question: "Why does a parallel operation wait for all machines instead of starting on the one that is free?"
+    answer: "Because independent parallel is an all-or-nothing guarantee. The scheduler searches for a window where every machine in the group has capacity at the same time on a shift they share, and if one machine is down for two days the whole group starts when it returns. Letting one machine start alone would produce a plan the floor cannot execute, since the operation needs all of them."
+  - question: "Do parallel machines need to share a shift?"
+    answer: "Yes, for independent parallel. A simultaneous slot can only exist on a shift that every machine in the group operates on that calendar day, so a group whose members are rostered on different shifts will never find a window. Aligning shift definitions across the group is the first thing to check when a parallel operation refuses to schedule."
+  - question: "How are actual hours recorded on a mirrored machine?"
+    answer: "They are not entered twice. A parallel step produces two schedule rows sharing one routing step, and the parallel row's actuals follow the primary at log time: dates mirror one to one and per-day hours are scaled by the configured factor. A direct edit on the parallel row is overwritten from the primary on the next pass, so the pair cannot drift apart."
+qaQuestions:
+  - question: "We have two weld cells that can both work a large weldment. Today the routing names one and the job takes twice as long as it needs to. What changes?"
+    answer: "Configure the step as independent parallel with the second cell as an alternate marked finite-capacity, and the scheduler looks for a window where both cells are free at the same time on a shared shift. Take a 200-piece order with 16 hours of total content: instead of 16 hours on one cell, both cells are allocated 8 hours Monday 08:00 to 16:00 and the operation completes Monday at 16:00. Throughput on that operation doubles and, more importantly, the downstream step starts a full shift earlier. Both cells' capacity pools are consumed normally, so nothing else gets double-booked into those hours."
+  - question: "Our multi-torch positioner is one operation on three heads that must run in lockstep. Independent parallel keeps looking for three separate windows. What is the right model?"
+    answer: "Dependent parallel, which is a mirroring model rather than a capacity-search model. The primary earns its slot through the normal capacity path, and each dependent head copies that timing verbatim: same start, same end, same instance pattern, hours scaled by its factor. A 10-hour operation on the primary that runs 8 hours Monday and 2 hours Tuesday produces six schedule rows in total, two per machine, with identical timestamps within each pair. The dependent mirrors deliberately bypass the capacity check, which is correct when those heads physically cannot run anything else, and is exactly why you should not use this model for machines that can."
+---
+
+**Fabrication is the discipline where one operation genuinely uses more than one machine, and most schedulers cannot say so.** EDGEBIC by User Solutions supports two different answers: independent parallel, where several machines split the work and each consumes its own capacity, and dependent parallel, where secondary machines mirror the primary in exact lockstep. For a fab shop with two weld cells that could share a weldment, or a multi-torch positioner that is physically one operation on three heads, choosing the right one is the difference between a plan that executes and a plan the floor argues with.
+
+The full mechanism is documented in [parallel work centers explained](/blog/edgebic-parallel-work-centers-explained), with configuration steps in [how to configure parallel and alternate work centers](/blog/how-to-configure-parallel-and-alternate-work-centers-in-edgebic). This post is about the fabrication cases.
+
+## Three Things a Fab Shop Means by "Two Machines"
+
+Before configuring anything, be clear which of these you have. They schedule completely differently.
+
+| What you mean | Model | Capacity behavior |
+|---|---|---|
+| "Either cell can do it, whichever is free" | True alternative | One machine runs it; the others were candidates |
+| "Both cells work it at once and we finish sooner" | **Independent parallel** | Each machine's capacity is checked and consumed |
+| "Three heads run as one machine, in lockstep" | **Dependent parallel** | Primary earns the slot; the others mirror its timing |
+
+The first is covered in [routing work to the next available machine](/blog/edgebic-for-cnc-shops-alternate-machines). This post covers the other two.
+
+## Independent Parallel: Splitting the Work
+
+Take an assembly or weld operation with 16 hours of content on a 200-piece order. The primary cell runs an eight-hour day shift; a second cell of the same capability is added as a parallel alternate marked finite-capacity, with a factor of 1.0.
+
+The scheduler searches for a **simultaneous slot**: a date, shift, and start time where every machine in the group has capacity at the same moment. Monday's day shift qualifies, both cells having eight hours free.
+
+| Schedule row | Work center | Start | End | Hours |
+|---|---|---|---|---|
+| 1 | Weld Cell 1 | Mon 08:00 | Mon 16:00 | 8 h |
+| 2 | Weld Cell 2 | Mon 08:00 | Mon 16:00 | 8 h |
+
+The operation completes Monday at 16:00, in eight hours of wall clock rather than sixteen. Both capacity pools are consumed normally, so nothing else gets scheduled into those hours behind your back. The real prize is not the operation itself: it is that the downstream step starts a full shift earlier, and everything after it moves with it.
+
+## The All-or-Nothing Rule
+
+Independent parallel carries a guarantee that surprises people the first time it bites, so it is worth stating plainly: **either every machine in the group works together, or none of them start**.
+
+Take the same three-machine group with the second machine down for maintenance Monday and Tuesday.
+
+| Date | Machine 1 | Machine 2 | Machine 3 | Result |
+|---|---|---|---|---|
+| Monday | 10 h available | 0 h (maintenance) | 10 h available | Rejected |
+| Tuesday | 10 h available | 0 h (maintenance) | 10 h available | Rejected |
+| Wednesday | 10 h available | 10 h available | 10 h available | **All gates pass** |
+
+All three machines start together Wednesday at 08:00. The job is delayed two days rather than letting the first machine start alone.
+
+That is correct, not conservative. The operation is defined as needing all three; starting one of them produces a plan the floor cannot execute, and a plan that cannot be executed is worse than a plan that admits a two-day delay. If your reality is "any one of them could do it alone, just slower," you wanted alternates, not parallel.
+
+A second requirement follows from the same logic: **common shifts**. A simultaneous slot can only exist on a shift that every machine in the group operates on that calendar day. A group whose members are rostered on different shifts will never find a window. When a parallel operation refuses to schedule, misaligned shift definitions across the group are the first thing to check, ahead of capacity.
+
+## Dependent Parallel: Mirroring in Lockstep
+
+A multi-torch positioner, a multi-spindle drill head, a two-station weld fixture driven by one program: these are physically one operation running on several machines that cannot do anything else while it runs. They do not need a capacity search across the group, because there is nothing to search for.
+
+Dependent parallel handles this by **mirroring**. The primary earns its slot through the normal capacity path. Each dependent machine then receives a copy of that schedule: same start, same end, same instance pattern, with hours scaled by its factor.
+
+A 10-hour operation on a three-head group where the primary runs 8 hours Monday and 2 hours Tuesday produces six schedule rows:
+
+| Row | Machine | Start | End | Hours | Source |
+|---|---|---|---|---|---|
+| 1 | Head 1 (primary) | Mon 08:00 | Mon 16:00 | 8 h | Capacity-checked |
+| 2 | Head 1 (primary) | Tue 08:00 | Tue 10:00 | 2 h | Capacity-checked |
+| 3 | Head 2 | Mon 08:00 | Mon 16:00 | 8 h | Mirrored |
+| 4 | Head 2 | Tue 08:00 | Tue 10:00 | 2 h | Mirrored |
+| 5 | Head 3 | Mon 08:00 | Mon 16:00 | 8 h | Mirrored |
+| 6 | Head 3 | Tue 08:00 | Tue 10:00 | 2 h | Mirrored |
+
+Every timestamp matches within each pair. The setup source on the mirrors records that they were mirrored from the parent rather than independently resolved, which is correct: a machine running in lockstep inherits the parent's changeover physics by definition.
+
+## The Factor, and What It Does Not Do
+
+The factor on a dependent entry scales **hours only**, never timing. A factor of 1.0 books the same hours as the parent. A factor of 0.5 books half, which is how you model a secondary head that carries a lighter share of the work or runs at a different consumption rate.
+
+Start and end timestamps are copied verbatim regardless of factor. If you set 0.5 expecting the mirror to finish in half the time, nothing moves; only the hours change. That is the point of a lockstep model.
+
+## Two Cautions Before You Configure
+
+**Dependent mirrors bypass the capacity check by design.** That is correct for machines that genuinely cannot run anything else while the primary runs, and it is the reason dependent parallel does not need a simultaneous search. It also means the model should be reserved for exactly that case. If a machine you listed as a dependent mirror could in fact take unrelated work, it will appear busy in one plan and free in another, and the floor will find the conflict before the report does.
+
+**Rollback is real, and it is total.** If a parallel scheduling attempt fails partway through, every partial allocation is reversed in the opposite order it was made. You do not end up with one cell booked and the group unscheduled. This matters most when a group is on the edge of feasibility and small capacity changes flip it back and forth.
+
+## Actuals on a Parallel Step
+
+A parallel step produces two schedule rows sharing one routing step, and operators do not log both. The parallel row's actuals **follow the primary** at log time: dates mirror one to one and per-day hours are scaled by the configured factor. A direct edit on the parallel row is overwritten from the primary on the next pass, so the two cannot drift apart.
+
+That one-directional rule is deliberate. The primary is where the operator stands and where the count comes from. See [shop floor tracking](/blog/edgebic-for-machine-shops-actuals-tracking) for how those records are captured.
+
+## Choosing, in One Question
+
+Ask: **if one of these machines were unavailable, could the operation still run?**
+
+- Yes, just slower or on a different machine, and you want alternates.
+- No, and the machines split the work, and you want independent parallel.
+- No, and the machines are physically one unit, and you want dependent parallel.
+
+Most fab shops have all three situations on the same floor. Getting each step's model right matters more than getting any one of them clever.
+
+For the category background, [metal fabrication scheduling](/blog/metal-fabrication-scheduling) covers the fundamentals and the [metal fabrication scheduling software](/metal-fabrication-scheduling-software) page is the shorter evaluation read. If your real problem is that downstream waits for the whole lot, [overlapping cut, form and weld with lot streaming](/blog/edgebic-for-metal-fabrication-lot-streaming) is the companion piece, and if one machine sets the pace for the whole shop, [scheduling around the bottleneck](/blog/edgebic-for-metal-fabrication-bottleneck-scheduling) is where to go next. The [industry fit guide](/blog/edgebic-by-industry) maps the rest, and [EDGEBIC](/edgebic) is the product hub.
+
+Ready to model your multi-machine operations? [Contact US for a demo](/contact-us) and bring the operation your planner schedules by hand.
+
+<Accordion title="What is the difference between independent and dependent parallel work centers?">
+Independent parallel machines each have their capacity checked and consumed, and the work is split across them so the operation finishes sooner. Dependent parallel machines are mirrored from the primary: their start and end times are copied exactly, their hours are scaled by a factor, and their capacity is not separately checked because they physically cannot do anything else while the primary runs.
+</Accordion>
+
+<Accordion title="Why does a parallel operation wait for all machines instead of starting on the one that is free?">
+Because independent parallel is an all-or-nothing guarantee. The scheduler searches for a window where every machine in the group has capacity at the same time on a shift they share, and if one machine is down for two days the whole group starts when it returns. Letting one machine start alone would produce a plan the floor cannot execute, since the operation needs all of them.
+</Accordion>
+
+<Accordion title="Do parallel machines need to share a shift?">
+Yes, for independent parallel. A simultaneous slot can only exist on a shift that every machine in the group operates on that calendar day, so a group whose members are rostered on different shifts will never find a window. Aligning shift definitions across the group is the first thing to check when a parallel operation refuses to schedule.
+</Accordion>
+
+<Accordion title="How are actual hours recorded on a mirrored machine?">
+They are not entered twice. A parallel step produces two schedule rows sharing one routing step, and the parallel row's actuals follow the primary at log time: dates mirror one to one and per-day hours are scaled by the configured factor. A direct edit on the parallel row is overwritten from the primary on the next pass, so the pair cannot drift apart.
+</Accordion>

@@ -1,0 +1,162 @@
+---
+title: "When to Schedule in Pieces Instead of Hours"
+description: "Pieces based capacity scheduling in EDGEBIC: how hours, pieces and both differ, when an output rate should override routing hours, and the zero-rate trap."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - pieces based capacity scheduling
+  - capacity type hours or pieces
+  - throughput rate scheduling
+  - pieces per hour work center
+  - hybrid capacity constraint
+  - output rate capacity planning
+targetPhrase: "pieces based capacity scheduling"
+wordCount: 2040
+readingTime: 10
+faqQuestions:
+  - question: "What is the difference between hours capacity and pieces capacity on a work center?"
+    answer: "Hours capacity derives an operation's duration from the routing: hours per unit multiplied by quantity, plus setup. Pieces capacity derives it from the machine's output rate instead: quantity divided by effective pieces per hour. The first suits a machine whose cycle time is a property of the part. The second suits a line whose throughput is a property of the equipment and barely varies by part."
+  - question: "What does the both setting actually do?"
+    answer: "It computes the duration under each model and keeps whichever is longer. If the routing says two and a half hours but the line physically caps at 108 pieces an hour and the order is 500 pieces, the piece constraint needs 4.63 hours and that is what gets scheduled. Both is the honest setting for equipment where a routing time exists but the physical output rate is the real limit."
+  - question: "Why did a pieces-based work center produce impossible durations?"
+    answer: "Almost certainly because the pieces-per-hour rate is zero. With the capacity type set to pieces and no rate entered, there is nothing to divide the quantity by, and the resulting durations are meaningless. A pieces-based machine must always carry a non-zero rate. It is the single most common configuration error on this feature and it is easy to spot because the durations are absurd rather than subtly wrong."
+  - question: "Does the unit of measure control whether a work center schedules in pieces?"
+    answer: "No. A unit of measure carries a scheduling behavior field that acts as a hint and a default when you build work centers around that unit, but the work center carries its own capacity type independently and that is what the engine reads. If the two disagree, the work center wins. Set the capacity type on the machine deliberately rather than assuming it inherited from the unit."
+  - question: "Do instances and utilization still apply on a pieces-based machine?"
+    answer: "Yes. The output rate decides how many hours the operation needs. Those hours are then allocated against capacity computed the usual way: available shift hours multiplied by the instance count, multiplied by the utilization percentage. The two halves are separate questions, and both must be right for the plan to be right."
+qaQuestions:
+  - question: "Our bottling line is rated at 120 bottles a minute but runs closer to 108 in practice. Where does that go?"
+    answer: "Put the rated figure in pieces per hour and express the shortfall as the efficiency factor, which multiplies it. A rating of 120 with a factor of 0.9 gives an effective 108 per hour, and a 500-piece order needs 4.63 hours rather than the routing's number. Keeping the rating and the derate as separate fields means you can adjust the real-world number after a rebuild without losing what the equipment is nominally capable of."
+  - question: "We track output in pieces on the floor but our routings are in hours. Which capacity type do we pick?"
+    answer: "Start with hours if the routing times are trustworthy, and set the operator entry mode to pieces so the floor logs what it actually counts. Those two settings are independent: what the engine uses to plan and what the kiosk asks the operator for do not have to match. Move to the both setting only when you have a machine whose physical output rate genuinely caps below what the routing implies, and let that machine tell you by consistently running longer than planned."
+---
+
+**[EDGEBIC by User Solutions](/edgebic) offers three capacity modes on every work center: hours, pieces, and both, and only the third one changes the answer the scheduler gives you.** Hours and pieces are two ways of asking the same question. Both is a genuine constraint check, and it exists because some equipment cannot go as fast as a routing claims.
+
+The definitional material is in [work centers explained](/blog/edgebic-work-centers-explained) and [how EDGEBIC calculates work center capacity](/blog/how-edgebic-calculates-work-center-capacity). This post is about choosing between the modes and what each one does when it meets the rest of the configuration.
+
+## Two Separate Questions
+
+Every scheduled operation needs two numbers answered, and it helps enormously to keep them apart:
+
+1. **How long does this operation need?** This is what the capacity type controls.
+2. **How much time can this machine offer on this day?** This is the shift capacity formula, and it is the same regardless of capacity type.
+
+The second is always available shift hours, minus downtime and partial holidays, multiplied by the instance count, multiplied by the utilization percentage. An eight-hour shift on a three-instance machine at 80 percent utilization offers 19.2 hours. That does not change because you switched to pieces. [How to configure instances and utilization](/blog/how-to-configure-instances-and-utilization-in-edgebic) covers that half.
+
+What changes is the first number.
+
+## The Three Modes
+
+**Hours.** The duration comes from the routing: hours per unit multiplied by order quantity, plus the resolved setup. This is the default and it suits any machine whose cycle time is a property of the part. A mill takes longer on a complicated housing than on a simple bracket, and the routing is where that difference lives.
+
+**Pieces.** The duration is derived from the machine's own output rate rather than the routing. Effective output is the rated pieces per hour multiplied by an efficiency factor, and the operation needs the order quantity divided by that effective rate. This suits equipment whose throughput is a property of the line and barely varies by part: a bottling line, a packaging machine, a conveyorized wash.
+
+**Both.** Both durations are computed and the longer one wins. This is the mode that actually stops a plan being optimistic.
+
+## Where Both Earns Its Place
+
+Take a bottling line rated at 120 pieces per hour with an efficiency factor of 0.9, so an effective 108 per hour. The routing carries 0.005 hours per unit, which is three minutes per bottle. The order is 500 bottles.
+
+| Model | Arithmetic | Duration |
+|---|---|---|
+| Hours | 0.005 × 500 | 2.5 h |
+| Pieces | 500 ÷ 108 | 4.63 h |
+| Both | longer of the two | **4.63 h** |
+
+The routing says two and a half hours. The line physically cannot do it. Under the hours mode, the plan promises the shorter figure and the floor misses it every single run, which is exactly the pattern that erodes trust in a schedule. Under both, the plan says 4.63 hours and is honest.
+
+The general rule: use both when a routing time exists but a physical output rate is the real ceiling. Use hours when the routing time genuinely governs. Use pieces alone when the routing time is a rough placeholder that nobody maintains and the rate is the number the shop actually believes.
+
+## The Zero-Rate Trap
+
+A machine set to pieces with a pieces-per-hour rate of zero produces durations that are meaningless, because there is nothing to divide the quantity by.
+
+This is by some distance the most common configuration error on this feature, and it is at least a loud one: the resulting durations are absurd rather than subtly wrong, so it is spotted on the first run rather than a month later. The rule is unconditional. If the capacity type includes pieces, the rate is not optional.
+
+The rate and the efficiency factor are deliberately separate fields. Put the equipment's nominal rating in the rate, and express the real-world derate as the factor, which is bounded between 0.1 and 2.0. That way a rebuild that recovers speed is a change to one number, and the machine's nameplate capability is not lost.
+
+## Batch Limits
+
+Pieces-capable machines also carry minimum and maximum batch sizes. They are validation bounds on a proposed allocation quantity rather than a scheduling objective: the engine checks that what it is about to allocate falls inside the range.
+
+They are useful where the physics has real limits, such as an oven that cannot be loaded below a certain fill or a line that cannot run above a certain queue depth. They default to permissive values, so leaving them alone is fine on equipment where there is no genuine limit. Inventing bounds you do not actually have will only produce rejections you then have to explain.
+
+## Three Fields Named Something Like Efficiency
+
+This is the naming collision most likely to waste an afternoon.
+
+| Field | Where | Used by the engine? |
+|---|---|---|
+| Utilization percentage | Work center | Yes. The sole multiplier in the shift capacity formula |
+| Efficiency factor | Work center | Yes, on the pieces path. Multiplies pieces per hour |
+| Efficiency | Work center | No. Stored and displayed, not in the capacity formula |
+| Efficiency factor | Machine pool membership | Yes, but on a different axis: it scales run hours for that pool member |
+
+Two of those are load-bearing on a pieces-based machine, one is inert, and the fourth belongs to a different feature entirely. If you want a machine to offer less than a full shift, change the utilization percentage. If you want its output rate derated, change its efficiency factor. Changing the plain efficiency field will look like it should do something and will not.
+
+[Instance and utilization mistakes](/blog/instance-and-utilization-mistakes-edgebic) covers the wider set of traps on the capacity side, and [capacity shows zero for a work center](/blog/capacity-shows-zero-for-a-work-center-edgebic) is the diagnosis path when a machine offers nothing at all.
+
+## Unit of Measure Is a Hint, Not a Control
+
+Every unit of measure carries a scheduling behavior with the same three values: hours, pieces, or both. It reads as though it should drive the work center's behavior. It does not.
+
+The unit's behavior acts as a hint and a sensible default when you are building work centers that handle that unit. The work center carries its own capacity type independently, and that is the field the engine reads. If a unit says pieces and the machine says hours, the machine wins.
+
+The practical instruction is simply to set the capacity type on each machine deliberately rather than assuming it was inherited. Two minutes of checking on setup saves the class of confusion where a planner changes a unit's behavior and nothing happens.
+
+## What the Operators Log Is a Separate Decision
+
+Each work center also carries an entry mode that controls what the shop-floor kiosk prompts for: hours first with pieces optional, pieces first with hours optional, or both required.
+
+That setting is independent of the capacity type, and keeping it independent is useful. A shop whose routings are trustworthy in hours may still count output in pieces on the floor, because pieces are what the operator can see. Set the capacity type to hours and the entry mode to pieces, and both halves reflect reality.
+
+There is a second reason to capture pieces even on an hours-based machine. Logged piece counts feed the overlap calculation on a reschedule: when an upstream operation is in progress and the transfer batch threshold has already been crossed in real counted pieces, the downstream start is set from the crossing rather than from a projection. That is only available if somebody logged pieces. [How to log actual hours and pieces](/blog/how-to-log-actual-hours-and-pieces-in-edgebic) covers the kiosk side, and [lot streaming explained](/blog/edgebic-lot-streaming-explained) covers the overlap it feeds.
+
+## Choosing a Mode by Equipment Type
+
+| Equipment | Suggested mode | Why |
+|---|---|---|
+| CNC mill, lathe, machining center | Hours | Cycle time is a property of the part, and the routing carries it |
+| Welding cell, manual assembly | Hours | Labor content varies by part; a rate would flatten real differences |
+| Bottling, filling, packaging line | Both | A routing time exists but the line's rate is the real ceiling |
+| Conveyorized wash, coating line | Both or pieces | Throughput is a property of the equipment |
+| Heat-treat oven, batch furnace | Hours, usually with one job per instance per day | The constraint is the cycle and the load, not a per-piece rate |
+| Paint booth | Hours, often continuous-process | Overlap is expressed as a head start in hours rather than in pieces |
+
+The oven and booth rows point at two other settings that pair with capacity type. A machine where a job occupies the whole unit for the day wants the one-job-per-instance-per-day flag rather than a rate. [How EDGEBIC picks an instance](/blog/how-edgebic-picks-an-instance-load-balancing-vs-one-per-day) covers that choice. A machine producing a continuous stream wants the continuous-process flag, which changes which overlap model applies; [scheduling ovens, baths and other continuous-process equipment](/blog/continuous-process-work-centers-edgebic) covers it.
+
+## Migrating an Existing Machine
+
+Switching an already-configured machine from hours to both is a low-risk change, but it is not a no-op.
+
+The duration of every future operation on that machine can only stay the same or get longer, because both takes the maximum. Existing scheduled jobs keep their planned durations until they are rescheduled. So the sequence that produces the least surprise is:
+
+1. Enter the rate and the efficiency factor while the machine is still set to hours. Nothing changes yet.
+2. Compare the derived piece duration against the routing duration on a few representative orders. If they are close, the routing is already honest and the change buys you little. If the piece duration is consistently longer, you have found real optimism in the plan.
+3. Switch the capacity type to both.
+4. Run a full reschedule so existing jobs pick up the longer durations, and expect the finish dates on that machine's work to move out.
+
+Step four is the one worth warning people about. A machine that has been quietly under-planning will produce a visible jump in completion dates the first time both is enabled. That jump is the truth arriving, not a regression, but it goes down better when the plant has been told to expect it.
+
+## What Pieces Capacity Does Not Do
+
+Two limits are worth stating so the mode is not asked to carry more than it does.
+
+**It does not sequence by rate.** A pieces-based machine still takes work in the order jobs are dispatched, and slot selection still follows the run's strategy. Nothing groups high-rate products together to protect throughput. If that grouping matters, it is a sequencing decision made through priority, the slot strategy, or the optimizer, as covered in [deciding what runs first](/blog/job-priority-and-sequencing-strategy-edgebic).
+
+**It does not replace overlap.** The rate decides how long an operation needs; it says nothing about when the next operation may start. A pieces-based line that feeds a downstream operation still needs a transfer batch or an hour lag if you want them to overlap. The two features happen to both involve piece counts and are otherwise unrelated.
+
+The batch bounds sit in a similar place. They validate an allocation quantity rather than steering one, so a minimum batch is a rejection rule rather than an instruction to accumulate work until the minimum is reached.
+
+## Verifying After the Change
+
+Three checks confirm the configuration is doing what you intended.
+
+Compare a scheduled operation's planned hours against the arithmetic by hand on one order. Under both, they should match the longer of the two models. Check that the machine's daily capacity in the capacity view still reflects instances and utilization as before, because the capacity type does not change that half. And check the operator entry mode matches what the floor can actually count, since a mismatch there produces missing actuals rather than wrong plans.
+
+For the full picture of how a machine's day is computed, [how EDGEBIC resolves capacity day by day](/blog/how-edgebic-resolves-capacity-day-by-day) is the deeper reference. For the whole feature map, see the [complete guide](/blog/edgebic-complete-guide).

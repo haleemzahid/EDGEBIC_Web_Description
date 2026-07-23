@@ -1,0 +1,180 @@
+---
+title: "Planning Furniture Shop Capacity Season by Season"
+description: "Furniture manufacturing capacity planning with real calendars: shutdown weeks, approved Saturdays and reduced-capacity retooling periods that hold."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - furniture manufacturing capacity planning
+  - seasonal production capacity
+  - shop calendar scheduling furniture
+  - overtime capacity override
+  - plant shutdown scheduling
+  - work center capacity formula
+targetPhrase: "furniture manufacturing capacity planning"
+wordCount: 1790
+readingTime: 9
+faqQuestions:
+  - question: "How does a scheduler calculate how many hours a work center has on a given day?"
+    answer: "EDGEBIC by User Solutions resolves capacity in a fixed order and takes the first match. A daily override for that work center, shift and date wins outright. Failing that, a date-range override is spread across the available days in its window. Failing both, the shift formula applies: gross shift hours less breaks, downtime and any partial holiday, multiplied by the number of machine instances, multiplied by the utilization percentage."
+  - question: "How do you authorise a single Saturday of overtime without changing the shift pattern?"
+    answer: "With a daily capacity override on that work center, shift and date, carrying the number of hours and a reason. The override is used verbatim, so the planner enters the total hours the machine will actually be available and the engine does not multiply it by instances or efficiency. Saturday, which would otherwise be skipped, becomes schedulable capacity for that one date only."
+  - question: "What is the difference between a holiday and a downtime event?"
+    answer: "A holiday removes the day. A downtime event removes hours from within a day. A plant shutdown or a work center teardown day closes the calendar so nothing schedules. A recurring two-hour preventive maintenance window on Monday mornings subtracts two hours from Monday's capacity while leaving the rest of the shift schedulable. Using a holiday where you meant downtime silently deletes a full day of capacity."
+  - question: "Can a whole department be capped for a period without editing every machine?"
+    answer: "A date-range override sets a total hours budget for a work center across a window, and the engine spreads it evenly across the available days in that window, then across the shifts running on each day. That covers a retooling period or a reduced-staffing stretch on one work center. For a whole department the override is applied per work center, which is deliberate: departments group machines for reporting, and capacity always belongs to the machine."
+qaQuestions:
+  - question: "Our finish room is 8.5 hours gross with a half-hour break, two booths, and we plan at 85 percent. Wednesdays carry an hour of preventive maintenance. What does the scheduler think Wednesday is worth?"
+    answer: "11.9 hours, and the arithmetic is worth knowing because it explains a lot of surprises.\n\nGross is 08:00 to 16:30, so 8.5 hours. Subtract the half-hour break and the one hour of recurring Wednesday maintenance, leaving 7.0 net. Multiply by 2 booths for 14.0. Multiply by the 85 percent utilization for 11.9.\n\nSo a job needing 10 hours fits Wednesday and a job needing 13 spills into Thursday. If Wednesday looks short and nobody can say why, walk the same four numbers in order: gross, deductions, instances, utilization. One of them is usually not what people assume."
+  - question: "We are retooling one work center for a week and can only guarantee 60 machine-hours across the whole week instead of the usual load. How do we model that?"
+    answer: "A date-range override on that work center: start Monday, end Friday, total capacity 60 hours, with a reason recorded.\n\nThe engine counts the available days in the window, which is 5 weekdays with no plant holidays, and divides: 12 hours per day. That work center runs two shifts on each weekday, so each shift slot gets 6 hours instead of its normal figure. Every scheduling run that week is automatically constrained to the retooling budget with no further configuration, and it lifts on its own when the window ends. Note that if a plant holiday fell inside the week, the 60 hours would spread across the remaining available days rather than being lost."
+---
+
+**Furniture demand is not flat, and neither is a furniture shop's capacity.** EDGEBIC by User Solutions resolves how many hours a work center actually has on any given date through a fixed chain: a daily override, then a date-range override, then the shift formula. Understanding that chain is the difference between a seasonal plan you can quote from and one that quietly assumes every week is average.
+
+## The Pain: A Calendar That Does Not Match the Year
+
+Case goods and upholstery shops live on a rhythm. There is a market show to build for. There is a pre-holiday retail push. There is a summer stretch when half the finish room is on vacation. There is a shutdown week. There is the retooling period after a new collection lands.
+
+Most scheduling setups model none of it. A shift pattern is entered once, and after that the plan believes every Tuesday in the year is identical. So the plan is optimistic in July, pessimistic in October, and confidently wrong about the shutdown week until somebody notices jobs scheduled into a closed plant.
+
+The workaround is usually a planner mentally discounting the system's dates, which works right up until they are on holiday themselves. The general practice for this industry is covered in the [furniture and woodworking scheduling overview](/blog/furniture-woodworking-scheduling).
+
+## The Resolution Chain
+
+Every capacity question resolves the same way, first match wins.
+
+| Priority | Source | Behavior |
+|---|---|---|
+| 1 | Daily capacity override | A planner-entered number of hours for one work center, shift and date. Used verbatim |
+| 2 | Date-range capacity override | A total hours budget spread evenly across the available days in a window, then across the shifts on each day |
+| 3 | Shift formula | Gross shift hours less break, downtime and partial holiday, multiplied by instances, multiplied by utilization |
+
+Two things follow from that ordering, and both catch people out.
+
+A daily override beats a date-range override on any date both cover. If you have set a reduced-capacity month and then approve one specific Saturday, the Saturday value wins for that cell.
+
+And a daily override is used exactly as entered. The engine does not multiply it by instances or by the utilization percentage. The planner owns the final number, which is right, because a planner authorising four hours of Saturday overtime means four hours of output, not four hours multiplied by two booths and then discounted.
+
+Full mechanism detail is in [shifts and calendars explained](/blog/edgebic-shifts-and-calendars-explained).
+
+## The Formula, Worked
+
+Take a finish room on a Wednesday.
+
+| Parameter | Value |
+|---|---|
+| Shift start and end | 08:00 to 16:30 |
+| Break | 30 minutes |
+| Booths (instances) | 2 |
+| Utilization | 85 percent |
+| Recurring Wednesday maintenance | 1 hour |
+| Holidays | none |
+| Overrides | none |
+
+The engine computes:
+
+```
+gross          = 16:30 minus 08:00        = 8.5 h
+deductions     = 0.5 break + 1.0 downtime = 1.5 h
+net            = 8.5 minus 1.5            = 7.0 h
+raw capacity   = 7.0 x 2 booths           = 14.0 h
+effective      = 14.0 x 0.85              = 11.9 h
+```
+
+A job needing 10 hours fits. A job needing 13 spills into Thursday.
+
+Whenever a day looks wrong, walk those four numbers in order. In practice the surprise is almost always the utilization percentage, which somebody set to 85 two years ago and nobody has revisited, or an instance count that no longer matches the machines on the floor.
+
+## Three Seasonal Tools, Three Different Jobs
+
+The chain is only useful if you use the right tool for each situation. Three come up constantly in furniture.
+
+### Plant shutdown: a holiday
+
+The shutdown week is a closure, and closures belong in the holiday layer. There are three scopes:
+
+- **Plant-wide holidays** close every work center on every shift. National holidays and the shutdown week live here.
+- **Shift holidays** close one shift, which is how you model a night-shift-only maintenance week without touching days.
+- **Work center holidays** close one machine, which is how you model a teardown day on the wide-belt sander while everything else runs.
+
+Plant-wide holidays can also be partial. A negotiated 45-minute assembly on the first Monday of the month is a partial-day holiday: the hours come out of that day's capacity but the day stays open. Notably, a partial holiday is subtracted before the instance and utilization multipliers, exactly like downtime, so 45 minutes off a two-booth room at 85 percent removes more than 45 minutes of planned capacity. That is intentional and it matches reality: both booths lose the time.
+
+Recurring holidays repeat on the same month and day each year and need a correct reference date to anchor from. That is the field most often entered wrong on first setup.
+
+### Preventive maintenance: a downtime event
+
+A holiday deletes a day. Downtime deletes hours inside a day. A weekly two-hour PM window on the moulder is downtime, and modeling it as a holiday throws away six schedulable hours every week.
+
+Downtime can be one-off or recurring by weekday, and it subtracts from the shift before the multipliers. It also must not exceed the shift's own hours, which sounds obvious and is worth checking when somebody enters a full-day PM as a downtime event rather than a work center holiday.
+
+### Approved overtime: a daily override
+
+The Saturday case. Without an override, Saturday is not a working day and no shift exists, so the formula produces zero and the day is skipped.
+
+A daily override for that work center, shift and date, carrying the hours and a reason, makes it real:
+
+```
+Work center   : Finish room
+Shift         : Day
+Date          : Saturday
+Hours         : 4.0
+Reason        : Overtime approved, rush order for the market show
+```
+
+The engine returns 4.0 for that cell without computing the formula at all, and the scheduler can now place work on that Saturday. The capacity view shows it in a distinct color so nobody mistakes an authorised Saturday for a normal one.
+
+One trap worth knowing: setting an override of zero on a weekend does not make the shift appear and then empty it. Zero on a day that was already closed changes nothing.
+
+### Reduced-capacity periods: a date-range override
+
+Retooling, a staffing dip, a partial line rebuild. You know the total hours available across a window but not how they land day by day.
+
+```
+Work center : Assembly
+Start       : Monday July 14
+End         : Friday July 18
+Capacity    : 60.0 total hours
+Reason      : Retooling, partial availability
+```
+
+The engine counts the available days in the window, five weekdays here, giving 12 hours per day. That work center runs two shifts a day, so each shift slot gets 6 hours instead of its usual figure. Every run that week respects the budget automatically, and it lifts when the window ends.
+
+The distribution is across **available** days only. If a plant holiday falls inside the window, the 60 hours spread across the days that remain rather than evaporating with the closed day. That is usually what you want, and it is worth knowing so the numbers do not surprise you.
+
+## Building the Seasonal Calendar
+
+A workable annual routine, once a year plus small adjustments:
+
+1. **Enter the fixed closures** as plant-wide holidays: national holidays, the shutdown week, the inventory day.
+2. **Enter recurring maintenance** as downtime events on the machines that carry it, by weekday.
+3. **Enter known reduced periods** as date-range overrides: the retooling window, the vacation stretch, the ramp after a collection launch.
+4. **Leave overtime out of the annual plan.** Daily overrides are a weekly decision made against a real backlog, not a forecast.
+5. **Check the utilization percentages** while you are in there. They are the quietest source of wrong capacity in most installations.
+
+Then read the capacity view before each season rather than after it. A week that goes red before the market show is a staffing conversation in August; the same week discovered in October is an expedite.
+
+## The Dashboard and the Scheduler Must Agree
+
+A capacity number is only useful if everyone is reading the same one.
+
+The resource calendar and the scheduling engine resolve capacity through the same chain and the same override data. That is deliberate and it is worth verifying after any calendar change: open the resource calendar for a work center and a date, note the hours, then check what the schedule actually placed there. If the two disagree, one of them is reading a stale override snapshot and the discrepancy will not resolve itself.
+
+The calendar also has a backlog view that shows what is loaded against each cell rather than only what is available. That is the view to read before a season rather than the plain availability figure, because a work center with 11.9 hours of capacity and 14 hours of load is a problem you can still solve in August and cannot solve in October.
+
+When a cell shows zero and should not, there is a defined order to check rather than a guess: plant holidays, then shift holidays, then work center holidays, then whether the shift has an entry for that weekday at all, then downtime, then overrides. Working the list top to bottom finds the cause in a minute or two. Guessing at it can take an afternoon, and the answer is usually the weekday entry, because a shift with no Saturday row produces no Saturday capacity whatever its nominal hours suggest.
+
+## Where Capacity Meets the Promise
+
+Seasonal capacity and promised dates are the same question asked twice.
+
+If you schedule make-to-order work backward from delivery dates, the calendar decides whether backward is even feasible: a shutdown week inside a job's window removes the shifts the backward pass needs, and the job rolls forward instead. That interaction is covered in [scheduling custom furniture to a promised date](/blog/edgebic-for-furniture-make-to-order-scheduling) and in [backward scheduling explained](/blog/edgebic-backward-scheduling-explained).
+
+If you quote lead times, the calendar is what makes the quote seasonal rather than average. A quote simulation run against a July calendar and one run against an October calendar should not return the same date, and with the calendar modeled they do not. See [quote simulation explained](/blog/edgebic-quote-simulation-explained).
+
+And when a work center shows zero on a day it should not, there is a defined order to check: plant holidays first, then shift holidays, then work center holidays, then whether the shift runs on that weekday at all, then downtime, then overrides. Working the list beats guessing. See [why a work center shows zero capacity](/blog/capacity-shows-zero-for-a-work-center-edgebic).
+
+For the industry picture, see the [furniture and woodworking scheduling overview](/blog/furniture-woodworking-scheduling) and the [furniture manufacturing software page](/furniture-manufacturing-software). For the rest of this series, see [EDGEBIC by industry](/blog/edgebic-by-industry), and for the product, [EDGEBIC](/edgebic).

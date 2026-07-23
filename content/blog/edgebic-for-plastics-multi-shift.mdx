@@ -1,0 +1,149 @@
+﻿---
+title: "Running Molding Around the Clock Without Overbooking"
+description: "Plastics multi shift scheduling explained: how a 28-hour molding run spreads across day and night shifts and several presses without double-booking a machine."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - plastics multi shift scheduling
+  - 24 hour production scheduling
+  - molding shift capacity planning
+  - night shift scheduling software
+  - machine instance allocation
+  - continuous running press scheduling
+  - overbooking prevention scheduling
+targetPhrase: "plastics multi shift scheduling"
+wordCount: 1780
+readingTime: 9
+faqQuestions:
+  - question: "How does plastics multi shift scheduling split one long run?"
+    answer: "The engine finds every shift slot with available capacity from the earliest start forward, ranks them, then fills them in order until the required hours are consumed. A 12-hour run on an 8-hour shift takes 8 hours Monday and 4 hours Tuesday, and the schedule records both. The run is one operation with a start, an end and a per-day hour breakdown, not two separate jobs a planner has to stitch together."
+  - question: "Does a job that starts mid-shift lose the whole shift?"
+    answer: "No. The engine computes the effective capacity from the actual start time rather than from the shift start. A job that cannot begin before 10:00 on a 16:00 shift end with two machines gets six remaining hours times two machines, which is twelve hours of usable capacity in that slot. The partial shift is used, and only the hours genuinely before the earliest start are lost."
+  - question: "How does the schedule stop two jobs booking the same press at once?"
+    answer: "Each machine inside a work center is tracked separately, and every allocation records which instance it consumed. Available capacity is the total minus what is already committed, so a second job can only take what remains. Where a machine must be dedicated for a whole day, the one-per-day setting switches the check from pooled capacity to per-instance availability, which prevents any sharing of that machine within the day."
+  - question: "What happens when a run hits a weekend the plant does not work?"
+    answer: "The days with no shift are skipped rather than filled. A job that starts Friday at noon takes the four hours remaining in Friday's shift, skips Saturday and Sunday because there is no shift to allocate, and continues Monday morning. The elapsed calendar time reflects the gap while the recorded hours reflect the work, so nobody has to reconcile a plan that shows weekend production that never happens."
+qaQuestions:
+  - question: "We run day and night shifts on two presses and a 28-hour job cannot start before Monday at 10:00. When does it finish?"
+    answer: "Monday at midnight. The Monday day shift has 16 hours of nominal capacity across two machines, but the 10:00 earliest start leaves six hours to 16:00 on each machine, so twelve hours are usable. The engine books those twelve, balanced across both presses, leaving sixteen hours to go. The Monday night shift then offers a full sixteen across two machines, which absorbs the remainder exactly. The recorded breakdown reads twelve hours and sixteen hours, and a supervisor can see which shift owns which part of the job."
+  - question: "Our dryers can only take one job per day even though we have three of them. How do we model that without pretending we have one dryer?"
+    answer: "Set the work center to three instances and turn on the one-per-day flag. The engine then checks per-instance availability instead of pooled hours: three jobs of six hours each arriving the same Monday land on three separate dryers, all finishing at 14:00, and no fourth job can share a dryer that day. Without the flag the same three jobs would be load balanced across the pooled capacity, which is right for presses and wrong for a dryer that has to be dedicated for the batch. One setting, and it is per work center."
+---
+
+**Plastics multi shift scheduling is the problem of taking one long molding run and spreading it across shifts, days and machines without ever committing a press twice.** [EDGEBIC by User Solutions](/edgebic) treats a shift as a bucket of hours per machine, fills those buckets in a ranked order, and records exactly which machine consumed which hours on which date. The result is a schedule a night-shift supervisor can act on and a planner can defend.
+
+For the mechanism without the plastics framing, see [multi-shift scheduling explained](/blog/edgebic-multi-shift-scheduling-explained). For this sector's wider constraint picture, see [plastics and rubber production scheduling](/blog/plastics-rubber-scheduling), and for the cross-industry view, [how different industries use EDGEBIC](/blog/edgebic-by-industry).
+
+## Why molding breaks single-shift thinking
+
+Molding runs are long. A 40,000-shot order does not fit in one shift and was never meant to. Three consequences follow, and most spreadsheet schedules handle none of them.
+
+A run has to be describable across shifts. If your system can only say "this job runs Tuesday", the night shift has no idea what is theirs.
+
+A run has to survive a partial first shift. Tooling changes and material arrivals mean jobs rarely start at the top of a shift, and rounding a 10:00 start up to the next shift throws away six machine hours.
+
+And a run has to respect machine identity. Two jobs can share a work center's capacity when it has four presses. They cannot share the same press at the same time. A schedule that only tracks work center totals will happily book both.
+
+## How capacity is built before anything is scheduled
+
+Before placing work, the engine builds a bucket for every combination of work center, date and shift in the horizon. Each bucket's size comes from one formula:
+
+```
+net hours = shift gross - break - downtime - partial closures
+raw       = net hours x machines
+capacity  = raw x (utilization / 100)
+```
+
+A press cell with three machines on an 8-hour shift at 80 percent utilization offers 19.2 hours in that bucket. Not 8, and not 24. Utilization is a deliberate planning choice, and holding back 20 percent for the variability molding always has is a legitimate one. What matters is that the number is derived rather than typed, so changing the shift pattern or adding a machine updates every bucket at once. Calendar details, closures and overrides are covered in [shifts and calendars explained](/blog/edgebic-shifts-and-calendars-explained).
+
+## How one run fills those buckets
+
+The engine finds every bucket with available capacity from the job's earliest start forward, ranks them, then walks the list taking the smaller of what remains and what the bucket offers.
+
+Ranking is not arbitrary. Buckets that can start immediately outrank buckets that cannot, larger available capacity outranks smaller, and earlier shifts on a day outrank later ones, so a day shift fills before the night shift on the same date. Dates still lead: the engine does not skip Monday night to reach Tuesday day.
+
+### The simple case
+
+One press, one instance, day shift 08:00 to 16:00, a run needing 12 hours starting Monday.
+
+| Pass | Bucket | Hours taken | Remaining |
+|---|---|---|---|
+| 1 | Monday day | min(12, 8) = 8 | 4 |
+| 2 | Tuesday day | min(4, 8) = 4 | 0 |
+
+The operation starts Monday 08:00, ends Tuesday 12:00, and carries a per-day breakdown of 8 and 4. That breakdown is what makes the plan usable on the floor: Monday's crew owns eight hours of it, Tuesday's crew owns four.
+
+### The realistic case
+
+Two presses, day shift 08:00 to 16:00 and night shift 16:00 to 00:00, a run needing 28 hours that cannot start before Monday 10:00.
+
+Monday day nominally holds 16 hours (8 hours times 2 machines). The 10:00 earliest start leaves six hours per machine, so the usable figure is 12 hours. The engine books those 12, load balanced at six hours on each press, and 16 hours remain. Monday night offers a full 16 across both machines and absorbs the rest exactly.
+
+```
+Mon day   10:00 - 16:00   Press A 6 h, Press B 6 h   (12 h)
+Mon night 16:00 - 00:00   Press A 8 h, Press B 8 h   (16 h)
+Finish: Monday 24:00. Breakdown recorded as 12, 16.
+```
+
+Two things to notice. The late start cost six machine hours, not a whole shift. And the job finished on the same calendar day it started, because the night shift was treated as capacity rather than as an afterthought.
+
+### Why the ranking is what it is
+
+The three ranking rules exist for reasons a molding planner will recognize.
+
+Immediate availability outranks everything because a bucket you can start in now is worth more than a larger bucket tomorrow. Larger available capacity comes next because filling one big bucket beats scattering a run across four small ones, which is both easier to supervise and fewer changeovers. And earlier shifts on a day outrank later ones so a day shift fills before the night shift on the same date, which matches how most plants staff and supervise.
+
+The ranking is a tie-break within reachable dates, not a licence to jump forward. The engine does not skip Monday night to reach Tuesday day just because Tuesday scores higher: dates lead, scores order what is available on and after them.
+
+Understanding this saves an argument later. When a run lands partly on the night shift, it is because the day shift was full or the job could not start early enough, not because the engine preferred the night.
+
+### The weekend case
+
+One press, day shift Monday to Friday only, a 20-hour run starting Friday at noon. Friday offers the four hours to 16:00. Saturday and Sunday have no shift, so no bucket exists and nothing is allocated. Monday and Tuesday absorb the remaining 16. Elapsed calendar time reflects the closure while recorded hours reflect the work, and nobody is left explaining a plan that shows Saturday production.
+
+## Three ways machines get chosen
+
+Once a bucket is selected, the engine has to decide which physical machine takes the hours. Three modes exist, and picking the right one per work center matters more in plastics than in most sectors.
+
+| Mode | Fires when | Behavior | Fits |
+|---|---|---|---|
+| One per day | The one-per-day flag is on and there are several machines | One job per machine per day, no sharing | Dryers, ovens, batch equipment needing dedication |
+| Load balanced | Several machines, balancing enabled | Hours spread across machines to finish sooner | Press cells running the same tool family |
+| Sequential | One machine, or balancing off | Fill one machine before starting the next | Where machine continuity matters more than speed |
+
+The one-per-day case is worth a worked look because molding plants nearly always have equipment that needs it. Three dryers, one shift, three jobs of six hours each arriving the same Monday. The first job takes dryer one from 08:00 to 14:00. The second finds dryer one used and takes dryer two. The third takes dryer three. All finish at 14:00, on separate machines, and no fourth job can slip onto a dryer that day. Pooled capacity would have been 24 hours and would have allowed exactly the kind of sharing the process forbids.
+
+Load balancing is the opposite instinct and is right for presses running interchangeable work: splitting hours across machines finishes the order sooner. The difference between the two is a single flag on the work center, and [machine instances explained](/blog/edgebic-machine-instances-explained) covers the underlying model.
+
+## Why this is finite capacity in practice
+
+Every allocation writes back to the bucket it came from, so the next job sees reduced availability. That feedback loop is what makes the schedule finite rather than a wish list, and it is the difference discussed in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+The practical test is simple. Load one more job than your plant can physically run this week. An infinite-capacity plan will place it inside the week and report no problem. A finite-capacity plan will push it into next week and show you which resource ran out. The second answer is less pleasant and considerably more useful.
+
+## Configuration checklist for a 24-hour molding plant
+
+1. **Define every shift you actually run**, including the night shift and any weekend pattern, with real start, end and break times per day of week.
+2. **Set machine counts honestly.** Four presses is four instances, and taking one down for a rebuild is a calendar entry rather than a count edit.
+3. **Choose utilization deliberately** and write down why. Do not model the same buffer twice by also shortening the shift.
+4. **Set the one-per-day flag** on dryers, ovens and any equipment that must be dedicated for a batch. Leave it off for interchangeable presses.
+5. **Attach recurring downtime** for shift-change routines and preventive maintenance so those hours stop being invisible.
+6. **Read the per-day breakdown** on a long job after the first run. If a shift's hours look wrong, the bucket that produced them is where to look.
+
+## Reading the per-day breakdown
+
+The most under-used output of a multi-shift run is the per-day hour breakdown attached to each operation. It is the bridge between the planner's Gantt bar and the supervisor's shift.
+
+A 28-hour run showing 12 and 16 tells the Monday day crew they own 12 hours of it across two presses and the Monday night crew owns the remaining 16. Neither has to interpret a bar that spans two shifts. When the day crew logs 10 hours instead of 12, the shortfall is attached to a specific date rather than smeared across the job, and the reschedule moves the remainder rather than the whole operation.
+
+It is also the fastest diagnostic you have. If a day's figure looks wrong, the bucket that produced it is where to look: the shift definition, its downtime, a closure, an override, or the machine count. Every one of those is visible, and none of them requires reading the schedule to work out.
+
+## Where it sits with the rest
+
+Multi-shift allocation is the layer that turns everything else into a dated plan. It consumes the changeover times produced by [mold changeover sequencing](/blog/edgebic-for-plastics-mold-changeovers) as part of each operation's required hours, and it evaluates whichever machine the pool logic in [press pool routing](/blog/edgebic-for-plastics-machine-pools) selected. Get all three right and the night shift stops improvising.
+
+Bring your shift pattern, machine list and one long-running job to a demo of [plastic manufacturing scheduling software](/plastic-manufacturing-software), and we will show you the run spread across the shifts that will really carry it.

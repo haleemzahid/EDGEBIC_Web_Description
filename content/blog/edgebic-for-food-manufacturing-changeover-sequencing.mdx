@@ -1,0 +1,131 @@
+﻿---
+title: "Allergen and Flavor Changeovers: Sequencing Food Production"
+description: "Food manufacturing changeover scheduling explained: model allergen and flavor groups as setup families so the schedule charges the real cleanout every run."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - food manufacturing changeover scheduling
+  - allergen changeover sequencing
+  - food production scheduling software
+  - setup matrix food manufacturing
+  - sanitation changeover scheduling
+  - flavor changeover sequencing
+  - food plant production sequencing
+targetPhrase: "food manufacturing changeover scheduling"
+wordCount: 1781
+readingTime: 9
+faqQuestions:
+  - question: "What is food manufacturing changeover scheduling?"
+    answer: "Food manufacturing changeover scheduling is production sequencing that charges the real cleanout time between two runs instead of a single average number. The time to switch a line depends on what ran before and what runs next: a plain-to-plain switch may be a rinse, while an allergen-bearing product followed by a plain one demands a full validated wash. Scheduling that ignores the pair misstates capacity every day."
+  - question: "Does EDGEBIC have an allergen module?"
+    answer: "No, and it does not need one. You model allergen and flavor risk as setup families, which are named groups of products that behave identically during changeover on a given line. The engine then reads a family-to-family changeover time in minutes for that work center. Your food safety team owns which products belong in which family; the scheduler owns the minutes and applies them on every run."
+  - question: "How many changeover entries does a food plant have to maintain?"
+    answer: "Far fewer than the product count suggests, because the matrix is entered at family level. Eight families covering 100 SKUs collapse a 10,000-cell product grid to 64 cells, and roughly 95 percent of real changeover behavior lives at that level. Product-level entries exist for the few pairs that break their family rule, such as one flavor that needs an extra solvent-grade cleanout."
+  - question: "Can a planner see why a specific changeover time was used?"
+    answer: "Yes. Every scheduled operation stores a setup source code and a plain-sentence reason, both visible as columns in the Job View. A row reads, for example, family matrix light to dark for White to Black, 60 minutes. Rows that fell back to the flat routing default are shown in a muted style, so you can tell at a glance which sequences the matrix actually priced and which it did not."
+qaQuestions:
+  - question: "We run 40 SKUs on one filler and our sanitation SOP has three wash levels. How do we get that into a schedule?"
+    answer: "Build three or four setup families that mirror your wash levels, not your marketing categories. If your SOP says rinse (10 minutes), intermediate clean (45 minutes), and full validated wash (240 minutes), those numbers are your matrix cells. Assign each of the 40 SKUs to a family, then enter the family-to-family grid for that filler: same family to same family is often 0, low-risk to high-risk may be 10, and high-risk to low-risk is the 240. That is a 16-cell grid for 40 SKUs, and the schedule immediately stops pretending every changeover costs the same 30 minutes."
+  - question: "Our schedule always looks achievable on paper and always slips by Wednesday. Is changeover the reason?"
+    answer: "It is the first place to look, and there is a fast test. In the documented paint-booth case, three jobs planned with a flat 30-minute setup finished on paper at 12:45 while the floor needed roughly 11 hours, because the plan never saw a 240-minute reverse changeover. Load your real cleanout times as a matrix and re-run. If the finish date moves out, the plan was never wrong on the floor: it was wrong in the setup field. The honest plan is worth more than the optimistic one, and you can then sequence to shrink it."
+---
+
+**Food manufacturing changeover scheduling is production sequencing that prices each changeover by the pair of products involved, not by a single average setup number.** On a food line the cost of switching depends entirely on what ran before: plain crackers followed by plain crackers may be a five-minute rinse, while a sesame-bearing run followed by a plain one triggers the full validated wash your quality system demands. [EDGEBIC by User Solutions](/edgebic) stores those pair-specific times in a setup matrix and charges the correct one on every scheduling run, which turns an optimistic plan into an honest one and then lets you shorten it by sequencing.
+
+This post is the food and beverage view of one specific mechanism. For the broader map of which capability matters most in which plant, start at [how different industries use EDGEBIC](/blog/edgebic-by-industry). For the general category discussion of scheduling constraints in this sector, see [food and beverage production scheduling](/blog/food-beverage-scheduling).
+
+## Why food changeovers refuse to be one number
+
+Most scheduling systems store setup time as a single field on the routing step. That works when a machine is re-tooled the same way regardless of sequence. It does not describe a food line, where at least four things vary by pair:
+
+- **Allergen carryover.** Running a product that contains a declared allergen before one that does not is the expensive direction. The reverse costs almost nothing. Allergen control is a documented, inspected discipline in food manufacturing (see the [FDA's food program](https://www.fda.gov/food) for the regulatory framing), and the cleanout it requires is real production time that has to appear in the plan.
+- **Flavor carryover.** Strong flavors contaminate mild ones. Mint before vanilla is a problem; vanilla before mint is not.
+- **Color carryover.** The same asymmetry that governs a paint booth governs a colored coating, a glaze, or a syrup line.
+- **Sanitation level.** Many plants already define wash levels in the SOP. Those levels are the natural shape of a changeover matrix, because the SOP already says how long each one takes.
+
+Every one of those is directional. A flat setup field cannot express direction, so a plan built on one is wrong in a predictable way: it understates the days that run dirty-to-clean and overstates the days that run like-to-like. The net effect is a schedule that looks achievable on Monday and is behind by Wednesday.
+
+## The mechanism: setup families and a per-line matrix
+
+EDGEBIC models this with three layers, described in full in [the setup matrix explained](/blog/edgebic-setup-matrix-explained).
+
+**Setup families** are named groups of products that change over identically on a work center. A family might be Plain, Dairy, Nut-Bearing, or Strong Flavor. One product belongs to at most one family. A product left without a family is treated as its own family, which is the right answer for a single problem SKU.
+
+**The family matrix** is a per-work-center grid of from-family to to-family changeover times, stored in minutes because that is the unit your SOP uses. This grid is the workhorse: roughly 95 percent of real behavior lives here. If you want the concept on its own, [what a setup family is](/blog/what-is-a-setup-family-sequence-dependent-changeover) covers it without the food framing.
+
+**The product matrix** is the escape hatch. It holds specific from-product to to-product pairs that break their family rule, and it always wins over the family entry. One flavor that needs an extra solvent-grade cleanout gets a single row here instead of forcing a new family.
+
+Note that the matrix is per work center, not global. Two fillers of different age rarely wash in the same time, and the model expects them to differ.
+
+## How the engine picks a number
+
+For each operation, the engine finds what that work center ran last and then walks an ordered chain. The first rule that matches wins:
+
+| Order | Rule | Result |
+|---|---|---|
+| 1 | Cold start: nothing has run here yet | Routing default setup (not zero) |
+| 2 | Same product back to back | 0 minutes |
+| 3 | Product-level matrix cell exists for this pair | That cell |
+| 4 | Both products have families and a family cell exists | That cell |
+| 5 | No cell matched | Routing default, then work center default |
+
+Two details matter on a food line. First, a cold start does not mean zero: the line still needs its initial preparation, so the routing default applies. Second, same product back to back always returns zero automatically, so you never need to enter zeros down the diagonal of your grid.
+
+## Reschedules and what really ran
+
+Food plants reschedule constantly: a late ingredient delivery, a quality hold, a rush order for a promotion. The changeover question has to follow the job through every rebuild.
+
+When a schedule is rebuilt, the engine anchors the "what ran last" question for each line to the last product that **actually** completed there, taken from logged shop-floor data rather than from a planning assumption. If a dairy run genuinely finished on the filler this morning, the next job's changeover is priced against dairy even if the previous plan had intended something else. Operations that already completed keep the changeover they were charged, because that is now history rather than a projection.
+
+This matters more than it first appears. A reschedule clears and rebuilds all future allocations, so without the actuals anchor the engine would evaluate the next job against an empty machine and treat it as a cold start. It would then charge the flat routing default on exactly the transition that is about to cost you four hours of wash-down. In a plant that reschedules daily, that error would recur daily.
+
+The same principle protects work in progress. An operation an operator has already started stays on the line it started on, so a rebuild cannot move a half-finished batch to a different filler.
+
+## Worked numbers: the documented case
+
+The clearest published example uses a paint booth, and the arithmetic transfers directly to a filler or a coating line because the shape of the problem is identical. Three jobs, one work center, an 8-hour shift.
+
+**Scenario A, flat setup of 30 minutes each.** The plan shows three jobs finishing at 12:45. The floor actually needed the cold-start preparation plus a 240-minute reverse changeover plus a second 240-minute reverse changeover, roughly 11 hours of real elapsed time. The plan overpromised by half a day and nobody could see why.
+
+**Scenario B, matrix loaded, same due-date order.** Now the plan charges 30 minutes cold start, 60 minutes light to dark, and 240 minutes dark to light: 330 minutes of changeover. The three jobs run 08:00 to 16:45 and visibly overflow the shift. Nothing got slower. The plan finally tells the truth, and the planner can decide between overtime and resequencing.
+
+**Scenario C, matrix loaded, sequenced like to like.** Run the two light jobs together, then the dark one: 30 plus 0 plus 60 equals 90 minutes of changeover. All three jobs finish by 12:45 inside one shift with more than three hours to spare. That is a 73 percent cut in changeover time from sequencing alone, with no capital spend and no process change.
+
+| Scenario | Configuration | Changeover minutes | Finish | Fits the shift | Honest |
+|---|---|---|---|---|---|
+| A | Flat 30 minutes | 90 claimed, ~510 real | 12:45 on paper | Apparently | No |
+| B | Matrix, due-date order | 330 | 16:45 | No | Yes |
+| C | Matrix, campaigned | 90 | 12:45 | Yes, 3h slack | Yes |
+
+The lesson for a food plant is the two-step one. The matrix buys honesty. Sequencing buys capacity. You cannot get the second without the first, because a scheduler with no matrix has no reason to prefer one order over another.
+
+## Mapping it to your plant
+
+A practical rollout on a single line takes an afternoon.
+
+1. **Copy your wash levels.** Open the sanitation SOP for that line and write down each level and its minutes. Those become your families and your cell values.
+2. **Create the families** from the Work Center view, Setup Matrix tab, Families section. Give each a name and a short code.
+3. **Assign products.** In the Product Assignments panel, put every SKU that runs on the line into a family. A SKU that genuinely behaves alone stays unassigned.
+4. **Fill the grid.** Enter the from-family to to-family minutes. Zero is a legal and common value for compatible directions. You can export the grid to CSV, edit it in Excel, and bulk import it back, which is how most plants load a first matrix.
+5. **Add the exceptions** as product-level rows, one per genuinely special pair.
+6. **Verify.** Schedule, then add the Setup Source column in the Job View. Rows showing a matrix source used the sequence logic. Rows showing the routing default did not, which usually means one of the two products has no family assigned.
+
+That last check catches the most common configuration error. The family lookup requires both products to have a family, so a half-assigned catalogue silently falls back to the flat number. The [step-by-step build guide](/blog/how-to-build-a-setup-matrix-in-edgebic) walks the same sequence in more detail, and the [full paint-booth walkthrough](/blog/paint-shop-changeover-sequencing-example-edgebic) runs a six-job queue end to end.
+
+## What this changes for the planner
+
+Three things become visible that were not before.
+
+**Capacity is stated correctly.** Your line's available hours stop being consumed by changeover the plan never charged. Utilization numbers on the dashboard start matching what the supervisor sees.
+
+**Sequence becomes a lever.** Once the cost of every possible next job is in the data, campaigning like with like stops being a habit that lives in one person's head and starts being a decision the schedule can support and audit.
+
+**Changeover is auditable.** Each operation carries the source code and reason sentence that explain its setup number. In a plant that documents allergen changeovers for inspection, having the planned changeover and the actual logged time side by side on the same record is worth as much as the capacity gain.
+
+Sequencing is only one of the three constraints a food plant usually has to model. The other two are calendars, covered in [scheduling food production around shifts, sanitation and holidays](/blog/edgebic-for-food-manufacturing-shift-calendars), and equipment that runs as a continuous stream rather than in pieces, covered in [scheduling continuous-process equipment in food plants](/blog/edgebic-for-food-manufacturing-continuous-process). Together they are most of what a food schedule needs to stop lying.
+
+Ready to price your real changeovers? Bring one line's sanitation SOP and one week of orders to a demo of [food manufacturing scheduling software](/food-manufacturing-scheduling-software), and we will build the matrix with you.

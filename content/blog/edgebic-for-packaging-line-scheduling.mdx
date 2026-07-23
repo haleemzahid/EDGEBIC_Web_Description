@@ -1,0 +1,149 @@
+﻿---
+title: "Keeping Packaging Lines Fed and Sequenced"
+description: "Packaging line scheduling software must model cure waits and coating trips: how queue time, transit days and overlap compose into one downstream start."
+published: 2026-07-25T12:00:00.000Z
+modified: 2026-07-25T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - packaging line scheduling software
+  - converting line scheduling
+  - queue time scheduling
+  - outside vendor transit scheduling
+  - carton production scheduling
+  - lamination lead time scheduling
+  - packaging production sequencing
+targetPhrase: "packaging line scheduling software"
+wordCount: 1727
+readingTime: 9
+faqQuestions:
+  - question: "What does packaging line scheduling software need beyond machine capacity?"
+    answer: "It needs the waits between machines, because in converting they are often larger than the run times. A printed sheet cures before it can be die cut. A job that goes out for lamination is gone for days. A schedule that only models press hours and die-cutter hours will promise dates the plant cannot hit, not because the machines are wrong but because the gaps between them were never in the plan."
+  - question: "How is queue time different from transit days?"
+    answer: "Queue time is measured in hours and only ticks during working shifts, so a four-hour cure that starts at 14:30 on an 8-hour day shift finishes mid-morning the next day rather than at 18:30. Transit days are whole days for work that physically leaves the building, and they can be counted as raw calendar days or as working days only. Use queue for in-house waits and transit for outside trips."
+  - question: "In what order are the waits applied between two operations?"
+    answer: "Queue time first, then any lot-streaming overlap, then transit days. The order matters because the lot-streaming result replaces the queue-adjusted end rather than adding to it: whichever overlap rule fires becomes the successor gate. Transit is then applied on top of whatever survived, which is correct because the trip happens after the material is ready to move."
+  - question: "Why do calendar transit days and working transit days give different answers?"
+    answer: "Because working-day mode skips days with no shift. Three transit days from a Thursday resolve to Sunday in calendar mode and to the end of the following Tuesday in working-day mode on a Monday-to-Friday plant. For a single weekend the practical start is the same Monday either way. The difference matters when a trip crosses more than one weekend or a shutdown, which is exactly when a wrong setting costs you a week."
+qaQuestions:
+  - question: "Our sheets have to cure four hours after printing. We enter four hours and the die cutter still gets scheduled the same evening. What is wrong?"
+    answer: "Almost certainly nothing, and the number to check is the shift end. Queue time is shift aware: it consumes hours only while a shift is running. Printing finishing at 14:30 on a shift that ends at 16:00 uses 1.5 of the four hours that day, and the remaining 2.5 carry into the next shift, so the die cutter is gated at 10:30 the next morning, not at 18:30 that evening. If you are seeing an evening start, look for a second shift that is genuinely open overnight. That is the schedule correctly using capacity you told it you had."
+  - question: "We send about a third of our work out for lamination. Should that be a transit day setting or a queue time?"
+    answer: "Transit days, and set the calendar or working-day flag to match how your vendor actually works. Queue time is for in-house waiting and stops ticking outside your shifts, which is wrong for a truck that travels on a Saturday. Transit days model the trip as whole days and can skip your non-working days when you want them to. A practical pattern is transit days for the trip plus a short queue time on the return step for incoming inspection, so both parts of the delay are visible and separately adjustable."
+---
+
+**Packaging line scheduling software earns its keep in the gaps, not on the machines.** In converting, the press run may be two hours and the cure four, and the lamination trip five days. [EDGEBIC by User Solutions](/edgebic) models each of those waits with a different mechanism, applies them in a fixed order, and produces one downstream start date the die cutter can actually work to.
+
+For the mechanism in general terms, read [queue and transit times explained](/blog/edgebic-queue-and-transit-times-explained). For the category-level view of this sector, see [packaging manufacturing scheduling](/blog/packaging-manufacturing-scheduling), and for the cross-industry map, [how different industries use EDGEBIC](/blog/edgebic-by-industry).
+
+## The three waits a converting routing has to carry
+
+A packaging routing is a chain of machines separated by three different kinds of delay. Confusing them is the most common reason a converting schedule drifts.
+
+**Queue time** is a wait measured in hours that happens inside your building: ink cure, adhesive set, cooling, an in-house inspection buffer. It is shift aware, meaning it only ticks while a shift is running. Four hours of cure starting at 14:30 does not finish at 18:30 on a plant that closes at 16:00.
+
+**Transit days** are whole days when the work physically leaves: outside lamination, coating, foiling, an inter-plant move to the finishing site. Transit can count raw calendar days or working days only, which is a per-step choice because different vendors behave differently.
+
+**Overlap** is the opposite of a wait. It lets the downstream station start before the upstream one finishes, either after a set quantity of pieces exists or after a fixed number of hours from the upstream start. That is the subject of [overlapping print, cut and pack](/blog/edgebic-for-packaging-lot-streaming).
+
+## How they compose
+
+For every handoff, the engine applies them in a fixed order:
+
+```
+1. queue time    -> shift-aware buffer from the upstream end
+2. overlap       -> replaces the queue result when a streaming rule fires
+3. transit days  -> applied on top of whatever survived
+```
+
+The middle line surprises planners the first time, so it is worth stating plainly: whichever overlap rule fires becomes the successor gate and **replaces** the queue-adjusted end rather than adding to it. If you set a one-hour overlap and a two-hour queue expecting three hours, you get one. This is documented behavior and there is an anomaly check that flags the combination so the report tells you rather than the schedule quietly misbehaving. When you genuinely need a handling wait on top of an overlap, use the transfer delay field, which is added after the streaming trigger fires rather than replacing anything.
+
+Transit sits outside that interaction. It is applied after, because a truck leaves once the material is ready to move regardless of which rule decided when that was.
+
+## Worked numbers: queue time is not wall-clock
+
+A die-cutting handoff. Printing ends Monday at 14:30. Queue time is four hours for cure. Shift is Monday to Friday, 08:00 to 16:00.
+
+| Stage | Queue remaining | Clock | Note |
+|---|---|---|---|
+| Start | 4.00 h | Mon 14:30 | Shift ends 16:00 |
+| Monday shift | 4.00 - 1.50 = 2.50 h | Mon 16:00 | Shift exhausted |
+| Tuesday shift | 2.50 consumed | Tue 10:30 | Remainder fits |
+
+The die cutter is gated at **Tuesday 10:30**. The overnight gap from 16:00 to 08:00 does not count as cure time in the plan, because the plan is describing scheduled production capacity rather than physics. If your cure genuinely continues overnight and the sheets are ready at 08:00 regardless, that is a two-hour queue, not a four-hour one. Enter the wait the schedule needs to respect, not the chemistry.
+
+## Worked numbers: calendar versus working transit
+
+A job goes out for lamination. The upstream step ends Thursday at 12:00. Transit days is 3. Plant runs Monday to Friday, 08:00 to 16:00.
+
+**Calendar mode**, the default, adds three raw days: Thursday 12:00 plus three days is Sunday 12:00. There is no Sunday shift, so the capacity search starts there and finds the next slot Monday morning.
+
+**Working-day mode** counts only days with a shift:
+
+| Day | Has a shift | Counted | Remaining |
+|---|---|---|---|
+| Friday | Yes | 1 | 2 |
+| Saturday | No | - | 2 |
+| Sunday | No | - | 2 |
+| Monday | Yes | 2 | 1 |
+| Tuesday | Yes | 3 | 0 |
+
+The result is the end of Tuesday, so the return step starts Wednesday.
+
+For one weekend the practical difference is one working day. Across a two-week vendor trip or a shutdown week, the difference is far larger, and picking the wrong mode is how a job that everyone believed was due Friday turns up the following Wednesday. Ask the vendor whether they count business days and set the flag to match.
+
+## Sequencing on the line itself
+
+Feeding the line is half the problem. The other half is the order in which work runs on each machine, because converting machines carry sequence-dependent changeovers just as paint booths do: board grade and caliper changes, ink and plate changes, web width changes, adhesive changes on a gluer.
+
+EDGEBIC prices those with a per-machine setup matrix, entered at family level so the grid stays small. Group by what the machine cares about, usually board grade band or ink family, and the matrix charges the real changeover for each transition rather than an average. The mechanism is covered in [the setup matrix explained](/blog/edgebic-setup-matrix-explained) and the packaging-specific version in [quick changeover scheduling for packaging runs](/blog/edgebic-for-packaging-quick-changeover).
+
+The two halves interact usefully. Once transitions are priced, campaigning like work together on the press shortens the front of the chain, which pulls the whole downstream sequence forward rather than just making one machine look better.
+
+## Building a converting routing that behaves
+
+A worked routing for a folding-carton job shows all four mechanisms in one place.
+
+| Step | Station | Duration driver | Wait to next step |
+|---|---|---|---|
+| 10 Print | Press-2 | Run hours plus matrix changeover | Queue 4 h (cure) |
+| 20 Laminate | Outside vendor | Not scheduled in house | Transit 3 days, working mode |
+| 30 Die cut | Die-Cutter-1 | Run hours plus changeover | Overlap: transfer batch of one pallet |
+| 40 Glue and pack | Gluer-1 | Run hours | None |
+
+Read what each field is doing. Step 10 to 20 is an in-house wait, so it is queue time. Step 20 is a trip, so it is transit days and the vendor's working-day convention. Step 30 to 40 is an overlap, because pallets of cut blanks are countable and the gluer can start on the first pallet while the die cutter continues. Nothing here is a fudge factor added to a run time, which means every number can be argued with, measured and improved separately.
+
+## A worked handoff, end to end
+
+Take step 10 to step 30 of that routing with real numbers and watch the composition run.
+
+Printing finishes Monday at 14:30. Queue time is four hours for cure, and the shift runs 08:00 to 16:00. The queue consumes 1.5 hours before the shift closes and the remaining 2.5 the next morning, gating the next operation at Tuesday 10:30. No overlap rule is set on this step, so the queue result survives.
+
+The job then goes out for lamination with three transit days in working-day mode. Counting from Tuesday: Wednesday is one, Thursday two, Friday three. The return step is gated at the end of Friday, so die cutting starts Monday morning.
+
+Now change one thing. Set a transfer batch on the print step so the die cutter can start on the first pallet. The overlap rule fires and **replaces** the queue-adjusted Tuesday 10:30 with its own earlier gate. If the cure genuinely has to happen before the sheets can move, that is wrong, and the fix is to move the four hours into the transfer delay field where it is applied on top of the overlap rather than replaced by it.
+
+That is the whole composition model in one routing: each field has one job, and the only interaction to remember is that a streaming rule takes over the gate.
+
+## The diagnostic habit worth forming
+
+When a downstream step starts later than expected, check four things in this order.
+
+1. **Are an overlap and a queue time both set on the same step?** If so the overlap replaced the queue, and the anomaly report has already flagged it.
+2. **Is a transfer batch set on a station flagged as continuous process?** The piece count is ignored there and a lag applies instead. The report flags that too.
+3. **Is the transfer batch equal to or larger than the order quantity?** Then it behaves exactly like no overlap at all, because the batch is capped at the order size.
+4. **Is transit in the mode you meant?** Calendar and working modes diverge most across weekends and shutdowns.
+
+Each of those has a named check in the Scheduler Anomalies report, so the answer is a report row rather than an afternoon of comparing Gantt bars.
+
+## Why this matters for a converting plant
+
+Machine hours are usually the smallest part of a packaging lead time. A job with three hours of press time, four hours of cure, three days at a laminator and two hours of die cutting spends most of its life waiting. If the waits are not modeled, the plan will be wrong by days while every machine's utilization number looks fine, and the plant will conclude that the schedule is useless rather than that it is under-specified.
+
+Modeling them separately also makes improvement targetable. A cure wait is attacked with a different ink or a different rack. A vendor trip is attacked with a second supplier or a consolidated shipment. A changeover is attacked with sequencing. When all three sit in one setup field, none of them can be attacked at all.
+
+The two companion mechanisms for this sector are covered in [overlapping print, cut and pack with transfer batches](/blog/edgebic-for-packaging-lot-streaming) and [quick changeover scheduling for packaging runs](/blog/edgebic-for-packaging-quick-changeover).
+
+Bring one carton routing with its real cure and vendor times to a demo of [packaging manufacturing software](/packaging-manufacturing-software), and we will map the waits with you.
