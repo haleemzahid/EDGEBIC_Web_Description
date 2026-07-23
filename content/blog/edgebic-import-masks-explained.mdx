@@ -1,0 +1,156 @@
+---
+title: "Import Masks in EDGEBIC: How Your Data Gets In"
+description: "Import data into scheduling software without a custom connector: how saved column-mapping masks load products, work centers, routings, orders and actuals."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - import data into scheduling software
+  - import mask manufacturing
+  - excel csv import scheduling
+  - column mapping import
+  - master data import manufacturing
+  - reusable import configuration
+  - EDGEBIC import
+targetPhrase: "import data into scheduling software"
+wordCount: 1850
+readingTime: 9
+faqQuestions:
+  - question: "What is an import mask?"
+    answer: "An import mask is a saved recipe for one recurring file. It remembers which kind of record you are importing, what file format it arrives in, whether the first row is headings, how each column in your file maps to a field, and any unit conversion to apply on the way in. You build it once, and every later run of the same file shape is select the mask and click Do It."
+  - question: "What data can you import into EDGEBIC?"
+    answer: "Products, work centers, customers, sales orders (which become jobs), routings, shop-floor actuals, plant holidays, and shifts. Each type has its own mandatory columns and its own natural key for matching existing records. Routings are the most involved because their steps have to be linked to each other, which the import does automatically in a second pass."
+  - question: "Does importing data change the schedule?"
+    answer: "No. Imports change data, never the plan. Imported sales orders appear as jobs ready to schedule and nothing lands on the Gantt until you run the scheduler. That separation is deliberate: it means a bulk load can never quietly rearrange work in progress, and you choose the moment the new demand enters the plan."
+  - question: "Is an import mask the same as an ERP connector?"
+    answer: "No. EDGEBIC integrates through flexible Excel, CSV and database import and export masks rather than a native connector to any named ERP. Any system that can produce an export is a candidate, which is why the approach covers systems no vendor writes connectors for. What you build is a mapping you own, kept in the application, and it survives an ERP upgrade that would break a hard-coded integration."
+qaQuestions:
+  - question: "Our ERP export has 40 columns and half of them mean nothing to a scheduler. Do we have to clean the file first?"
+    answer: "No, and cleaning it is the wrong instinct because it turns a two-click weekly routine into a manual step somebody will eventually skip. Map only the columns that matter and leave the rest unmapped: unmapped columns are simply not read. A product load typically needs the identifier plus a handful of fields, and a routing load needs the end product, the step, whether the step is an operation, and the hours. The mask is where you absorb the mismatch between what your ERP exports and what a scheduler needs, and doing it there means next week's file can arrive untouched."
+  - question: "We import the same product file weekly. Will re-importing overwrite the descriptions our planners have edited by hand?"
+    answer: "Only if you ask it to, and even then blank cells are safe. With updates switched off, which is the default, existing records are counted as reused and left exactly as they are. With updates on, matched records are updated, but a blank cell in the file falls back to the value already in the system rather than wiping it. The trap is not blanks, it is zeros: a column of zeros is a real value and will happily be written. The practical rule is to map only the columns your run is meant to change, which is why a price refresh mask usually maps two columns and nothing else."
+---
+
+**An import mask is a saved recipe that tells EDGEBIC which kind of record a file contains, what format it arrives in, and how each of your columns maps to a field.** Build it once for a recurring file, and every import after that is two clicks. That is how data gets into EDGEBIC by User Solutions, and it is deliberately not a connector.
+
+This post covers the mechanism generically. If you are working from a specific ERP export, the per-system application is on the [ERP integration hub](/edgebic-erp-integration) and in posts like the [JobBOSS integration guide](/blog/edgebic-jobboss-integration-guide) and the [Epicor data mapping reference](/blog/epicor-to-edgebic-data-mapping-reference).
+
+## Why Masks Instead of Connectors
+
+Every shop's ERP export is different, and so is every shop's ERP. A vendor who ships connectors ships them for the ten systems worth engineering for, and the eleventh shop is out of luck.
+
+Masks invert that. Any system that can produce an Excel or delimited export is a candidate, which includes the systems nobody writes connectors for: a twenty-year-old MRP, a departmental Access database, the spreadsheet a planner has maintained since 2011. You map the columns once, in the application, and that mapping is yours. It survives an ERP upgrade that would break a hard-coded integration, and it is editable by the planner who understands the data rather than by whoever owns the middleware.
+
+This is the honest description of how EDGEBIC integrates: flexible Excel, CSV and database import and export masks, not a certified connector to any named system. The lineage behind it is long. User Solutions has been moving manufacturing data between systems since 1991, including a vendor-recommended Fourth Shift integration completed in five days at Plastilite and long-running work with Macola and AS400 environments at customers including Cummins across 33 locations.
+
+## What a Mask Remembers
+
+One mask covers one recurring file shape. It holds:
+
+| Setting | What it does |
+|---|---|
+| Entity type | Which kind of record the file contains |
+| File format | Excel, or comma, semicolon, tab or space delimited |
+| Sheet | Which worksheet inside a workbook to read |
+| Header present | Whether row one is headings, or mapping is by column position |
+| Column mappings | Each source column pointed at the field it fills |
+| Conversion factor | A multiplier per column, applied before the value is stored |
+| Options | Per-type behaviour such as update-or-reuse and auto-create |
+
+The conversion factor is the small feature that saves the most rework. Source systems very often store setup time in minutes while a scheduler works in hours. Set a factor of `0.016667` on that column and thirty minutes lands as 0.5 hours before it is ever stored, on every row, every week, without anyone editing a file.
+
+## What You Can Import
+
+Eight record types appear in the entity picker:
+
+| Type | What it loads | Matched by |
+|---|---|---|
+| Product | Product master data | Product identifier |
+| Workcenter | Machines and stations | Work center identifier |
+| Customer | Customer master | Name |
+| SalesOrder | Jobs and demand | Product, quantity and date, plus an optional order reference |
+| BOR | Routing steps | End product plus step |
+| Actuals | Daily hours and pieces per operation | Job, work center and date |
+| PlantHoliday | Plant-wide holidays | Holiday name and date |
+| Shift | Global shifts with weekly hours | Shift name |
+
+Matching is not case sensitive. A file row reading `WIDGET-A` finds the existing product `Widget-A` and does not rename it. The stored name is whatever arrived first.
+
+Sales orders have one grouping behavior worth knowing: when the optional order reference column is filled, rows sharing a reference are grouped under one sales order and their jobs are auto-numbered by line. Rows with a blank reference each become a standalone job.
+
+Routings deserve their own treatment because their steps must be linked to each other, which cannot happen row by row. That is [how EDGEBIC imports routings in two passes](/blog/how-edgebic-imports-routings-in-two-passes).
+
+## Four Outcomes, Every Row
+
+Every row in your file produces exactly one outcome, and the vocabulary is worth learning because it is what the result dialog reports.
+
+- **Created**: no matching record existed, so a new one was written.
+- **Updated**: a match was found and updates were enabled, so it was changed.
+- **Reused**: a match was found and updates were off, so it was left exactly as it is.
+- **Failed**: something was wrong with the row, and the reason is recorded.
+
+Nothing is half-imported silently. The result dialog shows the counts and a grid with one line per row, and a per-run log file records every row including the bookkeeping the dialog hides.
+
+The Reused outcome is the default for a reason. Re-running a master-data file is a safe, boring operation when updates are off: existing records are untouched and only genuinely new ones are added. Turn updates on for the runs whose purpose is changing values, such as a price refresh, and leave it off the rest of the time.
+
+## Blank Cells and the Zero Trap
+
+On an update, a blank cell in the file falls back to the value already in the system rather than wiping it. That guard exists so a half-populated export cannot erase planner-set values.
+
+The trap is not blanks, it is zeros. A column of zeros is a real value, and it will be written. This is why the practical discipline is to map only the columns your run is meant to change: a price refresh mask maps the identifier and the price and nothing else.
+
+One asymmetry to remember: the blank-cell guard applies on updates, not on creates. A new record created from a row with a blank cost field gets a cost of zero, because a brand-new record has no prior value to fall back on. That is intentional, and it is a good argument for checking a small sample after a first bulk load.
+
+## What an Import Does Not Do
+
+**It does not schedule.** Imported sales orders appear as jobs ready to schedule and nothing lands on the Gantt until you run the scheduler. Import forty orders at 08:00 and at 08:01 you have forty new jobs and an unchanged plan. Run the scheduler at 08:05 and they are placed around everything already on the floor. That separation is what keeps a bulk load from quietly rearranging work in progress.
+
+**It does not touch running jobs.** Scheduled jobs carry their own frozen copy of the routing they were planned with, so a routing re-import does not re-route work in progress. The imported routing applies to new orders, and to an existing job only if you deliberately reschedule it against the current standard routing.
+
+**It does not round-trip with grid exports.** Job View, the routing grid, work center details and every report can export to Excel, and those exports are snapshots of what you see, including colours and legends. They are for sharing and analysis. They are deliberately not the import file format, and a Job View export cannot be re-imported.
+
+## The Per-Run Log
+
+Every run writes one log file with a header (time, mask, entity type, file, sheet), one line per row with its outcome, and a summary trailer. The result dialog links straight to it.
+
+Read the log after any run with failures. The dialog gives you counts; the log gives you row numbers and exact reasons, which is the difference between "eleven rows failed" and "rows 14, 47 and 102 have a blank identifier". Log files accumulate one per run and stay until you delete them, which makes them a usable audit trail of what entered the system and when.
+
+## Where Masks Fit in an Implementation
+
+The typical first week runs masks in dependency order, because a routing cannot reference a work center that does not exist yet:
+
+1. Products, then work centers, then customers.
+2. Shifts and plant holidays, so the work centers have calendars.
+3. Routings, which reference the products and work centers above.
+4. Sales orders, which become jobs.
+5. A scheduling run, which is the first moment anything appears on a Gantt.
+6. A plant-wide diagnostics sweep, before anyone trusts the result.
+
+That last step is the one people skip and the one that pays most. An import changes hundreds of records at once, and a single mapping error repeats across every row of the file. [How to run and read the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic) is the two-minute routine, and it is exactly what catches a missing conversion factor before anyone schedules against sixty-fold setup times.
+
+## Next Steps
+
+To build your first mask field by field, read [how to build an import mask](/blog/how-to-build-an-import-mask-in-edgebic). For the routing import's two-pass mechanics and its upsert rules, read [how EDGEBIC imports routings in two passes](/blog/how-edgebic-imports-routings-in-two-passes). For the errors that cost the most time, [import mask mistakes](/blog/import-mask-mistakes-edgebic).
+
+If you are moving off spreadsheets entirely, [from Excel to APS](/blog/excel-to-aps-migration-guide) is the migration view, and [ERP data integration best practices](/blog/erp-data-integration-best-practices) is the wider discipline. The full platform map is the [complete EDGEBIC guide](/blog/edgebic-complete-guide) and the [EDGEBIC](/edgebic) hub.
+
+Bring your ERP export to a demo, exactly as it comes out. [Contact US](/contact-us) and we will map it live.
+
+<Accordion title="What is an import mask?">
+An import mask is a saved recipe for one recurring file. It remembers which kind of record you are importing, what file format it arrives in, whether the first row is headings, how each column in your file maps to a field, and any unit conversion to apply on the way in. You build it once, and every later run of the same file shape is select the mask and click Do It.
+</Accordion>
+
+<Accordion title="What data can you import into EDGEBIC?">
+Products, work centers, customers, sales orders (which become jobs), routings, shop-floor actuals, plant holidays, and shifts. Each type has its own mandatory columns and its own natural key for matching existing records. Routings are the most involved because their steps have to be linked to each other, which the import does automatically in a second pass.
+</Accordion>
+
+<Accordion title="Does importing data change the schedule?">
+No. Imports change data, never the plan. Imported sales orders appear as jobs ready to schedule and nothing lands on the Gantt until you run the scheduler. That separation is deliberate: it means a bulk load can never quietly rearrange work in progress, and you choose the moment the new demand enters the plan.
+</Accordion>
+
+<Accordion title="Is an import mask the same as an ERP connector?">
+No. EDGEBIC integrates through flexible Excel, CSV and database import and export masks rather than a native connector to any named ERP. Any system that can produce an export is a candidate, which is why the approach covers systems no vendor writes connectors for. What you build is a mapping you own, kept in the application, and it survives an ERP upgrade that would break a hard-coded integration.
+</Accordion>

@@ -1,0 +1,169 @@
+---
+title: "How Forecast Consumption Works in EDGEBIC: Building Gross Requirements"
+description: "Forecast consumption planning stops the same demand being counted twice. Here is how EDGEBIC assembles gross requirements from forecast and firm orders."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - forecast consumption planning
+  - gross requirements calculation
+  - greater of consumption rule
+  - minus consumed forecast rule
+  - firm demand source planning
+  - forecast double counting
+  - independent demand manufacturing
+targetPhrase: "forecast consumption planning"
+wordCount: 1828
+readingTime: 9
+faqQuestions:
+  - question: "What is forecast consumption in planning?"
+    answer: "Forecast consumption is the rule that reconciles a forecast with the real orders that arrive against it, so the same demand is not planned twice. Without it, a forecast of 100 units and 60 confirmed orders inside that forecast would produce 160 units of demand when the true expectation is 100. The consumption rule decides how the two figures combine into the single gross requirements number the projection actually uses."
+  - question: "Are forecast rows changed when firm orders arrive?"
+    answer: "No, forecast rows are never modified by consumption. The reconciliation happens entirely inside the projection calculation and is recomputed fresh every time it runs, so the stored forecast quantity stays exactly as the planner entered it. That means the same forecast rows produce different gross requirements as orders arrive, change and ship, and there is no consumed quantity written back that could drift out of date."
+  - question: "Do forecasts affect make-to-order products?"
+    answer: "No, gross requirements for a make-to-order product come from committed demand alone. Forecast rows for such a product are stored and displayed on the forecast tab, and contribute nothing to the projected balance. That is deliberate: a part built only when a customer orders it should not be planned to stock against a prediction. Change the build method to make-to-stock and the stored forecasts participate on the very next projection."
+  - question: "What counts as firm demand in a projection?"
+    answer: "Firm demand is committed demand bucketed by its due date, and it comes from one of two sources depending on configuration. The straightforward source is open make-to-order manufacturing orders. The more rigorous source is confirmed sales order lines, using open balance, which is ordered quantity less quantity already shipped. Draft or unconfirmed sales orders never count, which is what keeps a quote from consuming planned supply."
+qaQuestions:
+  - question: "Sales entered a customer order for a week we had already forecast. Will the plan now show double the demand for that week?"
+    answer: "No, and preventing exactly that is the reason the consumption rule exists. The projection does not add forecast and firm demand together: it passes both into the consumption rule and uses the single number that comes out as gross requirements for the bucket. With a forecast of 100 and a firm order of 60 under the default rule, gross requirements are 100, because the 60 are treated as part of the demand the forecast already predicted. If firm orders in that bucket climb above the forecast, the firm figure takes over, so real commitments are never suppressed by an out-of-date prediction."
+  - question: "Which consumption rule should we choose, and how do we test the choice?"
+    answer: "Pick it on how you think about your demand, then verify the totals on your own numbers rather than on a rule of thumb. Choose greater-of when a customer order is the arrival of demand you already predicted, which is the normal case for a forecast-driven stocked item. Choose minus-consumed when you think of firm orders as consuming a forecast pool with the uncovered remainder still being real demand. Both are per product, both take effect on the next projection with no migration, and the projection recalculates from the same stored rows either way. Set one product to each, run the calendar for a period where you have both forecast and firm figures, and compare the gross requirements column directly before you standardise."
+---
+
+**Forecast consumption planning exists to stop the same demand being counted twice.** You forecast 100 units for a week. Sixty of them arrive as real orders. If your plan adds those together it will tell you to prepare for 160 when the honest expectation is 100. In [EDGEBIC by User Solutions](/edgebic) the reconciliation is a per-product rule applied inside the projection, and this post is the mechanism: how gross requirements are assembled bucket by bucket, what each input contributes, and where the rule changes the answer.
+
+For the surrounding loop from forecast entry to firmed build order, see [forecasting and replenishment explained](/blog/edgebic-forecasting-and-replenishment-explained). For the balance calculation that consumes this figure, see [projected available balance explained](/blog/edgebic-projected-available-balance-explained).
+
+## Gross Requirements Is the Only Demand Number That Matters
+
+The projection row shows forecast demand and firm demand as separate columns, and neither is subtracted from the balance. The column that is subtracted is **gross requirements**, and it is the output of the consumption rule rather than a sum of the two inputs.
+
+This is the single most useful thing to know about the row. If forecast reads 60, firm reads 40, and gross requirements reads 60, nothing is broken: the rule decided that 60 is the honest total. Reading the row as "60 plus 40 should be 100" is the most common misreading of the whole calendar.
+
+## The Four Gates on the Way to a Number
+
+Before a bucket produces gross requirements, four decisions have already been made.
+
+**Is this a history bucket?** A bucket whose end date falls entirely before today ignores planned supply and planned demand completely. Its balance moves by realised ledger movement alone, because a plan for last Tuesday either happened or it did not, and the inventory ledger already knows which. Gross requirements in a history bucket reflect what actually left stock, not what was expected to.
+
+**Is the product make-to-stock?** For a make-to-order product, gross requirements are committed demand alone and forecast contributes nothing. Forecast rows are still stored and still shown on the forecast tab, which is exactly why this behavior gets reported as a bug. It is not: a part built only when a customer orders it should not be planned to stock against a prediction.
+
+**What is in the forecast bucket?** All forecast rows landing in that bucket, summed.
+
+**What is in the firm bucket?** All committed demand due in that bucket, from whichever firm demand source is configured.
+
+Only then does the consumption rule run.
+
+## Forecast Types Are Additive
+
+Forecast rows are keyed on four values: product, bucket width, forecast type and bucket date. The type is part of the key, which has a consequence people meet the hard way.
+
+Three types exist: sales (customer-facing expectation), production (internal throughput target) and consumption (raw-material usage rate). Rows of different types for the same product and bucket are separate rows, and the projection sums them.
+
+| Bucket | Type | Quantity |
+|---|---|---|
+| Week of Jul 7 | Sales | 150 |
+| Week of Jul 7 | Production | 30 |
+| Week of Jul 7 | Consumption | 10 |
+| | **Forecast demand for the bucket** | **190** |
+
+That is by design, since each type is independent demand from a different origin, and the split is genuinely useful for reporting where demand comes from. It is also the most common source of over-forecasting in real shops: two people entering the same expected demand under different types silently doubles the plan.
+
+Two practical rules follow. Agree who owns which type before anyone enters anything. And when correcting a figure, keep the type the same: changing the type while keeping the date creates a **new** row rather than replacing the old one, because type is part of the key.
+
+## The Two Consumption Rules
+
+Each product carries a forecast consumption rule with two options, and both are documented as explicit formulas.
+
+**Greater-of** (the default) takes the larger of the two figures:
+
+`gross requirements = max(forecast, firm)`
+
+The idea is that firm orders sit *inside* the forecast that predicted them. Forecast 100, firm 60, gross 100: the 60 are part of the 100, and 40 units of the forecast remain uncommitted.
+
+**Minus-consumed** lets firm orders eat the forecast and adds them on top of the remainder:
+
+`gross requirements = max(0, forecast − min(firm, forecast)) + firm`
+
+The idea is that a forecast is a pool that real orders draw down. Forecast 100, firm 60: the orders consume 60 of the pool, 40 of uncovered forecast remains, and the total is 40 plus 60.
+
+Run the arithmetic across the cases and you can see how each behaves:
+
+| Forecast | Firm | Greater-of | Minus-consumed |
+|---|---|---|---|
+| 100 | 0 | 100 | 100 |
+| 100 | 60 | 100 | 40 + 60 = 100 |
+| 100 | 100 | 100 | 0 + 100 = 100 |
+| 100 | 130 | 130 | 0 + 130 = 130 |
+
+Two things are worth saying plainly about that table. First, under both rules firm demand is never suppressed: when commitments exceed the forecast, the commitments drive the plan. Second, in the two-input case the documented formulas track each other closely, so if you are choosing a rule expecting a large numerical difference, verify it on your own figures first rather than assuming one. Set one product to each rule, run the calendar over a period where you have both forecast and firm numbers, and compare the gross requirements column directly. Ask User Solutions to run that comparison with you against your data.
+
+What the choice genuinely records is how you think about demand. Greater-of says a customer order is the arrival of demand you already predicted. Minus-consumed says a forecast is a pool that orders draw from and the uncovered remainder is still real demand. Both are per product, both change nothing stored, and both take effect on the next projection with no migration.
+
+## A Worked Bucket-by-Bucket Assembly
+
+Take a stocked casting on daily buckets with minus-consumed consumption. Forecast is 60 per day, Monday through Friday. Firm demand is 80 on Monday and 20 on Tuesday, nothing after that. Opening balance is 180, minimum level 50, maximum level 400.
+
+Gross requirements, day by day:
+
+| Day | Forecast | Firm | Gross requirements |
+|---|---|---|---|
+| Mon | 60 | 80 | max(0, 60 − 60) + 80 = 80 |
+| Tue | 60 | 20 | max(0, 60 − 20) + 20 = 60 |
+| Wed | 60 | 0 | 60 |
+| Thu | 60 | 0 | 60 |
+| Fri | 60 | 0 | 60 |
+
+Monday is the instructive row. Firm demand of 80 exceeds the forecast of 60, so the forecast is fully consumed and the commitment stands at 80. The plan follows reality rather than the prediction.
+
+Now roll the balance:
+
+| Day | Opening | Gross requirements | Projected balance | Below minimum? |
+|---|---|---|---|---|
+| Mon | 180 | 80 | 100 | No |
+| Tue | 100 | 60 | 40 | **Yes** |
+| Wed | 40 | 60 | −20 | Yes |
+| Thu | −20 | 60 | −80 | Yes |
+| Fri | −80 | 60 | −140 | Yes |
+
+Tuesday is the first breach, and that is where the replenishment suggestion fires: target 400 minus projected 40 gives a raw need of 360, fixed lots of 100 round it to 400, and a yield of 0.90 inflates it to 445 units to start.
+
+The deficits after Tuesday keep deepening, which is the correct behavior of a projection that does not assume its own suggestions. Nothing is fixed until the planner firms one, and the sizing steps behind 445 are covered in [forecasting and replenishment explained](/blog/edgebic-forecasting-and-replenishment-explained).
+
+## Where Firm Demand Comes From
+
+The firm figure has two possible sources, and which one is active changes what your plan responds to.
+
+**Open make-to-order manufacturing orders**, bucketed by due date. Straightforward, and it works without a sales order module in play.
+
+**Confirmed sales order lines**, bucketed by due date, using open balance (ordered quantity less quantity already shipped). This is the standard material-planning approach, because it plans against what the customer is owed rather than against the internal orders someone happened to create. Draft or unconfirmed orders do not count, which is what stops a quote from consuming planned supply.
+
+The second source is more correct and it has a precondition: sales order lines have to exist. Switching to it in a system where nobody enters sales orders makes firm demand zero for every stocked product, which suppresses replenishment suggestions across the board. Get the demand data in first, then switch. How sales orders become demand is covered in [how sales orders drive demand](/blog/how-sales-orders-drive-demand-in-edgebic) and [sales orders explained](/blog/edgebic-sales-orders-explained).
+
+## Forecast Rows Are Never Rewritten
+
+One invariant makes the whole mechanism predictable: **consumption never modifies a forecast row.**
+
+There is no consumed quantity stored against a forecast. The reconciliation happens inside the calculation, from scratch, every time the projection runs. A forecast entered as 100 stays 100 in the database forever, regardless of how many orders arrive against it, and it is only ever changed by a planner explicitly editing or deleting it.
+
+That gives you three things. The plan reacts immediately when an order is cancelled, because nothing was written down that has to be unwound. Historical forecast accuracy stays measurable, because the original prediction survives intact next to what actually happened. And there is no consumed figure that can drift out of step with reality, which is a classic failure in systems that do write consumption back.
+
+It also means changing a product's consumption rule is safe and instant. The next projection recalculates from the same stored rows using the new formula. Nothing migrates.
+
+## What To Check When Gross Requirements Look Wrong
+
+Five questions cover almost every case.
+
+- **Is the bucket in history?** History buckets ignore planned demand entirely and reflect realised ledger movement.
+- **Is the product make-to-order?** Then forecast contributes nothing and only committed demand counts.
+- **Did the forecast land in the bucket you meant?** Check both the date and the bucket width you were viewing when you entered it.
+- **Are multiple forecast types stacking?** Look for the same expectation entered under sales and under production.
+- **Which firm demand source is active?** A switch to confirmed sales order lines in a system with no sales orders zeroes firm demand everywhere.
+
+The traps around forecast entry and firming are collected in [forecasting and replenishment mistakes](/blog/forecasting-and-replenishment-mistakes-edgebic), and the entry procedure is in [how to enter forecasts and firm suggestions](/blog/how-to-enter-forecasts-and-firm-suggestions-in-edgebic).
+
+For where this sits in the wider planning picture, see the [inventory and planning guide](/blog/edgebic-planning-guide) and, for the category background on netting demand against supply, [what is MRP](/blog/what-is-mrp). The full platform tour is in the [complete guide to EDGEBIC](/blog/edgebic-complete-guide).

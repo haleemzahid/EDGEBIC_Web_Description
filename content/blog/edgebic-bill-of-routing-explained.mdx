@@ -1,0 +1,165 @@
+---
+title: "The Bill of Routing in EDGEBIC: The Recipe Your Schedule Runs On"
+description: "Bill of routing manufacturing explained: how routing steps, per-unit hours, setup, material rows, and sequence links become the hours on your schedule."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - bill of routing manufacturing
+  - manufacturing routing steps
+  - routing hours per unit
+  - setup time routing
+  - material step routing
+  - routing sequence links
+  - EDGEBIC bill of routing
+targetPhrase: "bill of routing manufacturing"
+wordCount: 2200
+readingTime: 11
+faqQuestions:
+  - question: "What is a bill of routing in manufacturing?"
+    answer: "A bill of routing is the ordered list of operations required to make one unit of a product. Each step names the work center that does the work, states the hours needed per unit, adds any fixed setup time, and points at the step that comes next. A bill of materials answers what goes into the product; a bill of routing answers where the work happens and how long it takes."
+  - question: "What is the difference between a bill of routing and a bill of materials?"
+    answer: "A bill of materials lists components and quantities. A bill of routing lists operations, work centers, and times. In EDGEBIC the two meet in one structure: a routing can carry material rows that name a component and its per-unit quantity alongside the work-center rows that consume machine hours. The material rows consume no capacity, so both views live in a single recipe."
+  - question: "Does the sequence number decide the order operations run?"
+    answer: "No. The sequence number controls display order in the routing grid only. Execution order follows the next-in-sequence link on each step, and the last production step points at the end product itself to close the chain. Keeping the two consistent is good practice, but a routing whose links are broken will schedule in a strange order no matter how tidy the sequence numbers look."
+  - question: "Do routing changes move jobs that are already scheduled?"
+    answer: "No. Every scheduled job carries its own frozen copy of the routing it was planned with, so editing the standard routing never silently re-routes work in progress. New orders pick up the change on the next scheduling run. To push a change into a live job you either reschedule that job against the current standard routing or edit the job's own copy directly."
+qaQuestions:
+  - question: "Our routings live in the ERP already. Why would we rebuild them in a scheduling system?"
+    answer: "You do not rebuild them, you import them, and then you add the fields your ERP has no column for. Most ERP routings carry an operation, a work center, a setup value and a run rate, which is enough for infinite-capacity backward planning and not enough for a finite schedule. What EDGEBIC adds on the same step is queue time that waits without consuming capacity, transit days for parts that leave the building, overlap fields that let the next operation start before this one finishes, and alternate or parallel machines. Those four categories are usually where the gap between the ERP's promised date and the floor's real date is hiding."
+  - question: "Half our operations are outside vendor work with no machine hours. Do those belong in the routing?"
+    answer: "Yes, and they change the answer more than anything else in the recipe. Model an outside operation on the step that ships the parts by setting transit days, and choose working days rather than calendar days when the vendor quotes business days. A five-working-day plating turnaround set as calendar days lands the next step two days early on any week that crosses a weekend, and that error compounds through every downstream step. Purchased components go on material rows instead: they carry a per-unit quantity and a lead time, book no machine capacity, and get an instant assignment in the plan."
+---
+
+**A bill of routing is the ordered list of operations that turns raw material into a finished product: each step names a work center, states the hours one unit needs there, adds any fixed setup, and points at the step that comes next.** In EDGEBIC by User Solutions the routing is not documentation that sits beside the schedule. It is the schedule's input. Every bar on the Gantt traces back to a number somebody typed into a routing row, which is why routing quality decides schedule quality more than any engine setting does.
+
+This post is about the routing model itself: the row types, the fields that carry meaning, and how the pieces fit together. If you would rather build the same model by dragging boxes on a canvas, the [graphical routing designer tour](/blog/edgebic-graphical-bor-designer-tour) covers that surface. For the generic concept independent of any product, [production routing](/blog/production-routing) is the category explainer.
+
+## What a Routing Contains
+
+A routing belongs to exactly one end product. It holds an ordered set of rows, and every row is one of two kinds.
+
+A **work-center step** is a real operation that consumes machine time. It names the work center, carries hours per unit, and optionally carries setup time, queue time, and the overlap and transit fields covered further down.
+
+A **material step** names a component that is consumed at that point in the process. It carries a per-unit quantity and a lead time, and it books no machine capacity at all. In the routing grid the timing cells on a material row read `N/A`, because hours have no meaning for a component. When the named component has a routing of its own, the row is a sub-assembly and the scheduler expands it at scheduling time. That structure gets its own treatment in [modeling sub-assemblies](/blog/sub-assemblies-in-the-edgebic-designer).
+
+Both kinds of row live in the same list. That is deliberate: a planner reading the recipe for a welded frame sees the saw, the mill, the purchased casting and the assembly bench in one sequence rather than in two documents that drift apart. If you are coming from an MRP background where structure and process live separately, the [bill of materials guide](/blog/bill-of-materials-guide) is the companion piece.
+
+## The Fields That Decide Your Dates
+
+Six fields on a work-center step carry almost all of the scheduling weight.
+
+| Field | Unit | What it does |
+|---|---|---|
+| Hours Required | hours per unit | Multiplied by the order quantity. The primary consumer of capacity |
+| Setup Time (hrs) | hours | Added once per run, regardless of quantity |
+| Queue Time (hrs) | hours | A buffer after the step ends, counted only inside working shifts. Consumes no capacity |
+| Flow Step (hrs) | hours | Lets the next step begin this many hours after the current step *starts* |
+| Transfer Batch | pieces | Lets the next step begin once this many pieces are done |
+| Transit Days | days | Travel time after the step, in calendar or working days |
+
+The formula the engine uses for a step is short enough to keep in your head:
+
+```
+booked hours = setup time + (hours per unit x order quantity)
+```
+
+That single line explains the most expensive routing mistake there is. Hours Required is time for **one** unit. Type a batch total into it and every order inflates by the batch size, which is how an operation quoted at half an hour ends up occupying three days on the Gantt.
+
+Setup belongs in its own field for the mirror-image reason: fold a one-hour changeover into the per-unit hours and the changeover silently scales with quantity, so a 500-piece order pays for 500 setups. When changeover depends on what ran before, EDGEBIC has a dedicated mechanism for that too, described in [the setup matrix](/blog/edgebic-setup-matrix-explained).
+
+Queue time is the field planners most often misread. It represents real waiting: cooling, curing, an inspection buffer. It delays the next step without booking the machine, so the work center stays free to run other jobs during the queue. It is also shift-aware, which means a two-hour queue does not tick overnight or on a holiday. It behaves like a physical queue on a shop floor, not like a stopwatch.
+
+## The Chain Is the Order, Not the Numbers
+
+Every routing step carries a **next in sequence** link, and that link is what the scheduler follows. The sequence number in the grid is a display and sorting hint.
+
+This catches people out, so it is worth stating plainly: a routing with tidy sequence numbers 10, 20, 30 and a broken link chain will schedule in a strange order, and nothing about the grid will look wrong. The last production step must point at the end product itself, which is how the system knows the recipe is finished. A step whose link is empty or points at a deleted step carries a warning marker in the grid, and that marker is the thing to fix before you schedule.
+
+The convention that saves the most rework is numbering in tens. Start at 10, 20, 30, and you can insert step 15 next year without renumbering the routing. That practice comes straight from traditional routing sheets and is standard across [APICS/ASCM planning terminology](https://www.ascm.org).
+
+Links can also fan out and merge. A step may point at more than one successor when the process branches, and several steps may point at the same successor when they converge at an assembly. That is how a real routing with two feeder legs into one bench gets modeled without inventing fake sequential steps.
+
+## Levels: How Deep Each Step Sits
+
+From the link chain, EDGEBIC computes a **routing level** for every step. Level 0 is the step immediately before the end product, and the numbers climb as you move upstream.
+
+Take a three-step bracket routing: saw, then drill, then deburr, then the finished bracket.
+
+- Deburr points at the end product, so deburr is level 0.
+- Drill points at deburr, so drill is level 1.
+- Saw points at drill, so saw is level 2.
+
+Levels are not decoration. They are what lets the engine order a routing where two legs of different depths converge, and they are what the designer uses to lay a routing out sensibly. A circular chain, where A points at B and B points back at A, cannot be given a sensible depth. EDGEBIC anchors both steps at level 0 and flags the cycle rather than refusing to schedule, which means a circular routing produces a plan that looks plausible and is wrong. Fix cycles when the warning appears.
+
+## A Worked Routing, End to End
+
+Here is the routing that the rest of this cluster keeps coming back to. A product called Widget-A with three operations:
+
+| Sequence | Work center | Hours Required | Setup Time (hrs) | Queue Time (hrs) | Next in sequence |
+|---|---|---|---|---|---|
+| 10 | Saw-1 | 0.20 | 0.50 | 0 | CNC-Mill-1 |
+| 20 | CNC-Mill-1 | 0.50 | 1.00 | 2.00 | Assembly-1 |
+| 30 | Assembly-1 | 0.30 | 0.50 | 0 | End item |
+
+The header strip above the grid adds the rows up live: **Estimated Hour per unit = 1** (0.20 + 0.50 + 0.30) and **Setup Time = 2** (0.50 + 1.00 + 0.50). Those two numbers are the per-unit labor content and the fixed cost of running the recipe once, and they are the fastest sanity check you have on a routing somebody else built.
+
+Now put 100 units through it:
+
+| Step | Booked hours | Arithmetic |
+|---|---|---|
+| Saw-1 | 20.5 | 0.50 + 0.20 x 100 |
+| CNC-Mill-1 | 51.0 | 1.00 + 0.50 x 100 |
+| Queue after milling | 2.0 | shift-hours buffer, no capacity consumed |
+| Assembly-1 | 30.5 | 0.50 + 0.30 x 100 |
+
+On a single day shift, sawing runs Monday into Wednesday, milling follows and finishes the next Thursday, the two-hour queue pushes assembly to Friday morning, and assembly completes the Wednesday after that. Roughly thirteen working days, and every hour of it traces to a cell in that grid.
+
+That thirteen-day baseline is also the number the rest of the platform exists to compress. Overlap the operations with a transfer batch and the same order finishes in roughly eight working days without buying a machine, which is the arithmetic in [lot streaming](/blog/edgebic-lot-streaming-explained). Split the milling across two machines and the milling window halves, which is [parallel and alternate work centers](/blog/edgebic-parallel-work-centers-explained).
+
+## A Note on Header Totals and Parallel Rows
+
+When a step has parallel machines mirroring it, those child rows occupy the same time window as the primary. Counting their hours in the per-unit total would inflate it: a five-step routing with five one-hour labor mirrors reads 8 hours per unit when the real per-unit content is 3.
+
+EDGEBIC has a site-wide setting for this, and when it is on, parallel child rows are excluded from **Estimated Hour per unit** and **Setup Time** while true-alternative rows stay counted. Total Cost is deliberately unaffected, because cost is always full effort: two machines committed for the same hour cost two machine-hours even though they only consume one hour of calendar. The same rollup basis carries through the job-level reports, so the number on the routing header and the number on a job report agree.
+
+## What Happens When You Save
+
+Saving a routing writes it as the product's **standard** recipe. The effects are narrow on purpose:
+
+| Surface | Effect of saving |
+|---|---|
+| New orders for the product | Scheduled with the new routing on the next scheduling run |
+| Orders already scheduled | Unchanged. Each carries its own frozen routing copy |
+| Quote simulations | New simulations use the updated routing |
+| Header totals and cost estimates | Recalculate immediately |
+| The Gantt | Nothing moves until you run the scheduler |
+
+The frozen-copy rule is worth internalizing. Discover that a mill actually runs at 0.40 hours per unit rather than 0.50, save the correction, and every new order plans 41.0 hours of milling instead of 51.0 for a 100-piece batch. The job you scheduled last week still shows 51.0, because its paperwork is on the floor and its snapshot is what the shop is working to. You choose per job whether to adopt the new routing, and [editing a live job's routing](/blog/editing-a-live-jobs-routing-in-edgebic) covers how.
+
+## Where to Go Next
+
+If you are building your first routing, the grid walkthrough is [how to build a routing step by step](/blog/how-to-build-a-routing-step-by-step-in-edgebic). If you want to know exactly how the engine turns these rows into dates, including start-time resolution and the order the timing fields compose in, read [how EDGEBIC reads a routing](/blog/how-edgebic-reads-a-routing). If your routings already exist and you want to see them fail early, [routing setup mistakes](/blog/routing-setup-mistakes-edgebic) collects the eight that cost the most.
+
+The wider pipeline, from master data through to a published schedule, is mapped in the [complete EDGEBIC guide](/blog/edgebic-complete-guide), and the product hub at [EDGEBIC](/edgebic) has the feature map.
+
+Bring one real routing to a demo, ideally the one nobody trusts. [Contact US](/contact-us) and we will schedule it against your own calendars.
+
+<Accordion title="What is a bill of routing in manufacturing?">
+A bill of routing is the ordered list of operations required to make one unit of a product. Each step names the work center that does the work, states the hours needed per unit, adds any fixed setup time, and points at the step that comes next. A bill of materials answers what goes into the product; a bill of routing answers where the work happens and how long it takes.
+</Accordion>
+
+<Accordion title="What is the difference between a bill of routing and a bill of materials?">
+A bill of materials lists components and quantities. A bill of routing lists operations, work centers, and times. In EDGEBIC the two meet in one structure: a routing can carry material rows that name a component and its per-unit quantity alongside the work-center rows that consume machine hours. The material rows consume no capacity, so both views live in a single recipe.
+</Accordion>
+
+<Accordion title="Does the sequence number decide the order operations run?">
+No. The sequence number controls display order in the routing grid only. Execution order follows the next-in-sequence link on each step, and the last production step points at the end product itself to close the chain. Keeping the two consistent is good practice, but a routing whose links are broken will schedule in a strange order no matter how tidy the sequence numbers look.
+</Accordion>
+
+<Accordion title="Do routing changes move jobs that are already scheduled?">
+No. Every scheduled job carries its own frozen copy of the routing it was planned with, so editing the standard routing never silently re-routes work in progress. New orders pick up the change on the next scheduling run. To push a change into a live job you either reschedule that job against the current standard routing or edit the job's own copy directly.
+</Accordion>

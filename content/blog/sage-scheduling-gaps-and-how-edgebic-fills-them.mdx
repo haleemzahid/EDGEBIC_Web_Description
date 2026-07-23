@@ -1,0 +1,125 @@
+---
+title: "Sage Scheduling Gaps (And How EDGEBIC Fills Them)"
+description: "Sage finite capacity scheduling gaps small manufacturers report: capacity as one number, one setup per operation, invisible bottlenecks, whiteboard math."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - Sage finite capacity scheduling
+  - Sage scheduling gaps
+  - Sage scheduling add-on
+  - Sage production scheduling integration
+  - small manufacturer finite capacity
+  - Sage bottleneck scheduling
+targetPhrase: "Sage finite capacity scheduling"
+wordCount: 1891
+readingTime: 9
+faqQuestions:
+  - question: "Why do Sage shops end up scheduling on a whiteboard?"
+    answer: "Because the whiteboard answers the question the ERP does not: which job runs on which machine next. Sage records orders, materials, costs, and shipments accurately, but sequencing 45 open jobs across 11 work centers with shifts and changeovers is a constraint problem. When that computation lives outside the system, the whiteboard becomes the real schedule and the ERP's dates become a formality."
+  - question: "Do we have to replace Sage to get finite capacity scheduling?"
+    answer: "No. The standard pattern is a scheduling layer beside the ERP. Sage stays the system of record for orders, inventory, purchasing, and accounting, and a finite capacity tool reads the items, work centers, routings, and open jobs it already holds. Executable dates and dispatch lists come back as Excel. Nothing is installed inside Sage and no ERP process changes."
+  - question: "How does EDGEBIC get data out of Sage?"
+    answer: "Through reusable import masks fed by the Excel or CSV exports Sage already produces. You map an export's columns to EDGEBIC fields once, and every later run is two clicks with each row reporting Created, Updated, Reused, or Failed and a per-run log recording all of them. Because the interface is a file rather than a connector, the same masks keep working across Sage editions and upgrades."
+  - question: "Is finite capacity scheduling worth it for a small manufacturer?"
+    answer: "Small shops usually gain the most, because they have the least slack to absorb a bad sequence. With 8 to 20 machines, one avoidable changeover or one overloaded bottleneck week is a visible share of total capacity. Modeling real machine counts, shift hours, and sequence-dependent setups turns which-jobs-fit-this-week from an estimate into a computed answer, and the setup effort is measured in days."
+qaQuestions:
+  - question: "We are a 40-person shop on Sage. Our planner spends every Monday morning rebuilding a schedule spreadsheet from three reports. Where does that time go instead?"
+    answer: "Into judgment rather than assembly. Monday becomes an import run: export the open jobs, pick the saved mask, press Do It, and the result dialog reports something like Created 12, Reused 33, Failed 0 in under a minute, because jobs already known come back Reused and untouched. You then run the scheduler, which states how many jobs are new and how many existing ones are being rescheduled before it plans anything. What is left is the part that actually needed a person: looking at the two work centers that are over and deciding what to do. Most shops find the half day collapses to about twenty minutes."
+  - question: "Our routings hold one setup time per operation, but our shear and press changeovers vary hugely with material gauge. Is that fixable without re-engineering every routing?"
+    answer: "Yes, and without touching the routings at all. You import them with their existing base setup times, then build a sequence-dependent setup matrix in EDGEBIC: setup families grouped by gauge, with a changeover time from each family to each other on that work center. Because families collapse part-to-part pairs into a handful of entries, a shop with 300 parts and five gauges maintains around 25 numbers rather than tens of thousands. The optimizer then sequences work to reduce total changeover, and the recovered hours land on the exact machines where you are short."
+---
+
+**Sage handles the business side of a small manufacturer well (orders, inventory, purchasing, costing, and accounting), but shops consistently report that the actual sequencing decision still lives on a whiteboard or in a spreadsheet, because the planner's morning questions are finite capacity questions: which jobs fit this week, what a rush order displaces, and when the press runs out of hours.** The fix is not replacing Sage. It is adding a finite capacity layer beside it that reads the data Sage already holds and hands back dates the floor can hit.
+
+EDGEBIC by User Solutions is that layer. This post walks the gaps shops report, why they exist in any business-first ERP, and how each one is filled with a specific mechanism rather than a claim. For the data-flow mechanics, the companion post is the [complete Sage integration guide](/blog/edgebic-sage-integration-guide).
+
+## Why the gaps exist
+
+An ERP's job is to be right about money and material. A scheduler's job is to be right about time: what runs where, when, in what order, on which machine, with which operator. Those are different computations, and the second one is combinatorial. Sequencing 45 open jobs across 11 work centers with shifts, setups, and shared machines has more valid arrangements than a person can compare, which is why the answer usually ends up being habit plus intuition.
+
+So the gap is structural rather than a Sage defect. It shows up the same way in every shop: dates come from lead-time rules, the floor runs from a board one person maintains, and the two drift until a customer call reconciles them. The distinction between planning material and scheduling finite capacity is standard in the operations management body of knowledge maintained by [ASCM](https://www.ascm.org). The general version of the story is in [job shop scheduling challenges](/blog/job-shop-scheduling-challenges), and the older category overview is [Sage scheduling integration](/blog/sage-scheduling-integration). Here is the gap-by-gap version.
+
+## Gap 1: dates that never checked whether the hours exist
+
+The first question, [finite versus infinite capacity](/blog/finite-vs-infinite-capacity-scheduling), decides whether a promise date means anything. Infinite-capacity logic stacks work into a week without asking whether the hours are there. Finite-capacity logic refuses to plan 60 hours onto a machine with 40 available and pushes the overflow to where capacity is real.
+
+**How EDGEBIC fills it:** every schedule is finite capacity by construction. Work centers carry machine counts, shift calendars, efficiency, utilization caps, holidays, and downtime, and available hours resolve day by day before anything is allocated. A job that does not fit this week lands where it fits, so the date it produces is one you can defend on the phone. When you want the just-in-time answer instead, [backward scheduling](/blog/forward-vs-backward-scheduling) from the due date is a per-job choice.
+
+## Gap 2: capacity flattened into one number per work center
+
+A cell of three identical machines usually appears in an ERP as one work center with a larger capacity figure. That is right in a weekly total and wrong every day, because it will plan one job that occupies the whole cell where three could run side by side, and it hides which specific machine is actually free.
+
+**How EDGEBIC fills it:** machine instances are modeled directly. Three machines means three simultaneous jobs, and the engine either balances load across them or dedicates one machine per job per day when long changeovers make that the right rule. Where machines are genuinely interchangeable, a work center group treats them as a pool and re-shops it on every reschedule, so a breakdown redistributes work automatically. The mechanics are in [how EDGEBIC picks the best machine in a pool](/blog/how-edgebic-picks-the-best-machine-in-a-pool), and the capacity math is in [how EDGEBIC calculates work center capacity](/blog/how-edgebic-calculates-work-center-capacity).
+
+## Gap 3: one setup time per operation
+
+A single setup column cannot express the reality that changeover cost depends on what ran immediately before. Shops running colors, coatings, gauges, resins, or tooling families lose whole shifts to a sequence nobody can see, and the loss is invisible precisely because it never appears as a line item.
+
+**How EDGEBIC fills it:** a sequence-dependent setup matrix per work center, organized by setup families so maintenance stays small. The optimizer then groups compatible jobs and orders families to reduce total changeover, using mathematical optimization with a proven optimality gap plus a multi-run layer guaranteed never worse than the baseline schedule. Recovered setup hours are capacity you already paid for. The concept post is [what a setup family is](/blog/what-is-a-setup-family-sequence-dependent-changeover).
+
+## Gap 4: the bottleneck shows up as late jobs, three weeks later
+
+Every shop has a constraint. Without finite loading, its overload is invisible until the late orders arrive, at which point the useful decisions are already behind you. Identifying and protecting the constraint is the highest-return move available; the method is in [production bottleneck identification](/blog/production-bottleneck-identification).
+
+**How EDGEBIC fills it:** flag the work center as a bottleneck and the engine anchors schedules around it, scheduling backward into the constraint and forward out of it with protective buffers. Capacity views then show the constraint's load by day, which turns an overloaded Tuesday into something you can act on while it is still next week.
+
+## Gap 5: rush orders take an afternoon to evaluate
+
+The whiteboard's fatal weakness is cascade math. Inserting one hot job displaces others, which displaces others, and nobody recomputes 200 downstream operations by hand. So the honest answer to "what slips?" is a guess.
+
+**How EDGEBIC fills it:** rescheduling is a computed operation, and it comes with two guarantees that make planners trust the output. Completed work is never moved by a reschedule, because an operation with recorded actual start and end is historical fact. And every scheduled job runs from a frozen snapshot of the routing it was planned with, so a mid-stream routing change never rewires work in progress. Quote simulation lets you test a promise date before you make it, so sales can ask the question during the call.
+
+## Gap 6: the schedule and the floor never reconcile
+
+If actual hours live in one place and the plan lives in another, Monday's plan is assuming a fiction by Tuesday afternoon.
+
+**How EDGEBIC fills it:** actual hours and piece counts arrive either typed at a shop-floor kiosk or imported in bulk from whatever your shop already collects. The actuals import is built to be re-run: the days a file carries are always overwritten, so importing a corrected timesheet fixes the numbers without double-counting. The next reschedule then plans remaining work from where the shop actually is.
+
+## The integration question, answered honestly
+
+The objection to any layer beside the ERP is the data bridge, and the answer here is deliberately unglamorous: reusable import masks that read the Excel and CSV exports Sage already produces. Map columns once; every later run is two clicks. Routings import in two passes so operation sequences wire themselves. Unit conversion (minutes to hours at `0.016667`) lives inside the mask. Every row reports Created, Updated, Reused, or Failed with a per-run log.
+
+There is no certified connector, no middleware, and nothing installed inside Sage, which is also why the same masks survive a move between Sage editions. The full architecture is on the [ERP integration page](/edgebic-erp-integration), and the same method applied to other platforms is in the [SAP](/blog/sap-scheduling-gaps-and-how-edgebic-fills-them) and [NetSuite](/blog/netsuite-scheduling-gaps-and-how-edgebic-fills-them) versions of this post.
+
+This is not a new approach. User Solutions has integrated scheduling with ERPs this way since 1991, including Cummins across 33 locations from AS400-era data, BAE Systems, and a Fourth Shift integration at Plastilite Corporation that ran Monday to Friday with the ERP vendor itself recommending the add-on. Documented results from the same line include GE Railcar moving on-time shipping from 30 percent to 90 percent.
+
+## Three routes small shops actually consider
+
+| Route | Up-front effort | What you get | Where it breaks |
+|---|---|---|---|
+| Spreadsheet plus whiteboard | Low | Familiar and flexible | No constraint checking, no cascade math, one owner, no history |
+| Waiting for the next ERP upgrade | Varies | One vendor to call | Still a business-first data model; sequencing depth rarely matches a job shop |
+| A finite capacity layer beside Sage | Days | Real finite capacity, optimization, what-if | Needs a data bridge to the ERP |
+
+The third route's data-bridge objection is the one this product line answered decades ago, and it is answered below. The first route deserves a fair hearing though: a spreadsheet is genuinely good at flexibility and genuinely bad at cascade math, so the moment your shop's pain is "what does this rush order actually displace?" the spreadsheet has reached its ceiling.
+
+## Three checks that predict how fast this pays off
+
+**Routing coverage.** Pull routings for your ten highest-volume parts. Do they carry a sequence, a work center, hours per unit, and a setup time? If yes, you can schedule on day one.
+
+**Machine truth.** Count real machines per work center against what Sage records. Every disagreement is capacity you are currently misstating.
+
+**Date honesty.** Sample 20 recently shipped jobs and compare promised dates with actual ship dates. That spread is your current scheduling error and becomes the baseline you measure against.
+
+## A 30-minute test
+
+Export three files from Sage: work centers, routings for your five highest-volume parts, and this week's open jobs. [Bring them to a demo](/contact-us). Mapping the columns live takes minutes, and the first finite capacity schedule from your own data answers the only question that matters: do these dates look like your shop? The [EDGEBIC product overview](/edgebic) and the [ERP scheduling add-on page](/erp-scheduling-add-on) cover the surrounding category.
+
+<Accordion title="Why do Sage shops end up scheduling on a whiteboard?">
+Because the whiteboard answers the question the ERP does not: which job runs on which machine next. Sage records orders, materials, costs, and shipments accurately, but sequencing 45 open jobs across 11 work centers with shifts and changeovers is a constraint problem. When that computation lives outside the system, the whiteboard becomes the real schedule and the ERP's dates become a formality.
+</Accordion>
+
+<Accordion title="Do we have to replace Sage to get finite capacity scheduling?">
+No. The standard pattern is a scheduling layer beside the ERP. Sage stays the system of record for orders, inventory, purchasing, and accounting, and a finite capacity tool reads the items, work centers, routings, and open jobs it already holds. Executable dates and dispatch lists come back as Excel. Nothing is installed inside Sage and no ERP process changes.
+</Accordion>
+
+<Accordion title="How does EDGEBIC get data out of Sage?">
+Through reusable import masks fed by the Excel or CSV exports Sage already produces. You map an export's columns to EDGEBIC fields once, and every later run is two clicks with each row reporting Created, Updated, Reused, or Failed and a per-run log recording all of them. Because the interface is a file rather than a connector, the same masks keep working across Sage editions and upgrades.
+</Accordion>
+
+<Accordion title="Is finite capacity scheduling worth it for a small manufacturer?">
+Small shops usually gain the most, because they have the least slack to absorb a bad sequence. With 8 to 20 machines, one avoidable changeover or one overloaded bottleneck week is a visible share of total capacity. Modeling real machine counts, shift hours, and sequence-dependent setups turns which-jobs-fit-this-week from an estimate into a computed answer, and the setup effort is measured in days.
+</Accordion>

@@ -1,0 +1,157 @@
+---
+title: "Why Every EDGEBIC Column Carries Its Own Definition"
+description: "A manufacturing report glossary that cannot drift: how EDGEBIC structures every column definition, validates their links, and what that buys you in an audit."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - manufacturing report glossary
+  - metric definition traceability
+  - audit ready reporting
+  - structured documentation software
+  - KPI governance manufacturing
+  - report documentation standard
+targetPhrase: "manufacturing report glossary"
+wordCount: 2100
+readingTime: 11
+faqQuestions:
+  - question: "What is a manufacturing report glossary?"
+    answer: "A manufacturing report glossary is a single documented definition for every metric a plant reports, held where the numbers are produced rather than in a separate manual. In EDGEBIC it is structured data: each entry stores a field name, a display name, a plain-English description, a formula, a unit, worked examples, links to related columns, and the place the value is computed, and the reports read those entries directly."
+  - question: "How does EDGEBIC stop its report documentation from going out of date?"
+    answer: "By making the documentation part of the same change as the code. Each report has one provider holding its entries, a new report cannot register without content, and automated convention tests check every entry has a real description rather than a placeholder, that field names are unique within a report, and that every see-also reference resolves to a column that actually exists on that report. A broken link fails the build rather than shipping as a dead end."
+  - question: "Why does traceability matter for scheduling metrics?"
+    answer: "Because a metric with no traceable definition cannot be defended when it is questioned, and scheduling metrics get questioned constantly: by customers on delivery performance, by finance on hours, by auditors on process. Each EDGEBIC glossary entry carries the formula in the notation the engine uses plus a source line naming where the value is computed, so the answer to where does this number come from is a screen rather than a recollection."
+  - question: "What happens if two reports try to use the same identifier?"
+    answer: "The application refuses to start and names the duplicate. That is deliberate: silently picking one would mean a planner clicking Column Details on one report and reading another report's documentation, which is worse than a visible failure. The same fast-fail thinking runs through the system, including hiding the Column Details button entirely on a report with no registered glossary rather than opening an empty dialog."
+qaQuestions:
+  - question: "Our quality manual already defines these metrics. Why does the software need its own glossary?"
+    answer: "Because the manual and the software drift, and the drift is invisible until an audit finds it. A quality manual is written once and revised on its own cycle; a formula changes when a release changes it. Holding the definition next to the computation means the person who changes a formula is the person who has to update the entry, and the automated checks fail if the entry is left empty or its cross-references break. That does not replace your manual: it makes the manual verifiable, because you can open the entry, read the formula in the engine's own notation, and confirm the manual still matches. Where they differ, one of the two is wrong and you now know which screen to look at."
+  - question: "We are onboarding two planners next month. Realistically, how much training does an in-product glossary save?"
+    answer: "It changes what they have to learn. Without it, a new planner has to memorise an acronym set before they can read a report, and the failure mode is quiet: they read SPI 1.00 on an unstarted job as on schedule and nobody finds out for a month. With it, they learn one habit, which is to click Column Details before quoting a number, and each entry hands them a nominal, a good, and a bad example so they can grade their own figure immediately. A practical induction is four entries long: SPI, CPI, percent complete, and the utilization rating, which between them carry the traps that produce wrong conclusions. That is five minutes and a rule, replacing a deck that gets read once."
+---
+
+**Every documented column in EDGEBIC by User Solutions has a definition that lives with the code producing the number, not in a manual beside it, and the links between those definitions are checked automatically so they cannot rot into dead ends.** That is an engineering decision with operational consequences: it is why a planner never has to ask what VAC stands for, why an auditor gets a screen rather than a recollection, and why a formula change and its documentation cannot travel separately. This post is the mechanism behind the [Column Details dialog](/blog/how-to-use-column-details-in-edgebic) and why it was built the harder way.
+
+## The Failure Mode It Was Built Against
+
+Every plant has documentation for its metrics somewhere. The question is where, and what happens when a formula changes.
+
+| Where the definition lives | How it fails |
+|---|---|
+| In a training manual | Nobody has it open at the moment they read the number, and it drifts from the first release that changes a formula |
+| In a tooltip written per grid | Rewritten for every screen that shows the same column, and the copies disagree |
+| In a spreadsheet of KPI definitions | Owned by whoever made it, out of date the week they change roles |
+| In someone's head | Leaves with them |
+
+All four share the same defect: the documentation and the computation are separate artefacts with separate lifecycles, so they diverge quietly. Divergence in a scheduling metric is expensive, because the number keeps being quoted while it means something slightly different from what everyone believes.
+
+## The Design: Definitions as Structured Data
+
+The alternative is to treat documentation as data with named fields rather than prose, and to store it where the numbers are computed. Each entry carries:
+
+| Field | Purpose |
+|---|---|
+| Field name | The grid column it documents, which is also the lookup key |
+| Display name | The header as shown, abbreviation and all |
+| Full name | The expansion, so SPI reads as Schedule Performance Index |
+| Short description | One line, for a tooltip |
+| Long description | A self-contained paragraph aimed at a planner meeting the term for the first time |
+| Formula | The canonical computation, in the same notation the engine uses |
+| Unit | One of a fixed set: hours, pieces, percent, ratio, currency, date, datetime, text, flag |
+| Examples | Concrete value and interpretation pairs |
+| Related terms | Sibling columns on the same report |
+| Source | Where the value is computed |
+
+Structuring it this way, rather than as a paragraph, is what makes the rest possible. A field can be validated. A prose blob cannot.
+
+## One Provider per Report, No Central List
+
+Each report has exactly one place holding its entries, and a central lookup composes all of them at startup, keyed by a stable report identifier. Adding a documented report means adding its provider and registering it. There is no central switch statement to edit, which matters more than it sounds for a product where several reports get documented in parallel: nobody's work collides with anybody else's, so documentation does not become the merge conflict that gets skipped.
+
+The identifier is referenced by the report screen at compile time rather than as a typed-in string. Rename the identifier and the build breaks immediately. Type it as a string in two places and one of them silently stops matching, so the Column Details button opens nothing and nobody notices for months. The stricter version costs one line and removes an entire class of quiet failure.
+
+If two reports ever claim the same identifier, the application refuses to start and names the clash. Silently choosing one would mean a planner opening documentation for a different report than the one on screen, which is worse than an obvious failure at launch.
+
+## What the Automated Checks Enforce
+
+The part that keeps the glossary honest over years rather than months is a set of convention tests that run before changes ship.
+
+**Every registered report must have content.** A provider that registers with an empty entry list fails. So does one whose descriptions are blank or left as a placeholder. The long description is the text a reader quotes, and a placeholder is a silently wrong answer rather than a missing one.
+
+**Field names must be unique within a report.** Two entries claiming the same column would silently shadow each other on lookup, so the check catches it at review time.
+
+**Every see-also reference must resolve.** This is the one that pays for itself. Related terms form a small knowledge graph: the SPI entry points at planned value, earned value, and CPI; the CPI entry points back at the budget and earned value entries. A typo in one of those references would produce a dead end for a reader following the chain, or worse, a plausible-looking term that does not exist. The check asserts that every reference names a real sibling column on the same report, so a broken edge fails rather than ships.
+
+The discipline the tests cannot enforce is the important remaining one: when an engineer changes a formula, the entry has to change in the same commit. That is a review rule rather than an automated gate, and it is stated as such. Naming the limit is more useful than pretending the tests cover it.
+
+## Why the Examples Are Mandatory
+
+Each non-trivial entry carries three examples: one nominal, one good case, one bad case. The pattern is a rule rather than a suggestion, and it is the single highest-value element for a human reader.
+
+A ratio column defined as earned value over actual cost is accurate and useless at 08:40 on a Monday. The same entry showing 1.00 as on budget, 1.10 as earning ten percent more credit than the hours burned, and 0.82 as every hour worked earning only 0.82 hours of credit lets a reader place their own number instantly without arithmetic.
+
+The examples also do a second job: they document legitimate states that look like faults. An on-hand quantity of minus 30 reads as corruption to a new planner until the entry shows "-30: over-issued, 30 units consumed before the matching receipt landed" and explains that the on-hand figure is the signed sum of the ledger. A number that is expected in a documented circumstance is a very different conversation from a number that is broken.
+
+## A Worked Traversal: One Question, Three Entries
+
+A supervisor opens OEE for a welding station and sees availability 72%, performance 95%, quality 98%, and an OEE of 67%. The question is why the total is so much lower than the parts.
+
+She opens the entries in the order the see-also links suggest:
+
+```
+OEE          formula: availability x performance x quality
+availability formula: actual hours / available hours x 100
+             example: 95% = ran 95% of every hour it could, minimal downtime
+             example: 70% = lost 30% of available hours, look at downtime or staffing
+performance  actual pieces / theoretical pieces from the routing cycle time
+quality      good / (good + scrap + rework)
+```
+
+The arithmetic composes itself: 0.72 times 0.95 times 0.98 is 0.67. The station is fast and accurate when it runs, and it is not running for more than a quarter of its available hours. The improvement lever is downtime, not cycle time. Three entries, no spreadsheet, and the reasoning is reproducible by anyone else who opens the same dialog.
+
+The same traversal works on the setup matrix columns, where the entry for a changeover's source documents the resolution order the engine follows: a product-pair override first, then a family-level changeover cell, then the routing step's own setup time, then the work center default. A row reading "family matrix, white to black, 240 minutes" tells the planner exactly which cell to edit, because the entry told them which rung of the chain fired.
+
+## What It Buys an Audit
+
+Three artefacts, all obtainable in the moment.
+
+**The definition, on screen.** Plain English, aimed at someone who has never met the term, with no forward references to acronyms that are not themselves documented.
+
+**The formula, in the engine's notation.** Not pseudo-code and not a paraphrase. When a quality manual and the software disagree, the formula line tells you which is out of date.
+
+**The source.** Each computed entry names where the value is produced, which is the direct answer to "where does this number come from?" for a reader who is not going to read code.
+
+Add an exported PDF of the report taken at the moment a decision was made (reports are point-in-time, so tomorrow's picture differs) and a delivery or capacity decision has both its evidence and its definitions, dated. That combination is what quality systems actually ask for, and assembling it after the fact is far harder than capturing it as you go.
+
+## Built for a Second Reader
+
+One more design property is worth naming, because it explains a few of the choices above. The glossary service does not depend on the desktop interface at all, and the entries are plain records designed to be handed to another consumer as structured content.
+
+Practically, that means the identical definition can drive the in-app dialog today and structured lookups elsewhere later, with no second copy to maintain and no translation step. It also explains the rule that a description must be self-contained and must expand its acronyms: a paragraph written to make sense on its own is exactly what any second reader needs, whether that reader is a new planner or a lookup that returns the definition rather than inventing one. Content written for a knowledgeable colleague fails both.
+
+## The Practical Takeaway
+
+For a planner, none of this is visible. What is visible is that the button is always there, the definition is always current, the examples let you grade your own number, and the see-also list stops you acting on half a picture. That is the whole return on the engineering discipline.
+
+If you want the reader's view first, [self-explaining reports](/blog/edgebic-self-explaining-reports-explained) is the overview and [how to use Column Details](/blog/how-to-use-column-details-in-edgebic) is the walkthrough. The vocabulary traps that survive good definitions are collected in [report terminology mistakes](/blog/report-terminology-mistakes-edgebic), and the reports themselves in the [catalogue](/blog/edgebic-reports-explained). For the generic metric definitions behind the acronyms, see our [manufacturing KPI guide](/blog/manufacturing-kpis-guide); for the system computing them, the [complete EDGEBIC guide](/blog/edgebic-complete-guide).
+
+Documentation that ships with the number is the difference between a report you quote and a report you defend. [Bring the metric your team argues about to a demo](/edgebic) and we will open its entry.
+
+<Accordion title="What is a manufacturing report glossary?">
+A manufacturing report glossary is a single documented definition for every metric a plant reports, held where the numbers are produced rather than in a separate manual. In EDGEBIC it is structured data: each entry stores a field name, a display name, a plain-English description, a formula, a unit, worked examples, links to related columns, and the place the value is computed, and the reports read those entries directly.
+</Accordion>
+
+<Accordion title="How does EDGEBIC stop its report documentation from going out of date?">
+By making the documentation part of the same change as the code. Each report has one provider holding its entries, a new report cannot register without content, and automated convention tests check every entry has a real description rather than a placeholder, that field names are unique within a report, and that every see-also reference resolves to a column that actually exists on that report. A broken link fails the build rather than shipping as a dead end.
+</Accordion>
+
+<Accordion title="Why does traceability matter for scheduling metrics?">
+Because a metric with no traceable definition cannot be defended when it is questioned, and scheduling metrics get questioned constantly: by customers on delivery performance, by finance on hours, by auditors on process. Each EDGEBIC glossary entry carries the formula in the notation the engine uses plus a source line naming where the value is computed, so the answer to where does this number come from is a screen rather than a recollection.
+</Accordion>
+
+<Accordion title="What happens if two reports try to use the same identifier?">
+The application refuses to start and names the duplicate. That is deliberate: silently picking one would mean a planner clicking Column Details on one report and reading another report's documentation, which is worse than a visible failure. The same fast-fail thinking runs through the system, including hiding the Column Details button entirely on a report with no registered glossary rather than opening an empty dialog.
+</Accordion>

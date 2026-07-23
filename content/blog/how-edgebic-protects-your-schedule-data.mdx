@@ -1,0 +1,167 @@
+---
+title: "How EDGEBIC Protects Your Schedule Data: Passwords, Lockout, and the Audit Trail"
+description: "A manufacturing software security audit asks three questions: how are passwords stored, what stops guessing, and what is recorded. Here are EDGEBIC's answers."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: Admin & Deployment
+author: user-solutions
+cluster: edgebic-admin
+pillarSlug: edgebic-admin-guide
+keywords:
+  - manufacturing software security audit
+  - scheduling software password security
+  - manufacturing software audit trail
+  - account lockout manufacturing software
+  - production scheduling data protection
+  - who changed the schedule
+targetPhrase: "manufacturing software security audit"
+wordCount: 1994
+readingTime: 10
+faqQuestions:
+  - question: "How does EDGEBIC store user passwords?"
+    answer: "Passwords are never stored in readable form. EDGEBIC keeps a salted cryptographic hash produced with PBKDF2-SHA256 at 600,000 iterations, the work factor recommended by OWASP in 2023. Each password gets its own random salt, and comparison uses a constant-time check so an attacker cannot learn anything from how long a failed attempt takes. If the recommended work factor rises in a later version, stored hashes upgrade automatically at the user's next successful sign-in."
+  - question: "What stops someone guessing a password in EDGEBIC?"
+    answer: "Five consecutive wrong passwords lock the account for 15 minutes by default. Attempts made during a lockout do not extend it, and a successful sign-in resets the counter to zero. The error message is always the same wording whether or not the username exists, which denies an attacker the ability to enumerate valid accounts. An administrator can clear a lock immediately with the Unlock button rather than waiting out the window."
+  - question: "Does EDGEBIC keep an audit trail of security events?"
+    answer: "Yes, and it is append-only: rows are never deleted by the application. Sign-ins, failed attempts, lockouts, sign-outs, password changes and resets, user creation and deletion, activation and deactivation, role creation and assignment, and permission grants, revocations, and denials all land there permanently. There is no in-application viewing screen for the trail yet; it lives inside the database where an administrator or support can query it."
+  - question: "Is hiding a button enough to stop someone doing something they should not?"
+    answer: "No, and EDGEBIC does not rely on it. Permission checks run before an operation executes, not only when the interface decides what to draw. A user without the right to generate schedules gets the request refused at the point of execution and a permission-denied entry written to the audit trail, whether or not a button was visible. Hidden buttons are the convenience layer; the enforcement layer sits underneath them."
+qaQuestions:
+  - question: "Our quality auditor wants evidence of who changed a schedule and when. What can we actually show them?"
+    answer: "Two separate records answer two separate questions, and it helps to know which is which before the audit. Schedule changes are tracked in the schedule change history shown with the job, so you can show what moved, when, and as the result of which run or manual edit. Security events (sign-ins, failed attempts, lockouts, user and role changes, permission denials) go to the append-only security audit trail inside the database, which your administrator or support can query. The trail is only meaningful if actions map to people, so the one prerequisite is one account per person and no shared logins. If you are working toward a documented quality system, decide that policy before the first audit rather than during it."
+  - question: "We use SQL Server with a SQL login. Where does that password live and is it safe to copy the config to a second PC?"
+    answer: "The database password is encrypted with Windows DPAPI and tied to the Windows account that entered it, and only the encrypted form is ever written to disk. That means copying the configuration to another Windows user or another PC deliberately does not carry a usable password across: the decryption fails, the connection is refused, and the person re-enters the password under their own Windows identity and applies again. It is a feature, not a fault, but it is the single most common cause of the 'it worked on my machine' database complaint. The documented recommendation avoids the issue entirely: prefer Windows authentication for SQL Server, so there is no stored password to manage on any machine."
+---
+
+**A manufacturing software security audit** comes down to three questions: how are passwords stored, what stops someone guessing them, and what gets recorded. EDGEBIC by User Solutions answers all three with mechanisms rather than policy documents: passwords are stored only as salted hashes produced by a deliberately slow algorithm, five failed attempts lock an account for 15 minutes, and every security-relevant event lands in an append-only trail inside the database. This post explains each one, plus the part most scheduling tools get wrong: enforcement that does not depend on hiding a button.
+
+The access model itself (permissions, roles, users) is covered in [EDGEBIC users and roles explained](/blog/edgebic-users-and-roles-explained). This post is about what happens underneath it.
+
+## Passwords Are Never Stored, Only Verified
+
+EDGEBIC does not keep your password. It keeps a hash: a one-way transformation that can confirm a password is correct but cannot be reversed into the original text.
+
+The specifics matter, because "hashed" covers everything from strong to useless:
+
+| Property | What EDGEBIC does | Why it matters |
+|---|---|---|
+| Algorithm | PBKDF2-SHA256 | A deliberately slow, standard key-derivation function, not a fast general-purpose hash |
+| Work factor | 600,000 iterations | The [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html) 2023 recommendation for this algorithm |
+| Salt | 16 random bytes, unique per password | Two people with the same password get different stored values, so precomputed tables are worthless |
+| Comparison | Constant-time | A failed attempt takes the same time regardless of how wrong it was, so timing reveals nothing |
+| Upgrade path | Automatic | Parameters are embedded in the stored value, so raising the work factor in a later version re-hashes each password transparently at the next successful sign-in |
+
+That last row is the one administrators tend to appreciate later. Security recommendations move; a stored hash that carries its own parameters can move with them without a migration project or a forced password reset across the plant.
+
+The default policy for what a password must contain is modest and configurable: at least 8 characters with an uppercase letter, a lowercase letter, and a digit. Special characters are not required by default. Your installation may be set more strictly. Current guidance from [NIST's digital identity guidelines](https://pages.nist.gov/800-63-3/sp800-63b.html) favors length over composition rules, which is worth remembering when you decide whether to tighten yours: a longer minimum usually buys more than another character-class requirement.
+
+## Lockout: Five Attempts, Fifteen Minutes, No Hints
+
+Brute force is the attack that password rules alone do not stop. EDGEBIC's answer has three parts.
+
+**Five consecutive wrong passwords lock the account for 15 minutes** by default. A successful sign-in resets the counter to zero.
+
+**Attempts during a lockout do not stack.** Once the account is locked, further attempts are refused by the lockout check itself and do not increment the counter or extend the window. When the window expires, the next correct password signs in normally and the counters reset.
+
+**The message never reveals whether the username exists.** Wrong username and wrong password produce identical wording. That is deliberate: an error that distinguishes them hands an attacker a free list of valid accounts. The audit trail records the truth internally, so an administrator can still see which case actually occurred.
+
+An administrator does not have to wait out the window. Select the account on the Users screen and click **Unlock**: the lock clears and the failed-attempt counter resets immediately.
+
+A worked example from the documentation, for a supervisor whose counter already stands at three:
+
+| Attempt | Password | Outcome |
+|---|---|---|
+| 1 | wrong | Refused, attempt 4 of 5 recorded |
+| 2 | wrong | Account locked for 15 minutes |
+| 3 | correct | Still refused, locked until the window expires |
+| 4 (after 15 minutes) | correct | Signed in, counters reset to zero |
+
+## Enforcement Happens Before the Operation, Not at the Button
+
+This is the part that separates real access control from a cosmetic one.
+
+In many applications, permission means "the button is hidden." Hide the button, and anyone who reaches the underlying operation another way is unopposed. EDGEBIC hides buttons too, because a smaller interface is a kinder interface, but that is the convenience layer. The enforcement layer sits underneath: every operation carries the permission it requires, and the check runs before the operation executes.
+
+The consequence is concrete. A user without the right to generate schedules who somehow reaches that operation gets it refused at execution, and a permission-denied entry is written to the audit trail naming the person and the right they lacked. Screens they lack permission for are hidden or refused wholesale, including the entire Settings tab and the Security tab inside it.
+
+## The Audit Trail: Append-Only, and Deliberately Unbudgeable
+
+Every security-relevant event is recorded permanently. The application never deletes rows from that record.
+
+What lands there:
+
+- Sign-in succeeded, sign-in failed, lockout, sign-out
+- Password changed, password reset
+- User created, updated, deleted, activated, deactivated
+- Role created, updated, deleted, assigned to a user, removed from a user
+- Permission granted, revoked, denied
+
+Each row carries the username as it was at the time, so the record stays readable even after an account is renamed or removed. Failed sign-ins for a username that does not exist are recorded too, with no user attached.
+
+One honest limitation: **there is no viewing screen for the security trail in the application yet.** It exists as an append-only record inside the database that your administrator or support can query when a compliance question arrives. If in-application audit reporting is a hard requirement for your quality system, raise it early rather than assuming it.
+
+That is separate from schedule history, which planners see directly. Schedule changes are tracked in the schedule change history shown with the job, so "why did this operation move?" is answered in the scheduling screens rather than in a security log.
+
+## Where the Database Password Lives
+
+If you run on SQL Server with a SQL login rather than Windows authentication, there is a second secret to protect: the database password itself.
+
+EDGEBIC never writes it to disk in readable form. It is encrypted with Windows DPAPI, tied to the Windows account that entered it, and only the encrypted form is stored. At startup the value is decrypted into memory for the connection and is never written back.
+
+The user-scoping has a visible consequence. Copy the configuration to a different Windows user or a different PC and the decryption fails, so the connection is refused and the person simply re-enters the password under their own identity. That behavior is protective, and it is also the single most common "it worked on my machine" complaint during a rollout. The documented recommendation removes the problem entirely: **prefer Windows authentication for SQL Server**, and there is no stored password on any machine to break. More on that choice in [moving from single user to shared server](/blog/moving-from-single-user-to-shared-server-edgebic).
+
+## What Protects the Plan Itself
+
+Two behaviors protect the schedule as data, not just the login as an identity.
+
+**Completed work is never moved by a reschedule.** Operations with recorded actual dates keep them; a re-run replans only what has not happened yet. That is a scheduling property rather than a security one, but it does the same job an audit trail does: it makes the historical record immovable. The reschedule behavior is covered in the [EDGEBIC scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+**Backups are one click.** On the default single-file database, the Export button creates a timestamped backup next to the database file, safe even while the application is running. On SQL Server, the scheduling database joins your IT team's normal backup rotation. Take an export before every data clear, mass routing re-import, or provider switch. It costs one click and it is the only undo that exists for the Clear Data Tables utility.
+
+## What Is Not Protected, and How to Compensate
+
+An honest security summary names its gaps. Three are worth knowing before an IT review asks about them.
+
+**There is no in-application viewer for the security audit trail yet.** The record exists, it is complete, and it is append-only, but reading it is a query rather than a screen. If your quality system requires a self-service audit report, plan for your administrator or support to produce it.
+
+**Concurrent edits are last-write-wins.** On a shared database, two people editing the same record at the same moment means the second save silently overwrites the first. This is a data-integrity property rather than a security one, and the practical compensation is organizational: divide master data ownership so two people rarely have the same record open.
+
+**A kiosk terminal on the floor is physically open by definition.** It exists to let whoever is at the machine log work quickly. Give the kiosk role exactly one capability (logging actuals) and nothing else, so the worst case at an unattended terminal is a wrong punch rather than a changed routing.
+
+None of the three is a surprise if you know about it. All three are surprises if you find them during an audit.
+
+## A Question Set for Your IT Security Review
+
+IT security reviews ask roughly the same nine questions of any manufacturing application. Here are the answers in one place, so the review takes an afternoon rather than three weeks of email:
+
+| Question | Answer |
+|---|---|
+| Where does the data live? | A single file on one PC, or a SQL Server database your IT team runs. Nothing leaves your network |
+| How are passwords stored? | Salted PBKDF2-SHA256 hashes at 600,000 iterations; never in readable form |
+| Is there brute-force protection? | Five failed attempts lock the account for 15 minutes by default |
+| Can accounts be enumerated? | No. The failure message is identical for a wrong password and an unknown username |
+| Is access role-based? | Yes, with permissions granted through roles only |
+| Is enforcement server-side of the interface? | Yes. Checks run before the operation executes, not only when a button is drawn |
+| Is there an audit trail? | Yes, append-only, covering sign-ins, user and role changes, and permission denials |
+| How are database credentials protected? | Encrypted and tied to the Windows account that entered them; Windows authentication avoids stored passwords entirely |
+| What is the backup story? | One-click timestamped export on the single-file deployment; standard SQL Server rotation on a shared one |
+
+If your reviewer wants a policy document rather than a mechanism list, the mechanisms above are what a policy would have to describe anyway.
+
+## The Practical Security Checklist
+
+Five habits, all documented, all cheap:
+
+1. **One account per person, never shared logins.** The audit trail is only worth something if actions map to people.
+2. **Grant the least that does the job.** Start roles from nothing and add rights when someone genuinely hits a wall.
+3. **Keep exactly one break-glass administrator** besides the founding account, with a strong password in your password manager.
+4. **Use Windows authentication for SQL Server** wherever possible: no stored password, no per-user re-entry.
+5. **Back up on a schedule, not on memory.** A nightly copy of the database file, or the scheduling database in IT's standard rotation.
+
+Manufacturers already running a formal quality system will find these map cleanly onto the access and traceability sections they have to evidence anyway. See [audit-ready scheduling](/blog/audit-ready-scheduling) for how the scheduling record fits into that documentation.
+
+## Where to Go Next
+
+Read [EDGEBIC users and roles explained](/blog/edgebic-users-and-roles-explained) for the access model, [how to set up users and roles in EDGEBIC](/blog/how-to-set-up-users-and-roles-in-edgebic) for the setup clicks, and [user and permission mistakes in EDGEBIC](/blog/user-and-permission-mistakes-edgebic) for the failure modes that generate most support calls. The full deployment picture sits in the [EDGEBIC admin guide](/blog/edgebic-admin-guide).
+
+Bring your IT team's security questionnaire to a demo of [EDGEBIC](/edgebic), and we will answer it live rather than in a follow-up email.

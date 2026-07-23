@@ -1,0 +1,136 @@
+---
+title: "8 Manufacturing Inventory Mistakes That Quietly Break Your Schedule"
+description: "Manufacturing inventory mistakes rarely announce themselves. Here are eight configuration errors, the symptom each produces, and the check that catches it."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - manufacturing inventory mistakes
+  - inventory data accuracy manufacturing
+  - on hand quantity drift
+  - stocked flag misconfiguration
+  - negative inventory balance
+  - inventory integrity checks
+  - inventory audit trail errors
+targetPhrase: "manufacturing inventory mistakes"
+wordCount: 1606
+readingTime: 8
+faqQuestions:
+  - question: "Why would a make-to-stock product never post an inventory receipt?"
+    answer: "Almost always because its stocked flag is switched off. Build method decides intent, but the stocked flag decides whether inventory transactions happen at all. With it off, completion posts no receipt, netting skips the product, and on-hand sits at zero forever while the product record still says make-to-stock. It is the most misleading combination in inventory setup, which is why a dedicated integrity check looks for it."
+  - question: "What causes an on-hand quantity to disagree with the transaction history?"
+    answer: "Something wrote the quantity without going through the ledger. The cached on-hand figure is meant to be recomputed from the sum of ledger entries inside the same transaction as every posting, so a mismatch means a code path or an import bypassed that route, or a transaction was interrupted part way. The fix is a signed adjustment for the difference with a comment naming the reconciliation, which restores agreement without touching history."
+  - question: "Is negative on-hand inventory an error?"
+    answer: "It is allowed but flagged, and it usually means over-issuing. A negative balance says more units have been issued than were ever received, which distorts netting and can produce optimistic promise figures. Correct it by finding the missing receipt (a build never marked complete, a purchase never recorded) and posting it, rather than by adjusting the balance to zero and losing the trail."
+  - question: "How should you correct an inventory adjustment posted in error?"
+    answer: "Post an equal and opposite adjustment with a comment explaining it. There is no edit and no delete on an inventory ledger, by design: both the mistake and its correction stay on the record as separate dated facts. A deleted row would fix the display and remove the only evidence that the balance is now right, which defeats the purpose of keeping a ledger."
+qaQuestions:
+  - question: "Our anomaly report lists a product as satisfied from stock but there is no matching issue on the ledger. What actually went wrong?"
+    answer: "The order was marked as covered by stock but the stock was never drawn down, so on-hand is overstated by that quantity and the next order will be promised units that are already spoken for. Two causes account for most cases: the status was set by hand without a scheduling run behind it, or the save path ran in a context where inventory posting was not wired in, which happens in test and import environments more than in production. The fix is to reschedule the order so the full save round trip runs and posts the consumption properly. Then re-run the check and confirm the finding clears."
+  - question: "We imported 900 products from our ERP and now nothing nets against stock. Where do we look first?"
+    answer: "Check the stocked flag on the imported records before anything else. Import defaults are the single most common source of this symptom: if the mask left the flag off, every product looks configured and none of them participate in inventory, so netting silently skips all 900. Run the integrity report as a full scan and look at the make-to-stock-without-stocked finding, which lists exactly the products in that state. While you are there, check yield too: a blank yield column that imported as zero would break replenishment sizing on the same records, and both are one bulk edit away from correct."
+---
+
+**Manufacturing inventory mistakes rarely announce themselves.** They show up weeks later as a balance nobody trusts, a schedule that builds parts already sitting on a shelf, or a promise date the shop cannot keep. In [EDGEBIC by User Solutions](/edgebic) most of them are configuration errors rather than software faults, and each has a specific symptom and a specific check that finds it.
+
+This post lists the eight that recur, in rough order of how often they bite. If the mechanisms behind them are unfamiliar, [the inventory ledger explained](/blog/edgebic-inventory-ledger-explained) covers the design and [how EDGEBIC nets demand against stock](/blog/how-edgebic-nets-demand-against-stock) covers the engine's decision.
+
+## 1. A Make-to-Stock Product With the Stocked Flag Off
+
+**What it looks like.** The product record says make-to-stock. Build orders complete normally. On-hand never moves. Demand never nets against stock. Replenishment suggestions never fire.
+
+**Why it happens.** Two separate switches govern inventory behavior. Build method decides intent: does finished output go to stock or to a customer. The stocked flag decides participation: does this product take part in inventory at all. Turning the second one off suppresses receipts, issues, netting and replenishment together, and it does so silently.
+
+**Where it comes from.** Almost always an import. A mask that does not map the flag leaves it at whatever the default was, and a whole catalog lands in this state at once.
+
+**The check.** The integrity report has a check dedicated to this exact combination: make-to-stock build method with the stocked flag off. Run it as a full scan and fix the listed products in one pass.
+
+## 2. Writing the On-Hand Quantity Directly
+
+**What it looks like.** The product grid shows one figure. Transaction History adds up to another. Neither is obviously wrong, and nobody can say which to believe.
+
+**Why it happens.** The cached quantity on the product record exists so grids render fast. It is meant to be recomputed from the ledger sum inside the same transaction as every posting, and never written on its own. Anything that sets it directly (a hand-written script, an import that touches the field, a transaction that failed part way) breaks the relationship.
+
+**The fix.** Read the authoritative figure from the ledger, then post a signed adjustment for the difference with a comment such as "Cache reconciliation, 2026-07-24". The adjustment restores agreement through the ledger rather than around it, and the correction stays visible.
+
+**The check.** A plant-wide integrity check compares every product's cached quantity to its ledger sum and lists the disagreements. It runs only on a full scan, because it has to read all products and all entries.
+
+## 3. Treating Adjustments as Edits
+
+**What it looks like.** Someone posts an adjustment of plus 40, realises it should have been plus 4, and goes looking for a delete button. There isn't one.
+
+**Why that is correct.** An inventory ledger is append-only on purpose. Deleting the row would leave a balance that is right and unexplainable. The intended correction is an equal and opposite adjustment (here minus 36) with a comment naming what it fixes.
+
+**The habit to build.** Comment every adjustment as if a stranger will read it during an audit, because one might. "Cycle count 2026-06-13, bay A3" is worth ten times "correction". The posting mechanics are in [how to record receipts, issues and adjustments](/blog/how-to-record-receipts-issues-and-adjustments-in-edgebic).
+
+## 4. Typing a Negative Quantity Into an Issue
+
+**What it looks like.** The post is rejected and the operator assumes the screen is broken.
+
+**Why it happens.** Direction is carried by the action, not by the number. Receipts and issues both take a positive quantity, and the system applies the sign. Only adjustments take a signed value, because for a count correction the sign is the information you are recording.
+
+**The rule to remember.** Receipt: positive. Issue: positive. Adjustment: signed. Three words on a laminated card next to the terminal solve this permanently.
+
+## 5. Ignoring a Negative Balance
+
+**What it looks like.** A product sits at minus 30 and nobody acts, because the schedule keeps running and no error appears.
+
+**Why the system allows it.** Negative balances are permitted deliberately, in the same spirit that negative available-to-promise is permitted: committed demand ahead of supply is a planning fact worth seeing rather than an error worth blocking. But a negative on-hand means more has been issued than was ever received, which is a physical impossibility and therefore a data problem.
+
+**The right fix.** Find the missing receipt. A build order finished on the floor but never marked complete is the usual culprit, followed by a purchase receipt that never got entered. Post the real movement. Adjusting the balance to zero hides the cause and guarantees a repeat.
+
+**The check.** An integrity check flags stocked products whose ledger sum is below zero, with the current balance in the detail.
+
+## 6. A Yield Value Outside the Valid Range
+
+**What it looks like.** Replenishment suggestions come back at implausible sizes, or the suggestion calculation fails outright.
+
+**Why it happens.** Yield is a fraction of good output between just above zero and one, and it inflates suggested quantities so scrap does not become a shortage. A yield of 0.90 turns a need for 400 units into a start of 445. A yield of zero has no meaningful interpretation and a yield above one implies more output than input.
+
+**Where it comes from.** Imports again. A blank column that maps to zero, or a percentage column that arrives as 90 instead of 0.90.
+
+**The check.** An integrity check lists every product whose yield falls outside the valid range. Set it to 1.0 for perfect-yield products and to your measured first-pass rate for the rest. Yield's effect on replenishment sizing is covered in [forecasting and replenishment explained](/blog/edgebic-forecasting-and-replenishment-explained).
+
+## 7. Satisfied From Stock With No Consumption on the Ledger
+
+**What it looks like.** An order shows the satisfied-from-stock status, so it consumed no machine time, but Transaction History has no matching issue for it. On-hand is overstated by that quantity, and the next order will be promised units that are already spoken for.
+
+**Why it happens.** The status and the ledger entry are supposed to be written together at the save boundary. If a status was set by hand without a scheduling run behind it, or a save path ran without inventory posting wired in, the pair comes apart.
+
+**The fix.** Reschedule the order so the whole save round trip runs and posts the consumption properly, then re-run the check and confirm the finding clears.
+
+**The check.** An integrity check finds orders with that status and no live consumption pegged to them.
+
+## 8. Expecting Same-Run Supply To Be Visible Without It Being Configured
+
+**What it looks like.** One order this week builds a subassembly and another consumes it, and the schedule builds it twice.
+
+**Why it happens.** Point-in-time netting takes one availability figure at the start of a run. A producer scheduled in that same run has not completed yet, so its output does not exist at seed time and the consumer sees nothing to net against. Both build.
+
+**What changes it.** Time-phased netting keeps a dated supply timeline instead of a single number, so a consumer whose need date falls on or after a producer's projected completion nets against it. In the documented example a producer of 100 completing on July 10 covers a consumer needing 60 on July 12, and the plant builds 100 rather than 160.
+
+**How to measure your exposure first.** The scheduling session log records a netting line for every decision, including how many units a same-run producer would have supplied. Read a week of those lines before changing anything, and ask User Solutions to run both behaviors against your real order mix so you can compare the build totals rather than argue about them.
+
+## What Good Looks Like
+
+If you want a short standard to hold your setup against, this is it.
+
+- Every stocked product has the stocked flag on and a yield between just above zero and one.
+- Every product that should never hold inventory has the stocked flag off deliberately, not by accident.
+- Receiving, scrap and count corrections are posted the day they happen, with comments a stranger could follow.
+- Nobody writes an on-hand quantity anywhere except through a posted movement.
+- The integrity report runs as a full scan on a fixed cadence and its findings are cleared rather than filed.
+- After every bulk product import, someone checks the stocked flag and yield on the loaded records before the first scheduling run.
+
+None of that is difficult. All of it is the difference between a balance the schedule can act on and a balance the schedule has to be protected from.
+
+## The Habit That Prevents Most of This
+
+Run the integrity report as a full scan on a schedule, not only when something looks wrong. The inventory checks are plant-wide by nature (they read every product and every entry) so they are excluded from job-filtered runs, which means a weekly or monthly full scan is the only way they get exercised.
+
+Three of the eight mistakes above are import defaults. That is worth its own habit: after any bulk product load, check the stocked flag and yield on the imported records before the first scheduling run, not after the first surprise. The wider import discipline is covered in the [ERP integration approach](/edgebic-erp-integration).
+
+For the planning capabilities these mistakes distort, see [projected available balance explained](/blog/edgebic-projected-available-balance-explained) and the [inventory and planning guide](/blog/edgebic-planning-guide). For where inventory sits in the wider material planning picture, [what is MRP](/blog/what-is-mrp) covers the category, and the [complete guide to EDGEBIC](/blog/edgebic-complete-guide) covers the platform.

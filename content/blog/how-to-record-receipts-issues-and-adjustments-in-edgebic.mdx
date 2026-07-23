@@ -1,0 +1,161 @@
+---
+title: "How to Record Receipts, Issues and Adjustments in EDGEBIC"
+description: "Record inventory transactions in manufacturing without breaking the audit trail: the panes, fields and sign conventions behind receipts, issues and counts."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - record inventory transactions manufacturing
+  - post inventory receipt
+  - inventory issue transaction
+  - cycle count adjustment
+  - opening balance inventory setup
+  - inventory transaction history
+  - stock movement entry
+targetPhrase: "record inventory transactions manufacturing"
+wordCount: 1730
+readingTime: 9
+faqQuestions:
+  - question: "How do you record an inventory receipt in EDGEBIC?"
+    answer: "Open the Inventory tab, select the product, switch to the Adjustments pane, enter a positive quantity, add a comment describing the source, and click Post Receipt. A ledger entry is appended with a receipt type and a positive signed quantity, the on-hand figure recalculates from the ledger inside the same transaction, and the calendar and KPI cards refresh. Quantities must be greater than zero."
+  - question: "Should an inventory issue be entered as a negative number?"
+    answer: "No, enter the quantity consumed as a positive number and use the Post Issue action. The service applies the negative sign internally, so typing a negative value is rejected rather than doubling the direction. Adjustments are the exception: a cycle-count correction is entered as a signed delta, positive when the physical count is higher than the system and negative when it is lower."
+  - question: "How do you correct an inventory quantity after a cycle count?"
+    answer: "Post an adjustment for the difference rather than editing the balance. Enter the signed delta between the physical count and the system figure, add a comment naming the count and its date, and post it. The ledger appends a permanent adjustment entry and the on-hand cache recomputes. There is no delete: an adjustment posted in error is undone by an equal and opposite adjustment."
+  - question: "What is the difference between the effective date and the posting time on an inventory entry?"
+    answer: "The effective date is the planning day a movement belongs to, and the posting time is the wall-clock moment it was entered. Effective date decides which projection bucket the movement lands in, so backdating a receipt to the day material actually arrived puts it in the right planning period. The posting time is recorded separately and cannot be backdated, which keeps the audit trail honest."
+qaQuestions:
+  - question: "Material physically arrived Friday but nobody entered it until Monday. Does it matter which date we use?"
+    answer: "It matters to the projection, and there is a way to record both truths. Post the receipt from the inventory matrix rather than the calendar Adjustments pane: switch the lens to on-hand, double-click Friday's cell for that product, choose Receipt in the dialog, and enter the quantity. The bucket date from the column becomes the entry's effective date, so the receipt lands in Friday's planning bucket where it belongs, while the entry still records Monday as the moment it was posted. If you post from the Adjustments pane instead, the movement is stamped with the current date and shows up in Monday's bucket."
+  - question: "A build order was marked complete twice by two different supervisors. Do we now have double the stock?"
+    answer: "No. Completion posts its receipt through an idempotency guard: before writing, the system checks whether a live, non-reversed receipt already exists for that order, and skips the post if one does. The second click flips no quantities. If you want to confirm, open Transaction History for the product and filter to the job number: you should see exactly one entry with the comment Build to Inventory pegged to that order. If you see two, that is worth raising, because the guard is specifically designed to make it impossible."
+---
+
+**To record inventory transactions in manufacturing without destroying the evidence, you post movements rather than edit balances.** In [EDGEBIC by User Solutions](/edgebic) every receipt, issue and count correction becomes one permanent signed entry, and the on-hand figure is recalculated from those entries. This post covers where each action lives, which field takes which sign, and how to verify the result afterwards.
+
+If the idea of an append-only stock record is new, read [the inventory ledger explained](/blog/edgebic-inventory-ledger-explained) first: it covers why the design works this way. What follows is the mechanics.
+
+## Where the Transaction Screens Live
+
+Click **Inventory** in the left navigation. The view opens on the first product alphabetically with a fourteen-bucket horizon, and it holds five panes:
+
+| Pane | What you do there |
+|---|---|
+| Calendar | Read the projected balance and available-to-promise rows, and firm replenishment suggestions |
+| Forecast | Enter, edit and delete demand forecasts |
+| Adjustments | Post manual receipts, issues and count corrections |
+| Transaction History | Read every ledger entry for the selected product |
+| On-Hand Matrix | See all stocked products as rows against date columns, and post movements by cell |
+
+Above the panes sit a product dropdown, a **Bucket** picker (Day, Week or Period) and a **Bucket Count** spinner. Changing any of them re-runs the projection immediately.
+
+Almost every transaction you post by hand happens in the Adjustments pane. The matrix gives you a second route when the date matters, which is covered further down.
+
+## Posting a Receipt
+
+Use a receipt when physical stock arrives from outside the schedule: a purchase order landing, a customer return, product transferred in from another site.
+
+1. Select the product in the dropdown at the top of the Inventory view.
+2. Open the **Adjustments** pane.
+3. Enter the quantity received in **Qty**. It must be positive.
+4. Type a **Comment** that a stranger could understand six months from now. "PO 4471 receipt, 3 pallets" beats "stock in".
+5. Click **Post Receipt**.
+
+A ledger entry is appended with a receipt type and a positive signed quantity. The on-hand figure recalculates from the full ledger sum in the same transaction, and every pane refreshes. If you enter zero or a negative number the post is rejected rather than reinterpreted.
+
+Receipts also update the product's moving average cost using the standard weighted-average calculation, and the entry stores the unit cost that applied at that moment, so a valuation run months later still uses the right figures.
+
+One receipt you never post by hand: the one from a completed make-to-stock build. That posts automatically when the order is marked complete, with the comment "Build to Inventory", and it commits in the same save as the status change. Posting it manually as well would double the quantity.
+
+## Posting an Issue
+
+Use an issue when stock leaves for a reason the scheduler does not know about: a kit pulled to the floor outside a job, scrap disposal, a sample sent to a customer, a quality hold write-off.
+
+1. Inventory tab, select the product, open **Adjustments**.
+2. Enter the quantity consumed in **Qty** as a **positive** number.
+3. Add a comment naming the reason.
+4. Click **Post Issue**.
+
+The service applies the negative sign for you. This is the single most common data-entry mistake in this screen: typing a negative quantity into an issue is rejected, because the direction is already carried by the action you chose.
+
+As with receipts, the scheduler's own consumption is posted automatically. When it decides an order is covered by existing stock, it posts one issue with the comment "Schedule Transaction", pegged to that order. You never enter that by hand, and the arithmetic behind it is covered in [how EDGEBIC nets demand against stock](/blog/how-edgebic-nets-demand-against-stock).
+
+## Posting a Cycle-Count Adjustment
+
+Adjustments are the only movement where you enter a signed value, because the sign is the information.
+
+1. Inventory tab, select the product, open **Adjustments**.
+2. In **Qty**, enter the delta between the physical count and the system figure. Positive when the shelf holds more than the system thinks. Negative when it holds less.
+3. Comment with the count reference and date: "Cycle count 2026-06-13, bay A3".
+4. Click **Post Adjustment**.
+
+A zero delta is rejected, because a zero-delta adjustment records nothing while implying something happened.
+
+Adjustments are permanent. There is no delete and no edit. If you post the wrong figure, post an equal and opposite adjustment with a comment explaining it, and both rows stay on the record. That is the honest version of a correction, and it is what makes the ledger defensible during an audit. If cycle counting is new territory for your shop, [cycle counting in manufacturing](/blog/inventory-cycle-counting) covers the counting discipline itself; this pane is where the result lands.
+
+## Posting From the Matrix When the Date Matters
+
+The Adjustments pane stamps movements with the current date. When the planning date differs from the entry date, post from the matrix instead.
+
+1. Open the **On-Hand Matrix** pane.
+2. Set the **Lens** dropdown to **OnHand**.
+3. Find the product row and the date column you want.
+4. Double-click the cell. The movement dialog opens with the product name and date in its header.
+5. Choose **Kind**: Receipt, Issue or Adjustment.
+6. Enter the quantity (positive for receipt and issue, signed for adjustment) and an optional comment.
+7. Click **OK**.
+
+For receipts and issues the column's bucket date becomes the entry's effective date, so the movement lands in the planning bucket you clicked. Adjustments are the exception: they always timestamp to the current moment regardless of the cell you opened, so use the Adjustments pane for those and treat the matrix route as a receipt and issue shortcut.
+
+The matrix is also where you triage. The **Lens** dropdown switches every cell between projected on-hand, cumulative available-to-promise, net requirements, forecast, suggested replenishment and net ledger movement, and switching lenses re-pivots data already loaded rather than re-querying, so it is fast. The **Find** box filters rows by product name. Reading those lenses in detail is covered in [how to read the projection](/blog/how-to-read-the-projection-in-edgebic).
+
+## Choosing the Right Movement Type
+
+Three actions cover every manual movement, and picking the wrong one is not fatal (the balance ends up the same) but it does make the history harder to read later. Use this table when the choice is not obvious.
+
+| Situation | Movement | Sign to enter |
+|---|---|---|
+| Purchase order arrives | Receipt | Positive |
+| Customer returns good product | Receipt | Positive |
+| Product transferred in from another site | Receipt | Positive |
+| Kit pulled to the floor outside a job | Issue | Positive |
+| Scrap disposal or quality write-off | Issue | Positive |
+| Sample sent to a customer | Issue | Positive |
+| Physical count higher than the system | Adjustment | Positive delta |
+| Physical count lower than the system | Adjustment | Negative delta |
+| Reconciling a cached quantity to the ledger | Adjustment | Signed difference |
+
+The distinction that matters is between an **issue** and a **negative adjustment**. An issue says stock genuinely left for a known purpose. A negative adjustment says the stock was never there in the first place, or is no longer findable. Recording shrinkage as an issue makes your consumption figures look worse than reality and hides a counting problem inside a usage number.
+
+## Where Bin Location Comes From
+
+Every entry is stamped with a bin location, taken from the product's default location at the moment of posting. Set that on the product editor, in the same inventory planning section as the build method and reorder settings. The default is a generic location, so a shop that never sets it will see the same string on every row, which is harmless.
+
+Two things follow. Changing a product's default location does not rewrite existing entries, because entries are never rewritten. And the field is a product-level convenience rather than per-transaction bin control, so treat it as a label rather than a warehouse system.
+
+## Setting an Opening Balance for a New Product
+
+When a product enters the system with stock already on the shelf, it needs a starting position. That is a distinct movement type, posted once per product at setup, and it is a service-level operation rather than a button on the Adjustments pane. Ask your administrator or implementation contact to run it as part of data load, alongside the item master import.
+
+Two cautions. It is not a reset: calling it twice adds a second opening balance on top of the first rather than replacing it. And if you would rather stay in the UI, a plain receipt with the comment "Opening balance, count of 2026-07-01" achieves the same on-hand result with a slightly different entry type.
+
+## Verifying What You Posted
+
+Never assume. The **Transaction History** pane lists every entry for the selected product with its type, signed quantity, comment, effective date and running balance. Three checks cover most doubts:
+
+- **Did the movement land?** Find your entry at the top of the list and confirm the sign matches your intent.
+- **Does the balance agree?** The running balance column carries the total forward entry by entry. The last row's balance is the authoritative on-hand.
+- **Did a job's receipt post?** Filter to the job number and look for a receipt with the comment "Build to Inventory". Its absence on a completed make-to-stock order usually means the product's stocked flag is switched off.
+
+That last symptom, along with the other misconfigurations that make posted movements go missing, is covered in [inventory tracking mistakes](/blog/inventory-tracking-mistakes-edgebic).
+
+## A Sensible Daily Routine
+
+Receiving posts arrivals as they land, with the purchase reference in the comment. The floor posts scrap and unplanned pulls the same day. Counts go in as signed adjustments with the count reference. Build receipts and schedule consumption post themselves, so nobody touches them.
+
+Do that consistently and the projected balance calendar becomes worth reading, because its opening figure is the ledger sum. Everything in [the inventory and planning guide](/blog/edgebic-planning-guide) stands on the quality of this one habit.
+
+To see it running against your own part numbers and movement volumes, bring a stock export to a demo and ask User Solutions to load it. For the wider platform, see the [complete guide to EDGEBIC](/blog/edgebic-complete-guide).

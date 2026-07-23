@@ -1,0 +1,192 @@
+---
+title: "The Reports That Answer 'Are We On Time?' in EDGEBIC"
+description: "An on time delivery report for manufacturing is three reports, not one: how EDGEBIC computes late jobs, SPI and CPI, and the on-time trend, with worked numbers."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - on time delivery report manufacturing
+  - late jobs report
+  - earned value SPI CPI manufacturing
+  - schedule performance index
+  - delivery performance reporting
+  - manufacturing delivery metrics
+targetPhrase: "on time delivery report manufacturing"
+wordCount: 2100
+readingTime: 11
+faqQuestions:
+  - question: "What is an on-time delivery report in manufacturing?"
+    answer: "An on-time delivery report compares each job's completion against its due date and reports the percentage that made it. EDGEBIC judges finished jobs by their actual end date (On time or Late) and unfinished jobs by their scheduled end date (On track or Forecast late), so the same report is a scorecard for what shipped and an early-warning list for what has not. The percentage on the subtitle bar counts only completed jobs."
+  - question: "What does SPI below 1.0 mean on a job?"
+    answer: "SPI, the Schedule Performance Index, is earned value divided by planned value, and below 1.0 means the job has earned less credit than the plan said it should have earned by now. An SPI of 0.75 means three quarters of the expected progress. SPI measures time productivity only and says nothing about hours burned; CPI is the companion that measures that, and the two often move in opposite directions."
+  - question: "Why does a job show SPI exactly 1.00 before it starts?"
+    answer: "Because planned value is zero and the calculation defaults to 1.0 rather than dividing by zero. It does not mean the job is perfectly on schedule; it means nothing was scheduled to be complete by the cut-off date, so there is nothing to compare yet. Check the percent-done column before reading anything into an SPI of exactly 1.00 on a job with no logged hours."
+  - question: "Why is a late job missing from the Late Jobs report?"
+    answer: "A job appears in Late Jobs only when its latest scheduled end date exceeds its due date by more than zero days, and only when it has a due date at all. A job with no due date cannot be late by definition and is skipped entirely. If a job you expect is absent, either its due date is blank or its plan currently finishes on time, in which case the On-Time Delivery report's Forecast late list is where to look next."
+qaQuestions:
+  - question: "A job shows SPI 1.09 and CPI 0.91 in the same row. Is it good news or bad news?"
+    answer: "Both, and that combination is the most useful reading in the report. Take a five-step job with a 50-hour plan: 8 cut, 12 drill, 24 machine, 4 deburr, 2 inspect. By the cut-off, 46 of those hours were supposed to be complete and 55 were actually logged. SPI is earned value over planned value, 50 divided by 46, which is 1.09: the physical work is running ahead of the plan. CPI is earned value over actual cost, 50 divided by 55, which is 0.91: every planned hour is consuming about 1.10 real hours. So you will finish early and over budget. The forecast columns say the same thing in hours: estimate at completion 55 against a budget of 50, a 5-hour overrun. The action is a routing time study, not an expedite."
+  - question: "Our on-time percentage looks better than customers say it is. Where does the number diverge from their experience?"
+    answer: "Three places, all fixable. First, the percentage counts completed jobs, so a pile of unfinished late work sits in the Forecast late bucket rather than dragging the headline down; read both. Second, the header totals are computed before you filter the grid, so a per-customer figure needs the export rather than a grid filter. Third, and usually the real one, a job whose order due date does not match the promise your salesperson made will read as on time while the customer counts it late. The report is measuring the date in your database, so the audit that matters is comparing order due dates against acknowledgements for a sample of twenty orders."
+---
+
+**"Are we on time?" is three different questions, and EDGEBIC by User Solutions answers them with three different reports: Late Jobs says which jobs miss their dates and by how much, On-Time Delivery says what percentage actually shipped on time and which unfinished jobs are heading the same way, and Earned Value says whether a job is behind because it is slow or because it was under-planned.** Reading one and calling it delivery performance is how plants end up surprised. This deep dive works the arithmetic of all three with real numbers, and shows exactly where each one draws its line.
+
+These sit in the Executive and Supervisor families of the [report catalogue](/blog/edgebic-reports-explained). Everything below is computed at the moment you open the report, over your current plan and your logged actuals.
+
+## Report One: Late Jobs, the Ranked Problem List
+
+Late Jobs is a snapshot with no date range. It looks at every scheduled job that has a due date, finds the latest scheduled end across all of that job's operations, and computes:
+
+```
+scheduled end = the maximum scheduled end date across the job's operations
+days late     = scheduled end minus due date, in whole days
+```
+
+A job appears only when days late is greater than zero, and rows sort worst first. Two consequences follow immediately. A job with no due date can never appear, because it cannot be late against nothing. And lateness here is **structural**: it is the plan missing the date, visible today, not a job that has already blown its deadline.
+
+Each row then gets a status derived from actuals:
+
+- **Not started**: no operation has an actual start date.
+- **In progress**: at least one operation started without finishing.
+- **Behind**: everything else.
+
+And a blocker hint, derived from percent complete and days late:
+
+| Condition | Blocker hint |
+|---|---|
+| Under 1% complete | No actuals, never started |
+| Under 50% complete and more than 5 days late | Significantly behind plan |
+| Anything else | Schedule slipped |
+
+### Worked example: three jobs, one report
+
+Today is 20 June. Three scheduled jobs:
+
+| Job | Due | Scheduled end | Days late | Started? | % done |
+|---|---|---|---|---|---|
+| J-201 | 15 Jun | 22 Jun | 7 | Yes | 45% |
+| J-202 | 18 Jun | 25 Jun | 7 | No | 0% |
+| J-203 | 30 Jun | 28 Jun | -2 | n/a | n/a |
+
+J-203 never appears: its plan beats its due date by two days. J-201 and J-202 both tie at seven days late, but they are completely different problems. J-201 is in progress at 45% and under 50% with more than five days late, so it reads "Significantly behind plan": the work is moving, just not fast enough. J-202 is at 0% with no actuals, so it reads "No actuals, never started": nothing is wrong with the pace, because nothing has started. One needs capacity, the other needs a supervisor to ask why nobody picked it up. The blocker hint is a starting point rather than a diagnosis, but it routes the two rows to different conversations in a second.
+
+## Report Two: On-Time Delivery, the Scorecard and the Warning
+
+On-Time Delivery takes a date range and splits every job by whether it is finished:
+
+```
+effective end = actual end (if every operation is complete)
+                otherwise the latest scheduled end
+days vs due   = effective end minus due date, in whole days
+```
+
+Then the status:
+
+| Job state | Days vs due of zero or less | Days vs due above zero |
+|---|---|---|
+| Finished (actual end known) | On time | Late |
+| Unfinished | On track | Forecast late |
+
+The headline percentage on the subtitle bar counts completed jobs only: on-time completions divided by total completions. That is the right definition for a scorecard, because a job that has not shipped has not yet delivered anything. But it means the report has two halves, and reading only the headline hides the second one. The Forecast late rows are the jobs that will damage next month's percentage, visible now, while there is still time to act.
+
+Two operational cautions. The report skips jobs with no due date entirely, exactly as Late Jobs does. And the header totals are computed before any grid filtering you apply, so if you group by customer to get a per-customer figure, use the export rather than the header. For the generic definition of the metric behind the report, our [on-time delivery KPI guide](/blog/on-time-delivery-kpi) is the concept reference.
+
+## Report Three: Earned Value, Why a Job Is Behind
+
+Late Jobs and On-Time Delivery both answer "is the date at risk?". Earned Value answers "and why?", which is the question that changes what you do about it. It is denominated in hours rather than currency by default, which suits a shop far better than dollars nobody trusts.
+
+Five quantities per job:
+
+| Term | Meaning | How EDGEBIC gets it |
+|---|---|---|
+| BAC | Budget at completion | Sum of all planned operation durations, in hours |
+| PV | Planned value | The share of those hours that was scheduled to be done by the cut-off |
+| AC | Actual cost | Hours actually logged against the job |
+| % done | Percent complete | AC divided by BAC, capped at 100 |
+| EV | Earned value | BAC times percent done |
+
+From those come the four numbers people actually read:
+
+```
+SPI = EV / PV      schedule performance: below 1.0 means behind
+CPI = EV / AC      cost performance: below 1.0 means burning more hours than earned
+EAC = AC + (BAC - EV) / CPI     forecast final hours
+VAC = BAC - EAC                 forecast overrun, negative means over
+```
+
+Rows sort by SPI ascending, so the jobs in trouble sit at the top of the grid without you sorting anything.
+
+### Worked example: a job that is early and over budget
+
+A five-step job, planned and actual hours:
+
+| Step | Work center | Planned | Actual |
+|---|---|---|---|
+| Cut | Saw-1 | 8 | 10 |
+| Drill | Mill-1 | 12 | 11 |
+| Machine | CNC-1 | 24 | 30 |
+| Deburr | Finish-1 | 4 | 4 |
+| Inspect | QC-1 | 2 | not started |
+
+The cut-off falls halfway through the deburr step. Work it through:
+
+```
+BAC = 8 + 12 + 24 + 4 + 2               = 50 h
+PV  = 8 + 12 + 24 + 2 (half of deburr)  = 46 h
+AC  = 10 + 11 + 30 + 4                  = 55 h
+% done = min(100, 55/50 x 100)          = 100%   (capped)
+EV  = 50 x 100/100                      = 50 h
+SPI = 50 / 46                           = 1.09
+CPI = 50 / 55                           = 0.91
+EAC = 55 + (50 - 50) / 0.91             = 55 h
+VAC = 50 - 55                           = -5 h
+```
+
+The reading: physically ahead, financially behind. Four of five steps are done against a plan that expected 46 hours of progress, so SPI is above 1. But those four steps consumed 55 hours against a 50-hour budget, so CPI is 0.91 and the job will land about five hours over. Nobody needs to expedite this job. Somebody needs to look at why the machining step took 30 hours against a 24-hour standard, because that standard is now quoting every future job of this type six hours light.
+
+That capped percentage matters. A job running 110 hours against a 100-hour budget shows 100% done, not 110%. The overspend is not hidden; it moves into CPI and EAC where it belongs.
+
+## The Three Traps in These Numbers
+
+**SPI of exactly 1.00 on a job that has not started.** When planned value is zero, the index defaults to 1.0 to avoid dividing by zero. It reads like perfection and means "nothing to compare". Always glance at percent done alongside it.
+
+**Currency columns that vanish.** Earned Value shows BAC, AC, EV, and EAC in dollars only when at least one work center on the job carries an hourly rate above zero. With every rate at the default of zero, the report hides those columns rather than printing a wall of zeroes. Set rates on your work centers and the columns appear on their own.
+
+**Job hours versus the sum of station hours.** If a routing runs parallel work centers, the same wall-clock hours are logged on every parallel machine. With the primary-hours-only policy enabled, Earned Value, Late Jobs, and Job Progress count the primary path so job totals stay honest, while per-work-center rows and cost stay full-effort. The two can legitimately disagree, and knowing that in advance prevents an hour of reconciliation.
+
+## Which One to Open, and When
+
+| The question in the room | The report |
+|---|---|
+| Which jobs miss their dates, worst first? | Late Jobs |
+| What percentage shipped on time last month? | On-Time Delivery |
+| Which unfinished jobs are heading for late? | On-Time Delivery, the Forecast late rows |
+| Is this job behind because it is slow or because it was under-planned? | Earned Value, SPI against CPI |
+| Where will this job land in hours? | Earned Value, EAC and VAC |
+| Which step is holding the job? | Work Center Progress, filtered to that job |
+
+The sequence that resolves most delivery escalations runs Late Jobs first (is it real?), Work Center Progress second (which step?), and Earned Value third (slow or under-planned?). If the answer turns out to be capacity rather than the job, the next stop is [work center overload causes and fixes](/blog/work-center-overloaded-in-edgebic-causes-fixes), and if it turns out to be data, [report reading mistakes](/blog/report-reading-mistakes-edgebic) covers the ways a correct number produces a wrong conclusion.
+
+Every column in all three reports carries its own definition, formula, unit, and worked example values inside the product, one click away on the Column Details button. That is the subject of [why every column carries its own definition](/blog/why-every-column-carries-its-own-definition-edgebic), and it is the reason nobody in the plant has to remember what VAC stands for.
+
+For what these metrics look like once a shop acts on them, see the [documented results](/blog/edgebic-results-guide); for the wider system, the [complete EDGEBIC guide](/blog/edgebic-complete-guide). Want your own late list, computed against your real capacity? [Bring your open orders to a demo](/edgebic).
+
+<Accordion title="What is an on-time delivery report in manufacturing?">
+An on-time delivery report compares each job's completion against its due date and reports the percentage that made it. EDGEBIC judges finished jobs by their actual end date (On time or Late) and unfinished jobs by their scheduled end date (On track or Forecast late), so the same report is a scorecard for what shipped and an early-warning list for what has not. The percentage on the subtitle bar counts only completed jobs.
+</Accordion>
+
+<Accordion title="What does SPI below 1.0 mean on a job?">
+SPI, the Schedule Performance Index, is earned value divided by planned value, and below 1.0 means the job has earned less credit than the plan said it should have earned by now. An SPI of 0.75 means three quarters of the expected progress. SPI measures time productivity only and says nothing about hours burned; CPI is the companion that measures that, and the two often move in opposite directions.
+</Accordion>
+
+<Accordion title="Why does a job show SPI exactly 1.00 before it starts?">
+Because planned value is zero and the calculation defaults to 1.0 rather than dividing by zero. It does not mean the job is perfectly on schedule; it means nothing was scheduled to be complete by the cut-off date, so there is nothing to compare yet. Check the percent-done column before reading anything into an SPI of exactly 1.00 on a job with no logged hours.
+</Accordion>
+
+<Accordion title="Why is a late job missing from the Late Jobs report?">
+A job appears in Late Jobs only when its latest scheduled end date exceeds its due date by more than zero days, and only when it has a due date at all. A job with no due date cannot be late by definition and is skipped entirely. If a job you expect is absent, either its due date is blank or its plan currently finishes on time, in which case the On-Time Delivery report's Forecast late list is where to look next.
+</Accordion>

@@ -1,0 +1,170 @@
+---
+title: "How to Configure Scheduling Policy in EDGEBIC: Seven Decisions, One Screen"
+description: "Scheduling policy configuration decides direction, short-confirm handling, and which optimizer runs. Here is every option on EDGEBIC's Schedule settings tab."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - scheduling policy configuration
+  - configure production scheduling engine
+  - default scheduling direction setting
+  - partial confirm behaviour scheduling
+  - capacity search window scheduling
+targetPhrase: "scheduling policy configuration"
+wordCount: 1772
+readingTime: 9
+faqQuestions:
+  - question: "Where is the scheduling policy configured in EDGEBIC?"
+    answer: "On the Settings tab of the main navigation, under the Schedule sub-tab. It holds seven groups: default scheduling direction, what happens when a backward job does not fit, which optimizer engine runs, partial-confirm behaviour, the capacity search window, job-level hour roll-up, and sub-assembly inclusion. You pick, click Save, and the next scheduler run uses the new policy. No restart is required."
+  - question: "When does a scheduling policy change take effect?"
+    answer: "At the next scheduler run for most groups, because policy is read fresh at the start of every run rather than cached at startup. Two exceptions are worth knowing. Default scheduling direction applies only to jobs and quotes created after the change, since direction is stamped at creation. The primary-hours-only roll-up setting applies immediately on the affected screens because it changes how totals are displayed rather than how work is planned."
+  - question: "What does partial-confirm behaviour actually control?"
+    answer: "It controls what the engine does when an operator marks an operation finished but logged fewer hours than planned. Trust the operator's actual end treats the finish stamp as final and writes off the missing hours. Forward-shift the remaining hours, the default, re-plans the gap on a future slot so downstream steps queue behind it. A third option trusts the stamp everywhere except on routing steps individually flagged for strict tracking."
+  - question: "Should I lower the capacity search window from its default?"
+    answer: "Rarely. The default lets the engine walk a long way forward looking for free capacity before giving up on a step, which is what you want when a work center is heavily loaded. Lower it only when you would rather scheduling fail fast than plan far into the future on a hopelessly overloaded resource, and note that the minimum is 30 days. Most plants leave this one alone for the life of the installation."
+qaQuestions:
+  - question: "We switched the default direction to Backward and our existing jobs still schedule forward. Did the setting not save?"
+    answer: "It saved. Direction is stamped on a job at the moment the job is created, so the site default governs new jobs and quotes only. Everything created before the change keeps the direction it was born with, which is deliberate: a policy change should not silently re-time work that people have already promised dates on. You have two routes for the existing orders. Change direction on each order individually, which is the right call when only a handful matter, or recreate the ones that genuinely need just-in-time placement. New jobs from today inherit Backward without any per-order action, so the fleet converges naturally within a planning cycle or two."
+  - question: "Our job totals read roughly three times what the shop floor reports on one cell. Which setting fixes that?"
+    answer: "Tick Primary hours only, excluding parallel, under Job-Level Hours in Settings and then Schedule. The cause is synchronized parallel machines: three mirrored drill heads working the same operation genuinely consume 24 machine-hours across the three of them, but the job took 8 hours of elapsed work. Without the setting, hour roll-ups count all three and the job total reads 24. With it, totals count the primary path only and the job reads 8, everywhere hours roll up: routing header totals, Job View, and reports. It is a roll-up change rather than a scheduling change, so it applies immediately on the affected screens and it does not move a single operation."
+---
+
+**Scheduling policy configuration** in EDGEBIC by User Solutions is seven decisions on one screen. They are not preferences: each one changes what the next scheduler run produces for the whole site. This post walks every group with its options, its default, and the case for changing it, then shows the save behavior and a worked example of a just-in-time plant setting all three of the decisions that matter to it.
+
+The wider map of where settings live is in [EDGEBIC configuration options explained](/blog/edgebic-configuration-options-explained). Everything here lives in one place: **Settings**, then the **Schedule** sub-tab.
+
+## Before You Change Anything
+
+Two prerequisites, both practical.
+
+You need permission to open the Settings tab, which is permission-controlled and hidden entirely from users whose roles do not include it. See [EDGEBIC users and roles explained](/blog/edgebic-users-and-roles-explained).
+
+And you need to know the difference between policy and display. Policy settings change what the scheduler computes. Display settings, which live in a different screen, change only what you see. Confusing the two is the most common source of "I changed a setting and nothing happened."
+
+## 1. Default Scheduling Direction
+
+| Option | Meaning |
+|---|---|
+| Forward (default) | New jobs and quotes start as early as possible; spare time accumulates after the work |
+| Backward | New jobs and quotes are placed just-in-time so the last step ends at the due date; spare time sits deliberately in front |
+
+**What it changes.** The direction stamped on every newly created job and quote. Existing orders keep their own direction, and each order can still be overridden individually.
+
+**When to change.** Flip to Backward in a just-in-time shop where finishing weeks early only builds inventory. Forward suits shops where earliest completion is the priority and inventory is not the constraint. The trade-off between them is covered in [forward vs backward scheduling](/blog/forward-vs-backward-scheduling), and EDGEBIC's implementation of the just-in-time direction in [EDGEBIC backward scheduling explained](/blog/edgebic-backward-scheduling-explained).
+
+## 2. When a Backward Job Doesn't Fit
+
+| Option | Meaning |
+|---|---|
+| Accept the forward schedule (default) | If a backward job cannot fit before its due date, the earliest-possible forward plan is kept quietly |
+| Show a popup so I can review it | The run pauses and shows a dialog so you can accept, adjust dates and re-run, or cancel |
+
+**What it changes.** Whether you are interrupted when a just-in-time plan is impossible. Backward scheduling never fails outright, because the forward fallback always exists. This setting decides whether you get asked first.
+
+**When to change.** Choose the popup when a missed promise date must never slip through unnoticed. Leave it silent when your planners review dates anyway and would rather not be interrupted mid-run.
+
+## 3. Optimizer Engine
+
+| Option | Meaning |
+|---|---|
+| Multi-run search (default) | Tries many complete schedules with different job orderings and keeps the best; the badge reads "Best of N schedules tried" |
+| Mathematical solver | An exact solver that also proves how close the result is to optimal, reported as "proven within X% of optimal" |
+
+**What it changes.** Which engine runs when you use the Optimizer tab. Both are propose-only: nothing changes until you accept, and neither can make the schedule worse than what you had.
+
+**When to change.** Pick the solver when you want the optimality guarantee attached to the proposal. If the solver is not available in your installation, EDGEBIC quietly uses the multi-run engine instead, so selecting it can never break scheduling.
+
+The goal preset and the time budget are not here. They are chosen per run on the Optimizer tab, because they are decisions about one optimization rather than about the site. See [EDGEBIC optimizer goals and presets explained](/blog/edgebic-optimizer-goals-and-presets-explained).
+
+## 4. Partial-Confirm Behaviour
+
+This one is subtle and it matters more than its screen space suggests. It governs what happens when an operator marks an operation finished but logged fewer hours than planned: a short confirm.
+
+| Option | Meaning |
+|---|---|
+| Trust the operator's Actual End | The finish stamp is final; the missing hours are written off |
+| Forward-shift the remaining hours (default) | The gap between planned and logged is re-planned on a future slot; downstream steps queue behind it |
+| Trust Actual End unless the step is flagged 'short' | Trust the stamp everywhere except on routing steps individually flagged for strict tracking |
+
+**What it changes.** Where the next reschedule places downstream work. Trusting the stamp pulls work earlier. Forward-shifting keeps the unfinished hours visible in the plan.
+
+**When to change.** Choose trust in a custom job shop where the operator's close-out is the ground truth. Choose the flagged variant to be strict on a few critical operations while treating the rest as closed on the stamp. The default matches how mainstream APS systems behave.
+
+## 5. Capacity Search Window
+
+| Setting | Default | Meaning |
+|---|---|---|
+| Search ahead (days) | 5000 | How many days into the future the engine may walk looking for free capacity before giving up on a step |
+
+**When to change.** Rarely. Lower it only if you want scheduling to fail fast rather than plan far into the future on a hopelessly overloaded work center. The minimum is 30 days. Most installations never touch this.
+
+## 6. Job-Level Hours
+
+| Setting | Default | Meaning |
+|---|---|---|
+| Primary hours only (exclude parallel) | Off | When on, job and routing hour totals count primary steps only, so synchronized parallel machines do not double-count |
+
+**What it changes.** Hour roll-ups, not the plan. Three mirrored drill heads working one operation genuinely log 24 machine-hours between them, while the job consumed 8 hours of elapsed work. With this setting off, the job total reads 24. With it on, the job total reads 8, everywhere hours roll up: routing header totals, Job View, and reports.
+
+**When to change.** Turn it on if you use dependent-parallel routings and want job totals to reflect the primary path. See [EDGEBIC parallel work centers explained](/blog/edgebic-parallel-work-centers-explained) for what dependent-parallel means.
+
+## 7. Sub-Assemblies
+
+| Setting | Default | Meaning |
+|---|---|---|
+| Include sub-assemblies in schedule | On | When on, sub-assembly routings are exploded and scheduled with their parent job; when off, only the top-level routing is planned |
+
+Leave this on unless you deliberately plan sub-assemblies as separate jobs. Turning it off for a multi-level product changes what gets planned, not just what gets displayed.
+
+## What Happens When You Save
+
+| Setting group | Takes effect | Affects existing data? |
+|---|---|---|
+| Default Scheduling Direction | Next new job or quote you create | No, existing orders keep their direction |
+| Backward "doesn't fit" action | Next scheduler run | No stored data, behavior only |
+| Optimizer Engine | Next optimizer run | No, proposals still require Accept |
+| Partial-Confirm Behaviour | Next scheduler or reschedule run | Re-plans only future work; completed operations never move |
+| Capacity Search Window | Next scheduler run | No |
+| Primary hours only | Immediately on affected screens | Display and roll-up only, no schedule change |
+| Include sub-assemblies | Next scheduler run | Changes what gets planned for multi-level products |
+
+The line worth repeating from that table: **completed operations never move**. A reschedule replans what has not happened yet, whatever the policy says.
+
+## A Worked Example: A Just-in-Time Cell
+
+A plant runs a just-in-time cell and wants three things: new orders scheduled backward, a mandatory review when a date cannot be met, and honest job totals despite three synchronized drill heads on one weld station.
+
+1. Open **Settings**, then **Schedule**.
+2. Under **Default Scheduling Direction**, select **Backward**.
+3. Under **When a Backward Job Doesn't Fit**, select **Show a popup so I can review it**.
+4. Under **Job-Level Hours**, tick **Primary hours only (exclude parallel)**.
+5. Click **Save**.
+
+A new job for 300 units, due on the 24th, is created the next day and inherits Backward. Run the scheduler and the job right-aligns to the 24th. A week later a rush order eats the free capacity; on re-run the backward plan no longer fits, so the review dialog appears with the earliest-possible forward plan attached. The planner accepts it knowingly, instead of discovering the slip on a report. Meanwhile in Job View, the job's total now reads the primary path's hours: the mirrored drill-head hours no longer inflate it.
+
+## How to Test a Policy Change Before You Live With It
+
+Policy affects everyone's next run, which makes "try it and see" a group experiment unless you contain it. Two ways to contain it:
+
+**Run and read before the floor does.** Change the setting at a quiet moment, run one schedule yourself, and read the jobs you know best. A direction change or a partial-confirm change shows up immediately on jobs that have short confirms or tight due dates. If it looks wrong, change the setting back and run again: nothing is committed to the floor until people work from it.
+
+**Use a scenario for the bigger questions.** What-if scenarios and quote simulation exist to answer "what would happen if" without touching the live plan, which is the right tool when the question is about a whole product family rather than one setting. See the [EDGEBIC quoting guide](/blog/edgebic-quoting-guide) for how a simulation is run and read.
+
+What you should not do is change two policy groups at once and then try to attribute the result. Direction and partial-confirm behavior both move downstream work, and changed together they are indistinguishable.
+
+## Three Habits That Keep Policy Trustworthy
+
+**Change policy at a quiet moment and tell the team.** Direction and partial-confirm behavior alter what the next run produces, and surprises there erode trust in the plan faster than any bug.
+
+**Run the scheduler after saving.** Policy is read at the start of a run. Saving alone changes nothing visible, which is the number one reason a change looks like it "did nothing".
+
+**Write down what you changed and why.** Six months later, the question "why does this shop schedule backward?" should have an answer that is not a shrug.
+
+## Where to Go Next
+
+Read [the settings that change how your schedule looks](/blog/the-settings-that-change-how-your-schedule-looks-edgebic) for the display side and why the boundary matters, and [configuration mistakes in EDGEBIC](/blog/configuration-mistakes-edgebic) for the symptoms that follow a policy change nobody announced. The wider map is in [EDGEBIC configuration options explained](/blog/edgebic-configuration-options-explained), and the whole product in the [EDGEBIC complete guide](/blog/edgebic-complete-guide).
+
+Tell us how your shop treats a short confirm today, and we will show you the matching policy on a demo of [EDGEBIC](/edgebic).

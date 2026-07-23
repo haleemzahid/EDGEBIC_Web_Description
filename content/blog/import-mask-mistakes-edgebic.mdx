@@ -1,0 +1,145 @@
+---
+title: "8 Data Import Mistakes That Cost Manufacturers a Week"
+description: "Data import mistakes manufacturing teams repeat: unmapped required fields, missing unit conversions, split routing files, and zeros that overwrite good values."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - data import mistakes manufacturing
+  - import mask errors
+  - unit conversion import error
+  - duplicate master data import
+  - routing import problems
+  - excel import troubleshooting
+  - EDGEBIC import troubleshooting
+targetPhrase: "data import mistakes manufacturing"
+wordCount: 1600
+readingTime: 8
+faqQuestions:
+  - question: "Why does an import abort before processing any rows?"
+    answer: "Because a required field is not mapped in the mask. That check runs against the mask configuration before the file is opened, so the run stops with nothing processed. It is a deliberate design: a product file with no identifier column mapped would create a set of nameless records, and failing fast is better than importing garbage and asking you to clean it up afterwards."
+  - question: "Why did every row come back as Reused when I expected updates?"
+    answer: "Because update existing records is off, which is the default. In that mode a matched record is counted as reused and left exactly as it is, which makes re-running a file safe. Switch the option on for runs whose purpose is changing values, and map only the columns you actually intend to change, because a mapped column full of zeros will write zeros."
+  - question: "Why are my imported setup times sixty times too large?"
+    answer: "The source file is in minutes and no conversion factor was set on that column. Fill the conversion cell with 0.016667 and re-import. Every row was structurally valid, so the import reported success, which is why this error survives the result dialog and shows up later as machines that appear to spend whole shifts changing over."
+  - question: "Why did routing steps disappear after a second import run?"
+    answer: "Because a routing import wipes each end product's existing steps once per run before recreating them from the file. If one product's steps were split across two files imported in two separate runs, the second run's wipe removed the first run's steps. Put all of a product's steps in one file and re-import once."
+qaQuestions:
+  - question: "We ran a product import and now we have duplicates of half our catalogue. What happened and how do we recover?"
+    answer: "The key column stopped matching. Usually the mask was pointed at the wrong source column, or the export changed and the identifier now arrives with a prefix or trailing whitespace that makes it a different string. Matching is case-insensitive but not fuzzy, so 'WIDGET-A' finds 'Widget-A' while ' Widget-A' does not. The tell is in the result dialog: a familiar weekly file that suddenly reports everything Created rather than Reused or Updated is duplicating master data, and that split is worth reading on every run for exactly this reason. Recovery is manual, which is the strongest argument for the ten-row dry run: the same mistake on ten rows costs ten deletions."
+  - question: "How do we stop unit errors from reaching production data at all?"
+    answer: "Put the conversion in the mask and verify one value by hand after the first run. The mask factor applies before anything is stored, so it cannot be forgotten on a busy week the way a manual spreadsheet step can. The verification is the part people skip: open one imported routing and read the header totals, because estimated hours per unit and setup time are live sums that make a sixty-fold error obvious in one glance. Then run a plant-wide diagnostics sweep, which catches the structural half across every record the file touched rather than the one you happened to open."
+---
+
+**Every bad import in this list reported success.** That is what makes them expensive. A row that fails is visible and gets fixed in minutes; a row that lands with the wrong value in a valid field survives until the shop notices the schedule is nonsense.
+
+Here are the eight that cost the most time in EDGEBIC by User Solutions, with the symptom you will actually see first. For the mechanism behind them, see [import masks explained](/blog/edgebic-import-masks-explained) and [how to build an import mask](/blog/how-to-build-an-import-mask-in-edgebic).
+
+## 1. A Required Field Left Unmapped
+
+**Symptom.** The run aborts immediately with nothing processed.
+
+**Cause.** Required fields are checked against the mask configuration before the file is even opened. If the product identifier is not mapped anywhere, the run stops.
+
+**Fix.** Edit the mask and map the field marked as required. This one is on the list because it is the least damaging failure there is and it looks alarming: nothing was written, nothing needs cleaning up. Failing fast beats importing a hundred nameless records.
+
+## 2. No Conversion Factor on a Minutes Column
+
+**Symptom.** Setup times sixty times too large. The Gantt shows machines spending entire shifts changing over.
+
+**Cause.** The source system stores setup in minutes and the mask has no conversion factor on that column. Every row was structurally valid, so the import reported complete success.
+
+**Fix.** Set the conversion factor to `0.016667` on that column and re-import. For seconds, `0.000278`.
+
+This is the single most common bulk error, and the reason is that nothing catches it. Not the file, not the mapping, not the result dialog. What catches it is a habit: after the first run of any new mask, open one imported routing and read the header totals. Estimated hours per unit and setup time are live sums, and a sixty-fold error is obvious in one glance.
+
+## 3. Splitting One Product's Routing Across Two Runs
+
+**Symptom.** Steps that imported successfully last week are missing after this week's run.
+
+**Cause.** A routing import wipes each end product's existing steps once per run before recreating them from the file. File A held steps 10 to 30, file B held 40 to 50, and the second run's wipe removed the first run's steps before inserting its own. Both runs reported success.
+
+**Fix.** Put all of a product's steps in one file and re-import once. The full mechanics, including why wipe-and-recreate is the right design for a chained structure, are in [how EDGEBIC imports routings in two passes](/blog/how-edgebic-imports-routings-in-two-passes).
+
+## 4. Mapping Every Column on an Update Run
+
+**Symptom.** A price refresh quietly zeroes lead times, or wipes a field that was correct.
+
+**Cause.** Blank cells are safe on an update: they fall back to the value already stored. Zeros are not blank. A mapped column full of zeros is a real value and gets written.
+
+**Fix.** On an update run, map only the columns the run is meant to change. A price refresh mask maps the identifier and the price and nothing else. Leaving a column out is stronger protection than leaving it blank.
+
+There is a mirror-image trap on creates. A brand-new record has no prior value to fall back on, so a blank cost column creates a record with a cost of zero. Check a sample after any first bulk load.
+
+## 5. Everything Comes Back Created
+
+**Symptom.** A familiar weekly file suddenly reports every row as Created rather than Reused or Updated, and master data doubles.
+
+**Cause.** The key column stopped matching. Usually the mask points at the wrong source column, or the export changed and the identifier now arrives with a prefix or leading whitespace. Matching is case-insensitive but not fuzzy: `WIDGET-A` finds `Widget-A`, while ` Widget-A` with a leading space does not.
+
+**Fix.** Correct the mapping or the source, and clean up the duplicates by hand. Recovery is manual, which is the strongest argument there is for a ten-row dry run before every full load. The same mistake on ten rows costs ten deletions.
+
+Read the Created-versus-Reused split on every run. It is the fastest early warning available and it takes one second.
+
+## 6. Expecting an Import to Schedule
+
+**Symptom.** Forty imported orders and an empty Gantt.
+
+**Cause.** Imports change data and never change the plan. Imported sales orders arrive as jobs ready to schedule, and nothing is placed until you run the scheduler.
+
+**Fix.** Run the scheduler after importing demand. The separation is deliberate: it means a bulk load can never quietly rearrange work in progress, and you choose the moment new demand enters the plan.
+
+The same principle explains why a routing import does not move jobs already on the schedule. Each carries a frozen copy of the routing it was planned with, which is what keeps shop-floor paperwork valid.
+
+## 7. A Renamed Worksheet
+
+**Symptom.** An Excel import reads the wrong data, or apparently imports nothing recognisable.
+
+**Cause.** When the remembered sheet name no longer matches any worksheet, the reader falls back to the first sheet rather than failing. In a single-sheet workbook that is forgiving. In a workbook with a summary tab in front, it silently imports the wrong table.
+
+**Fix.** Re-pick the file with Get File and reselect the sheet whenever the source workbook is restructured. If your source regularly changes sheet names, put the data sheet first.
+
+## 8. Actuals Rows That Cannot Find Their Operation
+
+**Symptom.** An actuals import returns a block of failures reading that the operation could not be matched.
+
+**Cause.** Each actuals row is matched to a scheduled operation by job number, work center and date. Three things break that match: the job is not scheduled yet, the work center name does not match what is on the schedule, or the job number differs by a prefix.
+
+**Fix.** Check the job number and work center spelling against the job view grid, and confirm the job is scheduled. Actuals attach to a plan; there has to be a plan for them to attach to.
+
+Two properties of actuals imports are worth knowing because they prevent a different class of panic. The days a file carries are always overwritten with the file's values, so re-importing the same or a corrected file never double counts. Days the file does not mention are preserved unless you deliberately switch on the option that clears them, which is what makes the file the complete record.
+
+## The Two Habits That Prevent Most of This
+
+**Dry-run on ten rows.** Cut the source to ten representative rows and run that first. Ten rows expose an unmapped required field, a unit sixty times out, and a key column that matches nothing, in about a minute, and every one of those mistakes costs ten deletions instead of a thousand.
+
+**Run a plant-wide diagnostics sweep after the full load.** An import changes hundreds of records at once, and a single mapping error repeats across every one of them. The sweep is what catches the shape of that before anyone schedules against the new data: setup values that make no sense, work centers created without shift calendars, routings whose chains never reach the end product. The routine is [how to run and read the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic), and the consequences of skipping it are in [ignoring schedule warnings](/blog/ignoring-schedule-warnings-mistakes-edgebic).
+
+Neither habit takes more than a couple of minutes, and between them they catch every mistake on this list except the zero-versus-blank trap, which is prevented by mapping fewer columns rather than by checking afterwards.
+
+## Related Reading
+
+For the routing columns themselves before you map them, [how to create a manufacturing routing](/blog/how-to-build-a-routing-step-by-step-in-edgebic). For per-ERP export shapes and the daily cycle around them, start at the [ERP integration hub](/edgebic-erp-integration) or [the daily JobBOSS and EDGEBIC workflow](/blog/the-daily-jobboss-edgebic-scheduling-workflow). The wider discipline is [ERP data integration best practices](/blog/erp-data-integration-best-practices).
+
+Full platform map: the [complete EDGEBIC guide](/blog/edgebic-complete-guide) and the [EDGEBIC](/edgebic) hub.
+
+Send US the export that keeps going wrong and we will map it correctly on a demo. [Contact US](/contact-us).
+
+<Accordion title="Why does an import abort before processing any rows?">
+Because a required field is not mapped in the mask. That check runs against the mask configuration before the file is opened, so the run stops with nothing processed. It is a deliberate design: a product file with no identifier column mapped would create a set of nameless records, and failing fast is better than importing garbage and asking you to clean it up afterwards.
+</Accordion>
+
+<Accordion title="Why did every row come back as Reused when I expected updates?">
+Because update existing records is off, which is the default. In that mode a matched record is counted as reused and left exactly as it is, which makes re-running a file safe. Switch the option on for runs whose purpose is changing values, and map only the columns you actually intend to change, because a mapped column full of zeros will write zeros.
+</Accordion>
+
+<Accordion title="Why are my imported setup times sixty times too large?">
+The source file is in minutes and no conversion factor was set on that column. Fill the conversion cell with 0.016667 and re-import. Every row was structurally valid, so the import reported success, which is why this error survives the result dialog and shows up later as machines that appear to spend whole shifts changing over.
+</Accordion>
+
+<Accordion title="Why did routing steps disappear after a second import run?">
+Because a routing import wipes each end product's existing steps once per run before recreating them from the file. If one product's steps were split across two files imported in two separate runs, the second run's wipe removed the first run's steps. Put all of a product's steps in one file and re-import once.
+</Accordion>

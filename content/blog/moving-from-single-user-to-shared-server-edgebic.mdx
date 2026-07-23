@@ -1,0 +1,156 @@
+---
+title: "Moving EDGEBIC from One Planner to a Shared Server: What Changes, What Carries Over"
+description: "Going from single user to multi user manufacturing software: the provider switch, what does not migrate with it, and the six habits a shared plan needs."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: Admin & Deployment
+author: user-solutions
+cluster: edgebic-admin
+pillarSlug: edgebic-admin-guide
+keywords:
+  - single user to multi user manufacturing software
+  - migrate scheduling software to SQL Server
+  - shared production schedule multiple planners
+  - scheduling software database migration
+  - multi user production scheduling
+targetPhrase: "single user to multi user manufacturing software"
+wordCount: 1949
+readingTime: 10
+faqQuestions:
+  - question: "Does switching EDGEBIC from a local file to SQL Server move my data?"
+    answer: "No. Switching providers points the application at a different database; it does not copy anything across. The old database keeps everything untouched, and the new one starts empty and builds its schema on first connection. That is why the switch dialog offers Export current first. Plan the data step deliberately: either migrate the contents, or rebuild master data by re-running your standard import files against the new database."
+  - question: "What actually carries over when I move to a shared database?"
+    answer: "The application install itself carries over, and so does anything stored in a file rather than in the database: your exported scheduler display configuration and your exported localization label set both import into the new deployment. Everything stored inside the database does not: users and roles, products, work centers, routings, orders, schedules, actuals, import masks, and personal grid layouts. A brand-new database asks you to create an administrator again."
+  - question: "What changes for planners once several people share one database?"
+    answer: "Three things become real that did not matter with one planner. Named accounts and roles now decide who can regenerate the plan versus who can only log actuals. Backups move from a one-click export to your IT team's standard SQL Server rotation. And simultaneous edits matter, because the current version is last-write-wins: if two people edit the same record at the same moment, the second save silently overwrites the first."
+  - question: "Can we switch back to the local file if the shared setup goes wrong?"
+    answer: "Yes, from the same screen. The old database is untouched by the switch, so selecting the previous provider and restarting returns you to exactly the data you left. That property is what makes the move low-risk: your fallback is a settings change, not a restore. Keep the old database file until the shared deployment has run a full week of real scheduling."
+qaQuestions:
+  - question: "We have one planner with a year of master data on a laptop. Two more planners start next month. What is the actual sequence?"
+    answer: "Six steps, and the order matters. First, click Export on the DataSource card to take a timestamped backup of the current database. Second, ask IT for a server name and either Windows-authentication rights or a SQL login; the database itself does not need to exist yet. Third, in Settings and then DataSource, choose SQL Server, enter the server and a database name, pick Windows authentication, and click Test connection. A message saying the server is reachable and the database does not exist yet is the expected result, not an error. Fourth, click Apply and restart; EDGEBIC creates the database and builds the schema. Fifth, rebuild the data: recreate your import masks and re-run your standard files for products, work centers, routings, and orders, then spot-check counts against the old database. Sixth, create roles and named accounts before the new planners arrive, not after."
+  - question: "Two of our planners saved changes to the same work center within a minute of each other and one set of edits vanished. Is that a bug?"
+    answer: "It is documented behavior rather than a fault: the current version is last-write-wins, so the second save silently overwrites the first. It bites master data records, not scheduling runs. The practical fix is organizational and costs nothing. Divide ownership so two people rarely have the same record open: one planner per product family or per area, with master data changes made by whoever owns that area. Announce master data changes the way you would announce a routing revision. And if a record does need editing by two people in the same hour, have the second person reopen the record rather than saving a form that was loaded before the first person's change landed."
+---
+
+**Going from single user to multi user manufacturing software** is usually described as a migration, which oversells the software part and undersells the habits part. In EDGEBIC by User Solutions the software step is genuinely small: change the database provider in Settings, restart, done. What deserves planning is everything around it, because the switch deliberately does not carry your data with it, and because a shared plan needs rules that a single planner never needed.
+
+This post covers the whole move: the sequence, what carries over, what does not, and the six habits that make a shared deployment work. The choice between deployment models is in [EDGEBIC deployment options explained](/blog/edgebic-deployment-options-explained).
+
+## The Trigger Is a Second Person, Not a Data Volume
+
+The local single-file database is not a trial mode and it does not run out of room in any practical sense. The reason to move is that it is single-workstation: one person, one PC. When a second planner needs to see and change the same plan, or when a shop floor kiosk needs to write actuals that the planner reads, the shared database becomes the point.
+
+The documented standard puts it plainly: one database is one plant's truth. Do not let two planners work in two separate database files and try to merge later. Move to a shared database as soon as a second user appears.
+
+## The Sequence, in Order
+
+1. **Back up first.** Click **Export** on the DataSource card. One click creates a timestamped backup next to the database file, safe even while the application is running.
+2. **Get what IT needs to give you.** A server name, plus either Windows-authentication rights or a SQL login. The database itself does not need to exist yet.
+3. **Point at the new database.** Open **Settings**, then **DataSource**, choose **SQL Server**, enter the server and a database name, and choose **Windows** authentication (recommended).
+4. **Test connection.** The status message is specific. "Server reachable, sign-in succeeded, database does not exist yet" is the expected result on a first setup, not an error.
+5. **Apply & restart.** EDGEBIC restarts on the new connection, creates the database, and builds the schema automatically.
+6. **Rebuild the data.** Recreate your import masks and re-run your standard files, then spot-check record counts against the old database before anyone starts planning.
+
+Steps 1 to 5 take about ten minutes. Step 6 is the real work, and how big it is depends entirely on how your data got in there in the first place.
+
+## What Carries Over, and What Does Not
+
+This is the table to read before you start, because the assumption that "it is the same application, so my setup follows me" is wrong in a specific and recoverable way.
+
+| Thing | Carries over? | Why |
+|---|---|---|
+| The application install | Yes | Same build, different connection |
+| Scheduler display configuration | Yes, by file | Export it before the switch and Import it after |
+| Localization label set | Yes, by file | Export all and Import move label sets between installs |
+| Users, roles, permissions | No | Users live inside the database; a new database asks you to create an administrator again |
+| Products, work centers, routings, orders | No | Stored in the database being left behind |
+| Schedules and actuals | No | Same reason |
+| Import masks | No | Mask definitions are database records, so recreate them on the new database |
+| Personal grid layouts | No | Saved per user, in the database |
+| The old database | Untouched | It keeps everything; you can switch back from the same screen |
+
+Two implications are worth acting on before you click Apply.
+
+**Export your display configuration first.** The scheduler's configuration screen has Export and Import buttons that move a configuration between machines as a file. Doing that before the switch saves re-clicking forty display options afterwards. The same applies to a customized localization label set.
+
+**Write down your import mask mappings.** Mask definitions do not travel, but the source files do, and the mappings are quick to rebuild when you know what they were. A screenshot of each mask's field mapping is enough.
+
+## Two Ways to Get the Data In
+
+**Rebuild through imports.** If your products, work centers, routings, and orders originally came from spreadsheets or an ERP export, this is straightforward: recreate the masks, run them, and read the result counts. Every row lands as exactly one outcome and a per-run log records what failed and why. This is the path most shops take, and it doubles as a data cleanup. See [EDGEBIC import masks explained](/blog/edgebic-import-masks-explained).
+
+**Migrate deliberately.** If a year of master data was typed by hand and never existed as a file, treat the move as a project rather than an afternoon. The Export button can produce a portable export where the SQL Server tooling is installed, and the practical alternative is to export your current data to spreadsheets, then import those.
+
+Either way, do not skip the verification. Count products, work centers, and routing steps in both databases before the old one stops being your reference.
+
+## What Actually Changes for the People Using It
+
+The software behaves the same. The way your team works does not.
+
+**Accounts stop being optional.** With one planner, the founding administrator account is defensible. With four people, it is the thing that makes every "who changed this?" question unanswerable. Create named accounts and two or three roles: Planner (Production and Master Data, no Settings, no Security) and Supervisor (schedule viewing plus actuals logging) covers most plants. See [how to set up users and roles in EDGEBIC](/blog/how-to-set-up-users-and-roles-in-edgebic).
+
+**Backups change owner.** A one-click export next to a file becomes a database in IT's standard SQL Server rotation. Make sure that actually happens: a shared database that nobody added to the rotation is the classic post-migration gap.
+
+**Simultaneous edits matter.** The current version is last-write-wins. If two people edit the same record at the same moment, the second save silently overwrites the first. Scheduling runs are not the issue; master data edits are. The fix is organizational: divide ownership so two people rarely have the same record open, usually one planner per product family or per area.
+
+**Passwords get a wrinkle if you use SQL authentication.** The database password is encrypted and tied to the Windows account that entered it, so copying a configuration to another PC or another Windows user deliberately does not carry a usable password. Prefer Windows authentication and the wrinkle disappears entirely.
+
+**Everyone still installs the application.** The shared piece is the database, not the client. Each person runs EDGEBIC on their own Windows PC pointed at the same database. There is no browser client and no separate application server.
+
+## A Worked Move: One Laptop to Fifteen Users
+
+The documented example is a plant that grows from one planner to fifteen.
+
+The administrator opens the DataSource tab, clicks **Export** (backup taken), selects **SQL Server**, enters the server name and a database name for the plant, leaves **Windows** authentication on, and clicks **Test connection**. The message reports that the server is reachable, sign-in succeeded, and the database does not exist yet, which is exactly what a first setup should say. **Apply & restart** follows, EDGEBIC creates the database and applies its schema, and master data is re-imported from the standard files.
+
+Roles come next: **Planner** with Production and Master Data permissions and no Security or Settings, and **Supervisor** with schedule viewing plus actuals logging. Named users are created with **Must change password on next login** ticked, so each person sets their own password on first sign-in. Every installation now points at the same database, and a schedule run by one planner is visible to all of them.
+
+The old local database file is still on the original laptop, untouched, for as long as you want to keep it.
+
+## Verify the Move Before You Trust It
+
+A migration that nobody verified is a migration you will discover on the worst possible Monday. Four checks, in this order, before anyone plans real work on the new database:
+
+1. **Count master data.** Products, work centers, and routing steps, compared against the old database. A count that is close but not equal is worse than one that is obviously wrong, because it looks fine.
+2. **Open one complex routing** and read it end to end. Multi-step routings with parallel work centers or alternates are where an import loses detail quietly.
+3. **Run one schedule** and compare it against the same jobs on the old database. It does not have to match operation for operation, because dates have moved on, but the shape should be recognizable.
+4. **Sign in as each role from a second PC.** This confirms both the shared connection and the new accounts in one action.
+
+Only after the fourth check should the old database stop being your reference.
+
+## How Long Each Part Actually Takes
+
+Rough planning numbers, so the move can be scheduled rather than squeezed:
+
+| Task | Typical effort |
+|---|---|
+| Backup, provider switch, test, restart | 10 minutes |
+| Rebuilding import masks | 15 to 30 minutes per entity type |
+| Running the imports | Minutes, once the masks exist |
+| Creating roles and named accounts | 20 minutes for a small team |
+| Verification (the four checks above) | 30 to 60 minutes |
+
+The number missing from that table is the one that varies most: shaping the source files if your data was never in a file to begin with. That is the task to scope honestly before promising a date.
+
+## Six Habits a Shared Deployment Needs
+
+1. **One database is one plant's truth.** No parallel files, no "I'll merge it later."
+2. **One account per person.** The audit trail is only worth something if actions map to people.
+3. **Windows authentication for SQL Server** wherever possible: no stored password, no per-user re-entry.
+4. **The scheduling database joins the backup rotation** on day one, not after the first scare.
+5. **Divide master data ownership** so last-write-wins never has a chance to matter.
+6. **Announce policy changes.** Site-wide scheduling policy affects everyone's next run, so change it at a quiet moment and tell the team. See [how to configure scheduling policy in EDGEBIC](/blog/how-to-configure-scheduling-policy-in-edgebic).
+
+Habit six is the one people skip. A change of default scheduling direction or partial-confirm behavior alters what the next run produces, and a surprise there costs more trust than the setting is worth. The change-management side of a rollout is covered in [change management for scheduling](/blog/change-management-scheduling).
+
+## Keep the Fallback Until You Do Not Need It
+
+The property that makes this move low-risk is that the old database is untouched. Selecting the previous provider and restarting returns you to exactly the data you left, from the same screen you used to leave it.
+
+Keep that fallback for a full week of real scheduling. Once the shared deployment has run a Monday morning, a mid-week rush order, and a Friday close-out without anyone reaching for the old file, archive it and move on.
+
+## Where to Go Next
+
+Read [how to install and connect EDGEBIC](/blog/how-to-install-and-connect-edgebic) for the connection screen in detail, and [deployment and database mistakes in EDGEBIC](/blog/deployment-and-database-mistakes-edgebic) for what goes wrong and how to recover. The access model that becomes essential the moment a second person signs in is in [EDGEBIC users and roles explained](/blog/edgebic-users-and-roles-explained). The full administrator's journey is in the [EDGEBIC admin guide](/blog/edgebic-admin-guide).
+
+Tell us how your master data got into your current system, and we will scope the move on a demo call for [EDGEBIC](/edgebic).

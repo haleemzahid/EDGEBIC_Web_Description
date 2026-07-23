@@ -1,0 +1,160 @@
+---
+title: "Reschedule Without Losing Completed Work: How the Guarantee Works"
+description: "Reschedule without losing completed work: the six stages that freeze history, compute the resume point, and re-plan only the hours the shop still owes."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - reschedule without losing completed work
+  - actuals preservation scheduling
+  - in progress operation rescheduling
+  - remaining hours scheduling
+  - schedule history immutable
+  - partial completion scheduling
+targetPhrase: "reschedule without losing completed work"
+wordCount: 1915
+readingTime: 10
+faqQuestions:
+  - question: "How can a scheduling system reschedule without losing completed work?"
+    answer: "By classifying every operation before it re-plans anything. EDGEBIC by User Solutions sorts each operation into completed, in progress, or not started, writes the completed ones back into the new plan unchanged, and removes them from the list of work still to be placed. The engine never has the opportunity to move them, because by the time allocation runs they are no longer candidates for allocation."
+  - question: "What happens to an operation that is half finished when a reschedule runs?"
+    answer: "Its logged hours stay locked on the days they happened and only the balance is re-planned, on the same work center it started on. An operation planned for 12 hours with 4 logged carries an 8 hour remainder into the run. The engine finds the next available slot on that machine and books 8 hours there, not 12, so no hour is scheduled twice and none is quietly dropped."
+  - question: "What is the resume point and how is it calculated?"
+    answer: "The resume point is the earliest moment remaining work may begin, and it is the later of two values: the actual end of the last completed operation, and the projected end of any in-progress operation. A projected end is the operation's actual start plus its planned duration. Every slot search for the job's remaining work uses that moment as its earliest-start constraint."
+  - question: "Why does an in-progress operation keep an empty actual end after a reschedule?"
+    answer: "So the next run classifies it correctly. If the engine filled in a projected end, the operation would look complete on the following reschedule and the operator's eventual real finish time would be discarded. Leaving the end empty makes the round trip repeatable: an operation with a start and no end is in progress today, tomorrow, and every run until somebody on the floor says otherwise."
+qaQuestions:
+  - question: "Our old system rescheduled a job that was 80 percent done and moved every finished operation to next week. What stops that here?"
+    answer: "The order of operations inside the run. Systems that lose history typically clear the plan first and rebuild it from the routing, which means completed work has to be defended after the fact by exception handling that occasionally misses.\n\nEDGEBIC removes completed operations from the work list before allocation begins. Their existing rows are written into the output verbatim in an earlier stage, and the routing steps behind them are dropped from the list the allocator sees. There is no code path where a completed operation is a candidate for a slot, so there is nothing to defend. If every step of a job is complete, the run produces zero allocations and writes the original rows back unchanged."
+  - question: "We ran a reschedule and a step that should not have moved landed six days later. Nothing about it had actuals. What causes that?"
+    answer: "Almost always a stale capacity reservation. When a job is re-planned, its operations that have no actuals must release the machine slots they were holding from the previous run, otherwise the engine looks at the work center, sees the old booking, and searches forward for the next genuinely free window.\n\nEDGEBIC releases those reservations per operation rather than per job, which is the important detail. A three-step job where step 1 has actuals and steps 2 and 3 do not keeps step 1's capacity reservation and frees the other two. Releasing at job level would strand step 1's real hours; releasing nothing produces exactly the six-day artificial delay you described. If you see that symptom, check whether the step that moved shares a work center with a sibling that does have actuals."
+---
+
+**A reschedule in EDGEBIC by User Solutions cannot move completed work, because completed work is removed from the list of things to be planned before planning begins.** That ordering is the whole guarantee. It is not a validation rule applied afterward and it is not a setting that can be switched off. By the time the allocator looks for machine slots, every finished operation has already been written into the output and every routing step behind it has been dropped from the candidate list.
+
+This post walks the six stages of a reschedule in planner terms, with the worked numbers that show what each stage produces. If you want the decision layer instead, [production rescheduling software](/blog/edgebic-rescheduling-explained) covers when to run one and at what scope.
+
+## The Vocabulary
+
+Five terms carry the whole explanation.
+
+| Term | Meaning |
+|---|---|
+| Completed operation | Both an actual start and an actual end are recorded, whether by the floor or inferred |
+| In-progress operation | An actual start recorded, no actual end yet |
+| Short-confirm | An operation marked complete where the logged hours fall materially short of the planned hours |
+| Resume point | The earliest moment remaining work may begin, derived from actuals |
+| Stale reservation | A machine slot still held by an operation from the previous run that has no actuals |
+
+## Stage 1: Release the Right Reservations
+
+Before any job is touched, the engine rebuilds its picture of who owns which machine hours. This is where the most subtle failure in rescheduling lives, and it is worth understanding because it explains a symptom that looks nothing like its cause.
+
+The rule is applied per operation, not per job:
+
+- If a job is not in the reschedule set, all of its operations keep their capacity reservations. Its plan is untouched and its slots stay booked.
+- If a job is being rescheduled, only operations carrying an actual start or actual end keep their reservations. Every other operation releases its slot.
+
+The per-operation granularity is the point. Take a three-step job where step 1 has actuals and steps 2 and 3 do not. Step 1's real hours stay booked on its machine, because they genuinely happened. Steps 2 and 3 release their old slots so the allocator can place them fresh.
+
+Release at job level instead, meaning "this job has actuals, so preserve all of it," and steps 2 and 3 keep holding slots the engine is simultaneously trying to fill. The allocator looks at the machine, sees the old booking, and searches forward for a genuinely free window. The result is a multi-day artificial delay on a step that had no reason to move at all. That failure mode is documented and the per-operation filter exists specifically to prevent it.
+
+## Stage 2: Classify Every Operation
+
+The engine sorts the job's operations in scheduled order, finds the furthest point at which shop-floor reality reaches, and classifies each one.
+
+| Result | Test |
+|---|---|
+| Complete | Actual end recorded and logged hours match the plan |
+| Short-confirm | Actual end recorded, but logged hours fall short by more than 0.01 hours |
+| In progress | Actual start recorded, no actual end |
+| Inferred complete | No actuals of its own, but a later operation has them |
+| Not started | No actuals, and nothing later has any |
+
+Two of those deserve a note.
+
+**The 0.01 hour tolerance**, being 36 seconds, exists to absorb rounding when daily hours are summed. Without it, an operation logged to exactly its planned total could classify as short by a millionth of an hour and generate a phantom remainder that the engine would then try to schedule.
+
+**Inferred completion** handles the common real-world case where actuals were only captured on the last operation or two. If step 3 has actuals, steps 1 and 2 plainly ran, or step 3 could not have started. Their actuals are filled from their scheduled dates and flagged so a planner can tell inference from measurement. The flag is the same auto-filled marker described in [shop floor actuals tracking](/blog/edgebic-actuals-tracking-explained).
+
+## Stage 3: Compute the Resume Point
+
+One number falls out of the classification, and it drives every date that follows. The resume point is the later of:
+
+- the actual end of the last completed operation, and
+- the projected end of any in-progress operation, computed as its actual start plus its planned duration.
+
+That becomes the job's earliest-start constraint. Every subsequent slot search, capacity check, and instance selection for that job's remaining work uses it.
+
+This is also why a job can move further than expected without anything being wrong. An operation that started Monday at 16:00 with a 20 hour planned duration projects an end well into Wednesday, and everything behind it queues from there until the floor logs enough hours to shorten the projection. Log the running step and re-run, and the tail pulls back in.
+
+## Stage 4: Write History Into the Output
+
+Completed and partially completed operations are re-emitted into the new plan from their existing records, field for field. Dates, hours, machine, resource allocations, all unchanged.
+
+One deliberate exception. For an in-progress operation, the preserved row keeps its actual start and leaves its actual end empty. It would be tempting to stamp the projected end, and it would be wrong: on the next run the operation would classify as complete and the operator's eventual real finish would be discarded. Leaving it empty makes the round trip repeatable, which means running a reschedule twice produces the same answer both times.
+
+## Stage 5: Re-Plan Only What Is Owed
+
+Now the routing is filtered. Every step matching a completed operation is removed from the list the allocator will see. Partially completed and in-progress steps stay in the list, but they carry a reduced hour figure: the balance, not the full planned amount.
+
+Then the ordinary scheduling pipeline runs, exactly as it would for a new job, with two differences. The job's earliest start is the resume point rather than its original release date, and any step carrying a remainder is allocated for that remainder only.
+
+If the filter returns an empty list, meaning every step is complete, the engine stops immediately. The output already holds the preserved rows from stage 4, so a fully finished job produces a run with zero allocations and identical dates. Rescheduling a finished job by mistake is genuinely harmless.
+
+## Stage 6: Persist as One Row, and Log It
+
+Internally a partially completed operation is handled as two pieces: the hours that happened and the hours still owed. That separation is necessary for the arithmetic and unhelpful on screen, so at the moment of saving the two are merged back into one row per routing step per work center, with duplicate day entries and duplicate resource entries collapsed.
+
+This is why a half-done operation does not turn into two operations on your Gantt. You see the operation with its real logged hours, its real start, and a schedule window that now extends to cover the re-planned remainder.
+
+The merge is keyed by step *and* work center rather than step alone. That matters when a routing step runs on parallel work centers, because the parallel sibling legitimately shares the same routing step on a different machine. Keying per machine keeps the split pair together and leaves the sibling alone. See [parallel work centers](/blog/edgebic-parallel-work-centers-explained) for why the sibling exists.
+
+Finally, every run appends an audit event holding the job's old and new start and end, the actor, and the timestamp. Nothing is overwritten. A sequence of reschedules leaves a readable trail rather than a single current state, which is the standard argued in [audit-ready scheduling](/blog/audit-ready-scheduling).
+
+## Four Runs, Four Outcomes
+
+### Two steps complete, one to go
+
+A three-step job. Cut on Saw-A planned Monday 08:00 to 14:00, Drill on Drill-B planned Monday 14:00 to Tuesday 10:00, Paint on Paint-1 planned Tuesday 10:00 to 16:00.
+
+Reality: Cut ran Monday 08:30 to 15:15 with 6 hours logged. Drill ran Monday 15:15 to Tuesday 11:00 with 8 hours logged. Paint has nothing.
+
+The resume point is Tuesday 11:00, the later of the two actual ends. Cut and Drill are preserved at their logged dates. Paint is placed on Paint-1's first available slot at or after Tuesday 11:00, running Tuesday 11:00 to 17:00. Fourteen completed hours, untouched.
+
+### One step running short of its plan
+
+A three-step job. Forge is complete at 8 hours. Grind started Monday 16:00, planned for 12 hours, with 4 logged so far. QC has nothing.
+
+Grind's remainder is 8 hours. The engine finds the next available slot on Grind-2 after Monday 16:00 and books exactly 8 hours there, landing Tuesday 08:00 to 16:00. QC queues behind that, Tuesday 16:00 to Wednesday 10:00 across a shift boundary.
+
+The saved record shows Grind as one operation with its real Monday start, its 4 logged hours on Monday, and a window extending to Tuesday 16:00. Its actual end stays empty, so the next run reclassifies it as in progress.
+
+### An operator closed early
+
+A 16 hour CNC operation. The operator pressed complete Wednesday morning having logged 6 hours Monday and 4 hours Tuesday.
+
+The gap is 6 hours, well over tolerance, so the operation classifies as a short-confirm. Under the default forward-shift policy the 10 logged hours stay locked on Monday and Tuesday, the resume point becomes the operator's Wednesday 09:00 stamp, and 6 hours are re-planned from there, landing Wednesday 09:00 to 15:00. Downstream queues behind 15:00.
+
+Under the trust-the-stamp policy instead, the 6 hours are written off and downstream queues behind Wednesday 09:00. Both are legitimate; the choice is a site policy, walked through in the [partial completion reschedule walkthrough](/blog/partial-completion-reschedule-walkthrough-edgebic).
+
+### Everything is finished
+
+All three steps have actual ends. Classification finds three completed operations, the routing filter returns an empty list, and the engine stops. The preserved rows are written back unchanged and one audit event records that a run happened and produced no change. No date moves.
+
+## The Two Rules That Never Bend
+
+**Completed work is immutable.** Once an operation has an actual end, no stage of the pipeline may alter it. It is re-emitted from its own record with fields unchanged.
+
+**Started work keeps its machine.** An operation that has begun does not relocate. Its remainder goes onto the same work center, even when a faster alternate is sitting idle, because the fixture, the program, and the partially finished parts are physically on the machine that started it.
+
+Everything else in a reschedule is negotiable. Those two are not, and they are what make daily rescheduling a low-risk habit rather than a gamble. Directionally, the engine resolves precedence in a fixed order: an anchored constraint first, then real actuals, then planner pins, then backward scheduling from the due date, then plain forward scheduling.
+
+## Where to Go Next
+
+[How to reschedule safely](/blog/how-to-reschedule-safely-in-edgebic) turns this mechanism into a checklist. [Rescheduling mistakes](/blog/rescheduling-mistakes-edgebic) covers the configuration traps that make a correct run look wrong. [How actuals flow into the schedule](/blog/how-actuals-flow-into-the-edgebic-schedule) explains where the numbers this stage reads come from.
+
+When a job moves more than expected, [why did my job jump two days](/blog/why-did-my-job-jump-after-a-reschedule-edgebic) walks the four causes to a conclusion. The platform overview is the [complete guide to EDGEBIC](/blog/edgebic-complete-guide). Bring a job with real logged hours to a demo of [EDGEBIC](/edgebic) and we will reschedule it in front of you.

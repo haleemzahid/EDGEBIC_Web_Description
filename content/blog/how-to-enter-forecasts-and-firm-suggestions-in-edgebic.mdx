@@ -1,0 +1,141 @@
+---
+title: "How to Enter Forecasts and Firm Suggestions in EDGEBIC"
+description: "Demand forecast manufacturing software, step by step: the fields that create a forecast row, the settings that make suggestions fire, and how to firm one."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - demand forecast manufacturing software
+  - enter forecast by bucket
+  - firm replenishment suggestion
+  - reorder method configuration
+  - build to inventory order setup
+  - forecast upsert key
+  - replenishment order verification
+targetPhrase: "demand forecast manufacturing software"
+wordCount: 1643
+readingTime: 8
+faqQuestions:
+  - question: "How do you enter a demand forecast in EDGEBIC?"
+    answer: "Open the Inventory tab, select the product, and use the Forecast pane. Set the forecast date to the first day of the target bucket, choose the type (sales, production or consumption), enter the quantity, and click Add Forecast. The row is written against a four-part key of product, bucket width, type and bucket date, and the projection reloads immediately so you can see the effect on gross requirements."
+  - question: "How do you correct a forecast quantity that was entered wrong?"
+    answer: "Re-enter the same product, date, bucket width and type with the correct quantity. The write is an upsert: a matching row is updated in place rather than duplicated, so you never end up with two competing figures for the same bucket. To remove a forecast entirely, select its row in the forecast grid and delete it, which is immediate and permanent with no undo."
+  - question: "Which settings make a replenishment suggestion appear?"
+    answer: "Four have to line up on the product. Build method must be make-to-stock, the stocked flag must be on, the reorder method must be something other than none, and its levels must be set: reorder level and reorder quantity for reorder point, or minimum and maximum for min-max. Miss any one and the projection runs correctly and simply never suggests anything for that product."
+  - question: "What does firming a suggestion actually create?"
+    answer: "One manufacturing order flagged build-to-inventory, with the suggested quantity rounded up to a whole number, the bucket start as its due date, and a replenishment demand source recorded on it. It is created in a scheduled status but has no dates yet, so a scheduling run has to follow before it takes real machine time. No inventory transaction posts at firm time: the receipt posts only when the order is completed."
+qaQuestions:
+  - question: "I firmed a suggestion but the same suggestion is still on the row. Did the firm fail?"
+    answer: "Almost certainly not. Firming creates a build order but the projection only counts it as supply once it has scheduled completion dates, so until you run scheduling the order exists in the job list while contributing nothing to the balance in the calendar. Check the order list for a replenishment-prefixed job number with the quantity you expected, then run scheduling. On the next projection the order shows as a scheduled receipt in its completion bucket, the balance rises from there onward, and the suggestion clears. If you firm again in the meantime you will create a second order for the same need, which is the one genuine risk in this sequence."
+  - question: "Our forecast is maintained in a spreadsheet by the sales team. Do we have to retype it every month?"
+    answer: "No, forecast data is one of the record types that comes in through the same flexible import approach as products, work centers, routings and orders: you map your spreadsheet columns to the fields once and reuse the mapping each cycle. Because forecast writes are upserts keyed on product, bucket width, type and bucket date, re-importing a revised month updates the existing rows in place rather than stacking a second set on top of the first, which is what makes a monthly refresh safe to repeat. Bring a copy of the actual spreadsheet to a demo and ask User Solutions to build the mapping against your real columns rather than a sample."
+---
+
+**Two screens do the work of demand forecast manufacturing software in [EDGEBIC by User Solutions](/edgebic): the forecast pane, where you tell the system what demand is coming, and the calendar row, where you convert its replenishment advice into a real build order.** This post is the procedure for both, plus the product settings that have to be right first or nothing will ever be suggested.
+
+For the reasoning behind the sizing and the trigger logic, read [forecasting and replenishment explained](/blog/edgebic-forecasting-and-replenishment-explained) first. For the forecasting method itself, [demand forecasting for manufacturing](/blog/demand-forecasting-manufacturing) covers approaches; what follows assumes you already have numbers to enter.
+
+## Step 1: Configure the Product
+
+A forecast against a badly configured product produces a correct projection that never suggests anything. Get this right first.
+
+Open **Products**, find the item, click **Edit**, and scroll to the **Inventory Planning** section. Set:
+
+| Field | What to set | Why it matters |
+|---|---|---|
+| Build Method | Make to Stock | Only stocked-build products receive suggestions |
+| Is Stocked | Checked | With this off, nothing posts and nothing nets |
+| Safety Stock | Your alert level | Flags buckets and drives the projected stockout date |
+| Reorder Method | Reorder Point or Min/Max | Leave at None and no suggestion ever fires |
+| Reorder Level and Reorder Quantity | Trigger and order size | Used by the reorder point method |
+| Min Level and Max Level | Floor and ceiling | Used by the min-max method |
+| Lot Size Rule | Lot for Lot or Fixed Order Qty | How the raw need is rounded |
+| Yield | 1.0, or your measured first-pass rate | Inflates the suggestion for scrap |
+| Forecast Consumption Rule | Greater Of or Minus Consumed | How firm demand reconciles with forecast |
+
+Two of these fail silently when wrong. A make-to-stock product with the stocked flag off looks configured and does nothing. A yield of zero or above one breaks the sizing calculation. Both are caught by the integrity report and both are usually import defaults, which is covered in [inventory tracking mistakes](/blog/inventory-tracking-mistakes-edgebic).
+
+Set safety stock below your reorder trigger. Safety stock is the level at which you want to be told; the trigger is the level at which the build should start. Making them equal removes the cushion the two-level design exists to give you.
+
+If you are choosing between the two trigger methods, the practical rule is simple: use reorder point when you always order the same amount, and min-max when you want the balance to live inside a band.
+
+## Step 2: Enter the Forecast
+
+Click **Inventory** in the left navigation, select the product from the dropdown at the top, and set the **Bucket** picker to the width you forecast in (Day, Week or Period). Then open the **Forecast** pane.
+
+1. Set **New Forecast Date** to the first day of the target bucket. For weekly buckets that is the Monday.
+2. Choose **New Forecast Type**: Sales, Production or Consumption.
+3. Enter **New Forecast Qty**.
+4. Click **Add Forecast**.
+
+The projection reloads immediately, and you should see the forecast demand column change in the matching bucket. If it does not, three things are worth checking: whether the date landed in the bucket you intended, whether the bucket width you were viewing matches the one you entered against, and whether the product is make-to-order (in which case forecasts are stored and displayed but ignored by the calculation).
+
+**Types are additive within a bucket.** A sales forecast of 150 and a production forecast of 30 for the same week give 180 units of forecast demand, not 150. That is intended, since each type is independent demand from a different origin, but it also means two people entering the same expectation under different types will double your plan. Agree ownership of types before you start.
+
+## Step 3: Edit, Replace or Remove a Forecast
+
+**To change a quantity**, re-enter the same product, date, bucket width and type with the new number. The write is an upsert keyed on those four values, so a matching row is updated in place. You cannot accidentally create a competing duplicate for the same bucket and type.
+
+**Careful with the type field.** Changing the type while keeping the date creates a **new** row, because type is part of the key. Correcting a sales forecast by re-entering it as a production forecast leaves the original sales row intact and adds 100% on top of it.
+
+**To remove a forecast**, select its row in the forecast grid and click **Delete Forecast**. This is a hard delete: the row is gone, immediately, with no undo. Re-entering it is the only way back.
+
+**To clear every forecast for a product**, use the data clear route rather than deleting rows one at a time. It is an administrative operation rather than a button on this pane, so ask your administrator to run it.
+
+**To edit a forecast from the matrix**, open the on-hand matrix, switch the **Lens** to **Forecast**, and double-click the cell for the product and date. The forecast editor opens with the current value. This route edits the sales type only, so use the forecast pane for production and consumption entries.
+
+## Step 4: Read the Suggestion Before You Act on It
+
+Go back to the **Calendar** pane and find rows with a non-zero suggested quantity. Before firming, read the row across so you know what you are agreeing to.
+
+- **Projected balance** tells you how deep the shortfall is. A negative number means the raw need is larger than the target level, because the deficit has to be covered as well as the refill.
+- **Gross requirements** tells you what demand drove it, after the consumption rule reconciled forecast against firm orders.
+- **Below safety** tells you whether this is a genuine breach or a bucket sitting just under the trigger.
+- **Suggested** is the quantity after the target calculation, lot rounding and yield inflation, in that order.
+
+If the suggested figure looks larger than expected, the usual explanation is lot rounding followed by yield inflation. A raw need of 425 with fixed lots of 150 rounds to 450, and a yield of 0.95 takes that to 474. Both steps are visible in the product settings you configured in step one.
+
+Full column-by-column reading of the row, plus the six matrix lenses, is in [how to read the projection](/blog/how-to-read-the-projection-in-edgebic).
+
+## Step 5: Firm the Suggestion
+
+Select the row and click **Firm**.
+
+One manufacturing order is created. Verify it before moving on: open **Manufacturing Orders** and filter to the replenishment demand source or the replenishment job-number prefix. The new order should show:
+
+- **Build to Inventory** set, so completion will post a receipt
+- **Quantity** equal to the suggested quantity rounded up to a whole number
+- **Due Date** equal to the bucket start you firmed from
+- **Demand Source** recorded as replenishment
+- **Status** scheduled, with no actual dates yet
+
+That last point catches people out. The order exists and has no schedule. It has not been placed on a work center, it has taken no capacity, and it contributes nothing to the projection until it does.
+
+**Do not firm the same bucket twice.** There is no cross-check that stops you, and the suggestion does not clear at firm time, so a second click creates a second order for the same need. If you suspect a double firm, filter the order list by the replenishment prefix and look for two orders with the same due date and quantity.
+
+If you disagree with the suggested figure, firm a different quantity. The suggestion is advice. Firming a smaller amount and letting the projection show you what it leaves behind is a perfectly reasonable way to work, especially when your real lot size is set by a tool or a pallet rather than by arithmetic.
+
+## Step 6: Schedule, Then Watch the Loop Close
+
+Run scheduling. The firmed order competes for machine time exactly like a customer job, respecting setups, shift calendars and constraints, and it appears on the same Gantt as everything else.
+
+Refresh the inventory calendar afterwards. Three things should have changed:
+
+1. The order appears as a **scheduled receipt** in the bucket containing its expected completion.
+2. The **projected balance** rises from that bucket onward.
+3. The **suggestion** for that bucket clears, because the balance is now above the trigger.
+
+When the floor finishes the job and someone marks it complete, a receipt posts to the inventory ledger and on-hand rises for real. From then the stock is available for netting, meaning a later demand for the same part can be satisfied from it rather than triggering another build. See [how EDGEBIC nets demand against stock](/blog/how-edgebic-nets-demand-against-stock).
+
+## Cancelling a Firmed Order
+
+Plans change. Delete or cancel the order through the order editor, and any ledger entries pegged to it are reversed before it goes, with the reversal rows staying on the record. On the next projection refresh the scheduled receipt disappears and the suggestion for that bucket reappears, which is the system correctly returning to the position it was in before you firmed.
+
+## A Sensible Monthly Rhythm
+
+Enter or import the new forecast month at the start of the cycle. Review the matrix on the suggested lens to see which products need decisions. Work the shortlist product by product on the calendar, firm what you agree with, and run scheduling once at the end rather than after each firm. Then check the matrix again on the on-hand lens to confirm the red cells have cleared.
+
+The traps that ambush this rhythm, from duplicate firms to forecasts entered against the wrong bucket width, are collected in [forecasting and replenishment mistakes](/blog/forecasting-and-replenishment-mistakes-edgebic). For how everything connects, see the [inventory and planning guide](/blog/edgebic-planning-guide) and the [complete guide to EDGEBIC](/blog/edgebic-complete-guide).

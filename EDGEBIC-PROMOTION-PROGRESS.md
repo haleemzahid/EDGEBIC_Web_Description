@@ -40,11 +40,11 @@
 
 | Cluster | Slug | Target | Written | Published | Indexed |
 |---|---|---|---|---|---|
-| 17 | edgebic-platform | 180 | 73 | 0 | 0 |
+| 17 | edgebic-platform | 180 | 145 | 0 | 0 |
 | 18 | edgebic-scheduling-concepts | 200 | 1 | 0 | 0 |
 | 19 | edgebic-how-to | 500 | 1 | 0 | 0 |
 | 20 | edgebic-walkthroughs | 50 | 11 | 0 | 0 |
-| 21 | edgebic-erp-integration | 150 | 18 | 0 | 0 |
+| 21 | edgebic-erp-integration | 150 | 30 | 0 | 0 |
 | 22 | edgebic-industry | 110 | 1 | 0 | 0 |
 | 23 | edgebic-glossary | 350 | 5 | 0 | 0 |
 | 24 | edgebic-troubleshooting | 120 | 9 | 0 | 0 |
@@ -55,8 +55,8 @@
 | 29 | edgebic-quoting | 40 | 1 | 0 | 0 |
 | 30 | edgebic-planning | 80 | 1 | 0 | 0 |
 | 31 | edgebic-migration | 40 | 0 | 0 | 0 |
-| 32 | edgebic-admin | 40 | 1 | 0 | 0 |
-| | **TOTAL** | **2,120** | **134** | **0** | **0** |
+| 32 | edgebic-admin | 40 | 9 | 0 | 0 |
+| | **TOTAL** | **2,120** | **218** | **0** | **0** |
 
 **"Written" count is derivable from disk** (don't trust memory, count files):
 PowerShell: `Select-String -Path content/blog/*.mdx -Pattern "cluster: 'edgebic-" | Group-Object { ($_.Line -split "'")[1] } | Sort-Object Name | Format-Table Name, Count`
@@ -67,7 +67,8 @@ PowerShell: `Select-String -Path content/blog/*.mdx -Pattern "cluster: 'edgebic-
 |---|---|---|---|---|---|
 | 2026-07-23 | 1 | 50 | 15 of 16 (all but migration) | 917bdc3 | 7 parallel agents; 13 pillars + 10 walkthroughs + 8 visual + 6 ERP + 8 troubleshooting + 5 glossary; QA pass fixed 2 claims; ~110k words; no heroImage yet (screenshots pending) |
 | 2026-07-23 | 1 fix | 0 | erp-integration | c721268 | Corrected "new-jobs-only mode" claim in 4 Wave 1 posts (no user-facing mode picker exists) |
-| 2026-07-24 | 2 / flight 1 | 84 | platform (72), erp-integration (12) | see git log | 7 parallel agents, 4 angles x 18 chapters + 12 ERP; ~150k words; QA: 0 banned/em-dash/FCP hits, 0 dup slugs, 151/151 internal links resolve, 0 existing files touched |
+| 2026-07-24 | 2 / flight 1 | 84 | platform (72), erp-integration (12) | 19e620c | 7 parallel agents, 4 angles x 18 chapters + 12 ERP; ~150k words; QA: 0 banned/em-dash/FCP hits, 0 dup slugs, 151/151 internal links resolve, 0 existing files touched |
+| 2026-07-24 | 2 / flight 2 | 84 | platform (72), erp-integration (12), admin (8) | see git log | 7 parallel agents; actuals/reschedule/snapshots, BOR authoring/diagnostics/import, inventory/ATP/forecast, MPS/quotes/scenarios, reports/dashboards/column glossary, security/deployment/config, SAP+NetSuite+Sage; ~155k words; QA: all scans clean, 176/176 links resolve, 1 cross-post numeric contradiction reconciled (anomaly-check count) |
 
 ## SCREENSHOT TRACKER
 
@@ -107,13 +108,19 @@ claims; answer and then correct the named posts.
 
 | # | Question | Why it matters | Affected content |
 |---|---|---|---|
-| Q1 | **Are Work Center Groups and Operators/Skills in the shipping build?** UserGuide 07/08 open with "currently ship on a pre-release feature branch; the screens may not be present in your installed build yet", but strategy §5 says claim freely. | Present-tense marketing of unshipped screens is the one claim class we cannot risk. | 8 Wave-2 posts (WC-group + operator chapters), the `/edgebic` page feature list, `llms.txt` |
+| ~~Q1~~ | ~~Are Work Center Groups and Operators/Skills in the shipping build?~~ **RESOLVED 2026-07-24 by the owner: claim both as SHIPPED, present tense, no hedge.** Scope is those two features only; inventory / forecasting / replenishment / MPS keep the capability-without-release-promises guardrail. | — | No changes required; rule added to the Wave-2 agent brief |
 | Q2 | **Does flagging a bottleneck alone activate anchor scheduling, or is a target start date also required?** Chapter 16 says both are required (with a worked example); recipe books R01/R10 imply the flag alone suffices. | Four posts teach "both are required" as the rule. | 4 Wave-2 TOC posts |
 | Q3 | **Is work center utilization % editable in the shipping build?** Architecture chapter documents it as the operative knob (default 50); UserGuide says current versions run at 100% and the field is not editable. | Three posts tell readers to express headroom through calendars instead. | 3 Wave-2 capacity posts |
 | Q4 | **Are Is Bottleneck / One Per Day settable only via import?** UserGuide says "not on the edit dialog in the current release". | Four posts point readers at import columns. | 4 Wave-2 work-center posts |
 | Q5 | **Do the dashboard utilization color bands match** (red 90%, amber 75%; High/Medium/Low at 81/51)? | Used as planner-facing thresholds in one post. | 1 Wave-2 post |
 | Q6 | **Does a partial CSV import truly leave omitted cells unchanged?** | Stated as safe in setup-matrix guidance. | 1 Wave-2 post |
 | Q7 | **Do the shipped Setup Matrix tab labels match** (Families / Product Assignments / Family Matrix / Product Overrides; Setup Source + Setup Reason columns)? | Used verbatim in two posts. | 2 Wave-2 posts |
+| **Q8** | **DOC BUG (not a content issue): Chapter 27 claims the two forecast-consumption rules produce different gross-requirement totals, but by the formulas the book itself states they are algebraically identical; Chapter 28 concedes as much.** Either the docs or the code is wrong. | We declined to repeat the claim; posts present both formulas and frame the choice as recording intent. Engineering should resolve the source. | `how-forecast-consumption-works-in-edgebic` (already written safely) |
+| Q9 | **Positioning: older RMDB posts describe SAP/NetSuite integration via BAPI, RESTlet and ODBC; EDGEBIC posts describe Excel/CSV/database import masks.** No factual conflict, but a prospect reading both may ask whether the new flagship integrates less deeply. | Cross-content narrative gap on the highest-intent ERP queries. | ERP cluster + `/edgebic-erp-integration` page |
+| Q10 | **Is the routing comparison report planner-reachable, and do snapshot integrity findings surface in the UI or only in logs?** | Two posts tell planners to run/watch for these. | 2 Wave-2 posts |
+| Q11 | **Is the auto-filled actuals badge (docs dated 2026-07-07) in the customer build?** Same shipping-build question Q1 answered for groups/operators. | Written as current UI throughout the actuals chapter. | 4 Wave-2 actuals posts |
+| Q12 | **Confirm counts against the shipping build**: 18 vs 19 report panes; 21 vs 22 glossary providers (the Q1 decision may make it 22); Column Details coverage across reports. | Used as concrete numbers in several posts. | 4 Wave-2 reports/glossary posts |
+| Q13 | **Is there an in-app viewer for the security audit trail, and is self-service password reset enabled?** UserGuide and architecture chapter disagree. | Three posts say the audit record is database-only and reset is installation-dependent. | 3 Wave-2 admin posts |
 
 ## DECISIONS & CHANGES LOG (append-only)
 

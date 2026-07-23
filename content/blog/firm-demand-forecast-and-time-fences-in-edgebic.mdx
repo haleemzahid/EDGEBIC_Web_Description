@@ -1,0 +1,144 @@
+---
+title: "Firm Demand, Forecast, and Time Fences: Inside the EDGEBIC MPS"
+description: "How time fences in the master production schedule work: where firm demand comes from, how forecast consumption nets, and what each fence actually suppresses."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - time fences master production schedule
+  - demand time fence
+  - planning time fence
+  - forecast consumption netting
+  - firm demand sales order line
+  - forward netting producer consumer
+targetPhrase: "time fences master production schedule"
+wordCount: 1908
+readingTime: 10
+faqQuestions:
+  - question: "What is a demand time fence in a master production schedule?"
+    answer: "A demand time fence is a near-term window, measured in days from today, inside which only firm customer demand counts and forecast demand is ignored. The logic is that inside a short horizon, orders you actually hold are the truth, and a forecast that predicted them would double the same demand. A bucket qualifies when its start date falls before today plus the product's demand time fence days."
+  - question: "What is the difference between a demand time fence and a planning time fence?"
+    answer: "They suppress different things. The demand time fence suppresses forecast demand, so requirements inside it come only from confirmed orders. The planning time fence suppresses automatic suggestions and prevents committed build quantities from being auto-overwritten, so the near-term plan a human agreed to is protected from a planning run. They are set separately per product, and the planning fence is normally the longer of the two."
+  - question: "How does forecast consumption work in the MPS?"
+    answer: "Gross requirements for a bucket are the greater of firm demand and forecast demand after consumption, rather than their sum. When a firm order arrives, it is generally the fulfilment of the forecast that predicted it, so adding both would plan the same demand twice. A per-product alternative lets firm orders eat into the forecast and add on top of the remainder, for shops where firm orders genuinely arrive in addition to the forecast rather than instead of it."
+  - question: "Why does the MPS not count open make-to-order jobs as firm demand?"
+    answer: "Because a make-to-order job is created from a sales order line, so counting both counts one customer order twice. The line is the demand and the job is the response to it. Build-to-stock orders are treated as supply instead: while open, they appear as scheduled receipts in the bucket where they are expected to complete, which is the correct side of the equation for something that adds stock."
+  - question: "What is forward netting and why does it matter for MPS builds?"
+    answer: "Forward netting lets a consuming order in a scheduling run see the incoming supply from a producing order in the same run. Without it, a build-to-stock job producing 200 units and a customer job needing 150 of them get scheduled independently, and the shop builds the same parts twice. With it, the consumer nets against on-hand plus the in-run receipt, is fully covered, and emits no work-center operations at all. It matters for MPS because firming creates producer orders in bulk."
+qaQuestions:
+  - question: "Our forecast is stale but the near-term plan looks right. Is the demand fence hiding a problem or protecting us?"
+    answer: "Protecting you, and that is exactly its job. Inside the demand fence, requirements come from confirmed order lines only, so a forecast that has drifted cannot inflate the next two weeks of building. The trap is at the fence boundary. In the documented example a product with a 14 day demand fence and a 30 day planning fence sees forecast start contributing again on day 20, while committed quantities are still protected until day 30. If your forecast is stale, the damage shows up in the buckets just outside the demand fence, not inside it. That is where to look."
+  - question: "A planner committed 50 units for a bucket and a planning run wiped it. Which fence should have stopped that?"
+    answer: "The planning time fence, and the documented example shows the boundary precisely. With a 30 day planning fence set on June 13, a commitment for July 3 sits inside the fence and is protected from automatic revision. A commitment for July 18 sits in the open horizon, where the system may show a fresh suggestion and will not protect the committed quantity from being revised. If your planners commit a month out and expect it to survive, the planning fence days on that product are the number to raise. Note the fence is advisory on the firm action itself: it stops automatic overwriting, not a human clicking firm inside the window."
+---
+
+**Time fences in the master production schedule** are the two settings that decide whether your near-term plan is stable or repeatedly rewritten by arithmetic. This post opens the MPS mechanism in EDGEBIC by User Solutions: where firm demand actually comes from, how forecast and firm demand combine into gross requirements, what each fence suppresses, and the netting rule that stops a firmed build being built twice.
+
+This is the deep dive in a set of four. Start with [the MPS explained](/blog/edgebic-master-production-schedule-explained) for the overview, or [how to work the grid](/blog/how-to-work-the-mps-grid-in-edgebic) for the screen-by-screen walkthrough. The wider planning layer is covered in the [inventory and planning pillar](/blog/edgebic-planning-guide).
+
+## The Demand Side: One Source, Not Two
+
+Every requirement in the grid traces back to one of two inputs, and the rule about which records qualify is the single most important thing to understand.
+
+**Firm demand** comes from open lines on confirmed sales orders. A line's contribution is its open balance: ordered quantity minus quantity already shipped. Each line is bucketed by its own due date, not the order header's.
+
+**Forecast demand** comes from forecast entries for the product, entered at whatever granularity you keep them and rolled into whichever bucket their date falls in.
+
+That is the whole list. In particular, open make-to-order manufacturing orders are deliberately excluded from firm demand, and the reason is worth spelling out because the alternative is a common failure in home-grown planning spreadsheets.
+
+A make-to-order job exists because a customer placed an order. The sales order line is the demand signal. The job is the shop's answer to that signal. If both are counted, one customer's 60 units appear as 120 units of requirement, the projection shows a stockout that does not exist, and the system recommends building stock nobody has asked for. [EDGEBIC](/edgebic) counts the line and not the job.
+
+Build-to-stock orders are handled on the other side of the equation entirely. While open, they appear as **scheduled receipts** in the bucket where they are expected to complete. Demand pulls the projected balance down; receipts push it back up. The same order never appears in both roles.
+
+One operational consequence catches people out. A sales order line only counts when its parent order is confirmed. Lines entered onto a draft order are invisible to the grid, and a product whose entire firm demand sits on unconfirmed orders looks like a forecast-only item. When firm demand reads zero and you know the orders exist, check order status first. [How sales orders drive demand](/blog/how-sales-orders-drive-demand-in-edgebic) covers that path in full.
+
+## Gross Requirements: The Greater Of, Not the Sum
+
+Once both streams exist for a bucket, they have to be combined into one number. The default rule takes the greater of firm demand and forecast demand after consumption, rather than adding them.
+
+Consider a bucket with a forecast of 30 and firm orders of 60. Under the default rule, gross requirements are 60. The reasoning: those 60 units of orders are the realisation of the forecast that predicted them. The forecast was a guess about the same customers. Adding both plans 90 units of demand where 60 exists.
+
+Now consider a bucket with a forecast of 30 and firm orders of 10. Gross requirements are 30. The forecast still expects 30 units of total demand in that period, and only 10 of it has arrived as firm orders so far. Planning to 10 would leave you short when the other 20 shows up.
+
+A per-product alternative exists for shops where the logic genuinely differs: firm orders consume the forecast and are then added on top of what remains. That fits a business where a large customer's scheduled orders arrive in addition to general market demand rather than instead of it. What never happens under either rule is modification of the forecast records themselves. Consumption is arithmetic inside the calculation, and your forecast history stays intact for the next review. See [demand forecasting for manufacturers](/blog/demand-forecasting-manufacturing) for the general discipline.
+
+## The Two Fences and What Each One Suppresses
+
+Both fences are days from today, both are set per product, and each suppresses something different.
+
+| Fence | A bucket is inside when | What is suppressed inside it |
+|---|---|---|
+| Demand time fence | Bucket start is before today plus demand fence days | Forecast demand: only firm orders drive requirements |
+| Planning time fence | Bucket start is before today plus planning fence days | Automatic suggestions, and automatic overwriting of committed quantities |
+
+The **demand time fence** exists because forecasts get less useful as they get closer. Two weeks out, you know your order book. The forecast that predicted this fortnight has already been superseded by the orders it predicted, and letting it contribute is a way of planning the same demand twice. Inside the fence, requirements come from confirmed orders alone.
+
+The **planning time fence** exists to protect human decisions. Inside it, the system does not push new suggestions and does not overwrite build quantities that a planner has committed. This is what makes a Monday planning meeting survive Tuesday.
+
+Fence days live on each product, so horizons can differ by item. A high-turnover consumable might carry a seven day demand fence. A long-lead casting might carry sixty. The values follow the item's replanning rhythm, not a company-wide standard. The concepts themselves are standard planning vocabulary, maintained by [ASCM, formerly APICS](https://www.ascm.org), rather than product-specific inventions.
+
+## Worked Example: Both Fences on One Timeline
+
+Precision Shaft carries a 14 day demand fence and a 30 day planning fence. Today is June 13.
+
+| Bucket start | Inside demand fence? | Inside planning fence? | Behavior |
+|---|---|---|---|
+| June 13 | Yes | Yes | Only firm orders drive requirements; no auto-suggestion, committed quantity protected |
+| June 23 | Yes | Yes | Same |
+| July 3 | No | Yes | Forecast contributes to requirements; committed quantity still protected |
+| July 18 | No | No | Forecast and firm both drive requirements; suggestions appear; committed quantity not protected from automatic revision |
+
+Read the July 3 row twice, because it is the one that surprises planners. Forecast has re-entered the requirement calculation for that bucket, so the demand number can move without anybody touching a sales order. The commitment sitting on that row, however, is still safe. Two different protections, two different boundaries.
+
+A planner who committed 50 units for July 3 can trust that number to survive a planning run. A planner who committed 50 for July 18 should re-check it after the next run, because that bucket sits in the open horizon.
+
+One honest limit: the planning fence flags and suppresses, but it does not hard-lock the screen. Nothing stops a human from firming a bucket inside the fence. It is planner discipline made visible rather than an enforced constraint, and reading it as a lock is a genuine source of surprise.
+
+## The Overlay Rule: Committed Is Not Supply
+
+The grid keeps the planner's committed build quantity in its own column, and that column is not rolled into the projected available balance until the bucket has been firmed and a real order exists.
+
+The instinct to roll it in is understandable. A planner who commits 200 units would like to see the projected balance recover in the same screen. The design refuses, for a specific reason. If an uncommitted 200 lifts the balance, supply appears for an order that does not exist, and a later stockout is hidden by a number nobody released. Worse, once the bucket is firmed, the real order arrives as a scheduled receipt while the committed column still shows 200, and the same supply appears to exist twice.
+
+So the sequence stays honest: commit, firm, schedule, and only then does the projected balance move, because only then is there something real to move it.
+
+## Firming: Lead Time Offset and the Rounding Rule
+
+Firming a bucket creates one build-to-stock manufacturing order inside a single transaction. Two details of that order are worth knowing before you rely on it.
+
+**The release date is the due date minus the product's lead time.** A bucket starting Monday on a product with a three day lead time produces an order with a Monday due date and the previous Friday as its start. That start is an earliest-can-start hint rather than a pin: the finite capacity engine still places the work where capacity actually exists. A lead time of zero makes start equal due, which for anything with a real routing means the order has no runway.
+
+**Quantities round up, never down.** The committed quantity can carry decimals; a manufacturing order quantity is a whole number. A commitment of 30.4 produces an order for 31, and a commitment of 99.5 produces 100. Rounding up is the deliberate direction: under-building a stock plan is worse than one spare unit.
+
+The transaction is also idempotent. Firming the same bucket again while its order is still alive returns the existing order rather than creating a duplicate. If that order was deleted elsewhere, the grid demotes the row back to Firm on its next load so it can be re-firmed cleanly.
+
+## Forward Netting: Why a Firmed Build Is Not Built Twice
+
+Firming produces build-to-stock orders in quantity, and those orders often produce parts that other jobs in the same scheduling run consume. Without a rule connecting them, the shop builds the same parts twice.
+
+Here is the documented case. One scheduling run contains two orders:
+
+- A build-to-stock order for 200 units of a bracket sub-assembly, expected to complete in two days.
+- A customer order needing 150 of the same bracket sub-assembly as a material step.
+
+On-hand of the bracket is 20 units.
+
+Without forward netting, the two orders are planned in isolation. The customer order's material step sees 20 on hand, calculates a shortfall of 130, and emits work-center operations to build those 130. Meanwhile the build-to-stock order is producing 200 of exactly the same part in the same run. The shop builds 130 units nobody needs and burns capacity doing it.
+
+With forward netting on, the producing order is scheduled first and its 200 unit receipt is registered against its completion date. When the consumer's material step is netted, it sees 20 on hand plus 200 incoming, totalling 220 against a need of 150. Fully covered. The material step is marked satisfied from stock and emits no work-center operations at all.
+
+Because MPS firming is the main source of build-to-stock orders, the scheduling paths set this behavior deterministically whenever a run contains any build-to-stock order, rather than leaving it to a global preference that might be off. The [consume-from-stock walkthrough](/blog/consume-from-stock-netting-walkthrough-edgebic) shows the netting from the shop-floor side.
+
+## What This Means in Practice
+
+Four rules carry most of the value:
+
+1. Confirm sales orders, or their lines are invisible to the plan.
+2. Set the demand fence to roughly the horizon in which your order book is real.
+3. Set the planning fence to at least one full planning cycle longer, so decisions survive to the next meeting.
+4. Firm, then schedule, then re-read the projection. Reading it in between shows placeholder dates.
+
+For the configuration errors that break these rules quietly, read [MPS mistakes](/blog/mps-mistakes-edgebic). For everything the platform does with the orders this module creates, the [EDGEBIC complete guide](/blog/edgebic-complete-guide) is the map, and [capacity planning versus production scheduling](/blog/capacity-planning-vs-production-scheduling) covers where planning stops and scheduling starts.

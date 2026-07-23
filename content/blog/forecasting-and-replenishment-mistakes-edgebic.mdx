@@ -1,0 +1,131 @@
+---
+title: "8 Demand Forecasting Mistakes That Distort a Manufacturing Replenishment Plan"
+description: "Demand forecasting mistakes in manufacturing usually come from data entry, not statistics. Here are eight that distort replenishment, and their symptoms."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - demand forecasting mistakes manufacturing
+  - replenishment planning errors
+  - forecast double counting
+  - duplicate replenishment orders
+  - lot sizing misconfiguration
+  - forecast bucket alignment
+  - reorder trigger setup
+targetPhrase: "demand forecasting mistakes manufacturing"
+wordCount: 1628
+readingTime: 8
+faqQuestions:
+  - question: "Why is our forecast demand higher than anything we entered?"
+    answer: "Almost always because forecast types are additive within a bucket. Sales, production and consumption forecasts for the same product and week are three separate rows and the projection sums them, so the same expected demand entered under two types plans for double. Check the forecast grid for that bucket and look for two rows with similar quantities under different types before you question the calculation."
+  - question: "Why did editing a forecast create a second row instead of updating the first?"
+    answer: "Because the forecast type was changed along with the quantity. Forecast rows are keyed on product, bucket width, type and bucket date, so a matching write updates in place and a change to any key field creates a new row. Re-entering a sales forecast as a production forecast leaves the original sales row intact and adds the new one on top. Keep the type constant when correcting a quantity."
+  - question: "Why does a firmed replenishment order not appear in the projection?"
+    answer: "Because it has not been scheduled yet. Firming creates a manufacturing order with a due date and no schedule, and the projection counts an order as a scheduled receipt only once it has expected completion dates. Run scheduling after firming, then refresh the calendar: the order appears as a receipt in its completion bucket, the balance rises, and the suggestion for that bucket clears."
+  - question: "What happens if fixed order quantity lot sizing is used with a reorder quantity of zero?"
+    answer: "The lot-sizing calculation has nothing to round to, which is a misconfiguration rather than a valid setting. Fixed order quantity works by rounding the raw need up to whole multiples of the reorder quantity, so that quantity has to be a positive number. If you want the exact shortfall with no rounding, use lot-for-lot sizing instead, which is what a reorder quantity of zero usually means someone intended."
+qaQuestions:
+  - question: "We switched firm demand to come from confirmed sales orders and now nothing gets suggested anywhere. What happened?"
+    answer: "Firm demand went to zero across every stocked product because there are no confirmed sales order lines to read. The switch changes the demand source from open make-to-order manufacturing orders to confirmed sales order lines using open balance, which is the more rigorous approach, and it has a hard precondition: the sales order data has to exist first. With no lines, gross requirements collapse to forecast alone, projected balances look healthier than they are, and triggers stop firing. Either enter or import the confirmed order book before making the switch, or revert to the manufacturing-order source until that data is in place."
+  - question: "We firmed 445 and the shop built 445, but we only needed 400 good units. Did the system get it wrong?"
+    answer: "No, it inflated for scrap on purpose and 445 is the correct start quantity. The sizing runs in three steps: the raw need against your target level, rounding up to whole lots, then division by the product's yield with a round-up. With a rounded lot of 400 and a yield of 0.90, the start quantity is 400 divided by 0.90 rounded up, which is 445. If the run came out at 445 good units, the real issue is that your recorded yield no longer matches the process, and a yield that is too pessimistic quietly inflates every suggestion for that part. Compare recorded yield against your last twenty runs and update it."
+---
+
+**Demand forecasting mistakes in manufacturing are usually data-entry and configuration problems rather than statistical ones.** The forecasting method matters, but a well-chosen method entered against the wrong bucket, the wrong type or a wrongly configured product produces a plan nobody should follow. These eight recur in [EDGEBIC by User Solutions](/edgebic), and each has a symptom you can recognise.
+
+If the mechanics are unfamiliar, [forecasting and replenishment explained](/blog/edgebic-forecasting-and-replenishment-explained) covers the loop and [how forecast consumption works](/blog/how-forecast-consumption-works-in-edgebic) covers the arithmetic. For the forecasting method itself rather than its entry, see [demand forecasting for manufacturing](/blog/demand-forecasting-manufacturing).
+
+## 1. Entering the Same Demand Under Two Forecast Types
+
+**The symptom.** Forecast demand for a bucket is higher than any single number anyone entered, and nobody can find the source.
+
+**What is happening.** Forecast rows are keyed on product, bucket width, type and bucket date. Sales, production and consumption forecasts for the same week are three separate rows, and the projection sums them. A sales forecast of 150 and a production forecast of 30 give 180 units of forecast demand.
+
+**Why it is designed that way.** Each type is independent demand from a different origin, and the split lets you report where demand comes from. It becomes a trap the moment two people record the same expectation under different labels.
+
+**What to do.** Agree ownership of each type before anyone enters anything: sales owns sales, planning owns production, engineering or maintenance owns consumption. When forecast demand surprises you, open the forecast grid for that bucket and look for two rows with similar quantities under different types.
+
+## 2. Changing the Type While Correcting a Quantity
+
+**The symptom.** A planner fixes a forecast and the plan gets worse, because the old figure is still there.
+
+**What is happening.** The write is an upsert on the four-part key, so re-entering the same product, date, bucket width and type updates the row in place. Change the type and you have changed a key field, which creates a **new** row and leaves the original untouched.
+
+**What to do.** Keep the type constant when correcting a quantity. If a forecast genuinely belongs under a different type, delete the original row explicitly and then add the new one, rather than assuming the second entry replaced the first.
+
+**One more caution.** Forecast deletion is a hard delete with no undo. Re-entering is the only way back, so read the row before you remove it.
+
+## 3. Forecasting a Make-to-Order Product
+
+**The symptom.** Forecast rows exist and show on the forecast tab, and the projected balance never reacts to them.
+
+**What is happening.** For a make-to-order product, gross requirements come from committed demand alone. Forecast rows are stored and displayed and contribute nothing to the calculation.
+
+**Why it is right.** A part built only when a customer orders it should not be planned to stock against a prediction. That is the definition of make-to-order.
+
+**What to do.** Decide which the product genuinely is. If it should be planned to stock, change its build method and check that the stocked flag is on. Every stored forecast starts participating on the very next projection with no re-entry needed. The policy resolution is covered in [make to stock vs make to order](/blog/make-to-stock-vs-make-to-order-in-edgebic).
+
+## 4. Firming the Same Bucket Twice
+
+**The symptom.** Two replenishment orders with the same quantity and the same due date, and twice the stock arriving.
+
+**What is happening.** There is no cross-check preventing a second firm, and the suggestion does not clear at firm time. It clears only after the created order has been scheduled and shows up as a scheduled receipt. So a planner who firms, refreshes, still sees the suggestion, and clicks again gets a second order.
+
+**What to do.** Firm once, run scheduling, then refresh. If you suspect a double firm, filter the order list by the replenishment demand source or the replenishment job-number prefix and look for two orders with the same due date and quantity. Cancelling one reverses any ledger entries pegged to it and returns the projection to the correct position.
+
+## 5. Expecting a Firmed Order To Appear Immediately
+
+**The symptom.** An order was firmed, the calendar looks identical, and someone concludes the firm failed.
+
+**What is happening.** Firming creates an order with a due date and no schedule. It has not been placed on a work center, it has taken no capacity, and the projection counts an order as a scheduled receipt only once it has expected completion dates.
+
+**What to do.** Run scheduling. Then refresh the calendar and confirm three changes: the receipt appears in the completion bucket, the balance rises from there onward, and the suggestion clears. This is also the moment to check whether the shop can actually deliver on the date, because a replenishment order competes for machine time exactly like a customer job.
+
+## 6. Fixed Lot Sizing With No Lot Size
+
+**The symptom.** Suggestions come out at odd values or the sizing calculation fails on that product.
+
+**What is happening.** Fixed order quantity sizing rounds the raw need up to whole multiples of the reorder quantity. With a reorder quantity of zero there is nothing to round to, which is a misconfiguration rather than a valid setting.
+
+**What to do.** Either set the reorder quantity to your genuine lot (pallet, tool capacity, supplier minimum) or switch the lot size rule to lot-for-lot, which returns the exact shortfall with no rounding. A reorder quantity of zero almost always means somebody wanted lot-for-lot.
+
+## 7. Misreading Yield Inflation as an Error
+
+**The symptom.** The suggestion asks for 445 when the plan needs 400, and someone assumes the arithmetic is broken.
+
+**What is happening.** Sizing runs in three steps and yield inflation is the last one. Raw need against the target, rounded up to whole lots, then divided by yield and rounded up. A rounded lot of 400 with a yield of 0.90 gives 445 units to start so that roughly 400 good ones survive scrap.
+
+**The real risk is the opposite one.** A yield that no longer matches the process quietly inflates every suggestion for that part. Compare the recorded yield against your last twenty runs periodically and update it.
+
+**And check the range.** A yield of zero or above one breaks the calculation, and the integrity report has a check that lists every product in that state. It is a classic import default, along with a percentage column arriving as 90 rather than 0.90. See [inventory tracking mistakes](/blog/inventory-tracking-mistakes-edgebic).
+
+## 8. Switching Firm Demand Source Before the Data Exists
+
+**The symptom.** Firm demand goes to zero for every stocked product overnight and nothing gets suggested anywhere.
+
+**What is happening.** Firm demand can be sourced from open make-to-order manufacturing orders or from confirmed sales order lines using open balance. The second is the more rigorous approach, and it depends entirely on sales order data being present. With no confirmed lines, firm demand is zero, gross requirements collapse to forecast alone, projected balances look healthier than they are, and triggers stop firing.
+
+**What to do.** Get the order book in first, whether by entry or by import, and confirm it. Then switch. Until then, the manufacturing-order source keeps the plan honest. How sales orders become demand is covered in [how sales orders drive demand](/blog/how-sales-orders-drive-demand-in-edgebic).
+
+## 9. Forecasting Into the Wrong Bucket Width
+
+**The symptom.** A forecast was entered, the confirmation looked right, and the demand appears in a bucket nobody expected or seems to have vanished.
+
+**What is happening.** Bucket width is part of the forecast key, not just a viewing preference. A quantity entered while the calendar is set to daily buckets is stored as a daily forecast for that date. Switch the view to weekly and you are looking at weekly rows, which will not show a daily entry where you expect it.
+
+**What to do.** Set the bucket picker to the width you actually forecast in **before** you enter anything, and keep the whole team on the same width for a given product. If a product's forecast genuinely lives at two granularities, that is a process decision to make deliberately rather than an accident to discover later. When a forecast appears to be missing, check the bucket width first and the date second.
+
+## The Setup Mistake Behind Several of These
+
+Set safety stock **below** your reorder trigger, not equal to it.
+
+Safety stock is the level at which you want to be told, and by default it does not block consumption. The reorder trigger is the level at which the build should start. Making them equal means the build starts at the moment your cushion begins to be eaten, which removes the point of having two numbers. A reorder point of 50 with safety stock of 20 gives the build a runway. Sizing the safety level itself is covered in [safety stock calculation](/blog/safety-stock-calculation).
+
+## The Review That Catches the Rest
+
+Once a cycle, do three things. Run the integrity report as a full scan and clear any yield or stocked-flag findings, because those distort sizing before you ever read a number. Scan the matrix on the suggested lens for parts you did not expect to see, since an unexpected suggestion usually means a forecast landed in the wrong bucket. And filter the order list by the replenishment source and look for duplicates with matching dates and quantities.
+
+Ten minutes of that saves a month of wondering why the plan and the shelf disagree. For the surrounding capabilities, see [projected available balance explained](/blog/edgebic-projected-available-balance-explained) and the [inventory and planning guide](/blog/edgebic-planning-guide). The platform tour is in the [complete guide to EDGEBIC](/blog/edgebic-complete-guide). To pressure-test your own forecast and lot-sizing settings, bring a month of forecast data and your item master to a demo and ask User Solutions to run the loop against them.

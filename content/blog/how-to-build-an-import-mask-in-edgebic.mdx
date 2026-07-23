@@ -1,0 +1,178 @@
+---
+title: "How to Build an Import Mask in EDGEBIC, Field by Field"
+description: "Excel import mapping for manufacturing data: pick the entity, map your columns once, set unit conversions and options, then run and read the result counts."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - excel import mapping manufacturing
+  - build an import mask
+  - csv import scheduling software
+  - unit conversion import
+  - import options manufacturing
+  - reusable data import
+  - EDGEBIC import setup
+targetPhrase: "excel import mapping manufacturing"
+wordCount: 1850
+readingTime: 9
+faqQuestions:
+  - question: "How do you map Excel columns to fields in EDGEBIC?"
+    answer: "Open Settings, then the Import tab, pick the entity type and click Define New. Name the mask, use Get File to pick your workbook and worksheet, and EDGEBIC reads the column headings. Drag each heading from the file-headers list onto the matching row in the field mappings grid. Rows ticked as required must be mapped before the mask can run. Save, and the mapping is reusable."
+  - question: "How do you convert minutes to hours during an import?"
+    answer: "Fill the conversion cell on that column's mapping row with 0.016667. The multiplication happens before the value is stored, so a cell reading 30 lands as 0.5 hours. Seconds to hours is 0.000278. Leave the cell empty when the source is already in hours. Non-numeric cells pass through untouched, and a factor applied to a zero correctly produces zero."
+  - question: "What if my file has no header row?"
+    answer: "Untick header present on the mask and map by position instead. Each mapping row then takes a column number, counted from one, rather than a source heading. This is the normal arrangement for fixed-format extracts from older systems. Everything else about the mask, including conversions and options, works identically."
+  - question: "Should you turn on update existing records?"
+    answer: "Only for runs whose purpose is changing values, such as a price refresh. With it off, which is the default, matched records are counted as reused and left untouched, which makes re-running a file a safe operation. With it on, matched records are updated and blank cells fall back to the existing value rather than wiping it. A column of zeros, however, writes zeros."
+qaQuestions:
+  - question: "How do we test a new mask without risking a hundred bad records?"
+    answer: "Cut the source file down to ten representative rows and run that first. Ten rows prove the mapping, the conversions and the options in about a minute, and they surface the three failures that actually happen: a mandatory field unmapped, which aborts the run before a single row is read; a unit that came in sixty times too large; and a key column that matched nothing so everything came back Created when you expected Reused. Check the created records on their own screens, not just the counts, then run the full file. If something does go wrong on the full run, master-data imports are safe to re-run: with updates off, existing rows simply come back Reused."
+  - question: "We have four different files from the same ERP. Is that four masks or one?"
+    answer: "Four, and that is the intended design. A mask is tied to one file shape and one entity type, so a product extract, a work center extract, a routing extract and a weekly order file are four masks. Name them after the routine rather than the file: Weekly Product Sync outlives products-week29.xlsx. The payoff arrives on week two, when loading all four is four select-and-run operations with no mapping work at all, and it arrives again on the day the ERP adds a column, because an unmapped column is simply not read."
+---
+
+**Building an import mask takes about five minutes and you do it once per recurring file.** After that, importing this week's version of the same file is select the mask, click Do It, read the counts. This post walks the mask editor field by field.
+
+For what a mask is and why EDGEBIC by User Solutions uses mapped files rather than fixed connectors, start at [import masks explained](/blog/edgebic-import-masks-explained).
+
+## Step 1: Open Import and Pick the Entity Type
+
+Import lives under **Settings**, on the **Import** tab. The page shows an entity type list on the left and the masks saved for the selected type beside it.
+
+Pick the entity type first, because it determines which fields exist to map:
+
+| Entity type | Loads | Mandatory columns |
+|---|---|---|
+| Product | Product master | Product identifier |
+| Workcenter | Machines and stations | Work center identifier |
+| Customer | Customer master | Name |
+| SalesOrder | Jobs and demand | Product, quantity, job date |
+| BOR | Routing steps | End product, step, operation flag, hours required |
+| Actuals | Daily hours and pieces | Job number, work center, date |
+| PlantHoliday | Plant holidays | Holiday name, date |
+| Shift | Global shifts | Shift name |
+
+Import sits inside Settings, which is permission controlled. If you cannot see the tab, that is an access question rather than a licensing one.
+
+## Step 2: Define the Mask and Read the File
+
+Click **Define New**. The mask editor opens.
+
+**Name it after the routine, not the file.** `Weekly Product Sync` outlives `products-week29.xlsx`, and the mask is what you will pick from a list next month.
+
+Click **Get File** and choose the source. For a workbook, pick the worksheet in the **Sheet** box. EDGEBIC reads the column headings and lists them on the right, ready to drag.
+
+One caution about sheets: if the workbook's sheet name later changes, the mask falls back to the first worksheet rather than failing. That is forgiving when a file is regenerated and dangerous when a workbook has several sheets, because you can silently import the wrong data. Re-pick the file and the sheet whenever the source workbook is restructured.
+
+## Step 3: Map the Columns
+
+The field mappings grid has one row per available field, with columns for the target field, whether it is required, the source heading, the column number, and the conversion factor.
+
+Drag a heading from the file-headers list onto the matching row's source-header cell. Rows ticked as required must be mapped before the mask can save and run.
+
+Two rules make this faster than it looks.
+
+**Map only what you need.** Unmapped columns are simply not read. A forty-column ERP extract usually needs a handful of mappings, and leaving the rest alone means next week's file can arrive untouched.
+
+**Absorb the mismatch here, not in the file.** The mask is the place where your ERP's vocabulary meets the scheduler's. Doing it here means nobody has to clean a spreadsheet by hand on a Monday morning, which is the step that always eventually gets skipped.
+
+## Step 4: Set the File Options
+
+| Option | What it does |
+|---|---|
+| Delimiter | Excel for workbooks; comma, semicolon, space or tab for text files |
+| Header Present | On: row one is headings and mapping is by heading. Off: mapping is by column position |
+| Text Enclosed in Quotes | For CSV files whose text values are wrapped in quotation marks |
+| Col # | The column position, counted from one, used when header present is off |
+| Conv | A multiplier applied to numeric values in that column before storing |
+
+For a fixed-format extract with no heading row, untick header present and fill the column number on each mapped row instead. Everything else works identically.
+
+## Step 5: Set the Conversion Factors
+
+This is the field that prevents the most common bulk error there is.
+
+| Source unit | Conversion factor |
+|---|---|
+| Minutes to hours | `0.016667` |
+| Seconds to hours | `0.000278` |
+| Already hours | leave empty |
+
+The multiplication happens before the value is stored. A setup column reading `30` with a factor of `0.016667` lands as 0.5 hours. Non-numeric cells pass through untouched, and a factor applied to a zero correctly produces zero.
+
+Get this wrong on a routing import and every setup value in the file is sixty times too large. The import will report success, because every row was structurally valid, and the error shows up as machines that appear to spend entire shifts changing over. Set the factor when you build the mask and check one imported value afterwards.
+
+## Step 6: Set the Behaviour Options
+
+Select the saved mask and click **Options**. The available options depend on the entity type.
+
+| Option | Applies to | Effect |
+|---|---|---|
+| Continue on row error | All | On by default: a bad row fails individually and the run continues. Off: the run aborts at the first failure |
+| Update existing records | Product, Workcenter, Customer, SalesOrder, PlantHoliday, Shift | On: matched rows update. Off (default): matches are counted Reused and left untouched |
+| Auto-create missing products | SalesOrder, BOR | A product named in the file that does not exist is created on the fly |
+| Auto-create missing customers | SalesOrder | The same, for customers |
+| Auto-create missing work centers | BOR | The same, for work centers |
+| Auto-generate next in sequence | BOR | Chains routing steps automatically in sequence order |
+| Replace existing | Actuals | Additionally clears actuals on days the file does not cover |
+| Auto-calc hours | Actuals | Derives hours from pieces, or pieces from hours, using the operation's rate |
+| Mark complete on import | Actuals | Marks each imported operation complete, overridable per row |
+
+Two defaults are worth understanding rather than accepting.
+
+**Continue on row error is on.** One typo does not block 199 good rows. Switch it off when a partial load would be worse than no load, such as a demand file where a missing quantity means the whole extract is suspect.
+
+**Update existing records is off.** That makes re-running a file safe: matches come back Reused and untouched. Turn it on only for a run whose purpose is changing values. On an update, blank cells fall back to the existing value rather than wiping it, but zeros are real values and will be written. Map only the columns your run is meant to change.
+
+## Step 7: Save, Run, and Read the Result
+
+Click **Save**. The mask appears in the saved list with its name, last file and format.
+
+To run it: select the mask, click **Do It**, and pick this week's file if the remembered path is stale. A progress window shows the run.
+
+The result dialog gives you a summary line reading Created, Updated, Reused and Failed counts, plus a grid with one row per file row showing its status, key, message and the identifier of the record it touched.
+
+Read it in this order:
+
+1. **Failed count.** Any failure means a row did not land. Open the message.
+2. **The Created versus Reused split.** If a re-run of a familiar file suddenly shows everything Created, your key column stopped matching. That is more serious than a failure, because it silently duplicates master data.
+3. **The log file.** Click Open Log File for the full record: every row, including the bookkeeping rows the dialog hides, with exact reasons for each failure. The dialog gives you counts; the log gives you row numbers.
+
+Log files live one per run and stay until deleted, which makes them a usable record of what entered the system and when.
+
+## Step 8: Prove It Before You Trust It
+
+Two verification steps, both cheap.
+
+**Dry-run on ten rows.** Cut the source down to ten representative rows and run that first. Ten rows expose a missing mandatory mapping (which aborts before a single row is read), a unit sixty times out, and a key column that matches nothing. Check the created records on their own screens rather than trusting counts.
+
+**Run a plant-wide diagnostics sweep after the full load.** An import changes hundreds of records at once, and a single mapping error repeats across all of them. The sweep is the thing that catches the shape of a bad column before anyone schedules against it. The routine is in [how to run and read the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic).
+
+## Where to Go Next
+
+Routing imports have their own mechanics, because steps must be linked to each other after every step exists. That is [how EDGEBIC imports routings in two passes](/blog/how-edgebic-imports-routings-in-two-passes), and it also explains the wipe-and-recreate behaviour that surprises people on a second run.
+
+The failures worth pre-empting are collected in [import mask mistakes](/blog/import-mask-mistakes-edgebic). For what the routing columns mean before you map them, read [how to create a manufacturing routing](/blog/how-to-build-a-routing-step-by-step-in-edgebic). For per-ERP application, start at the [ERP integration hub](/edgebic-erp-integration) or the [Fourth Shift integration guide](/blog/edgebic-fourth-shift-integration-guide). The wider discipline is [ERP data integration best practices](/blog/erp-data-integration-best-practices).
+
+Full platform map: the [complete EDGEBIC guide](/blog/edgebic-complete-guide) and the [EDGEBIC](/edgebic) hub.
+
+Bring one real export to a demo and we will build the mask on screen. [Contact US](/contact-us).
+
+<Accordion title="How do you map Excel columns to fields in EDGEBIC?">
+Open Settings, then the Import tab, pick the entity type and click Define New. Name the mask, use Get File to pick your workbook and worksheet, and EDGEBIC reads the column headings. Drag each heading from the file-headers list onto the matching row in the field mappings grid. Rows ticked as required must be mapped before the mask can run. Save, and the mapping is reusable.
+</Accordion>
+
+<Accordion title="How do you convert minutes to hours during an import?">
+Fill the conversion cell on that column's mapping row with 0.016667. The multiplication happens before the value is stored, so a cell reading 30 lands as 0.5 hours. Seconds to hours is 0.000278. Leave the cell empty when the source is already in hours. Non-numeric cells pass through untouched, and a factor applied to a zero correctly produces zero.
+</Accordion>
+
+<Accordion title="What if my file has no header row?">
+Untick header present on the mask and map by position instead. Each mapping row then takes a column number, counted from one, rather than a source heading. This is the normal arrangement for fixed-format extracts from older systems. Everything else about the mask, including conversions and options, works identically.
+</Accordion>
+
+<Accordion title="Should you turn on update existing records?">
+Only for runs whose purpose is changing values, such as a price refresh. With it off, which is the default, matched records are counted as reused and left untouched, which makes re-running a file a safe operation. With it on, matched records are updated and blank cells fall back to the existing value rather than wiping it. A column of zeros, however, writes zeros.
+</Accordion>

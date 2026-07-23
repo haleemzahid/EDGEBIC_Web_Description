@@ -1,0 +1,169 @@
+---
+title: "From Punch to Plan: How Actual Hours Reach the Production Schedule"
+description: "Actual hours production schedule mechanics: how punches roll up into daily hours, how provenance is tracked, and exactly what the scheduler reads back."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - actual hours production schedule
+  - production data rollup
+  - punch to schedule data flow
+  - daily hour breakdown manufacturing
+  - actual vs planned hours calculation
+  - shop floor feedback loop
+  - resume point rescheduling
+targetPhrase: "actual hours production schedule"
+wordCount: 1990
+readingTime: 10
+faqQuestions:
+  - question: "How do actual hours get from a shop floor terminal into the production schedule?"
+    answer: "Each operator tap closes one punch and opens the next, and each closed punch stores its own elapsed hours. When the operation is completed, EDGEBIC by User Solutions groups the closed run and rework punches by calendar date and writes one daily row per date holding the summed hours and good pieces. Those daily rows are what the Gantt, the reports, and the next scheduling run read. Punches are the source; daily rows are the currency."
+  - question: "Why do my daily actual hours not match the elapsed time on the machine?"
+    answer: "Because only run and rework time counts as production hours. Setup, teardown, idle, and machine-down punches are recorded in full but excluded from the daily rollup, where they feed changeover variance and downtime analysis instead. A machine occupied from 07:50 to 16:00 with a 0.92 hour setup and a 1.25 hour stoppage contributes 6.00 production hours to that day, not 8.17."
+  - question: "What is the resume point in a reschedule?"
+    answer: "The resume point is the earliest moment remaining work is allowed to begin, derived entirely from actuals. It is the later of two values: the actual end of the last completed operation, and the projected end of any operation currently in progress. Remaining operations queue behind that moment rather than behind the old planned dates, which is why logging before rescheduling matters more than any engine setting."
+  - question: "Are scrap pieces included in daily actual pieces?"
+    answer: "No. Daily actual pieces count good pieces only. Scrap is recorded separately, each piece carrying a mandatory reason code drawn from the machine, material, quality, and waiting categories. Keeping scrap out of the produced quantity means a job's progress reflects sellable output, and the scrap record stays attributable for Pareto analysis rather than disappearing into a net figure."
+qaQuestions:
+  - question: "We ran an operation for 7.53 hours and got 42 good pieces, but the routing says the rate is 7.14 pieces per hour. Which number does the schedule use going forward?"
+    answer: "Neither, directly. The schedule uses the routing's cycle time to plan the remaining work, and it stores 5.58 pieces per hour as the observed rate for that day so you can see the gap. The observed figure is evidence, not a setting; it does not silently retune the plan.\n\nThat is the right split. One day at 5.58 could be a quality hold that ate 1.5 hours, which the reason codes on that day will show. Three weeks at 5.58 is a routing that is wrong, and then you change the cycle time deliberately. Auto-tuning the plan from yesterday would make every schedule chase noise, which is the pattern behind [schedule nervousness](/blog/schedule-nervousness-manufacturing)."
+  - question: "An operator logged the paint step before anyone logged the mill step ahead of it. What actually happened to the mill's numbers?"
+    answer: "EDGEBIC stopped and asked first. The prompt named the mill as an earlier operation with no actuals. If the operator continued, the mill got actual start equal to planned start, actual end equal to planned end, and planned hours copied onto its days, all tagged as system filled and shown with an auto-filled badge in the grid.\n\nSo the sequence stays coherent and the resume point is still computable, but the mill's numbers are the plan wearing a costume. Go back and type the real ones: the badge clears on the first edit. Until you do, treat any variance report touching that mill as unverified."
+---
+
+**Actual hours reach the production schedule through a two-stage pipeline: operator taps become punches, and closed punches roll up into one daily hours row per calendar date.** Those daily rows are what the Gantt shades, what the reports read, and what the next scheduling run uses to compute the point from which remaining work is allowed to resume. In EDGEBIC by User Solutions the two stages are deliberately separate, and understanding the boundary between them explains most of what people find surprising about their numbers.
+
+This post traces one operation from the first tap to a re-planned downstream date. If you want the conceptual model first, read [shop floor actuals tracking](/blog/edgebic-actuals-tracking-explained). If you want to do it rather than understand it, [logging actual hours and pieces](/blog/how-to-log-actual-hours-and-pieces-in-edgebic) is the procedure.
+
+## Stage One: Taps Become Punches
+
+A punch is one uninterrupted stretch of a single state. Every tap closes the punch that was open and opens a new one, which is why the record is a chain rather than a set of overlapping timers.
+
+Follow a real shift. CNC-1, machine instance 2, Schedule 44 for JOB MO-1010, a turbine shaft at 50 pieces. The routing step is 0.14 hours per piece with an efficiency factor of 1.0, giving an effective rate of 7.14 pieces per hour, snapshotted onto every punch when it opens.
+
+| Time | Operator action | What happens to the record |
+|---|---|---|
+| 08:00 | Tap Setup | Setup punch opens; the routing's 0.5 hour setup standard is frozen onto it, along with the product that last ran on this machine |
+| 08:28 | Tap Start Run | Setup punch closes at 0.47 hours; run punch opens; the operation's actual start is stamped 08:28 |
+| 09:00 | Four good taps | Good pieces on the open run punch reach 4 |
+| 10:15 | Scrap, quality, dimensional reject | Scrap count 1, with the quality reason code written in the same transaction |
+| 14:30 | Continued good taps | Good pieces reach 42 |
+| 16:00 | Tap Complete | Run punch closes at 7.53 hours; the operation's actual end is stamped 16:00 |
+
+Three details do quiet work here.
+
+**Timestamps are taken server side when the tap lands.** Terminals and servers drift; the record must not.
+
+**A closed punch's hours can never be negative.** A same-second double tap clamps to zero rather than producing a negative duration that would poison every sum downstream.
+
+**The rate is a snapshot, not a lookup.** Edit the routing next month and this punch still reports the rate that was actually in force, so historical variance analysis stays meaningful.
+
+## Stage Two: Punches Become Daily Hours
+
+When the operation completes, the rollup runs. Its algorithm is short enough to state completely.
+
+1. Load every punch for the operation.
+2. Keep only closed run and rework punches. Setup, teardown, idle, and down punches are dropped from this calculation.
+3. Group what survives by the date the punch started. Sum hours; sum good pieces. Scrap is not added.
+4. Compute the observed rate per day. If both hours and pieces are non-zero, it is pieces divided by hours. Otherwise it carries forward the rate snapshot from the last closed punch.
+5. Update the existing daily row for each date, or insert one where none exists.
+6. Zero any parent daily row whose date no longer has matching punches, which is how a deleted punch cleans up after itself.
+7. Leave sub-assembly rows alone. Those belong to the planner's grid, not to the terminal.
+
+For MO-1010 that produces exactly one row.
+
+| Date | Planned hours | Actual hours | Actual pieces | Observed rate |
+|---|---|---|---|---|
+| 2026-01-07 | 7.00 | 7.53 | 42 | 5.58 pieces per hour |
+
+Read what is not there. The 0.47 hour setup does not appear. The scrap piece does not appear in the piece count. And the observed 5.58 pieces per hour sits well under the 7.14 standard, which is the visible fingerprint of the 90 minute quality hold. The number that tells you something is the one you can compare against a standard, which is why the two quantities are captured independently rather than derived from each other.
+
+## Why Setup and Downtime Sit Outside the Daily Row
+
+Step 2 of that algorithm is the single most questioned behavior in the whole pipeline, so it is worth the second example.
+
+Paint Booth 3, Schedule 77 for MO-2200, logging hours rather than pieces.
+
+| Day | Sequence | Punch hours |
+|---|---|---|
+| Tue | Setup 07:50 to 08:45 | 0.92 setup |
+| Tue | Run 08:45 to 10:30 | 1.75 run |
+| Tue | Down 10:30 to 11:45, coolant issue | 1.25 down |
+| Tue | Run 11:45 to 16:00 | 4.25 run |
+| Tue to Wed | Idle overnight | 15.92 idle |
+| Wed | Run 07:55 to 11:00, then Complete | 3.08 run |
+
+The daily rows read 6.00 hours on Tuesday and 3.08 on Wednesday. Nine hours and five minutes of production against a plan of seven, with 1.25 hours of machine downtime carrying a named cause and 15.92 hours of overnight idle recorded and correctly ignored.
+
+Blend those buckets and you get 26.17 hours on a seven hour operation, which is true of the clock and useless for planning. Keeping them apart is what lets availability, performance, and quality stay separable in the way [overall equipment effectiveness](/blog/oee-overall-equipment-effectiveness) assumes, and it is why nobody's output number is dented by a coolant leak.
+
+## Provenance: Which Numbers Are Facts
+
+Every daily row and every operation carries a source flag: user entered, or system filled from the plan. The grid surfaces it as an auto-filled badge in the Source column.
+
+The badge appears in exactly one situation. Somebody logs a downstream operation while an earlier operation on the same job has no actuals at all. EDGEBIC stops, names the missing steps, and offers a choice. Continue and those steps get actual start equal to planned start, actual end equal to planned end, and planned hours copied onto their days, all flagged as system filled.
+
+The flag clears the instant a human edits the value. That behavior is the whole point: the badge is a queue of assumptions waiting to become facts, and it empties itself as you work through it.
+
+There is a second provenance layer for corrections. Editing a closed punch or a previously reported day writes an append-only adjustment record holding the old value, the new value, the author, and a mandatory reason. Nothing is deleted; a reversal is another record. A supervisor correcting a 4.83 hour punch to 5.83 leaves both numbers in the history along with the sentence explaining why, and the daily rows rebuild from the corrected punch set. That trail is the difference between a system you can audit and a system you can only argue with, which is the standard set out in [audit-ready scheduling](/blog/audit-ready-scheduling).
+
+## What the Scheduler Actually Reads
+
+Now the pipeline hands off. When a scheduling run starts, it examines every operation of every job and sorts it into one of four classifications.
+
+| Classification | Test | Consequence |
+|---|---|---|
+| Complete | Actual start and actual end both set, logged hours matching planned | Preserved exactly; excluded from re-planning |
+| Short-confirm | Actual end set, but logged hours fall short of planned by more than 0.01 hours | Logged portion preserved; the gap is re-planned under site policy |
+| In progress | Actual start set, no actual end | Logged hours preserved; only the balance is re-planned |
+| Not started | No actuals, and no later operation has any | Fully re-planned |
+
+The 0.01 hour tolerance, being 36 seconds, exists to absorb floating-point rounding when daily hours are summed. Without it, a job logged to the exact planned total could classify as short by a millionth of an hour and generate a phantom remainder.
+
+There is a fifth case, worth knowing because it surprises people. An operation with no actuals of its own that sits *earlier* in the routing than an operation that does have actuals is treated as inferred complete: the shop plainly ran it, or the later step could not have started. Its actuals are backfilled from its scheduled dates and flagged accordingly.
+
+## The Resume Point
+
+From that classification, one number falls out, and it drives everything downstream: the resume point. It is the later of two values.
+
+- The actual end of the last completed operation.
+- The projected end of any in-progress operation, computed as its actual start plus its planned duration.
+
+Remaining operations queue behind the resume point, not behind their old planned dates. That single substitution is what makes a reschedule reflect the shop rather than the plan.
+
+Work an example. JOB-2026-0125, three steps, day shift 08:00 to 16:00. The plan had Saw-1 running Monday 08:00 to 12:30 for 4.5 hours, CNC-Mill-1 Monday 12:30 to Tuesday 15:30 for 11 hours, and Assembly-1 Wednesday 09:30 to 16:00 for 6.5 hours, with a 2 hour queue time separating the mill and assembly.
+
+Reality: a blade change pushed Saw-1 to Monday 09:15 through 14:00, still 4.5 hours of work, logged at the terminal. Steps 2 and 3 have no actuals.
+
+The resume point becomes Monday 14:00, which is Saw-1's real end. From there:
+
+- CNC-Mill-1 re-plans from Monday 14:00: two hours Monday afternoon, eight hours Tuesday, one hour Wednesday morning, ending Wednesday 09:00.
+- The 2 hour queue runs Wednesday 09:00 to 11:00.
+- Assembly-1 takes Wednesday 11:00 to Thursday 09:30 against its own shift calendar.
+
+The job's end moves from Wednesday 16:00 to Thursday 09:30. Saw-1's bar never moves a minute. A 75 minute late start became a 17.5 hour date change, entirely through shift boundaries and a queue time, and now it is a date you can give a customer.
+
+## Two Cascades You Did Not Trigger
+
+One save can legitimately change rows you never touched, which is worth knowing before it looks like a bug.
+
+**Prior-step backfill** writes actuals onto upstream operations, as described above.
+
+**The parallel mirror** copies a primary operation's actuals onto its parallel sibling: dates one to one, hours scaled by the configured factor, days the primary lacks zeroed out. It runs job-wide after every actuals save, because a backfilled primary needs its own sibling updated too. Edit a sibling directly and the next save on that job overwrites it from the primary. See [parallel work centers](/blog/edgebic-parallel-work-centers-explained) for why the pair exists.
+
+Because both cascades exist, the Job View refreshes the whole job after each save rather than patching the single row you edited. That is also why an open Actual Live screen updates when a terminal logs something across the plant: every load reads fresh, and an actuals save broadcasts to any screen watching the job.
+
+## The Loop, Closed
+
+Punch, roll up, classify, resume, re-plan. Each stage does one job and hands a clean number to the next. What makes the loop trustworthy is the discipline at the boundaries: only productive time enters the daily row, only human entry is called a fact, and only the actuals decide where remaining work begins.
+
+That is what a working [shop floor feedback loop](/blog/shop-floor-feedback-loop-scheduling) looks like when it is wired end to end rather than assembled from reports.
+
+## Where to Go Next
+
+[How EDGEBIC preserves completed work on reschedule](/blog/how-edgebic-preserves-completed-work-on-reschedule) picks the story up where this one ends and explains the immutability guarantee in detail. [Actuals logging mistakes](/blog/actuals-logging-mistakes-edgebic) covers what goes wrong in the pipeline and how to trace each symptom. [Rescheduling explained](/blog/edgebic-rescheduling-explained) covers when to run one at all.
+
+For a full narrative of a breakdown moving through this pipeline, see the [machine breakdown reschedule walkthrough](/blog/machine-breakdown-reschedule-walkthrough-edgebic). The platform overview is the [complete guide to EDGEBIC](/blog/edgebic-complete-guide), and a demo of [EDGEBIC](/edgebic) can run this trace on one of your own jobs.

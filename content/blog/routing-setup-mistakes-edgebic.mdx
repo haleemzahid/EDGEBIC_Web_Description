@@ -1,0 +1,149 @@
+---
+title: "8 Manufacturing Routing Mistakes That Distort Your Schedule"
+description: "Manufacturing routing mistakes that wreck schedules: batch hours in per-unit fields, broken sequence links, misused queue time, and dead fields nobody reads."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - manufacturing routing mistakes
+  - routing data errors
+  - hours per unit error
+  - broken routing sequence
+  - queue time mistakes
+  - routing validation
+  - EDGEBIC routing troubleshooting
+targetPhrase: "manufacturing routing mistakes"
+wordCount: 1750
+readingTime: 9
+faqQuestions:
+  - question: "What is the most common manufacturing routing mistake?"
+    answer: "Entering batch hours in the per-unit hours field. The scheduler multiplies that value by the order quantity itself, so a batch total for 100 pieces produces a hundredfold error on every order. The symptom is unmistakable once you know it: one operation swallows days of Gantt for a job that should take hours, and the routing header's per-unit total reads far higher than the part's real cycle time."
+  - question: "Why do my routing steps schedule in the wrong order?"
+    answer: "Because execution follows the next-in-sequence links, not the sequence numbers in the grid. A routing can display a tidy 10, 20, 30 order while its links are broken, missing, or pointing at deleted steps. The fix is to open each row's next-in-sequence picker, repair the chain, and make sure the last production step points at the end item so the chain closes."
+  - question: "Why did my cooling buffer stop working after I added lot streaming?"
+    answer: "Because an overlap gate replaces queue time on the same step rather than adding to it. When a transfer batch or flow step fires, the gate it produces becomes the successor's release time and the queue on that step is discarded, even if the queue would have ended later. Put the handling lag in the transfer-delay field instead, or move the buffer onto the downstream step."
+  - question: "Does putting a value in Move Hours or Teardown Hours change the schedule?"
+    answer: "No. Those two fields are read for cost calculations only and have no effect on the produced schedule. Filling them in the belief they add time between operations produces a plan that is shorter than the shop expects and gives no warning at scheduling time. The anomaly report flags routings that carry them so the intent can be moved into queue time or transit days, which the engine does read."
+qaQuestions:
+  - question: "We inherited 200 routings from a legacy system. What do we audit first, before anyone trusts the schedule?"
+    answer: "Audit in this order, because it is the order of blast radius. First the per-unit hours: sort by hours required descending and look at the top 20 rows, since a batch total hiding in that field is both the most common inherited error and the most destructive. Second the chain: run a schedule and look for steps arriving in an order nobody expects, plus any warning markers in the grid. Third the setup values, checking that changeover time is in the setup field and not folded into the run rate. Fourth the calendar assumption on transit, since legacy exports rarely say whether five days meant business days. A plant-wide anomaly report catches the structural half of this in one pass, and the per-unit sanity check is the half only a human can do."
+  - question: "Our shop insists the schedule is wrong, but the anomaly report is clean. Where does that leave us?"
+    answer: "Usually in the one place automated checks cannot reach: values that are structurally valid and factually wrong. A run rate of 0.5 hours per unit is a perfectly legal number, and no validator can know the real rate is 0.4. That gap is exactly what actuals close. Once operators log real hours, the difference between planned and actual on the same operation becomes visible per job, and a step that is consistently 20 percent over is a routing correction waiting to happen rather than a scheduling defect. Treat a clean anomaly report as proof that the structure is sound, then let recorded time correct the values."
+---
+
+**Most schedules that planners refuse to trust are not broken by the scheduling engine. They are broken by eight recurring errors in the routing data, and every one of them has a visible symptom.** This post lists them in the order of how much damage they do, with the symptom you will actually notice first and the fix.
+
+For what each routing field means, start at [the bill of routing explained](/blog/edgebic-bill-of-routing-explained). For how the engine consumes those fields, [how EDGEBIC reads a routing](/blog/how-edgebic-reads-a-routing) is the mechanism.
+
+## 1. Batch Hours in the Per-Unit Field
+
+**Symptom.** One operation takes days of Gantt on a job that should take hours. The routing header's Estimated Hour per unit reads something like 12 on a part that takes twelve minutes.
+
+**Cause.** Hours Required is time for **one** unit. EDGEBIC by User Solutions multiplies it by the order quantity itself. A batch total for 100 pieces therefore inflates every order by a factor of 100.
+
+**Fix.** Divide by the typical batch size, or use the pieces-to-hours converter beside the cell rather than doing the arithmetic by hand. Then check the header total against a number you know: a one-minute part should read roughly 0.017 per unit.
+
+This is first on the list because it is both the most common inherited error and the one that destroys credibility fastest. A shop that sees one obviously impossible bar stops reading the rest of the schedule.
+
+## 2. Trusting the Sequence Number Instead of the Chain
+
+**Symptom.** Steps schedule in an order nobody recognises, while the grid shows a perfectly tidy 10, 20, 30.
+
+**Cause.** The sequence number sorts the grid. Execution follows the next-in-sequence link on each row. The two can disagree completely, and only one of them is visible at a glance.
+
+**Fix.** Open each row's next-in-sequence picker and repair the chain. Watch for the warning marker beside a step name: it means the link is empty or points at a step that was deleted. Repairing links is a two-minute job when the marker appears and an afternoon of confusion when it does not.
+
+## 3. An Unterminated Chain
+
+**Symptom.** The routing looks complete but the diagram shows it disconnected from the end product, and step ordering behaves oddly at the tail.
+
+**Cause.** The last production step must point at the **end item**, not at nothing. That link is how the system knows the recipe finishes, and it anchors the level calculation that gives every upstream step its depth.
+
+**Fix.** On the final step, open the next-in-sequence popup and click End Item. On imported routings, keep automatic sequence generation on so the terminal step gets the end-product link stamped for you.
+
+## 4. Setup Folded Into the Run Rate
+
+**Symptom.** Small orders look far too expensive in time. A five-piece order books nearly as many hours as a fifty-piece order should.
+
+**Cause.** A one-hour changeover added into the per-unit hours scales with quantity. On a 500-piece order the routing charges 500 changeovers.
+
+**Fix.** Move one-time work into Setup Time, where it is added once per run. The routing header shows the two sums separately for exactly this reason: Estimated Hour per unit and Setup Time should look like different kinds of number.
+
+If your changeover genuinely depends on what ran before, a flat setup value is the wrong model entirely and [the setup matrix](/blog/edgebic-setup-matrix-explained) is the right one. Sequence-dependent changeover is also where the biggest capacity recovery usually hides, which is the subject of [changeover time reduction](/blog/changeover-time-reduction).
+
+## 5. Hour Fields on Component Rows
+
+**Symptom.** Timing cells read `N/A` on a row and cannot be edited, and the planner concludes the grid is broken.
+
+**Cause.** The row is a component step. It names a product rather than a work center, books no machine capacity, and gets an instant assignment in the plan. Hours have no meaning there.
+
+**Fix.** Enter the per-unit **Quantity** and the **Lead Time (days)** instead, and link the row to the step that consumes the component. If the component has a routing of its own it is a sub-assembly, and the scheduler expands it at scheduling time. That structure is covered in [sub-assemblies on the design canvas](/blog/sub-assemblies-in-the-edgebic-designer).
+
+A related version of this mistake is setting transit days on both the component row and the consuming step. The component's travel is already inside its own availability, so the second value double counts it.
+
+## 6. Expecting a Routing Edit to Move Live Jobs
+
+**Symptom.** You correct a mill rate from 0.50 to 0.40 hours per unit, save, and the job on the Gantt does not budge.
+
+**Cause.** This is designed behavior, not a bug. Every scheduled job carries a frozen copy of the routing it was planned with, so a standard-routing edit never silently re-routes work in progress. Shop-floor paperwork stays valid.
+
+**Fix.** New orders pick the change up on the next scheduling run. To push it into a live job, reschedule that job against the current standard routing, or edit the job's own copy directly. [Editing a live job's routing](/blog/editing-a-live-jobs-routing-in-edgebic) walks both paths.
+
+The arithmetic is worth seeing: at 100 units, 0.50 hours per unit plans 51.0 hours of milling and 0.40 plans 41.0. A full shift-day of difference, applied to every new order from the moment you save.
+
+## 7. Combining a Queue With an Overlap Gate
+
+**Symptom.** A cooling or inspection buffer stops having any effect the moment lot streaming is added to the same step.
+
+**Cause.** When a transfer batch or a flow step fires, the gate it produces **replaces** the successor's release time, and the queue time on that step is discarded even if the queue would have ended later. The two do not compose.
+
+**Fix.** Put the handling lag in the transfer-delay field, which does compose with the streaming gate, or move the buffer onto the downstream step. The anomaly report flags every step carrying both a queue and a flow value so the intent can be confirmed rather than guessed.
+
+Three sibling configuration traps live in the same family, and all four are surfaced by the diagnostics:
+
+| Configuration | What the engine does |
+|---|---|
+| Both overlap models set on one step | Piece-count wins on a discrete machine; the flow step is ignored |
+| Transfer batch at or above the order quantity | Capped at the quantity, so streaming becomes serial and no overlap happens |
+| Transfer batch on a continuous-process machine | Piece counts have no meaning there; the flow step is used instead |
+
+Choose one overlap model per step. The full comparison is in [lot streaming](/blog/edgebic-lot-streaming-explained) and [queue and transit times](/blog/edgebic-queue-and-transit-times-explained).
+
+## 8. Filling Fields the Scheduler Never Reads
+
+**Symptom.** A planner adds move and teardown time between operations, the schedule does not lengthen, and nobody can say why.
+
+**Cause.** Move hours and teardown hours exist for cost calculations. The scheduler does not read them, so setting them has no effect on dates whatsoever.
+
+**Fix.** Express the intent in a field the engine does read. Time waiting for a forklift belongs in queue time when it is shift-aware waiting, in transfer delay when it sits on top of an overlap gate, or in transit days when the parts leave the building. The anomaly report lists routings carrying these dead values precisely so the intent can be relocated rather than lost.
+
+## Catching These Before the Shop Does
+
+Two habits catch most of the eight without anyone hunting.
+
+**Read the routing header before you save.** Estimated Hour per unit and Setup Time are live sums, and they make a batch total or a folded setup obvious in one glance. This is the check that finds mistakes one, four and five.
+
+**Run the anomaly report after any bulk change.** It catches the structural half: broken chains, cycles, overlap-model conflicts, dead fields, transit configured in a mode the work center cannot support. [How to run and read the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic) is the two-minute routine, and [what the checks look for](/blog/what-the-edgebic-anomaly-checks-actually-look-for) explains each family in plain language.
+
+What neither habit catches is a value that is structurally valid and factually wrong. That gap closes only when the shop logs real hours and the difference between planned and actual becomes visible per operation. Structure is checkable; accuracy is earned. The broader symptom-first companion is the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide), and the whole platform is mapped in the [complete EDGEBIC guide](/blog/edgebic-complete-guide).
+
+Send US a routing you suspect and we will tell you which of the eight it has. [Contact US](/contact-us) or start at the [EDGEBIC](/edgebic) hub.
+
+<Accordion title="What is the most common manufacturing routing mistake?">
+Entering batch hours in the per-unit hours field. The scheduler multiplies that value by the order quantity itself, so a batch total for 100 pieces produces a hundredfold error on every order. The symptom is unmistakable once you know it: one operation swallows days of Gantt for a job that should take hours, and the routing header's per-unit total reads far higher than the part's real cycle time.
+</Accordion>
+
+<Accordion title="Why do my routing steps schedule in the wrong order?">
+Because execution follows the next-in-sequence links, not the sequence numbers in the grid. A routing can display a tidy 10, 20, 30 order while its links are broken, missing, or pointing at deleted steps. The fix is to open each row's next-in-sequence picker, repair the chain, and make sure the last production step points at the end item so the chain closes.
+</Accordion>
+
+<Accordion title="Why did my cooling buffer stop working after I added lot streaming?">
+Because an overlap gate replaces queue time on the same step rather than adding to it. When a transfer batch or flow step fires, the gate it produces becomes the successor's release time and the queue on that step is discarded, even if the queue would have ended later. Put the handling lag in the transfer-delay field instead, or move the buffer onto the downstream step.
+</Accordion>
+
+<Accordion title="Does putting a value in Move Hours or Teardown Hours change the schedule?">
+No. Those two fields are read for cost calculations only and have no effect on the produced schedule. Filling them in the belief they add time between operations produces a plan that is shorter than the shop expects and gives no warning at scheduling time. The anomaly report flags routings that carry them so the intent can be moved into queue time or transit days, which the engine does read.
+</Accordion>
