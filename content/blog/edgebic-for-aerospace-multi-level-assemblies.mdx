@@ -1,0 +1,86 @@
+---
+title: "Aerospace Multi-Level Assemblies: Scheduling Sub-Assemblies That Feed the Line"
+description: "Aerospace multi-level assembly scheduling rolls sub-assembly hours and dependencies up through the routing, so a top-level job waits for the slowest feeder, not a guess."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - aerospace multi-level assembly scheduling
+  - sub-assembly scheduling
+  - multi-level bill of routing
+  - assembly dependency scheduling
+  - aerospace production scheduling
+  - sub-assembly hours rollup
+targetPhrase: "aerospace multi-level assembly scheduling"
+wordCount: 1870
+readingTime: 9
+faqQuestions:
+  - question: "How does the scheduler handle a routing that pulls in sub-assemblies?"
+    answer: "A routing step can reference another product rather than a work center, marking it as a sub-assembly. The scheduler expands that reference into the sub-assembly's own routing steps, links them into the parent's dependency graph, and schedules the whole tree as one connected plan. The top-level assembly step cannot start until every feeding sub-assembly step it depends on has finished, so the plan respects the real build sequence across levels."
+  - question: "Why do estimated hours look wrong when work lives in sub-assemblies?"
+    answer: "If the estimate only counts the top-level routing's own steps, a sub-assembly reference contributes material cost but drops its work hours, so a product whose effort lives in its feeders reads near zero hours. The rollup fixes this by recursively summing hours, labor, and material up through every sub-assembly. A product resolving to a bracket assembly that resolves to a base plate totals its own steps plus both children's, so the quote and the plan see the full manufacturing effort."
+  - question: "How does a top-level assembly know to wait for its slowest feeder?"
+    answer: "The scheduler builds a dependency graph from the next-in-sequence links and records each finishing step's end time under the successor's key. When two feeder paths both point at the same assembly step, the later of the two end times wins, so the assembly waits for whichever path finishes last. A four-hour prep path and a six-hour prep path both feeding one assembly step mean the assembly starts after the six-hour path, automatically."
+  - question: "Does rescheduling re-open completed sub-assembly steps?"
+    answer: "No. When a job is rescheduled, steps with recorded actual end dates are frozen and their end times seed the plan directly, so only the remaining work is re-placed on the calendar. A sub-assembly that is already built stays built, and the top-level assembly resumes from where the real work left off. Completed work is never moved by a reschedule, which matters when a program spans months and the tree is partly done."
+qaQuestions:
+  - question: "Our top-level assemblies pull from three or four levels of sub-assemblies, and the whiteboard only shows the final line. We are always surprised by a feeder that runs late. What changes?"
+    answer: "The plan starts scheduling the whole tree, not just the last level. Each sub-assembly is expanded into its own routing steps and wired into the parent's dependency graph, so a feeder that runs long visibly pushes the assembly step that depends on it, before it happens on the floor. When two feeders join at one assembly, the assembly waits for the slower one because the later end time wins at that join. You stop finding out about the late feeder when the line goes idle, and start seeing it in the plan while there is still time to expedite it."
+  - question: "When we quote a deep assembly, the hours come out far too low because the real work is in the sub-assemblies. Is that a data problem or a tool problem?"
+    answer: "It was a tool problem in most estimating setups, and it is the one the rollup was built to fix. The estimate now recurses through every sub-assembly, summing hours, labor, and material at each level and respecting the quantity of each child per parent. A worked case from the test suite resolves a product through a bracket assembly to a base plate at 22.5 hours per unit, which becomes 225 hours at a quantity of ten. Every child's manufacturing effort counts, nested references included, so the quote reflects the whole build instead of just the final join."
+---
+
+**Aerospace multi-level assembly scheduling expands each sub-assembly into its own routing, links it into the parent's dependency graph, and rolls its hours up through every level, so EDGEBIC by User Solutions schedules the whole build tree as one connected plan.** For an aerospace program, the assembly line is the tip of a pyramid of feeders, and a plan that only sees the top level is blind to the sub-assembly that will make the whole thing late. This post is about scheduling the pyramid, and reading its true hours.
+
+The dependency machinery this rests on is described in [what is production scheduling](/blog/what-is-production-scheduling), and the everyday difficulty of coordinating many interdependent jobs is [job shop scheduling challenges](/blog/job-shop-scheduling-challenges). Aerospace just stacks those dependencies several levels deep.
+
+## The problem with scheduling only the final line
+
+A complex airframe or engine component is not one routing. It is a top-level assembly that consumes sub-assemblies, each of which is its own product with its own routing, sometimes three or four levels down. The top-level line cannot start joining until its feeders exist, and each feeder cannot start until its own children exist.
+
+A plan that only models the final assembly treats those feeders as material that magically appears. It cannot tell you that the bracket sub-assembly is two weeks behind, or that a base plate feeding two different sub-assemblies is the real constraint. So the line looks fine on the board right up until it goes idle waiting for a part nobody was tracking. In a program that runs for months, that surprise is expensive, and it is entirely avoidable if the schedule sees every level.
+
+## Expanding sub-assemblies into one connected plan
+
+The routing model handles this directly. A routing step can point at a work center, as usual, or it can point at another product, marking it as a sub-assembly rather than an operation. When the scheduler meets that reference, it expands the sub-assembly into its own routing steps, re-keys them so they stay distinct even when several sub-assemblies share the same work centers, and wires them into the parent's dependency graph.
+
+That graph is the heart of it. Each step declares its successor through a next-in-sequence link, and the scheduler builds a directed graph of "this cannot start until that finishes." A genuine topological sort orders the whole tree so that every step is scheduled after the steps it depends on, regardless of what order they were entered in. The top-level assembly step lands only after every feeding step it depends on has completed.
+
+### The assembly waits for the slowest feeder
+
+The join logic is where multi-level plans earn their keep. When two feeder paths point at the same assembly step, each writes its finishing time under that step's key, and the later time wins. So the assembly waits for whichever feeder finishes last, not the first, and not an average.
+
+Take two preparation paths joining at one assembly step: one path runs 40 hours on one machine, the other runs 60 hours on a second machine, both starting Monday.
+
+| Feeder path | Hours | Finishes |
+|---|---|---|
+| Prep A | 40 | End of week |
+| Prep B | 60 | Mid next week |
+| Assembly | starts | After Prep B |
+
+The assembly correctly waits for the 60-hour path. Neither the planner nor a spreadsheet had to reason about which feeder was critical; the graph did it. Shared feeders that fan out to several parents are handled the same way, with unique per-step keys so one sub-assembly's finish is never mistaken for another's.
+
+## Reading the true hours of a deep assembly
+
+There is a quieter failure that multi-level products cause: the hours come out too low. If an estimate only sums the top-level routing's own steps, a sub-assembly reference contributes its material cost but its work hours vanish. A product whose entire effort lives in its feeders reads near zero hours, and any quote built on that number underprices the job badly.
+
+The rollup fixes it by recursing. It walks up through every sub-assembly, summing hours, labor, and material at each level, respecting how many of each child go into each parent, and guarding against a data-error loop so it always terminates. A worked case from the regression suite resolves a product through a bracket assembly to a base plate at 22.5 hours per unit, which becomes 225 hours at a quantity of ten. Every level counts, nested references included and repeated references counted once per use.
+
+That single source feeds both the estimate on a quote and the order cost analysis, so a deep aerospace assembly shows its real manufacturing effort before the first part is cut. The mechanics of turning that effort into a lead time and price are covered in [quote simulation](/blog/edgebic-for-electronics-quoting-and-what-if), which applies the same finite-capacity model to a full build tree.
+
+## Rescheduling a partly-built tree
+
+Aerospace programs run long, and by the time you reschedule, part of the tree is already built. The engine handles this by freezing completed work. Any step with a recorded actual end date is not re-opened; its end time seeds the plan directly, and only the remaining steps are re-placed on the calendar. A sub-assembly that is finished stays finished, and the top-level assembly resumes from where the real work left off rather than from the job's original start.
+
+Completed work is never moved by a reschedule. That guarantee matters most exactly here, on a multi-month build where a hot order or a design change forces a replan and you cannot afford to have the plan pretend that a finished sub-assembly is available to move. It is the same actuals discipline that underpins [routing snapshots for aerospace](/blog/edgebic-for-aerospace-routing-snapshots), which preserve the exact routing each job was built to.
+
+## Where multi-level scheduling meets TOC and certification
+
+The build tree does not schedule in isolation. When a bottleneck work center sits inside the tree, aerospace shops anchor the whole plan around it, scheduling feeders backward to feed the constraint on time and downstream steps forward from it. That anchor logic, covered in [theory of constraints scheduling for aerospace](/blog/edgebic-for-aerospace-toc-scheduling), sits directly on top of the dependency graph described here. And the operators who build the sub-assemblies carry certifications the plan respects, so a feeder that needs a qualified inspector waits for one, the same labor constraint that shapes every aerospace line.
+
+This is the multi-level discipline User Solutions has brought to complex, regulated production since 1991, in programs sequencing tens of thousands of interdependent tasks for defense and aerospace customers. A plan that sees every level of the build is the difference between managing a program and reacting to it.
+
+See it schedule your deepest assembly. [Bring a multi-level routing to a demo](/edgebic) and watch the whole tree land as one connected plan, with the top-level line waiting on exactly the feeder that constrains it. The [EDGEBIC by industry guide](/blog/edgebic-by-industry) puts this in context with the rest of an aerospace shop's needs.

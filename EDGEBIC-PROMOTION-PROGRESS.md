@@ -41,12 +41,12 @@
 | Cluster | Slug | Target | Written | Published | Indexed |
 |---|---|---|---|---|---|
 | 17 | edgebic-platform | 180 | 155 | 0 | 0 |
-| 18 | edgebic-scheduling-concepts | 200 | 25 | 0 | 0 |
+| 18 | edgebic-scheduling-concepts | 200 | 37 | 0 | 0 |
 | 19 | edgebic-how-to | 500 | 217 | 0 | 0 |
 | 20 | edgebic-walkthroughs | 50 | 11 | 0 | 0 |
 | 21 | edgebic-erp-integration | 150 | 42 | 0 | 0 |
-| 22 | edgebic-industry | 110 | 37 | 0 | 0 |
-| 23 | edgebic-glossary | 350 | 65 | 0 | 0 |
+| 22 | edgebic-industry | 110 | 61 | 0 | 0 |
+| 23 | edgebic-glossary | 350 | 113 | 0 | 0 |
 | 24 | edgebic-troubleshooting | 120 | 45 | 0 | 0 |
 | 25 | edgebic-outcomes | 100 | 25 | 0 | 0 |
 | 26 | edgebic-optimization | 60 | 1 | 0 | 0 |
@@ -56,7 +56,7 @@
 | 30 | edgebic-planning | 80 | 1 | 0 | 0 |
 | 31 | edgebic-migration | 40 | 0 | 0 | 0 |
 | 32 | edgebic-admin | 40 | 9 | 0 | 0 |
-| | **TOTAL** | **2,120** | **636** | **0** | **0** |
+| | **TOTAL** | **2,120** | **720** | **0** | **0** |
 
 **"Written" count is derivable from disk** (don't trust memory, count files):
 PowerShell: `Select-String -Path content/blog/*.mdx -Pattern "cluster: 'edgebic-" | Group-Object { ($_.Line -split "'")[1] } | Sort-Object Name | Format-Table Name, Count`
@@ -68,6 +68,7 @@ PowerShell: `Select-String -Path content/blog/*.mdx -Pattern "cluster: 'edgebic-
 | 2026-07-23 | 1 | 50 | 15 of 16 (all but migration) | 917bdc3 | 7 parallel agents; 13 pillars + 10 walkthroughs + 8 visual + 6 ERP + 8 troubleshooting + 5 glossary; QA pass fixed 2 claims; ~110k words; no heroImage yet (screenshots pending) |
 | 2026-07-23 | 1 fix | 0 | erp-integration | c721268 | Corrected "new-jobs-only mode" claim in 4 Wave 1 posts (no user-facing mode picker exists) |
 | 2026-07-24 | 2 / flight 1 | 84 | platform (72), erp-integration (12) | 19e620c | 7 parallel agents, 4 angles x 18 chapters + 12 ERP; ~150k words; QA: 0 banned/em-dash/FCP hits, 0 dup slugs, 151/151 internal links resolve, 0 existing files touched |
+| 2026-07-30 | 4 / flight 1 | 84 | glossary (48), scheduling-concepts (12), industry (24) | see git log | 7 parallel agents self-selecting uncovered terms; every glossary/concept agent reported NO shortfall (corpus still deep). Agents rejected internal-only terms (unit of work, repository) and roadmap items (drum-buffer-rope, CCPM, yield inflation) rather than overclaim. QA: all scans clean, 200/200 links resolve, 0 collisions across all 720. Open item logged: canonical glossary URL form (dash vs slash) needs app confirmation |
 | 2026-07-29 | 3 / flight 4 | 84 | glossary (60), scheduling-concepts (24) | see git log | 7 parallel agents; pivoted off micro-tasks to the definitions dictionary: 60 glossary terms (engine/planning/execution/reporting/diagnostics) + 24 deeper concept posts; ~105k words; QA: all scans clean, 161/161 links resolve, 0 cross-commit collisions across all 636. Fixed 3 glossary links from hyphen to canonical slash form + retargeted 2 phrases to avoid cannibalizing generic glossary terms (ATP, FPY). **WAVE 3 COMPLETE (400+ how-to/troubleshooting/glossary/concept posts across 4 flights).** |
 | 2026-07-28 | 3 / flight 3 | 84 | how-to (72), troubleshooting (12) | see git log | 7 parallel agents; work-center deep, routing internals, scheduling control, remaining reports, kiosk/operators, deployment/options, + 12 new troubleshooting symptoms; ~115k words; QA: all scans clean, 195/195 links resolve, 0 cross-commit slug collisions across all 552, 1 British UI label normalized. ~11 tasks substituted for undocumented features (the granular how-to seam is thinning; Flight 4 pivots to glossary/concepts). New product-finding note added on doc-vs-UI control gaps |
 | 2026-07-27 | 3 / flight 2 | 84 | how-to (72), troubleshooting (12) | see git log | 7 parallel agents; inventory, MPS/sales orders, quoting/scenarios, admin/import, advanced-scheduling config, Gantt/options, + 12 new troubleshooting symptoms; ~110k words; QA: all scans clean, 183/183 links resolve. Genericized internal FCP filesystem paths + env flag out of 3 posts (see product-finding note); 2 more feature gaps surfaced (no filter-Gantt-by-WC, no optimizer job-freeze button); docs-vs-code disagreement on scenario step-overrides logged |
@@ -124,6 +125,15 @@ product-behavior angle, (b) link the generic entry, and (c) use a DISTINCT targe
 (not the bare term) so the two do not cannibalize. Pre-existing corpus has ~210 hyphen-form
 links that redirect fine; a scripted slash-normalization pass across ALL posts is a future
 tidy-up, not urgent.
+
+## OPEN ITEM: CANONICAL GLOSSARY URL FORM (needs running-app confirmation)
+
+The 185 live generic glossary term files are named `glossary-<term>.mdx` (dash). The site
+survey said they render canonically at `/blog/glossary/<term>` (slash) via sitemap logic +
+redirects. Both forms resolve (dash serves the file or 301s to slash). We cannot determine
+the CANONICAL form from the repo alone. Waves link a mix; not broken either way. When the app
+is available, confirm the canonical form and run one scripted normalization pass across ALL
+posts (this + the ~210 pre-existing dash-form links). Low priority, cosmetic.
 
 ## OPEN QUESTIONS FOR THE PRODUCT / BUSINESS OWNER
 

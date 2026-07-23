@@ -1,0 +1,72 @@
+---
+title: "What Is an Effective Permission?"
+description: "An effective permission is the final yes-or-no answer to what a user can do, after roles, extra grants, and explicit denies are combined. Learn how EDGEBIC computes it."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - effective permission
+  - effective permission definition
+  - role based access control
+  - permission override
+  - explicit deny wins
+  - user permissions manufacturing
+targetPhrase: "effective permission"
+wordCount: 1080
+readingTime: 5
+faqQuestions:
+  - question: "What is an effective permission?"
+    answer: "An effective permission is the final set of rights a user actually has at the moment a check runs. It is computed by taking every permission the user's roles grant, adding any extra permissions granted directly to that user, and then removing any permission the user has been explicitly denied. The result is the single yes-or-no answer the system uses before it lets an action proceed."
+  - question: "Does a per-user deny beat a role grant?"
+    answer: "Yes. An explicit deny always wins. If a role grants a permission but the user has a per-user override that denies it, the effective set removes that permission and the action is blocked. This lets an administrator carve one capability away from one person without rebuilding the role or removing them from it, which is why deny is applied last in the calculation."
+  - question: "Where do the extra grants and denies come from?"
+    answer: "They come from per-user overrides set on an individual user's record, separate from their roles. A grant override adds a single permission on top of whatever the roles give. A deny override subtracts a single permission even when a role would otherwise allow it. Roles handle the common case for a whole job function; overrides handle the exceptions for one person."
+qaQuestions:
+  - question: "A planner in our Planner role suddenly cannot delete a manufacturing order, but everyone else in that role can. Where do I look?"
+    answer: "Check that one planner's per-user permission overrides, not the role. The Planner role clearly still grants the delete right, since the rest of the role can do it, so the block is coming from an explicit deny attached to that individual. A deny override always wins over a role grant in the effective permission calculation, and it is applied last, so it silently removes the delete capability for just that person. The role editor shows what the role grants, not what a single user has been denied, so you have to open that user's own record to find the override. Clear the deny there and their effective set picks the permission back up on the next check."
+  - question: "We want a maintenance tech to see schedules but never generate one. Do we need a whole new role?"
+    answer: "Not necessarily. If an existing role already gives them the view rights you want, you can add a per-user grant for any extra capability and use a per-user deny to remove anything the role over-grants, all without touching the shared role. But when several people need the same narrow profile, a dedicated role is cleaner than repeating the same overrides on each person. Overrides are best for one-off exceptions; a role is best for a repeatable job function. For a single maintenance tech, an override is fine; for a maintenance crew, build the role once."
+---
+
+**An effective permission is the final yes-or-no answer to whether a user may perform an action, after their roles, their personal extra grants, and their personal explicit denies are all combined into one set.** It is what the system checks the instant a planner clicks a button or runs a command. Roles supply the bulk of the rights, per-user overrides adjust the edges, and an explicit deny always wins over a role grant. The effective set is the single source of truth for access, not any one role in isolation.
+
+[EDGEBIC by User Solutions](/edgebic) computes an effective permission set for each user at sign-in and rechecks it whenever their roles or overrides change. This article defines the term. To see where you configure the pieces, read [how EDGEBIC handles users and roles](/blog/edgebic-users-and-roles-explained).
+
+## How It Works
+
+Access in EDGEBIC is built from three layers, resolved in a fixed order.
+
+First, roles. A role is a named bucket of permissions such as Planner or Shop Floor Supervisor. Assign a user to one or more roles and they inherit the union of everything those roles grant. Most users get everything they need from roles alone.
+
+Second, per-user grants. Sometimes one person needs a single extra capability that their role does not include. Rather than widen the role for everyone or spin up a new role, an administrator adds a grant override to that user. It adds exactly one permission on top of the roles.
+
+Third, per-user denies. Sometimes one person must be blocked from a capability their role otherwise allows. A deny override subtracts exactly one permission from that user, and it is applied after everything else, so it wins.
+
+The formula the engine uses is plain arithmetic on sets: take the union of all role grants, add the user's granted overrides, then remove the user's denied overrides. What remains is the effective permission set, and every access check is a fast lookup against it.
+
+## A Concrete Example
+
+Alice holds only the Planner role. That role grants, among other things, the right to generate a schedule and the right to delete a manufacturing order.
+
+Her administrator makes two per-user changes. First, a grant override for editing a bill of routing, a right the Planner role does not include. Second, a deny override for deleting a manufacturing order, because Alice is new and deletions on this line have caused problems.
+
+Now walk the calculation:
+
+| Source | Permission | Effect |
+|---|---|---|
+| Planner role | Generate schedule | granted |
+| Planner role | Delete manufacturing order | granted |
+| Per-user grant | Edit bill of routing | added |
+| Per-user deny | Delete manufacturing order | removed |
+
+Alice's effective set ends up as: generate a schedule (from the role), edit a bill of routing (from the grant), and everything else the Planner role gives, but not delete a manufacturing order, because the deny is applied last and wins. When Alice tries to delete a job, the check fails, the attempt is recorded, and she sees an access-denied message. The rest of the Planner role is untouched.
+
+## How EDGEBIC Uses It
+
+EDGEBIC loads a user's effective permission set when they sign in and keeps it in memory for the session, so each check is instant. Every screen, menu, and command consults it: buttons appear only when the effective set allows the action, and the underlying command refuses to run if the check fails, so hiding a button is never the only guard.
+
+Because the set is recomputed whenever a user's roles or overrides change, an administrator who removes a permission sees it take effect immediately, not after a restart. The three-layer model also keeps day-to-day administration simple: build roles for job functions, then use grant and deny overrides for the handful of people who are exceptions. When you are diagnosing why someone can or cannot do something, the effective set, not the role list alone, is the thing to reason about.
+
+For the wider access-control picture, see [how EDGEBIC handles users and roles](/blog/edgebic-users-and-roles-explained) and the sibling term [security audit log](/blog/what-is-a-security-audit-log). You can browse related definitions in the [manufacturing glossary](/blog/manufacturing-glossary).

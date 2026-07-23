@@ -1,0 +1,69 @@
+---
+title: "What Is Phantom Capacity in Scheduling?"
+description: "Phantom capacity is fake schedulable hours no physical machine backs, created when a machine pool is treated as a resource itself. Learn how good scheduling design avoids it."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - phantom capacity scheduling
+  - fake capacity work center group
+  - double-counting capacity
+  - machine pool capacity
+  - resource group capacity
+  - scheduling capacity integrity
+targetPhrase: "phantom capacity scheduling"
+wordCount: 1080
+readingTime: 5
+faqQuestions:
+  - question: "What is phantom capacity in scheduling?"
+    answer: "Phantom capacity is schedulable hours that no physical machine actually backs. It appears when a machine pool or resource group is treated as if it were a work center in its own right: the scheduler seeds a capacity bucket for the group and again for each member, so the same hours get counted twice and the plan promises time that does not exist. The fix is to give the group no capacity of its own and compute any pool total as a live sum of member hours."
+  - question: "Why does treating a machine pool as a work center create phantom capacity?"
+    answer: "The scheduler creates a real capacity bucket for every work center that has shifts. If a pool of three mills is also modeled as a work center, the engine seeds a fourth bucket for the pool plus one for each of the three mills. The pool's bucket offers hours that only the three real machines can supply, so those hours are double-counted. Jobs get scheduled into time that has no machine behind it."
+  - question: "How is phantom capacity avoided?"
+    answer: "By making the machine pool a routing concept with no capacity of its own. Only the physical members hold hours; the pool is a label a routing step targets, and any pool total a screen shows is computed on the fly as the sum of member capacity. Because the pool never enters the scheduler's set of capacity-bearing work centers, there is no extra bucket to double-count, and the plan can only book hours a real machine supplies."
+qaQuestions:
+  - question: "We want to route steps to 'any mill' but we are nervous the scheduler will overbook. How do we get pooling without phantom capacity?"
+    answer: "You get it by modeling the pool as a group with no capacity of its own, which is exactly how EDGEBIC work center groups behave. A routing step targets the MILLING group, but the group holds zero hours; only the individual mills hold capacity. When the engine schedules, it expands the group into its real members and books against their actual buckets, so it can never promise time no machine backs. Any pool number a dashboard shows you is a live sum of the members, computed for display only."
+  - question: "Our old setup had a 'grouped resource' that always looked like it had more hours than the machines under it. Was that phantom capacity?"
+    answer: "Almost certainly. If a grouped resource displays capacity that exceeds, or adds to, the total of its member machines, those extra hours are phantom: they come from counting the group as a capacity-bearing thing on top of its members. The telltale sign is a plan that schedules more total work into the pool than the physical machines could ever run in that window. Modeling the pool as a zero-capacity routing target removes the double count entirely."
+---
+
+**Phantom capacity is schedulable hours that no physical machine actually backs, created when a machine pool or resource group is treated as a capacity-bearing work center in its own right rather than as a routing label over real machines.** It is the scheduling equivalent of booking a meeting into "Conference Rooms" as if that were a fourth room, when only three physical rooms exist: the calendar accepts the booking, but there is nowhere to hold the meeting.
+
+This entry is part of the [EDGEBIC by User Solutions](/edgebic) glossary; the broader dictionary lives in the [manufacturing glossary](/blog/manufacturing-glossary).
+
+## How It Happens
+
+A scheduling engine gives every work center that has shifts a real capacity bucket: so many hours per shift, per day, that jobs can be booked into. That is correct and necessary for physical machines.
+
+The trap appears when a pool of interchangeable machines is also modeled as a work center. Now the engine seeds a bucket for the pool and a bucket for each machine inside it. The pool's hours are supplied by the very same machines that already have their own buckets, so those hours exist twice in the engine's accounting. Schedule a job into the pool's bucket, and another job into a member's bucket for the same window, and the plan has committed the same machine-hour to two jobs. On paper it looks fine. On the floor, one job waits.
+
+## Why It Matters
+
+Phantom capacity is dangerous precisely because it is invisible until execution. The schedule looks feasible, due dates look achievable, utilization looks healthy, and then production falls behind for no reason a planner can find in the plan. The whole point of finite capacity scheduling is to refuse to book more hours than a machine actually has (see [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling)). A double-counted pool quietly reintroduces the infinite-capacity problem the shop bought a scheduler to avoid.
+
+## The Fix: A Pool With No Capacity of Its Own
+
+The clean solution is to make the machine pool a routing concept, not a machine. The pool is a name a routing step can target, and it holds no hours at all. Only the physical members hold capacity. Any total a dashboard shows for the pool is computed on the spot as the sum of its members' hours, purely for display.
+
+Because the pool never enters the engine's set of capacity-bearing work centers, there is no extra bucket to double-count. When a step routed to the pool is scheduled, the engine resolves it to a real member and books against that member's actual capacity. The plan can only ever promise hours a real machine supplies.
+
+## How EDGEBIC Uses It
+
+In EDGEBIC, a [work center group](/blog/what-is-a-work-center-group-machine-pool) is exactly this zero-capacity pool. A routing step can target the MILLING group instead of a specific mill, but the group itself holds no hours and never joins the scheduler's work-center collection. Only the member mills carry capacity, and any pool figure you see on a Resource Calendar or dashboard is a live sum of those members, computed for display.
+
+At schedule time, the engine performs a [group explosion](/blog/what-is-group-explosion-in-scheduling): it converts the group-bound step into a real member plus one candidate per remaining member, each carrying its own hours, and books against real buckets. This is the structural reason a group is a separate entity rather than a special kind of work center. Making it a work-center subtype is exactly what would create phantom capacity, so the design forbids it. For where groups sit in the wider pipeline, see the [work center groups overview](/blog/edgebic-work-center-groups-explained) and the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+<Accordion title="What is phantom capacity in scheduling?">
+Phantom capacity is schedulable hours that no physical machine actually backs. It appears when a machine pool or resource group is treated as if it were a work center in its own right: the scheduler seeds a capacity bucket for the group and again for each member, so the same hours get counted twice and the plan promises time that does not exist. The fix is to give the group no capacity of its own and compute any pool total as a live sum of member hours.
+</Accordion>
+
+<Accordion title="Why does treating a machine pool as a work center create phantom capacity?">
+The scheduler creates a real capacity bucket for every work center that has shifts. If a pool of three mills is also modeled as a work center, the engine seeds a fourth bucket for the pool plus one for each of the three mills. The pool's bucket offers hours that only the three real machines can supply, so those hours are double-counted. Jobs get scheduled into time that has no machine behind it.
+</Accordion>
+
+<Accordion title="How is phantom capacity avoided?">
+By making the machine pool a routing concept with no capacity of its own. Only the physical members hold hours; the pool is a label a routing step targets, and any pool total a screen shows is computed on the fly as the sum of member capacity. Because the pool never enters the scheduler's set of capacity-bearing work centers, there is no extra bucket to double-count, and the plan can only book hours a real machine supplies.
+</Accordion>

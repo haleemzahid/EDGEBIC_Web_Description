@@ -1,0 +1,96 @@
+---
+title: "Finite vs Infinite Capacity in Practice: What Actually Changes"
+description: "Finite vs infinite capacity in practice: infinite planning tells you if you are overloaded, finite scheduling tells you when each job actually finishes, with worked numbers."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - finite vs infinite capacity in practice
+  - finite capacity scheduling
+  - infinite capacity planning
+  - capacity overload
+  - realistic production schedule
+  - machine one job at a time
+targetPhrase: "finite vs infinite capacity in practice"
+wordCount: 1550
+readingTime: 8
+faqQuestions:
+  - question: "What is the practical difference between finite and infinite capacity?"
+    answer: "Infinite capacity planning tells you whether your total load exceeds total capacity over a horizon, but it lets every job start at once and ignores that a machine can run only one job at a time. Finite capacity scheduling queues work against real machine time and gives each operation an executable start and finish. Infinite answers whether you are overloaded; finite answers when each job actually finishes."
+  - question: "When should I use infinite capacity planning?"
+    answer: "Use infinite capacity for a fast rough-cut check months out, when you only need to know if a period is broadly overloaded before you commit to orders. It is quick because it skips sequencing. Once you need a schedule the shop can run, switch to finite capacity, which respects that each work center and instance can do one job at a time and pushes contested work into a queue with honest dates."
+  - question: "Does finite capacity scheduling make lead times longer?"
+    answer: "Finite capacity does not make lead times longer; it makes them honest. Infinite capacity hides queue time by pretending everything can start immediately, so its completion dates look shorter than reality allows. Finite scheduling surfaces the queue that already exists on your floor. If the finite dates are later than you like, the constraint is real capacity, and the fix is more hours, resequencing, or offloading, not a more optimistic model."
+qaQuestions:
+  - question: "Our ERP says all three jobs finish Tuesday, but the floor never makes that date. What is going on?"
+    answer: "Your ERP is almost certainly running infinite capacity, which lets all three jobs start Monday and ignores that they share one machine. If each job needs 10 hours and the work center gives 8 productive hours a day, the three jobs are 30 hours of work that physically cannot fit before Thursday afternoon. A finite capacity engine sequences them, so job one finishes Tuesday, job two Wednesday, and job three late Thursday. The Tuesday date was never achievable; the finite date is the one you can promise."
+  - question: "Can I run infinite capacity for planning and finite for the actual schedule in the same tool?"
+    answer: "Yes, and that is the common workflow. Use a rough-cut infinite view to spot which weeks are overloaded before you accept orders, then run the finite engine to produce the executable schedule with real start and finish times per operation. The finite run is where you set each work center's productive hours through the schedule-at-utilization percentage, so an 80 percent setting on an 8-hour shift gives 6.4 planning hours per instance per day."
+---
+
+**Finite and infinite capacity differ in one practical way: infinite capacity planning tells you whether you are overloaded, while finite capacity scheduling tells you when each job actually finishes.** Infinite capacity lets every job start the moment it is released and stacks unlimited work onto a work center, which is fast but fictional. Finite capacity respects that a machine runs one job at a time, queues contested work, and hands each operation a start and finish the floor can actually hit. EDGEBIC by User Solutions schedules finite by default, and understanding what changes between the two models is the difference between a promise you can keep and a date that slips every week.
+
+The textbook contrast is covered in the generic guide to [finite vs infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling). This post is about what the two models do differently on a real floor, with numbers.
+
+## What infinite capacity actually produces
+
+An infinite capacity model treats each work center as if it had unlimited parallel lanes. Release ten jobs to a single mill and the model happily starts all ten at once, because it never asks whether the mill can be in ten places at the same time. The output is a load profile: total hours demanded per period versus total hours available. That profile is genuinely useful for one thing, spotting an overloaded week before you accept the order that causes it.
+
+What infinite capacity cannot do is give you an executable schedule. Its completion dates assume zero queue time, so they are always the earliest arithmetic possible, never the earliest achievable. On a busy floor the gap between those two is where every missed delivery lives.
+
+## What finite capacity does instead
+
+Finite capacity scheduling places one operation, consumes that machine time, then places the next operation against whatever time is left. Two jobs that both want the same mill on Monday do not both get Monday; the higher-priority job claims it and the second job queues behind it. The result is a set of dates that already account for the wait every job experiences in a real queue.
+
+This is why finite dates are later than infinite dates and also why they are trustworthy. The finite engine is not being pessimistic. It is showing you the queue that already exists on your floor, the one infinite planning hides.
+
+## A worked example: three jobs, one work center
+
+One work center, one instance, one 8-hour day shift. To keep planning realistic you set the schedule-at-utilization to 80 percent, so the engine plans 6.4 productive hours per day rather than a fictional 8. Three jobs arrive Monday morning, each needing 10 run hours:
+
+| Job | Run hours | Due |
+|---|---|---|
+| MO-A | 10 | Tue 16:00 |
+| MO-B | 10 | Wed 16:00 |
+| MO-C | 10 | Thu 16:00 |
+
+**Infinite capacity** starts all three Monday 08:00. Each is 10 hours of work, so at face value each "finishes" partway through Tuesday. The report shows all three on time. Nobody on the floor believes it, because there is one machine.
+
+**Finite capacity** sequences by priority and start date, then queues:
+
+| Job | Starts | Finishes (6.4 h/day) |
+|---|---|---|
+| MO-A | Mon 08:00 | Tue, mid-morning |
+| MO-B | after MO-A | Thu, mid-morning |
+| MO-C | after MO-B | Fri, late |
+
+Thirty run hours divided by 6.4 planning hours per day is about 4.7 days of elapsed time. MO-A hits its Tuesday due date; MO-B misses Wednesday by a day; MO-C misses Thursday by a full day. The finite model just told you, on Monday, that two of three orders are already late. That is a decision you can act on: add a shift, offload MO-C to an [alternate work center](/blog/when-to-use-a-machine-pool-vs-an-alternate-work-center), or renegotiate a date. The infinite model gave you nothing to act on because it reported success.
+
+## The schedule-at-utilization dial is where the two models meet
+
+Even a finite schedule has to decide how many of a shift's clock hours are truly plannable. Nobody runs a machine 100 percent of every shift; there are micro-stops, tool changes, and breaks. EDGEBIC exposes this as a per-job schedule-at-utilization percentage. At 80 percent on an 8-hour shift, each instance offers 6.4 hours a day to the finite engine. Set it to 100 percent and you have quietly recreated the infinite model's optimism inside a finite run, and your dates will drift. This dial is covered in depth alongside [how multi-shift allocation fills capacity](/blog/how-multi-shift-allocation-fills-capacity).
+
+## When infinite still earns its place
+
+Infinite capacity is not wrong, it is just a different question. Reach for it when you want a fast, months-out sanity check: is October broadly overloaded, or is there room to take on the new contract? You do not need a sequenced schedule to answer that, and running the full finite engine over a rough forecast would be slower than the answer deserves. The discipline is to never confuse the rough-cut load profile with a promise. The moment you quote a date to a customer, that date should come from the finite run, not the infinite one.
+
+## Why the finite model is the honest one
+
+A finite schedule respects the same reality your operators live in: one job at a time, per instance, inside real shifts, minus holidays and downtime. When it says a job finishes Friday, that date already includes the queue behind it. This is the foundation the rest of the platform builds on, from [searching forward in time for the next open capacity](/blog/why-a-scheduler-searches-forward-in-time-for-capacity) to [keeping a shared bottleneck fed](/blog/how-finite-capacity-scheduling-handles-a-shared-bottleneck). It is also why finite scheduling was the model behind the schedules User Solutions built for operations from GE Railcar, which moved from 30 percent to 90 percent on-time delivery, to the US Navy carrier Nimitz with its 26,000-plus scheduled tasks. Those results came from planning against real capacity, not wished-for capacity.
+
+The full pipeline, from the finite placement rules to the optimizer that sits on top of them, is laid out in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide). To watch the finite model queue your own jobs and surface the dates you can actually promise, [see EDGEBIC on your data](/edgebic).
+
+<Accordion title="What is the practical difference between finite and infinite capacity?">
+Infinite capacity planning tells you whether your total load exceeds total capacity over a horizon, but it lets every job start at once and ignores that a machine can run only one job at a time. Finite capacity scheduling queues work against real machine time and gives each operation an executable start and finish. Infinite answers whether you are overloaded; finite answers when each job actually finishes.
+</Accordion>
+
+<Accordion title="When should I use infinite capacity planning?">
+Use infinite capacity for a fast rough-cut check months out, when you only need to know if a period is broadly overloaded before you commit to orders. It is quick because it skips sequencing. Once you need a schedule the shop can run, switch to finite capacity, which respects that each work center and instance can do one job at a time and pushes contested work into a queue with honest dates.
+</Accordion>
+
+<Accordion title="Does finite capacity scheduling make lead times longer?">
+Finite capacity does not make lead times longer; it makes them honest. Infinite capacity hides queue time by pretending everything can start immediately, so its completion dates look shorter than reality allows. Finite scheduling surfaces the queue that already exists on your floor. If the finite dates are later than you like, the constraint is real capacity, and the fix is more hours, resequencing, or offloading, not a more optimistic model.
+</Accordion>

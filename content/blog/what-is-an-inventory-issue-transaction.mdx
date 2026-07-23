@@ -1,0 +1,66 @@
+---
+title: "What Is an Inventory Issue Transaction?"
+description: "An inventory issue is a negative ledger movement, stock going out when material is consumed or demand is satisfied from on-hand, with a running balance after."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - inventory issue
+  - issue transaction
+  - stock out movement
+  - inventory ledger entry
+  - consume from stock
+  - negative quantity posting
+targetPhrase: "inventory issue transaction"
+qaQuestions:
+  - question: "A 60-unit order was satisfied from stock, but I do not see a build. Where is the record that stock left the shelf?"
+    answer: "Look in the inventory ledger for an issue entry of minus 60 with the comment Schedule Transaction. When demand is met from on-hand instead of a build, the engine emits a satisfied-from-stock result and posts a single issue at the persist step, which is the only record of the movement. There is no work-center schedule and no build receipt, because nothing was manufactured. The issue line, its signed minus 60, its running balance after, and its link to the manufacturing order are the complete audit trail for that consumption."
+  - question: "I rescheduled the same job three times. Will I see three issues draining my stock?"
+    answer: "No, at most one live issue exists for that job at any moment, because the reschedule reverses the prior consume issue before it reads on-hand again. On each run the sequence is: reverse the existing consume issue for the order, then let the engine see the restored on-hand, then post one fresh issue for the current build quantity. So the ledger may show an issue, a reversal, and a new issue, but they net so that only one consumption stands. This is what keeps rescheduling from silently draining stock every time you run it."
+  - question: "What is the difference between an issue and a scheduled receipt?"
+    answer: "An issue is stock leaving inventory now, recorded as a negative ledger entry, while a scheduled receipt is supply expected to arrive later, such as an open build order due to complete. An issue is a confirmed movement already in the ledger; a scheduled receipt is a future addition that a projection counts on but that has not posted yet. When the build finishes, its completion posts a positive receipt entry, which is the mirror image of an issue."
+faqQuestions:
+  - question: "What is an inventory issue transaction?"
+    answer: "An inventory issue is a ledger entry that records stock leaving inventory, posted as a negative quantity. It fires when material is consumed by a build or when a demand is satisfied from existing on-hand rather than by producing more. Each issue carries its signed quantity, a running balance after the movement, a comment explaining it, and a link to the order it served, so the ledger is a complete, append-only audit trail of every unit that left the shelf."
+  - question: "When does an inventory issue get posted?"
+    answer: "An issue is posted when stock is drawn down, most commonly when the scheduling engine satisfies a demand from on-hand instead of scheduling a build. At the persist step the engine emits a satisfied-from-stock result and posts a single negative issue with the comment Schedule Transaction. Issues also post when a routing's material step consumes raw material. In every case the movement is recorded as a signed ledger entry rather than by editing a stored quantity."
+  - question: "Can I delete an inventory issue if it was wrong?"
+    answer: "No, the ledger is append-only, so an issue is never deleted; it is cancelled with an inverse reversal entry instead. The original issue stays in the ledger marked as reversed, and a matching positive entry is appended that links back to it, so the two net to zero. This preserves the full history of what happened and when it was undone, which is exactly what an audit trail is for. Deleting the row would erase the evidence."
+wordCount: 1050
+readingTime: 5
+---
+
+**An inventory issue is a ledger entry that records stock leaving inventory, posted as a negative quantity when material is consumed or a demand is satisfied from on-hand.** It is one half of a two-direction ledger: receipts add stock, issues remove it. Every issue is a signed, permanent line in the record, never an edit to a stored number.
+
+This entry defines the inventory issue and shows how it reads inside [EDGEBIC by User Solutions](/edgebic). For the wider index of terms, see the [manufacturing glossary](/blog/manufacturing-glossary); for the record it lives in, see [what is an inventory ledger](/blog/what-is-an-inventory-ledger); and for the movement that cancels one, see [ledger reversal](/blog/what-is-a-ledger-reversal-in-inventory).
+
+## How it works
+
+Think of a bank statement. Money in is a positive line, money out is a negative line, and each line shows the balance after it posts. The inventory ledger works the same way. A receipt is a positive entry, an issue is a negative entry, and every entry records the running balance that follows it.
+
+An issue posts whenever stock is drawn down. The most common trigger is consume-from-stock: when a demand exists for a product that already has on-hand, the engine satisfies it from stock rather than building, and posts a single negative issue at the persist step with the comment Schedule Transaction. A routing's material step that consumes raw material posts an issue too. In each case the movement is signed, dated, and linked to the order it served.
+
+Because the ledger is append-only, an issue is never edited or deleted. If it was wrong, an inverse reversal cancels it while both entries stay in the record. This is what makes the ledger the authoritative on-hand: the sum of every signed entry is the true balance, and nothing can quietly change history.
+
+## A concrete example
+
+A product opens with 200 units on hand. An order needs 80, and the engine finds enough on the shelf, so it satisfies the demand from stock. At the persist step it posts issue number 2: minus 80, comment Schedule Transaction, running balance after 120.
+
+| Entry | Quantity | Type | Comment | Balance after |
+|---|---|---|---|---|
+| 1 | +200 | Opening balance | Opening | 200 |
+| 2 | -80 | Issue | Schedule Transaction | 120 |
+
+The on-hand is now 120, not because a stored field was overwritten, but because the ledger sums to 120. No work center ran, no build receipt posted, and the job's status records that it was satisfied from stock. The single issue line is the whole story of those 80 units leaving.
+
+Now suppose you reschedule that job. The engine first reverses issue number 2, restoring the balance to 200, then reads on-hand fresh, and posts a new issue for the current build quantity. The reversal and the fresh issue both appear, but only one consumption ever stands, so rescheduling the same job never drains the shelf twice.
+
+## How EDGEBIC uses it
+
+In EDGEBIC, an inventory issue is one of the recognized ledger transaction types, posted through the inventory service so the on-hand cache is recomputed atomically in the same transaction as the entry. When the scheduler satisfies a demand from stock, it emits a satisfied-from-stock schedule row and pairs it with an issue in the ledger, keeping the plan and the stock record in agreement.
+
+The reversal-first discipline is what makes reschedules safe. Before the engine reads on-hand for a job, it reverses any existing consume issue for that job, so no matter how many times you reschedule, there is at most one live issue draining stock for it. The ledger may accumulate an issue, a reversal, and a fresh issue across runs, but the arithmetic always nets to a single true consumption.
+
+To see the receipts that mirror issues and the full ledger lifecycle, read [EDGEBIC inventory ledger explained](/blog/edgebic-inventory-ledger-explained) and [what is consume from stock netting](/blog/what-is-consume-from-stock-netting). To follow the entry that undoes an issue, continue with [ledger reversal](/blog/what-is-a-ledger-reversal-in-inventory).

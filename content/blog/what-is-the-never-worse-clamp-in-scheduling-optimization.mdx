@@ -1,0 +1,74 @@
+---
+title: "What Is the Never-Worse Clamp in Scheduling Optimization?"
+description: "The never-worse clamp compares an optimized schedule against your current plan and returns the current plan if the new one does not strictly beat it, so optimization can only help."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - never-worse clamp scheduling
+  - optimizer never worse guarantee
+  - baseline retained scheduling
+  - schedule optimization safety
+  - guaranteed never worse than baseline
+  - optimization guardrail
+targetPhrase: "never-worse clamp scheduling"
+wordCount: 1140
+readingTime: 6
+faqQuestions:
+  - question: "What is the never-worse clamp in scheduling optimization?"
+    answer: "The never-worse clamp is a safety check that runs after the optimizer solves. It scores the optimized candidate schedule against the baseline plan you started with, using the same goal you chose, and returns the baseline unless the candidate strictly beats it. Because the comparison is enforced rather than assumed, the optimizer can only ever hand you a plan at least as good as the one you already had."
+  - question: "Why is a warm-start hint not enough on its own?"
+    answer: "A warm-start hint only tells the solver where to begin. The solver is free to move away from it, and under a limited time budget it can settle on a plan that scores worse than the starting point. The clamp is the separate, mandatory step that catches that case: it measures the finished candidate against the baseline and discards the candidate if it did not improve, so the hint plus the clamp together deliver the guarantee."
+  - question: "What does 'strictly better' mean for the clamp?"
+    answer: "Strictly better means the candidate wins on the requested objective by a measurable margin, not a tie. If the optimized plan matches the baseline's score, the baseline is kept, because there is no reason to churn the shop floor for an identical result. Only a genuine improvement under the goal you picked, such as fewer late jobs or a shorter total finish, replaces the plan you began with."
+qaQuestions:
+  - question: "Our floor lost trust in an old optimizer that occasionally made things worse. How does the clamp let us run optimization without that risk?"
+    answer: "The clamp removes the failure mode entirely. Every optimizer run in EDGEBIC first computes the baseline with the standard scheduling engine, then, after the solver finishes, compares the candidate against that baseline under your chosen goal. If the candidate does not strictly beat it, the run returns the baseline and reports that the baseline was retained. The worst possible outcome of pressing the optimize button is the plan you already had, which is exactly the confidence a shop needs to use it."
+  - question: "If the optimizer often just returns our existing plan, is it even doing anything?"
+    answer: "When it returns the baseline, it has proven that within its time budget it could not beat the plan you had, which is useful information rather than wasted effort. Often it does find a better ordering: fewer tardy jobs, less changeover, or a tighter finish, and then it returns that. The clamp does not stop improvement; it only stops regression. You keep every gain and absorb no losses, and honesty counters in the result show how many jobs were actually rearranged versus left alone."
+---
+
+**The never-worse clamp is a mandatory check that scores an optimized schedule against the plan you started with and returns the original plan unless the optimized one strictly beats it, so running the optimizer can only improve your schedule or leave it unchanged, never make it worse.** It is the guardrail that lets a shop press the optimize button on a live schedule without fear: the worst outcome is the plan already in hand.
+
+This entry is part of the [EDGEBIC by User Solutions](/edgebic) glossary; the wider dictionary lives in the [manufacturing glossary](/blog/manufacturing-glossary).
+
+## The Problem It Solves
+
+A scheduling optimizer, given a limited time budget, does not always land on the best possible plan. It lands on the best plan it could reach before the clock ran out. Left unguarded, that plan can occasionally be worse than the schedule a planner produced by hand, and a single embarrassing regression is enough to make a shop stop trusting the tool entirely.
+
+Feeding the solver a good starting point (a [warm start](/blog/what-is-a-warm-start-in-production-scheduling)) helps, but it is not enough. The hint is advisory: the solver may wander away from it and finish on something worse. Something has to check the final answer before it reaches you.
+
+## How It Works
+
+After the solver produces a candidate, the clamp scores that candidate and the baseline side by side, using the exact goal you selected (protect due dates, minimize total finish time, minimize changeover, minimize disruption). Then it applies one rule:
+
+- If the candidate is **strictly better** on that goal, return the candidate.
+- If the candidate ties or loses, return the **baseline**, and report that the baseline was retained.
+
+The comparison is enforced in code, not left to trust. A warm-start hint alone is advisory; the clamp is what turns "the optimizer usually helps" into "the optimizer can only help." Both the multi-run search and the mathematical solver route through the same clamp, so the guarantee holds regardless of which engine you run.
+
+## A Concrete Example
+
+Suppose your current plan finishes with three jobs one day late. You run the optimizer with the goal set to protect due dates. The solver explores orderings and returns a candidate that finishes with only one job late. The clamp scores both, sees one late beats three late, and returns the improved plan.
+
+Now suppose a different run explores a candidate that trims total finish time by an hour but pushes a fourth job past its due date. Against the due-date goal, that candidate is worse, so the clamp discards it and returns your original plan unchanged. You lost nothing. The optimizer simply reports that it could not beat the baseline this time, which is honest and safe.
+
+## How EDGEBIC Uses It
+
+In EDGEBIC, the clamp is one of the optimizer's non-negotiable contracts. Every run computes the baseline first with the untouched scheduling engine, then runs the solver, then clamps. When the baseline wins, the result is labeled as baseline-retained and nothing is proposed for you to accept.
+
+The clamp works together with two other safeguards. Nothing the optimizer produces is written to your live schedule automatically: a run is held in memory as a proposal until you press Accept, and the proposal is re-checked against the current data at Accept time so a colleague's reschedule cannot be silently overwritten. And jobs that use features the mathematical model does not yet handle natively are reproduced exactly as the standard engine scheduled them, a [job-level feature lock](/blog/what-is-a-job-level-feature-lock-in-scheduling-optimization) that keeps every plan valid. Together these rules mean optimization is additive: you keep your gains, you absorb no losses. For how the optimizer sits beside the standard engine, see the [optimizer guide](/blog/edgebic-optimizer-guide) and the [optimizer goals and presets](/blog/edgebic-optimizer-goals-and-presets-explained).
+
+<Accordion title="What is the never-worse clamp in scheduling optimization?">
+The never-worse clamp is a safety check that runs after the optimizer solves. It scores the optimized candidate schedule against the baseline plan you started with, using the same goal you chose, and returns the baseline unless the candidate strictly beats it. Because the comparison is enforced rather than assumed, the optimizer can only ever hand you a plan at least as good as the one you already had.
+</Accordion>
+
+<Accordion title="Why is a warm-start hint not enough on its own?">
+A warm-start hint only tells the solver where to begin. The solver is free to move away from it, and under a limited time budget it can settle on a plan that scores worse than the starting point. The clamp is the separate, mandatory step that catches that case: it measures the finished candidate against the baseline and discards the candidate if it did not improve, so the hint plus the clamp together deliver the guarantee.
+</Accordion>
+
+<Accordion title="What does 'strictly better' mean for the clamp?">
+Strictly better means the candidate wins on the requested objective by a measurable margin, not a tie. If the optimized plan matches the baseline's score, the baseline is kept, because there is no reason to churn the shop floor for an identical result. Only a genuine improvement under the goal you picked, such as fewer late jobs or a shorter total finish, replaces the plan you began with.
+</Accordion>

@@ -1,0 +1,126 @@
+---
+title: "Tool and Die Shops: Scheduling When Setup Runs the Job"
+description: "Setup heavy scheduling for tool and die shops: price each machine's real changeover by sequence so plans stop assuming an average that is wrong in both directions."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - setup heavy scheduling
+  - tool and die scheduling
+  - sequence dependent setup scheduling
+  - setup time matrix software
+  - die shop production scheduling
+  - changeover scheduling tool room
+targetPhrase: "setup heavy scheduling"
+wordCount: 1900
+readingTime: 10
+faqQuestions:
+  - question: "Why is setup so hard to schedule in a tool and die shop?"
+    answer: "Because setup is often the largest part of the job and its cost depends on what ran before. A tool room runs small lots on machines that need long, careful setups, so a flat average setup number misprices nearly every job. It underestimates the changeovers that need a full fixture rebuild and overestimates the ones that share a setup with the previous part. A sequence-dependent setup matrix prices each changeover by the from-part and to-part pair, so the plan charges the real cost per machine."
+  - question: "Does each machine need its own setup matrix?"
+    answer: "Yes, and that is intentional. Setup physics are per machine: a newer machining center with quick-change tooling sets up faster than an older machine that needs manual indicating and fixturing. The matrix is keyed by work center, so the same part-to-part changeover can carry one time on a fast machine and a longer time on a slow one, and the scheduler charges whichever machine the job actually runs on. A plant average would be wrong on every machine that differs from it."
+  - question: "How does the schedule know what a machine ran last after a reschedule?"
+    answer: "It anchors each machine's 'what ran last' to the part that actually completed there, taken from logged actuals rather than a planning assumption. So when the plan is rebuilt mid-week, the next job's changeover is priced against the part genuinely finished on that machine, not against whatever the previous plan intended. Completed operations keep the setup they were charged, because that is now history. This keeps the setup cost honest across reschedules, which matters most in a tool room where setup is the dominant cost."
+qaQuestions:
+  - question: "We are a tool room running lots of one and two off, and setups routinely take longer than the cut. Our schedule uses one setup number per operation and it is never right. What do we do?"
+    answer: "Replace the single number with a per-machine matrix that prices changeover by what ran before. Group your parts into setup families that reflect how each machine actually sets up, usually by fixturing or tooling class, then fill each busy machine's grid with the real total changeover for each family-to-family move. A same-family part that shares a setup returns a small number; a full fixture rebuild returns a big one. Because the matrix is keyed by machine, your fast center and your old workhorse carry different numbers for the same change. The plan then charges the true setup for whatever order the jobs run, so the finish dates stop being fiction and you can see which sequences are cheap before you commit to one."
+  - question: "How do we check the plan is actually using our setup matrix and not falling back to a default?"
+    answer: "Add the setup-source detail to the job view after a run. Every scheduled operation records which rule set its setup time, so you can see whether a row used a matrix cell or fell back to the routing's flat default. A row showing the default when you expected a matrix cell almost always means one of the two parts in the changeover has no family assigned, because the family lookup needs both sides. Fixing that one assignment restores the matrix pricing. The stored reason turns 'is the matrix working' from a guess into something you read directly off the plan."
+---
+
+**Setup heavy scheduling for a tool and die shop starts by admitting the setup is the job, then pricing each machine's changeover by what ran before instead of a flat average.** A tool room runs small lots on machines whose setups often take longer than the cut, and a single setup number misprices nearly every job. [EDGEBIC by User Solutions](/edgebic) stores changeover as a per-machine matrix keyed by the from-part and to-part pair, so the plan charges the real cost and the finish dates stop being fiction.
+
+For the matrix mechanism at its fullest, see [the setup matrix explained](/blog/edgebic-setup-matrix-explained) and [what a setup family is](/blog/what-is-a-setup-family-sequence-dependent-changeover). For the sector view, see [tool and die shop scheduling](/blog/tooling-die-shop-scheduling) and [tooling bottleneck scheduling](/blog/tooling-bottleneck-scheduling). Pair this with [high-mix low-volume scheduling](/blog/edgebic-for-high-mix-low-volume-scheduling) and [foundry lot scheduling](/blog/edgebic-for-foundries-and-casting-lot-scheduling). The full map is at [how different industries use EDGEBIC](/blog/edgebic-by-industry).
+
+## When setup is the job
+
+A tool and die shop is the extreme case of setup-heavy work. Lots are tiny, often one or two off. Machines need careful, deliberate setups: indicating, fixturing, tool building, first-article checks. On many jobs the setup takes longer than the actual cutting. That inverts the usual assumption behind a schedule, which treats run time as the main event and setup as a small fixed add-on.
+
+When setup dominates, a flat setup number per operation is not a small error; it is the main error. It underestimates the changeovers that need a full rebuild, so the plan promises finishes the tool room cannot hit. It overestimates the changeovers that share a setup with the previous part, so the plan hides capacity the machine actually has. Both are wrong at once, and because setup is the largest cost, the plan is wrong by a lot.
+
+The fix is to price setup as what it is: a cost that depends on the sequence, and that differs per machine.
+
+## Price changeover by sequence, per machine
+
+EDGEBIC stores changeover as a matrix keyed by the machine and by the pair of parts involved. Instead of one number for an operation, the plan looks up the real cost of going from the last part to the next part on that specific machine.
+
+You keep it maintainable with setup families. Group parts that set up identically on a machine, usually by fixturing or tooling class rather than by customer or part family, and price each family-to-family transition. A working set for a tool room might be families by fixture type, clamping method, or material class. Add product-level overrides for the handful of parts that break their family rule. Roughly 95 percent of the behavior lives in the family grid; the overrides cover the exceptions.
+
+Two facts matter most on your first load. A matched cell replaces the routing's flat setup rather than adding to it, so each cell holds the total changeover, including the tool build and first-article check. And the same part back to back returns zero automatically, so a repeat of a part on a machine already set carries no changeover at all.
+
+The matrix is keyed by machine because setup physics are per machine. A newer machining center with quick-change tooling sets up faster than an old machine that needs manual indicating. The same part-to-part change carries one time on the fast machine and a longer time on the slow one, and the scheduler charges whichever machine the job actually runs on. A plant average would be wrong on every machine that differs from it, which in a tool room is all of them.
+
+## How the engine picks a setup number
+
+For every operation, the engine finds what the machine ran last and walks an ordered chain, first match wins:
+
+| Order | Rule | Result |
+|---|---|---|
+| 1 | Cold start: nothing has run on this machine yet | Routing default setup, not zero |
+| 2 | Same part back to back | 0 |
+| 3 | A part-level override exists for this pair | That cell |
+| 4 | Both parts have families and a family cell exists | That cell |
+| 5 | Nothing matched | Routing default |
+
+The cold-start rule catches people out. A machine that has run nothing yet still needs its initial setup, so the routing's flat number applies; only a genuine repeat returns zero. The override rule is the escape hatch for the one part that fights another specifically, without forcing a whole new family.
+
+## A worked tool-room grid
+
+A machining center, quick-change tooling, base setup 60 minutes. Four fixturing families. Values are total changeover minutes including the tool build.
+
+| From \ To | Fixture A | Fixture B | Fixture C | Specials |
+|---|---|---|---|---|
+| Fixture A | 60 | 90 | 120 | 150 |
+| Fixture B | 90 | 60 | 110 | 150 |
+| Fixture C | 120 | 110 | 60 | 160 |
+| Specials | 150 | 150 | 150 | 90 |
+
+The diagonal is the base setup for a same-family part that reuses the fixture. A run that jumps Fixture A to Specials to Fixture C pays 150 then 150. Grouping the same jobs so same-fixture parts run together drops most of those to 60. On a tool room where setup is the dominant cost, that regrouping is the single biggest lever on capacity, and the matrix is what makes it visible. An older manual machine gets its own grid with a longer base setup and heavier cross-family times, same parts, different numbers.
+
+## Verify the plan is really using the matrix
+
+A setup matrix that is not actually firing looks exactly like one that is, until a job runs long. EDGEBIC records, on every scheduled operation, which rule set its setup time. Add the setup-source detail to the job view after a run, and you can read directly whether each row used a matrix cell or fell back to the routing default.
+
+A row showing the default when you expected a matrix cell almost always means one of the two parts in the changeover has no family assigned, because the family lookup needs both sides. That is the most common cause of a matrix that seems not to work, and it is a one-assignment fix. The stored reason turns "is the matrix working" from a guess into something you check.
+
+## Setup stays honest across reschedules
+
+Tool rooms replan constantly as rush work lands. The setup question follows the job. When the plan is rebuilt, the engine anchors each machine's "what ran last" to the part that actually completed there, taken from logged actuals rather than the previous plan's intention. So the next job's changeover is priced against the part genuinely finished on that machine. Completed operations keep the setup they were charged, because that is now history rather than a projection.
+
+This matters more than it sounds. Without the actuals anchor, a reschedule that rebuilds future work would treat the next job as a cold start and mispriced the very changeover about to cost real hours. In a tool room, where setup is the dominant cost, keeping that honest across reschedules is what keeps the plan trustworthy.
+
+## Common mistakes in a setup-heavy shop
+
+**One part in a changeover has no family.** The family lookup needs both sides; assign one and leave the other unassigned and the plan falls back to the flat default with no error. Check the setup source after the first run.
+
+**Cells holding only part of the setup.** A matched cell replaces the flat setup, so a cell that omits the tool build deletes it from the plan. Cells hold the total changeover.
+
+**Using a plant-average matrix across different machines.** Setup physics are per machine; a single grid applied to a fast and a slow machine is wrong on both. Give each busy machine its own grid.
+
+**Zeros entered down the diagonal for repeats.** A genuine same-part repeat returns zero automatically, so those rows are dead data someone will later mistake for a rule. Leave them out.
+
+## Rolling it out
+
+1. **Pick your most contended machines,** the ones whose setups decide your ship dates.
+2. **Define families by how each machine sets up:** fixture type, clamping, material class, not customer.
+3. **Assign every part** that runs on those machines to a family, with product-level overrides for the exceptions.
+4. **Fill each machine's grid** with total changeover including the tool build, from the people who do the setups.
+5. **Run the schedule and verify** with the setup-source detail that rows used matrix cells, fixing any that fell back to a default.
+6. **Group same-family work** where due dates allow, and read the capacity the regrouping frees.
+
+Bring one machine, its real changeover times and a week of small jobs to a demo of [machine shop scheduling software](/machine-shop-scheduling-software), and we will build the grid with you.
+
+<Accordion title="Why is setup so hard to schedule in a tool and die shop?">
+Because setup is often the largest part of the job and its cost depends on what ran before. A tool room runs small lots on machines that need long, careful setups, so a flat average setup number misprices nearly every job. It underestimates the changeovers that need a full fixture rebuild and overestimates the ones that share a setup with the previous part. A sequence-dependent setup matrix prices each changeover by the from-part and to-part pair, so the plan charges the real cost per machine.
+</Accordion>
+
+<Accordion title="Does each machine need its own setup matrix?">
+Yes, and that is intentional. Setup physics are per machine: a newer machining center with quick-change tooling sets up faster than an older machine that needs manual indicating and fixturing. The matrix is keyed by work center, so the same part-to-part changeover can carry one time on a fast machine and a longer time on a slow one, and the scheduler charges whichever machine the job actually runs on. A plant average would be wrong on every machine that differs from it.
+</Accordion>
+
+<Accordion title="How does the schedule know what a machine ran last after a reschedule?">
+It anchors each machine's 'what ran last' to the part that actually completed there, taken from logged actuals rather than a planning assumption. So when the plan is rebuilt mid-week, the next job's changeover is priced against the part genuinely finished on that machine, not against whatever the previous plan intended. Completed operations keep the setup they were charged, because that is now history. This keeps the setup cost honest across reschedules, which matters most in a tool room where setup is the dominant cost.
+</Accordion>

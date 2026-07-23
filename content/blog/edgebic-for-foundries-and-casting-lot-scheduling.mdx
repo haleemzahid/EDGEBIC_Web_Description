@@ -1,0 +1,105 @@
+---
+title: "Foundries: Scheduling Furnace Batches and Casting Lots"
+description: "Foundry lot scheduling: run a furnace as parallel chambers with one job each per day, then model the cooling delay before castings can move to machining."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - foundry lot scheduling
+  - furnace batch scheduling
+  - casting production scheduling
+  - one job per day scheduling
+  - heat treat scheduling software
+  - cooling delay scheduling
+targetPhrase: "foundry lot scheduling"
+wordCount: 1890
+readingTime: 9
+faqQuestions:
+  - question: "How do you schedule a furnace so each chamber runs one job a day?"
+    answer: "You model the furnace as a work center with multiple instances and enable the one-job-per-instance-per-day mode. The engine then assigns each new job to its own chamber for the day rather than pooling capacity, so a three-chamber furnace runs three different jobs in parallel. It tracks each chamber individually to avoid double-booking, and a job that spans several days keeps the same chamber. This matches a furnace or heat-treat oven where each door takes one charge for a cycle."
+  - question: "How does a foundry model the cooling time before castings can be machined?"
+    answer: "With a transfer delay in hours on the casting step, which holds the downstream machining start by that many hours to represent physical cooling. It is a flat lag added after the pieces are ready to move, distinct from a shift-aware queue buffer or a calendar-day transit to an outside vendor. Because it composes on top of lot streaming, castings transferred in sub-lots still each wait their cooling time before machining, so the plan reflects the real handling constraint rather than sending hot castings straight to the mill."
+  - question: "Can a foundry overlap casting and machining instead of waiting for the whole lot?"
+    answer: "Yes, using a transfer batch. When you set the number of pieces that must accumulate before the first sub-lot moves downstream, machining can begin once that many castings are ready rather than after the entire lot is poured. The cooling transfer delay then applies on top, so each sub-lot cools before it is machined. This compresses the total time for a large casting order, because the mill starts working the first castings while the foundry is still pouring the rest of the lot."
+qaQuestions:
+  - question: "Our heat-treat furnace has three chambers and each takes one job for the whole day. The schedule keeps trying to pack multiple jobs into a chamber. How do we model this correctly?"
+    answer: "Set the furnace up as a work center with three instances and turn on the one-job-per-instance-per-day behavior. That tells the engine each chamber holds exactly one job for the day, so it assigns three different jobs to the three chambers in parallel rather than stacking jobs into one. Each chamber gets its own job, they run at the same time, and a fourth job that day waits for the next open chamber-day. This matches the physical furnace: three doors, three jobs, one cycle each. The engine tracks each chamber separately so it never double-books a door, and a job that spans days keeps its chamber across the run."
+  - question: "Castings have to cool before they can be machined. Our plan sends them straight to the mill and it is wrong. What is the right setting?"
+    answer: "Add a transfer delay in hours on the casting step so the machining step cannot start until the castings have cooled. If a batch needs two hours to cool before it can be handled, set a two-hour transfer delay, and the engine holds the machining start two hours past the point the castings are ready to move. It composes on top of any lot-streaming overlap, so if you are transferring pieces as they come off in sub-lots, the cooling delay still applies before each sub-lot can be machined. It is a flat hours-based lag for physical cooling, distinct from a shift-aware queue or a multi-day transit."
+---
+
+**Foundry lot scheduling comes down to two things the shop already knows physically: a furnace runs one charge per chamber per cycle, and castings must cool before they can be machined.** A schedule that packs multiple jobs into one furnace chamber, or sends hot castings straight to the mill, does not match the floor. [EDGEBIC by User Solutions](/edgebic) runs a furnace as parallel chambers with one job each per day, and models the cooling delay before castings move downstream, so the plan reflects how the foundry actually pours and cools.
+
+For the furnace and cooling mechanisms at the category level, see [continuous-process equipment scheduling](/blog/continuous-process-work-centers-edgebic) and [lot streaming explained](/blog/edgebic-lot-streaming-explained). Pair this with [tool-and-die setup-heavy scheduling](/blog/edgebic-for-tool-and-die-shops-setup-heavy-scheduling) and [chemical processing scheduling](/blog/edgebic-for-chemical-processing-continuous-and-batch). The full map is at [how different industries use EDGEBIC](/blog/edgebic-by-industry).
+
+## The two constraints that define foundry scheduling
+
+Foundry work has a rhythm a generic schedule gets wrong. A melt or heat-treat furnace is a batch resource: each chamber takes one charge, runs a cycle, and cannot take another until it is done. A furnace with three chambers is not one machine with three times the capacity; it is three parallel batch units, each running one job. And once metal is poured or heat-treated, the castings are hot: they cannot be handled or machined until they cool, which is a real delay measured in hours.
+
+A schedule that treats the furnace as pooled hours will try to stack several jobs into one chamber, which is physically impossible. A schedule that treats machining as ready the instant casting ends will send hot parts to the mill, which the floor simply will not do. Both errors produce a plan the shop ignores. Modeling the two constraints correctly is what makes a foundry schedule usable.
+
+## The furnace: one job per chamber per day
+
+EDGEBIC models a furnace as a work center with multiple instances, one per chamber, and a mode that gives each instance one job per day. When that mode is on and the furnace has more than one chamber, the engine assigns each new job to its own chamber rather than pooling capacity. Three chambers run three different jobs in parallel; a fourth job that day waits for the next open chamber-day.
+
+The engine tracks each chamber individually, so it never double-books a door. When a job is assigned a chamber, it keeps that chamber for the duration, including across days if the cycle spans them, which matches how a charge sits in one furnace door until its cycle completes. This is exactly the behavior a foundry needs from a batch furnace: the plan schedules jobs into chambers the way the shop loads charges into doors.
+
+Consider a heat-treat furnace with three chambers on a day shift. Three jobs arrive Monday morning needing 6, 7 and 5 hours. The engine puts the first job in chamber 1, the second in chamber 2, and the third in chamber 3, all running Monday in parallel. If a fourth job needs the furnace that day, it takes the first chamber that frees up, or the next chamber-day. The plan reads like the furnace log, because it is built on the same one-charge-per-door logic.
+
+## The cooling delay: castings cannot move hot
+
+After pouring or heat treatment, castings need to cool before they can be handled and machined. EDGEBIC models this as a transfer delay in hours on the casting step: a flat lag added after the pieces are ready to move, before the downstream machining step is allowed to start.
+
+If a batch needs two hours to cool, you set a two-hour transfer delay, and the engine holds the machining start two hours past the point the castings are ready. This is deliberately distinct from other timing tools. It is not a shift-aware queue buffer, and it is not a calendar-day transit to an outside vendor. It is a flat, hours-based physical delay for cooling, which is exactly what a foundry needs between the furnace and the mill.
+
+A worked handoff: precision castings move from the foundry to machining with a 25-piece transfer batch, an hour of setup, and about 0.8 hours of run per piece, plus a two-hour cooling delay. The engine computes when the first 25 castings are ready, then adds the two hours of cooling, and only then does machining start. Without the cooling delay, machining would be planned to start the moment the castings came off, which the floor would never do. With it, the plan matches the real handling constraint.
+
+## Overlapping the lot: transfer batches
+
+Foundries pour in lots, and a large order does not have to finish pouring before machining begins. A transfer batch lets machining start once a set number of castings has accumulated, rather than after the whole lot is poured.
+
+You set the number of pieces that must accumulate before the first sub-lot moves downstream. Machining then begins when that many castings are ready, while the foundry continues pouring the rest of the lot. The cooling transfer delay composes on top, so each sub-lot still waits its cooling time before machining. For a large casting order, this compresses the total time materially, because the mill works the first castings while the foundry is still pouring, instead of the two stages running strictly in series. For the concept on its own, see [what a transfer batch is](/blog/what-is-a-transfer-batch).
+
+There is a sensible guard here: if the transfer batch is set larger than the order quantity, the engine caps it at the order size, so a small urgent order does not wait for pieces that will never exist. A report flags that case so you can lower the batch for that order and get real overlap.
+
+## Loading the whole foundry against real capacity
+
+The furnace and the cooling delay sit inside a finite-capacity plan that loads every work center against its real hours. Molding, pouring, shakeout, cleaning and machining each have their own capacity, and the [finite-capacity engine](/blog/finite-vs-infinite-capacity-scheduling) will not stack work beyond what a resource can hold. When the furnace is the constraint, which it often is, its chamber-days set the beat for the whole plan, and you can identify and schedule around it as the [bottleneck](/blog/production-bottleneck-identification).
+
+For jobs committed to a ship date, the plan can be pulled to finish just in time; for a foundry feeding downstream machining, the goal is usually to keep the furnace loaded and the castings flowing. Either way, the plan reflects the furnace's batch rhythm and the cooling reality rather than an idealized continuous flow. That accuracy is what lets a foundry planner promise a machined-and-finished date rather than just a poured date, because every step past the furnace, the cooling wait and the machining that follows, sits in the same plan against real capacity.
+
+## Common mistakes in foundry scheduling
+
+**Modeling the furnace as pooled hours.** A three-chamber furnace treated as one machine with triple capacity will have jobs stacked into a single door. Use multiple instances with one-job-per-chamber-per-day so each chamber holds one charge.
+
+**One-job-per-day set on a single-chamber furnace.** The mode only takes effect when the furnace has more than one chamber; on a single chamber it behaves like a normal single machine. Set the instance count to the real number of chambers.
+
+**Cooling modeled as a queue or transit.** A shift-aware queue buffer or a calendar-day transit does not represent a flat cooling lag correctly. Use a transfer delay in hours for cooling between the furnace and the mill.
+
+**A transfer batch larger than the order.** It cancels the overlap and behaves like waiting for the whole lot. The engine caps it and flags it; lower the batch for small orders to get real overlap.
+
+## Rolling it out
+
+1. **Model each furnace as a work center** with an instance per chamber, and turn on one-job-per-chamber-per-day.
+2. **Set the cooling delay** as a transfer delay in hours on the casting step, so machining waits for the castings to cool.
+3. **Set a transfer batch** on large casting orders so machining overlaps pouring by sub-lot, with cooling applied to each sub-lot.
+4. **Confirm the other foundry work centers** carry their real shifts and capacity, so the whole plan loads honestly.
+5. **Run the schedule and read a furnace day,** checking that each chamber holds one job and the parallel loading matches your furnace log.
+6. **Read a casting-to-machining handoff,** confirming the cooling delay holds machining and the transfer batch overlaps the lot.
+
+Bring a furnace, its chamber count and a casting routing with real cooling times to a demo of [metal fabrication scheduling software](/metal-fabrication-scheduling-software), and we will build the furnace and cooling plan with you.
+
+<Accordion title="How do you schedule a furnace so each chamber runs one job a day?">
+You model the furnace as a work center with multiple instances and enable the one-job-per-instance-per-day mode. The engine then assigns each new job to its own chamber for the day rather than pooling capacity, so a three-chamber furnace runs three different jobs in parallel. It tracks each chamber individually to avoid double-booking, and a job that spans several days keeps the same chamber. This matches a furnace or heat-treat oven where each door takes one charge for a cycle.
+</Accordion>
+
+<Accordion title="How does a foundry model the cooling time before castings can be machined?">
+With a transfer delay in hours on the casting step, which holds the downstream machining start by that many hours to represent physical cooling. It is a flat lag added after the pieces are ready to move, distinct from a shift-aware queue buffer or a calendar-day transit to an outside vendor. Because it composes on top of lot streaming, castings transferred in sub-lots still each wait their cooling time before machining, so the plan reflects the real handling constraint rather than sending hot castings straight to the mill.
+</Accordion>
+
+<Accordion title="Can a foundry overlap casting and machining instead of waiting for the whole lot?">
+Yes, using a transfer batch. When you set the number of pieces that must accumulate before the first sub-lot moves downstream, machining can begin once that many castings are ready rather than after the entire lot is poured. The cooling transfer delay then applies on top, so each sub-lot cools before it is machined. This compresses the total time for a large casting order, because the mill starts working the first castings while the foundry is still pouring the rest of the lot.
+</Accordion>

@@ -1,0 +1,120 @@
+---
+title: "Heavy Equipment: Scheduling One Job Across Two Plants"
+description: "Heavy equipment multi plant scheduling done right: model the days a weldment spends in transit between facilities so downstream steps start when the parts actually arrive."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - heavy equipment multi plant scheduling
+  - inter-plant transit scheduling
+  - multi facility production scheduling
+  - transit days scheduling software
+  - heavy equipment manufacturing software
+  - weldment routing across plants
+targetPhrase: "heavy equipment multi plant scheduling"
+wordCount: 1880
+readingTime: 9
+faqQuestions:
+  - question: "How does a scheduler account for the days a part spends moving between two plants?"
+    answer: "Each routing step carries a transit-days value that adds a fixed delay between the step that ships and the step that receives. When a heavy-equipment weldment leaves the fabrication plant for a machining plant four days away, the downstream machining step is not allowed to start until four days after the fabrication step ends. The delay is a property of the step, so it applies on every schedule and every reschedule without a planner re-entering it."
+  - question: "What is the difference between calendar-day and working-day transit?"
+    answer: "Calendar-day transit adds raw days including weekends, which fits a part sitting on a truck or at an outside vendor whose calendar does not matter to your shop. Working-day transit counts only days that have an active shift, which fits a move handled by your own logistics crew that does not run on weekends. The default is calendar days, and it is set per routing step so different moves can use different rules."
+  - question: "Can one heavy-equipment job be scheduled across plants that keep different calendars?"
+    answer: "Yes. Each plant's work centers carry their own shifts and holidays, so a fabrication plant running Monday to Friday and a machining plant running six days a week schedule against their own calendars in the same job. The transit-days delay bridges the two, and the finite-capacity engine loads each plant's machines against that plant's real available hours rather than a shared assumption."
+qaQuestions:
+  - question: "Our frames are cut and welded in one plant, then trucked 300 miles to be machined and painted in another. The paper schedule always assumes machining can start the day welding ends. How do we stop that?"
+    answer: "Put the real transit on the machining step. If the truck plus receiving takes four days, set the fabrication-to-machining handoff to four transit days, counted as calendar days because the freight runs regardless of your shift pattern. The engine then holds the machining start four days past the welding finish on every run. Nobody has to remember to pad the plan by hand, and when welding slips two days the machining start and everything after it move with it automatically. Your promised ship date reflects the truck, not a wish."
+  - question: "We move sub-frames between our own plants with our own trucks that only run weekdays. Does that change the setup?"
+    answer: "It does, and the fix is one field. Set the same transit step to count working days instead of calendar days, so a two-day move that starts on a Thursday lands the parts back on the schedule Monday morning rather than Saturday. The engine counts only days that have an active shift and returns the parts at the end of the last shift on the final working day, so the receiving plant cannot start before it actually reopens. Calendar days for common freight, working days for your own weekday-only logistics."
+---
+
+**Heavy equipment multi plant scheduling only works when the plan knows how many days a part spends between facilities.** A frame that is cut and welded in one plant, trucked to a second plant to be machined, and finished in a third does not become available downstream the instant the upstream step ends. [EDGEBIC by User Solutions](/edgebic) models that gap as transit days on the routing step, so the machining plant's schedule starts when the parts arrive, not when the welder puts down the torch.
+
+This is the same lineage that scheduled 26,000-plus tasks on the USS Nimitz refit and runs across Cummins' 33 locations. For the capability without the heavy-equipment framing, see [scheduling work that moves between plants](/blog/multi-plant-scheduling-with-transit-times-edgebic). For the category-level view of this sector, see [heavy equipment production scheduling](/blog/heavy-equipment-scheduling). For the map of which capability carries the load in which plant, start at [how different industries use EDGEBIC](/blog/edgebic-by-industry).
+
+## Why heavy equipment breaks single-plant schedules
+
+Heavy equipment is rarely built in one building. Structural fabrication needs big presses, brakes and weld cells. Precision machining needs a climate-controlled bay. Paint and assembly need yet another footprint. Many builders split these across separate plants, sometimes hundreds of miles apart, and a single large weldment can visit three of them before it ships.
+
+A schedule that treats those plants as one continuous shop lies in a specific, expensive way: it assumes the next operation can start the moment the last one finishes. In reality the part is on a flatbed. If the truck plus receiving inspection takes four days, and the plan ignores those four days, every promised date downstream is four days optimistic per handoff. Two handoffs and you are a work week short before the first machine even runs.
+
+The fix is not to inflate every run time by a fudge factor. The fix is to model the physical move as what it is: a fixed delay between two steps, owned by the step, applied every time.
+
+## Transit days: the delay that travels with the routing
+
+In EDGEBIC each routing step can carry a transit-days value. When it is greater than zero, the engine adds that delay after the step ends and before the downstream step is allowed to start. The delay lives on the step, so it is entered once and honored on every schedule and every reschedule.
+
+Two rules decide how the days are counted:
+
+- **Calendar days (the default).** The engine adds raw days, including weekends and holidays. This is correct when the parts are on a truck or sitting at an outside vendor: the freight company runs Saturday, and your shift calendar has nothing to do with when the trailer arrives.
+- **Working days.** The engine counts only days that have an active shift, and it returns the parts at the end of the last shift on the final working day. This is correct when your own weekday-only logistics crew handles the move, so a transit that starts Thursday does not "arrive" on Saturday when nobody is at the dock.
+
+You set the rule per step, because different moves in the same job genuinely behave differently. Common carrier freight is calendar days. An internal shuttle run is working days. The engine does not force one answer on the whole routing.
+
+## A worked heavy-equipment routing
+
+Consider a track-frame weldment built across three plants. The routing is five operations, and two of them cross a plant boundary.
+
+| Step | Operation | Plant | Run time | Transit after |
+|---|---|---|---|---|
+| 10 | Cut and form | Fab (Plant A) | 12 h | 0 |
+| 20 | Weld and stress-relieve | Fab (Plant A) | 20 h | 4 calendar days (truck to Plant B) |
+| 30 | CNC machine | Machining (Plant B) | 16 h | 2 working days (internal shuttle to Plant C) |
+| 40 | Paint | Finishing (Plant C) | 6 h | 0 |
+| 50 | Final assembly | Finishing (Plant C) | 8 h | 0 |
+
+Suppose fabrication finishes step 20 at 16:00 on a Friday. Without transit modeling, the machining plant would be scheduled to start step 30 the following Monday. With four calendar days of transit, the engine holds step 30 until the following Tuesday, because Saturday and Sunday count on a truck. Machining then finishes, and the two working days of internal transit to paint skip the weekend, so the parts land at Plant C's dock at the end of a working day rather than mid-Saturday.
+
+The whole point is that each plant loads its own machines against its own real hours, and the transit delays stitch the plants together honestly. When welding slips, the machining start slips with it, the shuttle move slips with it, and the promised ship date moves once, visibly, instead of quietly going wrong.
+
+## Each plant keeps its own calendar
+
+Multi-plant scheduling would be pointless if every facility had to share one shift pattern. It does not. In EDGEBIC every work center carries its own shifts, holidays and available hours, so a fabrication plant on a Monday-to-Friday day shift and a machining plant running two shifts six days a week both schedule against their own reality inside the same job.
+
+This matters for a builder whose plants sit in different regions or run different labor agreements. The [finite-capacity engine](/blog/finite-vs-infinite-capacity-scheduling) loads each plant's machines against that plant's actual open hours: a machine can only run one job at a time, and a plant that is closed on a regional holiday simply has no capacity that day. Transit days are the connective tissue between those separate calendars, not a substitute for them.
+
+If your plants roll up into reporting regions, you group them for the dashboard and reports without changing how the scheduler loads them: the grouping is organizational, and the scheduler still shops each work center's own capacity. That keeps a plant manager's utilization numbers meaningful while the engine plans across the whole network.
+
+## What honest transit does to a promise date
+
+The payoff is a ship date you can defend. Heavy equipment orders are large, late penalties are real, and "we forgot the parts were on a truck" is not an explanation a customer accepts twice.
+
+When every plant boundary in the routing carries its true transit, the schedule's finish date is the real finish date. Sales can quote against it, procurement can time long-lead castings to it, and the plant that receives the parts is not blindsided by a job that "should have arrived" days ago. For jobs where the commitment is the due date rather than the start, you can combine this with [backward scheduling](/blog/forward-vs-backward-scheduling) so the whole network is pulled to finish just in time. The companion piece on [long-lead assemblies](/blog/edgebic-for-heavy-equipment-long-lead-assemblies) covers that side.
+
+## Common mistakes with inter-plant transit
+
+Each of these produces a plan that looks fine and ships late, so they are worth checking on purpose.
+
+**Calendar days used for a weekday-only internal move.** A two-day shuttle set to calendar days that starts Thursday will "arrive" Saturday, so the receiving plant gets scheduled to start work on a day it is closed. The engine will then push the real start to the next open shift, but your capacity picture for the weekend is wrong. Use working days for moves your own crew handles.
+
+**Transit modeled as extra run time instead of transit.** Padding the upstream step's hours to cover the truck inflates that plant's machine load and hides real capacity, and it does not move with the part correctly when the plant that ships is not the plant that receives. Transit belongs on the handoff, not inside a run time.
+
+**Transit on a material step.** Material steps already absorb their own procurement lead time, so adding transit days there double-counts. Put inter-plant transit on the manufacturing step that ships the physical part.
+
+**One plant's holidays applied to all.** If a machining plant inherits the fabrication plant's calendar by accident, its capacity will be wrong on exactly the days the two facilities differ. Give each plant's work centers their own shifts and holidays.
+
+## Rolling it out
+
+1. **List every plant boundary in your longest routings.** These are the handoffs where a part physically leaves one facility for another.
+2. **Get the real door-to-dock time** for each move from the people who ship it, including receiving inspection, not the optimistic "it's a day away" number.
+3. **Set transit days on the shipping step,** and pick calendar days for common freight or working days for your own weekday logistics.
+4. **Confirm each plant's work centers carry their own shifts and holidays,** so the engine loads each facility against its real hours.
+5. **Run the schedule and read a cross-plant job end to end,** checking that each downstream start lands after the transit, not the instant the upstream step ends.
+6. **Reschedule a slipped job** and confirm the transit and every downstream step move together, so the promised date updates once and correctly.
+
+Bring one multi-plant routing, its real transit times and a plant calendar to a demo of [heavy equipment manufacturing scheduling](/heavy-equipment-manufacturing-scheduling), and we will build the cross-plant plan with you. For builders running many sites, the [multi-location scheduling](/multi-location-manufacturing-scheduling) overview shows how the same mechanism scales across a network.
+
+<Accordion title="How does a scheduler account for the days a part spends moving between two plants?">
+Each routing step carries a transit-days value that adds a fixed delay between the step that ships and the step that receives. When a heavy-equipment weldment leaves the fabrication plant for a machining plant four days away, the downstream machining step is not allowed to start until four days after the fabrication step ends. The delay is a property of the step, so it applies on every schedule and every reschedule without a planner re-entering it.
+</Accordion>
+
+<Accordion title="What is the difference between calendar-day and working-day transit?">
+Calendar-day transit adds raw days including weekends, which fits a part sitting on a truck or at an outside vendor whose calendar does not matter to your shop. Working-day transit counts only days that have an active shift, which fits a move handled by your own logistics crew that does not run on weekends. The default is calendar days, and it is set per routing step so different moves can use different rules.
+</Accordion>
+
+<Accordion title="Can one heavy-equipment job be scheduled across plants that keep different calendars?">
+Yes. Each plant's work centers carry their own shifts and holidays, so a fabrication plant running Monday to Friday and a machining plant running six days a week schedule against their own calendars in the same job. The transit-days delay bridges the two, and the finite-capacity engine loads each plant's machines against that plant's real available hours rather than a shared assumption.
+</Accordion>

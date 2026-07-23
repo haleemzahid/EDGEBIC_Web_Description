@@ -1,0 +1,85 @@
+---
+title: "Plastics Scheduling: Modeling Mold Cavities and Pieces-Based Capacity"
+description: "Plastics cavity capacity scheduling models a multi-cavity mold as machine instances and schedules by pieces per hour, so the plan matches real molding throughput."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - plastics cavity capacity scheduling
+  - injection molding scheduling
+  - pieces based capacity
+  - multi-cavity mold scheduling
+  - molding machine instances
+  - work center utilization plastics
+targetPhrase: "plastics cavity capacity scheduling"
+wordCount: 1930
+readingTime: 10
+faqQuestions:
+  - question: "How do you model a multi-cavity mold in the schedule?"
+    answer: "Model the parallel cavities or presses as instances on the work center. A work center with an instance count of four represents four units of capacity that the scheduler can load together. With load balancing on, it divides an operation's hours evenly across the instances so they finish together, cutting wall-clock time. A twenty-hour block on a four-instance center becomes five hours on each, done in a quarter of the single-unit time."
+  - question: "Can capacity be counted in pieces instead of hours?"
+    answer: "Yes. A routing step can express its requirement in pieces as well as hours, using a pieces-required figure and a pieces-per-unit multiplier so the effective piece count scales with order quantity. The work center carries a pieces-per-hour rate and an efficiency factor, which lets the plan reason in the units a molding floor actually measures. The effective rate combines the routing's piece requirement with the machine's efficiency so throughput reflects the real cycle, not a nominal one."
+  - question: "How do you stop the plan from over-committing a press?"
+    answer: "Set the work center's utilization below one hundred percent. Utilization is baked into the shift capacity at the start of a run, so a press at eighty percent with an eight-hour shift and two instances offers twelve point eight hours instead of sixteen. That leaves realistic headroom for changeovers, minor stoppages, and the gap between nominal and sustained cycle rates, so the plan promises dates the floor can actually hit."
+  - question: "What about a press that can only run one job per day?"
+    answer: "Turn on the one-per-day setting for that work center. With more than one instance, each new job is assigned its own instance rather than pooling the capacity, so three jobs of six hours each land on three separate units at the start of the shift instead of stacking on one. This fits equipment where a mold or color change occupies the whole shift and you dedicate a press to a single job for the day."
+qaQuestions:
+  - question: "Our routings say a press runs eight hours, but a four-cavity mold obviously does not take four times as long as a single. How do we model the cavities so the schedule is not off by 4x?"
+    answer: "Model the cavities as capacity, not as four separate operations. The cleanest approach depends on your equipment: if the cavities are identical units of throughput, represent them as instances on the work center so the scheduler loads them together and load balancing shares the hours across them. If the constraint is really pieces per hour, express the step in pieces and set the press's pieces-per-hour rate and efficiency factor so the plan reasons in molded parts. Either way the plan stops treating a multi-cavity run as a single-cavity time and starts matching the throughput you actually see off the press."
+  - question: "We run presses hot and the plan always says we have more capacity than we really do, so promised dates slip. What is the lever?"
+    answer: "The utilization percentage on each press. It scales the shift capacity down before any job is placed, so it models the real gap between nameplate cycle time and sustained output. Set a press that realistically holds eighty percent to eighty, and an eight-hour shift with two instances offers twelve point eight hours instead of sixteen. Combine that with a daily capacity override on days you know will run short, for example a scheduled mold change, and the plan stops promising hours the floor cannot deliver. Utilization is applied when capacity is built for the run, so set it before you schedule."
+---
+
+**Plastics cavity capacity scheduling models a multi-cavity mold or a bank of presses as machine instances and schedules the work by hours or pieces per hour, so EDGEBIC by User Solutions plans against real molding throughput instead of a single-cavity time.** For an injection molding shop, the whole problem is that a four-cavity mold is not four separate jobs and not one slow job either. This post is about modeling cavities and pieces correctly, so the plan matches what comes off the press.
+
+The general question of loading work against real, limited capacity is [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling), and the plain definition of a schedule is [what is production scheduling](/blog/what-is-production-scheduling). Here we translate both into the units a molding floor lives in: cavities, presses, and pieces per hour.
+
+## The cavity that breaks a naive schedule
+
+A routing that says a molding step runs eight hours is fine for a single-cavity tool. Put a four-cavity mold on it and the number is wrong four ways: the cycle produces four parts per shot, so the throughput is four times higher, but the routing still charges the single-cavity time. A plan built on that either massively overstates the time a run takes, and idles the press, or understates it and blows the date.
+
+Plastics shops also measure in the wrong currency for most schedulers. The floor thinks in parts per hour and shots per shift, not machine-hours. A plan that can only reason in hours forces the planner to convert everything by hand, and the conversion drifts the moment a cycle rate changes or a mold moves. The right model lets the schedule reason in cavities and pieces directly.
+
+## Modeling cavities as capacity, not as steps
+
+The clean way to represent parallel cavities or a bank of identical presses is as instances on the work center. An instance is one unit of physical capacity, and a work center's instance count tells the scheduler how many units it can load at once. This is deliberately not the same thing as a machine pool of different-but-interchangeable machines, which is covered in [plastics machine pools](/blog/edgebic-for-plastics-machine-pools); instances are identical units under one calendar and one speed, which is exactly what a multi-cavity mold or a set of matched presses is.
+
+With load balancing on, the default, the scheduler divides an operation's hours evenly across the instances so they finish together instead of stacking on one. A 20-hour block on a four-instance work center becomes five hours on each instance, all starting together and done in a quarter of the single-unit wall-clock time.
+
+| Instance | Hours | Runs |
+|---|---|---|
+| 1 | 5 | 08:00 to 13:00 |
+| 2 | 5 | 08:00 to 13:00 |
+| 3 | 5 | 08:00 to 13:00 |
+| 4 | 5 | 08:00 to 13:00 |
+
+The plan now reflects the throughput the cavities actually deliver, without splitting the routing into four fake operations. When a cavity count is not a whole number, for example a half-capacity backup unit, the scheduler supports fractional instances and redistributes the partial unit's share across the full ones, so a two-and-a-half-cavity setup is modeled honestly rather than rounded.
+
+## Scheduling in pieces per hour
+
+When the real constraint is throughput rather than time, express the step in pieces. A routing step can carry a pieces-required figure and a pieces-per-unit multiplier, so the effective piece count scales with order quantity. The work center carries a pieces-per-hour rate and an efficiency factor, and the effective rate combines the two, so the plan reasons in molded parts and the machine's real efficiency rather than a nominal cycle.
+
+For a molding floor this closes the gap between the routing sheet and the shop language. You state how many parts an order needs and how fast the press makes them, and the schedule works in those units end to end. It is the same piece-based thinking that drives lot streaming, where downstream operations start after a transfer batch of parts is ready rather than after the whole run finishes, described in [what a transfer batch is](/blog/what-is-a-transfer-batch).
+
+## Utilization: the lever for a hot press
+
+Presses rarely sustain nameplate cycle for a full shift. Cooling, minor stoppages, and the difference between the tool's rated cycle and its real one all eat into throughput. The utilization percentage on the work center models that gap. It is applied when shift capacity is built at the start of a scheduling run, scaling the raw hours down before any job is placed.
+
+Set a press that realistically holds 80 percent to 80, and an eight-hour shift with two instances offers 12.8 hours of capacity instead of 16. The plan then promises dates against the throughput the press actually sustains, not its best-case cycle. Because utilization is baked in at capacity-build time, set it before you schedule; changing it mid-run has no effect until the next run.
+
+For a specific day you know will run short, a scheduled color or mold change that eats the morning, a daily capacity override sets an exact figure for that one date and takes precedence over the utilization formula. That keeps the everyday utilization realistic while letting you model known disruptions precisely.
+
+## Presses that run one job per day
+
+Some molding cells dedicate a press to one job for the whole shift because the mold or color change occupies the day. The one-per-day setting handles that. With more than one instance, each new job is assigned its own instance rather than pooling the capacity, so three six-hour jobs land on three separate presses at the start of the shift rather than queuing on one. This is the same instance-selection logic that runs a furnace shop, applied to a press bank where changeover discipline matters. It composes naturally with [mold changeover scheduling](/blog/edgebic-for-plastics-mold-changeovers), which decides how long each change takes, while the one-per-day rule decides how the day's jobs are distributed across the presses.
+
+## Putting cavities, pieces, and utilization together
+
+A molding floor modeled well looks like this: cavities and matched presses as instances so throughput is real, pieces and pieces-per-hour where the floor thinks in parts, utilization tuned to what each press actually sustains, and one-per-day where a press is dedicated for the shift. Load the shifts each press runs and the plan spreads work across cavities, promises dates the floor can hit, and moves rush orders through the real capacity picture rather than a nameplate one. It sits alongside the [multi-shift model](/blog/edgebic-for-plastics-multi-shift) that molding shops use to run around the clock.
+
+This is the capacity realism User Solutions has brought to manufacturers since 1991, the difference between a plan that assumes best-case cycles and one that matches the press. A schedule that speaks cavities and pieces is a schedule a molding floor will actually trust.
+
+See it model your worst multi-cavity tool. [Bring a molding routing and a press to a demo](/edgebic) and watch the plan schedule the cavities as real capacity. The [EDGEBIC by industry guide](/blog/edgebic-by-industry) shows where this fits alongside the rest of a plastics operation.

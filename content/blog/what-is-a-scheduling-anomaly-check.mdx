@@ -1,0 +1,66 @@
+---
+title: "What Is a Scheduling Anomaly Check? EDGEBIC Definition"
+description: "A scheduling anomaly check is an automated test that flags data integrity problems in a schedule. See the V, F, I, and C families EDGEBIC runs after every plan."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - scheduling anomaly check
+  - schedule data integrity
+  - anomaly report
+  - validation check scheduling
+  - inverted dates
+  - split operation pairs
+targetPhrase: "what is a scheduling anomaly check"
+wordCount: 1080
+readingTime: 5
+faqQuestions:
+  - question: "What is a scheduling anomaly check?"
+    answer: "A scheduling anomaly check is an automated test that flags a specific data integrity problem in a schedule, such as a job that ends before it starts or a step with two conflicting rows. EDGEBIC runs a whole family of them, grouped into validation, flow, inventory, and configuration categories, after a plan is built. Each check has a code, a plain-language meaning, and a severity, so a planner can find and fix a broken record before it distorts a report or a downstream schedule."
+  - question: "What do the V, F, I, and C prefixes mean?"
+    answer: "They group the checks by what they guard. V checks are core schedule validations, like inverted actual dates or duplicate daily-hour rows. F checks cover flow and lot-streaming interactions, like a FlowStep setting silently ignored on an alternate work center. I checks cover inventory integrity, like on-hand cache drift or a negative stock balance. C checks cover configuration mismatches, like a transfer batch set on a continuous-process machine. The prefix tells a planner which part of the system a flagged row belongs to."
+  - question: "Are anomaly checks warnings or hard errors?"
+    answer: "Both, depending on the check. EDGEBIC assigns each anomaly a severity of Critical or Warning. A Critical anomaly, like an inverted actual date, points at a record that will produce wrong numbers and needs fixing; a Warning, like a large unexplained gap between steps, is worth a look but may be intentional. The report groups anomalies by check and shows a count for each, so a planner can triage the criticals first and treat the warnings as a review list."
+qaQuestions:
+  - question: "The anomaly report flags a V4 split-op pair on Job 42 Step 3. What went wrong?"
+    answer: "A V4 means two or more schedule rows exist for the same job and routing step where only one should. It usually appears after a reschedule that produced a duplicate row for a partially completed step. The fix is the partial-completion merge that collapses the pair back to a single row, and the V4 check exists to catch any that slip through. Until it is resolved, that step's hours can double-count, so a V4 is a Critical worth clearing before you trust the job's totals."
+  - question: "I see an I3 negative on-hand anomaly for a stocked product. How urgent is that?"
+    answer: "Urgent. An I3 means the authoritative ledger sum for a stocked product is below zero, which is physically impossible: more has been issued than was ever received. It signals a posting path that deducted stock without a matching receipt, and it will corrupt any inventory projection built on that product. Treat it as Critical, trace the missing receipt or the over-issue in the ledger, and correct it before running planning that depends on that item's on-hand figure."
+---
+
+**A scheduling anomaly check is an automated test that flags a specific data integrity problem in a schedule, such as a job that ends before it starts or a step carrying two conflicting rows.** In EDGEBIC by User Solutions, a whole family of these checks runs after a plan is built, grouped into validation, flow, inventory, and configuration categories. Each check has a code, a plain-language meaning, and a Critical or Warning severity, so a planner can find and fix a broken record before it distorts a report or a downstream schedule.
+
+This entry is part of the [EDGEBIC](/edgebic) glossary series. For the broader vocabulary, see the [manufacturing glossary](/blog/manufacturing-glossary). Anomaly checks are a diagnostic sibling of the [resource replacement audit](/blog/what-is-a-resource-replacement-audit-in-manufacturing), which trails routing changes rather than data faults.
+
+## How a Scheduling Anomaly Check Works
+
+A schedule is only as trustworthy as the records behind it. A single row with an end date before its start date, or two rows where one step should have one, quietly poisons every report that sums hours or dates. Anomaly checks are the automated guardrails that catch those records so a human does not have to hunt for them.
+
+EDGEBIC organizes the checks into families by prefix, each guarding a different part of the system:
+
+- **V checks** are core schedule validations. Examples: V1 flags an actual end date earlier than the actual start (an inverted date); V4 flags split-op pairs, two or more schedule rows for one job-and-step; V7 flags duplicate daily-hour rows that would double-count.
+- **F checks** cover flow and lot-streaming interactions. F1 flags a FlowStep overlap silently ignored when a step routes to an alternate work center; F2 flags FlowStep and queue time set together, where FlowStep wins unexpectedly.
+- **I checks** cover inventory integrity. I3 flags a negative on-hand balance (more issued than received); I1 flags on-hand cache drift where the stored quantity disagrees with the ledger sum.
+- **C checks** cover configuration mismatches. C1 flags a transfer batch set on a continuous-process work center, where the piece-count model does not apply and the setting is ignored.
+
+Each anomaly carries a severity. Critical means the record will produce wrong numbers and needs fixing; Warning means it is worth a look but may be intentional, like a deliberate long gap between steps. The report counts each check's hits so a planner can clear the criticals first.
+
+## A Concrete Example
+
+Suppose a reschedule of Job 42 leaves a duplicate row for Step 3. The next anomaly run reports:
+
+| Code | Meaning | Severity |
+|---|---|---|
+| V4 | Split-op pair: two schedule rows for Job 42, Step 3 | Critical |
+
+Left alone, that duplicate makes Step 3's hours count twice, inflating the job's totals and any utilization report that touches it. The V4 check surfaces it immediately, so the planner knows to let the partial-completion merge collapse the pair back to one row rather than discovering the double-count later in a wrong earned value number.
+
+Now a second example on the inventory side: an over-issue drops a stocked product's ledger sum below zero. The run reports an I3 negative on-hand anomaly, Critical. That is physically impossible stock, and it will corrupt any projection built on the item, so it is fixed by tracing the missing receipt before planning runs against that product. Two different families, two different faults, one report that catches both.
+
+## How EDGEBIC Uses Scheduling Anomaly Checks
+
+The checks are surfaced through the Scheduler Anomalies report, one of the panes in EDGEBIC's reports catalogue. The pane runs its full set across the schedule (dozens of checks in several categories) and renders a summary chip for each check at the top; clicking a chip filters the detail grid to that check's rows, and clicking again clears it. The step by step is in [how to run and read the anomaly report in EDGEBIC](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic), and a plain-English tour of what each check looks for is in [what the EDGEBIC anomaly checks actually look for](/blog/what-the-edgebic-anomaly-checks-actually-look-for).
+
+The point of running the checks after every plan is that data faults are cheapest to fix the moment they appear. A V4 caught today is a one-row merge; the same V4 found next week is a wrong report someone already acted on. Treating the anomaly report as a routine post-schedule step, rather than a tool you reach for only when something looks off, is what keeps the numbers on every other EDGEBIC report worth trusting.

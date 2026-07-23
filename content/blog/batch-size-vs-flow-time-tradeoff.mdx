@@ -1,0 +1,90 @@
+---
+title: "Batch Size vs Flow Time: The Transfer Batch Trade-Off"
+description: "Batch size vs flow time: a smaller transfer batch lets the next operation start sooner and shrinks makespan, at the cost of more handoffs, with worked lot-streaming numbers."
+published: 2026-07-30T12:00:00.000Z
+modified: 2026-07-30T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - batch size vs flow time
+  - transfer batch
+  - lot streaming
+  - flow time reduction
+  - process batch vs transfer batch
+  - makespan reduction
+targetPhrase: "batch size vs flow time"
+wordCount: 1600
+readingTime: 8
+faqQuestions:
+  - question: "How does batch size affect flow time?"
+    answer: "A smaller transfer batch lets the next operation start as soon as a partial quantity is ready, so work overlaps between operations instead of waiting for the whole lot. That overlap shortens flow time and total makespan. A larger transfer batch makes the downstream operation wait until more or all of the lot finishes upstream, which lengthens flow time but reduces the number of material handoffs. Batch size is a direct dial on how much operations overlap."
+  - question: "What is the difference between a process batch and a transfer batch?"
+    answer: "A process batch is how many pieces an operation runs before it changes over to something else. A transfer batch is how many pieces move to the next operation at a time. They do not have to match. You can run a process batch of 1,000 on a machine but move the parts downstream in transfer batches of 100, so the next operation starts after the first 100 are done rather than waiting for all 1,000. Splitting the two is the heart of lot streaming."
+  - question: "Does a smaller transfer batch always finish the job faster?"
+    answer: "A smaller transfer batch usually shortens total flow time, but not without limits. Each transfer carries handling effort, and if the downstream operation has a setup, tiny transfer batches can force repeated setups that eat the overlap gain. The sweet spot is a batch small enough to start the downstream operation early but large enough that handling and setup do not swamp the saving. Below a point the returns flatten and then reverse."
+qaQuestions:
+  - question: "We run 1,000-piece lots and the second operation always sits idle for hours waiting on the first. Can lot streaming fix that?"
+    answer: "Yes, that idle time is exactly what transfer batches remove. If the first operation makes 100 pieces an hour, the downstream machine waits 10 hours for the full lot today. Set a transfer batch of 100 and the downstream operation can start after the first hour, once 100 pieces are ready, then run alongside the first operation instead of after it. In a two-operation job that can cut the total makespan by close to a third, because the operations overlap instead of running end to end."
+  - question: "What transfer batch size should I start with?"
+    answer: "Start with a batch that keeps the downstream operation fed without repeated setups: often one hour of upstream output, or a natural container or pallet quantity. If the upstream makes 100 an hour, try 100. Watch two things: whether the downstream machine still idles, in which case go smaller, and whether handling or downstream setups are eating the gain, in which case go larger. The best size is the smallest one where the overlap saving still clears the added handling."
+---
+
+**Batch size and flow time trade off directly: a smaller transfer batch lets the next operation start sooner and shrinks total makespan, while a larger transfer batch reduces handoffs but forces the downstream operation to wait longer.** The transfer batch is how many pieces move to the next operation at a time, and it does not have to equal the process batch you run on the machine. EDGEBIC by User Solutions models this as piece-count lot streaming, so the downstream operation can begin as soon as a partial quantity is ready instead of waiting for the whole lot. Getting the batch size right is a direct dial on how much your operations overlap.
+
+The plain definition lives in [what is a transfer batch](/blog/what-is-a-transfer-batch), and the choice between the two lot-streaming methods is in [piece-count vs time-lag lot streaming](/blog/piece-count-vs-time-lag-lot-streaming-which-to-use). This post is about the trade-off itself, with numbers.
+
+## Process batch and transfer batch are two different sizes
+
+The single most useful idea here is that the batch you run and the batch you move do not have to be the same. A process batch is how many pieces an operation completes before changing over. A transfer batch is how many pieces hand off to the next operation at once. Traditional shops move the whole process batch downstream in one go, so the second operation cannot begin until the first is completely finished. Splitting the two, running a large process batch but moving small transfer batches, is lot streaming, and it is where the flow-time savings come from.
+
+## The overlap that shrinks makespan
+
+When the transfer batch equals the whole lot, operations run end to end: the second waits for the first, the third waits for the second. When the transfer batch is a fraction of the lot, operations overlap: the first operation is still running the back half of the lot while the second operation is already processing the front half. That overlap is time removed from the total, and on a multi-operation routing it compounds.
+
+EDGEBIC computes when the downstream operation can start using the transfer batch directly. The downstream start is gated by the setup plus the run time of one transfer batch of pieces, rather than the run time of the whole order. Smaller transfer batch, earlier downstream start.
+
+## A worked example: 1,000 pieces, two operations
+
+An order of 1,000 pieces runs Cut then Drill. The Cut operation makes 100 pieces per hour, so its run time per piece is 0.01 hours. Each operation has a 0.5-hour setup.
+
+**No lot streaming (transfer batch = full lot).** Cut runs its setup plus 1,000 pieces: 0.5 + 10 = 10.5 hours. Only then can Drill start. If Drill runs at the same rate, the job spans roughly 10.5 + 10.5 = 21 hours end to end.
+
+**Transfer batch of 100.** Drill can start once the first 100 pieces are cut. That gate is the Cut setup plus one transfer batch: 0.5 + (100 × 0.01) = 1.5 hours. Drill starts at 1.5 hours and runs alongside Cut for the rest of the lot. The two operations now overlap for nine hours instead of running back to back, and total makespan falls to roughly 11.5 to 12 hours.
+
+| Transfer batch | Downstream starts at | Approx. makespan |
+|---|---|---|
+| 1,000 (full lot) | 10.5 h | ~21 h |
+| 100 | 1.5 h | ~12 h |
+| 20 | 0.7 h | ~11 h |
+
+Moving from the full lot to a batch of 100 nearly halves the makespan, close to the roughly one-third flow-shop reductions reported in the lot-streaming literature. Going from 100 to 20 saves another hour but adds five times as many handoffs.
+
+## Where smaller stops helping
+
+The table shows the trade-off flattening. Each shrink of the transfer batch buys a smaller overlap gain, while the costs scale the other way. Every transfer is a physical move with handling effort, and if the downstream operation has its own setup, tiny transfer batches can force repeated setups that swallow the overlap you gained. A transfer batch of 1 gives the theoretical minimum flow time but the maximum handling, and on most floors the handling and any per-batch setup make it a bad deal.
+
+The practical sweet spot is the smallest transfer batch where the overlap saving still clears the added handling and setup. Often that is around one hour of upstream output, or a natural container, pallet, or tote quantity that the floor already moves in. In the example, 100 pieces (one hour of Cut output) captures most of the available gain without multiplying handoffs.
+
+## Watch the continuous-process exception
+
+Piece-count lot streaming assumes discrete parts you can count and move in batches. A continuous-process resource, like an oven or a bath that treats a whole load at once, does not overlap this way; the transfer batch does not apply because the operation is not divisible into flowing pieces. EDGEBIC treats a work center flagged as continuous-process differently, ignoring the transfer batch on those steps, which is the correct behavior and the reason the flag exists. If you set a transfer batch on a step routed to a continuous-process resource and see no overlap, that is working as designed, not a bug.
+
+## Setting it in the schedule
+
+The transfer batch is a per-step value on the routing, and the how-to is in [setting a transfer batch size](/blog/how-to-set-a-transfer-batch-size-in-edgebic). When you set it, the finite engine recomputes the downstream start for that step on the next schedule run, and the overlap shows up as the two operations running in parallel on the Gantt rather than in series. Nothing else in the routing changes; only the gate between those two operations moves earlier.
+
+Flow time is one of the largest components of real lead time, which is why the transfer batch is one of the highest-impact dials on the routing. The way it composes with setup, queue, and transit time is laid out in [lead time as the sum of its parts](/blog/lead-time-as-the-sum-of-its-parts), and the full placement pipeline is in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide). To try a transfer batch on your own long-running lot and watch the makespan drop, [see EDGEBIC on your data](/edgebic).
+
+<Accordion title="How does batch size affect flow time?">
+A smaller transfer batch lets the next operation start as soon as a partial quantity is ready, so work overlaps between operations instead of waiting for the whole lot. That overlap shortens flow time and total makespan. A larger transfer batch makes the downstream operation wait until more or all of the lot finishes upstream, which lengthens flow time but reduces the number of material handoffs. Batch size is a direct dial on how much operations overlap.
+</Accordion>
+
+<Accordion title="What is the difference between a process batch and a transfer batch?">
+A process batch is how many pieces an operation runs before it changes over to something else. A transfer batch is how many pieces move to the next operation at a time. They do not have to match. You can run a process batch of 1,000 on a machine but move the parts downstream in transfer batches of 100, so the next operation starts after the first 100 are done rather than waiting for all 1,000. Splitting the two is the heart of lot streaming.
+</Accordion>
+
+<Accordion title="Does a smaller transfer batch always finish the job faster?">
+A smaller transfer batch usually shortens total flow time, but not without limits. Each transfer carries handling effort, and if the downstream operation has a setup, tiny transfer batches can force repeated setups that eat the overlap gain. The sweet spot is a batch small enough to start the downstream operation early but large enough that handling and setup do not swamp the saving. Below a point the returns flatten and then reverse.
+</Accordion>
