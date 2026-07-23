@@ -1,0 +1,134 @@
+---
+title: "How to Overlap Operations in EDGEBIC: A Field-by-Field Setup Guide"
+description: "Overlap operations in production scheduling: which routing fields to fill for transfer batch size, flow lag hours, and transfer delay, and how to verify."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - overlap operations production scheduling
+  - configure transfer batch size
+  - lot streaming setup guide
+  - routing step overlap settings
+  - transfer delay scheduling
+  - continuous process work center
+  - production scheduling configuration
+targetPhrase: "overlap operations production scheduling"
+wordCount: 1800
+readingTime: 9
+faqQuestions:
+  - question: "How do you overlap operations in production scheduling software?"
+    answer: "You overlap operations by telling the scheduling engine what the next step is allowed to wait for instead of full completion. In EDGEBIC that is a field on the upstream routing step: a transfer batch size in pieces, or a flow lag in hours. Fill one of the two, leave the other at zero, then reschedule the job and the overlap appears on the Gantt."
+  - question: "Where is the transfer batch size configured?"
+    answer: "Transfer batch size lives on the individual routing step, not on the product or the work center. Open the routing, select the upstream operation, and enter the number of pieces that must accumulate before the next step can start. Because the setting is per step, one routing can stream between operations 10 and 20 while operations 20 and 30 stay serial."
+  - question: "What is the difference between transfer delay and queue time?"
+    answer: "Transfer delay is flat elapsed hours added after the streaming threshold is crossed, and it does not pause overnight. Queue time is shift-aware and only ticks during working shifts, so a 4-hour queue starting at 14:00 on Friday finishes Monday morning. Use transfer delay for a forklift run or a cooling period, and queue time for a buffer that should respect the shop calendar."
+  - question: "Do I need to restart anything after changing a transfer batch size?"
+    answer: "No. Save the routing and reschedule. The next scheduling run for any job using that routing picks up the new value, and jobs that do not use it are unaffected. Because the field defaults to zero on every existing step, turning streaming on for one operation cannot change the behavior of anything else in the schedule."
+  - question: "How do I confirm that overlap actually took effect?"
+    answer: "Look at the Gantt first: streamed operations sit under one another instead of end to end. Then check the built-in configuration audit, which flags the settings that quietly disable streaming, such as a transfer batch at or above the order quantity or piece counts on a continuous-process work center. If both look right and the bars still do not overlap, the downstream work center had no capacity in the window."
+qaQuestions:
+  - question: "Our totes hold 40 parts. Should the transfer batch be 40, or should I pick a smaller number for more overlap?"
+    answer: "Set it to 40. The transfer batch is a physical statement about how material actually moves, not a tuning dial. If you set 10 and the shop still waits for a full tote, the schedule promises an overlap that never happens and the job runs late against a plan nobody can hit. Smaller batches do compress the schedule further, but only if handling actually runs at that rate. Change the tote, then change the number."
+  - question: "We set a 50-piece transfer batch and the drill still shows up a full day later. What did we miss?"
+    answer: "Check three things in order. First, transit days on the upstream step: a single working day of transit lands the handoff at end of shift and pushes the drill to the next morning, which absorbs the entire overlap. Second, the drill's own load, because streaming produces an earliest start and the allocator still has to find a free shift at or after it. Third, whether the upstream work center is flagged continuous-process, in which case piece counts are ignored by design and you need the flow lag instead."
+---
+
+**To overlap operations in EDGEBIC by User Solutions you fill one field on the upstream routing step: either a transfer batch size in pieces or a flow lag in hours.** Everything else about the schedule stays as it was. The engine keeps the same finite capacity rules, the same shift calendars, and the same routing sequence. What changes is the moment the successor is allowed to begin, and that single change is often worth a day of lead time per job.
+
+This is the setup guide for that chapter. For what the three overlap models are and when each fits, read [lot streaming explained](/blog/edgebic-lot-streaming-explained). For a full worked order, see the [lot streaming overlap walkthrough](/blog/lot-streaming-overlap-walkthrough-edgebic).
+
+## Before You Touch a Field
+
+Overlap is only worth configuring where it pays, so spend ten minutes picking the right step.
+
+Open a job that runs long and look at where the time actually goes. You are looking for one pattern: a long upstream operation feeding a short downstream one on a work center that is sitting idle waiting. A 26-hour machining run feeding a 4-hour deburring bench is the textbook case. A 20-minute operation feeding another 20-minute operation is not worth the configuration.
+
+Then confirm two facts about the physical process:
+
+- **How does material actually move between the two stations?** In totes of 40? On a rack of 25? By the piece down a conveyor? That number is your transfer batch size, and guessing it wrong is the most common reason a streamed schedule fails on the floor.
+- **Is there a mandatory wait after the material moves?** Cooling, drying, inspection, a long forklift run. Those hours belong in the transfer delay field, not in the batch size.
+
+If you have not identified your constraint yet, do that first. Overlapping work into a work center that is already the bottleneck moves the queue rather than shortening it. [Production bottleneck identification](/blog/production-bottleneck-identification) covers the diagnosis.
+
+## Step 1: Open the Routing Step
+
+Overlap settings live on the individual routing step, not on the product and not on the work center. Open the routing in the Graphical Routing Designer or the routing grid, then select the **upstream** operation, the one that will hand work forward early.
+
+That per-step scope is deliberate. One routing can stream between operations 10 and 20 while 20 and 30 stay strictly serial, which is exactly what you want when only one handoff in the sequence has a real overlap opportunity. If you are new to the designer, the [routing flow-chart guide](/blog/how-to-build-a-routing-as-a-flow-chart-in-edgebic) covers the canvas itself.
+
+## Step 2: Fill Exactly One Overlap Field
+
+| Field | Unit | What it means | Leave at zero when |
+|---|---|---|---|
+| **Transfer batch size** | pieces | Downstream starts once this many pieces are finished upstream | The work center is a continuous process |
+| **Flow (start-to-start lag)** | hours | Downstream starts this many hours after the upstream step **starts** | You are using piece counts |
+| **Transfer delay** | hours | Flat handling lag added on top of whichever gate fires | Material moves immediately |
+
+Fill one of the first two. Not both.
+
+**Transfer batch size** is the discrete-parts answer. Enter the number of pieces in a physical move: 40 for a 40-part tote, 25 for a rack, 1 for true one-piece flow in a cell. The engine then clears the successor at setup plus batch size times hours per piece, measured from the upstream start.
+
+**Flow lag** is the continuous-process answer, and it is read as hours after the upstream step starts. A value of 1 on a booth running 08:00 to 12:00 clears the oven at 09:00. The value is independent of order quantity and hours per piece, because the physical question at a paint line ("when is there enough product on the line to feed the next stage?") does not scale with the order.
+
+**Transfer delay** rides on top of either. A 25-piece batch at 0.8 hours per piece with an hour of setup is ready 21 hours into the run; add a 2-hour cooling delay and the machining step is cleared at hour 23. One field, one physical constraint, no arguing about which gate wins.
+
+## Step 3: Flag Continuous-Process Work Centers
+
+If the upstream station is a paint booth, reactor, oven, or extruder, open the work center and set its continuous-process flag. Two things follow automatically:
+
+1. Piece-count streaming is disabled there, permanently. Even if a transfer batch size is typed on a routing step by mistake, the engine ignores it and uses the flow lag instead.
+2. The configuration audit flags any routing step that sets a transfer batch on that work center, so the mistake surfaces rather than sitting silent.
+
+Set this flag once when you create the work center. It describes the machine, not the job, so it never needs to change per order.
+
+## Step 4: Keep Queue Time Off the Same Step
+
+This is the rule that catches most first-time configurations. When lot streaming fires on a routing step, its result becomes the successor's gate and any queue time you put on that same step is discarded. The lot-streaming time is the answer, full stop.
+
+So if a step genuinely needs both a streamed handoff and a mandatory wait, express the wait one of two other ways:
+
+- Put the hours in **transfer delay** on the same step, which sits on top of the streaming gate.
+- Put the **queue time on the downstream step**, where it applies after that step's own operation.
+
+EDGEBIC's configuration audit flags every routing step that carries both a flow lag and a queue time, precisely because the combination surprises planners. Treat the flag as a question about intent, not as an error. The full composition order is covered in [how EDGEBIC composes step timing](/blog/how-edgebic-composes-step-timing).
+
+## Step 5: Watch the Transit Days
+
+Transit days are applied after streaming, and a single transit day is bigger than most overlap wins. Give a streamed step one working day of transit and the handoff lands at end of shift, so the downstream operation's first feasible slot is the next morning. The whole overlap disappears into the transit.
+
+The rule of thumb is simple. Same building, minutes to hours: use transfer delay. Off-site vendor, overnight or longer: use transit days, and do not expect streaming to survive it.
+
+## Step 6: Reschedule and Verify
+
+Save the routing and reschedule the job. No restart, no global flag, no migration. Then check three things in this order:
+
+1. **The Gantt.** Streamed operations sit under one another rather than end to end. If the bars still run in series, streaming did not fire or the downstream work center had no slot. Reading the bars is covered in [planned versus actual on the Gantt](/blog/reading-the-edgebic-gantt-planned-vs-actual).
+2. **The configuration audit.** It flags a transfer batch at or above the order quantity (which behaves exactly like serial), both models set on one step, and piece counts on a continuous-process work center. Each flag names the routing step.
+3. **The elapsed time.** Compare the job's finish against the serial baseline you noted before the change. That is the number worth reporting, and the [results guide](/blog/edgebic-results-guide) covers how to baseline it honestly.
+
+## A Worked Configuration
+
+A 500-piece machining order feeding deburring, with parts moving on 50-piece trolleys and a half-hour trolley run:
+
+| Setting | Value |
+|---|---|
+| Transfer batch size (machining step) | 50 |
+| Hours per piece | 0.05 (3 minutes) |
+| Setup | 1 hour |
+| Transfer delay | 0.5 hours |
+| Flow lag | 0 |
+| Queue time on this step | 0 |
+| Transit days | 0 |
+
+The first 50 pieces exist 1 + 50 x 0.05 = 3.5 hours after machining starts. Add the half-hour trolley move and deburring is cleared 4 hours in. The full machining run is 1 + 500 x 0.05 = 26 hours, so the two operations now overlap for 22 hours instead of running back to back.
+
+Every number in that table is a physical fact about the shop. That is what makes the resulting schedule executable rather than optimistic.
+
+## What to Read Next
+
+[Piece-count versus time-lag overlap](/blog/piece-count-vs-time-lag-overlap-in-edgebic) runs both models against the same order so you can see which gives more on your routings. [Lot streaming mistakes](/blog/lot-streaming-mistakes-edgebic) covers the traps that make a correct-looking configuration produce no overlap at all. For the definition of the underlying concept, see [what is a transfer batch](/blog/what-is-a-transfer-batch), and for where streaming sits in the wider platform, the [complete guide to EDGEBIC](/blog/edgebic-complete-guide).
+
+Bring a routing and a typical order quantity to a demo of [EDGEBIC](/edgebic) and we will configure the first overlap with you.

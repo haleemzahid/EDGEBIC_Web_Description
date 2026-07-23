@@ -1,0 +1,164 @@
+---
+title: "How EDGEBIC Composes Step Timing: Queue, Overlap, Transit, in Order"
+description: "Operation timing composition in scheduling: the fixed order EDGEBIC applies queue time, lot streaming, and transit days, worked end to end on one routing step."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - operation timing composition scheduling
+  - queue time calculation scheduling
+  - transit days calculation
+  - handoff time between operations
+  - scheduling engine step timing
+  - earliest start calculation
+  - routing step handoff
+targetPhrase: "operation timing composition scheduling"
+wordCount: 2000
+readingTime: 10
+faqQuestions:
+  - question: "In what order does EDGEBIC apply queue time, lot streaming, and transit days?"
+    answer: "Always in the same three-stage order: queue time first, lot streaming second, transit days third. Queue time is added to the operation's end. Lot streaming, if configured, then replaces that result with its own gate. Transit days are added on top of whatever survived. The result is published as the earliest time any successor may begin."
+  - question: "Why does lot streaming replace queue time instead of adding to it?"
+    answer: "Because streaming's whole purpose is to let the next step start before the upstream one ends, and a later queue-adjusted time would cancel that. The engine returns the streaming gate directly rather than comparing it against the queue result. Queue time on the same step is therefore discarded, which the built-in configuration audit flags so the planner can confirm intent."
+  - question: "Is the composed handoff time when the next operation actually starts?"
+    answer: "No, it is the earliest time the next operation may start. The capacity allocator then searches forward from that moment for a real shift opening on the downstream work center, respecting instances, utilization, holidays, and existing load. A correctly composed handoff of Monday 12:00 can still produce a Tuesday start if Monday afternoon is fully booked."
+  - question: "What happens when two routing branches feed the same operation?"
+    answer: "The join waits for whichever branch resolves latest. Each upstream step publishes its own handoff time, and the engine keeps the later value for the shared successor. That is why a delay on any one sub-assembly branch propagates to the parent assembly, and why shortening a branch that was not the latest changes nothing."
+  - question: "Does a transit day cancel the benefit of lot streaming?"
+    answer: "Usually yes, in working-day mode. Transit is applied after streaming, and a single working transit day resolves to the end of a shift, so the successor's first feasible slot is the next morning. A 22-hour overlap disappears into a one-day transit. Calendar-day transit is gentler because it adds flat hours rather than snapping to end of shift."
+qaQuestions:
+  - question: "Our routing has one hour of queue, a 50-piece transfer batch, and one transit day. What does the engine actually compute?"
+    answer: "Three stages. The queue hour is added to the operation's end, then thrown away, because the streaming gate replaces it: with a 1-hour setup and 0.05 hours per piece, 50 pieces exist 3.5 hours after the machine starts, so an 08:00 start gates the successor at 11:30, plus half an hour of handling equals 12:00. Then the transit day is applied on top. In working-day mode that resolves to end of shift the following day and the successor lands Wednesday morning, which erases the entire overlap. In calendar mode it lands Tuesday at noon. The transit mode is worth more than the transfer batch on this routing."
+  - question: "We shortened one sub-assembly branch by two days and the final assembly did not move. Why?"
+    answer: "Because that branch was not the one gating the join. When several branches feed one operation, the engine keeps the latest handoff time among them, so the assembly is bound by the slowest path. Shortening any other branch just adds slack. Find the branch whose handoff matches the assembly's start, shorten that one, and then re-check, because the binding branch often changes after the first improvement."
+---
+
+**EDGEBIC by User Solutions builds the handoff time between two operations in a fixed three-stage sequence: queue time first, lot streaming second, transit days third.** The order is an invariant, not a preference, and knowing it explains almost every surprising gap on a Gantt chart. This post walks the sequence, shows what each stage does to the clock, and runs one routing step through all three with real numbers.
+
+For what each field models, read [queue and transit times explained](/blog/edgebic-queue-and-transit-times-explained). For how to enter them, see [how to set queue, flow, and transit times](/blog/how-to-set-queue-flow-and-transit-times-in-edgebic). This is the mechanism underneath both.
+
+## The Sequence
+
+When an operation finishes, the engine holds one value: the moment the last hour of work was consumed. That value then passes through three stages before it becomes the successor's gate.
+
+```
+operation end
+   ↓  stage 1: add queue time (shift-aware)
+queue-adjusted end
+   ↓  stage 2: lot streaming, if configured (REPLACES the value)
+streaming gate
+   ↓  stage 3: add transit days (calendar or working)
+published handoff
+   ↓
+next operation's earliest start
+```
+
+Two properties of this pipeline do most of the explanatory work.
+
+**Stage 2 replaces rather than adds.** Streaming does not extend the queue result, it overwrites it. That is what allows the handoff to land *earlier* than the operation's own end, which is the entire purpose of overlapping.
+
+**Stage 3 always applies last.** Transit is the outermost wrapper, so anything streaming gained is still subject to the truck leaving. Reversing stages 1 and 2 would let a queue buffer cancel the overlap, and moving transit earlier would let a streamed handoff jump the shipment. Neither is physically sensible, which is why the order is fixed.
+
+## Stage 1: The Shift-Aware Queue Walk
+
+Queue time is not added as flat hours. The engine walks the work center's shift calendar forward and consumes queue hours only from time that falls inside an active shift.
+
+The walk is straightforward to follow by hand:
+
+1. Start at the operation's end time with the full queue balance.
+2. If the current date has no shifts (a holiday, a weekend, an idle day), jump to the next day's first shift start and try again.
+3. Inside a shift, take whichever is smaller: the queue balance, or the hours remaining in that shift. Subtract, advance the clock.
+4. Repeat until the balance is zero.
+
+Four hours of queue starting Monday at 14:30 on an 08:00 to 16:00 calendar:
+
+| Stage | Balance | Clock |
+|---|---|---|
+| Start | 4.0 h | Mon 14:30 |
+| Monday's shift has 1.5 h left | 2.5 h | Mon 16:00 |
+| Tuesday from 08:00 consumes the rest | 0 h | **Tue 10:30** |
+
+The overnight gap contributes nothing. That is what "shift-aware" means, and it is why a four-hour cure entered on a Friday afternoon can look like a three-day gap on the chart while being exactly right.
+
+If queue time is zero, this stage returns the operation end unchanged. It does not skip forward past a holiday, and it does not need to: the capacity allocator will find the first working slot later in the pipeline.
+
+## Stage 2: Lot Streaming Replaces the Value
+
+This stage runs only when the routing step carries a transfer batch size or a flow lag. When it runs, it computes a gate from the upstream operation's **start** rather than its end, then hands that back as the answer.
+
+The piece-count model computes:
+
+> gate = upstream start + setup + min(transfer batch, order quantity) x hours per piece, then plus transfer delay
+
+The flow-lag model computes:
+
+> gate = upstream start + flow lag hours, then plus transfer delay
+
+Neither result is compared against the queue-adjusted value from stage 1. It is simply replaced. Take a welding step that starts Monday 08:00 and ends Monday 10:00, with two hours of queue for cooling and a six-hour flow lag:
+
+- Stage 1 walks two queue hours from Mon 10:00 and produces **Mon 12:00**.
+- Stage 2 computes Mon 08:00 plus six hours and produces **Mon 14:00**, which becomes the answer.
+
+The cooling queue is gone. Not overruled by a later value, gone: had the flow lag been two hours instead of six, the gate would be Mon 10:00 and the successor would be released *before* the queue buffer had elapsed. This is the interaction the configuration audit flags whenever a step carries both a flow lag and a queue time, and the fix is always to move the wait into transfer delay or onto the downstream step. The model detail lives in [transfer batch versus flow overlap](/blog/piece-count-vs-time-lag-overlap-in-edgebic).
+
+Streaming also reads actuals rather than plan when a job is already running. If the upstream step is complete, the gate is its actual end plus handling. If it is running and logged piece counts have crossed the batch threshold, the gate is the end of shift on the crossing day, a deliberately conservative choice given that pieces trickle in through the day.
+
+## Stage 3: Transit Days on Top
+
+Transit is the last thing applied, and it behaves in one of two modes chosen per routing step.
+
+**Calendar days** add flat days. A handoff at Thursday 12:00 with three calendar transit days becomes Sunday 12:00. The result may land outside working hours, which is correct for a vendor whose calendar is not yours.
+
+**Working days** count only days that have at least one active shift on the sending work center, then resolve to the **end of the last shift** on the final counted day. From the same Thursday noon: Friday counts as one, the weekend is skipped, Monday is two, Tuesday is three, and the handoff resolves to Tuesday 16:00.
+
+That end-of-shift snap is the detail worth internalizing. Working-day transit never releases a successor mid-morning: it releases it after the last shift of the final transit day, so in practice the next operation starts the following morning. Which is why a single working transit day is worth roughly a full day of lead time, and why it is the most expensive checkbox on the routing step.
+
+Material steps skip this stage entirely, because they already absorb their own transit when their dates are built. Setting transit days on both a material step and the operation that follows it counts the same delay twice.
+
+## Publication and the Join Rule
+
+The composed value is published as the handoff for that step, and the next operation reads it when deciding its own earliest start.
+
+When several branches feed one operation, each publishes its own handoff and the engine keeps the **latest** of them. That is the correct behavior for a join: an assembly cannot start until every feeding branch has delivered. It also means shortening a non-binding branch changes nothing at all, which frustrates a lot of improvement work aimed at the wrong sub-assembly. Find the branch whose handoff matches the assembly's start before you optimize anything. [Sub-assemblies in the designer](/blog/sub-assemblies-in-the-edgebic-designer) shows how those branches are drawn.
+
+## One Step, All Three Stages
+
+A 500-piece machining order feeding deburring. Machining starts Monday 08:00 on a Monday-to-Friday, 08:00 to 16:00 calendar.
+
+| Setting | Value |
+|---|---|
+| Hours per piece | 0.05 |
+| Setup | 1 h |
+| Full machining run | 1 + 500 x 0.05 = 26 h |
+| Queue time | 1 h |
+| Transfer batch size | 50 pieces |
+| Transfer delay | 0.5 h |
+| Transit days | 1 |
+
+**Stage 1.** Machining's own end is late Tuesday. One hour of queue is walked from there, producing a queue-adjusted end.
+
+**Stage 2.** Streaming fires and discards that value. Fifty pieces exist 1 + 50 x 0.05 = 3.5 hours after the machine starts, so the gate is Monday 11:30. Transfer delay adds half an hour: **Monday 12:00**. The queue hour never reaches the schedule.
+
+**Stage 3, calendar mode.** One calendar day from Monday 12:00 is **Tuesday 12:00**. Deburring's first feasible slot is Tuesday at noon. The job still gains most of the overlap.
+
+**Stage 3, working mode.** One working day from Monday counts Tuesday, resolving to **Tuesday 16:00**. Deburring cannot start until Wednesday morning. The 22-hour overlap the transfer batch just bought has been spent entirely on the transit setting.
+
+Same routing, same batch size, same delay. One checkbox moves the downstream start by 20 hours. That is the practical reason to know the sequence: the fields do not contribute equally, and the last stage is the loudest.
+
+## Reading a Gap on the Chart
+
+When a gap looks wrong, work the stages in order and stop at the first one that explains it:
+
+1. **Does the step have a queue?** Convert it to calendar time by walking the shifts. Four hours from Friday afternoon is genuinely three days of chart.
+2. **Does it have streaming?** If so, the queue is not in the plan at all, and the gate came from the upstream start rather than its end.
+3. **Does it have transit days, and in which mode?** Working mode snaps to end of shift. This is the single most common source of an unexplained extra day.
+4. **If none of the above accounts for it, it is capacity.** The composed handoff is an earliest start, not a booking, and a loaded work center supplies the rest of the gap. [Why a schedule has idle gaps](/blog/schedule-has-idle-gaps-edgebic) covers that case, and [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) covers why the allocator behaves that way at all.
+
+## What to Read Next
+
+[Queue and transit mistakes](/blog/queue-and-transit-mistakes-edgebic) catalogs the configurations that produce plans the floor cannot hit. [Lot streaming explained](/blog/edgebic-lot-streaming-explained) covers stage 2 in depth. For where step timing sits among the engine's other decisions, see the [complete guide to EDGEBIC](/blog/edgebic-complete-guide).
+
+Bring one routing with a queue, an overlap, and a vendor send on it to a demo of [EDGEBIC](/edgebic) and we will walk the three stages against your own dates.

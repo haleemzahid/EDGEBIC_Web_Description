@@ -1,0 +1,134 @@
+---
+title: "The Daily Fourth Shift + EDGEBIC Scheduling Workflow"
+description: "The daily scheduling workflow Fourth Shift sites run: a weekly load, a twenty-minute morning loop, saved masks, and dispatch lists the floor trusts."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - daily scheduling workflow Fourth Shift
+  - Fourth Shift planning routine
+  - legacy ERP scheduling cycle
+  - EDGEBIC daily workflow
+  - shop floor dispatch list
+  - Fourth Shift export routine
+targetPhrase: "daily scheduling workflow Fourth Shift"
+wordCount: 1548
+readingTime: 8
+faqQuestions:
+  - question: "Does a Fourth Shift shop need to schedule daily, or is weekly enough?"
+    answer: "Load weekly, tune daily. A Monday load brings in the week's orders and produces the plan the shop works from. A short daily run absorbs what actually happened: yesterday's hours, a machine down, a rush order accepted. Weekly alone drifts by Wednesday because the floor never matches the plan exactly, and daily-only loading adds export work without adding information."
+  - question: "Can the daily routine run without anyone touching Fourth Shift's database?"
+    answer: "Yes. The interface is a file, so the routine only needs an export the ERP already produces. Nothing is installed inside Fourth Shift, no queries run against it, and no connector has to be version-matched. For an install that has been stable for a decade, that property is worth more than automation: the daily loop cannot break the system of record."
+  - question: "What if yesterday's actuals were never recorded?"
+    answer: "The schedule still runs, and it plans from where it thinks the work stands. That is why the actuals step comes before the scheduler run rather than after it. Operations with no recorded work are treated as not started and re-planned; operations with an actual start and end are historical fact and are never moved. Missing actuals do not break the run, they just make it optimistic."
+  - question: "How long does the daily Fourth Shift routine take?"
+    answer: "Around twenty minutes, and most of it is a planner reading the result rather than waiting on software. The export is a saved extract, each import is two clicks against a saved mask, and the scheduler run is one button plus a confirmation. The review step is the part worth protecting: it is where a slipping promise gets caught while there is still time to act."
+qaQuestions:
+  - question: "Our shop still runs paper travelers, and hours reach the office a day late. Can we schedule daily on data that is always one day behind?"
+    answer: "Yes, and daily is still better than weekly with a one-day lag. The run plans from the last recorded position, so a one-day delay makes the plan one day optimistic rather than wrong: completed operations stay where they happened, and everything unstarted re-plans. Two improvements are worth staging. First, put a kiosk at the constraint work center only, so the machine that governs the whole plant reports in real time while everything else keeps arriving on paper. Second, import the office's daily entry file as actuals, which takes a mask and no new habits. Most shops feel the difference at the bottleneck within a week."
+  - question: "We accept about ten rush orders a month and our current answer is a whiteboard note. What does the routine do with them?"
+    answer: "Add or import the single job, then run the scheduler with only that job selected. The confirmation dialog tells you how many jobs will be created versus rescheduled before anything runs, so you see the scope first. Every other job keeps its plan and its reserved capacity. If the real question is whether the promise date you are about to give is achievable, answer it before accepting: a quote simulation produces a what-if promise date without touching the live plan, so the commitment and the schedule stop being two different opinions."
+---
+
+**A Fourth Shift shop's rhythm with EDGEBIC is a weekly load and a daily twenty-minute loop: import the week's orders on Monday, then every morning bring in yesterday's actuals, run the scheduler once, and publish the dispatch lists.** The ERP is never touched. The interface is a file it already produces, which is what lets a decade-old install carry a modern finite capacity schedule without any risk to the system of record.
+
+EDGEBIC by User Solutions is the current generation of the scheduling line whose Fourth Shift integration is the most documented in the family: the ERP vendor recommended the User Solutions scheduler to its own customer at Plastilite Corporation, and the integration ran Monday to Friday. The setup is covered in [the complete Fourth Shift integration guide](/blog/edgebic-fourth-shift-integration-guide); the fields are listed in the [Fourth Shift mapping reference](/blog/fourth-shift-to-edgebic-data-mapping-reference). This post is what happens after that, every week, forever.
+
+## Two cadences, not one
+
+Shops running a long-established ERP usually plan on a weekly beat, and the routine should respect that rather than fight it.
+
+| Cadence | What happens | Roughly how long |
+|---|---|---|
+| Weekly (Monday) | Import the week's open orders, run a full schedule, publish the week | 45 minutes |
+| Daily (each morning) | Import yesterday's actuals, run the scheduler, publish the day | 20 minutes |
+| On change | Re-import routings after an engineering change; refresh work centers when the plant changes | Minutes |
+
+Weekly alone drifts by Wednesday, because no floor executes a plan exactly. Daily-only loading adds export work without adding information, since the order file rarely changes much between Tuesday and Wednesday. The pair works.
+
+## Monday: the load
+
+Export open orders from Fourth Shift, run the saved orders mask, read the counts. A typical Monday reads something like `Created 46 · Updated 0 · Reused 180 · Failed 0`: 46 genuinely new orders, 180 already known and deliberately untouched.
+
+Reused is the healthy outcome, not a failure to act. The default behavior for a record that already exists is to leave it exactly as it is, and that is what makes re-importing the same export safe every week for years. A non-zero Failed count is a question, not a crisis: the per-run log records every row with the exact reason, and the reason is nearly always a blank required cell or a date in a format the row could not parse.
+
+Then the rule that governs everything: **imports change data, never the plan.** Newly imported orders sit as unscheduled demand until you run the scheduler. Nothing lands on the Gantt on its own.
+
+Run the scheduler, confirm the counts in the dialog that states how many jobs are being scheduled for the first time and how many are being rescheduled, and let it finish. Publish the week.
+
+## Every morning: the loop
+
+Four moves, in this order, and the order matters.
+
+**1. Actuals in.** Yesterday's hours and pieces, one row per job, work center, and day. If your shop captures at a kiosk, this step is already done by the time you arrive. If hours come through the office, import the daily entry file. The import always overwrites the days the file carries, so importing the same file twice never double-counts and a corrected file simply fixes the earlier numbers. Days the file does not mention stay as they are.
+
+**2. Capacity reality.** A machine down, a crew short, an unplanned closure. This is the input that never comes from an export and always changes the answer.
+
+**3. Run the scheduler.** Select the jobs or accept the offer to include everything, read the confirmation dialog, let the run finish. Cancelling mid-run is always safe: nothing partial is kept and the previous plan stands.
+
+**4. Publish.** Job View exports the schedule as a workbook with colored cells and a legend sheet; work center reports export with the column layout you saved.
+
+Two guarantees make a daily cadence tolerable rather than nerve-wracking:
+
+- **Completed work never moves.** An operation with an actual start and end is historical fact. No run, no setting, no mode shifts it.
+- **Scheduled jobs run on the routing they were planned with.** Each carries a frozen snapshot, so re-importing a corrected routing changes future jobs and leaves work in progress alone.
+
+## Reading the result before you hand it out
+
+Six columns answer the morning's real questions: status, start date, first operation start, job end, due date, and days late. Days late is a projection rather than a complaint: it means the current plan's end lands past the promise. A positive number today is a decision you get to make while options still exist.
+
+The review worth ten minutes:
+
+- **Every positive days-late number is a decision.** Re-sequence, add hours, or move the promise. Doing it on Tuesday costs less than doing it on Friday.
+- **Check the constraint.** If the bottleneck is over capacity on any day, everything downstream is fiction. [Bottleneck identification](/blog/production-bottleneck-identification) covers the diagnosis, and anchoring the schedule around the constraint is worked through in [the bottleneck anchor example](/blog/toc-bottleneck-anchor-scheduling-example-edgebic).
+- **Ask why anything moved.** Jobs move for reasons: an operation that ran long, a capacity change, or higher-priority work inserted ahead.
+
+## What legacy exports need, once
+
+Older extracts have habits, and the mask absorbs each one permanently rather than requiring a weekly cleanup.
+
+| Export habit | Mask setting, set once |
+|---|---|
+| No heading row | Turn off header-present; map by column position |
+| Values wrapped in quotation marks | Turn on the quoted-text option |
+| Tab or semicolon delimited | Select the matching delimiter |
+| Times in minutes | Conversion factor `0.016667` on that column |
+| Times in seconds | Conversion factor `0.000278` |
+| Extra columns nobody needs | Leave them unmapped; unmapped columns are ignored |
+
+That table is the difference between a routine and a chore. The point of a mask is that nobody reshapes a file by hand on a Monday morning.
+
+## Who does what
+
+| Role | Daily | Weekly | On change |
+|---|---|---|---|
+| Planner | Actuals in, schedule, review, publish | Load the week's orders, reconcile dates | Re-import routings after an engineering change |
+| Supervisor | Confirm the day's hours are recorded | Flag capacity reality | |
+| Office | Enter or export the day's hours | | |
+| IT | Nothing | Nothing | Keep the saved extract working |
+
+A routine that needs IT every morning does not survive its second month. Keeping IT out of the loop is deliberate.
+
+## Where the modern engine shows up
+
+None of this adds daily steps, but all of it runs underneath the loop: work center groups that re-shop a machine pool on every reschedule, alternates for machines that can only run certain tooling, the sequence-dependent setup matrix, lot streaming with transfer batches, backward scheduling per job for just-in-time work (see [forward versus backward scheduling](/blog/forward-vs-backward-scheduling)), and mathematical optimization with a proven optimality gap. The heritage schedule at Plastilite was built on alternates and finite capacity; the same shop today would get all of that on top.
+
+The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) shows how the same file-based rhythm serves any ERP. For the first week rather than the hundredth day, read [a Fourth Shift site's first week with EDGEBIC](/blog/a-fourth-shift-sites-first-week-with-edgebic); for the questions shops ask before starting, see the [Fourth Shift integration FAQ](/blog/edgebic-fourth-shift-integration-faq).
+
+<Accordion title="Does a Fourth Shift shop need to schedule daily, or is weekly enough?">
+Load weekly, tune daily. A Monday load brings in the week's orders and produces the plan the shop works from. A short daily run absorbs what actually happened: yesterday's hours, a machine down, a rush order accepted. Weekly alone drifts by Wednesday because the floor never matches the plan exactly, and daily-only loading adds export work without adding information.
+</Accordion>
+
+<Accordion title="Can the daily routine run without anyone touching Fourth Shift's database?">
+Yes. The interface is a file, so the routine only needs an export the ERP already produces. Nothing is installed inside Fourth Shift, no queries run against it, and no connector has to be version-matched. For an install that has been stable for a decade, that property is worth more than automation: the daily loop cannot break the system of record.
+</Accordion>
+
+<Accordion title="What if yesterday's actuals were never recorded?">
+The schedule still runs, and it plans from where it thinks the work stands. That is why the actuals step comes before the scheduler run rather than after it. Operations with no recorded work are treated as not started and re-planned; operations with an actual start and end are historical fact and are never moved. Missing actuals do not break the run, they just make it optimistic.
+</Accordion>
+
+<Accordion title="How long does the daily Fourth Shift routine take?">
+Around twenty minutes, and most of it is a planner reading the result rather than waiting on software. The export is a saved extract, each import is two clicks against a saved mask, and the scheduler run is one button plus a confirmation. The review step is the part worth protecting: it is where a slipping promise gets caught while there is still time to act.
+</Accordion>

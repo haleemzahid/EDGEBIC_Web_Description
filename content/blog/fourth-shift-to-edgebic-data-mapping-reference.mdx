@@ -1,0 +1,160 @@
+---
+title: "Fourth Shift to EDGEBIC: The Data Mapping Reference"
+description: "Fourth Shift data mapping into EDGEBIC field by field: items, work centers, routings, orders, actuals, plus positional mapping for legacy exports."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - Fourth Shift data mapping
+  - Fourth Shift export scheduling
+  - legacy ERP data mapping
+  - import mask positional mapping
+  - Fourth Shift routing export
+  - Fourth Shift work center data
+targetPhrase: "Fourth Shift data mapping"
+wordCount: 1947
+readingTime: 10
+faqQuestions:
+  - question: "Can EDGEBIC read a Fourth Shift export with no column headings?"
+    answer: "Yes. Turn off the header-present option on the import mask and map each field by column position instead of by heading. Legacy extracts often emit raw delimited data with no header row, and positional mapping is built for exactly that case. The positions are stored on the mask, so once mapped the weekly routine is identical to a headed file: pick the mask, run it, read the counts."
+  - question: "What is the minimum Fourth Shift data needed for a first schedule?"
+    answer: "Four files: items, work centers, routings, and open orders. Items need a product id. Work centers need a work center id. Routings need end product, step name, an operation flag, and hours per unit. Orders need product, quantity, and a date. Everything else is optional and can arrive in a later refresh file, because blank cells preserve existing values on an update."
+  - question: "Our Fourth Shift routings only carry operation names and rough hours. Is that enough?"
+    answer: "It is enough for a first finite capacity schedule you can criticize, which is the point. Import what the ERP holds today, run the scheduler, and compare the dates to what the shop believes. The gaps then appear as specific defects (a missing setup time on one work center, a wrong hours-per-unit on another) instead of a vague data cleanup mandate. Because a routing re-import wipes and recreates that product's steps, each corrected file simply replaces the last."
+  - question: "Does mapping a Fourth Shift export require any change on the ERP side?"
+    answer: "No. The interface is the file, so nothing is installed, queried, or modified inside Fourth Shift. Any report or extract that saves to Excel or a delimited text file is a valid source. That property matters most for long-lived installs: a file-based integration has no API version to track and no connector to re-certify when either system changes."
+qaQuestions:
+  - question: "We have run Fourth Shift for 15 years and our part numbering has drifted, so the same physical part appears under two ids in old routings. What does the import do with that?"
+    answer: "It creates two products, because the part id is the natural key and two distinct ids are two distinct records. The import will not merge them for you, and that is the safe behavior: silently collapsing ids would be a data decision the software is not qualified to make. The practical fix is a five-minute pass over the distinct end product ids in the routing file before the first import. Note that capitalization differences are not a problem: matching is case-insensitive, so WIDGET-A finds Widget-A. Only genuinely different strings split into two records."
+  - question: "Our molding work centers each hold different combinations of tools, so which machine can run a job depends on tooling, not just on the machine being free. Does that map from the export?"
+    answer: "The export carries the machines; the eligibility rules are configured in EDGEBIC. Import each press as a work center, then express the tooling reality with alternates on the routing step or with a work center group holding only the presses that can run that family, each with its own efficiency factor. That is precisely the modeling problem the Fourth Shift lineage case was built around at Plastilite: many machines with different tool configurations holding different combinations of molds. The routing import brings in the base step, and the group or alternate list narrows the pool to the machines that are physically capable."
+---
+
+**Mapping Fourth Shift data into EDGEBIC means exporting items, work centers, routings, and open orders from the ERP, then mapping each column once into a saved import mask that runs in two clicks every week afterwards.** Nothing is installed inside Fourth Shift and nothing queries its database unless you want it to. The file is the interface, which is exactly the property a long-lived ERP install should want.
+
+EDGEBIC by User Solutions is the current generation of the scheduling line whose Fourth Shift integration is the best-documented in the family: at Plastilite Corporation, the Fourth Shift vendor recommended the User Solutions scheduler to its own customer, and the integration ran Monday to Friday. That story is told in [the complete Fourth Shift integration guide](/blog/edgebic-fourth-shift-integration-guide). This post is the field-level reference behind it.
+
+## The load order, and why it is the order
+
+| # | Fourth Shift export | EDGEBIC entity type | Needs to exist first |
+|---|---|---|---|
+| 1 | Item master | Product | Nothing |
+| 2 | Work centers | Workcenter | Nothing |
+| 3 | Routings | BOR (bill of routing) | Items and work centers |
+| 4 | Open orders | SalesOrder | Items |
+| 5 | Labor or actuals (optional) | Actuals | Scheduled jobs |
+
+Auto-create is on by default, so a routing file that names an unknown work center creates one rather than failing. Treat that as a net, not a plan: an auto-created work center has a name and nothing else, which means one machine, no calendar, and no efficiency. Load the real work center file first and the routing import finds everything it needs.
+
+Two entity types are not exported from anywhere. **Shift** carries your working calendar (one row per shift with a start and end pair per weekday, and a blank pair meaning that day is off). **PlantHoliday** carries plant-wide closures by name and date. Both are written in a plain spreadsheet, and both are worth doing carefully, because every date the scheduler produces is planned against them.
+
+## Items to Product
+
+| EDGEBIC target field | Mandatory | What goes in it |
+|---|---|---|
+| `Product_Id` | Yes | Item number. The natural key, matched case-insensitively |
+| `Product_Name`, `Description` | | Names and descriptions |
+| `UOM` | | Unit of measure |
+| `Unit_Price`, `Lead_Time`, `Category` | | Optional planning and quoting attributes |
+| `Size`, `Weight`, `Country_Of_Origin` | | Optional descriptive columns |
+
+Only the item number is required. A narrow first file (id plus description) is a perfectly good starting point, and a later refresh file adds costs or lead times without disturbing anything already set.
+
+## Work centers
+
+This file decides whether the schedule is believable, because it carries capacity.
+
+| EDGEBIC target field | Mandatory | What it drives |
+|---|---|---|
+| `Workcenter Id` | Yes | Natural key. Routing steps match on it |
+| `Workcenter Name` | | Gantt and report label |
+| `Number_Of_Instances` | | Identical machines in this center. Blank defaults to 1 |
+| `Capacity`, `Efficiency` | | Rated capacity and the efficiency applied to it |
+| `Setup_Time_Hours` | | Default setup, overridden per routing step |
+| `Hourly_Rate` | | Cost rollups |
+| `Is_Bottleneck` | | Marks the constraint so the engine anchors around it |
+| `One_Per_Day_Flag` | | One job per machine per day, for long-changeover centers |
+| `Use_Global_Shifts`, `Shift_Names` | | Which calendar this center runs |
+| `Pieces_Per_Hour` | | Output-rate capacity where that is how the center is measured |
+| `Min_Batch_Size`, `Max_Batch_Size` | | Batching limits |
+| `Is_Active`, `Color`, `Type` | | Housekeeping and Gantt color |
+
+Older ERPs usually model a work center as a single capacity figure rather than a count of machines, so `Number_Of_Instances` is the column most likely to be missing from the export and most likely to matter. Fill it by hand for every center that is really a cell of several identical machines. A four-press cell imported as one instance produces a plan roughly four times too long, and nothing errors to tell you: the dates are simply wrong. That failure mode is the practical argument in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+## Routings
+
+| EDGEBIC target field | Mandatory | What to put in it |
+|---|---|---|
+| `End_Prod` | Yes | Item this routing builds |
+| `Sub_Prod` | Yes | Work center id (operation row) or component item (material row) |
+| `Op_Flag` | Yes | True for an operation, false for a material or component |
+| `No_Req` | Yes | Hours required per unit |
+| `Seq_No` | | Operation sequence, in gaps of 10 |
+| `Next_Seq` | | Leave blank; the chain is wired automatically |
+| `Setup_Time` | | Setup hours at this step |
+| `Queue_Time` | | Buffer hours before the step may start |
+| `Flow_Step`, `Transit_Days` | | Overlap between steps, and transport time |
+| `Parallel_Op` | | Parent step's work center name for parallel or alternate steps |
+| `Alt_Type` | | `Parallel-Independent`, `Parallel-Dependent`, or `Alternative` |
+| `Res_Mult` | | Applicable machine instances at this step |
+| `Fam_Dept` | | Department for auto-created work centers |
+
+The `Alt_Type` column is the one that carries a legacy shop's real flexibility. `Alternative` means the step can run on this machine instead of the parent's, which is how a press family or a set of interchangeable lathes gets expressed. `Parallel-Dependent` means the partner machine runs in lockstep with the parent, which is how synchronized multi-machine operations are modeled.
+
+### How the sequence gets wired
+
+Routing rows cannot be written one at a time, because step 10 has to point at step 20 and step 20 does not exist yet. The import therefore runs in **two passes**. Pass one validates every row, resolves or creates the items and work centers it names, and buffers the row. Pass two groups the buffer by end product, sorts by sequence number, writes the steps, and wires the chain: 10 to 20, 20 to 30, and the last step to the finished item so the routing renders as one connected flow in the graphical designer.
+
+Check that visually after the first routing import. A routing whose final link is missing draws as a chain of operations floating free of the item it builds, and it is the single most common first-import cosmetic defect.
+
+## Open orders and actuals
+
+Orders need product, quantity, and a job date. An order reference column groups multi-line orders together, with jobs auto-numbered `{Ref}-{line}`. Due date, order date, customer, priority, and price are optional, and missing customers are created automatically.
+
+Actuals need job number, work center id, and the date, plus hours or pieces (either one can be derived from the other using the operation's rate). They import last because every row has to find an operation on a job that is already scheduled. The import always overwrites the days the file carries, so re-running a corrected extract fixes numbers instead of doubling them, and days the file does not mention stay as they are unless you explicitly ask for them to be cleared.
+
+## Legacy export handling
+
+This is where a Fourth Shift mapping differs most from a modern ERP export, and the mask has a switch for each case.
+
+| Export quirk | Mask setting |
+|---|---|
+| No header row at all | Turn off header-present, map each field by column position |
+| Text values wrapped in quotation marks | Turn on the quoted-text option |
+| Tab, semicolon, or space delimited instead of comma | Pick the matching delimiter |
+| Times in minutes | Conversion factor `0.016667` on that column |
+| Times in seconds | Conversion factor `0.000278` |
+| Worksheet renamed between runs | Re-pick the file and reselect the sheet; otherwise the first sheet is read |
+| Extra columns you do not need | Leave them unmapped: unmapped columns are ignored |
+
+Positional mapping deserves the emphasis. Scheduled extracts from older systems frequently produce raw delimited output with no headings, and mapping by column number handles it permanently. The mask remembers the positions, so the weekly routine is unchanged from a headed file.
+
+## Re-import behavior, in three rules
+
+- **Master data is safe by default.** Existing items and work centers come back Reused and untouched unless you deliberately enable updates for a refresh run.
+- **Blank preserves, zero writes.** On an update, a blank cell keeps the existing value. A column full of zeros writes zeros, so leave a column out of the file rather than filling it with numbers you do not mean.
+- **Routing re-import wipes and recreates that item's steps** once per run, on first reference. All of one item's steps must therefore travel in the same file. This is what keeps re-imports idempotent, and it is safe for running jobs: every scheduled job carries a frozen snapshot of the routing it was planned with, and completed work is never moved by any reschedule.
+
+## What no export can carry
+
+The settings that most change the schedule have no ERP column: the sequence-dependent setup matrix, work center groups and their selection strategies, operator skills, bottleneck anchoring, and lot streaming transfer batches. Those are configured once in EDGEBIC and then apply to every job that arrives afterwards. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) shows why one mask design serves every ERP in the same way.
+
+For what the week looks like once the masks exist, read [the daily Fourth Shift and EDGEBIC scheduling workflow](/blog/the-daily-fourth-shift-edgebic-scheduling-workflow). For the questions shops ask first, see the [Fourth Shift integration FAQ](/blog/edgebic-fourth-shift-integration-faq).
+
+<Accordion title="Can EDGEBIC read a Fourth Shift export with no column headings?">
+Yes. Turn off the header-present option on the import mask and map each field by column position instead of by heading. Legacy extracts often emit raw delimited data with no header row, and positional mapping is built for exactly that case. The positions are stored on the mask, so once mapped the weekly routine is identical to a headed file: pick the mask, run it, read the counts.
+</Accordion>
+
+<Accordion title="What is the minimum Fourth Shift data needed for a first schedule?">
+Four files: items, work centers, routings, and open orders. Items need a product id. Work centers need a work center id. Routings need end product, step name, an operation flag, and hours per unit. Orders need product, quantity, and a date. Everything else is optional and can arrive in a later refresh file, because blank cells preserve existing values on an update.
+</Accordion>
+
+<Accordion title="Our Fourth Shift routings only carry operation names and rough hours. Is that enough?">
+It is enough for a first finite capacity schedule you can criticize, which is the point. Import what the ERP holds today, run the scheduler, and compare the dates to what the shop believes. The gaps then appear as specific defects (a missing setup time on one work center, a wrong hours-per-unit on another) instead of a vague data cleanup mandate. Because a routing re-import wipes and recreates that product's steps, each corrected file simply replaces the last.
+</Accordion>
+
+<Accordion title="Does mapping a Fourth Shift export require any change on the ERP side?">
+No. The interface is the file, so nothing is installed, queried, or modified inside Fourth Shift. Any report or extract that saves to Excel or a delimited text file is a valid source. That property matters most for long-lived installs: a file-based integration has no API version to track and no connector to re-certify when either system changes.
+</Accordion>

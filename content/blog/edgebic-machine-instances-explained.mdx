@@ -1,0 +1,181 @@
+---
+title: "Machine Instances in EDGEBIC: Modelling Multiple Machines as One Resource"
+description: "Multiple machine instances let one work center hold several identical machines. What instances change, when to use them, and when a pool is a better fit."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - multiple machine instances scheduling
+  - parallel machines work center
+  - instance allocation manufacturing
+  - load balancing machines scheduler
+  - one job per machine per day
+  - machine capacity multiplier
+targetPhrase: "multiple machine instances scheduling"
+wordCount: 1910
+readingTime: 10
+faqQuestions:
+  - question: "What is a machine instance in production scheduling?"
+    answer: "An instance is one physical machine inside a work center. A work center with three instances is three interchangeable machines sharing one queue and one name: its capacity per shift is three times the shift hours, and up to three jobs can run at once. The scheduler tracks which instance each slice of work ran on, so the Gantt and the allocation records name the actual machine."
+  - question: "When should machines be instances and when should they be separate work centers?"
+    answer: "Instances are for machines that are truly identical: same speed, same shifts, same tooling. Anything that differs in speed or runs a different calendar belongs in its own work center, pooled with the others in a work center group so a routing step can still target any of them. Mixing unequal machines into one instance pool produces an averaged speed that no individual machine can hold."
+  - question: "Does adding an instance make a job finish sooner?"
+    answer: "Often, yes. With load balancing on, a single operation is split across all available instances and they finish together, so a 20-hour job on four machines takes about five hours of elapsed time instead of twenty. Adding an instance also lets separate jobs run simultaneously. The exception is a work center with One Per Day on, where each instance takes one job per day regardless of how few hours it uses."
+  - question: "Can a work center have a fractional number of instances?"
+    answer: "Yes. A blending suite with two full-size vessels and one half-capacity unit can be entered as 2.5 instances, and the engine handles the partial machine explicitly rather than rounding it to three. Whole numbers remain the norm for ordinary machine banks, and a fractional entry should describe a genuine half-capacity resource rather than a guess about availability."
+  - question: "What decides which machine a job lands on?"
+    answer: "By default the engine load-balances: hours are split evenly across the instances so they finish together. With One Per Day on, it picks the least-loaded instance that has no job yet that day and keeps the job on that same machine for the rest of the run, which preserves setup continuity. Either way the choice is recorded, so the Gantt shows which physical machine ran the work."
+qaQuestions:
+  - question: "We run two identical presses. Right now they are two separate work centers and every routing has to name one. Is there a reason to combine them?"
+    answer: "If they are genuinely identical, combine them into one work center with two instances and you gain three things. The routing stops making a machine choice it has no information to make, so the scheduler picks at run time based on actual load. A single long operation can be split across both presses and finish in half the elapsed time. And capacity reporting reads as one resource, which is how the shop actually thinks about it. The one thing you give up is the ability to route deliberately to a specific press, and if you need that regularly, that is a signal the two presses are not as interchangeable as they look."
+  - question: "Our heat-treat bank has four chambers. If I set four instances, will the scheduler try to fit five loads on a busy day?"
+    answer: "With the default pooled behavior, yes: four chambers on an 8-hour shift offer 32 hours, and five loads of 6 hours each fit inside 32 on paper. That is wrong for a furnace, where a load occupies the chamber for the day regardless of cycle time. Turning on One Per Day changes the arithmetic to one job per chamber per calendar day, so the fifth load slides to tomorrow and any leftover clock time goes unused deliberately. Four chambers then means exactly four loads a day, which is what the floor can actually do."
+---
+
+**A machine instance in EDGEBIC is one physical machine inside a work center, and the instance count is the most direct multiplier in the whole capacity calculation: three instances on an eight-hour shift offer 24 hours, not eight.** That single number decides how much work exists, how fast a job can finish, and how many jobs can run at once.
+
+[EDGEBIC by User Solutions](/edgebic) treats instances as interchangeable clones sharing one name and one queue. This article covers what that buys you, when it is the wrong model, and what changes when you turn on the one flag that redefines how instances behave. The configuration steps are in [how to configure instances and utilization](/blog/how-to-configure-instances-and-utilization-in-edgebic), and the selection logic is in [how EDGEBIC picks an instance](/blog/how-edgebic-picks-an-instance-load-balancing-vs-one-per-day).
+
+## What One Number Does
+
+**No.Instances** answers: how many identical machines stand behind this work center name?
+
+Take `Press-1`, a bank of two identical stamping presses entered as one work center, on a day shift of 08:00 to 16:00:
+
+```
+capacity per day = 8 h x 2 instances = 16 h
+```
+
+Three consequences follow directly:
+
+- **Two 8-hour jobs run simultaneously**, one per press, and both finish the same day.
+- **One 16-hour job can be split across both presses** and finish in one day instead of two.
+- **The allocation records and the Gantt name the machine.** Instance 1 and Instance 2 are visible, so a supervisor can see which press ran what.
+
+That is the whole feature at the capacity level. The nuance is in when to use it.
+
+## Instances Versus Groups Versus Departments
+
+Three pooling mechanisms exist and they solve different problems. Choosing wrong is the most consequential master data mistake in a scheduling implementation.
+
+| You have | Model it as |
+|---|---|
+| N machines that are truly identical: same speed, same shifts, same tooling | One work center with **No.Instances** = N |
+| N machines that are interchangeable but different: own speeds, own calendars | Separate work centers pooled in a [work center group](/blog/what-is-a-work-center-group-machine-pool) |
+| An organizational or reporting rollup the scheduler should ignore | A department |
+
+The dividing line is the word **identical**. Instances are assumed to be clones, so the engine books every one of them at the same rate. Put two 2019 mills and two 2004 mills into one four-instance pool and the plan runs all four at an average speed that neither pair can hold. The old machines are chronically late, the new ones are underused, and nothing on any report says why.
+
+The mechanisms also compose. A group member can itself be a multi-instance work center, so "three identical new mills plus two identical old mills, and either family will do" is two work centers with instance counts of 3 and 2, pooled in one group.
+
+## What Instances Do to Capacity
+
+The instance count multiplies the per-machine shift hours, after subtractions and before utilization:
+
+```
+available hours = (shift hours − downtime − partial-holiday overlap)
+                  × number of instances
+                  × utilization %
+```
+
+The ordering matters more than it looks. Downtime and partial holidays are subtracted at the per-machine level, so an hour of Wednesday maintenance on a three-instance work center removes three hours of capacity. A 45-minute plant meeting on a two-instance work center costs 1.5 hours. Interruptions on multi-machine resources are always more expensive than the clock suggests, and that is correct: the meeting stopped every machine.
+
+The full resolution, including how planner overrides replace the formula, is in [how EDGEBIC resolves capacity day by day](/blog/how-edgebic-resolves-capacity-day-by-day).
+
+## Load Balancing: The Default Behavior
+
+With instances pooled (the default), the engine splits an operation's hours evenly across the machines so they finish together.
+
+A CNC cell with four instances receiving a 20-hour allocation:
+
+| Instance | Hours | Window |
+|---|---|---|
+| 1 | 5 | 08:00 to 13:00 |
+| 2 | 5 | 08:00 to 13:00 |
+| 3 | 5 | 08:00 to 13:00 |
+| 4 | 5 | 08:00 to 13:00 |
+
+Twenty hours of work, done by 13:00. The same operation on one machine would run into the following day. That elapsed-time compression is the main argument for consolidating identical machines into one work center rather than routing to each individually.
+
+Pooling also means separate jobs share the capacity freely. Three jobs of 6, 7, and 5 hours on a three-instance work center with 24 hours available all fit on the same day, distributed across whichever machines have headroom.
+
+## One Per Day: When Pooling Is Physically Wrong
+
+Some resources cannot share. A furnace load or a paint color locks the chamber for the day regardless of cycle time, and pooled arithmetic will happily promise something the floor cannot do.
+
+**One Per Day** restricts each instance to a single job per calendar day. The job owns that machine even if it uses two hours of an eight-hour shift.
+
+A three-bay booth, day shift, flag on:
+
+| Monday queue | Hours | Result |
+|---|---|---|
+| JOB-2026-0104 | 6 | Instance 1, locked for Monday |
+| JOB-2026-0105 | 7 | Instance 2, locked for Monday |
+| JOB-2026-0106 | 5 | Instance 3, locked for Monday |
+| JOB-2026-0107 | 3 | No free instance, slides to Tuesday |
+
+Six plus seven plus five is 18 hours out of 24, so six hours of clock go unused and the fourth job still waits. That waste is the point. With the flag off, all four jobs fit on Monday and the plan is fiction.
+
+Two things to know before setting it:
+
+- It has **no effect on a single-instance work center**. One machine takes one job at a time either way.
+- It is set through the work center import file (the `One_Per_Day_Flag` column) rather than the edit dialog, and the grid shows the current value.
+
+Reserve it for physics: furnace loads, paint colors, sterile campaigns. On a general-purpose machining center it is pure loss.
+
+## Fractional Instances
+
+Instance counts are usually whole numbers, and should be. One real case justifies a fraction: a resource where one unit genuinely handles a fraction of the throughput of the others.
+
+A blending suite with two full-capacity mixers and one half-size unit is entered as **2.5 instances**. The engine handles the partial machine explicitly rather than rounding to three, which would over-count the small unit's contribution. A 12-hour job then distributes as four hours on each full mixer and four hours' equivalent on the half-size unit, and the arithmetic stays additive and consistent.
+
+Two caveats: use it to describe a genuinely half-capacity machine, not as a guess about availability (that belongs in the calendar or an override), and very small fractions are treated as noise rather than a real partial machine.
+
+## Utilization: The Other Multiplier
+
+Utilization is an engine-level throttle on how much of the clock the scheduler may book. Work centers created or imported in current versions run at 100%, and the value is not editable on the work center screen.
+
+To plan below the full clock, shape the calendar with honest shift hours or use per-day capacity overrides. Both are honored identically by the scheduler and the dashboards, and both leave a record explaining the number. One clarification worth carrying: the efficiency percentage shown on a work center is not the capacity throttle, and reducing it does not reduce the hours the scheduler books.
+
+Planning a resource at slightly under the theoretical clock is standard finite-capacity practice for the same reason buffers exist in the [Theory of Constraints and APS literature](https://www.ascm.org): a plan loaded to 100% has no recovery room. Express that headroom explicitly rather than hoping the plan absorbs it. The measurement side is in [the capacity utilization KPI](/blog/capacity-utilization-kpi).
+
+## Naming and Taking Out One Machine
+
+Instances are not anonymous slots. Each one carries a number within the work center, a description, and a status, so an allocation reads as `Mill #2, Haas VF-3` rather than a bare index. That matters on a shop floor board where a supervisor has three seconds to decide whether a bar is relevant to them.
+
+It also gives you a clean way to remove a single machine from the plan. Marking one instance unavailable takes that machine out of selection while the rest of the work center keeps running: no instance count to change, no capacity removed from the other machines, and nothing to remember to restore across the whole work center. Use it for a machine under repair while its neighbors carry the load.
+
+For a longer or scheduled outage, a capacity override across the affected dates is usually the better instrument, because it carries a reason and expires by itself. Reducing the instance count works too, but it strips capacity from every date with no record of why, and it depends on somebody putting the number back when the machine returns.
+
+## Instances Across Shifts and Days
+
+A single operation rarely fits inside one shift, and instances interact with that in a way worth understanding.
+
+When the hours exceed what the current slot can offer, the work spills into the next available slot: the same day's second shift, or the following day. The instance choice made in the first slot carries forward, because a job stays on the machine it was assigned for the rest of the run. That is deliberate, and the reason is setup continuity: moving a part between machines mid-job costs real changeover time the plan would not otherwise account for.
+
+The result is visible in how hours are reported back. An operation that runs eight hours Monday and four Tuesday displays as `8,4`, and one split across two shifts on the same day displays as `4+4`. Reading those strings tells you immediately whether an operation is spread over days, over shifts, or both, without opening the allocation detail.
+
+One small behavior prevents the arithmetic from producing nonsense: allocation slices below a minimum threshold are skipped rather than placed. Without it, a slot with a few minutes of residual capacity would collect meaningless bookings and the Gantt would fill with fragments nobody can execute.
+
+## Where Instances Show Up Downstream
+
+The instance choice is not just an internal detail. It surfaces in three places a planner uses daily:
+
+**The Gantt.** Each allocation names the instance it ran on, so a supervisor reading the board knows which physical machine is committed.
+
+**Capacity reporting.** Utilization percentages are computed against instance-multiplied capacity, which is why an under-counted instance count makes a normal week read as a severe overload. That symptom and its siblings are covered in [work center overload causes and fixes](/blog/work-center-overloaded-in-edgebic-causes-fixes).
+
+**Diagnostics.** Two instances hosting overlapping work, or two jobs landing on the same instance on a One Per Day work center, are both flagged as anomalies rather than left to be discovered on the floor.
+
+## The Practical Rule
+
+Before setting an instance count, ask one question: **if I gave this job to any machine behind this name, would it take the same number of hours?**
+
+If yes, they are instances. If no, they are separate work centers that belong in a group. Getting that right at setup time is worth more than any tuning afterwards, and it is why User Solutions implementations spend the first hour on master data. Across 35+ years of finite capacity work at organizations including the US Navy, GE, BAE Systems, and Cummins, the plants whose schedules hold are the plants whose resource definitions are honest. GE Railcar went from 30% to 90% on-time delivery on the same equipment.
+
+## Next
+
+Configure the numbers with [how to configure instances and utilization](/blog/how-to-configure-instances-and-utilization-in-edgebic). Understand the selection logic in [how EDGEBIC picks an instance](/blog/how-edgebic-picks-an-instance-load-balancing-vs-one-per-day). Then read [the instance and utilization mistakes](/blog/instance-and-utilization-mistakes-edgebic) before you commit dates from a new configuration.

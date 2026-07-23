@@ -1,0 +1,123 @@
+---
+title: "How to Set Queue, Flow, and Transit Times on an EDGEBIC Routing"
+description: "Set queue time on a routing step by step: hours, transit days in calendar or working mode, transfer delay, and how to verify the result on the schedule."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - set queue time routing
+  - configure transit days scheduling
+  - calendar days vs working days transit
+  - routing step timing setup
+  - outside process routing step
+  - queue time configuration
+  - production routing configuration
+targetPhrase: "set queue time routing"
+wordCount: 1650
+readingTime: 8
+faqQuestions:
+  - question: "Where do you set queue time on a routing?"
+    answer: "Queue time is a field on the individual routing step, entered in hours, and it applies after that step's own operation finishes. Put it on the step that produces the wait, not on the step that endures it. A two-hour cool-down after milling belongs on the milling step, because that is where the physical wait happens."
+  - question: "Should transit days be calendar days or working days?"
+    answer: "Choose calendar days when the parts are at an outside vendor, because their turnaround does not pause for your weekend. Choose working days when the transit should skip your own non-working days, such as an internal courier that only runs on shift days. Calendar days is the default, and the setting lives on the same routing step as the transit day count."
+  - question: "How do you enter a wait in minutes rather than hours?"
+    answer: "Queue time and transfer delay are decimal hours, so 90 minutes is 1.5 and 20 minutes is 0.33. Transit days are whole days, so anything shorter than a day belongs in queue time or transfer delay instead. Mixing the units is the most common data-entry error on these fields, and it produces a schedule that is wrong by a factor of 60."
+  - question: "Do material steps need transit days?"
+    answer: "No. A material step already absorbs its transit internally when its own dates are built, so adding transit days to both a material step and the operation that follows it counts the same delay twice. Set the transit on the operation that physically sends the work, not on both."
+  - question: "How do you verify that a queue or transit setting took effect?"
+    answer: "Compare the upstream operation's finish with the downstream operation's start on the Gantt and check the gap against your configured hours. A shift-aware queue will look longer in calendar terms than the number you typed whenever it crosses a night or a weekend. If the gap is larger than expected, check the downstream work center's load before assuming the setting is wrong."
+qaQuestions:
+  - question: "Our heat treat vendor quotes five days door to door. What exactly do we enter?"
+    answer: "Set transit days to 5 on the operation that ships the parts, with calendar days left on. The five days then run straight through the weekend the way the vendor's turnaround actually does, and the handoff lands five calendar days after the shipping operation's composed end. Do not add a queue time for the same wait: queue time would pause over your weekend, so a five-day vendor turnaround would stretch to seven or more on the plan. One field, one physical fact."
+  - question: "We need 90 minutes of cool-down and a 20-minute cart ride. Two fields or one?"
+    answer: "Use one field unless the two waits behave differently on the calendar. If nobody moves the parts until they are cool and the cart only runs on shift, put 1.83 hours of queue time on the upstream step and be done. If the cart is a conveyor that runs whenever material is ready, split them: 1.5 hours of queue time for the cool-down, which pauses overnight, and 0.33 hours of transfer delay for the conveyor, which does not. The test is always whether the clock should stop at end of shift."
+---
+
+**Queue time, transit days, and transfer delay are all fields on an individual routing step in EDGEBIC by User Solutions, and you set them on the step that produces the wait.** There is no global buffer setting, no per-product default to override, and nothing to restart. Save the routing, reschedule, and the next plan reflects the change. This guide walks the fields in the order you should fill them and shows how to confirm the result.
+
+For what each mechanism models and why there are several fields rather than one, read [queue and transit times explained](/blog/edgebic-queue-and-transit-times-explained) first. For the exact order the engine applies them, see [how EDGEBIC composes step timing](/blog/how-edgebic-composes-step-timing).
+
+## Step 1: Pick the Step That Owns the Wait
+
+Every one of these fields applies **after** its own step's operation finishes. So the question is not "which step is delayed?" but "which step causes the delay?"
+
+- Parts must cool after milling: queue time on the **milling** step.
+- Parts are trucked to a plater after deburring: transit days on the **deburring** step.
+- Parts wait for an inspector before assembly: queue time on the step before assembly, or on the assembly step if the wait is really about assembly's own readiness.
+
+Getting this backward is easy and produces a plan that is off by exactly one operation. If you are unsure, ask where a person standing on the floor would say the parts are sitting.
+
+Open the routing in the Graphical Routing Designer or the routing grid, select that step, and work through the fields below.
+
+## Step 2: Queue Time, in Decimal Hours
+
+Enter the wait in hours. Ninety minutes is `1.5`. Twenty minutes is `0.33`. Eight hours is `8`.
+
+The engine consumes those hours only inside active shifts on the work center's calendar. A four-hour queue that starts at 14:30 on a Monday with an 08:00 to 16:00 shift uses 1.5 hours before end of shift and the remaining 2.5 hours on Tuesday morning, resolving to Tuesday 10:30. Nights, weekends, and holidays do not tick.
+
+Two rules keep queue time honest:
+
+- **Only use it for waits a person has to be present to end.** Cooling, drying, drip time, an inspection queue. If the wait continues over a weekend regardless of whether the plant is open, it is not queue time.
+- **Do not put queue time on a step that also uses lot streaming.** When streaming fires, its result becomes the successor's gate and the queue on that step is discarded. Use transfer delay instead, or move the queue to the downstream step.
+
+## Step 3: Transit Days, and the Calendar Question
+
+If the work leaves the work center for a vendor or another site, set transit days on the sending step. This field is whole days, not hours.
+
+Then make the calendar choice, which is a separate setting on the same step:
+
+| Mode | Behavior | Use it for |
+|---|---|---|
+| **Calendar days** (default) | Flat addition, weekends and holidays included | Outside vendors: heat treat, plating, coating, anodizing |
+| **Working days** | Counts only days with at least one active shift, resolving to end of the last shift | Internal courier runs, inter-plant moves that follow your own calendar |
+
+The two diverge fast. From an operation ending Thursday at 12:00, three calendar transit days lands Sunday at 12:00, so the next operation's first feasible slot in a Monday-to-Friday plant is Monday morning. Three **working** transit days counts Friday, Monday, Tuesday and resolves to end of shift Tuesday, so the next operation cannot start before Wednesday morning. Same number, two days of difference.
+
+The default is calendar days, and for genuine outside processes that is almost always right. A plater's five-day turnaround does not pause because your plant is closed on Saturday.
+
+One more detail: working-day transit is counted against the **sending** work center's calendar. If the sending and receiving stations are in different plants with different shift patterns, the count follows the sender, and the allocator then finds the first feasible slot at the receiver.
+
+## Step 4: Transfer Delay, for Handling That Never Pauses
+
+Transfer delay is flat elapsed hours added after a lot streaming handoff. Enter it in decimal hours on the same step that carries the streaming setting.
+
+Use it when the handling genuinely runs whenever material is ready: a conveyor, a robot cycle, a cooling period measured in minutes, a short cart run in a plant that always has somebody available. Do not use it for a wait that should stop at end of shift, because it will not. A two-hour transfer delay applied at 15:00 on a Friday resolves to 17:00 that Friday, past the end of an 08:00 to 16:00 shift.
+
+## Step 5: Leave Material Steps Alone
+
+A material step already absorbs its transit internally when its own dates are built, so the engine deliberately skips the separate transit calculation for those steps. Adding transit days to a material step is harmless but does nothing extra. Adding it to a material step **and** the operation that follows it double-counts the same delay, which is the version that actually hurts.
+
+Set the transit on the operation that physically sends the work, once.
+
+## Step 6: Reschedule and Read the Result
+
+Save the routing and reschedule the job. Then verify in two places.
+
+**On the Gantt**, measure the gap between the upstream finish and the downstream start. Expect a shift-aware queue to look *longer* in calendar terms than the number you typed whenever it crosses a night or a weekend: four hours of queue from Friday afternoon is a three-day gap on the chart and is completely correct. Reading the chart is covered in [planned versus actual on the Gantt](/blog/reading-the-edgebic-gantt-planned-vs-actual).
+
+**In the load**, check the downstream work center. Every field here produces an earliest start, not a booking. If the gap is larger than your configuration explains, the machine was busy, and that is a capacity question rather than a routing question. [Work center overloaded: causes and fixes](/blog/work-center-overloaded-in-edgebic-causes-fixes) covers the difference.
+
+## A Worked Configuration
+
+Plating in-house, then inspection in another building. The plating operation ends Friday at 15:00 on a Monday-to-Friday, 08:00 to 16:00 calendar.
+
+| Setting on the plating step | Value | Why |
+|---|---|---|
+| Queue time | 1 hour | Wet-rack drip time, needs somebody present |
+| Transit days | 1 | Carried to the inspection lab in another building |
+| Calendar days | on | The van runs daily regardless of shift |
+| Transfer delay | 0 | No streaming on this step |
+| Transfer batch size | 0 | Inspection needs the full lot |
+
+The engine composes it in order. The one-hour queue fits inside Friday's remaining shift hour, so it resolves to Friday 16:00. No streaming fires. One calendar transit day lands the handoff at Saturday 16:00. Inspection's first feasible slot is Monday 08:00.
+
+Switch that step to working days and the single transit day counts Monday, resolving to end of shift Monday 16:00, so inspection lands Tuesday morning. One checkbox, one full day of quoted lead time. That is why the calendar choice deserves a deliberate answer per step rather than a default nobody reviewed.
+
+## What to Read Next
+
+[How EDGEBIC composes step timing](/blog/how-edgebic-composes-step-timing) shows the exact sequence when queue, streaming, and transit all appear on one step, with the arithmetic worked through. [Queue and transit mistakes](/blog/queue-and-transit-mistakes-edgebic) covers the configurations that quietly produce unachievable plans. For overlap rather than delay, see [how to overlap operations](/blog/how-to-overlap-operations-in-edgebic).
+
+For the wider picture, see the [complete guide to EDGEBIC](/blog/edgebic-complete-guide) and [forward versus backward scheduling](/blog/forward-vs-backward-scheduling), which determines which direction these buffers push from. Bring a routing with a vendor step on it to a demo of [EDGEBIC](/edgebic) and we will configure the send together.

@@ -1,0 +1,174 @@
+---
+title: "Work Centers in EDGEBIC: What They Are and What Every Setting Does"
+description: "Work center setup in scheduling software decides every promise date. What a work center is in EDGEBIC, and what instances, capacity type, and the flags change."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - work center setup scheduling software
+  - what is a work center manufacturing
+  - work center capacity configuration
+  - machine instances scheduling
+  - one per day scheduling flag
+  - bottleneck work center setup
+targetPhrase: "work center setup scheduling software"
+wordCount: 2050
+readingTime: 10
+faqQuestions:
+  - question: "What is a work center in production scheduling software?"
+    answer: "A work center is the production resource the scheduler books time on: one CNC mill, a bank of three identical mills, a paint booth, or a welding cell. Every step of a routing points at a work center, and every scheduled operation consumes that work center's available hours. It is the unit of finite capacity, which makes it the single most consequential piece of master data in the system."
+  - question: "What is the difference between a machine instance and a separate work center?"
+    answer: "An instance is one physical machine inside a work center, and instances are assumed identical: same speed, same shifts, same tooling. Three interchangeable clones belong in one work center with three instances. Machines that differ in speed or run different calendars belong in separate work centers, pooled through a work center group so a routing step can still target either one."
+  - question: "How does a scheduler calculate a work center's daily capacity?"
+    answer: "Available hours for a work center on a given day equal the shift hours for that weekday, minus downtime and any partial-holiday overlap, multiplied by the number of instances, multiplied by the utilization percentage. A per-day capacity override replaces that formula entirely for the days it covers. Every zero in the chain, including zero instances or a shift with no hours on that weekday, produces zero capacity."
+  - question: "What does the One Per Day flag do on a work center?"
+    answer: "One Per Day restricts each machine instance to a single job per calendar day. The job owns that machine for the day even if it uses only part of the shift. A three-instance furnace bank with the flag on runs three jobs simultaneously and sends the fourth to tomorrow, even with clock time left over. It exists for physics: a furnace load or a paint color locks the chamber for the day."
+  - question: "Should every work center be marked as a bottleneck?"
+    answer: "No. Mark one work center per plant, or per routing family, and only the genuine constraint. The flag switches the scheduler into anchor scheduling for every job whose routing touches that work center: the constraint operation is planned first, upstream steps are planned backward to feed it just in time, and downstream steps run forward. Applied to a non-constraint, it distorts the whole plan."
+qaQuestions:
+  - question: "We have four mills. Two are 2019 machines, two are from 2004 and run about 30% slower on the same part. Do I set up one work center with four instances?"
+    answer: "No. Instances are assumed identical, so a four-instance work center would schedule all four at the same speed and produce a plan the two old mills cannot hold. Create two work centers (say Mill-New with 2 instances and Mill-Old with 2 instances), then pool them in a work center group so a routing step can target either. The group carries a per-member speed factor, so the same 4-hour operation can be booked as 4 hours on the new mills and 5.2 hours on the old ones. You get one routing step, honest capacity on both machines, and the scheduler picks the member that finishes soonest."
+  - question: "Our paint booth has three bays but the plan keeps putting a fourth job in on the same day, and the crew says that is impossible because of the color change. Is the scheduler wrong?"
+    answer: "The scheduler is doing exactly what it was told. By default, instances pool their hours: three bays on an 8-hour shift offer 24 hours, and four jobs at 6, 7, 5, and 3 hours all fit inside 24. Turning on One Per Day changes the arithmetic to one job per bay per day, so the fourth job slides to the next day and the leftover 6 hours of clock go unused on purpose. That waste is the point of the flag, and it is correct only where physics demands it. Booths, furnaces, and sterile campaigns qualify. A general-purpose mill does not."
+---
+
+**A work center in EDGEBIC is the production resource the scheduler books time on, and it is the unit of finite capacity: every routing step points at one, and every scheduled operation consumes its hours.** Get the work center definitions right and the plan matches the floor. Get them wrong and every promise date inherits the error, because capacity is the first number the engine computes and the last one it can recover from.
+
+[EDGEBIC by User Solutions](/edgebic) treats a work center as a small, honest description of a physical resource: how many machines stand behind the name, when they run, what they cost per hour, and which of two behavioral flags apply. This article covers what each of those settings means and when you need it. The click-by-click configuration lives in [how to set up work centers in EDGEBIC](/blog/how-to-set-up-work-centers-in-edgebic), and the exact arithmetic behind every available hour is in [how EDGEBIC calculates work center capacity](/blog/how-edgebic-calculates-work-center-capacity).
+
+## What a Work Center Represents
+
+A work center is a name the shop already uses: `CNC-Mill-1`, `Weld-1`, `Paint-Booth-1`, `Assembly-1`. It is deliberately not a machine serial number and not a department.
+
+Three things are true of every work center:
+
+- **Routings target it.** Each step of a bill of routing names the work center that performs it. That is the only link between what a product needs and where the plant does it.
+- **It owns a calendar.** Either it inherits the plant-wide shifts or it carries its own. No calendar means no capacity, and no capacity means no schedule.
+- **It is finite.** The engine will not book more hours in a day than the work center offers. That is the whole difference between this and an MRP-style plan, covered in [finite vs infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+The work center grid shows the shape of your plant at a glance: identifier, name, unit of measure, capacity type, instance count, whether the shift calendar is Global or Custom, and the two behavior flags.
+
+## Instances: One Number That Multiplies Everything
+
+**No.Instances** answers a single question: how many identical machines stand behind this name?
+
+A work center with 2 instances on an 8-hour day shift offers 16 hours per day, not 8. Two 8-hour jobs run simultaneously, one per machine, and both finish the same day. A single 16-hour job can be split across both machines and finish in one day instead of two. The allocation records and the Gantt both show which instance each slice ran on.
+
+The rule for when to use instances is strict, and it is the most common master data mistake in any scheduling implementation:
+
+| You have | Model it as |
+|---|---|
+| N machines that are truly identical: same speed, same shifts, same tooling | One work center, **No.Instances** = N |
+| N machines that are interchangeable but different: own speeds, own calendars | Separate work centers pooled in a [work center group](/blog/what-is-a-work-center-group-machine-pool) |
+| An organizational or reporting rollup the scheduler should ignore | A department |
+
+Mixing unequal machines into one instance pool produces an averaged speed that no individual machine can hold. The plan looks feasible and the floor misses it every week.
+
+## Capacity Type: Hours, Pieces, or Both
+
+Most work centers are time-based. Some are not, and the **Capacity Type** setting says which.
+
+- **Hours** is the normal case. Duration comes from the routing step: hours per unit times quantity, plus setup.
+- **Pieces** is output-rate-based. The work center has a physical throughput ceiling in pieces per hour, and duration derives from that.
+- **Both** applies whichever constraint is more limiting, so a slow line is never over-promised.
+
+The **Both** model earns its keep on lines where the routing time and the physical rate disagree. Take a bottling line with an effective rate of 108 pieces per hour, and a routing step that says 0.005 hours per bottle. For a 500-bottle order:
+
+```
+routing time      = 0.005 x 500          = 2.50 h
+time at real rate = 500 / 108            = 4.63 h
+limiting factor   = pieces
+scheduled hours   = 4.63 h
+```
+
+The routing says two and a half hours. The line needs four and a half. **Both** picks the larger number, and the promise date is honest.
+
+## The Calendar: Global or Custom
+
+By default every work center inherits the plant-wide shifts, and the grid shows a green **Global** badge. That covers most of the plant, and it means one edit to Day Shift reaches every machine that uses it.
+
+Untick **Use Global Shifts** and the work center gets its own shift list, marked with an amber **Custom** badge. Reach for that only when a resource genuinely runs a different pattern:
+
+- One mill is the only machine staffed on nights.
+- The finishing cell works Monday through Thursday.
+- A shared external resource is available to you on fixed days only.
+
+The badge matters operationally, because a Custom work center stops following global shift edits. Change the plant pattern and you have to visit the exceptions separately. The full calendar story, including holidays and downtime, is in [shifts and calendars in EDGEBIC](/blog/edgebic-shifts-and-calendars-explained).
+
+## The Two Behavior Flags
+
+Everything above changes how much capacity exists. Two flags change how it is used.
+
+### Is Bottleneck
+
+Marking a work center as the bottleneck tells the scheduler this resource is the plant constraint, in the Theory of Constraints sense. The effect is large: for any job whose routing passes through it, the engine switches to anchor scheduling. The constraint operation is planned first at its target time, the steps before it are planned backward so material arrives exactly on time, and the steps after it run forward, with protective buffers around the constraint.
+
+Used correctly, that is the single most powerful flag in the system. Used carelessly, it forces backward scheduling for every job that touches a non-constraint and distorts the entire plan. TOC discipline applies: identify the constraint, exploit it, subordinate everything else to it. If you are not certain which resource is the drum, start with [production bottleneck identification](/blog/production-bottleneck-identification).
+
+The flag is loaded through the work center import file (the `Is_Bottleneck` column), and the grid and the bottleneck dashboard tiles surface it afterwards.
+
+### One Per Day
+
+**One Per Day** dedicates each instance to a single job per calendar day. The job owns that machine for the day even if it uses only part of the shift.
+
+A three-bay paint booth on an 8-hour day shift, with the flag on:
+
+| Monday queue | Hours | Result |
+|---|---|---|
+| JOB-2026-0104 | 6 | Instance 1, locked for Monday |
+| JOB-2026-0105 | 7 | Instance 2, locked for Monday |
+| JOB-2026-0106 | 5 | Instance 3, locked for Monday |
+| JOB-2026-0107 | 3 | No free instance, slides to Tuesday |
+
+Six plus seven plus five leaves six hours of clock unused, and the fourth job still waits. That is deliberate: a color change or a furnace load locks the chamber for the day. With the flag off, the three instances pool their 24 hours and all four jobs fit on Monday.
+
+The flag has no effect on a single-instance work center, and it too is set through the import file (the `One_Per_Day_Flag` column). How the engine picks which instance gets which job is covered in [how EDGEBIC picks an instance](/blog/how-edgebic-picks-an-instance-load-balancing-vs-one-per-day).
+
+## Cost, Setup, and Color
+
+Three smaller fields carry more weight than their size suggests.
+
+**Cost per Hour** is the rate charged to jobs that run here. Quote simulation and cost rollup both read it, and new routing steps inherit it, so a stale rate quietly corrupts every margin calculation downstream.
+
+**Setup Time (hrs)** is the default changeover time inherited by new routing steps assigned to this work center. It is the last rung of the setup-time ladder: a sequence-dependent matrix entry for the product pair wins first, then a family entry, then the routing step's own value, then this default. If changeovers here depend on what ran before (paint colors, alloys, grades), the flat default is the wrong tool. See [what is a setup family](/blog/what-is-a-setup-family-sequence-dependent-changeover).
+
+**Back Color / Fore Color / Border Color** decide how this work center's bars read on the Gantt. Color is not decoration on a shop floor board that a supervisor scans in three seconds.
+
+## Continuous Process: One Bit, Two Overlap Models
+
+The **Continuous-Process** checkbox selects how overlapping between consecutive routing steps is computed on this work center. Discrete work centers use piece-count transfer batches: the downstream step can start once a defined number of pieces is ready. Continuous work centers (paint lines, chemical reactors, food, pharma) use a time-based start-to-start lag instead.
+
+Check it only where the output genuinely is not discrete pieces. It is a per-work-center setting with no per-step override, so it applies to every routing step that runs here. Background on the discrete model is in [what is a transfer batch](/blog/what-is-a-transfer-batch).
+
+## Availability: Taking a Resource Out of the Plan
+
+A work center is not always schedulable, and there are three separate ways to say so, each meaning something different.
+
+**Is Available** switches the whole work center off. The scheduler skips it entirely on the next run, and jobs routed through it either move to a configured alternative or slide until it comes back. This is the right tool for a machine that has left the floor.
+
+**Effective Date** tells the scheduler to treat the work center as unavailable before a given date. Use it for equipment on order or mid-installation, so the routing can be built now and the capacity appears when the machine does.
+
+**Instance availability** works one machine at a time. A single machine inside a multi-instance work center can be marked unavailable, and the engine skips it during selection while the rest of the work center carries on. Each machine can also carry its own description (`Mill #2, Haas VF-3`) and a status label, which is what makes an allocation record readable to a supervisor rather than a row of numbers.
+
+For a bounded outage on an otherwise healthy work center, a capacity override across the affected dates is usually cleaner than any of the three: it carries a reason, it expires on its own, and the configuration keeps describing the plant as it really is.
+
+There is also preventive maintenance tracking. A work center can record when PM was last performed and the interval in days between cycles, and the shop floor kiosk shows a banner when the next one is due. It changes no capacity by itself; it stops PM from being the thing everyone remembers late.
+
+## Retiring a Work Center Safely
+
+Deletion is guarded. If a work center appears on any active routing step, in any open alternative or parallel configuration, on any schedule, or on any capacity override, the delete is blocked and you are told what is still using it. Remove or reassign those references first.
+
+That guard is protecting real damage. Bypassing it orphans the routing references that point at the work center and breaks scheduling for every product that used the machine, and the failure surfaces far away from the cause.
+
+The better habit is to deactivate rather than delete. Setting a work center unavailable keeps its history intact, so past schedules and reports still resolve the name while new scheduling ignores it. Historical audit records do not block deletion either way, which means a work center that has genuinely finished its life can be removed once the live references are gone.
+
+## Why This Is Worth the Hour It Takes
+
+User Solutions has been building finite capacity scheduling since 1991, and across 35+ years of implementations at organizations including the US Navy, GE, BAE Systems, and Cummins, the pattern repeats: the plants whose schedules hold are the plants whose work center definitions are honest. GE Railcar went from 30% to 90% on-time delivery on the same machines. Nothing about the steel changed. The description of the plant did.
+
+Work centers are also where a new implementation starts. If you are building from an empty database, follow [the greenfield setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough), which creates shifts first and work centers second for exactly this reason: a work center without working hours has zero capacity.
+
+Ready to configure yours? Start with [the step-by-step setup guide](/blog/how-to-set-up-work-centers-in-edgebic), and keep [the common configuration mistakes](/blog/work-center-configuration-mistakes-edgebic) open in the next tab. Bring your current machine list to a demo and we will build the first three work centers with you.

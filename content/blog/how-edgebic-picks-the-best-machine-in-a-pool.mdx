@@ -1,0 +1,161 @@
+---
+title: "How EDGEBIC Picks the Best Machine in a Pool"
+description: "Machine pool selection strategy in EDGEBIC: how earliest completion, primary first, and earliest start compare candidates, with real hours and reschedule rules."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - machine pool selection strategy
+  - earliest completion scheduling
+  - primary first work center
+  - capacity aware machine selection
+  - work center group reschedule
+  - efficiency factor scheduling
+targetPhrase: "machine pool selection strategy"
+wordCount: 1880
+readingTime: 9
+faqQuestions:
+  - question: "How does EDGEBIC decide which machine in a pool runs an operation?"
+    answer: "At scheduling time the engine turns the routing step's base hours into per-member effective hours, using each member's efficiency factor and setup override, then compares the candidates against live machine load under the group's selection strategy. Earliest completion books the member that finishes first, primary first books the designated machine unless it is full, and earliest start books the member that can begin soonest."
+  - question: "Why did the scheduler pick the slower machine in the pool?"
+    answer: "Because the faster machine was busier. Earliest completion projects a real finish time for each candidate from its speed and its current queue, so a slower machine that is free today legitimately beats a faster machine booked until Thursday. Check both machines' load on the Resource Calendar for the days in question. If you would rather have predictable routing, switch the group to primary first."
+  - question: "Can a group-routed operation move to a different machine on a reschedule?"
+    answer: "Yes, if it has not started. The pool binding stays on the step permanently, so every reschedule re-shops the pool against the current capacity picture and the operation may land on a different member, carrying a replacement indicator that names the change. Operations that have started or completed keep their machine, because recorded work is never moved by a reschedule."
+  - question: "Does the efficiency factor compound over repeated reschedules?"
+    answer: "No. Effective hours are always computed from the planner-entered base hours on the routing step, never from a previous run's already-factored result. A step with 0.5 base hours per unit on a member with factor 1.25 produces 0.625 effective hours on every run, whether that run is the first or the fiftieth. The saved routing keeps the base numbers, which is what makes repeated re-shopping safe."
+qaQuestions:
+  - question: "One of our mills is twice as fast but has slower fixturing. Can the pool express both at once?"
+    answer: "Yes, because run speed and setup time are independent knobs on the member row. In the documented three-mill example, a 2024 machine carries factor 0.5 while a 1998 machine carries factor 1.5 plus a setup override of 0.25 hours for its simpler fixturing. For a routing step of 0.04 hours per unit and 0.5 hours setup on a 100-piece order, the three candidates bid 4.5, 2.5, and 6.25 hours. The factor scales run time only, so a machine that runs fast and sets up slowly is modeled honestly instead of averaged into one misleading number."
+  - question: "We need one specific job on one specific machine, but we do not want to break the pool for everything else. Options?"
+    answer: "Pin that one step to that machine using the manual machine selection, exactly as you would for per-step alternates. The pin beats the group's selection strategy unconditionally and survives reschedules, while every other step bound to the pool keeps shopping normally. This is different from the primary flag, which is a group-wide preference rather than a per-job instruction. Use the pin for the customer-requires-this-machine case and the primary flag for the this-is-our-preferred-machine case."
+---
+
+**When a routing step targets a machine pool, EDGEBIC by User Solutions converts the step's base hours into per-member effective hours, projects a real start and finish for each candidate against live machine load, and books the winner according to the group's selection strategy.** The decision is made fresh on every scheduling run, which is why a job can move between machines as the shop's load changes and why it stops moving the moment somebody starts the work.
+
+This post is the mechanism. For the definition of a pool, see [what a work center group is](/blog/what-is-a-work-center-group-machine-pool); for the screens, see [creating a work center group](/blog/how-to-create-work-center-groups-in-edgebic).
+
+## Step One: The Pool Becomes Candidates
+
+A pooled step does not reach the scheduling engine as an abstraction. Immediately before machine selection, [EDGEBIC](/edgebic) expands the group into a concrete candidate list: a nominal primary machine plus one alternate candidate per remaining active member. Each candidate carries its **own pre-computed effective hours**, derived from the step's base numbers:
+
+- **Effective run hours** equal base run hours multiplied by that member's efficiency factor.
+- **Effective setup hours** equal the member's setup override, or the step's own setup time when the override is blank.
+
+Setup is never multiplied by the factor. Setup is a per-changeover cost tied to fixturing and tooling, not a function of spindle speed, and treating it as one produced misleading numbers in every shop that tested it.
+
+The nominal primary is chosen deterministically: the member flagged Primary first, then the lowest priority number, then a stable tie-break. It is only a starting point. The selection pass that follows can and often does pick a different member.
+
+After expansion, the step looks exactly like a hand-configured step with alternate work centers, and the same selection machinery that has handled alternates for years does the choosing. That reuse is deliberate: pooling did not introduce a second, parallel way to pick machines.
+
+## Step Two: The Strategy Compares Candidates
+
+Each candidate is evaluated against **live shift allocations**, including the tentative reservations made by steps resolved earlier in the same run. That last detail matters: two jobs shopping the same pool in one run do not both get told the pool is empty.
+
+### Earliest completion (the default)
+
+Each candidate gets a projected finish: when can this machine start, and how long will its own effective hours take. The earliest finish wins.
+
+Take the documented two-mill pool. CNC-Mill-1 runs at factor 1.0, CNC-Mill-2 at factor 1.25. The step has 0.5 base hours per unit and 0.5 hours of setup, and the job is 20 pieces. Both mills run a Day Shift of 08:00 to 16:00 with one instance:
+
+| Candidate | Effective run hours per unit | Total for 20 pieces |
+|---|---|---|
+| CNC-Mill-1 | 0.5 x 1.0 = 0.5 | 0.5 x 20 + 0.5 = **10.5 h** |
+| CNC-Mill-2 | 0.5 x 1.25 = 0.625 | 0.625 x 20 + 0.5 = **13.0 h** |
+
+**Both mills free Monday 08:00.** CNC-Mill-1 needs 10.5 hours: eight on Monday, 2.5 on Tuesday, finishing Tuesday 10:30. CNC-Mill-2 would finish Tuesday 13:00. The faster machine wins, as expected.
+
+**CNC-Mill-1 booked solid until Wednesday.** Its projected completion becomes Thursday 10:30, because it cannot begin until Wednesday 08:00. CNC-Mill-2 is free Monday and still finishes Tuesday 13:00. **The slower machine wins by nearly two days.** This is not a defect. Waiting for the fast machine cost more than its speed saved, and no static routing rule could have found that answer, because the answer depends on this week's load.
+
+### Primary first
+
+The designated primary machine gets the work whenever it has capacity on the target date. Work spills to the other members only when the primary is full. In the scenario above, primary first sends the job to CNC-Mill-1 even in the free-Monday case where the arithmetic would have chosen it anyway, and it keeps sending work there until the day is genuinely full.
+
+You trade lead time for predictability. That is a good trade when the primary is the validated or customer-qualified machine and the rest are overflow, and a poor one when your goal is throughput.
+
+### Earliest start
+
+The member that can begin soonest wins, judged **day by day**. A machine that can start today beats a faster machine that can only start tomorrow, even when the faster machine would finish first. Among members that can start on the same day, the earlier finisher wins.
+
+The day granularity is deliberate and worth internalizing before you choose this strategy. It suits shops where visible progress and work-in-process flow matter more than cycle time, for example when a downstream cell is starving and any feed today is better than a better feed tomorrow.
+
+### Two jobs shopping the same pool in one run
+
+A detail that decides whether pooling actually balances load: candidates are evaluated against **tentative reservations** made earlier in the same scheduling run, not just against what was in the database when the run started.
+
+Picture two 10-hour jobs bound to the same two-machine pool, both released Monday, both pools free at the start of the run. Without tentative reservations, both jobs would see two idle machines and both would pick the same one, producing 20 hours of work on one machine and an idle neighbour. With them, the first job books CNC-Mill-1 and the second job sees that booking, projects CNC-Mill-1's completion accordingly, and takes CNC-Mill-2.
+
+That is why a pool spreads work rather than piling it onto whichever machine happens to be nominally fastest. It also explains a behavior planners sometimes read as inconsistency: two identical jobs in one run legitimately land on different machines, because the second one was scheduled against a plant that already contained the first.
+
+### Two overrides that beat every strategy
+
+1. **A planner's manual machine pin on the step wins unconditionally** and survives reschedules. Use it for the one job that must run on one machine.
+2. **A started operation keeps its machine.** Once actual work is recorded on a member, no reschedule moves that operation to a different member, whatever the strategy says.
+
+## Step Three: The Winner Becomes the Step
+
+When a non-primary candidate wins, the engine swaps the chosen member's machine identity, effective run hours, and setup time onto the step before anything downstream runs. From that point on, [finite capacity](/blog/finite-vs-infinite-capacity-scheduling) checks, multi-shift allocation, instance selection, holidays, and capacity overrides all use the chosen machine's own configuration. There is no residual "pool behavior" once the member is picked, which is exactly why pooled steps behave predictably in the rest of the engine.
+
+Two consequences show up on screen:
+
+- **Every post-schedule surface shows the real machine.** The Gantt, the Job View, the grids, and the reports all say CNC-Mill-2, not the pool badge. The badge only appears on a step that has not been scheduled yet.
+- **The pool binding stays on the step.** The step still belongs to MILLING even though it currently sits on CNC-Mill-2. That stored intent is what makes the next section possible.
+
+## Re-Shopping: What Happens on the Next Run
+
+Because the binding persists, every reschedule re-evaluates pooled steps. The rules are short and they are the same rules that protect every other operation in EDGEBIC:
+
+| Operation state | Behavior on reschedule |
+|---|---|
+| Not started | Re-shops the pool against current capacity, and may land on a different member. Carries a replacement indicator naming the change, for example "Replaced: CNC-Mill-1 to CNC-Mill-2" |
+| Started (actual start recorded) | Keeps its machine. The engine matches the locked machine among the candidates and holds it |
+| Completed | Keeps its machine and its recorded dates. Completed work is never moved by a reschedule |
+| Member deactivated since last run | Drops out of the candidate list from this run onward. Work already started on it stays |
+
+The worked reschedule case in the documentation is the clearest illustration. An operator starts a step on CNC-Mill-2 on Monday. On Tuesday a hot order forces a full reschedule. The preserved routing still carries the pool binding and the base hours, the engine rebuilds the same candidates from those base numbers, and because actual work exists on CNC-Mill-2 that member is locked and the step stays. Had the step not started, it would have re-shopped and could legitimately have moved back to CNC-Mill-1.
+
+## Why the Factor Cannot Drift
+
+One quiet design rule prevents a whole class of bug: **effective hours are always computed from the planner-entered base hours**, never from a previous run's factored result. The saved routing, including the per-job routing snapshot that reschedules read, stores the un-expanded step with its base numbers. Re-expansion recomputes 0.5 times 1.25 from scratch every time.
+
+Without that rule, a step re-shopped ten times on a factor-1.25 machine would have drifted to roughly 4.7 hours per unit instead of 0.625. It is the kind of error that would look plausible for two weeks and then produce lead times nobody could explain. The engine's test suite asserts the resulting hour totals to the decimal for exactly this reason.
+
+## When People Are Also a Constraint
+
+A routing step can carry both a machine pool and a required skill. The group answers which machine, the skill answers which qualified person, and the two compose rather than compete. Since the labor constraint shipped, member selection is **staffability-aware**: a candidate whose shifts cannot be staffed for the step's skill loses its bid rather than winning on machine capacity and then sliding when the engine cannot find an operator.
+
+That ordering matters more than it sounds. Picking a machine first and discovering the staffing problem second produces schedules that look right on the machine calendar and fail on the floor. The mechanics of the operator side are in [how EDGEBIC books operator hours](/blog/how-edgebic-books-operator-hours).
+
+## What the Optimizer Does With Pools
+
+The default multi-run optimizer re-runs the real scheduling engine for every candidate job ordering it evaluates, so every candidate schedule shops the pools exactly as a live run would. Pool behavior is fully honored.
+
+The mathematical solver takes the conservative path: pooled jobs are reproduced exactly as the standard engine scheduled them rather than being rearranged by a model that does not represent pooling natively. That is the same job-level lock rule described in [locked jobs and the never-worse guarantee](/blog/locked-jobs-and-the-never-worse-guarantee-in-edgebic), and it is why selecting the solver can never produce an invalid machine assignment.
+
+## Reading a Decision After the Fact
+
+When a supervisor asks why a job landed where it did, three surfaces answer:
+
+1. **The replacement indicator on the step** names the machine change since the last run.
+2. **The Resource Calendar** shows capacity against load per member for the days in question, which is usually enough to explain a surprising pick.
+3. **The scheduling run's diagnostics** record each pool expansion with its base hours, the per-candidate effective hours, and the strategy in force, then record the final pick.
+
+Between them you can reconstruct any decision, which is what separates a pool from a black box. If the answer still looks wrong, the usual causes are collected in [work center group mistakes](/blog/work-center-group-mistakes-edgebic), and the wider decision-making pipeline is documented in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide) and the [complete EDGEBIC guide](/blog/edgebic-complete-guide).
+
+<Accordion title="How does EDGEBIC decide which machine in a pool runs an operation?">
+At scheduling time the engine turns the routing step's base hours into per-member effective hours, using each member's efficiency factor and setup override, then compares the candidates against live machine load under the group's selection strategy. Earliest completion books the member that finishes first, primary first books the designated machine unless it is full, and earliest start books the member that can begin soonest.
+</Accordion>
+
+<Accordion title="Why did the scheduler pick the slower machine in the pool?">
+Because the faster machine was busier. Earliest completion projects a real finish time for each candidate from its speed and its current queue, so a slower machine that is free today legitimately beats a faster machine booked until Thursday. Check both machines' load on the Resource Calendar for the days in question. If you would rather have predictable routing, switch the group to primary first.
+</Accordion>
+
+<Accordion title="Can a group-routed operation move to a different machine on a reschedule?">
+Yes, if it has not started. The pool binding stays on the step permanently, so every reschedule re-shops the pool against the current capacity picture and the operation may land on a different member, carrying a replacement indicator that names the change. Operations that have started or completed keep their machine, because recorded work is never moved by a reschedule.
+</Accordion>
+
+<Accordion title="Does the efficiency factor compound over repeated reschedules?">
+No. Effective hours are always computed from the planner-entered base hours on the routing step, never from a previous run's already-factored result. A step with 0.5 base hours per unit on a member with factor 1.25 produces 0.625 effective hours on every run, whether that run is the first or the fiftieth. The saved routing keeps the base numbers, which is what makes repeated re-shopping safe.
+</Accordion>

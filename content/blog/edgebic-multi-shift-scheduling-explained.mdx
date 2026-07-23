@@ -1,0 +1,137 @@
+---
+title: "Multi-Shift Scheduling in EDGEBIC, Explained"
+description: "How multi shift production scheduling works in EDGEBIC: what a shift slot is worth, how jobs span shifts and days, and why the weekend gap costs no hours."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - multi shift production scheduling
+  - multi-shift scheduling software
+  - scheduling across shifts
+  - shift capacity manufacturing
+  - second shift scheduling
+  - overnight shift scheduling
+  - finite capacity scheduling
+targetPhrase: "multi shift production scheduling"
+wordCount: 1920
+readingTime: 10
+faqQuestions:
+  - question: "What is multi-shift production scheduling?"
+    answer: "Multi-shift production scheduling places one operation's hours across more than one shift, more than one day, and more than one machine instance until all the work has a real home on the calendar. Instead of assuming an operation fits inside a single block of time, the scheduler treats each shift on each work center as a separate capacity bucket and fills the buckets in order until the operation's hours run out."
+  - question: "How much capacity does one shift actually provide?"
+    answer: "Shift capacity is the shift's working hours minus downtime and partial holiday hours, multiplied by the number of machine instances, multiplied by the work center's utilization percentage. A two-instance milling center on an 8-hour shift at 80 percent utilization offers 12.8 hours. A whole-day holiday sets the bucket to zero, and a capacity override for one specific date replaces the formula entirely."
+  - question: "Can a job start mid-shift in EDGEBIC?"
+    answer: "Yes, and the scheduler charges it correctly. If an operation cannot begin before 10:00 and the shift runs 08:00 to 16:00, only the remaining 6 hours per instance are offered for that first slot. The rest of the work moves to the next ranked slot. A shift that has already ended by the earliest start time is rejected outright rather than being partially credited."
+  - question: "Does a weekend delay a job's hours or just its finish date?"
+    answer: "Only its finish date. Days with no configured shift consume no machine hours: they are skipped in the search. A 20-hour operation that starts Friday at 12:00 with one 8-hour weekday shift takes 4 hours Friday, jumps the weekend, takes 8 hours Monday and 8 hours Tuesday, and finishes Tuesday at 16:00. The elapsed span is four calendar days; the machine hours consumed are still 20."
+  - question: "Do overnight shifts that cross midnight schedule correctly?"
+    answer: "Yes. When a shift's end time is earlier than its start time, EDGEBIC recognizes the midnight crossing and adds a day to the end, so a 22:00 to 06:00 shift is treated as 8 hours spanning two calendar dates rather than a negative block. The same arithmetic is used both when the capacity bucket is built and when work is placed inside it."
+qaQuestions:
+  - question: "We just added a second shift on two machines. Will existing jobs automatically use it, or do I have to re-enter routings?"
+    answer: "Routings do not change at all. Shifts are a work center property, not a routing property, so you assign the new shift to the two machines and rerun the schedule. The next run rebuilds every shift slot for every work center from the current calendar, so the new night capacity appears as additional candidate slots immediately. A 28-hour operation that previously took four days on one shift can now finish in under two."
+  - question: "Our furnace runs one job per chamber per day. Does multi-shift allocation break that rule when a job spills into the next day?"
+    answer: "No. A work center flagged as one job per instance per day keeps that constraint across shifts and across days. The job holds the same chamber for its whole duration rather than hopping between chambers, and other jobs are pushed onto the remaining free chambers or to the next day. Three 6-hour jobs on a three-chamber furnace all complete the same afternoon, one per chamber, with no chamber double booked."
+---
+
+**Multi-shift production scheduling means a single operation's hours can be spread across several shifts, several days, and several machines until every hour of that operation has a real place on the calendar.** It exists because the alternative, assuming each operation fits neatly inside one block of available time, produces schedules that are wrong the moment a job runs longer than a shift. [EDGEBIC by User Solutions](/edgebic) treats every shift on every work center as its own capacity bucket, ranks the buckets, and fills them in order until the work is placed.
+
+This post covers what that capability is and when you need it. If you want the configuration steps, see [how to make jobs span shifts](/blog/how-to-make-jobs-span-shifts-in-edgebic). If you want the ranking arithmetic, see [how the engine allocates hours across shifts](/blog/how-edgebic-allocates-hours-across-shifts). The full platform picture lives in the [complete guide to EDGEBIC](/blog/edgebic-complete-guide).
+
+## The Problem Multi-Shift Allocation Solves
+
+Take a 28-hour milling operation. Your day shift runs 08:00 to 16:00, five days a week, and the machining center has two instances.
+
+A scheduler that cannot split work across shifts has only bad options. It can pretend the operation is one continuous 28-hour block and place it Monday 08:00 to Tuesday 12:00, straight through two nights when nobody is in the building. It can refuse to schedule the operation at all because no single shift is big enough. Or it can round the work up to the nearest whole shift and waste the remainder.
+
+None of those is a plan a supervisor can hand to a crew. The first produces dates that arrive impossibly early, the second produces gaps in the plan, and the third quietly destroys capacity you paid for.
+
+Multi-shift allocation is the honest answer: split the 28 hours into pieces that fit the shifts that actually exist, on the machines that actually exist, and report the real finish time that falls out of that arithmetic. This is the practical meaning of [finite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) once your operations are longer than your shifts.
+
+## What a Shift Slot Is Worth
+
+Before any job is scheduled, EDGEBIC builds one capacity bucket for every combination of work center, calendar date, and shift that the calendar says is active. Each bucket carries a fixed number of hours:
+
+```
+capacity = (shift hours − downtime − partial holiday hours)
+           × number of instances
+           × utilization %
+```
+
+Four inputs, and each one is a real decision you make in the work center and calendar setup:
+
+| Input | Where it comes from | Effect |
+|---|---|---|
+| Shift hours | The shift definition, per weekday, less the break | Sets the base size of the bucket |
+| Downtime | Planned maintenance windows on the work center | Subtracted before any multiplier |
+| Partial holiday | A half day on the plant or work center calendar | Subtracted the same way as downtime |
+| Instances | Physical machine count on the work center | Multiplies the whole bucket |
+| Utilization | Percentage of capacity the scheduler may claim | Multiplies the whole bucket |
+
+A two-instance milling center on an 8-hour shift at 80 percent utilization offers 12.8 hours in that slot. Mark the day a whole-plant holiday and the bucket is zero. Set a capacity override for one specific date and the override replaces the formula outright, which is how a Saturday of authorized overtime gets modeled without touching the standing weekly calendar.
+
+One default deserves a warning: work center utilization ships at 50 percent. That is a deliberately conservative starting point, and leaving it there halves the capacity the engine is allowed to see. Raise it on purpose, per machine, once you know how much of the nominal shift each work center genuinely converts into production.
+
+## How the Work Actually Lands
+
+The allocator does three things, in this order.
+
+**It searches.** Starting at the operation's earliest allowed start (the finish of its predecessor, adjusted for queue time, overlap, or transit), the engine walks forward day by day. For each day it checks whether the work center is available at all, then which of its assigned shifts run on that weekday, then how much unconsumed capacity each of those slots still holds.
+
+**It ranks.** Candidate slots are scored, and the score encodes three instincts a planner would apply by hand: a slot that can start immediately beats one that cannot, more available capacity beats less, and an earlier shift in the day beats a later one. Slots are then taken in date order so the engine always fills the nearest usable time first.
+
+**It consumes.** The engine takes the top slot, places the smaller of (hours still needed, hours the slot can offer), subtracts that from the remaining requirement, and moves to the next slot. When the remaining requirement reaches zero, the operation is placed and its true start and end are known.
+
+The output is not a single bar. It is a per-shift, per-instance breakdown that persists with the schedule and drives the hour display in the Job View, the utilization reports, and the capacity calendars. An operation that ran 8 hours Monday and 4 hours Tuesday shows as "8,4", which tells a supervisor more in six characters than a start and end date pair ever will.
+
+## Four Situations Where It Earns Its Keep
+
+**The late start.** An operation cannot begin before Monday 10:00 because its predecessor finishes then. The 08:00 to 16:00 shift is not worth 8 hours to this job, it is worth 6, and with two instances that first slot offers 12 hours rather than 16. EDGEBIC clips the slot to the part of the shift that is still ahead, so the first day's contribution is charged honestly instead of optimistically.
+
+**The weekend gap.** A 20-hour operation starts Friday at 12:00 on a single-instance work center running weekdays only. Friday contributes 4 hours. Saturday and Sunday have no configured shift, so they are skipped and cost nothing. Monday contributes 8, Tuesday contributes 8, and the job finishes Tuesday at 16:00. Four calendar days elapsed, 20 machine hours consumed. That distinction (elapsed time versus consumed capacity) is exactly what a manual estimate gets wrong.
+
+**Multiple machines on one operation.** A four-instance work center running a 20-hour operation with load balancing on gives each machine 5 hours, and the machines run at the same time. The operation finishes in 5 elapsed hours, not 20. Instance behavior has its own rules, including a one-job-per-instance-per-day mode for furnaces and paint booths, and a job keeps the same physical machine across shifts rather than hopping between them.
+
+**Round the clock.** With a day shift and a night shift assigned to the same work center, a 28-hour operation starting Monday at 10:00 takes 12 hours on the clipped day shift and 16 on the night shift, and completes at midnight the same day. That is the compounding return on a second shift: not just more hours per week, but far shorter elapsed time on the long operations that set your lead times.
+
+## Reading the Result
+
+A multi-shift allocation is not one bar with two dates. It is a set of pieces, and EDGEBIC keeps the pieces.
+
+The hour display in the Job View shows what each day or shift group received. "8,4" means eight hours the first day and four the second. "12,16" means twelve on a clipped day shift and sixteen on the night shift that followed. Read alongside the start and end, that column answers the question a start-and-end pair cannot: how the work actually divided.
+
+The same breakdown persists with the schedule and feeds the utilization reports, the capacity calendars, and the daily hour records that shop-floor actuals are later compared against. When an operator logs six hours on Tuesday, the comparison is against a planned figure for Tuesday specifically, not against a total spread evenly across the span.
+
+It is also the audit trail. When someone asks why an operation finished Thursday rather than Tuesday, the breakdown shows which slots contributed what and where the hours ran out. Because the run order is deterministic, the same inputs produce the same schedule every time, so any change in the answer traces back to a change in the data.
+
+## One More Constraint: Qualified People
+
+Machine capacity is not always the binding constraint. When a routing operation requires a specific skill, EDGEBIC also checks whether qualified operator hours exist in the shift before offering it as a candidate, and clamps the hours it places to what the qualified pool can actually cover.
+
+A shift with machines free and nobody certified to run them is not offered at all, which is the honest answer: a plan that assumes an absent welder is a plan that will not happen. Operators are counted in hours rather than as present or absent, and an operator tending two machines at once contributes accordingly. [Operator and skill constraints in scheduling](/blog/operator-skill-constraints-scheduling) covers the model, and [what an attend fraction is](/blog/what-is-attend-fraction-operator-scheduling) explains the tending arithmetic. On routings with no skill requirement, or with no operator data loaded, none of this applies and allocation behaves exactly as described above.
+
+## Where It Sits in the Engine
+
+Multi-shift allocation is not a separate mode you switch on. It is the mechanism every work center operation goes through, every run. The [scheduling engine guide](/blog/edgebic-scheduling-engine-guide) shows the surrounding pipeline: dependency ordering decides which operation is scheduled next and what its earliest start is, the allocator decides where its hours land, and queue time, lot streaming overlap, and transit days then decide when the successor may begin.
+
+It also composes with the rest of the platform. [Theory of Constraints anchor scheduling](/blog/edgebic-toc-anchor-scheduling-explained) pins the bottleneck operation to a date and then uses this same allocator to place everything around it. [Parallel work centers](/blog/edgebic-parallel-work-centers-explained) run the allocator once per machine in the group after agreeing on a common start moment. Reschedules preserve completed work untouched and re-run the allocator only for what remains.
+
+## When You Need It, and When You Do Not
+
+You need multi-shift allocation the moment any of these is true:
+
+- An operation's hours exceed one shift's capacity on its work center.
+- You run more than one shift, or you are considering adding one.
+- Any work center has more than one machine instance.
+- Your week has holes in it: weekends off, plant holidays, planned maintenance, half days.
+- You want a finish date you can quote from rather than one you have to pad.
+
+If every operation you run is shorter than a shift, on single-machine work centers, on a calendar with no gaps, you will never notice the mechanism working. Most shops that describe their scheduling as [a job shop problem](/blog/job-shop-scheduling-challenges) fail all five tests on day one.
+
+## Next Steps
+
+The three companion posts in this chapter go deeper in three directions. Start with [the configuration walkthrough](/blog/how-to-make-jobs-span-shifts-in-edgebic) if you are setting up shifts now. Read [the allocation deep dive](/blog/how-edgebic-allocates-hours-across-shifts) if you want to reproduce the engine's arithmetic by hand and know exactly why a job landed where it did. Read [the mistakes post](/blog/multi-shift-scheduling-mistakes-edgebic) before you go live, because most multi-shift complaints trace back to five or six configuration errors rather than to the engine.
+
+User Solutions has been building finite capacity scheduling for manufacturers since 1991, for shops from single-cell job shops up to the US Navy, GE, BAE Systems, and Cummins. Bring a real routing and a real shift calendar to a demo and see your own hours land on your own shifts.

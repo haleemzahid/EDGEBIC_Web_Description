@@ -1,0 +1,206 @@
+---
+title: "How Sales Orders Drive Demand in EDGEBIC: The Full Chain"
+description: "Sales order demand planning explained: which lines count, how open quantity buckets by due date, and the full trace from a confirmed line to a scheduled job."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - sales order demand planning
+  - firm demand calculation
+  - projected available balance
+  - open quantity bucketing
+  - order to job traceability
+  - overdue demand rollforward
+targetPhrase: "sales order demand planning"
+wordCount: 2100
+readingTime: 11
+faqQuestions:
+  - question: "Which sales order lines count as firm demand?"
+    answer: "Only lines on orders whose status is Confirmed, where neither the line nor its parent order has been deleted. Draft, Shipped, Closed, and Cancelled orders contribute nothing. Each qualifying line contributes its open quantity, meaning ordered minus shipped floored at zero, into the planning bucket that matches that line's own due date rather than the header's requested date."
+  - question: "What happens to demand from an overdue sales order line?"
+    answer: "It rolls forward into today's bucket rather than disappearing or sitting in the past. A line that was due last week and is still open keeps its full open quantity as demand, clamped to the current period. That is the correct behavior for planning: work you still owe a customer is still work, and burying it in a historical bucket would understate what has to be produced now."
+  - question: "How does a partial shipment change the demand calculation?"
+    answer: "It reduces it automatically, with no planner intervention. Demand reads the line's open quantity, computed as ordered minus shipped, so raising the shipped figure from 150 to 350 on a 500-unit line drops the firm demand contribution from 350 to 150 immediately. The next projection refresh reflects it, and available-to-promise for that product frees up by the same amount."
+  - question: "Why might firm demand show zero when sales order lines clearly exist?"
+    answer: "Six causes account for almost all of it: the parent order is not Confirmed, the order has been deleted, the line has been deleted, the line is fully shipped so its open quantity is zero, the product is not set up as a stocked make-to-stock item, or the planning layer is not the demand source in that configuration. Checking them in that order finds the cause in minutes."
+qaQuestions:
+  - question: "Can you show the whole path from one customer line to a finished shipment with numbers?"
+    answer: "The documented trace runs like this. Confirm an order and add a line for product P, quantity 50, due in two weeks. The planning grid for P shows firm 50 in that week. Commit a build of 60 in the bucket, which sets the row to firm. Firm the bucket and a manufacturing order is created, moving the row to released. Schedule it: the job gets a scheduled end date and the calendar shows the receipt. Complete the job and the ledger posts plus 60, so on-hand rises by 60. Ship 50 units by setting shipped quantity on the sales order line, which drops its open quantity to zero. Refresh and firm demand for the bucket reads zero while available-to-promise improves by the 10 units of surplus."
+  - question: "Two lines on the same order name the same product and the same date. Is that a data error?"
+    answer: "Not necessarily, and the system treats it as valid. There is no uniqueness rule on product plus due date within an order, so both lines are accepted and both accumulate into the same demand bucket. That is genuinely useful for staged releases against a single purchase order, where a customer commits to two tranches with the same nominal date. It is also exactly what a repeated import produces when nobody purges the existing lines first, so the same structure can mean deliberate staging or accidental doubling. If the numbers look twice what you expect, check the line list before you check anything else."
+---
+
+**Sales order demand planning is the chain that turns a customer commitment into a scheduled job, and every link in it is a documented rule rather than a black box.** In EDGEBIC by User Solutions, a confirmed line's open quantity lands in a planning bucket keyed by that line's due date, nets against projected stock, and produces a build suggestion when the balance goes negative. This post walks the whole chain with real numbers, then gives the diagnostic sequence for when the numbers look wrong.
+
+For the record structure, read [sales orders explained](/blog/edgebic-sales-orders-explained). For the entry sequence, see [how to enter and manage sales orders](/blog/how-to-enter-and-manage-sales-orders-in-edgebic).
+
+## The qualifying rule
+
+Not every line counts. A line contributes firm demand only when all of the following hold:
+
+1. Its parent order's status is **Confirmed**.
+2. The parent order has not been deleted.
+3. The line itself has not been deleted.
+
+Draft, Shipped, Closed, and Cancelled orders contribute nothing. That single filter is what gives a planner control over when a commercial commitment enters the planning calculation, and it is locked in by regression tests: flipping an order to Draft removes its lines from the demand result.
+
+What each qualifying line contributes is its open quantity:
+
+```
+Open quantity = max(0, quantity − quantity shipped)
+```
+
+Not the ordered quantity. The balance still owed.
+
+## The bucketing rule
+
+Each line's contribution lands in the planning bucket that matches **that line's due date**, not the header's requested date. One purchase order covering two products with different dates therefore produces demand in two different buckets, which is the whole reason the due date sits on the line.
+
+Overdue lines are handled explicitly: a line whose due date has passed and which is still open **rolls forward into today's bucket** rather than sitting in the past or vanishing. That is correct for planning. Work you still owe a customer is still work, and burying it in a historical bucket would understate what has to be produced now.
+
+## Worked example: three lines, one excluded
+
+Three customers have open orders for the same standard widget.
+
+| Order | Status | Line | Qty | Shipped | Due | Open |
+|---|---|---|---|---|---|---|
+| SO-2026-0031 | Confirmed | L-101 | 100 | 40 | Jul 10 | **60** |
+| SO-2026-0035 | Confirmed | L-102 | 80 | 0 | Jul 15 | **80** |
+| SO-2026-0040 | Draft | L-103 | 200 | 0 | Jul 22 | 200 |
+
+The firm-demand result contains two rows:
+
+```
+2026-07-10   60
+2026-07-15   80
+```
+
+L-103 is excluded because its parent order is still Draft. Its 200 units are real commercially and invisible to planning, which is exactly the intent. Note also that L-101 contributes 60 rather than 100, because 40 have already shipped.
+
+Roll that forward against 50 units on hand, in weekly buckets:
+
+| Week | Firm | Receipts | Projected balance |
+|---|---|---|---|
+| Jul 7 to 13 | 60 | 0 | 50 − 60 = **−10** |
+| Jul 14 to 20 | 80 | 0 | −10 − 80 = **−90** |
+
+Both buckets go negative. A negative projected balance is not an error; it is the signal. It says committed demand exceeds projected supply in that period, which is precisely the condition that produces a build suggestion. The planning layer then suggests quantities that restore the balance above the safety level, and firming those suggestions creates build-to-stock jobs that pass into the scheduling engine.
+
+The [make-to-stock replenishment walkthrough](/blog/make-to-stock-replenishment-walkthrough-edgebic) follows one of those suggestions through to a finished receipt with real machine hours.
+
+## Worked example: shipments shrinking demand
+
+A single large line over four months, with no planner intervention at any point:
+
+| Date | Event | Shipped | Open | Firm demand contribution |
+|---|---|---|---|---|
+| Jun 01 | Line created, 500 units | 0 | 500 | 500 |
+| Jun 15 | First partial shipment | 150 | 350 | 350 |
+| Jul 01 | Second shipment | 350 | 150 | 150 |
+| Jul 20 | Final shipment | 500 | 0 | 0 |
+
+Because demand reads the computed open balance rather than a stored demand figure, updating the shipped quantity is the only action required. The projection reflects reality on the next refresh, and available-to-promise frees up by the same amount. There is no separate "reduce the plan" step to forget.
+
+That design also means you cannot get demand and shipments out of step. They are two views of the same two numbers.
+
+## The full trace, end to end
+
+Here is the documented path from one customer line to a shipped order, with every state change named.
+
+**1. Confirm the order and add a line.** Product P, quantity 50, due in two weeks.
+
+**2. Demand appears.** The planning grid row for that week shows firm demand of 50.
+
+**3. Commit a build.** The planner enters a build quantity of 60 in that bucket, perhaps rounding to a natural batch. The row moves to a firm state.
+
+**4. Firm the bucket.** A manufacturing order is created from the committed row. The row moves to released.
+
+**5. Schedule.** The engine allocates the job's operations across work centers, the job gets a scheduled end date, and the projected receipt appears on the inventory calendar. This is where the planning layer hands off to [finite capacity scheduling](/blog/what-is-finite-capacity-planning).
+
+**6. Complete.** When the job finishes, the ledger posts a receipt of plus 60 and on-hand rises by 60.
+
+**7. Ship.** Setting shipped quantity to 50 on the sales order line drops its open quantity to zero.
+
+**8. Refresh.** Firm demand for that bucket reads zero. Available-to-promise improves, reflecting the 10 units of surplus now sitting in stock.
+
+Eight states, each visible, each reversible only through a deliberate action. That traceability is what lets a planner answer "why is this job on the schedule" with a specific customer line rather than a shrug.
+
+## Where the job link fits
+
+The sales order to manufacturing order link is optional and does not affect the demand calculation at all. Demand comes from lines. The link is for traceability and grouping.
+
+It matters in two places:
+
+**The grouped order view** presents each order as a parent row with its linked jobs as children, showing job number, product, quantity, status, whether the job has actually been through the engine, scheduled start and end, estimated hours, and actual hours. That is a customer progress call answered in one expansion.
+
+**The unassigned grouping** collects jobs with no link. Replenishment jobs and jobs firmed from a planning suggestion legitimately live there, because neither has a customer order behind it. Treat it as a category rather than an error list, but do scan it occasionally: a job that should be attached to a customer order and is not will not show up on that customer's progress view.
+
+## Firm demand versus forecast
+
+In a planning-capable configuration, confirmed sales order lines are one of the demand sources and the firm one. Forecast entries are the statistical estimate of demand not yet ordered, and the two have to net against each other or the same units get counted twice.
+
+Two consumption rules are available per product:
+
+| Rule | Formula | Fits when |
+|---|---|---|
+| **Greater of** | `gross = max(forecast, firm)` | Firm orders replace the forecast that predicted them |
+| **Minus consumed** | `gross = max(0, forecast − firm) + firm` | Firm orders arrive in addition to the forecast |
+
+Worked comparison. Forecast is 150 and firm is 80 in a bucket.
+
+```
+Greater of:     max(150, 80)                = 150
+Minus consumed: max(0, 150 − 80) + 80
+              = 70 + 80                     = 150
+```
+
+Identical here. Now make firm 200 against a forecast of 150:
+
+```
+Greater of:     max(150, 200)               = 200
+Minus consumed: max(0, 150 − 150) + 200     = 200
+```
+
+Also identical. The rules diverge in the middle ground, where the choice decides whether overlapping demand is counted once or partly twice. Greater-of can overstate demand when forecast is a floor rather than a commitment, which is precisely why it is the default for products where the forecast is meant to be a floor.
+
+Time fences add the third dimension: inside the demand fence, firm demand is used and forecast is suppressed entirely, on the grounds that near-term reality beats near-term prediction. The [planning guide](/blog/edgebic-planning-guide) covers the fence mechanics, and [what MRP is](/blog/what-is-mrp) covers the underlying netting logic.
+
+## Diagnosing zero firm demand
+
+When lines exist and the demand column reads zero, work through these in order. The list is short because the qualifying rule is short.
+
+1. **Is the parent order Confirmed?** Draft is the default for new and imported orders, and it is the most common answer.
+2. **Has the order been deleted?** A deleted parent silences all its lines.
+3. **Has the line been deleted?** Line deletion is permanent, unlike the order's, so there is nothing to recover.
+4. **Is the line fully shipped?** Shipped equal to or above ordered means open quantity is zero, which is correct rather than broken.
+5. **Is the product configured to hold stock?** A make-to-order item behaves differently from a stocked make-to-stock item in the netting path. The [build policy deep dive](/blog/make-to-stock-vs-make-to-order-in-edgebic) covers the resolution.
+6. **Is the planning layer the demand source in this configuration?** Some configurations derive demand from open make-to-order jobs instead of sales order lines, and the two produce identical output when no confirmed lines exist. Switching the source before the lines are entered gives you exactly the symptom of zero firm demand, so the migration order is: enter the lines first.
+
+That last point is worth expanding, because it is the one that looks like a bug and is not. If a configuration starts reading sales order lines before anyone has entered any, every make-to-stock product shows zero firm demand and the planning grid suggests building everything from scratch. The demand did not disappear; it was never entered in the new form. Load the order book first.
+
+## One structural trap
+
+There is no uniqueness rule on product plus due date within an order. Two lines naming the same product and the same date are both valid and both accumulate into the same bucket.
+
+That is deliberate and useful for staged releases against one purchase order. It is also exactly what a repeated bulk import produces when nobody purges the existing lines first. Same structure, two very different meanings. If a bucket's demand looks like twice what you expect, look at the line list before you look at anything else.
+
+For the rest of the failure modes, see [sales order mistakes](/blog/sales-order-mistakes-edgebic). For the platform overview, read the [complete EDGEBIC guide](/blog/edgebic-complete-guide) or start at the [product hub](/edgebic).
+
+<Accordion title="Which sales order lines count as firm demand?">
+Only lines on orders whose status is Confirmed, where neither the line nor its parent order has been deleted. Draft, Shipped, Closed, and Cancelled orders contribute nothing. Each qualifying line contributes its open quantity, meaning ordered minus shipped floored at zero, into the planning bucket that matches that line's own due date rather than the header's requested date.
+</Accordion>
+
+<Accordion title="What happens to demand from an overdue sales order line?">
+It rolls forward into today's bucket rather than disappearing or sitting in the past. A line that was due last week and is still open keeps its full open quantity as demand, clamped to the current period. That is the correct behavior for planning: work you still owe a customer is still work, and burying it in a historical bucket would understate what has to be produced now.
+</Accordion>
+
+<Accordion title="How does a partial shipment change the demand calculation?">
+It reduces it automatically, with no planner intervention. Demand reads the line's open quantity, computed as ordered minus shipped, so raising the shipped figure from 150 to 350 on a 500-unit line drops the firm demand contribution from 350 to 150 immediately. The next projection refresh reflects it, and available-to-promise for that product frees up by the same amount.
+</Accordion>
+
+<Accordion title="Why might firm demand show zero when sales order lines clearly exist?">
+Six causes account for almost all of it: the parent order is not Confirmed, the order has been deleted, the line has been deleted, the line is fully shipped so its open quantity is zero, the product is not set up as a stocked make-to-stock item, or the planning layer is not the demand source in that configuration. Checking them in that order finds the cause in minutes.
+</Accordion>

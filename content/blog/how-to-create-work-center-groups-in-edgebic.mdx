@@ -1,0 +1,156 @@
+---
+title: "How to Create a Work Center Group in EDGEBIC"
+description: "Create a machine pool work center group in EDGEBIC step by step: name the pool, pick a selection strategy, add members with factors, and bind a routing step."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - create machine pool work center group
+  - work center group setup
+  - machine pool configuration
+  - selection strategy scheduling
+  - efficiency factor work center
+  - bind routing step to group
+targetPhrase: "create machine pool work center group"
+wordCount: 1730
+readingTime: 9
+faqQuestions:
+  - question: "What do you need before creating a work center group in EDGEBIC?"
+    answer: "You need at least two work centers that already have shifts assigned, because a group has no capacity of its own and every hour it schedules lands on a member machine. You also need to know the relative speed of those machines for this class of work, since each member carries an efficiency factor against the routing step's base hours. A routing to bind is the third piece."
+  - question: "What does the efficiency factor on a group member do?"
+    answer: "The efficiency factor multiplies the routing step's base run hours for that member only. A factor of 1.0 is the baseline, 0.5 runs the work twice as fast, and 1.25 runs it 25 percent slower. It never touches setup time, which comes either from the routing step or from the member's own setup override. Leave the factor at 1.0 for machines that genuinely run at the same speed."
+  - question: "How do you route an operation to a machine pool instead of a machine?"
+    answer: "Open the routing, click the select work center button on the step, and choose the Work Center Group radio in the selection popup. The list shows active groups that have at least one active member, and hovering a group previews its members and factors. Confirm, and the step shows a pool badge with the group name and member count until the next scheduling run resolves it to a real machine."
+  - question: "Does adding a member to a group change the current schedule?"
+    answer: "No. Master data edits never move a live schedule by themselves in EDGEBIC. The new member is considered on the next Drive Schedule or reschedule run, and only for operations that have not started yet. Operations already running keep their machine, because recorded work is never moved. That is why the usual sequence is edit the pool, then run the schedule, then read the Gantt."
+qaQuestions:
+  - question: "We added a second mill to the pool on Monday but the Gantt looked identical. Did the group not save?"
+    answer: "It almost certainly saved. Nothing on the Gantt changes until a scheduling run happens, because EDGEBIC never silently re-plans behind you. Run Drive Schedule on Tuesday and the not-yet-started milling operations get re-shopped against the two-machine pool. In the documented example, two of three pending operations move to the new mill because it finishes them sooner, the operation that started Monday stays where it is, and one job's milling step moves from finishing Thursday 14:00 to Wednesday 10:30. Steps that moved carry a replacement indicator so you can see which ones changed machine."
+  - question: "How aggressive should we be with efficiency factors when we are not sure of the numbers?"
+    answer: "Start at 1.0 for every member and only set a factor where you can defend it for this class of work. Invented precision creates confident-looking completion dates built on a guess, which is worse than a pool of equals. If one machine is simply slower at everything you run on it, that belongs in the work center's own configuration rather than the member row: the member factor means 'for this pool's work, this machine takes 25 percent longer than the base hours say.' Setup is separate, so a machine that runs fast but fixtures slowly gets a factor plus a setup override, not a compromise number."
+---
+
+**Creating a machine pool in EDGEBIC by User Solutions takes four steps: create the group, choose its selection strategy, add member machines with their speed factors, and bind a routing step to the pool instead of a machine.** Everything after that happens on the next scheduling run, when the engine shops the pool and books the best member. This walkthrough covers each screen and each field.
+
+If you are still deciding whether a pool is the right structure at all, start with [work center groups explained](/blog/edgebic-work-center-groups-explained), which compares pools against alternates, instances, and departments, or with the plain definition of [a work center group](/blog/what-is-a-work-center-group-machine-pool). Everything below happens inside [EDGEBIC](/edgebic).
+
+## Before You Start
+
+| Prerequisite | Why it matters |
+|---|---|
+| At least two work centers exist, each with shifts assigned | A group has no capacity of its own. Every hour it schedules lands on a member work center with that member's shifts, holidays, instances, and utilization |
+| You know the relative speed of the machines for this class of work | Each member carries an efficiency factor against the routing step's base hours |
+| A routing exists, or you are about to build one | The pool does nothing until a routing step targets it |
+
+Work centers themselves are set up on the Workcenter tab, and the [complete EDGEBIC guide](/blog/edgebic-complete-guide) covers the master data sequence if you are building a plant from scratch.
+
+## Step 1: Create the Group
+
+Open the **Workcenter** tab from the main navigation. It holds three inner tabs: **Workcenters**, **Workcenter Groups**, and **Resource Calendar**. Select **Workcenter Groups** and click **Group** in the toolbar to open the Add Work Center Group dialog.
+
+| Field | Required | What it does | Example |
+|---|---|---|---|
+| **Group Name** | Yes | The pool's unique name, shown as a badge on every routing step bound to it | `MILLING` |
+| **Code** | No | Short code for imports and reports | `MILL` |
+| **Selection Strategy** | Yes | How the scheduler picks the member that runs a step | `EarliestCompletion` |
+| **Status: Active** | No | Unchecked means future scheduling runs ignore the group and it disappears from the routing picker | Checked |
+| **Description** | No | Free-text notes about what the pool covers | `Vertical mills, any member can run bracket ops` |
+
+Name the pool after the capability, in capitals: `MILLING`, `WELDING`, `PAINT-LINE`. That name lands on routing steps as a badge, so short and unmistakable beats descriptive. Save, and the group appears in the list with a member count of zero. A group with no active members cannot be scheduled, so add members next.
+
+To change the name, code, strategy, or active flag later, double-click the group in the list and the same dialog reopens.
+
+## Step 2: Choose the Selection Strategy
+
+The strategy decides which member runs a step when more than one could. Three options ship, and the help text under the combo box explains the selected one:
+
+| Strategy | Plain language | Choose it when |
+|---|---|---|
+| **EarliestCompletion** (default) | Whoever finishes the operation first gets it, weighing both machine speed and how busy each machine already is | You want the shortest lead time per job. Right for most shops |
+| **PrimaryFirst** | Always use the primary machine unless it is full that day, then spill to the others | You want predictable routing, for example when the primary is the validated machine and the rest are overflow |
+| **EarliestStart** | Whoever can begin soonest gets it, judged day by day | Getting work moving today matters more than finishing sooner tomorrow |
+
+EarliestCompletion is the default and matches what most planners expect. It is also the standard behavior of resource groups in mainstream planning systems, so it travels well when a supervisor moves between tools. The mechanics of each strategy, with arithmetic, are in [how EDGEBIC picks the best machine in a pool](/blog/how-edgebic-picks-the-best-machine-in-a-pool).
+
+## Step 3: Add Members and Set Their Knobs
+
+With the group selected, click **Add / Remove Members**. The picker lists every work center with a checkbox. Check the machines that belong to the pool and click OK. A machine may belong to several groups at once, and rows already used elsewhere carry a note rather than being hidden.
+
+The members now appear in the members grid. Edit each row directly in the grid, then click **Apply** on that row:
+
+| Column | What it does | Example |
+|---|---|---|
+| **Work Center** | The member machine, read only | `CNC-Mill-1` |
+| **Factor (x)** | Run-time multiplier inside this pool: effective run hours equal base hours times factor. Never applied to setup | `1.0` |
+| **Setup Override (h)** | Setup hours when this member runs the step. Blank inherits the routing step's own setup time | `inherit` |
+| **Primary** | Marks the designated primary that PrimaryFirst always tries first. Only one member per group can hold it, and ticking a second one unticks the first automatically | Checked on `CNC-Mill-1` |
+| **Priority** | Tie-break ordering, lower first. Also decides the fallback primary when no member is flagged | `1` |
+| **Active** | Unchecked means this machine drops out of every bound step's candidate list on the next scheduling run. Operations already started on it stay put | Checked |
+
+Two habits keep pools honest. First, leave factors at 1.0 for homogeneous pools and set them only where machines genuinely differ in speed for this class of work. Second, flag exactly one Primary when you plan to use PrimaryFirst. Without a primary flag, the lowest priority number acts as the primary, and explicit beats implicit when a supervisor is reading the grid at 6am.
+
+## Step 4: Bind a Routing Step to the Pool
+
+Open the **BOR** tab and select the routing you want to edit. On the step's row, click the select work center button next to the work center field. The selection popup opens with three radio buttons: **Workcenter**, **Product**, and **Work Center Group**.
+
+Choose **Work Center Group**. The list switches to active groups that have at least one active member, and hovering a group previews its members with their factors. Pick the group and click **Confirm**. The step now shows a pool badge with the group name and member count instead of a machine name.
+
+Two consequences are worth knowing at this moment:
+
+- Binding to a group **replaces any manually configured alternate work centers** on that step. The group is the alternate list.
+- A group-bound step cannot also be a parallel step in this release, and a material step (one pointing at a product) cannot be group bound.
+
+The same fields are available in the graphical routing designer, which shows the pool badge on bound nodes and blocks the alternate and parallel dialogs on them. If you build routings visually, the [designer tour](/blog/edgebic-graphical-bor-designer-tour) covers the node properties panel.
+
+## Step 5: Run the Schedule and Check the Result
+
+Nothing has moved yet. Run **Drive Schedule**, then read what changed:
+
+| Action | Immediate effect | Effect on the schedule |
+|---|---|---|
+| Create or edit a group | The group appears in the list and the routing picker | None until a step is bound and you run a schedule |
+| Add a member, change a factor or setup override | The members grid updates | The next run considers the new pool for every bound, not-yet-started operation |
+| Untick a member's Active flag | The row is marked inactive | From the next run no new work goes there. Started operations stay |
+| Untick the group's Active flag | The group leaves the routing picker | Steps still bound to it fail to schedule with a visible warning. Rebind or reactivate first |
+| Bind a step to a group | The step shows the pool badge | The step lands on a member on the next run, and every screen then shows the real machine |
+| Delete a group | Blocked with a friendly error while routing steps still reference it | Rebind those steps first, or simply deactivate the group |
+
+After the run, open the **Resource Calendar** inner tab to see capacity against load for the pool over a date window. Each group row is the live sum of its members for that window. A machine belonging to two pools appears under both, and those rows are overlapping views of the same hours rather than extra capacity.
+
+## A Concrete First Pool
+
+Here is the documented worked example, small enough to build in ten minutes. Group `MILLING`, strategy EarliestCompletion, two members: CNC-Mill-1 at factor 1.0 flagged Primary with priority 1, and CNC-Mill-2 at factor 1.25 with priority 2. Both run a Day Shift of 08:00 to 16:00 with one instance each.
+
+A routing step for a 20-piece job has base hours of 0.5 per unit and 0.5 hours of setup. The pool arithmetic:
+
+| Candidate | Effective run hours per unit | Total for 20 pieces |
+|---|---|---|
+| CNC-Mill-1 | 0.5 x 1.0 = 0.5 | 0.5 x 20 + 0.5 setup = **10.5 h** |
+| CNC-Mill-2 | 0.5 x 1.25 = 0.625 | 0.625 x 20 + 0.5 setup = **13.0 h** |
+
+With both mills free on Monday morning, CNC-Mill-1 finishes Tuesday 10:30 against CNC-Mill-2's Tuesday 13:00, so the faster machine wins. With CNC-Mill-1 booked solid until Wednesday, its projected completion slides to Thursday 10:30 while CNC-Mill-2 still finishes Tuesday 13:00, so the slower machine wins. That reversal is not a bug, it is capacity-aware pooling doing its job.
+
+## Where to Go Next
+
+Once the first pool works, the useful next reads are [how the member gets picked](/blog/how-edgebic-picks-the-best-machine-in-a-pool) for the strategy mechanics and re-shopping behavior, and [work center group mistakes](/blog/work-center-group-mistakes-edgebic) for the configuration traps that produce confusing schedules. If your pooled operations also need a certified person standing at the machine, [operator and skill scheduling](/blog/edgebic-operator-and-skill-scheduling-explained) is the second constraint dimension, and the two compose on one routing step. For how pooling fits the wider picture of [production scheduling](/blog/what-is-production-scheduling), the [complete guide](/blog/edgebic-complete-guide) has the full pipeline.
+
+Bringing machine data over from an existing system? Pools are built on work centers, and work centers arrive through [import masks](/edgebic-erp-integration) like every other master data table.
+
+<Accordion title="What do you need before creating a work center group in EDGEBIC?">
+You need at least two work centers that already have shifts assigned, because a group has no capacity of its own and every hour it schedules lands on a member machine. You also need to know the relative speed of those machines for this class of work, since each member carries an efficiency factor against the routing step's base hours. A routing to bind is the third piece.
+</Accordion>
+
+<Accordion title="What does the efficiency factor on a group member do?">
+The efficiency factor multiplies the routing step's base run hours for that member only. A factor of 1.0 is the baseline, 0.5 runs the work twice as fast, and 1.25 runs it 25 percent slower. It never touches setup time, which comes either from the routing step or from the member's own setup override. Leave the factor at 1.0 for machines that genuinely run at the same speed.
+</Accordion>
+
+<Accordion title="How do you route an operation to a machine pool instead of a machine?">
+Open the routing, click the select work center button on the step, and choose the Work Center Group radio in the selection popup. The list shows active groups that have at least one active member, and hovering a group previews its members and factors. Confirm, and the step shows a pool badge with the group name and member count until the next scheduling run resolves it to a real machine.
+</Accordion>
+
+<Accordion title="Does adding a member to a group change the current schedule?">
+No. Master data edits never move a live schedule by themselves in EDGEBIC. The new member is considered on the next Drive Schedule or reschedule run, and only for operations that have not started yet. Operations already running keep their machine, because recorded work is never moved. That is why the usual sequence is edit the pool, then run the schedule, then read the Gantt.
+</Accordion>

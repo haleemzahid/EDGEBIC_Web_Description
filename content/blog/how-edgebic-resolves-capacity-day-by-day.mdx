@@ -1,0 +1,237 @@
+---
+title: "How EDGEBIC Resolves Capacity Day by Day: The Full Chain"
+description: "Daily capacity calculation in manufacturing follows one chain: date gate, then override priority, then the shift formula. Every branch, with worked numbers."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - daily capacity calculation manufacturing
+  - capacity resolution chain scheduling
+  - daily vs monthly capacity override
+  - partial holiday overlap calculation
+  - overnight shift capacity
+  - available hours per work center
+targetPhrase: "daily capacity calculation manufacturing"
+wordCount: 1940
+readingTime: 10
+faqQuestions:
+  - question: "What order does a scheduler resolve daily capacity in?"
+    answer: "A date gate runs first and can zero the day outright: an unavailable work center, a future effective date, a machine closure, a whole-day plant holiday, or a weekend with weekend production off. If the date survives, resolution runs in priority order: a per-day override for that work center, shift, and date is returned verbatim; failing that, a date-range override is distributed; failing that, the shift-hours formula computes. First match wins."
+  - question: "Which wins, a daily capacity override or a date-range override?"
+    answer: "The daily override, always. If any applicable shift on a date carries a per-day override, the date-range override is ignored completely for that date, and the day is effectively removed from the range budget. The reasoning is that the more specific instruction is the more recent decision: a planner who typed a number for one particular day meant that number."
+  - question: "How is a partial holiday subtracted from shift capacity?"
+    answer: "By computing the overlap between the holiday window and each shift's own window, per shift. The formula is the later of the two start times subtracted from the earlier of the two end times, floored at zero. That overlap is removed from the per-machine shift duration before the instance count and utilization multiply, so on a three-machine work center a 45-minute plant meeting costs 2.25 hours of schedulable capacity."
+  - question: "Why does a date-range override give more hours per day than expected?"
+    answer: "Because it spreads across available days only. A five-day range containing one plant holiday distributes the budget over four days, not five, so each remaining day receives a larger share. The total budget is preserved and the daily share rises. It is then divided again by the number of shifts running on that date, which is why a two-shift work center sees half of the daily figure in each shift slot."
+  - question: "Do the capacity dashboard and the scheduler ever show different available hours?"
+    answer: "They resolve through the same chain, so the arithmetic matches. The one timing difference worth knowing is that the dashboard reads overrides as soon as they are saved, while a scheduling run loads its overrides when it starts. Change an override mid-run and the dashboard reflects it immediately while the running engine picks it up on the next run."
+qaQuestions:
+  - question: "I set a per-day override of zero on a Saturday to make absolutely sure nothing schedules there, and now I am not sure it did anything. Did it?"
+    answer: "On a day the shift does not run, no. An override adjusts a slot that already exists rather than creating one, so a zero-hour entry on a non-working Saturday is a no-op: the day was already returning zero. Where a zero override does real work is on a day the shift normally runs and you want blacked out, a full-day teardown for instance, and there it is the cleanest tool because it carries a reason and shows as overridden in the grid. If you are trying to make a Saturday schedulable rather than blocked, that is the opposite case and needs a positive override or a date-range override."
+  - question: "Our Wednesday PM is one hour, but the capacity report says Wednesday lost nearly two hours compared to Tuesday. Is the maintenance record wrong?"
+    answer: "The record is probably right and the arithmetic is doing what it should. Downtime is subtracted from the per-machine shift duration before the instance count and utilization multiply it back up, so one hour of PM on a two-instance work center running at 85% utilization removes 1 x 2 x 0.85, which is 1.7 hours of schedulable capacity. That ordering is deliberate: a maintenance window stops every machine in the work center, not one. It also means maintenance on multi-machine resources is always more expensive than the clock suggests, which is a real planning input rather than a reporting artifact."
+---
+
+**Daily capacity in EDGEBIC resolves through a fixed chain: a date gate that can zero the day outright, then a three-level override priority, and only then the shift-hours formula.** Understanding the order matters because most "the capacity number looks wrong" investigations are really "I do not know which branch fired".
+
+[EDGEBIC by User Solutions](/edgebic) runs this resolution at a single point, and the capacity dashboard mirrors it, so the Resource Calendar bars and the hours the engine books never come from two different opinions. This article walks the whole chain with worked numbers. The layers it consumes are introduced in [shifts and calendars explained](/blog/edgebic-shifts-and-calendars-explained), and the work center fields it multiplies are covered in [how EDGEBIC calculates work center capacity](/blog/how-edgebic-calculates-work-center-capacity).
+
+## The Chain, Top to Bottom
+
+```
+For one work center, one shift, one date:
+
+  GATE   Is the work center available on this date at all?
+           no  -> zero capacity, date skipped entirely
+           yes v
+
+  1      Per-day override for (work center, shift, date)?
+           yes -> return those hours verbatim, stop
+           no  v
+
+  2      Date-range override covering this date?
+           yes -> return total ÷ available days ÷ shifts on this date, stop
+           no  v
+
+  3      Shift-hours formula
+           (shift duration − downtime − partial-holiday overlap)
+           × instances × utilization %
+```
+
+Each level is unconditional. When level 1 fires, levels 2 and 3 are never computed at all.
+
+## The Gate: Six Ways a Day Disappears
+
+Before any capacity math runs, the engine asks whether the work center is available on the date. A "no" from any of these skips the date entirely, and no allocation slot is created:
+
+- The work center is marked unavailable.
+- Its effective date is later than the date being tested (a machine not yet commissioned).
+- The date falls inside an idle-time window recorded for the work center.
+- A machine-specific closure covers the date.
+- A whole-day plant holiday covers the date.
+- The date is a Saturday or Sunday and weekend production is off.
+
+That last one accounts for a large share of "I added Saturday hours to the shift and nothing schedules" reports. The Saturday can carry hours and still be gated out before the formula ever runs. The practical route to occasional weekend work is a per-day override on the specific Saturdays you intend to run, which also creates the audit trail explaining why that Saturday and not the next three.
+
+One gate has a deliberate exception. Dates covered by a date-range override skip the weekend guard, because the override is an explicit statement that those days are schedulable.
+
+## Level 1: The Per-Day Override
+
+A per-day override is keyed to exactly one work center, one shift, one date. It is returned verbatim.
+
+```
+Per-day override
+  Work center : the CNC machining center
+  Shift       : Day Shift
+  Date        : Saturday 21st
+  Hours       : 4.0
+  Reason      : "Overtime approved, rush order"
+
+Resolution   : 4.0 h, immediately. The formula never runs.
+```
+
+Two properties of "verbatim" are worth stating plainly, because both cause real errors:
+
+**The engine does not multiply the number by the instance count.** The planner is stating the effective total for the day across every machine. On a three-instance work center where each machine will run four hours, the entry is 12. Enter 4 and the day offers four hours across three machines, which is a third of what was intended, and work quietly pushes into the following days.
+
+**Zero is legal and blacks the cell out**, but only on a day the shift already runs. An override adjusts an existing slot rather than creating one, so a zero-hour override on a non-working Saturday changes nothing: the day was returning zero anyway.
+
+Overrides are also per shift. A work center running day and night needs both cells overridden to change the whole day's capacity.
+
+## Level 2: The Date-Range Override
+
+A date-range override states a total hours budget for a window, and the engine distributes it.
+
+A welding shop with 3 instances and 2 shifts of 8 hours normally offers 48 hours a day. During a partial retooling, the plant can only guarantee 60 machine-hours for the whole week:
+
+```
+Date-range override
+  Start    : Monday 14th
+  End      : Friday 18th
+  Capacity : 60.0 h total
+  Reason   : "Retooling, partial availability"
+
+Resolution for any date in the range:
+  available days in the window  = 5
+  daily total                   = 60 / 5   = 12.0 h
+  shifts running that date      = 2
+  per shift, per day            = 12 / 2   =  6.0 h
+```
+
+Each shift slot offers 6 hours instead of its usual 16, for the whole week, from one record.
+
+Two behaviors of the distribution surprise people the first time:
+
+**It spreads across available days only.** Put a plant holiday inside that Monday to Friday range and the 60 hours spread across 4 days at 15 hours a day, not 5 at 12. The budget is preserved and the daily share rises. That is correct: the plant still gets its 60 hours, just in fewer days.
+
+**A per-day override on any date inside the range removes that date from the range budget entirely.** Level 1 wins outright, and the range is not consulted for that day. If you override a Wednesday inside a retooling week, Wednesday follows your number and the other four days keep their original per-day share.
+
+## Level 3: The Formula
+
+When no override applies, the shift-hours formula runs:
+
+```
+gross     = shift end − shift start          (wraps for overnight shifts)
+net       = gross − break − downtime − partial-holiday overlap
+capacity  = max(0, net) × instances × (utilization ÷ 100)
+```
+
+The ordering carries most of the meaning. Subtractions happen at the per-machine level, then the multipliers scale the result. A worked case, on a Wednesday with a recurring PM window:
+
+| Parameter | Value |
+|---|---|
+| Shift | 08:00 to 16:30 |
+| Break | 0:30 |
+| Instances | 2 |
+| Utilization | 85% |
+| Downtime | Wednesdays, 08:00 to 09:00 |
+
+```
+gross            = 8.5 h
+break            = 0.5 h
+downtime         = 1.0 h
+partial holiday  = 0.0 h
+net per machine  = 7.0 h
+raw capacity     = 7.0 x 2   = 14.0 h
+effective        = 14.0 x 0.85 = 11.9 h
+```
+
+The Wednesday day shift offers 11.9 hours. The one hour of PM cost 1.7 hours of schedulable capacity (1 hour, times 2 machines, times 0.85), because maintenance stops every machine in the work center. That is a real planning input, not a reporting quirk: maintenance on multi-machine resources is always more expensive than the clock suggests.
+
+The formula also clamps at zero. A downtime entry longer than the shift produces zero capacity rather than a negative number, and nothing at data entry stops you from recording a five-hour window on a four-hour shift. The result is silent, so it is worth a sanity check when a shift suddenly goes dark.
+
+## Partial Holidays: Overlap, Per Shift
+
+A partial holiday blocks a window rather than a day, and each shift is charged only its own overlap:
+
+```
+blocked = max(0, min(shift end, holiday end) − max(shift start, holiday start))
+```
+
+A quarterly all-hands from 10:00 to 10:45:
+
+| Shift | Window | Overlap | Effect per machine |
+|---|---|---|---|
+| Day | 08:00 to 16:00 | 10:45 − 10:00 = 0.75 h | 8 h becomes 7.25 h |
+| Night | 16:00 to 00:00 | none | unchanged |
+
+The day shift on a two-instance work center offers 14.5 hours that date instead of 16. The night shift loses nothing, because nobody on nights was in the meeting. That is the argument for modelling meetings as partial holidays rather than by shrinking shifts: one record, plant-wide, charged correctly to each shift, repeating automatically if the holiday recurs.
+
+Recurring holidays match on month and day only, and the year on the record is ignored. That is convenient and it is also the single most common holiday data error: a wrong month or day fires on the wrong calendar date every year, forever. [A job scheduled on a holiday](/blog/job-scheduled-on-a-holiday-edgebic) covers how to confirm which layer misfired.
+
+## Overnight Shifts
+
+A shift whose end time is at or before its start time wraps around midnight:
+
+```
+duration = (24:00 − start) + end
+22:00 to 06:00  ->  (24:00 − 22:00) + 06:00  =  8 h
+```
+
+Those hours are attributed to the calendar day the shift **starts** on. A slice running 22:00 Tuesday to 06:00 Wednesday belongs to Tuesday's allocation. That is consistent across the Gantt, the allocation records, and the capacity screens, so overnight rows reconcile once you read them against the start day.
+
+The engine also guards against absurd durations. If a shift configuration produces more than 24 hours, the slot returns zero rather than an impossible number. A night shift showing zero capacity is worth a look at its start and end times before anything else.
+
+## What Happens After Capacity Is Known
+
+The resolved number is a ceiling, not an assignment. Two further adjustments decide how much of it a specific job can take.
+
+**Consumed capacity.** Each slot tracks hours already committed, and available capacity is total minus used. When it reaches zero, the slot is full.
+
+**The late-start penalty.** A job that cannot start before 13:00 does not get the whole day's ceiling, even on an idle machine:
+
+```
+Assembly work center, 2 instances, day shift 08:00 to 16:00, nothing booked yet.
+Earliest start = Monday 13:00.
+
+remaining time in shift    = 16:00 − 13:00   = 3 h
+remaining capacity         =                   8 h per machine
+available per instance     = min(3, 8)       = 3 h
+total available Monday     = 3 x 2           = 6 h
+```
+
+Six hours on Monday, the rest spills to Tuesday. Without that clamp, the first day of every multi-day job would be over-allocated and every downstream date would inherit the fiction. The rest of the allocation sequence is in [the scheduling engine guide](/blog/edgebic-scheduling-engine-guide) and [how EDGEBIC picks an instance](/blog/how-edgebic-picks-an-instance-load-balancing-vs-one-per-day).
+
+## Debugging a Capacity Number in Four Questions
+
+When a number looks wrong, resolve it in this order rather than arguing with the report:
+
+1. **Did the gate fire?** Is the work center available, effective, un-closed, and is the date a working day?
+2. **Which level answered?** Is there a per-day override on that exact work center, shift, and date? A date-range override covering it?
+3. **Are the multipliers right?** Instance count against the machines on the floor, utilization as expected.
+4. **What was subtracted?** Downtime for that weekday, and any partial-holiday overlap with that shift's window.
+
+Nine times out of ten the answer is in question 2 or question 3. The full symptom-first version of the same walk is [the zero-capacity checklist](/blog/capacity-shows-zero-for-a-work-center-edgebic), and the opposite symptom is covered in [work center overload causes and fixes](/blog/work-center-overloaded-in-edgebic-causes-fixes).
+
+## Why the Chain Is Worth Knowing
+
+Planners who understand the resolution order stop treating capacity as a black box and start using it as a control surface. Approved overtime becomes a typed number with a reason attached. A retooling week becomes one record. A recurring plant meeting becomes a holiday that maintains itself.
+
+That is the practical difference between a calendar that describes the plant and a calendar that argues with it. Across 35+ years of finite capacity work at User Solutions, at organizations including the US Navy, GE, BAE Systems, and Cummins, the schedules that get trusted are the ones where a planner can explain any number on the screen in under a minute. This chain is how you do that.
+
+## Next
+
+Configure the layers with [the shifts and holidays setup guide](/blog/how-to-set-up-shifts-holidays-downtime-in-edgebic), then read [the shift and calendar mistakes](/blog/shift-and-calendar-mistakes-edgebic) that produce right-looking, wrong capacity. The work center side of the same arithmetic, including instances and capacity type, is in [work centers explained](/blog/edgebic-work-centers-explained).

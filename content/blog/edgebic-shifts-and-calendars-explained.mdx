@@ -1,0 +1,167 @@
+---
+title: "Shifts, Holidays, and Calendars in EDGEBIC: The Plant Clock"
+description: "A production shift calendar drives every scheduling promise date. How shifts, holidays, downtime, and capacity overrides layer into available hours in EDGEBIC."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - production shift calendar scheduling
+  - manufacturing shift calendar software
+  - plant holiday scheduling
+  - partial holiday capacity
+  - shift hours capacity formula
+  - capacity override manufacturing
+targetPhrase: "production shift calendar scheduling"
+wordCount: 1850
+readingTime: 9
+faqQuestions:
+  - question: "What is a shift in production scheduling software?"
+    answer: "A shift is a named weekly working-hours pattern, for example Day Shift running 08:00 to 16:00 Monday through Friday. Each weekday has its own on/off switch and its own start and end time, so one shift can run ten hours on weekdays and four on Saturday. Shifts are plant-wide master data, which means one shift can be shared by many work centers and edited in one place."
+  - question: "What is the difference between a whole-day and a partial plant holiday?"
+    answer: "A whole-day holiday removes the date entirely: every work center and every shift returns zero capacity and the scheduler skips the day. A partial holiday blocks only a time window, and each shift loses only the hours that overlap its own window. A 10:00 to 10:45 all-hands costs a day shift 45 minutes and costs a 16:00 night shift nothing at all."
+  - question: "How do shift hours become schedulable capacity?"
+    answer: "For every work center, shift, and date the scheduler computes shift hours for that weekday, minus downtime and any partial-holiday overlap, multiplied by the machine instance count, multiplied by the utilization percentage. A per-day capacity override replaces the whole formula for the days it covers. That number is the ceiling for the slot, and the engine will not book past it."
+  - question: "Does changing a shift move jobs that are already scheduled?"
+    answer: "No. Saving a shift or a holiday changes the capacity calendar only. Existing schedules keep their dates, including allocations that may now sit outside working hours, until the next scheduling run rebuilds the plan against the new calendar. Completed work is never moved by a reschedule, so rerunning is safe on jobs already in progress."
+  - question: "How are overnight shifts handled in a scheduling calendar?"
+    answer: "A shift whose end time is at or before its start time wraps around midnight, so 22:00 to 06:00 computes as eight hours. Those hours are attributed to the calendar day the shift starts on. A job running 22:00 Tuesday into 06:00 Wednesday appears on Tuesday's allocation, which is correct and worth knowing before reading an overnight Gantt."
+qaQuestions:
+  - question: "We work a normal 8-hour day but lose 45 minutes to a plant meeting on the first Monday of every month. Do I shrink the shift?"
+    answer: "No, model it as a recurring partial plant holiday for the meeting window. Shrinking the shift would cost you 45 minutes every single day and it would hide the reason, so a year later nobody remembers why the day is short. A partial holiday costs each shift only its own overlap with the window, applies plant-wide from one record, and repeats automatically once you tick recurring. The day shift drops from 8 hours to 7.25 per machine on those Mondays and the night shift is untouched, which matches what actually happens."
+  - question: "Our schedule promises dates that assume we run at full clock all week, and we never do. What is the honest way to leave headroom?"
+    answer: "Put the headroom into the calendar rather than hoping the plan absorbs it. Three approaches work and all three are honored identically by the scheduler and the dashboards: enter shift hours net of the time you reliably lose, record recurring maintenance as downtime so it is subtracted before the instance multiplier, or use per-day capacity overrides on the specific days that differ. What does not work is planning to 100% of the theoretical clock and treating the shortfall as a surprise every Friday. A plan with no recovery room propagates its first breakdown through every downstream date."
+---
+
+**A production shift calendar is the set of rules that tells a finite scheduler when work is possible, and in EDGEBIC it resolves into a single number: available hours for one work center, one shift, one date.** Everything visible downstream (Gantt bars, utilization percentages, promised delivery dates) is that number, computed thousands of times. Get the calendar wrong and every promise inherits the error.
+
+[EDGEBIC by User Solutions](/edgebic) builds the calendar from four layers that stack in a fixed order: shifts, holidays, downtime, and planner overrides. This article explains what each layer is for and how they combine. The click-by-click configuration is in [how to set up shifts, holidays, and downtime](/blog/how-to-set-up-shifts-holidays-downtime-in-edgebic), and the exact arithmetic is in [how EDGEBIC resolves capacity day by day](/blog/how-edgebic-resolves-capacity-day-by-day).
+
+## Layer 1: The Shift
+
+A shift is a named weekly pattern. `Day Shift`, `Night Shift`, `Weekend Shift`. Each weekday carries its own working-day checkbox and its own start and end time, which means one shift can run ten hours Monday through Thursday, eight on Friday, and nothing at the weekend.
+
+Two properties make shifts the right unit of plant time:
+
+**They are shared.** One shift record serves many work centers. Extend Day Shift by two hours and every work center that inherits it gains two hours a day, in one edit.
+
+**They are literal.** The scheduler believes the times exactly as entered. A shift that says 08:00 to 16:00 offers eight hours, not "about a day".
+
+Shifts are plant-wide master data, and most work centers should simply inherit them. A work center that genuinely runs a different pattern (the one mill staffed on nights, the cell that works Monday to Thursday) can carry its own calendar instead, which is covered in [work centers explained](/blog/edgebic-work-centers-explained).
+
+Breaks are not a separate field on the shift. Model a plant-wide lunch either by defining the shift hours net of the break, or as a recurring partial holiday for the break window. If no job may span the break, define two shifts instead of one.
+
+## Layer 2: Plant Holidays
+
+A plant holiday is a closure that affects every work center and every shift. Two dimensions matter.
+
+**Recurring or one-off.** A recurring holiday matches the same month and day every year, so Christmas is entered once and expands into every year the scheduler plans across. Only the month and day of the date matter for a recurring record; the year is ignored.
+
+**Whole day or partial.** A whole-day holiday removes the date entirely: every work center returns zero capacity and the scheduler skips it. A partial holiday blocks only a window, and the subtraction is computed per shift.
+
+The partial version is the more useful of the two, because most real interruptions are not full days:
+
+```
+blocked hours = max(0, min(shift end, holiday end) − max(shift start, holiday start))
+```
+
+A quarterly all-hands from 10:00 to 10:45 against a 08:00 to 16:00 day shift blocks 0.75 hours. Against a 16:00 to 00:00 night shift it blocks nothing, because the two windows do not overlap. One record, entered once, charged correctly to each shift.
+
+That overlap is subtracted **before** the instance and utilization multipliers, so it scales with the size of the work center. On a two-machine work center, a 45-minute meeting costs 1.5 hours of schedulable capacity, exactly as it does in the building.
+
+### Closures Come at Three Scopes
+
+A closure is not always plant-wide, and the scheduler recognizes three levels that coexist without double-counting:
+
+| Scope | What it blocks | Typical use |
+|---|---|---|
+| Plant-wide | Every work center and every shift on that date | Public holidays, annual shutdown |
+| Shift-scoped | One shift, on the work centers that use it | A night-shift-only maintenance window |
+| Work-center-scoped | One machine, leaving everything else running | An annual teardown or certification day |
+
+The hierarchy resolves in the obvious direction. A whole-day plant holiday wins outright: no work center gets an allocation that day regardless of what the other two levels say. Below that, a shift-scoped closure blocks one shift while the others keep working, and a machine-specific closure takes one work center out while its neighbors continue.
+
+In the current release the plant level is the one with its own screen. Shift-scoped closures and machine-specific closure records are honored by the engine, and the practical way to model them today is a partial plant holiday for anything genuinely plant-wide, and a per-day capacity override set to zero for a single machine on a single date. The override version is arguably better anyway: it carries a reason and shows as overridden in the grid, so the plan explains itself later.
+
+## Layer 3: Downtime
+
+Downtime is unavailability inside a shift rather than instead of it: a weekly lubrication window, a recurring PM slot, a one-off bearing replacement. It subtracts hours from the shift without eliminating the shift.
+
+Recurring downtime fires on every matching weekday. One-off downtime fires on its specific date. Like a partial holiday, downtime is subtracted from the per-machine shift duration before the multipliers, which is why an hour of Wednesday PM on a three-instance work center removes three hours of capacity, not one. Maintenance on multi-machine resources is always more expensive than the clock suggests.
+
+Shift-scoped closures and standalone downtime records are honored by the scheduling engine. The current release has no dedicated screen for configuring them, so the practical way to model the same situations today is a partial plant holiday for anything plant-wide, and a per-day capacity override for anything specific to one machine on one date.
+
+## Layer 4: Capacity Overrides
+
+The first three layers describe the rules. The fourth lets a planner state an answer directly.
+
+A **per-day capacity override** sets the effective hours for one work center, one shift, one date. It carries a reason, it is flagged as overridden in the grid, and it replaces the formula entirely for that cell. Approved Saturday overtime, a half-day PM window, a temporarily de-rated machine: all of them are one typed number rather than a calendar edit.
+
+A **date-range override** does the same job for a period. Give it a total hours budget for a window and the engine spreads it across the available days and shifts inside that window. A retooling week that can only guarantee 60 machine-hours is one record, not five daily edits.
+
+The two combine in a strict order, and the more specific instruction wins:
+
+```
+1. per-day override for this work center, shift, and date
+2. date-range override covering this date
+3. the shift-hours formula
+```
+
+The one rule that catches people: an override is the **total** for the day across every machine in the work center. The engine uses it verbatim and never multiplies it by the instance count. On a three-instance work center where each machine will run four hours, the entry is 12.
+
+## How the Layers Become a Number
+
+For every work center, shift, and date:
+
+```
+available hours = (shift hours for that weekday
+                   − downtime
+                   − partial-holiday overlap)
+                  × number of instances
+                  × utilization %
+```
+
+An example with real numbers. `CNC-Mill-1` has one instance and works Day Shift, 08:00 to 16:00. Its Monday capacity is 8 hours. Add a second instance and it becomes 16. Put the quarterly all-hands on that Monday and it becomes 7.25 per machine, so 14.5 across two.
+
+Before the formula runs at all, a date gate can zero the day outright: the work center is unavailable, its effective date has not arrived, a machine-specific closure covers the date, a whole-day plant holiday covers the date, or the date is a weekend with weekend production off. That gate is why [a work center can show zero capacity](/blog/capacity-shows-zero-for-a-work-center-edgebic) with a perfectly valid shift attached.
+
+## What Changes When You Save, and What Does Not
+
+This is the part that surprises new planners, and it is deliberate.
+
+| Surface | When you save a shift or holiday |
+|---|---|
+| The shift and holiday grids | Update immediately |
+| Work centers on the global calendar | Pick up the change at the next scheduling run |
+| Work centers on a custom calendar | Not affected by global edits at all |
+| Existing schedules and promised dates | Unchanged until the next run |
+| Resource Calendar and capacity dashboards | Show the new capacity when refreshed |
+
+Saving a calendar change never reschedules anything. The plan on screen was computed against the old calendar and keeps its dates, including allocations that may now sit outside working hours. Run the schedule again to rebuild it, and note the guarantee that makes that safe: completed work is never moved by a reschedule.
+
+The effect is large. Take a 20-hour milling job on a single-instance work center, day shift only, starting Monday morning. At 8 hours a day it finishes Wednesday at noon. Extend the shift to 10 hours and rerun, and it finishes Tuesday at 18:00. A full day earlier, with nothing changed but the calendar. The same lever works in reverse, which is why adding a holiday or unticking a weekday pushes end dates out at the next run.
+
+## The Calendar Is Also the Quote
+
+Quote simulation runs through the same engine and the same calendar, so a quoted delivery date already accounts for holidays, downtime, and overrides. That is worth knowing for two reasons: quotes stay honest without a separate maintenance job, and a calendar left optimistic will make sales promise dates the plant cannot hit.
+
+This is also why the calendar is where a new implementation starts. [The greenfield walkthrough](/blog/edgebic-greenfield-setup-walkthrough) builds shifts first, then work centers, then routings, in that order, because a work center without working hours has no capacity to configure.
+
+## Keeping It Honest
+
+Standard finite-capacity practice, and the reasoning behind buffer management in the [Theory of Constraints and APS literature](https://www.ascm.org), is that a resource planned to 100% of the theoretical clock has no recovery room: the first breakdown propagates through every downstream date. Express the headroom in the calendar rather than in hope. Honest shift hours, recorded downtime, and per-day overrides are all read identically by the scheduler and the dashboards.
+
+A few standards that hold up in practice:
+
+- **Name shifts by when they run**, not by who works them. The name appears on every capacity screen and every allocation.
+- **Prefer global shifts.** Every custom work center calendar is one more place to update when the plant pattern changes.
+- **Enter recurring holidays once** with the recurring flag rather than maintaining a row per year, which invites gaps.
+- **Model meetings and breaks as partial holidays**, not by shrinking shifts. The record documents why the hours are missing.
+- **One-off exceptions belong in per-day overrides.** Editing a shift for one approved Saturday changes every week and every work center on it.
+- **Rerun the schedule after any calendar change** and review the result before communicating dates.
+
+## Next
+
+Build the calendar with [the step-by-step setup guide](/blog/how-to-set-up-shifts-holidays-downtime-in-edgebic). Understand exactly how the layers resolve in [how EDGEBIC resolves capacity day by day](/blog/how-edgebic-resolves-capacity-day-by-day). Then read [the shift and calendar mistakes](/blog/shift-and-calendar-mistakes-edgebic) that produce right-looking, wrong plans. If a job has landed somewhere it should not, [a job scheduled on a holiday](/blog/job-scheduled-on-a-holiday-edgebic) explains the usual cause.

@@ -1,0 +1,174 @@
+---
+title: "How to Sequence Operations With Dependencies in EDGEBIC"
+description: "Set up operation dependencies in a routing: next in sequence links, branching, joins, repeated work centers, and inserting a step into a live routing."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - operation dependencies routing
+  - next in sequence link
+  - branching and joining routings
+  - insert operation into routing
+  - repeated work center routing
+  - routing sequence setup
+targetPhrase: "operation dependencies routing"
+wordCount: 2100
+readingTime: 10
+faqQuestions:
+  - question: "How do you set operation dependencies in a routing?"
+    answer: "Each operation carries a Next In Sequence link that names the operation which follows it, and that link is what the scheduler follows. Set the link on every step, and point the last step at the end item so the chain terminates. Sequence numbers are a display hint only: two steps numbered 10 and 20 run in that order because of the link between them, not because of the numbers."
+  - question: "How do you build a routing that branches into two parallel paths?"
+    answer: "Give the shared predecessor two successors rather than one, so its Next In Sequence names both downstream operations. Both legs then become eligible to start as soon as that step finishes, and they run in parallel if capacity allows. To join them back together, point both legs at the same assembly step: the assembly waits for whichever leg finishes last."
+  - question: "What happens if the same work center appears twice in one routing?"
+    answer: "Give each visit a distinct display name, such as Inspect 1 and Inspect 2, so the two visits stay distinct in the dependency chain. Without distinct identities, a name-based link can attach to the wrong visit, and a later step may read the earlier visit's finish time. Linking the two steps by their identity rather than by work center name avoids the problem entirely."
+  - question: "Can you insert a new operation into a routing that is already in use?"
+    answer: "Yes. Create the step, set its work center and hours, then repoint the upstream step's Next In Sequence link at the new step and set the new step's link at whatever used to follow. Save and reschedule the affected jobs. Jobs already scheduled keep the routing snapshot they were born with, so they only pick up the change if you deliberately refresh them onto the live routing."
+  - question: "Does the sequence number control the order operations are scheduled?"
+    answer: "No. The scheduler follows the dependency links, so a routing whose steps were entered in an odd order still schedules correctly as long as the links are right. Sequence numbers influence only the tie-break between operations that are simultaneously ready to start, which is why they still deserve to be sensible even though they do not drive the plan."
+qaQuestions:
+  - question: "I added a deburr step between milling and inspection, but the schedule still runs milling straight into inspection. What did I miss?"
+    answer: "The upstream link. Creating a step and giving it a link forward is only half the job: the milling step is still pointing at inspection, so the graph has a bypass. Repoint milling at deburr, and confirm deburr points at inspection. Then check the second half of the problem: any job already scheduled carries the routing snapshot it was born with, so it will not see the new step until you refresh that job onto the live routing or clear and reschedule it."
+  - question: "Our routing has two prep legs feeding one assembly, but assembly starts as soon as the fast leg is done. Why?"
+    answer: "Because only the fast leg is linked to assembly. A join is formed by both legs naming the same successor: if the slow leg's link is missing or points somewhere else, assembly never learns to wait for it. Open both prep steps and confirm each has assembly as its next operation. Once both legs write their finish against the same successor, the later finish wins and assembly waits for the slower path, which is the behaviour you want even though it looks like a delay."
+---
+
+**Operation dependencies live in one field: the Next In Sequence link on each step, which names the operation that runs after it.** That link is what the scheduler follows, and it is the only thing that makes a routing a flow chart rather than a list. Set the links correctly and branching, joining, sub-assemblies and repeated work centers all behave without any further configuration in EDGEBIC by User Solutions.
+
+This is the setup post. If you are building a routing from scratch, [how to build a routing as a flow chart](/blog/how-to-build-a-routing-as-a-flow-chart-in-edgebic) covers creating the steps and typing the hours; start there and come back here for the sequencing patterns. For what the engine then does with those links, see [how EDGEBIC orders operations](/blog/how-edgebic-orders-operations-dependency-graphs).
+
+## Rule Zero: The Link Is the Sequence, Not the Number
+
+The single most common misunderstanding is that step numbers drive execution. They do not. Two steps numbered 10 and 20 run in that order because step 10's link points at step 20, and for no other reason.
+
+Step numbers matter in exactly one place: when two operations are simultaneously ready to start, the entry order breaks the tie. That is a minor effect and it never overrides a link. Keep your numbering sensible for readability, but fix sequence problems in the links.
+
+Every chain must terminate at the end item. The final operation's link points at the product itself, which is how the routing announces that it is finished. A step whose link is missing, or points at a step that no longer exists, is the most common cause of operations appearing to schedule out of order.
+
+## Pattern 1: The Linear Chain
+
+The default case. Each step names one successor:
+
+```
+Cut ──► Drill ──► Inspect ──► End item
+```
+
+Set it in the grid by opening the Next In Sequence picker on each row and choosing the next operation, or draw it in the Designer by turning on the connector tool and dragging from the upstream node onto the downstream one. The grid column and the connector arrow are the same data in two views: edit either and the other reflects it.
+
+**Verification:** every step except the last has exactly one outgoing link, and the last points at the end item. No step is unreachable.
+
+## Pattern 2: Branching Into Parallel Paths
+
+When one operation feeds two independent downstream paths, give it two successors rather than one:
+
+```
+          ┌──► Mill path A ──┐
+Cut ──────┤                  ├──► Assembly ──► End item
+          └──► Mill path B ──┘
+```
+
+Both legs become eligible the moment the cut finishes, and they run at the same time if the machines are free. If they compete for the same machine, they queue for it and the plan reflects the contention honestly. This is worth stating because planners sometimes model two branches expecting concurrency and then discover both legs are routed to the same single-instance machine, where nothing can overlap.
+
+**Verification:** the shared predecessor lists both downstream steps, not just the first one you configured.
+
+## Pattern 3: Joining Paths Back Together
+
+A join is formed by pointing both legs at the same successor. Nothing else is required. The assembly step then waits for whichever leg finishes last, which is exactly the physical truth: you cannot assemble until both halves exist.
+
+The failure mode here is asymmetric configuration. If only one leg names the assembly step, assembly waits only for that leg and starts too early. The symptom is a plan that looks tighter than reality and a shop floor that stalls at assembly waiting for the other half. Check both legs, not just the one that looks late.
+
+## Pattern 4: The Same Work Center Twice
+
+Routings that inspect before and after assembly hit a special case: two operations on the same machine, in the same routing, at different points.
+
+Give each visit a distinct display identity, such as **Inspect 1** and **Inspect 2**. This keeps the two visits distinct so that the second inspection waits for assembly rather than for the first inspection, and so a downstream step reading "the inspection finish" gets the right one.
+
+The more durable fix is to make sure both steps are linked by their identity rather than only by work center name. Steps linked step-to-step are immune to name collisions entirely, even when a routing reuses the same machine three or four times, and even when a sub-assembly shares work center names with its parent.
+
+## Pattern 5: Material and Sub-Assembly Steps
+
+Material steps sit in the same chain but behave differently: they claim no machine capacity, their bar is drawn backward from the point of need by the material's lead time, and their finish still gates whatever depends on them.
+
+Link them the same way. A purchased rod that feeds turning points at the turning step, and turning waits for the rod's availability date.
+
+If a component has a routing of its own, it becomes a sub-assembly and is expanded into the parent's dependency chain at schedule time. No extra sequencing work is needed on your side: the expansion happens before the ordering pass, so the sub-assembly's steps participate in exactly the same ordering as everything else. The detail is in [modeling sub-assemblies on the design canvas](/blog/sub-assemblies-in-the-edgebic-designer).
+
+## Inserting a Step Into an Existing Routing
+
+This is the operation most likely to go half-done. Four moves, in order:
+
+1. **Create the step.** Assign its work center, hours per unit and setup time.
+2. **Repoint the upstream step** so its Next In Sequence names the new step.
+3. **Set the new step's link** to whatever used to follow the upstream step.
+4. **Save and reschedule** the affected jobs.
+
+Skipping move 2 is the classic error: the new step exists, points forward correctly, and is never reached because the old bypass link is still in place. The routing looks right in the grid and wrong in the Designer, which is one good reason to check the diagram after every structural edit.
+
+There is a second half to this. Jobs already scheduled carry the routing snapshot they were born with, so a master routing edit does not rewrite a job already running on the floor. That protection is deliberate. To bring a live job onto the new routing, refresh that job onto the live version deliberately, which is covered in [editing a live job's routing](/blog/editing-a-live-jobs-routing-in-edgebic).
+
+## A Worked Wiring: Five Steps, One Branch, One Join
+
+Take a bracket that is cut once, machined on two different paths, assembled, and inspected. Five operations, and every link written out:
+
+| Step | Operation | Next in sequence |
+|---|---|---|
+| 10 | Cut | Mill path A **and** Mill path B |
+| 20 | Mill path A | Assembly |
+| 30 | Mill path B | Assembly |
+| 40 | Assembly | Inspect |
+| 50 | Inspect | End item |
+
+Five rows, six links, and every behaviour you care about is now determined. Cut runs first because nothing points at it. Both mill paths become eligible the moment cut finishes, and they run at the same time if the two machines are free. Assembly waits for whichever mill path finishes last, because both wrote their finish against it. Inspect follows assembly. The chain terminates at the end item, so the routing is complete.
+
+Change one thing and watch it break: remove step 30's link and assembly stops waiting for path B. The plan will be shorter, the arithmetic will be internally consistent, and the shop floor will stall at assembly holding half a bracket. That is why the join check below is worth running every time you edit a branching routing.
+
+## Verifying Your Sequencing Before You Trust It
+
+| Check | What to look for |
+|---|---|
+| Terminal link | The last operation points at the end item |
+| Reachability | Every step sits on a chain that reaches the end item |
+| Joins | Every leg feeding a join names the join step |
+| Branches | The shared predecessor lists all of its successors |
+| Repeated machines | Each visit carries a distinct display identity |
+| Diagram check | The Designer renders one connected flow, left to right |
+
+The Designer earns its place here. A missing connector is nearly invisible in a grid and obvious in a diagram, and the Designer refuses to save a chart where a step cannot reach the end product. Read the validator's list rather than saving around it: the issues it flags are precisely the ones that become scheduling surprises a week later.
+
+## Handoff Time Belongs on the Link, Not in Your Head
+
+Sequencing decides the order. Three fields decide the waiting time between operations, and they are configured on the routing rather than inferred:
+
+- **Queue time** is the buffer before the next operation picks the part up. It is shift-aware, so it ticks only during working hours and pauses over nights, weekends and holidays.
+- **Overlap** lets a downstream step begin before the upstream batch is finished, either as a start-to-start offset or as a piece-count transfer batch.
+- **Transit days** model physical movement between operations, cells or plants, in calendar or working days.
+
+Two rules keep them honest. Configure **one mechanism per physical wait**: queue time and transit days both applied to the same handoff double count it, and the whole downstream plan drifts by the duplicate. And set them where the wait actually happens, not on the step that is convenient to edit, because the delay attaches to the operation that carries it.
+
+## When the Plan Still Looks Wrong
+
+If operations still land in an order you did not expect, the links are the first suspect and [steps scheduled out of sequence](/blog/steps-scheduled-out-of-sequence-edgebic) is the triage guide. The configuration errors that cause it are catalogued in [dependency and sequencing mistakes](/blog/dependency-and-sequencing-mistakes-edgebic), and the underlying rule set is in [forward scheduling explained](/blog/edgebic-forward-scheduling-explained).
+
+Bring one routing with a branch and a join to a demo and we will wire it, schedule it, and read the resulting dates together. [Contact US to book a session](/contact-us), or start at the [EDGEBIC product overview](/edgebic).
+
+<Accordion title="How do you set operation dependencies in a routing?">
+Each operation carries a Next In Sequence link that names the operation which follows it, and that link is what the scheduler follows. Set the link on every step, and point the last step at the end item so the chain terminates. Sequence numbers are a display hint only: two steps numbered 10 and 20 run in that order because of the link between them, not because of the numbers.
+</Accordion>
+
+<Accordion title="How do you build a routing that branches into two parallel paths?">
+Give the shared predecessor two successors rather than one, so its Next In Sequence names both downstream operations. Both legs then become eligible to start as soon as that step finishes, and they run in parallel if capacity allows. To join them back together, point both legs at the same assembly step: the assembly waits for whichever leg finishes last.
+</Accordion>
+
+<Accordion title="What happens if the same work center appears twice in one routing?">
+Give each visit a distinct display name, such as Inspect 1 and Inspect 2, so the two visits stay distinct in the dependency chain. Without distinct identities, a name-based link can attach to the wrong visit, and a later step may read the earlier visit's finish time. Linking the two steps by their identity rather than by work center name avoids the problem entirely.
+</Accordion>
+
+<Accordion title="Can you insert a new operation into a routing that is already in use?">
+Yes. Create the step, set its work center and hours, then repoint the upstream step's Next In Sequence link at the new step and set the new step's link at whatever used to follow. Save and reschedule the affected jobs. Jobs already scheduled keep the routing snapshot they were born with, so they only pick up the change if you deliberately refresh them onto the live routing.
+</Accordion>
+
+<Accordion title="Does the sequence number control the order operations are scheduled?">
+No. The scheduler follows the dependency links, so a routing whose steps were entered in an odd order still schedules correctly as long as the links are right. Sequence numbers influence only the tie-break between operations that are simultaneously ready to start, which is why they still deserve to be sensible even though they do not drive the plan.
+</Accordion>

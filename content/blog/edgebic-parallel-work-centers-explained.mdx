@@ -1,0 +1,136 @@
+---
+title: "Parallel and Alternate Work Centers in EDGEBIC, Explained"
+description: "Parallel work centers scheduling in EDGEBIC: independent machines that split the work, dependent mirrors that run in lockstep, and true alternate routing."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - parallel work centers scheduling
+  - independent parallel machines
+  - dependent parallel mirroring
+  - alternate routing manufacturing
+  - simultaneous machine scheduling
+  - fallback work center
+targetPhrase: "parallel work centers scheduling"
+wordCount: 1875
+readingTime: 9
+faqQuestions:
+  - question: "What are parallel work centers in production scheduling?"
+    answer: "Parallel work centers are two or more machines assigned to a single routing operation that run at the same time. EDGEBIC supports two kinds. Independent parallel splits the work across machines that each consume their own capacity, so the operation finishes in a fraction of the elapsed time. Dependent parallel mirrors one machine's schedule onto others that are physically bolted to the same motion and cannot run separately."
+  - question: "What is the difference between a parallel work center and an alternate work center?"
+    answer: "A parallel work center runs alongside the primary on the same operation. A true alternate replaces the primary: the scheduler compares projected completion times before scheduling begins and swaps the operation onto whichever machine finishes soonest. Parallel means both machines work on the job. Alternate means only one of them does, and the scheduler picks which."
+  - question: "How does EDGEBIC guarantee that parallel machines start together?"
+    answer: "For independent parallel work it searches day by day for a window where every machine in the group has capacity at the exact same moment, and applies four validation gates before accepting it. If any gate fails, the whole window is rejected and the search advances. For dependent parallel work synchronization is structural rather than searched: only the lead machine is scheduled and the others receive exact copies of its timestamps."
+  - question: "What happens if one machine in a parallel group is down for maintenance?"
+    answer: "For independent parallel work the whole group waits. The scheduler will not start two machines and leave the third behind, because the group is defined as working together. It advances day by day until every member is simultaneously free, so a two-day maintenance window delays the operation by two days rather than producing a physically impossible plan."
+  - question: "Do parallel machines need to share the same shift?"
+    answer: "Yes, and by the same shift record, not merely by the same hours. EDGEBIC finds a group's common shifts by matching the shift itself across every member. Two separately created rows that both read 08:00 to 16:00 are two different shifts, so a group split across them has nothing in common and no simultaneous window will ever be found. Assign one shared shift row to every machine in the group."
+qaQuestions:
+  - question: "We have three identical mills. Should they be one work center with three instances, a parallel group, or a machine pool?"
+    answer: "Three instances on one work center, if they are genuinely interchangeable and equally fast. That gives you load balancing, so a 20 hour operation finishes in about 7 elapsed hours, and any job can use whichever mill is free. Use a machine pool when the machines are interchangeable but differ in speed or setup time. Use parallel work centers when the operation genuinely needs more than one machine at once rather than needing one of several."
+  - question: "Our twin welding robots work one frame together. Independent or dependent?"
+    answer: "Dependent, because they are physically committed to the same part and cannot be placed separately. Scheduled as independent machines, the engine would look for a window where both are free and could still allocate them different hours within it. Scheduled as dependent, only the lead robot goes through the capacity search and the second receives an exact copy of its start and end, so drift between them is impossible by construction."
+---
+
+**A single routing operation in EDGEBIC can involve more than one machine, and there are exactly three ways it can happen: independent machines that split the work and each consume their own capacity, dependent machines that mirror a lead machine in lockstep, and true alternates that replace the primary before scheduling starts.** Getting the category right is the whole game, because each one produces a completely different plan from the same set of machines. [EDGEBIC by User Solutions](/edgebic) treats them as three separate mechanisms rather than three settings on one.
+
+This post covers what each category is and when to use it. For configuration, read [how to configure parallel and alternate work centers](/blog/how-to-configure-parallel-and-alternate-work-centers-in-edgebic). For the validation mechanism behind simultaneous placement, read [how EDGEBIC validates simultaneous capacity](/blog/how-edgebic-validates-simultaneous-capacity).
+
+## The Three Categories at a Glance
+
+| | Independent parallel | Dependent parallel | True alternate |
+|---|---|---|---|
+| Machines working | All of them, at once | All of them, at once | Exactly one |
+| Capacity checked | On every machine | On the lead machine only | On the chosen machine |
+| How timing is set | A window where all are free | Copied from the lead machine | Normal, on the winner |
+| When it is chosen | During scheduling | After the lead is placed | Before scheduling starts |
+| Typical case | Two assembly lines on one big order | Ganged drill heads, twin robots | A backup CNC when the primary is booked |
+| If one machine is busy | The whole group waits | The mirror is written anyway | Another candidate wins |
+
+Everything else in this post is the detail behind that table.
+
+## Independent Parallel: Split the Work, Halve the Clock
+
+Independent parallel is what most people mean when they say two machines are running a job together. The operation's hours are divided across the machines, each machine's capacity is genuinely consumed, and the operation finishes in a fraction of the elapsed time.
+
+Take a 16-hour assembly operation on a 200-piece order. Assembly-1 alone takes two days. With Assembly-2 added as an independent parallel machine, the scheduler looks for a window where both lines have capacity at the same moment, finds Monday 08:00, and places 8 hours on each. The operation finishes Monday at 16:00 instead of Tuesday: one shift instead of two.
+
+Two properties define this category.
+
+**Capacity is real on every machine.** Assembly-2's hours come out of Assembly-2's capacity, so a different job cannot claim the same window afterwards. This is the ordinary [finite capacity](/blog/finite-vs-infinite-capacity-scheduling) contract, applied once per machine in the group.
+
+**Placement is all or nothing.** The group either starts together or nobody starts. If Assembly-2 is down for maintenance Monday and Tuesday, the scheduler does not run Assembly-1 alone and leave the rest for later. It advances day by day until every member is simultaneously free, then places the whole group. The operation is delayed two days, which is correct: the alternative would be a plan that cannot be executed as written.
+
+That guarantee costs something, and it is worth naming. Adding a third machine to a parallel group makes a simultaneous window harder to find, not easier, because all three calendars now have to agree. Use independent parallel when the operation genuinely benefits from more than one machine at once, not as a general way to add capacity. For that, [a machine pool](/blog/what-is-a-work-center-group-machine-pool) is usually the better structure.
+
+## Dependent Parallel: One Schedule, Several Machines
+
+Some machines cannot be scheduled separately because they are not separate. Three drill heads ganged on one gantry, twin welding robots on one frame, a filling line with slaved stations: they start when the fixture starts and stop when it stops.
+
+For these, searching for a window where all of them happen to be free is the wrong model. Even if the search succeeded, nothing would force the machines onto identical hours within that window. EDGEBIC solves it structurally instead. The lead machine is scheduled normally against real capacity. Every dependent machine then receives an exact copy of that schedule: same start, same end, same shift, same instance number, same daily breakdown.
+
+Because a mirror is copied rather than placed, it cannot drift. The synchronization is not hoped for, it is a property of how the row is created. The [synchronized multi-spindle walkthrough](/blog/synchronized-multi-spindle-scheduling-example-edgebic) traces a three-head gantry through this with real timestamps.
+
+Two details of the copy matter in practice.
+
+**Hours are scaled by a factor, timing is not.** A dependent machine carries a factor that multiplies the hours it is credited with. A factor of 1.0 records the same work as the lead. A factor of 1.25 records 25 percent more, which is how you model an older head that works harder to keep pace, and it feeds cost roll-up correctly when machine rates differ. The start and end timestamps are copied verbatim regardless of the factor, because the machines are physically running together. Setup hours are copied one to one for the same reason: both machines set up at the same time.
+
+**Mirrors bypass the capacity check on purpose.** A dependent machine is physically committed to the lead operation, so the copy is written even when the scaled hours exceed the shift's nominal capacity. That means a mirrored machine can show more allocated hours than its shift contains. This is documented, intentional behavior for synchronized machines, and it is surfaced by an audit check rather than hidden. It is also why you should not use the dependent category for machines that merely happen to run at the same time: the bypass is a promise about physics, and applying it to machines that are actually independent will over-book them.
+
+## True Alternates: Pick One Before Scheduling Starts
+
+The third category is not parallel at all. A true alternate is a replacement: a second machine that can do the operation if the primary is a poor choice today.
+
+The decision happens before any capacity is allocated. The resolver walks the routing, and for each operation with true alternates it projects a completion time on every candidate, including the current primary. The candidate that finishes soonest wins, and the operation's work center is switched to it. From that moment the operation is scheduled exactly as though the winner had always been the primary.
+
+An example. CNC-1 is the primary but is queued behind existing work until Wednesday. CNC-2 can start Monday and needs 6 hours. CNC-3 can start Tuesday and needs 8. Projected completions are Wednesday, Monday 16:00, and Tuesday 16:00, so CNC-2 wins and the job runs two days earlier than it would have on the primary.
+
+Three rules govern the choice.
+
+**Each alternate carries its own numbers.** A true alternate holds its own run hours and its own setup time, not a multiplier of the primary's. That is what makes the projection honest when the backup machine is slower or takes longer to set up.
+
+**Priority is a tie-breaker, not a preference.** When two candidates would finish at the same time, priority decides. When one finishes meaningfully sooner, it wins regardless of priority.
+
+**Started work is locked.** On a reschedule, any machine with actual dates recorded for that job is locked, and the resolver will not move the job off it even if another machine now looks faster. Completed work is never moved by a reschedule, and in-progress work stays on the machine that is physically holding the part.
+
+True alternates are also the mechanism behind machine pools. When a routing operation targets a pool rather than a single machine, EDGEBIC expands the pool's members into true alternate candidates before scheduling and picks among them by the pool's own selection strategy. The [work center group explainer](/blog/what-is-a-work-center-group-machine-pool) covers when a pool beats a hand-built alternate list, which is most of the time once you have more than two or three interchangeable machines.
+
+## Choosing the Right Category
+
+Ask two questions in order.
+
+**Does the operation need more than one machine at once, or one of several machines?**
+
+If one of several, you want a true alternate or a machine pool. If more than one at once, continue.
+
+**Can the machines be placed independently in time, or are they physically joined?**
+
+Independently placeable machines that split the work are independent parallel. Machines bolted to the same motion are dependent parallel.
+
+Two structures are often mistaken for these categories and are usually better answers:
+
+- **Multiple instances on one work center.** Four identical, interchangeable mills modeled as one work center with four instances give you load balancing (a 20-hour operation finishes in about 5 elapsed hours) with none of the simultaneous-window difficulty of a parallel group. Reach for parallel work centers only when the machines are genuinely distinct resources.
+- **A machine pool.** Interchangeable machines that differ in speed or setup time belong in a pool, where each member carries its own efficiency and setup, and the scheduler shops the pool on every run.
+
+## How Multi-Machine Operations Behave on a Reschedule
+
+Parallel and alternate operations follow the same preservation rules as everything else, with two specifics worth knowing.
+
+**In-progress work locks its machine.** When a job has actual dates recorded on a machine, that machine is locked for that job. The alternate resolver will not move the remaining work to a different machine even if another one now projects an earlier finish, because the part is physically sitting on the first one. Completed work is never moved by a reschedule.
+
+**Partially completed groups are handled member by member.** In a group where one machine finished and another was pulled mid-operation, the completed machine's row is preserved with its actual dates intact and only the incomplete member is replanned. If the group is synchronized hardware that must physically restart together, that is a case to handle deliberately rather than assume, since preserving one head of a gantry while replanning another describes something the machine cannot do.
+
+Both behaviors follow from one principle that runs through the whole engine: history is fact and only the future is planned.
+
+## What This Costs You in Setup Discipline
+
+Parallel groups are less forgiving of sloppy calendar data than single-machine operations, and one requirement causes most of the trouble: every machine in an independent or dependent group must share at least one shift record in common, matched by the shift itself rather than by its printed hours. Two separately created rows both reading 08:00 to 16:00 are two different shifts, and a group split across them will never find a simultaneous window.
+
+The other setup rules, plus the exact fields for each category, are in [the configuration walkthrough](/blog/how-to-configure-parallel-and-alternate-work-centers-in-edgebic). The mistakes that produce the most support questions, with their symptoms, are in [parallel work center mistakes](/blog/parallel-work-center-mistakes-edgebic).
+
+## Next Steps
+
+If you want to see the validation logic that decides whether a simultaneous window is acceptable, including the four gates every candidate window has to clear and what happens when one fails mid-run, read [how EDGEBIC validates simultaneous capacity](/blog/how-edgebic-validates-simultaneous-capacity). For how parallel operations sit alongside the rest of the engine, including how each machine's hours are actually placed once the group agrees on a start, see [how EDGEBIC allocates hours across shifts](/blog/how-edgebic-allocates-hours-across-shifts) and the [complete guide to EDGEBIC](/blog/edgebic-complete-guide).

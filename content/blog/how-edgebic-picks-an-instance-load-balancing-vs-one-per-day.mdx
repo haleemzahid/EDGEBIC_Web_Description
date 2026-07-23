@@ -1,0 +1,220 @@
+---
+title: "How EDGEBIC Picks a Machine: Load Balancing vs One Per Day"
+description: "Machine instance allocation explained: the four modes the engine uses to choose a machine, why a job sticks to one instance, and worked numbers for each path."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - machine instance allocation load balancing
+  - how scheduler picks a machine
+  - one per day instance selection
+  - fractional instance allocation
+  - late start penalty scheduling
+  - shift priority scoring
+targetPhrase: "machine instance allocation load balancing"
+wordCount: 1940
+readingTime: 10
+faqQuestions:
+  - question: "How does a scheduler decide which machine a job runs on?"
+    answer: "It picks an allocation mode from the work center's configuration, then applies it. With One Per Day on and more than one machine, it selects the least-loaded instance with no job yet that day and keeps the job there. With load balancing on, it splits the hours evenly across every instance. With a single machine or load balancing off, everything goes on the one instance. The choice is recorded, so the Gantt names the machine."
+  - question: "Why does a job stay on the same machine across several days?"
+    answer: "Because instance assignment is sticky for the duration of a scheduling run. Once a job is assigned to a machine at a work center, every later allocation for that job at that work center uses the same machine. The reason is setup continuity: moving a part between chambers or fixtures mid-job costs real time. The tradeoff is that a job can appear to skip a less-loaded machine in a later shift."
+  - question: "Why does a job only get part of the first day's capacity?"
+    answer: "The late-start penalty. A job whose earliest start is 13:00 can only use the hours remaining in the shift from that point, even on an idle machine. On a two-instance work center with a shift ending at 16:00, that is three hours per machine, or six hours total, and the rest spills to the next slot. Without this clamp the first day of every multi-day job would be over-allocated."
+  - question: "How does the scheduler choose between a day shift and a night shift?"
+    answer: "It scores every candidate slot and works through them in order. A slot that can start at or before the job's earliest start gets a large bonus, more available capacity adds to the score, and earlier shift start times add a small amount. In practice a day shift with room usually outscores a night shift by a wide margin, so the engine fills earlier and emptier slots first."
+  - question: "What does the engine do when a work center has a fractional instance count?"
+    answer: "It uses a dedicated fractional path rather than rounding. The capacity that the partial machine cannot provide is redistributed across the full machines, so the arithmetic stays additive, and the partial machine receives an allocation sized to its real share. A count like 2.5 therefore describes two full mixers and one half-capacity unit accurately instead of over-counting the small one."
+qaQuestions:
+  - question: "Two identical mills, and every job seems to land on Mill 1 first. Is the load balancing broken?"
+    answer: "Probably not, and there are two different behaviors that look the same. When instances are pooled, hours are split evenly across every machine for a given allocation, so you should see both mills carrying half of each long operation rather than jobs queueing on one. If instead you are seeing whole jobs assigned one at a time, that is the One Per Day path, which picks the least-loaded machine and breaks ties by the lowest instance number: with everything free, Mill 1 wins the tie, then the next job goes to Mill 2. Both are correct. Check the work center's One Per Day column to know which one you are watching."
+  - question: "A machine went down after the schedule ran, and the affected job did not move to the free machine next to it. Why not?"
+    answer: "Instance assignment is sticky within a run, and the run that produced the current plan made its choice while the machine was still up. Nothing reassigns itself between runs, which is deliberate: a plan that quietly reshuffles machines every time something changes is a plan supervisors stop trusting. Record the outage (a per-day capacity override on that work center, or marking the instance unavailable) and rerun the schedule. The new run makes a fresh selection with the outage in view, and completed work stays exactly where it was."
+---
+
+**When EDGEBIC needs a machine for an operation, it does not search: it selects one of four allocation modes from the work center's own configuration, and applies it.** Load balancing splits the hours across every machine. One Per Day dedicates a machine to a job for the whole day. A single-machine work center takes everything on instance one. A fractional count gets its own path.
+
+[EDGEBIC by User Solutions](/edgebic) makes that choice visible: every allocation records the instance it ran on, so the Gantt and the allocation records name the physical machine. This article traces the decision end to end with worked numbers. The configuration behind it is in [how to configure instances and utilization](/blog/how-to-configure-instances-and-utilization-in-edgebic), and the concepts in [machine instances explained](/blog/edgebic-machine-instances-explained).
+
+## Two Questions, In Order
+
+Before any machine is chosen, the engine has already answered a different question: **which time slot?** That search runs first, and the machine choice happens inside the winning slot.
+
+Slots are scored, and the scoring is simple enough to predict:
+
+```
+score = 0
+      + 1000  if the slot can start at or before the job's earliest start
+      + available hours x 10
+      + (100 − shift start hour)
+```
+
+Two shifts with 8 hours free each, for a job that can start now:
+
+| Shift | Can start now? | Available | Starts | Score |
+|---|---|---|---|---|
+| Day, 08:00 | yes | 8 h | 08:00 | 1000 + 80 + 92 = **1172** |
+| Night, 20:00 | no | 8 h | 20:00 | 0 + 80 + 80 = **160** |
+
+The immediate-start bonus dominates by design: a slot you can use now beats a bigger slot you cannot. After scoring, slots are worked through by date, then shift, then remaining capacity, so the engine fills earlier and emptier slots first. The wider pipeline is in [the scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+## How Much of the Slot the Job Can Take
+
+The slot's capacity is a ceiling, not an allowance. Two adjustments narrow it.
+
+**Consumed capacity.** Each slot tracks hours already committed, and only the remainder is offered.
+
+**The late-start penalty.** A job that cannot begin before a certain time gets only the hours remaining in the shift from that point, even on a completely idle machine:
+
+```
+Assembly work center, 2 instances, day shift 08:00 to 16:00, nothing booked.
+Earliest start = Monday 13:00.
+
+remaining time in shift    = 16:00 − 13:00   = 3 h
+remaining capacity         =                   8 h per machine
+available per instance     = min(3, 8)       = 3 h
+total available Monday     = 3 x 2           = 6 h
+```
+
+Six hours on Monday. The rest spills to Tuesday. Without this clamp, the first day of every multi-day job would be over-allocated and every downstream date would inherit the error.
+
+There is a related case that surprises planners: a work center can show remaining capacity for a day and still accept no work, because the shift is already consumed past the point where the job could start. The hours exist in the slot's total; they are simply behind the job in time.
+
+## Mode A: Load Balancing (the Default)
+
+With more than one instance and pooling on, the engine divides the hours to be placed evenly across every machine.
+
+A CNC cell with four instances receiving a 20-hour allocation:
+
+```
+hours per instance = 20 / 4 = 5 h
+
+Instance 1: 5 h  08:00 to 13:00
+Instance 2: 5 h  08:00 to 13:00
+Instance 3: 5 h  08:00 to 13:00
+Instance 4: 5 h  08:00 to 13:00
+```
+
+Twenty hours of work, complete by 13:00. On one machine the same operation would run into the next day. That elapsed-time compression is the strongest argument for consolidating genuinely identical machines into one work center.
+
+Load balancing also means separate jobs coexist. Three jobs of 6, 7, and 5 hours against 24 hours of pooled capacity all fit on the same day, spread across whichever machines have headroom.
+
+One nuance: very small residual slices are skipped rather than placed. A fragment below a minimum threshold does not earn its own allocation, which prevents a slot from filling up with two-minute bookings.
+
+## Mode B: One Per Day (Dedicated Machines)
+
+With **One Per Day** on and more than one instance, the model changes completely. Instead of asking how much aggregate capacity remains, the engine scans **each machine individually** and works with the best one available.
+
+A furnace shop with three chambers, day shift 08:00 to 16:00, 100% utilization:
+
+```
+capacity at initialisation = 8 h x 3 instances = 24 h
+```
+
+Three jobs arrive Monday morning:
+
+| Job | Hours | Selection | Result |
+|---|---|---|---|
+| JOB-A | 6 | All three chambers free, loads all zero, lowest index wins | Instance 1, 08:00 to 14:00 |
+| JOB-B | 7 | Instance 1 now carries 6 h, others carry 0 | Instance 2, 08:00 to 15:00 |
+| JOB-C | 5 | Instance 3 is the only free chamber | Instance 3, 08:00 to 13:00 |
+
+```
+Monday 08:00 ─────────────────────────────── 16:00
+  Chamber 1 (JOB-A):  ████████████
+  Chamber 2 (JOB-B):  ██████████████
+  Chamber 3 (JOB-C):  ██████████
+```
+
+Three jobs, three chambers, all running in parallel on the same shift. A fourth job slides to Tuesday even though 6 hours of clock remain, because every chamber is spoken for. That is exactly what a furnace or a paint booth does in reality.
+
+The selection rule inside the mode is: among machines that still have a free window in the shift, take the least-loaded one, breaking ties by the lowest instance number. Two jobs on **different** machines on the same day is correct and expected. Two jobs on the **same** machine on the same day is a violation, and it is flagged as an anomaly rather than left to be discovered on the floor.
+
+## Stickiness: Why a Job Stays Put
+
+Once a job has been assigned a machine at a work center, every later allocation for that job at that work center uses the same machine for the rest of the run.
+
+The reason is setup continuity. Moving a part between chambers, fixtures, or spindles mid-job costs real changeover time that the plan would not otherwise account for. Keeping the job on one machine is almost always the cheaper choice.
+
+The tradeoff is visible and worth knowing: a job can appear to skip a less-loaded machine in a later shift, because it is honoring an earlier assignment. And if the assigned machine becomes unavailable after the assignment was made, the run does not reassign on the fly. The correct response is to record the outage (a per-day capacity override, or marking that instance unavailable) and rerun. A new run makes a fresh selection with the outage in view, and completed work stays exactly where it was.
+
+## Mode C: Single Instance
+
+A work center with one machine, or with load balancing switched off, places the whole allocation on instance 1. There is nothing to choose.
+
+This is also where One Per Day quietly does nothing: on a single-instance work center the flag changes no behavior, because one machine takes one job at a time regardless.
+
+## Mode D: Fractional Instances
+
+A count like 2.5 gets a dedicated path rather than rounding, so a genuinely half-capacity machine is not over-counted.
+
+A blending suite with two full-size mixers and one half-size unit, day shift 08:00 to 16:00, and a 12-hour job:
+
+```
+instances               = 2.5
+full machines           = 2
+fractional part         = 0.5
+capacity per full unit  = (8 x 2.5) / 2.5 = 8 h
+
+capacity the half unit cannot provide = 0.5 x 8 = 4 h
+redistributed to the two full units   = 4 / 2   = 2 h each
+effective capacity per full unit      = 8 + 2   = 10 h
+```
+
+| Machine | Hours | Physical meaning |
+|---|---|---|
+| Mixer 1 | 4 | Full-size, runs 08:00 to 12:00 |
+| Mixer 2 | 4 | Full-size, runs 08:00 to 12:00 |
+| Mini-mixer 3 | 4 | Half-capacity unit, covering its real share |
+
+Twelve hours placed, job complete by noon, and the small unit is charged for what it can actually do. Rounding to three identical mixers would have over-promised.
+
+Very small fractions are treated as noise and ignored, which stops a count of 2.1 from generating phantom minute-long allocations on a machine that barely exists.
+
+## When the Hours Do Not Fit in One Slot
+
+Most operations need more hours than one shift can offer, and the engine handles that by working down its scored list of slots and taking what each one has left.
+
+```
+for each candidate slot, in priority order:
+    hours to place here = min(hours still needed, hours the slot can offer)
+    allocate them, record which machine
+    subtract from hours still needed
+    stop when nothing is left to place
+```
+
+Two rules keep the result clean. A slot with only a sliver of capacity left is skipped rather than given a token booking, which stops the plan filling with fragments nobody can execute. And a job whose remaining hours fall below that same threshold is treated as complete rather than chasing the last few seconds across another day.
+
+The outcome is reported in a form that reads at a glance. An operation running eight hours Monday and four Tuesday shows as `8,4`. One split across two shifts on the same day shows as `4+4`. Three days reads `8,6,2`. Those strings tell you whether an operation is spread over days, over shifts, or both, before you open anything.
+
+If the list is exhausted and hours remain, the run reports a capacity failure naming the work center rather than silently producing a partial plan. In practice that almost always means a configuration problem rather than genuine demand, because the search horizon is long: a failure after months of searching means every one of those days produced zero. [The zero-capacity checklist](/blog/capacity-shows-zero-for-a-work-center-edgebic) works through the causes in order of likelihood.
+
+## Reading the Result
+
+Every one of these decisions is visible after the run:
+
+- **The Gantt** shows which instance each slice ran on.
+- **Allocation records** carry the machine, the shift, the date, and the hours, which is what the hour-tracking display on a job row is built from.
+- **Diagnostics** flag two failure shapes specifically: overlapping work on the same machine, and two jobs on one machine on a One Per Day work center. Both are reported rather than silently tolerated.
+
+If a machine appears more loaded than the plan should allow, [work center overload causes and fixes](/blog/work-center-overloaded-in-edgebic-causes-fixes) covers the three ways that happens, and an under-counted instance count is the first thing to check.
+
+## What the Modes Mean for Configuration
+
+The engine's behavior is entirely determined by two work center settings, which puts the outcome in your hands rather than the algorithm's:
+
+| You want | Set |
+|---|---|
+| One long operation to finish sooner across identical machines | Multiple instances, One Per Day off |
+| Several jobs to run in parallel, one per machine per day | Multiple instances, One Per Day on |
+| Strictly one job at a time on one machine | One instance |
+| A genuinely half-capacity unit modelled honestly | A fractional instance count |
+
+That predictability matters more than optimality in daily use. A supervisor who can look at a board and say "of course it went to chamber 2, chamber 1 already had a load" trusts the plan. Across 35+ years of finite capacity work at User Solutions, at organizations including the US Navy, GE, BAE Systems, and Cummins, the schedules that survive contact with the shop floor are the explainable ones.
+
+## Next
+
+Read [the instance and utilization mistakes](/blog/instance-and-utilization-mistakes-edgebic) for the configurations that make these modes produce plans nobody can hit. If you are still deciding between instances and a machine pool, [what is a work center group](/blog/what-is-a-work-center-group-machine-pool) covers the alternative, and [work centers explained](/blog/edgebic-work-centers-explained) puts both in context.

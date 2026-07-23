@@ -1,0 +1,144 @@
+---
+title: "A Fourth Shift Site's First Week With EDGEBIC (An Illustrative Walkthrough)"
+description: "An illustrative Fourth Shift site scheduling rollout, day by day: legacy exports, tooling constraints, knowledge captured in a model, and honest dates."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - Fourth Shift site scheduling
+  - Fourth Shift finite capacity scheduling
+  - legacy ERP scheduling rollout
+  - EDGEBIC Fourth Shift implementation
+  - tooling constrained scheduling
+  - shop floor scheduling knowledge capture
+targetPhrase: "Fourth Shift site scheduling"
+wordCount: 1953
+readingTime: 10
+faqQuestions:
+  - question: "Can a site running a decade-old ERP integrate scheduling without an upgrade project?"
+    answer: "Yes, because the interface is a file rather than an API. Any installation that can produce an Excel workbook or a delimited text file can feed the import masks, and legacy quirks are handled by mask settings: no heading row maps by column position, quoted text has its own option, and tab or semicolon delimiters are supported. Nothing is installed inside the ERP, so its upgrade path and backups are untouched."
+  - question: "How does a site capture routing knowledge that lives in people's heads?"
+    answer: "By letting them criticize a plan instead of describing one. Import what the ERP holds, schedule it, and show supervisors a Gantt that is wrong in places. People correct a wrong schedule far more accurately than they recite routings from memory, and the corrections arrive specific and checkable. Each one goes into the routing file or a work center setting, and a routing re-import replaces that product's steps cleanly."
+  - question: "How do tooling constraints get modeled if the ERP does not hold them?"
+    answer: "Two ways, depending on the shop. Where a family of machines can run the same work at different speeds, use a work center group with per-member efficiency factors so the engine compares real finish times. Where only certain machines can physically run a part, express that as alternates on the routing step or as a group containing only the capable machines. Both are configured in EDGEBIC, because no ERP export carries them."
+  - question: "What does the first honest schedule usually reveal at a long-established site?"
+    answer: "The real backlog, and where it sits. A finite capacity plan cannot promise more hours than a work center has, so work that was quietly late becomes visibly late with dates attached. Most sites also find that at least one work center they never suspected is the true constraint on certain product mixes, because a manual system distributes attention by habit rather than by load."
+qaQuestions:
+  - question: "Our planner retires in 18 months and most of the scheduling logic is in his head. Is week one enough to capture any of it?"
+    answer: "Week one captures the mechanical part, which is more than people expect: machine counts, shift calendars, which presses can run which molds, real setup times, the sequence rules he applies without thinking. Each of those becomes a field or a setting rather than a habit, and it survives him. What week one does not capture is judgment, which is the part where he decides that a particular customer's job is worth protecting this month. That has to be written down separately, or trained. The practical value of doing this while he is still there is that he is the one correcting the model, so what ends up in it is his reasoning rather than a consultant's guess at it."
+  - question: "We tried a scheduling tool eight years ago and it died because nobody kept the data current. What is different this time?"
+    answer: "The maintenance cost is the difference, and it is worth checking rather than believing. In the old pattern somebody re-keyed data or reshaped a spreadsheet every week, and the routine died the first busy month. Here the weekly cost is running a saved export and clicking a saved mask, with unit conversion, delimiter, and column positions all stored on the mask permanently. Actuals arrive from a kiosk or a daily import that always overwrites the days it carries, so a corrected file fixes numbers rather than doubling them. If your evaluation shows anyone hand-editing a file every week, something is mapped wrong, and that is a fixable problem rather than an accepted cost."
+---
+
+**This walkthrough follows an illustrative site, not a customer: about 70 people, Fourth Shift running for more than 15 years, 22 work centers including eight presses that can each run only certain tooling, paper travelers, and one planner who holds most of the scheduling logic in his head.** The mechanics below are real. The site is a composite, and no number here is presented as a measured customer result.
+
+EDGEBIC by User Solutions is the current generation of the scheduling line whose Fourth Shift heritage is the best documented in the family. For the mechanics rather than the narrative, see the [complete Fourth Shift integration guide](/blog/edgebic-fourth-shift-integration-guide) and the [Fourth Shift mapping reference](/blog/fourth-shift-to-edgebic-data-mapping-reference).
+
+## The site, and the two problems it thinks it has
+
+The stated problem is promise dates. The site quotes lead times from experience, misses often enough that it hurts, and finds out late.
+
+The unstated problem is bigger. The planner has been there 22 years. He knows which press can run which mold, which combinations force a long changeover, which customer's work gets protected in a squeeze, and which routing in the ERP is wrong and has been for a decade. None of that is written down. He retires in less than two years.
+
+A scheduling rollout at a site like this is partly a data project and mostly a knowledge-capture project. Week one should be planned that way.
+
+## Day 1: items, work centers, and the calendar
+
+Two exports and two masks. The item export comes out with no heading row, which is common on long-established installs and is a mask setting rather than a problem: turn off header-present and map each field by column position. The positions are stored permanently, so no one reshapes a file again.
+
+The work center export lands next. Then the afternoon, which is where the schedule is actually built, because it covers what the ERP never held:
+
+- **Instance counts.** Two work centers are really cells of identical machines. Left at one instance each, every plan would be several times too long exactly where the site runs hardest, and nothing would error to warn anyone.
+- **Shift calendars.** One row per shift with a start and end pair per weekday, blank pairs where the site is closed, plus plant holidays. This is the calendar every future date is planned against, so it deserves careful minutes rather than fast ones.
+- **The constraint.** Everyone names the same work center. Nothing in the ERP did.
+
+## Day 2: routings, and the first knowledge transfer
+
+The routing export carries operation names, sequence numbers, and hours, with setup in minutes. The conversion is a mask setting (0.016667 on the setup column) applied on this run and every future run automatically.
+
+The mask maps end product, step name, the operation flag, hours per unit, sequence, setup, queue, and transit days, and the next-step column is left blank on purpose. The import wires the chain itself: pass one validates and buffers every row, pass two sorts each product's steps by sequence number, writes them, and links 10 to 20, 20 to 30, and the last step to the finished item so the routing renders connected in the graphical designer.
+
+Then the moment the week turns. The planner looks at his own routings drawn as flow charts and starts correcting them out loud, because seeing a wrong picture is a completely different experience from reading a wrong table. Three routings have steps in the wrong order. Two have a step that has not existed since a machine was replaced. One has a queue time entered in days rather than hours.
+
+Each correction goes into the export file and the file is re-imported, and because a routing re-import wipes and recreates that product's steps, the corrected file simply replaces the last. Version drift never accumulates, which is what makes correcting-as-you-go safe.
+
+## Day 3: tooling, and orders in
+
+Presses that can only run certain molds are the site's real scheduling problem, and no ERP export has a column for it. Two mechanisms handle it:
+
+| Situation | Model |
+|---|---|
+| Several presses can run the family, at different speeds | Work center group with per-member efficiency factors |
+| Only certain presses can physically run the part | Alternates on the routing step, or a group containing only the capable machines |
+
+The group case is worth spelling out, because it is the difference between a plan and a suggestion. An operation bound to a group re-evaluates every member on each reschedule, picks by strategy (earliest completion, primary first, or earliest start), and applies each member's efficiency factor, so a slower press is chosen only when it still finishes soonest. Operations already running keep their machine, because recorded work is never moved.
+
+This is precisely the modeling problem the documented Plastilite Corporation case was built around: many machines with different tool configurations holding different combinations of molds. That work belongs to the earlier Resource Manager DB generation and is cited here as heritage rather than as a promise. The account is in [the 5-day integration story](/blog/fourth-shift-scheduling-the-5-day-integration-story).
+
+Open orders import in the afternoon. Then the rule every site meets once: **imports never schedule.** The orders sit as unscheduled demand until the planner runs the scheduler, and a confirmation dialog states how many jobs are being scheduled for the first time before anything happens.
+
+## Day 4: the first honest plan, and the argument about it
+
+The first schedule is wrong in three or four places and right about one thing that matters: the backlog. Jobs the site thought were comfortable show positive days-late numbers, which is not a defect but the plan refusing to promise hours that do not exist.
+
+The planner spends the day trying to break it, which is the correct use of him. Every objection resolves to one input:
+
+| Objection | Input at fault |
+|---|---|
+| "Press 4 cannot run that part" | Machine missing from the group restriction or the alternate list |
+| "Changeover is never that fast between those two" | Sequence-dependent setup not configured for that center |
+| "We do not run Saturdays except in December" | Shift calendar |
+| "That job waits for the outside plater" | Transit days missing on the step |
+| "Assembly cannot run three at once" | Instance count too high |
+
+By the end of the day, five things that lived in one person's memory are fields in a model. That is the deliverable nobody put on the project plan and the one the owner will care about in two years.
+
+## Day 5: publish, and decide the rhythm
+
+Dispatch lists go out Friday, after the plan has survived its critic. Publishing a plan the floor catches being wrong in week one costs months of credibility, and waiting two days costs nothing.
+
+The rhythm at a site like this is usually two cadences rather than one: a weekly load on Monday (orders in, full schedule, publish the week) and a short daily loop (yesterday's hours in, run the scheduler, publish the day). [The daily Fourth Shift and EDGEBIC scheduling workflow](/blog/the-daily-fourth-shift-edgebic-scheduling-workflow) walks both.
+
+Actuals start with a kiosk at the constraint work center only. Paper travelers keep running everywhere else and reach the office a day late, which is fine: the plan is one day optimistic rather than wrong, and completed operations stay exactly where they happened. Expanding capture is a habit change, and habits take longer than software.
+
+## What typically changes, and why
+
+Mechanisms, not promises.
+
+**Dates become honest before they become better.** A finite capacity plan cannot promise more hours than a work center has, so the backlog becomes visible with dates attached. Uncomfortable for a fortnight, then normal.
+
+**Tooling reality enters the plan.** Work that used to be assigned by memory gets assigned by finish time, and it gets re-decided on every reschedule for anything not yet started.
+
+**Changeover-heavy centers give hours back.** Where a setup matrix exists, grouping compatible work converts setup hours into run hours without buying capacity. The engine's documented paint example shows the mechanism in full: see [the paint shop changeover sequencing example](/blog/paint-shop-changeover-sequencing-example-edgebic).
+
+**Knowledge stops being a single point of failure.** This is the change with the longest tail and the one worth building the business case on at a site with a retiring planner.
+
+For a documented outcome rather than a typical one, the User Solutions lineage includes GE Railcar going from 30 percent to 90 percent on-time delivery. That belongs to that engagement and is quoted as heritage, not as a forecast for a 70-person site.
+
+## What does not change
+
+Fourth Shift keeps financials, purchasing, and inventory. Nothing is installed inside it, nothing writes back automatically, and no connector enters its upgrade path. Dates return as Excel and go into the ERP the way your team already updates them. The [ERP integration architecture](/edgebic-erp-integration) explains why the boundary is drawn there, and the [EDGEBIC product overview](/edgebic) maps the engine on the other side of it.
+
+## The honest caveats
+
+A week builds a working model, not a finished one. Routing data at a long-established site usually needs two or three weekly cycles before it is trustworthy. Actuals capture expands slowly and should. And a site that has run on one person's judgment for 20 years will discover that some of that judgment was right for reasons nobody can articulate yet, which is worth investigating rather than overruling.
+
+If your site looks like this one, the fastest test is your own export. Pull this week's open orders and a routing file and [bring them to a demo](/contact-us). The questions sites ask first are collected in the [Fourth Shift integration FAQ](/blog/edgebic-fourth-shift-integration-faq).
+
+<Accordion title="Can a site running a decade-old ERP integrate scheduling without an upgrade project?">
+Yes, because the interface is a file rather than an API. Any installation that can produce an Excel workbook or a delimited text file can feed the import masks, and legacy quirks are handled by mask settings: no heading row maps by column position, quoted text has its own option, and tab or semicolon delimiters are supported. Nothing is installed inside the ERP, so its upgrade path and backups are untouched.
+</Accordion>
+
+<Accordion title="How does a site capture routing knowledge that lives in people's heads?">
+By letting them criticize a plan instead of describing one. Import what the ERP holds, schedule it, and show supervisors a Gantt that is wrong in places. People correct a wrong schedule far more accurately than they recite routings from memory, and the corrections arrive specific and checkable. Each one goes into the routing file or a work center setting, and a routing re-import replaces that product's steps cleanly.
+</Accordion>
+
+<Accordion title="How do tooling constraints get modeled if the ERP does not hold them?">
+Two ways, depending on the shop. Where a family of machines can run the same work at different speeds, use a work center group with per-member efficiency factors so the engine compares real finish times. Where only certain machines can physically run a part, express that as alternates on the routing step or as a group containing only the capable machines. Both are configured in EDGEBIC, because no ERP export carries them.
+</Accordion>
+
+<Accordion title="What does the first honest schedule usually reveal at a long-established site?">
+The real backlog, and where it sits. A finite capacity plan cannot promise more hours than a work center has, so work that was quietly late becomes visibly late with dates attached. Most sites also find that at least one work center they never suspected is the true constraint on certain product mixes, because a manual system distributes attention by habit rather than by load.
+</Accordion>

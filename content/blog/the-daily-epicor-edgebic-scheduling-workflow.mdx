@@ -1,0 +1,157 @@
+---
+title: "The Daily Epicor + EDGEBIC Scheduling Workflow"
+description: "The daily scheduling workflow Epicor plants run with EDGEBIC: export jobs and labor, re-run saved masks, one finite capacity run, then dates and lists out."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - daily scheduling workflow Epicor
+  - Epicor daily planning routine
+  - Epicor export scheduling cycle
+  - EDGEBIC daily workflow
+  - multi-shift scheduling routine
+  - finite capacity daily run
+targetPhrase: "daily scheduling workflow Epicor"
+wordCount: 1743
+readingTime: 9
+faqQuestions:
+  - question: "When in the day should an Epicor plant run the EDGEBIC schedule?"
+    answer: "Before the first shift starts, after the previous day's labor has landed. That ordering matters more than the clock time: the run should see yesterday's actuals so remaining work replans from where the floor really is. Plants running three shifts usually schedule against the start of first shift and publish dispatch lists for all three from the same plan rather than rescheduling per shift."
+  - question: "Which Epicor exports does the daily cycle actually need?"
+    answer: "Two: open jobs and labor or actuals. Parts, resources, and methods of manufacture change on engineering and plant cadence, not daily, and re-running those masks daily is harmless but pointless because existing records come back Reused and untouched. Keeping the daily export set to two files is what holds the routine to twenty minutes."
+  - question: "Does the daily run move work that is already in progress?"
+    answer: "No. Recorded work is never moved by any run: an operation with an actual start and end is historical fact and is left exactly where it happened. A reschedule re-plans only work that has not started. Jobs you did not select keep their existing plan, and the capacity they reserved is respected by everything planned around them."
+  - question: "Do machine pools have to be reassigned every day?"
+    answer: "No, and that is the point of a work center group. A routing step bound to a group re-evaluates every member on each reschedule automatically, picking by strategy and applying per-member efficiency factors. Operations already started keep their machine. Nobody reassigns anything by hand: the daily run re-shops the pool as part of planning."
+qaQuestions:
+  - question: "We run three shifts and our planner works days. Second and third shift supervisors want to know what changed. What does the handoff look like?"
+    answer: "Publish once, not three times. The morning run produces one plan covering all three shifts, and the Job View grid exports it as a workbook with colored cells and a legend sheet. Work center reports export the same way with a saved column layout, so each supervisor's dispatch list is a saved report rather than a document someone builds. The only reason to schedule again during the day is a real disruption, and in that case the run touches only the jobs you select, with a confirmation dialog stating the counts before anything happens."
+  - question: "Our labor extract lands at 11pm but occasionally a shift's hours are corrected two days later. Does a corrected file break the numbers?"
+    answer: "No, because the actuals import always overwrites the days the file carries. Importing the same file twice never double-counts, and importing a corrected file simply replaces the earlier numbers on those days. Days the file does not mention are preserved unless you deliberately ask for them to be cleared, which is what makes a partial re-extract safe. The effect on the plan appears at the next scheduler run: the corrected hours change what remains, while the completed operations stay exactly where they happened."
+---
+
+**An Epicor plant's daily EDGEBIC cycle is a twenty-minute loop with four moves: export open jobs and labor, run the saved import masks, run the scheduler once, and publish dispatch lists and dates.** The plan is rebuilt against real capacity every morning, before first shift, using yesterday's actuals as the starting point. Nothing else in the day depends on a person remembering to do something.
+
+EDGEBIC by User Solutions runs alongside Epicor, not instead of it. Epicor stays the system of record for orders, inventory, purchasing, and financials. EDGEBIC owns the finite capacity sequencing question. If the masks are not built yet, the [complete Epicor integration guide](/blog/edgebic-epicor-integration-guide) covers the setup and the [Epicor mapping reference](/blog/epicor-to-edgebic-data-mapping-reference) lists every field.
+
+## The four questions the daily run has to answer
+
+Before the mechanics, the purpose. A morning scheduling run exists to answer four questions that nobody can answer from a static plan:
+
+1. What actually happened yesterday, and what does that leave?
+2. What new demand arrived, and where does it fit?
+3. Which promises are now at risk, and by how many days?
+4. What should each work center run today, in what order?
+
+Everything below is the shortest route to those four answers.
+
+## Move one: export two files
+
+Only two data sets change every day.
+
+| Data | Cadence | Reason |
+|---|---|---|
+| Open jobs / orders | Daily | New orders, quantity changes, date changes |
+| Labor / actuals | Daily | Yesterday's real hours and pieces |
+| Parts | On change or monthly | New parts, cost or lead-time refreshes |
+| Resources / work centers | On change | Instance counts, rates, calendars, bottleneck flags |
+| Methods of manufacture | On engineering change | Method revisions |
+
+Set the Epicor side up once as saved extracts writing to a known folder with stable file names. Masks remember the last file path, so a stable name is what makes the import two clicks instead of a file-picker hunt. This is the only step that needs anyone from IT, and it is one-time work.
+
+Sequencing matters when the labor extract runs overnight. Schedule the daily run after the extract lands, so the plan starts from yesterday's reality rather than yesterday's plan.
+
+## Move two: the imports
+
+Pick a mask, run it, read the counts. Every row of every run lands as exactly one outcome:
+
+| Outcome | What it means today |
+|---|---|
+| Created | New job or record |
+| Updated | Existing record changed, on runs where you enabled updates |
+| Reused | Existing record matched and deliberately left alone |
+| Failed | Row rejected, with the reason in the per-run log |
+
+A healthy daily orders import in a 400-job plant reads something like `Created 14 · Updated 0 · Reused 391 · Failed 0`. Reused dominating is the correct shape: the safe default for a matching record is to leave it untouched, which is precisely what makes re-importing the same export every day harmless.
+
+When Failed is not zero, open the log rather than guessing. It records every row with the exact reason, and the reason is almost always a blank required cell or a date the row could not parse.
+
+One rule governs the entire routine: **imports change data, never the plan.** Imported jobs sit as unscheduled demand until you run the scheduler. An import can never silently rearrange the floor.
+
+## Move three: actuals in
+
+Most Epicor plants have labor data already, so the actuals import is usually a direct extract rather than a new data-collection habit. One row per job, work center, and day, carrying hours or pieces (either one is derived from the other using the operation's rate) and optionally a flag marking the operation complete.
+
+Where labor reporting is thin, a shop-floor kiosk captures hours and piece counts as the work happens, which closes the loop without waiting for a nightly extract. Plants typically end up with both: kiosk capture at the constraint work centers, bulk import for everything else.
+
+Either way, re-running is safe by design. The days a file carries are always overwritten with the file's values, so a corrected extract fixes numbers rather than doubling them.
+
+## Move four: the scheduler run
+
+Select the jobs, or accept the offer to include everything, and confirm. The confirmation dialog states the run in plain numbers before it starts: how many jobs get a first plan and how many existing jobs are being rescheduled. That single sentence is the cheapest blast-radius check available, and reading it is a habit worth building.
+
+A progress overlay runs while the engine works, and cancelling is always safe: nothing partial is kept and the previous plan stands.
+
+What the run does that a static plan cannot:
+
+- Places every operation into real shift hours on real machines, never exceeding what a work center can do in a day.
+- Re-shops every work center group, so a group-bound operation is assigned to whichever member finishes it soonest given today's load, with per-member efficiency factors applied. Started operations keep their machine.
+- Sequences work at centers with a setup matrix so changeovers fall in a sane order rather than an arbitrary one, the mechanism worked through in [the paint shop changeover example](/blog/paint-shop-changeover-sequencing-example-edgebic).
+- Leaves recorded work exactly where it happened.
+
+## Move five: read the plan before publishing it
+
+The schedule grid gives you status, start date, first operation start, job end, due date, and days late. Days late is a projection: the current plan's end lands past the promise. A positive number today is a decision you get to make calmly, instead of a phone call you take later.
+
+The ten-minute review that pays for the whole routine:
+
+- **Scan days late,** and treat every positive number as a decision: re-sequence, add capacity, or move the promise.
+- **Check the constraint's load.** If the bottleneck is over capacity on any day, everything downstream of it is fiction. [Bottleneck identification](/blog/production-bottleneck-identification) covers the diagnosis.
+- **Look at what moved since yesterday,** because jobs move for reasons: an operation that ran long, a capacity change, higher-priority work inserted ahead of it.
+
+## Move six: publish
+
+The return trip is Excel. The Job View grid exports the schedule as a workbook with colored cells and a legend sheet. The work center schedule exports the same way. Every report dialog exports to Excel or PDF using the column layout you saved, which makes a dispatch list a saved report rather than a document somebody assembles.
+
+Promise dates go back into Epicor through the same date-maintenance path your team already uses. Epicor's workflows are untouched; they simply receive dates that came out of a finite capacity model.
+
+## Who does what, and how often
+
+| Role | Daily | Weekly | On change |
+|---|---|---|---|
+| Planner | Export, import, schedule, review, publish | Reconcile dates against Epicor promises | Re-import methods after an engineering change |
+| Supervisors | Confirm actuals are complete for their area | Flag capacity reality (machines down, crews short) | |
+| Materials | Flag material risk on jobs about to release | | |
+| IT | Nothing | Nothing | Keep the saved Epicor extracts running |
+
+An integration that needs IT every morning does not survive its second month. Keeping IT out of the daily loop is a design goal, not an accident.
+
+## When the day goes sideways
+
+Disruptions do not require re-running the world. A machine goes down: mark the capacity change and reschedule the affected jobs, with the confirmation dialog showing the scope first. A rush order lands: add or import the one job and schedule it alone, so everything else keeps its plan and its reserved capacity. The mechanics of the first case are walked through in [the machine breakdown reschedule walkthrough](/blog/machine-breakdown-reschedule-walkthrough-edgebic).
+
+If the question is whether to accept the rush order at all, that is a promise-date question rather than a scheduling one. A quote simulation answers it without touching the live plan.
+
+## The slower cadences that keep it honest
+
+Weekly: reconcile EDGEBIC dates against the promises recorded in Epicor and tune whatever disagrees, usually shift calendars, instance counts, or setup times. Monthly: refresh parts and resources, re-check which work center is genuinely the constraint, and review whether the setup matrix still matches how the plant actually sequences work.
+
+The rest of the engine works underneath the daily loop without adding steps to it. The [EDGEBIC product overview](/edgebic) maps it, and the [ERP integration architecture](/edgebic-erp-integration) shows the same rhythm applied to any ERP. For the beginning of the story rather than the middle, read [an Epicor plant's first week with EDGEBIC](/blog/an-epicor-plants-first-week-with-edgebic), and for the questions that come up first, the [Epicor integration FAQ](/blog/edgebic-epicor-integration-faq).
+
+<Accordion title="When in the day should an Epicor plant run the EDGEBIC schedule?">
+Before the first shift starts, after the previous day's labor has landed. That ordering matters more than the clock time: the run should see yesterday's actuals so remaining work replans from where the floor really is. Plants running three shifts usually schedule against the start of first shift and publish dispatch lists for all three from the same plan rather than rescheduling per shift.
+</Accordion>
+
+<Accordion title="Which Epicor exports does the daily cycle actually need?">
+Two: open jobs and labor or actuals. Parts, resources, and methods of manufacture change on engineering and plant cadence, not daily, and re-running those masks daily is harmless but pointless because existing records come back Reused and untouched. Keeping the daily export set to two files is what holds the routine to twenty minutes.
+</Accordion>
+
+<Accordion title="Does the daily run move work that is already in progress?">
+No. Recorded work is never moved by any run: an operation with an actual start and end is historical fact and is left exactly where it happened. A reschedule re-plans only work that has not started. Jobs you did not select keep their existing plan, and the capacity they reserved is respected by everything planned around them.
+</Accordion>
+
+<Accordion title="Do machine pools have to be reassigned every day?">
+No, and that is the point of a work center group. A routing step bound to a group re-evaluates every member on each reschedule automatically, picking by strategy and applying per-member efficiency factors. Operations already started keep their machine. Nobody reassigns anything by hand: the daily run re-shops the pool as part of planning.
+</Accordion>

@@ -1,0 +1,163 @@
+---
+title: "Operator and Skill Scheduling Mistakes to Avoid"
+description: "The operator scheduling mistakes that quietly break a labor-constrained plan: attention left at zero, expired certifications, roster gaps, and unwanted pins."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - operator scheduling mistakes
+  - certification expiry scheduling
+  - roster configuration errors
+  - labor constraint troubleshooting
+  - skill gated step not scheduling
+  - operator pin problems
+targetPhrase: "operator scheduling mistakes"
+wordCount: 1590
+readingTime: 8
+faqQuestions:
+  - question: "Why did a person stop being scheduled when nothing visibly changed?"
+    answer: "Check the certification expiry date first. An expired certification stops qualifying that operator on the next scheduling run, and nothing announces it on the schedule itself. The same silent effect follows from deactivating the operator, deactivating the certification, or removing a roster row. All four are filtered out before the scheduling engine ever sees them, so the person simply is not in the qualified pool any more."
+  - question: "Why does a skill-gated step book nobody at all?"
+    answer: "Because operator attention is 0.0 by default and the step has no setup time. Attention describes the run phase only, so zero attention plus zero setup means the operation consumes no operator time and the labor constraint is skipped entirely. Either give the step its real setup time or set attention above zero. If people must stand at the machine for the whole run, set attention to 1.0 explicitly."
+  - question: "Why do steps routed to one particular work center never staff?"
+    answer: "That work center is probably running a custom shift that is not derived from any global shift. Roster rows attach to global shifts, so a parentless custom work center shift has nothing a roster row can reference, and every skill-gated step routed there finds an empty qualified pool. Re-derive the work center's shift from a global parent, or roster people on the global shift it mirrors."
+  - question: "Is the Dispatch list a record of who worked on a job?"
+    answer: "No. Dispatch shows the current plan's crew, regenerated wholesale on every scheduling run, so it answers who is planned to do the work rather than who did it. Actual work stays in punches and actual dates from the shop-floor kiosk. Building payroll, history, or performance reporting on the planned crew would be building on a list that legitimately changes with the next run."
+qaQuestions:
+  - question: "We entered a week of vacation on Friday and the schedule still shows that person working Monday. Is the time off broken?"
+    answer: "The time off saved, but nothing replans by itself. EDGEBIC never moves a live schedule in response to a master data edit, which is deliberate: silent replanning is how planners lose trust in a tool. Run Drive Schedule or a reschedule and the steps that depended on those hours will slide. The habit worth building is entering leave the moment it is approved and running the schedule in the same sitting, because leave entered and never rescheduled protects nothing at all."
+  - question: "A supervisor dragged a job onto an operator's lane and it accepted, but the next run moved it. Why?"
+    answer: "The drag checks qualification, not hours. Dropping a bar onto somebody's lane pins the step to that person if they hold the step's skill, and the drop is accepted even when their day is already full. The next scheduling run then books hours honestly and slides the step if that person cannot cover it. This is the same trust model as dragging an operation onto a different machine: the gesture records your intent, and the engine tells you the truth about capacity on the next run."
+---
+
+**The operator constraint in EDGEBIC by User Solutions rarely fails loudly. It fails by silently not applying, or by applying harder than anyone intended.** Both directions have a small number of specific causes. Here they are, with the symptom that identifies each one.
+
+If you are configuring this for the first time, [setting up operators, skills, and rosters](/blog/how-to-set-up-operators-skills-and-rosters-in-edgebic) walks the screens in order, [operator and skill scheduling explained](/blog/edgebic-operator-and-skill-scheduling-explained) covers what the constraint does in [EDGEBIC](/edgebic), and [the attend fraction](/blog/what-is-attend-fraction-operator-scheduling) covers the one field behind mistake number one.
+
+## Mistake 1: Leaving Operator Attention at Zero on Hands-On Work
+
+**Symptom:** a step carries a required skill, but the schedule places it as though labor were free.
+
+Operator attention defaults to `0.0`, which means **setup only**: a person sets the machine up and the machine then runs itself. On a genuinely lights-out machine that is correct and valuable. On hands-on welding it is wrong, and the wrongness is invisible, because the schedule still looks plausible.
+
+The extreme case is worth knowing: a skill-gated step with **zero setup and zero attention** consumes no operator time at all, so the constraint is skipped entirely and the step schedules as if it had no skill.
+
+**Fix:** set attention deliberately on every gated step. `1.0` when somebody must stand at the machine, `0.5` when one person tends two machines, above `1.0` for a crew, `0.0` only for real lights-out running. The default was chosen so a forgotten field under-books visibly rather than overselling people quietly, but "visibly" still means somebody has to look.
+
+## Mistake 2: Certification Expiry Surprises
+
+**Symptom:** a person stops being scheduled and nothing visibly changed.
+
+Expired certifications are filtered out before the scheduling engine sees them. So are inactive operators, inactive certifications, and inactive roster rows. The operator simply is not in the qualified pool any more, and no banner announces it.
+
+One extra detail catches people out: a certification expiring **in the middle** of your planning horizon is treated as expired for the whole run. If the person is genuinely qualified through part of the window, renew the date before rescheduling.
+
+**Fix:** check expiry dates before debugging anything else. Record real expiry dates on certifications that really expire, and treat the schedule's silence as a feature: finding a lapsed certification from your planning run beats finding it from an auditor.
+
+## Mistake 3: Roster Gaps and Unstaffable Shifts
+
+**Symptom:** steps routed to one particular work center never staff, no matter who you certify.
+
+Roster rows attach to **global** shifts. A work center whose calendar is derived from a global shift inherits that shift's roster automatically. A work center shift that is **not** derived from any global shift has nothing a roster row can reference, so every skill-gated step routed there finds an empty pool and fails.
+
+This is intentional. A silent pass here would put you back in the one-welder-five-machines world the whole feature exists to prevent.
+
+**Fix:** re-derive the custom work center shift from a global parent, or roster people on the global shift the work center mirrors. Do not work around it by relaxing the skill requirement, which trades a visible problem for an invisible one.
+
+## Mistake 4: Modeling Job Titles Instead of Certifications
+
+**Symptom:** a skills catalog containing Welder, Machinist, and Inspector, and a schedule that staffs people who are not actually qualified for the specific work.
+
+Steps gate on certifications, not on roles. `Welder` is a job title held by twelve people with four different tickets between them. `TIG-Weld` is a skill, and only the people who hold it should qualify.
+
+**Fix:** model skills at the level you certify, matching what your quality system actually issues. It usually means more skills than you first planned, and it makes the qualified pool honest rather than approximate.
+
+## Mistake 5: Expecting One Step to Require Two Skills
+
+**Symptom:** an operation genuinely needs a welder who is also inspection-certified, and the routing can only name one skill.
+
+A step requires exactly one skill in this release.
+
+**Fix:** create the combination as its own skill, such as `TIG-Weld+Inspection`, and certify only the people who hold both. It keeps the pool exact instead of approximating with the looser of the two requirements.
+
+## Mistake 6: Pinning by Habit
+
+**Symptom:** a step sits still for days while qualified colleagues are free.
+
+A pin is deliberately hard. The pinned person's hours are the only hours that count, the rest of the pool is never a fallback, and the step **slides through their absence** to their first day back. That visible slip is the design, because a pin means the identity of the person is a requirement and a silent substitution would defeat it.
+
+**Fix:** use automatic operator selection by default and pin only when who genuinely matters, such as a customer requirement or a sign-off authority. To release a pin, set the operator picker back to automatic or drag the operation to the unassigned lane on the operator-mode Gantt.
+
+## Mistake 7: Unchecking a Skill to Suspend It
+
+**Symptom:** a certification's dates and level vanish when you meant to pause it.
+
+Unchecking a skill in the certify dialog **deletes** that certification, taking its history with it.
+
+**Fix:** to suspend a certification temporarily, for example pending a re-test, untick **Active** on the certification grid row instead. The record and its dates survive, and the person stops qualifying on the next run.
+
+## Mistake 8: Entering Time Off and Never Rescheduling
+
+**Symptom:** approved leave is in the system and the schedule still plans that person's hours.
+
+Master data edits never move a live schedule by themselves. EDGEBIC does not replan on its own, so leave entered on Friday changes nothing until a scheduling run happens.
+
+**Fix:** enter leave as soon as it is approved and run the schedule in the same sitting. A vacation recorded but never rescheduled protects nothing.
+
+## Mistake 9: Treating the Crew Plan as an Actuals Record
+
+**Symptom:** somebody built a labor report, or worse a payroll input, on the Dispatch list, and the numbers change week to week.
+
+Crew assignments are **plan data**, regenerated wholesale on every scheduling run. They answer who is planned to work an operation. Completed steps carry none at all.
+
+**Fix:** read Dispatch as the plan for the coming days and keep actual labor reporting on punches and actual dates from the [shop-floor kiosk](/blog/edgebic-shop-floor-guide). The two surfaces answer different questions and should never be merged.
+
+## Mistake 10: Assuming the Operator Drag Checks Hours
+
+**Symptom:** a supervisor drags a bar onto somebody's lane, it is accepted, and the next scheduling run moves it.
+
+Dragging an operation between operator lanes checks **qualification**, not availability. An unqualified drop snaps back with the reason. A qualified drop is accepted even when that person's day is already full, and the next run books hours honestly and slides the step.
+
+**Fix:** treat the drag as recording intent, exactly like dragging an operation onto a different machine. If you need to know whether the person can actually cover it, check the operator lens of the Resource Calendar before dropping. The same override-and-warn model is described in [drag and drop rescheduling](/blog/drag-and-drop-rescheduling-in-edgebic).
+
+## Mistake 11: Reading Free Machine Hours as Available Capacity
+
+**Symptom:** "the machine had eight free hours on Thursday and the job went to Friday."
+
+For a skill-gated step, an unstaffed shift is **unusable** capacity, not partially usable. If the only certified person is on leave that day, the step will not be placed there, and nothing flags the machine as idle because for that operation it was never genuinely free.
+
+**Fix:** read the operator lens alongside the machine calendar whenever a gated step lands later than you expected. The staffing picture is the missing half of the explanation. The hour-by-hour mechanics are in [how EDGEBIC books operator hours](/blog/how-edgebic-books-operator-hours).
+
+## The Fast Diagnostic Table
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Step will not schedule, message names the skill | No active operator holds an unexpired certification | Certify or renew, then reschedule |
+| Step lands days after the machine looks free | Qualified pool empty or exhausted on the earlier days | Check the operator lens, roster or certify more people |
+| One work center never staffs | Custom shift with no global parent | Re-derive the shift from a global parent |
+| A person quietly dropped out of plans | Expiry date passed, or a record was deactivated | Check expiry first, then active flags |
+| A lights-out step books a full person | Attention set to 1.0 on a machine that runs itself | Set attention to 0.0 and reschedule |
+| A skill step ignores operators completely | Zero setup plus zero attention means no involvement | Give the step its real setup time, or raise attention |
+| Pinned step waits while colleagues are free | Working as designed, a pin never falls back | Clear the pin if a substitute is acceptable |
+| Dispatch shows different people than yesterday | Crew assignments are plan data, regenerated each run | Expected. Pin the step if the person must be stable |
+
+Most of these take under a minute once you know which one you are looking at. For problems that turn out not to be labor-related, the [troubleshooting guide](/blog/edgebic-troubleshooting-guide) covers the wider set, and the [complete EDGEBIC guide](/blog/edgebic-complete-guide) puts the labor constraint in the context of the whole pipeline. Shops balancing certified people against machine capacity will recognize the same tension in [job shop labor scheduling](/blog/job-shop-labor-scheduling).
+
+<Accordion title="Why did a person stop being scheduled when nothing visibly changed?">
+Check the certification expiry date first. An expired certification stops qualifying that operator on the next scheduling run, and nothing announces it on the schedule itself. The same silent effect follows from deactivating the operator, deactivating the certification, or removing a roster row. All four are filtered out before the scheduling engine ever sees them, so the person simply is not in the qualified pool any more.
+</Accordion>
+
+<Accordion title="Why does a skill-gated step book nobody at all?">
+Because operator attention is 0.0 by default and the step has no setup time. Attention describes the run phase only, so zero attention plus zero setup means the operation consumes no operator time and the labor constraint is skipped entirely. Either give the step its real setup time or set attention above zero. If people must stand at the machine for the whole run, set attention to 1.0 explicitly.
+</Accordion>
+
+<Accordion title="Why do steps routed to one particular work center never staff?">
+That work center is probably running a custom shift that is not derived from any global shift. Roster rows attach to global shifts, so a parentless custom work center shift has nothing a roster row can reference, and every skill-gated step routed there finds an empty qualified pool. Re-derive the work center's shift from a global parent, or roster people on the global shift it mirrors.
+</Accordion>
+
+<Accordion title="Is the Dispatch list a record of who worked on a job?">
+No. Dispatch shows the current plan's crew, regenerated wholesale on every scheduling run, so it answers who is planned to do the work rather than who did it. Actual work stays in punches and actual dates from the shop-floor kiosk. Building payroll, history, or performance reporting on the planned crew would be building on a list that legitimately changes with the next run.
+</Accordion>

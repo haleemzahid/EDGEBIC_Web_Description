@@ -1,0 +1,143 @@
+---
+title: "A JobBOSS Shop's First Week With EDGEBIC (An Illustrative Walkthrough)"
+description: "An illustrative 40-person JobBOSS shop scheduling improvement, day by day: exports, import masks, the first honest schedule, and what typically changes."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - JobBOSS shop scheduling improvement
+  - JobBOSS finite capacity scheduling
+  - job shop scheduling first week
+  - JobBOSS EDGEBIC implementation
+  - job shop planner workflow
+  - ERP scheduling add-on rollout
+targetPhrase: "JobBOSS shop scheduling improvement"
+wordCount: 1972
+readingTime: 10
+faqQuestions:
+  - question: "What does a job shop actually do on day one of a scheduling rollout?"
+    answer: "Export parts and work centers from the ERP and import them, which usually takes a morning. The afternoon goes into the data no export carries: how many identical machines sit inside each work center, which shifts each one runs, and which center is the real constraint. That afternoon is the highest-value hour of the week, because a four-machine cell imported as a single machine produces a plan four times too long and nothing errors to warn you."
+  - question: "When does a shop see its first realistic schedule?"
+    answer: "Usually on day three, after parts, work centers, routings, and open jobs are all in. The first schedule is rarely correct, and that is the point: it disagrees with the planner in specific, checkable ways. Each disagreement traces to one input (a wrong hours-per-unit, a missing setup time, a machine count) and gets fixed in the source file or the work center settings before the next run."
+  - question: "What typically changes first for a job shop after finite capacity scheduling?"
+    answer: "Honest dates, before anything else. A finite capacity plan cannot promise more hours than a work center has, so jobs that were quietly late become visibly late while there is still time to act. The second change is usually sequencing at the changeover-heavy work center, where a sequence-dependent setup matrix lets the engine group compatible work instead of running the queue in arrival order."
+  - question: "Does a scheduling rollout require cleaning up ERP data first?"
+    answer: "No, and waiting for clean data is how these projects stall. Import what the ERP holds today and let the first schedule expose the defects by name. Because a routing re-import wipes and recreates that part's steps, each corrected file replaces the last cleanly, so the data improves week by week instead of in one large project nobody has time for."
+qaQuestions:
+  - question: "Our planner is the only person who understands the schedule, and he is skeptical about software. How do we get him through week one without a fight?"
+    answer: "Give him the job of proving the software wrong, because that is genuinely the fastest path to a correct model. On day three the first schedule will disagree with him somewhere, and his objection is diagnostic: if he says a job cannot possibly finish that early, the cause is almost always a specific input (a setup time missing on one work center, a machine count set to one where the shop has three). Each objection resolved makes the model more his than the vendor's. Shops where the planner spent week one hunting for errors tend to end up trusting the plan; shops where the planner was handed a finished schedule tend not to."
+  - question: "We quote lead times from gut feel and we are wrong often enough that it costs us. Does week one help with quoting, or is that a later phase?"
+    answer: "It helps in week one, but indirectly. Once the shop's real capacity is modeled, a quote simulation can run a hypothetical order against the live load and produce a what-if promise date without touching the committed plan. That is not the same as a formal promise system, and it should not be sold internally as one. What it changes immediately is the conversation: instead of a planner guessing four weeks because that is what he said last time, the estimate comes from the same model that produces the shop's actual dates. The gap between quoted and achieved dates usually narrows first at the constraint work center, where the guessing was worst."
+---
+
+**This walkthrough follows an illustrative shop, not a customer: a 40-person job shop running JobBOSS, 14 work centers, roughly 250 open jobs, and a planner who spends most of Monday rebuilding a spreadsheet from ERP reports.** Everything the shop does here is mechanically real and grounded in how EDGEBIC works. The shop itself is a composite, and no numbers below are presented as a measured customer result.
+
+EDGEBIC by User Solutions is a finite capacity scheduling platform that sits beside the ERP. If you want the mechanics rather than the narrative, the [complete JobBOSS integration guide](/blog/edgebic-jobboss-integration-guide) and the [JobBOSS mapping reference](/blog/jobboss-to-edgebic-data-mapping-reference) cover them field by field.
+
+## The shop, and the Monday it wants to stop having
+
+Fourteen work centers. Three CNC mills that everyone calls "the mill cell" but that JobBOSS carries as one work center. A saw, two lathes, a weld cell, a small paint booth, an inspection bench, assembly. One full shift with a partial second shift on the mills when things get tight. Around 250 open jobs at any time and a mix of repeat work and one-offs.
+
+The ERP does what ERPs do well: quotes, orders, purchasing, job costing. Scheduling happens in a spreadsheet the planner rebuilds every Monday from three JobBOSS reports, plus a whiteboard the paint booth operator keeps in his own notation, plus a Wednesday expediting meeting that exists because Monday's spreadsheet is wrong by then.
+
+The symptom the owner cares about is not the spreadsheet. It is that promise dates are guesses, and the shop finds out which guesses were wrong when a customer calls.
+
+## Day 1: parts and work centers
+
+The morning is straightforward. The planner runs two JobBOSS exports (parts and work centers), builds two import masks by dragging column headings onto EDGEBIC fields, and runs them. The parts run reports something like `Created 610 · Reused 0 · Failed 2`. The two failures are rows with blank part numbers left over from an old data cleanup, and the per-run log names them in one line each.
+
+The afternoon is the valuable part, and it is not import work at all. It is the data JobBOSS never held:
+
+- **The mill cell is three machines, not one.** The work center record gets an instance count of three. Left at one, every plan the shop ever produced would have been roughly three times too long on its busiest resource, and nothing would have errored to say so.
+- **Shifts get built.** One row per shift with a start and end pair per weekday, and blank pairs where the shop is closed. Plant holidays go in the same way.
+- **The paint booth gets flagged as the bottleneck.** Everyone in the building knows it. Nothing in the ERP did.
+
+That afternoon buys more schedule accuracy than anything else in the week. A plan is only as honest as its capacity model, which is the whole argument in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+## Day 2: routings
+
+The routing export comes out of JobBOSS with setup in minutes, which is normal and which the mask absorbs: a conversion factor of 0.016667 on that column turns a 30-minute cell into 0.5 hours on this run and every future run.
+
+The routing mask maps end product, step name, an operation flag, hours per unit, sequence number, setup, and queue time. The planner leaves the next-step column blank on purpose, because the import wires the chain itself: it reads and buffers every row in a first pass, then in a second pass sorts each part's steps by sequence number, writes them, and links 10 to 20, 20 to 30, and the last step to the finished part.
+
+Two things go wrong on day two, and both are ordinary:
+
+1. Twelve routings come in with the operation flag set wrong, so components appear as work centers. The graphical routing designer makes it obvious in about four seconds of looking. The planner fixes the column in the export and re-imports, and because a routing re-import wipes and recreates that part's steps, the corrected file simply replaces the last one.
+2. Somebody suggests splitting the file "so it is easier to check". It is not: all of one part's steps must be in the same run, because the wipe happens once per run. One file, 2,400 rows, done.
+
+By late afternoon the shop can see its own routings drawn as flow charts, and two supervisors are standing at the screen arguing about a weld step. That argument is progress.
+
+## Day 3: jobs in, first schedule out
+
+Open jobs import in the morning: part, quantity, job number, due date. Roughly 250 rows, all Created, because it is the first load.
+
+Then the rule that surprises people: **imports never schedule.** The 250 jobs sit as unscheduled demand until the planner runs the scheduler. He does, and the confirmation dialog states the scope before anything happens: 250 new jobs, zero rescheduled. The run finishes, and the shop sees its first finite capacity plan.
+
+It is wrong in three places, which is exactly what should happen. A bracket job finishes implausibly early (setup time missing on the lathe). A weld job sits idle for two days (queue time entered as days instead of hours). And 31 jobs show a positive days-late number, which is not a software error at all: it is the shop's real backlog, visible for the first time.
+
+That third finding is the week's actual deliverable. Nothing about the shop changed on day three. The plan simply stopped pretending.
+
+## Day 4: making the model argue back correctly
+
+Day four is the planner trying to break it, which is the right instinct and the fastest route to a model he trusts. Each objection resolves to one input:
+
+| Objection | Cause | Fix |
+|---|---|---|
+| "The mill cannot start that job Tuesday, we run the second shift only on rush work" | Second shift assigned to the mill cell every day | Correct the shift assignment |
+| "Paint never changes color that fast" | No sequence-dependent setup configured | Build the setup matrix for the booth |
+| "That job has to wait for the fixture" | Constraint not modeled | Express it as an alternate or a machine pool restriction |
+| "Assembly cannot run three of these at once" | Instance count too high | Correct it |
+
+The setup matrix is the one worth dwelling on. A booth where a same-color run costs nothing and a dark-to-light change costs hours is not schedulable by arrival order, and the difference between an arrival-order sequence and a campaign-ordered one is large enough that the engine's documented paint example is worth reading on its own: see [the paint shop changeover sequencing example](/blog/paint-shop-changeover-sequencing-example-edgebic).
+
+## Day 5: locking the rhythm
+
+Friday is not technical. It is deciding who does what, forever:
+
+- The planner runs the loop each morning: export open jobs, run the saved masks, run the scheduler, publish dispatch lists.
+- Supervisors confirm the day's actual hours, which start arriving through a shop-floor kiosk at the paint booth and the mill cell first.
+- IT does nothing, having made the JobBOSS exports saved reports that land in a known folder.
+
+The whole loop is described in [the daily JobBOSS and EDGEBIC scheduling workflow](/blog/the-daily-jobboss-edgebic-scheduling-workflow). Total elapsed time once it settles is around twenty minutes, most of it reading rather than clicking.
+
+## What typically changes, and why
+
+No invented numbers here: these are the mechanisms, and what they usually produce.
+
+**Dates become honest before they become better.** A finite capacity engine cannot promise more hours than a work center has. Jobs that were quietly late become visibly late, which feels worse for a week and then stops being a surprise. This is where the visible gains start, because a late job discovered on Monday has options that a late job discovered on Friday does not.
+
+**Changeover time drops where a setup matrix exists.** Grouping compatible work at a changeover-heavy center converts setup hours into run hours without buying anything. The shop's paint booth is the obvious candidate; the mill cell usually is not.
+
+**The Monday spreadsheet stops being rebuilt.** That is roughly a planner-morning a week returned, and it is the change people notice first even though it is not the most valuable one.
+
+**The expedite meeting shrinks.** Not because expediting disappears, but because the conversation moves from "what is late?" to "which of these three do we protect?"
+
+For a documented outcome rather than a typical one, the User Solutions lineage includes GE Railcar going from 30 percent to 90 percent on-time delivery. That result belongs to that engagement, and it is quoted here as heritage rather than as a projection for a 40-person shop.
+
+## What does not change
+
+JobBOSS keeps order entry, purchasing, costing, and financials. Nothing is installed inside it, nothing writes back to it automatically, and no connector enters its upgrade path. Promise dates return as Excel and go into the ERP the way your order-entry process already updates dates. The [ERP integration architecture](/edgebic-erp-integration) explains why that boundary is deliberate, and the [EDGEBIC product overview](/edgebic) maps the engine that runs on the other side of it.
+
+## The honest caveats
+
+A week is enough to build a working model, not enough to fix routing data that has been drifting for a decade. Shops usually need two or three weekly cycles before the routings are trustworthy. Actuals capture is a habit change, and habits take longer than software. And the first two weeks of honest dates are uncomfortable, because the backlog was always there: the schedule just started telling the truth about it.
+
+If your shop looks like this one, the fastest test is your own export. Pull this week's open jobs and a routing file and [bring them to a demo](/contact-us). The remaining questions are collected in the [JobBOSS integration FAQ](/blog/edgebic-jobboss-integration-faq).
+
+<Accordion title="What does a job shop actually do on day one of a scheduling rollout?">
+Export parts and work centers from the ERP and import them, which usually takes a morning. The afternoon goes into the data no export carries: how many identical machines sit inside each work center, which shifts each one runs, and which center is the real constraint. That afternoon is the highest-value hour of the week, because a four-machine cell imported as a single machine produces a plan four times too long and nothing errors to warn you.
+</Accordion>
+
+<Accordion title="When does a shop see its first realistic schedule?">
+Usually on day three, after parts, work centers, routings, and open jobs are all in. The first schedule is rarely correct, and that is the point: it disagrees with the planner in specific, checkable ways. Each disagreement traces to one input (a wrong hours-per-unit, a missing setup time, a machine count) and gets fixed in the source file or the work center settings before the next run.
+</Accordion>
+
+<Accordion title="What typically changes first for a job shop after finite capacity scheduling?">
+Honest dates, before anything else. A finite capacity plan cannot promise more hours than a work center has, so jobs that were quietly late become visibly late while there is still time to act. The second change is usually sequencing at the changeover-heavy work center, where a sequence-dependent setup matrix lets the engine group compatible work instead of running the queue in arrival order.
+</Accordion>
+
+<Accordion title="Does a scheduling rollout require cleaning up ERP data first?">
+No, and waiting for clean data is how these projects stall. Import what the ERP holds today and let the first schedule expose the defects by name. Because a routing re-import wipes and recreates that part's steps, each corrected file replaces the last cleanly, so the data improves week by week instead of in one large project nobody has time for.
+</Accordion>

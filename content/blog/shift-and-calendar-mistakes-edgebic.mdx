@@ -1,0 +1,153 @@
+---
+title: "Nine Shift and Calendar Setup Mistakes That Quietly Break a Schedule"
+description: "Shift calendar setup mistakes rarely throw errors: wrong recurring dates, shrunk shifts, per-shift overrides, stale calendars. The symptom and fix for each."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - shift calendar setup mistakes
+  - production calendar configuration errors
+  - recurring holiday wrong date
+  - capacity override mistakes
+  - overnight shift scheduling problem
+  - weekend production scheduling
+targetPhrase: "shift calendar setup mistakes"
+wordCount: 1620
+readingTime: 8
+faqQuestions:
+  - question: "Why does a recurring holiday fire on the wrong date every year?"
+    answer: "Because only the month and day of a recurring holiday record are used and the year is ignored. A record saved with the wrong month or day repeats that error in every year the scheduler plans across, and nothing about it looks wrong in the grid. Open the holiday, correct the date, and rerun the schedule. Recurring records are worth an annual review for exactly this reason."
+  - question: "Why did jobs still schedule on a day I marked as a holiday?"
+    answer: "Almost always because the schedule predates the calendar change. Saving a holiday never moves existing work: the plan on screen was computed against the old calendar and keeps its dates until the next run. Check the holiday is active and covers the right date, then rerun the schedule. Completed work is never moved by a reschedule, so rerunning is safe on jobs already in progress."
+  - question: "Should you shrink a shift to account for daily lost time?"
+    answer: "Only when the loss really is every day. A shift shortened to cover an occasional meeting costs those hours every single day and hides the reason, so a year later nobody can explain why the day is short. A recurring partial holiday charges each shift only its own overlap with the window, applies plant-wide from one record, and documents itself. Reserve shift edits for changes to the actual working pattern."
+  - question: "Why does overriding capacity on one shift not change the day's total?"
+    answer: "Because overrides are keyed to a work center, a shift, and a date, so each shift is its own cell. A work center running day and night needs both cells overridden to change the whole day. The usual symptom is exactly half the expected weekend or overtime capacity, with a job that runs the morning and then stops."
+  - question: "What is the safest way to leave planning headroom in a schedule?"
+    answer: "Put it in the calendar, not in hope. Enter shift hours net of time the plant reliably loses, record recurring maintenance as downtime so it is subtracted before the instance multiplier, or use per-day overrides on the specific days that differ. All three are honored identically by the scheduler and the dashboards, and all three leave a record explaining the number, which a mental buffer never does."
+qaQuestions:
+  - question: "We edited the day shift to add two hours and one department's dates did not improve at all. Everything else moved. Why would one area ignore a global change?"
+    answer: "Those work centers are almost certainly on custom calendars. Once a work center has Use Global Shifts unticked it follows only its own shift list and stops tracking plant-wide edits, which the amber Custom badge in the Shift Calendar column is there to flag. It is a real feature (a night-shift-only mill or a Monday-to-Thursday cell needs it) but every custom calendar becomes another place to update, and after a year nobody remembers which machines are exceptions. Either edit those work centers' own Associated Shifts tab, or re-tick Use Global Shifts to bring them back onto the plant calendar."
+  - question: "A supervisor says our night shift work is showing on the wrong day on the Gantt and wants the calendar fixed. Is there anything to fix?"
+    answer: "Usually not. An overnight shift is attributed to the calendar day it starts on, so a 22:00 Tuesday to 06:00 Wednesday slice belongs to Tuesday's allocation even though most of the hands-on time happens Wednesday. That convention is consistent across the Gantt, the allocation records, and the capacity screens, so the numbers reconcile once you read overnight rows against their start day. If the split genuinely needs to read as two days for reporting or handover purposes, the honest fix is two shifts rather than reinterpreting one, but it is a reporting preference and not a calendar defect."
+---
+
+**Shift and calendar mistakes almost never throw an error: they produce a plan that is internally consistent and quietly disconnected from the plant, because the scheduler believes the calendar literally and has no way to know it is wrong.** The nine below account for most of the calendar problems that reach a support conversation, each with the symptom you would actually notice first.
+
+[EDGEBIC by User Solutions](/edgebic) will tell you when a work center has no shift at all. It cannot tell you that the shift you defined is optimistic, or that a recurring holiday is set to the wrong Monday. This article covers the quiet class. For the layers themselves, start with [shifts and calendars explained](/blog/edgebic-shifts-and-calendars-explained) and [the setup guide](/blog/how-to-set-up-shifts-holidays-downtime-in-edgebic).
+
+## 1. Changing the Calendar and Not Rerunning the Schedule
+
+**The mistake.** Adding a holiday, extending a shift, or entering an override, then reading the Gantt and concluding nothing happened.
+
+**Why it is wrong.** Saving calendar data never reschedules. The plan on screen was computed against the old calendar and keeps every date, including allocations that now sit outside working hours.
+
+**The symptom.** "I added the holiday and jobs are still scheduled on it." Also its more expensive cousin: promising dates from a plan that predates the change.
+
+**The fix.** Run Drive Schedule and review the result before communicating anything. Completed work is never moved by a reschedule, which is the guarantee that makes frequent reruns practical. The pipeline is described in [the scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+This one is first because it masquerades as every other mistake on the list. Confirm the plan is current before diagnosing anything else.
+
+## 2. A Recurring Holiday on the Wrong Month or Day
+
+**The mistake.** A recurring holiday saved with a date that is off by a day, or in the wrong month entirely.
+
+**Why it is wrong.** Only the month and day of a recurring record are used. The year is ignored, and the pattern expands into every year the scheduler plans across.
+
+**The symptom.** The plant works through the real holiday and shuts down on a normal Tuesday. In the grid, the record looks perfectly valid.
+
+**The fix.** Open the holiday, correct the date, rerun. Then put a five-minute annual review of the recurring list on the calendar, because a wrong record repeats itself indefinitely and nothing surfaces it.
+
+## 3. Shrinking a Shift to Absorb Occasional Losses
+
+**The mistake.** The plant loses 45 minutes to a monthly meeting, so somebody shortens the day shift by 45 minutes.
+
+**Why it is wrong.** The shift is the weekly working pattern. Shortening it charges the time every single day, on every work center that inherits it, and records no reason.
+
+**The symptom.** Capacity that is quietly 6% low across the plant forever, and a shift whose hours nobody can justify a year later.
+
+**The fix.** Model it as a recurring partial holiday for the meeting window. Each shift is charged only its own overlap:
+
+| Shift | Window | Overlap | Result per machine |
+|---|---|---|---|
+| Day | 08:00 to 16:00 | 0.75 h | 8 h becomes 7.25 h |
+| Night | 16:00 to 00:00 | none | unchanged |
+
+One record, correct per shift, self-documenting, and it repeats automatically. Reserve shift edits for genuine changes to the working pattern.
+
+## 4. Per-Machine Hours in a Capacity Override
+
+**The mistake.** A three-instance work center has a PM window where each machine loses half a shift. The planner types the per-machine figure into **Capacity (h)**.
+
+**Why it is wrong.** An override states the effective total for the day across every machine, and the engine uses it exactly as typed. It never multiplies an override by the instance count.
+
+**The symptom.** The day offers a third of the intended hours. The Resource Calendar bar looks far too short and work quietly pushes into following days.
+
+**The fix.** Always enter machines times hours: three instances at four hours each is 12. Related trap on the other side, a zero-hour override on a day the shift does not run is a no-op, because an override adjusts an existing slot rather than creating one. The mechanics are in [how EDGEBIC resolves capacity day by day](/blog/how-edgebic-resolves-capacity-day-by-day).
+
+## 5. Overriding One Shift and Expecting the Whole Day
+
+**The mistake.** A work center runs day and night. The planner overrides Saturday on the day shift and expects a full day of weekend capacity.
+
+**Why it is wrong.** Overrides are keyed to work center, shift, and date. Each shift is a separate cell.
+
+**The symptom.** Exactly half the expected capacity. A job that runs Saturday morning and then stops.
+
+**The fix.** Override each shift you intend to run. And remember the priority rule: a per-day override beats a date-range override on any date both cover, which means a single day overridden inside a retooling week comes out of that week's budget entirely.
+
+## 6. A Stale Custom Work Center Calendar
+
+**The mistake.** One work center was given its own shifts for a good reason a year ago. The plant pattern then changed and nobody revisited the exception.
+
+**Why it is wrong.** A work center with **Use Global Shifts** unticked follows only its own shift list. Global edits do not reach it, by design, and the amber **Custom** badge in the **Shift Calendar** column is the only indication.
+
+**The symptom.** A plant-wide shift extension improves every date except one department's. Or one machine's bars sit in the wrong part of the day.
+
+**The fix.** Edit that work center's own **Associated Shifts** tab, or re-tick **Use Global Shifts** to rejoin the plant calendar. As a standing rule, prefer global shifts and keep custom calendars for genuine exceptions only. The work center side is covered in [work center configuration mistakes](/blog/work-center-configuration-mistakes-edgebic).
+
+## 7. Expecting Weekend Hours to Produce Weekend Work
+
+**The mistake.** Saturday hours added to the shift, and no jobs appear on Saturdays.
+
+**Why it is wrong.** Weekend production is off by default at the work center level, and the date gate runs before capacity is ever calculated. A Saturday can carry shift hours and still be skipped.
+
+**The symptom.** Configuration that looks right, and a weekend that stays empty.
+
+**The fix.** Use a per-day capacity override on the specific Saturdays you actually intend to run, entered per shift, with a reason. That is not a workaround: it is the better model, because occasional overtime should be a deliberate decision with an audit trail rather than a permanent calendar assumption. For a stretch of weekend work, a date-range override makes those days schedulable across the window.
+
+## 8. Retiring a Shift Without Cleaning Up Its Work Centers
+
+**The mistake.** A temporary overtime shift is deactivated when the overtime period ends, and nobody revisits the work centers that were assigned to it.
+
+**Why it is wrong.** Schedules already generated keep their dates, so nothing looks broken. The next scheduling run simply has no capacity from that shift, and the work centers still carry the association without the hours.
+
+**The symptom.** A capacity drop on specific machines that nobody can trace to a change, because the change was made somewhere else and weeks earlier.
+
+**The fix.** Before retiring a shift, check which work centers use it. After retiring it, clean up their shift lists so the configuration says what is actually true. Deleting a shift outright has the same effect on future runs, so the same check applies.
+
+## 9. Downtime Longer Than the Shift
+
+**The mistake.** A five-hour maintenance window recorded against a four-hour shift, usually because the window spans two shifts and was entered once.
+
+**Why it is wrong.** The capacity result is floored at zero rather than going negative, so the shift silently returns no hours instead of complaining. Nothing at data entry prevents the combination.
+
+**The symptom.** A shift that goes completely dark on a recurring weekday with no holiday and no obvious cause.
+
+**The fix.** Record downtime per shift, sized to fit inside it. If a window genuinely spans two shifts, enter the portion that belongs to each. And when a shift goes to zero unexpectedly, check downtime before anything else: the full ordered walk is in [how EDGEBIC resolves capacity day by day](/blog/how-edgebic-resolves-capacity-day-by-day).
+
+## Two Habits That Prevent Most of This
+
+**Keep the calendar honest rather than optimistic.** A resource planned to 100% of the theoretical clock has no recovery room, and the first breakdown propagates through every downstream date. That reasoning is the same one behind buffer management in the [Theory of Constraints and APS literature](https://www.ascm.org). Express the headroom explicitly (real shift hours, recorded downtime, per-day overrides) so the number carries a reason. The measurement side of the same idea is in [the capacity utilization KPI](/blog/capacity-utilization-kpi).
+
+**Put exceptions where exceptions belong.** One-off days go in overrides. Plant-wide interruptions go in partial holidays. Only genuine changes to the working pattern go in the shift. Follow that split and the calendar stays readable by whoever inherits it, which over a few years is worth more than any single setting.
+
+## The Non-Mistake Worth Knowing
+
+Overnight shift work appears on the calendar day the shift **starts**. A slice running 22:00 Tuesday to 06:00 Wednesday belongs to Tuesday's allocation. This is consistent everywhere (Gantt, allocation records, capacity screens) and reconciles perfectly once you read overnight rows against their start day. It gets reported as a bug regularly. It is not one.
+
+## Next
+
+Fix the calendar, then confirm the arithmetic in [how EDGEBIC resolves capacity day by day](/blog/how-edgebic-resolves-capacity-day-by-day). If one machine has gone completely quiet, [the zero-capacity checklist](/blog/capacity-shows-zero-for-a-work-center-edgebic) walks the causes in order. If a job has landed on a closure date, [a job scheduled on a holiday](/blog/job-scheduled-on-a-holiday-edgebic) covers which layer usually misfired. Bring your current shift and holiday list to a demo and we will read it with you.

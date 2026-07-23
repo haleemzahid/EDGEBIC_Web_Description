@@ -1,0 +1,153 @@
+---
+title: "Locked Jobs and the Never-Worse Guarantee in EDGEBIC"
+description: "The schedule optimizer guarantees in EDGEBIC: why the never-worse clamp is enforced not promised, why some jobs reproduce exactly, and what determinism buys."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - schedule optimizer guarantees
+  - never worse optimization
+  - locked jobs optimizer
+  - deterministic scheduling optimizer
+  - optimizer time budget
+  - schedule proposal safety
+targetPhrase: "schedule optimizer guarantees"
+wordCount: 1830
+readingTime: 9
+faqQuestions:
+  - question: "What does the never-worse guarantee mean in EDGEBIC?"
+    answer: "It means the optimizer compares its candidate plan directly against your current plan under the goal you chose, and returns your current plan unless the candidate is strictly better. The check runs after the search finishes, on the real numbers, so it is enforced rather than assumed. The worst outcome of pressing Run is that you learn your plan already wins."
+  - question: "Why does the optimizer leave some jobs exactly where they are?"
+    answer: "Because their routings use a capability the mathematical solver does not yet rearrange natively, such as multi-instance work centers, parallel processing, lot streaming, transit days, alternate work centers, or a required operator skill. Those jobs are reproduced exactly as the standard scheduler planned them, and they still consume capacity in the model, so the remaining jobs are optimized around them rather than through them."
+  - question: "Will the same optimizer run produce the same schedule twice?"
+    answer: "Yes, given the same inputs. Each run records the random seed it used, and the same inputs with the same seed produce an identical plan. That matters for support and for trust: a result you cannot reproduce is a result you cannot investigate, and a planner comparing two runs needs to know that a difference means the data changed rather than the dice."
+  - question: "What happens if the optimizer runs out of time?"
+    answer: "It returns the best plan it found so far, along with whatever bound it had proven at that point, and the optimality gap simply stays wider. An interrupted run is never a failed run, and a cancelled run reports that nothing was changed. Since nothing is written before Accept in any case, stopping a run early has no consequences beyond a less thoroughly searched answer."
+qaQuestions:
+  - question: "Our badge says nothing to optimize because every job is locked. Is the optimizer useless for our shop?"
+    answer: "It means the mathematical solver has nothing it can safely rearrange in your dataset, which is common in shops that lean on parallel processing, lot streaming, or multi-instance machines. Two things follow. First, the result is still meaningful: the solver verified your plan and changed nothing, which is honest reporting rather than a silent no-op. Second, switch to the multi-run search in Options. That layer re-runs the real scheduling engine with different job orderings, so it reorders whole jobs regardless of which routing features they use, and it carries the same never-worse guarantee."
+  - question: "How do we know the optimizer will not quietly overwrite work our operators already recorded?"
+    answer: "Three independent properties cover it. Completed and in-progress operations pass through optimization and persistence unchanged, the same actuals-preservation rule that governs every reschedule. Nothing is written at all until a planner presses Accept, so a proposal you dislike costs nothing to discard. And if actuals land while your proposal sits on screen, Accept refuses with a banner and offers a re-run on the latest data rather than overwriting work it never saw. The safety strip on the comparison screen states the first two of these on every single result."
+---
+
+**The optimizer in EDGEBIC by User Solutions makes three promises worth understanding precisely: it is never worse than your current plan, it never writes anything until you Accept, and it never rearranges work it does not fully model.** The third promise is what produces locked jobs, and the first is enforced by an explicit check rather than assumed from good intentions. This post covers how each guarantee is actually delivered.
+
+For the run-and-read workflow, see [how to run and read an optimization](/blog/how-to-run-and-read-an-optimization-in-edgebic). For the whole feature, the [optimizer guide](/blog/edgebic-optimizer-guide) is the pillar, and if a run has just come back unchanged, [why the optimizer returned the same schedule](/blog/why-the-optimizer-returned-the-same-schedule-edgebic) is the shortest path to the reason.
+
+## The Baseline Comes First, Every Time
+
+Every optimizer run starts by producing a **baseline**: the plan the untouched standard scheduling engine produces from the same inputs. That baseline does double duty. It is the starting point the search works from, and it is the floor everything is measured against.
+
+That ordering has a quiet consequence worth stating. The optimizer is a sidecar, not a replacement engine. The standard scheduler remains the thing that produces schedules in [EDGEBIC](/edgebic); the optimizer proposes an alternative arrangement of the same engine's work and asks you whether you want it. Every candidate plan the multi-run layer evaluates is a **complete real schedule produced by the production scheduling engine**, which is why constraint compliance is total by construction rather than by careful modeling.
+
+## The Never-Worse Clamp Is Enforced, Not Promised
+
+Here is the part that separates a guarantee from a slogan.
+
+After the search finishes, the candidate plan's measures are compared **directly** against the baseline's measures under the goal you chose. If the candidate is not strictly better, the baseline is returned and the verdict says your current plan is still the best. There is no intermediate chain of comparisons that could let small tolerances accumulate into a net loss: it is one direct comparison against the plan you already have.
+
+Why does this need saying? Because with the mathematical solver there is a tempting shortcut. The solver is given the baseline as a **warm-start hint**, a suggested starting solution. It would be natural to assume that a solver handed a good starting point can only improve on it. That assumption is wrong: hints are advisory to a solver, not binding. A design review caught exactly this, and both optimizer layers therefore run the explicit post-solve comparison. The hint helps the search; the clamp is the contract.
+
+The practical translation for a planner: **the worst outcome of pressing Run is learning that your plan already wins.** That is also why running the optimizer after every meaningful scheduling run costs nothing but seconds.
+
+## Nothing Is Written Until Accept
+
+An optimizer result is an in-memory proposal held under a token on your screen. It is not a draft in the database, and other users cannot see it.
+
+- **Accept** persists it through the **same** pipeline as a normal scheduling run, with the same merge protections and the same actuals handling, then writes one audit record.
+- **Discard** drops it, leaving the database byte for byte untouched.
+- **Closing the application** drops it too, which is always safe because nothing was saved.
+
+One more guard sits on Accept. A cheap fingerprint of the schedule is taken **before** the solve and recomputed at Accept. If the world moved in between, because a colleague rescheduled or kiosk actuals landed, Accept refuses and offers a re-run on the latest data instead of overwriting work the optimizer never saw. That check is the reason a planner can leave the comparison screen open without creating a risk.
+
+## Why Some Jobs Reproduce Exactly
+
+The mathematical solver models a specific slice of scheduling reality: plain sequential operations on single-instance machines, with precedence, queue gaps, release dates, capacity, and due dates as penalties. Real routings do more than that.
+
+A job whose routing touches anything the model does not represent natively is **locked**: reproduced exactly as the standard engine scheduled it, on the same machines at the same times, with its rows still consuming capacity inside the model so the optimizable jobs schedule around it rather than through it.
+
+| Lock reason | Trigger |
+|---|---|
+| Multi-instance work center | Any routed machine with more than one instance |
+| One-per-day work center | Any routed machine configured for one job per day |
+| Transit days | The routing step carries calendar transit time |
+| Lot streaming (flow step or transfer batch) | The routing overlaps operations by time fraction or piece count |
+| Parallel processing | Dependent or independent parallel configurations |
+| Alternate work centers | The step carries alternates, including a machine pool binding |
+| Sequence-dependent setup matrix | A populated matrix that is not eligible for native modeling |
+| Required operator skill or a pinned operator | The routing carries a labor constraint |
+
+The reasons are listed **per job** in the Explain dialog, so "why did the optimizer leave this job alone" always has an answer on screen rather than a shrug.
+
+This is a correctness property, not a shortfall. An optimizer that rearranged work subject to a constraint it cannot see would produce plans that look better on the comparison screen and fail on the floor, which is the single worst thing a planning tool can do. Locking first and expanding coverage second is the right order, and coverage does expand: as each capability gains a native model, its lock disappears without changing anything you configured.
+
+Two related behaviors follow from the same principle:
+
+- **Locked jobs are copied straight across** rather than being decoded through the solver's internal time grid, so a fully locked run cannot produce cosmetic differences that look like improvements.
+- **When every job is locked**, the badge says so plainly and **no optimality claim is made**. The result reports that the solver verified the plan and changed nothing. That state has a name in the interface and an explanation in Explain, rather than being dressed up as a successful optimization.
+
+## When Everything Is Locked, Change Engines
+
+The multi-run search has **no lock list at all**. It reorders whole jobs and re-runs the real scheduling engine for each ordering, so every routing feature is honored automatically, whatever it is. That is exactly why the two layers coexist rather than one replacing the other:
+
+| | Multi-run search (default) | Mathematical solver |
+|---|---|---|
+| How it searches | Re-runs the real scheduling engine with many different job orderings, keeps the best complete result | Models the problem and solves it, warm-started from the standard plan |
+| Feature coverage | Every routing feature, because every candidate is a real schedule | Plain sequential single-instance work, everything else locked |
+| What it can claim | Best of N complete schedules tried, guaranteed never worse | Never worse, plus a proven optimality gap |
+| Best when | Rich routings: parallel work, lot streaming, machine pools, skills | Straightforward routings where a proof is worth having |
+
+A shop that leans on parallel processing and lot streaming should not conclude the optimizer is useless when the solver reports nothing to optimize. It should switch to multi-run, where whole-job reordering is still very much on the table. The meaning of the proof itself is covered in [what an optimality gap is](/blog/what-is-an-optimality-gap-production-scheduling).
+
+## Determinism: The Same Run Twice
+
+Every run records the **seed** it used, and the same inputs with the same seed produce an identical plan. The solver additionally pins its worker count for the same reason.
+
+This matters more than it sounds. A result you cannot reproduce is a result you cannot investigate, so when a planner reports a surprising proposal, support can rebuild it exactly rather than debating what probably happened. It also means that comparing two runs a week apart is meaningful: a difference tells you the data changed, not that the dice landed differently.
+
+## Time Budgets and Interruption
+
+You choose 10, 30, or 60 seconds. Whatever happens inside that window, the run ends well:
+
+- **Ran out of time**: the best plan found so far is returned, along with whatever bound had been proven, and the optimality gap simply stays wider.
+- **Cancelled**: the run stops harmlessly and reports that nothing was changed.
+- **Solver fault**: the failure is caught and logged, and the clamp keeps the standard plan. Selecting the mathematical solver can never break scheduling. If the solver component is not installed in a deployment at all, the selection falls back to multi-run rather than failing.
+
+There is one case where a longer budget provably adds nothing: with a small number of jobs, the multi-run search evaluates **every possible ordering**, so once it has tried them all there is nothing left to try. Three jobs means six orderings, evaluated in a couple of seconds.
+
+## Recorded Work Is Never Touched
+
+Completed and in-progress operations pass through optimization and persistence unchanged. This is not a separate optimizer feature: it is the same actuals-preservation machinery that governs every reschedule in EDGEBIC, and the optimizer's Accept path runs through the same persistence pipeline as a normal scheduling run precisely so that it inherits those protections rather than reimplementing them.
+
+The comparison screen states it on every result, and the verdict repeats it in the same sentence as the improvement: nothing already started was touched. If you want the wider rules for what a reschedule may and may not move, [why did my job jump after a reschedule](/blog/why-did-my-job-jump-after-a-reschedule-edgebic) covers them.
+
+## The Audit Record
+
+Accept writes one record capturing the full plain-language explanation, the goal, the seed, the solve statistics, and both sets of before and after numbers. It is the **same story** the Explain dialog showed at the moment of acceptance, which means the conversation you had with a supervisor on Tuesday and the audit answer somebody pulls in November are literally the same text.
+
+For shops working under [AS9100 or similar documentation requirements](/blog/audit-ready-scheduling), that property is worth more than the optimization itself: a schedule change with a recorded reason is a defensible schedule change.
+
+## Reading the Guarantees Together
+
+Put end to end, the properties compose into one sentence a planner can act on: **you can run the optimizer on a live plan, mid-shift, without a change-control conversation, because the only thing that can happen is that you learn something.** Either it finds a better arrangement, which you may accept or discard, or it tells you your plan already wins, which is information you did not have before.
+
+The verdict, the badge, the move list, and Explain are all built so that outcome is legible in thirty seconds. [How to run and read an optimization](/blog/how-to-run-and-read-an-optimization-in-edgebic) covers reading them, [optimizer goals and presets](/blog/edgebic-optimizer-goals-and-presets-explained) covers choosing what to optimize for, and [optimizer usage mistakes](/blog/optimizer-usage-mistakes-edgebic) covers the habits that waste runs. For the platform around it, the [complete EDGEBIC guide](/blog/edgebic-complete-guide) has the full pipeline.
+
+<Accordion title="What does the never-worse guarantee mean in EDGEBIC?">
+It means the optimizer compares its candidate plan directly against your current plan under the goal you chose, and returns your current plan unless the candidate is strictly better. The check runs after the search finishes, on the real numbers, so it is enforced rather than assumed. The worst outcome of pressing Run is that you learn your plan already wins.
+</Accordion>
+
+<Accordion title="Why does the optimizer leave some jobs exactly where they are?">
+Because their routings use a capability the mathematical solver does not yet rearrange natively, such as multi-instance work centers, parallel processing, lot streaming, transit days, alternate work centers, or a required operator skill. Those jobs are reproduced exactly as the standard scheduler planned them, and they still consume capacity in the model, so the remaining jobs are optimized around them rather than through them.
+</Accordion>
+
+<Accordion title="Will the same optimizer run produce the same schedule twice?">
+Yes, given the same inputs. Each run records the random seed it used, and the same inputs with the same seed produce an identical plan. That matters for support and for trust: a result you cannot reproduce is a result you cannot investigate, and a planner comparing two runs needs to know that a difference means the data changed rather than the dice.
+</Accordion>
+
+<Accordion title="What happens if the optimizer runs out of time?">
+It returns the best plan it found so far, along with whatever bound it had proven at that point, and the optimality gap simply stays wider. An interrupted run is never a failed run, and a cancelled run reports that nothing was changed. Since nothing is written before Accept in any case, stopping a run early has no consequences beyond a less thoroughly searched answer.
+</Accordion>

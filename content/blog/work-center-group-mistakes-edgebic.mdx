@@ -1,0 +1,151 @@
+---
+title: "Work Center Group Mistakes (And How to Spot Them)"
+description: "The work center group mistakes that produce confusing schedules in EDGEBIC: wrong model, invented factors, deactivated pools, and the symptom for each."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - work center group mistakes
+  - machine pool configuration errors
+  - resource group troubleshooting
+  - scheduling master data mistakes
+  - work center group not scheduling
+  - efficiency factor mistakes
+targetPhrase: "work center group mistakes"
+wordCount: 1600
+readingTime: 8
+faqQuestions:
+  - question: "Why does a group-bound routing step fail to schedule?"
+    answer: "The usual cause is that the group is inactive, or every one of its members is inactive, so the step has no candidate machines. EDGEBIC leaves the step unexpanded and writes a visible warning in the run's diagnostics rather than quietly picking a machine, because scheduling work onto the wrong machine is worse than a loud failure. Reactivate the group or a member, or rebind the step, then reschedule."
+  - question: "Why did my manual alternate work centers disappear when I bound a step to a group?"
+    answer: "Binding a step to a group replaces its manual alternate list by design, because the group is the alternate list. Two competing sources of alternates on one step would have no defined selection meaning. If you need a hand-picked list that differs from the pool for this one step, unbind the group and configure per-step alternates instead. If the same list keeps recurring across steps, the pool is the better structure."
+  - question: "Can you delete a work center group that routing steps still use?"
+    answer: "No. EDGEBIC blocks the delete with a message naming how many routing steps reference the group, which protects those routings from silently losing their target. Rebind the steps to another machine or pool first if you truly want the record gone. In most cases the better move is to deactivate the group instead, which keeps history intact and reverses cleanly."
+  - question: "Why does one machine show up under two pools on the Resource Calendar?"
+    answer: "Because membership is many to many and pool rows are views, not capacity stores. A mill belonging to both a MILLING pool and a HEAT-TREAT-PREP pool appears under both, showing the same hours in each. Those hours exist once, on the machine, and are booked once. Read overlapping pool rows as two lenses on the same capacity rather than adding them together."
+qaQuestions:
+  - question: "We put every mill in one pool and now nobody can predict where a job will run. Did we over-pool?"
+    answer: "Probably, if predictability matters to your setup people. Earliest completion optimizes each job's finish time against live load, which by design moves work around as the load changes. Two fixes exist and they are not exclusive. Switch the group to primary first, so the designated machine takes the work whenever it has capacity and the others are genuine overflow. Or split one broad pool into two narrower pools that reflect what each machine is actually qualified and tooled for, since a pool should mean interchangeable for this class of work, not merely similar."
+  - question: "Our factors were guesses and the completion dates now look precise but feel wrong. What is the recovery?"
+    answer: "Reset every factor to 1.0 and add them back only where you can defend the number for this class of work. An invented factor does not add uncertainty to the schedule, it adds false confidence: the engine multiplies exactly and reports dates to the minute, so a made-up 1.3 produces a made-up finish time that reads as fact. If one machine is simply slower at everything, put that in the work center's own configuration rather than in a member row, and if the difference is really in fixturing rather than cutting, use the member setup override instead of the factor."
+---
+
+**Most work center group problems in EDGEBIC by User Solutions are not scheduling bugs, they are modeling decisions showing their consequences.** A pool that fails to schedule, a job that landed on the wrong machine, a Gantt that refuses to change: each has a specific cause and a specific fix. Here are the mistakes that account for nearly all of them, with the symptom that gives each one away.
+
+If you are still setting up your first pool, [creating a work center group](/blog/how-to-create-work-center-groups-in-edgebic) covers the screens in [EDGEBIC](/edgebic), [work center groups explained](/blog/edgebic-work-center-groups-explained) covers when a pool is the right structure at all, and [what a work center group is](/blog/what-is-a-work-center-group-machine-pool) covers the definition in one page.
+
+## Mistake 1: Using a Pool Where Instances Belong (or the Reverse)
+
+**Symptom:** either the "identical" machines in one work center produce schedules that assume a speed none of them actually has, or a pool of genuinely identical units carries three member rows that all say factor 1.0 and duplicate the same calendar three times.
+
+Instances model identical units inside one work center: one shift calendar, one utilization percentage, one speed, one capacity formula. A pool models different-but-interchangeable machines, each keeping its own calendar, speed factor, setup time, and instance count. Three mills of different vintages are a pool. Three identical mills bought together on one calendar are one work center with three instances.
+
+The two compose, which is the part people miss. A pool member can itself be a multi-instance work center, so a pool of three cells where one cell holds two identical machines needs no compromise.
+
+**Fix:** pick by the calendar question. If the machines must share one calendar and one speed to be modeled correctly, they are instances. If any of them needs its own, they are pool members.
+
+## Mistake 2: Modeling People as a Machine Pool
+
+**Symptom:** a group named something like "Certified Welders" or "Inspectors", and schedules that place work where nobody qualified is actually present.
+
+A pool answers which machine. It has no concept of certification, roster, or time off, so a people-shaped pool is a label that constrains nothing. EDGEBIC has a separate labor dimension for the human question: skills, certifications with expiry dates, weekly rosters, and time off, described in [operator and skill scheduling](/blog/edgebic-operator-and-skill-scheduling-explained).
+
+**Fix:** delete the people-shaped pool and set the routing step's required skill instead. The two constraints can sit on the same step, where the pool answers which machine and the skill answers which qualified person. Machine selection even accounts for staffability, so a member whose shifts cannot be staffed for the step's skill loses its bid.
+
+## Mistake 3: Deactivating the Pool and Leaving Steps Bound
+
+**Symptom:** a routing step fails to schedule and the run's diagnostics carry a group warning naming the pool.
+
+An inactive group, or a group whose members are all inactive, leaves a bound step with no candidate machines. EDGEBIC deliberately leaves the step unexpanded and fails visibly rather than falling back to some other machine, because silently scheduling work onto a machine nobody chose is the worse outcome.
+
+**Fix:** reactivate the group or at least one member, or rebind the step to a machine, then reschedule. When you retire a pool for good, rebind its steps first. Hard-deleting a referenced group is blocked anyway, with a message that names how many steps still point at it.
+
+## Mistake 4: Inventing Efficiency Factors
+
+**Symptom:** completion dates that look precise, feel wrong, and cannot be traced to anything anyone measured.
+
+The engine multiplies factors exactly and reports the resulting dates to the minute. A guessed factor therefore does not produce a vaguer schedule, it produces a confident schedule built on a guess. And the factor means something narrower than most people assume: it is speed **relative to this pool's base hours for this class of work**, not a general statement about the machine.
+
+**Fix:** leave homogeneous pools at 1.0. Set a factor only where you can defend it for the work the pool actually runs. Machine-wide slowness that applies in every context belongs in the work center's own configuration. Slow fixturing belongs in the member's setup override, since the factor never touches setup.
+
+## Mistake 5: Expecting the Gantt to Change Before You Run a Schedule
+
+**Symptom:** "I added a member and nothing happened."
+
+Master data edits never move a live schedule by themselves in EDGEBIC. Adding a member, changing a factor, or flipping an active flag updates the pool and nothing else until the next Drive Schedule or reschedule run. On that run, only operations that have **not started** re-shop the pool.
+
+**Fix:** edit the pool, run the schedule, then read the Gantt. In the documented walkthrough, adding a second mill on Monday changes nothing visible until Tuesday's run, when two of three pending milling operations move to the new machine, the operation that started Monday stays put, and one job's milling step moves from finishing Thursday 14:00 to Wednesday 10:30.
+
+## Mistake 6: Assuming the Faster Machine Should Always Win
+
+**Symptom:** a job landed on the slow machine and somebody filed it as a defect.
+
+Earliest completion is capacity-aware: it projects each candidate's real finish from its speed **and** its current queue. A slower machine that is free today legitimately beats a faster machine booked until Thursday. In the documented two-mill example, the 13-hour candidate beats the 10.5-hour candidate by nearly two days when the faster mill is booked solid.
+
+**Fix:** open the Resource Calendar and look at both machines' load for the days in question. Ninety percent of the time the answer is visible in ten seconds. If you would rather have predictable routing than the shortest finish, switch the group to primary first. The full arithmetic for all three strategies is in [how EDGEBIC picks the best machine in a pool](/blog/how-edgebic-picks-the-best-machine-in-a-pool).
+
+## Mistake 7: Expecting Manual Alternates to Survive the Binding
+
+**Symptom:** the alternate work centers configured on a step vanish after binding it to a pool.
+
+This is by design: the group is the alternate list, and two competing alternate sources on one step would have no defined meaning.
+
+**Fix:** if this one step genuinely needs a hand-picked list different from the pool, unbind the group and configure per-step alternates. If the same hand-picked list keeps appearing on step after step, that is the signal to build a second pool instead.
+
+## Mistake 8: Adding Up Overlapping Pool Rows
+
+**Symptom:** a Resource Calendar that appears to show more capacity than the shop owns.
+
+Membership is many to many. A versatile mill in two pools appears under both, with the same hours in each. Those hours exist once, on the machine, and are booked once. Pool rows are **views** of member capacity, computed live for display, and a pool never holds hours of its own.
+
+**Fix:** read pool rows as lenses, not as additive capacity. When you need the true plant total, read the machines.
+
+## Mistake 9: Missing the Primary Flag Rules
+
+**Symptom:** primary first is selected but the routing still feels arbitrary, or ticking Primary on one machine silently unticked another.
+
+Only one member per group can be primary, so promoting a new one demotes the old one automatically. That behavior is intentional. And when **no** member is flagged, the lowest priority number acts as the primary, which produces a working but implicit configuration that nobody can read off the grid.
+
+**Fix:** flag exactly one primary whenever you use primary first, and use the priority column deliberately for the spill order behind it.
+
+## Mistake 10: Expecting Quote Simulations to Honor Pool Bindings
+
+**Symptom:** a what-if promise date that ignores the pool.
+
+In this release, the file-based quote scenario simulation does not carry pool bindings. Live scheduling and rescheduling honor pools fully, so the difference only appears in that one surface.
+
+**Fix:** treat pooled work in a quote simulation as an approximation and confirm the date with a live scheduling run before promising it. Quoting behavior in general is covered in the [quoting guide](/blog/edgebic-quoting-guide).
+
+## The Fast Diagnostic Table
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Step fails to schedule, group warning in diagnostics | Group or all members inactive | Reactivate, or rebind the step, then reschedule |
+| Step shows a pool badge on one screen, a machine on another | Working as designed: badge before scheduling, real machine after | Nothing to fix |
+| Scheduler picked the slower machine | The faster machine was busier | Check load on the Resource Calendar, or switch to primary first |
+| Factor edited, Gantt unchanged | Master data edits never move a live schedule | Run Drive Schedule; only not-yet-started operations re-shop |
+| Ticking Primary unticked another machine | One primary per group, promotion demotes | Working as designed |
+| Delete blocked with a step count | Routing steps still reference the group | Rebind those steps, or deactivate instead |
+| Manual alternates gone after binding | The group supersedes manual alternates | Unbind for a one-off list, or build a second pool |
+| One machine under two pools with the same hours | Membership is many to many, pool rows are views | Nothing to fix |
+
+Most of these resolve in under a minute once you know which one you are looking at. For problems that turn out not to be pool-related, the [troubleshooting guide](/blog/edgebic-troubleshooting-guide) covers the wider set, and the [complete EDGEBIC guide](/blog/edgebic-complete-guide) puts machine selection in the context of the whole pipeline. Shops wrestling with these decisions across several machine types will also recognize them in [job shop scheduling challenges](/blog/job-shop-scheduling-challenges).
+
+<Accordion title="Why does a group-bound routing step fail to schedule?">
+The usual cause is that the group is inactive, or every one of its members is inactive, so the step has no candidate machines. EDGEBIC leaves the step unexpanded and writes a visible warning in the run's diagnostics rather than quietly picking a machine, because scheduling work onto the wrong machine is worse than a loud failure. Reactivate the group or a member, or rebind the step, then reschedule.
+</Accordion>
+
+<Accordion title="Why did my manual alternate work centers disappear when I bound a step to a group?">
+Binding a step to a group replaces its manual alternate list by design, because the group is the alternate list. Two competing sources of alternates on one step would have no defined selection meaning. If you need a hand-picked list that differs from the pool for this one step, unbind the group and configure per-step alternates instead. If the same list keeps recurring across steps, the pool is the better structure.
+</Accordion>
+
+<Accordion title="Can you delete a work center group that routing steps still use?">
+No. EDGEBIC blocks the delete with a message naming how many routing steps reference the group, which protects those routings from silently losing their target. Rebind the steps to another machine or pool first if you truly want the record gone. In most cases the better move is to deactivate the group instead, which keeps history intact and reverses cleanly.
+</Accordion>
+
+<Accordion title="Why does one machine show up under two pools on the Resource Calendar?">
+Because membership is many to many and pool rows are views, not capacity stores. A mill belonging to both a MILLING pool and a HEAT-TREAT-PREP pool appears under both, showing the same hours in each. Those hours exist once, on the machine, and are booked once. Read overlapping pool rows as two lenses on the same capacity rather than adding them together.
+</Accordion>

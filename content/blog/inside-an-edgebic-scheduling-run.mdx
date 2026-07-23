@@ -1,0 +1,173 @@
+---
+title: "Inside an EDGEBIC Scheduling Run: The Phases of One Pass"
+description: "How a scheduling engine works phase by phase: pre-flight validation, capacity rebuild, order sort, and the per-job pipeline that produces every date on the grid."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - how a scheduling engine works
+  - scheduling pipeline phases
+  - order sort priority start due date
+  - capacity rebuild reschedule
+  - pre-flight validation scheduling
+  - deterministic scheduling
+targetPhrase: "how a scheduling engine works"
+wordCount: 2250
+readingTime: 11
+faqQuestions:
+  - question: "How does a scheduling engine work?"
+    answer: "A finite capacity scheduling engine runs a fixed sequence of phases rather than one calculation. EDGEBIC clears its working state, seeds on-hand stock, reconciles recorded actuals, replays committed capacity from every job it is not replanning, sorts the orders in scope, then plans each job in turn against what capacity remains. Understanding the sequence explains almost every surprising placement."
+  - question: "In what order does EDGEBIC schedule jobs?"
+    answer: "Jobs are sorted by priority first, where a lower number wins, then by start date, then by due date. Each job is planned completely before the next one starts, and each claims capacity as it goes. There is no random tie-breaking anywhere, so the same inputs always produce the same schedule and any difference between two runs traces back to a difference in the data."
+  - question: "What happens if one job fails to schedule?"
+    answer: "The failure is recorded against that job with a readable reason and the run continues. One order with a missing routing or an inactive work center never takes down the plan for the other jobs in the run. Orders that fail an earlier pre-flight check are dropped from the input before the engine starts, so they are reported as failures rather than producing confusing partial results."
+  - question: "Does a quote simulation use the same engine as a live schedule?"
+    answer: "Yes. A quote simulation loads the same work centers, products, routings and existing schedules, creates the same engine, and runs the same pass. The only difference is what happens afterwards: the simulation returns its results and writes nothing to the database. That symmetry is why a simulated promise date matches what the live schedule will produce if the order is accepted."
+  - question: "Why does the engine release a rescheduled job's own reservations?"
+    answer: "Because a job's stale future reservations would otherwise block its own new plan. If a job with a partial actual on step 1 kept the old reservations for steps 2 and 3, the engine would see those work centers as already booked and push the new step 2 days into the future. Jobs in scope keep only the operations carrying recorded actuals; unstarted rows are released."
+qaQuestions:
+  - question: "An operator logged four hours on a twelve hour operation, then the job was rescheduled. How much work does the engine plan?"
+    answer: "Eight hours. The engine classifies that operation as partially completed and injects a remaining-hours override, so the allocator places only the gap rather than the full planned duration. The four recorded hours stay exactly where they are on the calendar and the capacity they consumed stays consumed. This is also why partially completed steps are deliberately excluded from the completed-step seeding pass: seeding them and scheduling the remainder would double count their time."
+  - question: "Two runs on what looks like the same data produced different schedules. Where do I look?"
+    answer: "At the data, because the engine has no random component. The usual causes, in order: the set of jobs in scope differed (a row was ticked or a prompt answered differently), an actual was logged between the runs and moved a resume point, a priority or start date changed, or a master data edit landed between them (a holiday, a shift, a capacity override, a routing change). Sorting is priority then start date then due date, all the way down, so identical inputs give an identical plan every time."
+---
+
+**A scheduling engine does not perform one calculation: it walks a fixed sequence of phases, and the sequence is what explains surprising results.** EDGEBIC by User Solutions clears its working state, seeds available stock, reconciles what the shop floor recorded, replays the capacity that other jobs already hold, sorts the orders in scope, and only then places work. This post follows a single run through all of it, with the arithmetic that produces the dates you see on the grid.
+
+If you are looking for the placement mechanics of one operation (how hours land in shifts, how instances are chosen, how the constraint path works), the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide) is the right page. This one is about the run as a whole: what enters it, in what order, and what the engine has already decided before your first job is placed.
+
+## Phase 0: Pre-flight, Before the Engine Sees Anything
+
+Orders are validated before the run starts. An order with no routing attached, or one pointing at an inactive work center, fails the check and is removed from the input list. It comes back as a structured failure with a summary, a detail line, and a fix hint.
+
+This matters more than it sounds. Dropping the order before the pass means the engine never generates noisy downstream errors from a broken input, and the planner gets a specific reason instead of a mystery. A run with three good orders and one bad one produces three schedules and one clear message.
+
+## Phase 1: Reset, Seed, Reconcile
+
+Once the engine starts, three preparatory phases run before any placement:
+
+**Reset the working state.** Every in-memory capacity bucket is cleared and set back to zero, and any per-run values cached from a previous pass are dropped. Nothing in the database changes yet. Starting from a clean slate is what makes a run reproducible.
+
+**Seed availability.** Current on-hand quantities are loaded so that orders can be netted against stock before consuming machine time. Where a product's demand is already covered by stock, the run can satisfy it without booking a work center at all. The [consume-from-stock netting walkthrough](/blog/consume-from-stock-netting-walkthrough-edgebic) traces that path end to end.
+
+**Reconcile actuals.** If an operator logged completion on step 3 but never logged steps 1 and 2, the engine infers that the earlier steps must also be complete and stamps them from their planned dates. This happens once, at the top of the run, before anything else reads the actuals. Without it, one step could be counted twice: once as an unrecorded row replayed into capacity, and again as an inferred-complete row. The visible symptom of that double count is impossible utilization: a work center reporting more hours consumed than it physically has.
+
+## Phase 2: Rebuild the Capacity Picture
+
+This phase decides what capacity is already spoken for, and it uses one rule with two branches:
+
+| Job | What is replayed into capacity |
+|---|---|
+| **Not** in this run's scope | Its entire plan. Every hour it holds stays reserved. |
+| **In** this run's scope | Only operations carrying at least one recorded actual date. Unstarted rows are released. |
+
+The second branch is the one that took real engineering to get right. Consider a job whose step 1 has a partial actual, with steps 2 and 3 still holding their old reservations. If those stale reservations survive into the rebuild, the engine looks at step 2's work center, sees it booked, and pushes the new step 2 days into the future. The job blocks itself. Releasing unstarted rows for in-scope jobs only is the fix, and it is why a targeted reschedule usually produces a tighter plan than planners expect.
+
+Everything that is genuinely committed stays committed. That is what makes it safe to replan one job on a busy plant without disturbing the other forty.
+
+## Phase 3: Sort the Orders
+
+Sequencing between jobs is deliberate and short:
+
+```
+priority ascending, then start date ascending, then due date ascending
+```
+
+Lower priority number wins. Start date and due date are tie-breakers, so identical-priority orders schedule in a deterministic and meaningful sequence rather than in whatever order they came out of the database.
+
+One extra rule applies when a run mixes stock building with order fulfilment: a job that builds stock is placed before a job that would consume that stock, regardless of priority. Without that ordering, the consumer would run first, find zero on hand, and schedule the full quantity from raw material, while the producer would then build inventory nobody consumed.
+
+The result is worth stating plainly: **the queue order is the plan on a loaded plant.** Each job is planned completely before the next begins, and each claims capacity as it goes. Setting priorities after a run means moving bars twice.
+
+## Phase 4: The Per-Job Pipeline
+
+For each order in the sorted list, the engine runs the same eleven-step sequence. This is where most of the interesting decisions live:
+
+1. **Protect the job's start time** so any internal adjustment cannot leak into the next job in the loop.
+2. **Choose the routing source.** A job already scheduled reads the routing snapshot frozen with it. A new job reads the live master routing. The planner can opt a job back onto the live routing deliberately.
+3. **Analyse actuals**, classifying every operation as completed, partially completed, in progress, or not started, and computing the resume point for the remaining work.
+4. **Resolve alternative work centers**, choosing the best available machine where the routing offers a choice. Work centers with recorded activity are locked and cannot be reassigned.
+5. **Inject remaining hours** on partially completed operations, so the allocator places only the gap.
+6. **Adjust the job's start** to the resume point, so remaining steps schedule from where the floor actually is.
+7. **Filter out completed steps**, which are no longer work to place.
+8. **Net against available stock**, which may reduce the quantity to build or remove the need to build at all.
+9. **Preserve completed schedules**, adding the historical rows back into the output so the job's plan tells the whole story.
+10. **Analyse anchor requirements**, checking whether a constraint operation has been pinned to a target date.
+11. **Place the work**, through the anchor path when a pin exists, or the standard directional path when it does not.
+
+Step 5 is the one worth an example. Take an operation planned at 12 hours with 4 hours logged. The engine sets its remaining hours to 8, so the allocator searches for 8 hours of free capacity from the resume point onward. The 4 recorded hours stay exactly where they were, and the capacity they consumed stays consumed. Partially completed operations are deliberately excluded from the completed-step seeding pass for the same reason: seeding their end and then scheduling the remainder would count their time twice.
+
+## Failure Isolation and Determinism
+
+Two engine properties do a lot of quiet work.
+
+**Failures are per job.** If a job throws (a routing pointing at a work center that no longer exists, for example), the exception is recorded against that job and the loop moves to the next order. One broken order never costs you the schedule for the other forty. Each failure carries a readable message rather than a stack trace.
+
+**The pass is deterministic.** There is no random tie-breaking anywhere in the sort, in slot selection, or in instance selection. The same inputs produce the same schedule every time. That property is what makes a support conversation tractable: a difference between two runs always traces back to a difference in the data between them, so the question is never "what mood was the engine in" but "what changed".
+
+## One Engine, Two Endings
+
+There are two ways to call the engine and they differ only in what happens after the pass finishes.
+
+| Path | What it does | What it writes |
+|---|---|---|
+| Execute | Loads data, runs the pass, converts results, persists them | The plan, plus its audit trail |
+| Simulate | Loads the same data, runs the same pass, converts results | Nothing |
+
+The simulate path is what quoting and what-if scenarios use. It sees the real existing schedules, so capacity already committed is respected, and it returns an earliest completion date the salesperson can price against. Then it stops. The database is untouched.
+
+This symmetry is the whole point. A simulated promise date is not a different, gentler calculation: it is the same engine making the same decisions. If the order is accepted and scheduled for real, the plan matches what the simulation showed, assuming the plant has not changed underneath it.
+
+## Every Run Leaves a Trace
+
+A pass is not a black box afterwards. Two artefacts make a finished run auditable.
+
+**A decision trace.** Each run records the branches it took per job: which routing source it read, how it classified each operation's actuals, which alternative work center it resolved, and which direction rule claimed the job. When a job did not schedule the way you expected, that trace answers the question directly rather than by inference.
+
+**Anomaly checks.** A separate report scans the resulting plan for patterns that should not occur: an operation whose recorded end precedes its recorded start, duplicate hour breakdowns, a sequential gap of several days with no queue time or transit to explain it, a backward-direction job whose plan ends after its due date. These checks exist because a plan can be internally consistent and still describe something impossible, and a validator catches that faster than a planner reading bars.
+
+Together they change the character of a support conversation. Instead of comparing screenshots, you compare a decision line against the data that produced it.
+
+## What a Run Does Not Do
+
+Three things the engine deliberately never does, each of which planners ask about:
+
+- **It never moves recorded work.** An operation with an actual start or end is historical fact. The hours were worked and the costs were incurred.
+- **It never moves a due date you set.** A blank due date is filled once from the job's first planned end, and then it is fixed. Customer commitments are inputs.
+- **It never rewrites a running job's routing.** The snapshot taken on first schedule travels with the job, so a master routing edit does not silently change a job already on the floor.
+
+## Where This Leads
+
+Once you can picture the pass, the rest of the engine reads naturally:
+
+- Scope and mode selection are covered in [EDGEBIC scheduling modes explained](/blog/edgebic-scheduling-modes-explained).
+- The button-level procedure is in [how to run the scheduler in EDGEBIC](/blog/how-to-run-the-scheduler-in-edgebic).
+- The failure patterns to avoid are in [scheduling run mistakes](/blog/scheduling-run-mistakes-edgebic).
+- Step ordering inside a job is covered in [how EDGEBIC orders operations](/blog/how-edgebic-orders-operations-dependency-graphs).
+
+The discipline described here is the same discipline User Solutions has applied since 1991, on schedules from single-cell job shops to the USS Nimitz overhaul with more than 26,000 tasks. A pass that is ordered, isolated and deterministic is what lets a planner trust a plan they did not personally build.
+
+Bring an export of your orders, routings and work centers to a demo and we will walk one real run through these phases with your numbers on screen. [Contact US to arrange it](/contact-us), or start at the [EDGEBIC product overview](/edgebic).
+
+<Accordion title="How does a scheduling engine work?">
+A finite capacity scheduling engine runs a fixed sequence of phases rather than one calculation. EDGEBIC clears its working state, seeds on-hand stock, reconciles recorded actuals, replays committed capacity from every job it is not replanning, sorts the orders in scope, then plans each job in turn against what capacity remains. Understanding the sequence explains almost every surprising placement.
+</Accordion>
+
+<Accordion title="In what order does EDGEBIC schedule jobs?">
+Jobs are sorted by priority first, where a lower number wins, then by start date, then by due date. Each job is planned completely before the next one starts, and each claims capacity as it goes. There is no random tie-breaking anywhere, so the same inputs always produce the same schedule and any difference between two runs traces back to a difference in the data.
+</Accordion>
+
+<Accordion title="What happens if one job fails to schedule?">
+The failure is recorded against that job with a readable reason and the run continues. One order with a missing routing or an inactive work center never takes down the plan for the other jobs in the run. Orders that fail an earlier pre-flight check are dropped from the input before the engine starts, so they are reported as failures rather than producing confusing partial results.
+</Accordion>
+
+<Accordion title="Does a quote simulation use the same engine as a live schedule?">
+Yes. A quote simulation loads the same work centers, products, routings and existing schedules, creates the same engine, and runs the same pass. The only difference is what happens afterwards: the simulation returns its results and writes nothing to the database. That symmetry is why a simulated promise date matches what the live schedule will produce if the order is accepted.
+</Accordion>
+
+<Accordion title="Why does the engine release a rescheduled job's own reservations?">
+Because a job's stale future reservations would otherwise block its own new plan. If a job with a partial actual on step 1 kept the old reservations for steps 2 and 3, the engine would see those work centers as already booked and push the new step 2 days into the future. Jobs in scope keep only the operations carrying recorded actuals; unstarted rows are released.
+</Accordion>

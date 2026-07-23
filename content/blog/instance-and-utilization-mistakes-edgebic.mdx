@@ -1,0 +1,149 @@
+---
+title: "Eight Instance and Utilization Mistakes That Produce Unhittable Plans"
+description: "Machine utilization setting mistakes are silent: wrong instance counts, mixed pools, One Per Day on the wrong machine, headroom that lives nowhere. With fixes."
+published: 2026-07-24T12:00:00.000Z
+modified: 2026-07-24T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - machine utilization setting mistakes
+  - wrong instance count scheduling
+  - one per day flag misuse
+  - planning at 100 percent capacity
+  - instance double booking
+  - work center pool configuration error
+targetPhrase: "machine utilization setting mistakes"
+wordCount: 1680
+readingTime: 8
+faqQuestions:
+  - question: "What happens if the instance count does not match the real machine count?"
+    answer: "Capacity scales directly with it, so the error scales through every date. An under-counted work center shows a normal week as a severe overload and jobs slide for no reason the floor can see. An over-counted one shows comfortable utilization and produces a plan the shop can never hit. It is the first number to check whenever a utilization percentage looks physically impossible."
+  - question: "Why is putting fast and slow machines in one instance pool a problem?"
+    answer: "Instances are assumed identical, so the engine books every machine in the pool at the same rate. Two fast machines and two slow ones scheduled as four instances produce a plan at an average speed neither pair can hold. The symptom is chronic mild lateness on whichever jobs land on the slower machines, with healthy-looking utilization and no visible cause."
+  - question: "Is it safe to plan a work center at 100% of its clock?"
+    answer: "It leaves no recovery room, which is why finite-capacity practice is to keep some headroom. A plan loaded to the full theoretical clock propagates its first breakdown through every downstream date. The honest way to hold headroom is in the calendar: shift hours net of reliable losses, recurring maintenance recorded as downtime, and per-day overrides on the days that genuinely differ."
+  - question: "Why did two jobs end up on the same machine on a One Per Day work center?"
+    answer: "That is a violation rather than a design behavior, and it is flagged as an anomaly rather than left to be found on the floor. The usual causes are a reschedule that did not clear a prior allocation, or a synchronized parallel operation mirroring onto an already-occupied machine. Rerun scheduling for the affected jobs, and if the collision persists, the work center needs more instances for the number of jobs that must run the same day."
+  - question: "Should you reduce the instance count while a machine is down?"
+    answer: "For a permanent loss, yes. For a bounded outage, a date-range capacity override across the affected period is cleaner: it carries a reason, expires by itself, and leaves the instance count describing the plant as it really is. Dropping the count removes capacity from every date with no record of why, and it is easy to forget to put back when the machine returns."
+qaQuestions:
+  - question: "Our utilization report shows one work center at 140% and the supervisor says the machines are not running any harder than usual. Which is wrong?"
+    answer: "Check the instance count before anything else. Three physical machines entered as one instance offer a third of the real capacity, so an ordinary week of work reads as a severe overload, jobs slide with no explanation the floor recognizes, and the report is technically correct about a plant that does not exist. The same arithmetic runs the other way and is more dangerous: instances entered above the real count produce comfortable percentages and a schedule the shop misses every week. The count is a straight multiplier on both capacity and utilization, which is why it is always the first number to verify."
+  - question: "We turned on One Per Day for our machining center because we prefer one job at a time per machine. Now the queue is growing and the machines look idle. Did we misconfigure it?"
+    answer: "You configured it exactly as documented and applied it to the wrong kind of resource. One Per Day dedicates each machine to a single job for the whole calendar day, so a two-hour job holds an eight-hour machine and the six remaining hours go unused on purpose. That waste is correct for a furnace load or a paint color, where the changeover genuinely locks the chamber. On a machining center it is pure loss, and the growing queue is the cost. Turn it off through the work center import and rerun: the machines will pool their hours again and the backlog will start clearing."
+---
+
+**Instance and utilization mistakes are the quietest failures in a scheduling implementation, because a wrong multiplier produces a plan that is internally consistent, fully populated, and impossible to execute.** Nothing errors. The floor just misses dates and nobody can point at the reason.
+
+[EDGEBIC by User Solutions](/edgebic) will refuse to schedule a work center with zero instances. It cannot tell you that your instance count is three when the floor has two, or that your four mills are not clones. The eight mistakes below cover the ones that actually recur. The settings themselves are in [machine instances explained](/blog/edgebic-machine-instances-explained) and [how to configure instances and utilization](/blog/how-to-configure-instances-and-utilization-in-edgebic).
+
+## 1. The Instance Count Does Not Match the Floor
+
+**The mistake.** Three physical machines entered as one instance, or one entered as three.
+
+**Why it is wrong.** The count is a straight multiplier on capacity, so every available hour, every utilization percentage, and every promise date scales with it.
+
+**The symptom.** Utilization numbers that are physically impossible. Under-counted, an ordinary week reads as a 140% overload and jobs slide for no reason a supervisor recognizes. Over-counted, utilization looks comfortable and the plant misses dates constantly.
+
+**The fix.** Read the grid's **Instances** column against the machines on the floor. This is always the first check when a capacity percentage looks wrong, and it is a five-minute audit for a whole plant. The multiplier chain is walked in [how EDGEBIC calculates work center capacity](/blog/how-edgebic-calculates-work-center-capacity).
+
+## 2. Unequal Machines in One Pool
+
+**The mistake.** Four mills, two of them roughly 30% slower, entered as one work center with four instances.
+
+**Why it is wrong.** Instances are assumed identical: same speed, same shifts, same tooling. The engine books all four at the same rate and produces a plan at an average speed neither pair can hold.
+
+**The symptom.** Chronic mild lateness on whichever jobs land on the slow machines, with no pattern anyone can name. Utilization looks healthy. On-time delivery does not.
+
+**The fix.** Separate work centers, one per speed class, pooled in a [work center group](/blog/what-is-a-work-center-group-machine-pool). The group carries a per-member speed factor, so one routing step books 4 hours on the new mills and 5.2 on the old ones. Apply the test before setting any count: **if this job went to any machine behind this name, would it take the same number of hours?**
+
+## 3. One Per Day on a General-Purpose Machine
+
+**The mistake.** The flag switched on for a machining center because the shop prefers one job at a time.
+
+**Why it is wrong.** One Per Day dedicates each machine to a single job per calendar day. A two-hour job holds an eight-hour machine and the remaining six hours go unused, deliberately.
+
+**The symptom.** A growing queue alongside machines that look idle. Jobs sliding to tomorrow while the day still has clock free.
+
+**The fix.** Reserve the flag for physics: furnace loads, paint colors, sterile campaigns, anything where a changeover genuinely locks the resource for the day. Switch it off through the work center import (the `One_Per_Day_Flag` column) and rerun. The behavior it changes is detailed in [how EDGEBIC picks an instance](/blog/how-edgebic-picks-an-instance-load-balancing-vs-one-per-day).
+
+The mirror-image mistake is worth naming too: leaving the flag **off** on a genuine furnace or booth. Then the pooled arithmetic promises a fourth load on a three-chamber day, and the floor discovers it.
+
+## 4. Planning to 100% of the Clock
+
+**The mistake.** Full theoretical shift hours everywhere, no downtime recorded, and an unspoken assumption that the plan will absorb the losses.
+
+**Why it is wrong.** A plan loaded to the full clock has no recovery room. The first breakdown, rework loop, or changeover overrun propagates through every downstream date, and there is nowhere for it to go.
+
+**The symptom.** A schedule that is right on Monday and wrong by Wednesday, every week. Firefighting that never converges.
+
+**The fix.** Put the headroom in the calendar, where it carries a reason and where both the scheduler and the dashboards read it identically:
+
+- Enter shift hours net of time the plant reliably loses.
+- Record recurring maintenance as downtime, which is subtracted from the per-machine shift duration before the instance multiplier and therefore scales correctly across a multi-machine work center.
+- Use per-day capacity overrides on the days that genuinely differ.
+
+Keeping some slack is standard finite-capacity practice, and the reasoning is the same one behind buffer management in the [Theory of Constraints and APS literature](https://www.ascm.org). The measurement side of the same idea is in [the capacity utilization KPI](/blog/capacity-utilization-kpi), which makes the case that utilization is optimized rather than maximized.
+
+## 5. Expecting the Efficiency Percentage to Throttle Capacity
+
+**The mistake.** Reducing a work center's efficiency percentage in the belief that it reduces the hours the scheduler will book.
+
+**Why it is wrong.** The capacity throttle is utilization, not efficiency. Work centers created or imported in current versions run at 100% utilization, and the value is not editable on the work center screen. Changing efficiency does not change scheduled hours.
+
+**The symptom.** Headroom that exists in someone's head and nowhere in the plan. The schedule keeps promising the full clock while the team believes it is planning at 85%.
+
+**The fix.** Same as mistake 4: shape the calendar or use overrides. Then verify by reading the available hours the scheduler is actually offering for a day, rather than assuming a percentage took effect somewhere.
+
+## 6. Dropping the Instance Count for a Temporary Outage
+
+**The mistake.** A mill goes down for a three-week rebuild, so the count drops from four to three.
+
+**Why it is wrong.** It works, but it removes a quarter of the capacity from every date with no record of why, and it depends on someone remembering to restore it.
+
+**The symptom.** Capacity that never comes back after the machine does. Three months later nobody knows whether the count is right.
+
+**The fix.** For a bounded outage, use a date-range capacity override across the affected period with the reduced total. It carries a reason, it expires on its own, and the instance count keeps describing the plant as it really is. For a permanent loss, change the count and rerun.
+
+## 7. Using a Fractional Instance Count as an Availability Guess
+
+**The mistake.** The fourth mill is only around half the time, so the count goes in as 3.5.
+
+**Why it is wrong.** A fractional count describes a machine with a fraction of the throughput of the others, like a half-size blending vessel alongside two full ones. It does not describe a machine that exists fully but is often busy elsewhere. Written as 3.5, the configuration says something about capability that is not true, and nobody reading it later can tell it was meant as an availability estimate.
+
+**The symptom.** Capacity that is close enough to look fine and wrong in a way nobody can trace, plus a number that no one will dare change because its origin is unknown.
+
+**The fix.** Keep the count at the real machine count and put the availability into the calendar: honest shift hours for that machine, or per-day overrides on the days it is genuinely elsewhere. Reserve fractional counts for genuine part-capacity units, where the engine handles the partial machine explicitly instead of rounding it up.
+
+## 8. Never Auditing the Grid
+
+**The mistake.** Instance counts set correctly at go-live and never checked again, while the plant adds a machine here and retires one there.
+
+**Why it is wrong.** Master data drifts silently. Nothing in a scheduling run compares the configured machine count to the floor, because nothing can.
+
+**The symptom.** A slow decline in schedule accuracy that nobody attributes to configuration, because the configuration was right when it was set.
+
+**The fix.** Read three columns of the work center grid once a quarter: **Instances**, **Shift Calendar**, and **One Per Day**. It takes five minutes for a whole plant and it catches the counts that drifted after equipment changed. Pair it with the same pass over [work center configuration mistakes](/blog/work-center-configuration-mistakes-edgebic).
+
+## The Two Anomalies Worth Watching
+
+Two instance-level failures are detected rather than left to be discovered on the floor, and both point back to configuration:
+
+**Two jobs overlapping on one machine.** Different jobs occupying the same instance in overlapping clock windows. Usually a reschedule that did not clear a prior allocation, or a synchronized parallel operation mirroring onto an occupied machine. Rerun the affected jobs.
+
+**A One Per Day violation.** Two jobs on the same instance on the same calendar day at a work center where the flag is on. Two jobs on **different** instances the same day is correct and expected; the same instance is not. If it persists after a rerun, the work center needs more instances for the number of jobs that must run that day.
+
+## The Pattern Behind All Eight
+
+Every mistake here is a description of the plant that is slightly off, producing a plan that is internally consistent and externally wrong. That is why the first hour of an implementation goes into master data, and why the plants whose schedules hold are the ones whose resource definitions are honest. GE Railcar moved from 30% to 90% on-time delivery with User Solutions software on the same equipment. The machines did not change. The description of them did.
+
+Two habits catch most of this:
+
+1. **Audit the work center grid quarterly.** Instances, shift calendar badge, One Per Day. Three columns, five minutes, and it catches the counts that drifted after a machine came or went.
+2. **When a percentage looks impossible, verify the multiplier chain in order.** Instances, then shift hours, then any override. Do not argue with the report until you know which factor produced it.
+
+## Next
+
+If a work center is booked past its ceiling, [work center overload causes and fixes](/blog/work-center-overloaded-in-edgebic-causes-fixes) covers the three ways that happens. If one has gone completely quiet, [the zero-capacity checklist](/blog/capacity-shows-zero-for-a-work-center-edgebic) finds it fast. And for the settings that sit alongside these, [work center configuration mistakes](/blog/work-center-configuration-mistakes-edgebic) covers the rest of the master data. Bring your work center export to a demo and we will read it with you.
