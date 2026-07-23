@@ -1,0 +1,93 @@
+---
+title: "How to Reorder Routing Steps in EDGEBIC"
+description: "Reorder routing steps in EDGEBIC the way the scheduler actually reads them: change the next-in-sequence links, not just the sequence numbers, then verify the chain."
+published: 2026-07-26T12:00:00.000Z
+modified: 2026-07-26T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - reorder routing steps
+  - resequence operations
+  - routing sequence number
+  - next in sequence chain
+  - change operation order scheduling
+  - EDGEBIC routing order
+targetPhrase: "reorder routing steps"
+wordCount: 1120
+readingTime: 6
+faqQuestions:
+  - question: "How do you reorder routing steps in EDGEBIC?"
+    answer: "Change the next-in-sequence links, then tidy the sequence numbers to match. The scheduler walks the chain of links from step to step and finishes at the end product, so re-pointing those links is what actually changes the order of work. Sequence numbers control how rows sort in the grid and nothing else. Save with Update Standard BOR once both the links and the numbers tell the same story."
+  - question: "Why did changing the sequence number not change the schedule?"
+    answer: "Because sequence numbers are a display and sorting hint, not the execution order. EDGEBIC builds the dependency graph from the next-in-sequence link on each step and sorts operations from that graph, so a routing whose numbers read 10, 20, 30 can still execute in a completely different order if the links say so. Re-point the links and the schedule follows immediately on the next run."
+  - question: "Can I reorder routing steps visually instead?"
+    answer: "Yes. Switch the routing to Designer mode and the same links appear as arrows between nodes. Turn on Draw Connector, delete the arrows you no longer want with the connector right-click menu, and draw the new ones in the order the work now runs. The diagram makes an unreachable step obvious, because it sits on the canvas with nothing arriving at it."
+qaQuestions:
+  - question: "Engineering wants inspection moved before paint instead of after. Both steps already have hours logged on an open job. What happens to that job?"
+    answer: "Nothing, until you act. The open job runs on the frozen copy of the routing it was scheduled with, so your change to the standard leaves its plan and its paperwork exactly as printed. Completed work is never re-planned in any case: hours already recorded stay where they are. If this job genuinely needs the new order, tick Use Global BOR on Reschedule for that job and reschedule it, and expect only the not-yet-started steps to move."
+  - question: "We swapped two steps and now scheduling reports a circular dependency. Where do we look?"
+    answer: "You have a back edge: one step points forward to a step that eventually points back to it. The usual cause is pointing step C at step A when the intended target was step D. Open the routing in Designer mode, where a cycle is visible as an arrow that loops backward against the flow, and delete that connector. Redraw it toward the correct successor, save, and the chain analysis clears."
+---
+
+**To reorder routing steps in EDGEBIC by User Solutions you re-point the next-in-sequence links, because those links are what the scheduler follows.** Sequence numbers sort the grid. Changing them alone reorders nothing, and that single misunderstanding accounts for most "we resequenced it and the plan did not move" support calls.
+
+For the mechanism behind why the link matters more than the number, read [how EDGEBIC reads a routing](/blog/how-edgebic-reads-a-routing). This post is the task itself.
+
+## Before You Start
+
+- Know the new order in full before you edit. Reordering three steps is six link edits if you improvise and three if you plan.
+- Check the routing saves cleanly today, so any validation error afterward is definitely yours.
+- Decide whether live jobs need the change. They will not get it automatically, which is usually what you want.
+
+## Reordering the Steps
+
+1. Open the **BOR** tab and select the routing. Work in **Data Grid** mode for numbers, or **Designer** mode if you would rather see the flow.
+2. Write the new chain down first: which step feeds which, ending at the end product. A routing of saw, mill, assemble that becomes saw, assemble, mill is three link changes, and the last one must land on the end item.
+3. For each step in the new order, open the **📝** button in the **Next In Sequence** column. In the **Select Next in Sequence (Multi-Select)** popup, untick the old successor, tick the new one, and click **Confirm**.
+4. On whichever step is now last, open the same picker and click **End Item**. That links it to the finished product and closes the chain. Exactly one step should point at the end item.
+5. Update the **Sequence** numbers so the grid reads the way the work now flows. Numbering in tens leaves room, so a step that moved between 20 and 30 can become 25 rather than forcing a renumber of everything downstream.
+6. Click **Update Standard BOR**. Fix anything the **Validation Errors** dialog lists rather than saving around it.
+
+In **Designer** mode the same job is done with arrows. Right-click a connector and choose **Delete Connector**, turn on the **Draw Connector** toggle, then drag from the new predecessor to the new successor. Leave the connector type as **Normal (Sequential)**: the other two types configure parallel machines and alternates, not routing order.
+
+Reordering is easier to reason about when you keep the diagram flowing one way, left to right or top to bottom, because a step out of order then stands out as an arrow running backward against the flow. The Designer is worth a look even when you did the edit in the grid, precisely because a reversed or missing link is obvious there in a way it is not in a column of picker values. That is also why a routing with more than a handful of steps is faster to resequence on the canvas: you are moving arrows you can see rather than opening a picker on every row.
+
+One detail catches planners out on a reorder: the routing's depth calculation. Each step carries a level that measures how far upstream it sits from the end product, and reordering the chain changes those levels. EDGEBIC recomputes them for you when you save, so there is nothing to do by hand, but it is the reason a reorder that looks purely cosmetic still writes to every affected row.
+
+## What Changes When You Save
+
+The routing is the recipe. The plan is what the scheduler builds from it, and those are two separate moments.
+
+| Surface | Effect |
+|---|---|
+| New manufacturing orders | Walk the steps in the new order on the next Drive Schedule run |
+| Jobs already scheduled | Unchanged, because each keeps a frozen copy of its own routing |
+| The routing's depth calculation | Recomputed from the new chain when you save |
+| Header totals | Unchanged, because the same hours are still in the routing |
+| The Gantt | Nothing moves until you schedule again |
+
+Note what does not change: **Estimated Hour per unit =** and **Setup Time =** are sums, so reordering leaves them exactly where they were. If a total moved, you changed something other than the order. That is a useful guard rail: a clean reorder touches links and numbers only, never the hours, so a moved total is a signal to look back at what else you edited.
+
+## How to Check It Worked
+
+Switch to **Designer** mode and follow the arrows with your eye from the first step to the end product node. Every step should have one path in and one path out, and every path should arrive at the end product. A node with nothing arriving at it is unreachable, and the grid flags the same condition with a **⚠** marker in the **WC/Product Name** column.
+
+Then schedule a test order and read the Job View Gantt left to right. The bars should start in the new order, and the machine you moved earlier should now begin before the one you moved later. If the bars still run in the old order, at least one link still points the old way.
+
+## Common Mistakes
+
+**Editing the numbers and stopping there.** Sequence controls the grid sort. The chain controls the work. Both should agree so the grid stays readable, but only one of them changes the schedule.
+
+**Leaving two steps pointing at the same successor by accident.** Untick the old target when you tick the new one. A stale link quietly keeps the old dependency alive, and the plan reads as though nothing moved.
+
+**Creating a loop.** Pointing a later step back at an earlier one produces a circular dependency, and scheduling reports it rather than guessing. The Designer view is the fastest place to spot the offending arrow.
+
+**Forgetting the end item.** The last step must point at the finished product. An unterminated chain is the classic cause of steps scheduling in a strange order, and it is easy to introduce when the step that used to be last is no longer last.
+
+**Assuming the shop floor sees it.** Live jobs keep their own copy on purpose, so printed travelers stay valid. Pushing a reorder into a running job is a deliberate, per-job decision: see [editing a live job's routing safely](/blog/editing-a-live-jobs-routing-in-edgebic).
+
+## Next Steps
+
+If reordering was really about inserting an operation, [adding a step to an existing routing](/blog/how-to-add-a-step-to-an-existing-routing-in-edgebic) covers the insert and the relink together. If it was about removing one, read [deleting a routing step safely](/blog/how-to-delete-a-routing-step-safely-in-edgebic) before you press delete. The full task list lives in [the EDGEBIC how-to hub](/blog/edgebic-how-to-hub), and the platform overview is at [EDGEBIC](/edgebic).

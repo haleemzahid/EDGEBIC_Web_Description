@@ -1,0 +1,103 @@
+---
+title: "A Step Is Waiting and I Cannot See Why: Tracing the Delay"
+description: "A step that starts later than its predecessor ended usually has a configured reason: queue time, transit, an overlap gate, a busy machine, or a missing operator. How to find which."
+published: 2026-07-26T12:00:00.000Z
+modified: 2026-07-26T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - step waiting production schedule
+  - gap between operations scheduling
+  - queue time scheduling delay
+  - transit days between steps
+  - operation starts late
+  - waiting step diagnosis
+targetPhrase: "step waiting production schedule"
+wordCount: 1400
+readingTime: 7
+faqQuestions:
+  - question: "Why does one operation start days after the previous one finished?"
+    answer: "Usually because time was configured between them and then forgotten. Queue time is a shift-aware buffer that only counts down during working hours, so four queue hours starting Friday afternoon finish Monday morning. Transit days add whole days for an off-site process. Both live on the routing step and both are working as configured. When neither is set, the other common causes are a busy downstream machine and a required operator who is not staffed on the earlier days."
+  - question: "What is the difference between queue time and transit days?"
+    answer: "Queue time is hours the work waits before the next operation can begin, and it only ticks during active working shifts, so it does not advance on holidays or between shifts. Transit days are whole days the work leaves the facility for an off-site process like heat treatment or plating, counted as flat calendar days by default or as working days only if configured. Queue time models in-plant buffer; transit days model physical transport time away from the plant."
+  - question: "Does the anomaly report flag an unexplained wait between steps?"
+    answer: "Yes. One of its checks specifically looks for a sequential-step gap of several days that has no queue time, no overlap gate, and no transit configured to explain it. If a wait genuinely has no configured cause, that check surfaces it with the two steps and the gap. If the check does not flag your gap, the wait almost certainly has a configured reason that is just hard to see on the Gantt."
+qaQuestions:
+  - question: "A step sits idle for a day and a half between two operations, and I never set any queue time. Where is the delay coming from?"
+    answer: "Walk three things in order. First the downstream machine's calendar: if it was busy or on a holiday or weekend when the upstream step finished, the operation waits for the machine's next open window, and that gap is capacity, not configuration. Second the operator, if the step needs a skill: an unstaffed day offers zero hours regardless of the machine being free, so a certified person on leave moves the start. Third, run the anomaly report; if it flags an unexplained sequential gap, the wait has no configured cause and is worth a closer look, but most of the time one of the first two explains it."
+  - question: "We set queue time to allow cooling, but the wait came out longer than the hours we entered. Why is it longer?"
+    answer: "Because queue time counts only during working shifts, not around the clock. If your plant runs one eight-hour shift and you set eight queue hours starting mid-afternoon, the buffer spans two calendar days: a few hours today, the rest tomorrow, with the overnight non-working time not counting. That is by design, because a cooling or curing buffer measured in shop hours should not tick while the plant is dark. If you wanted flat elapsed time regardless of shifts, transit days in calendar mode is the mechanism, not queue time."
+---
+
+**A step that starts later than its predecessor finished almost always has a reason you configured and then lost track of: a shift-aware queue buffer, transit days, an overlap gate, a busy downstream machine, or a required operator who is not there.** The wait is rarely a bug; the work is finding out which of five documented causes applies, and the routing step plus the machine calendar answer most of it.
+
+[EDGEBIC by User Solutions](/edgebic) composes these delays in a fixed order after each operation, so once you know the causes they are quick to check. This post narrows the "starts later than expected" symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) to a single waiting step, and it is the flip side of [idle gaps as waste or design](/blog/schedule-has-idle-gaps-edgebic): there the concern is idle machine capacity; here it is one operation that will not start.
+
+## Cause 1: Queue Time (the Shift-Aware Buffer)
+
+Queue time is hours a step must wait after its predecessor before it may begin, and it counts down only during active working shifts. That last part is what surprises people: four queue hours starting Friday afternoon on a Monday-to-Friday plant finish Monday morning, because the buffer does not tick over the weekend.
+
+**How to tell:** open the routing step and check its queue time. If it is set, and the wait spans non-working time, the buffer is longer in calendar terms than the hours you entered, and that is correct.
+
+**Fix:** if the wait is intentional (cooling, curing, drip time), leave it. If it is a stale value, set it to zero. If you actually wanted flat elapsed time that ticks around the clock, queue time is the wrong tool; use transit days in calendar mode. [Setting queue, flow, and transit times](/blog/how-to-set-queue-flow-and-transit-times-in-edgebic) covers all three.
+
+## Cause 2: Transit Days (Off-Site Time)
+
+Transit days model whole days the work leaves the facility for an off-site process: heat treatment, plating, an outside vendor, an inter-plant move. By default they count as flat calendar days, so the result can land on a weekend, and the machine allocator simply searches forward from there to the next working slot. In working-day mode, only days with at least one active shift count, which stretches the same number of transit days across intervening weekends.
+
+**How to tell:** the routing step has transit days set. A three-day calendar transit starting Thursday and a three-day working-day transit starting Thursday land differently, and the difference grows when the transit crosses weekends.
+
+**Fix:** confirm the day count and the calendar-versus-working-day mode match the real process. A vendor whose turnaround is three business days wants working-day mode; a fixed three-day cure wants calendar mode.
+
+## Cause 3: An Overlap Gate (Lot Streaming)
+
+If a step is configured to overlap its predecessor (lot streaming), the downstream start is gated by a start-to-start lag or a transfer-batch trigger rather than by the predecessor's full finish. This can make a step wait a specific amount past the upstream start, and if both an overlap gate and a queue time are set on the same step, the overlap gate replaces the queue result rather than adding to it. The anomaly report flags that particular combination as ambiguous config.
+
+**How to tell:** the step has a flow value or a transfer-batch size set, and the wait is measured from the upstream start rather than its end. [Lot streaming explained](/blog/edgebic-lot-streaming-explained) covers the two overlap models.
+
+**Fix:** if both an overlap gate and queue time are set and you meant them to add, they do not; a handling lag on top of the overlap is a separate transfer-delay field. Clear whichever field you did not intend.
+
+## Cause 4: The Downstream Machine Was Busy
+
+With no between-step time configured at all, the most common remaining cause is capacity: the downstream machine was occupied, on a holiday, or outside its shift when the upstream step finished, so the operation waits for the machine's next open window.
+
+**How to tell:** open the downstream machine's calendar and load for the days between the two operations. A busy or closed machine is the cause, and the gap is capacity, not configuration. The [work center overload post](/blog/work-center-overloaded-in-edgebic-causes-fixes) covers reading a machine's load.
+
+**Fix:** free the machine (re-rank the work ahead of it), add capacity (an instance or a shift), or give the step an alternate machine to shop to.
+
+## Cause 5: A Required Operator Is Not There
+
+If the step requires a skill, an unstaffed day offers zero hours for it regardless of the machine being free. A certified operator on leave, or a shift with nobody rostered for the skill, moves the step to the next day someone qualified is present.
+
+**How to tell:** the step carries a required skill, and the days it skipped are days the qualified operators were on time off or not rostered. The session log records the staffing decision for skill steps.
+
+**Fix:** roster or certify more operators for the skill, record time off accurately so the schedule reflects reality, or accept the slide as the honest picture of a labor constraint. [Setting up operators, skills, and rosters](/blog/how-to-set-up-operators-skills-and-rosters-in-edgebic) covers the setup.
+
+## The Diagnostic, in Order
+
+1. **Queue time on the step?** If set and the wait spans non-working time, that is it.
+2. **Transit days on the step?** Confirm the count and the calendar-versus-working mode.
+3. **Overlap gate on the step?** Check for a flow value or transfer-batch size, and for a queue time it silently replaced.
+4. **Downstream machine calendar and load** for the gap days. Busy or closed: capacity.
+5. **Required skill on the step?** Check operator rostering and time off for the skipped days.
+6. **Still nothing?** Run the anomaly report. It flags a multi-day sequential gap with no configured explanation, which is your signal that the wait genuinely has no cause and deserves a support look.
+
+## Prevention
+
+- **Treat queue and transit as deliberate, documented choices.** A buffer nobody remembers setting is the most common source of a mystery wait; review them when a step's timing surprises you.
+- **Log actuals before rescheduling** so a step's resume point reflects reality rather than a stale plan.
+- **Run the anomaly report after routing edits.** An unexplained sequential gap it flags today is a support conversation you have on your terms, not a Gantt you stare at next week.
+
+<Accordion title="Why does one operation start days after the previous one finished?">
+Usually because time was configured between them and then forgotten. Queue time is a shift-aware buffer that only counts down during working hours, so four queue hours starting Friday afternoon finish Monday morning. Transit days add whole days for an off-site process. Both live on the routing step and both are working as configured. When neither is set, the other common causes are a busy downstream machine and a required operator who is not staffed on the earlier days.
+</Accordion>
+
+<Accordion title="What is the difference between queue time and transit days?">
+Queue time is hours the work waits before the next operation can begin, and it only ticks during active working shifts, so it does not advance on holidays or between shifts. Transit days are whole days the work leaves the facility for an off-site process like heat treatment or plating, counted as flat calendar days by default or as working days only if configured. Queue time models in-plant buffer; transit days model physical transport time away from the plant.
+</Accordion>
+
+<Accordion title="Does the anomaly report flag an unexplained wait between steps?">
+Yes. One of its checks specifically looks for a sequential-step gap of several days that has no queue time, no overlap gate, and no transit configured to explain it. If a wait genuinely has no configured cause, that check surfaces it with the two steps and the gap. If the check does not flag your gap, the wait almost certainly has a configured reason that is just hard to see on the Gantt.
+</Accordion>

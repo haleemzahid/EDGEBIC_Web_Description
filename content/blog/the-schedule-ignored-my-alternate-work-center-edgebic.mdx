@@ -1,0 +1,100 @@
+---
+title: "The Schedule Ignored My Alternate Work Center: Why, and the Fix"
+description: "An alternate machine that never gets used has a few documented causes: the primary was faster, the alternate is inactive, a planner pin overrode it, or it was configured as the wrong type."
+published: 2026-07-26T12:00:00.000Z
+modified: 2026-07-26T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - alternate work center ignored
+  - alternate machine not used scheduling
+  - true alternative work center
+  - machine pool not shopping
+  - work center group selection strategy
+  - alternate routing not chosen
+targetPhrase: "alternate work center ignored"
+wordCount: 1360
+readingTime: 7
+faqQuestions:
+  - question: "Why does the scheduler ignore an alternate work center I configured?"
+    answer: "Usually because the alternate was never the better choice. A true-alternative machine is only used when it finishes the operation sooner than the primary; if the primary is open and finishes first, the alternate correctly sits idle. Other causes are an inactive alternate that dropped out of the candidate list, a planner pin forcing a specific machine, or the alternate configured as a parallel partner rather than a substitute, which are different mechanisms."
+  - question: "What is the difference between a true alternative and a parallel work center?"
+    answer: "A true alternative replaces the primary: the engine picks one machine or the other and runs the whole operation there. A parallel work center runs alongside the primary, either splitting the work across machines or mirroring one event onto several. Configuring a substitute as a parallel partner, or the reverse, produces surprising behavior because they are entirely different scheduling mechanisms. The category on the alternate entry decides which one you get."
+  - question: "Does a machine pool guarantee my work spreads across all its machines?"
+    answer: "No. A pool resolves each operation to the single member that finishes soonest under the pool's selection strategy, so a consistently least-loaded member will consistently win, and work concentrates there rather than spreading. That is the strategy doing its job. If you want deliberate balancing you rely on the strategy and the natural loading of the members over many jobs, not on a spreading rule, since each individual operation still goes to one machine."
+qaQuestions:
+  - question: "We listed a faster alternate machine but the engine keeps using the slower primary. Why would it pick the slower one?"
+    answer: "Because a true-alternative choice is made on projected completion, not on run speed alone. A faster machine that cannot start until Wednesday loses to a slower machine that is free Monday if the slower one still finishes sooner. Check the two candidates' earliest available slots, not just their hours: the primary is usually winning because it is open now while the alternate is queued behind other work. If you genuinely want the faster machine regardless, either free its early capacity or pin the step to it manually."
+  - question: "Our machine pool has five members but the schedule always lands on the same one. Is the pool broken?"
+    answer: "Almost never. The pool resolves to whichever member finishes soonest under its selection strategy, and if one member is consistently the least loaded it will consistently win. That is the pool working, not failing. Two things to check if it looks stuck: whether the other members are actually active (an inactive member drops out of the candidate list on the next run), and whether a planner pin on the step is forcing that one machine. The session log records which candidates the pool considered and why it chose the winner."
+---
+
+**An alternate work center that never gets chosen is usually not being ignored: the engine evaluated it and the primary won on projected completion, or the alternate dropped out of the running for a configuration reason.** Four documented causes cover nearly every case, and telling them apart takes a look at two things, the candidates' earliest slots and the alternate's status.
+
+[EDGEBIC by User Solutions](/edgebic) resolves substitute machines before the main scheduling pass, comparing each candidate on when it would actually finish. This post sits in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and is the companion to [configuring parallel and alternate work centers](/blog/how-to-configure-parallel-and-alternate-work-centers-in-edgebic), which covers the setup itself.
+
+## First, Know Which Mechanism You Configured
+
+Two different things get called "alternate," and they behave nothing alike:
+
+- A **true alternative** replaces the primary. The engine picks one machine and runs the whole operation there. Each alternative carries its own hours and setup, used directly.
+- A **parallel work center** runs alongside the primary, either splitting work across machines or mirroring one event onto several.
+
+If you meant "use this other machine when the first is busy" and configured a parallel partner instead of a true alternative, the machine will never substitute, because substituting is not what a parallel partner does. Confirm the category on the alternate entry before anything else. [Parallel work centers explained](/blog/edgebic-parallel-work-centers-explained) draws the line in full.
+
+## Cause 1: The Primary Simply Won
+
+A true alternative is chosen only when it finishes the operation sooner than the primary. The comparison is on projected completion, not on run hours alone: a faster machine that cannot start until Wednesday loses to a slower machine that is free Monday if the slower one still finishes first. Most of the time an "ignored" alternate is the engine correctly keeping the operation on a primary that is open now.
+
+**How to tell:** compare the two candidates' earliest available slots, not just their hours. If the primary has capacity now and the alternate is queued behind other work, the primary is winning fairly.
+
+**Fix:** if you genuinely want the alternate used, free its early capacity (the [work center overload post](/blog/work-center-overloaded-in-edgebic-causes-fixes) covers clearing a machine that is standing in the way), or pin the step to it manually (below). Otherwise, this is the resolver working as designed. [Example C in the parallel work centers reference](/blog/edgebic-parallel-work-centers-explained) shows a fallback being chosen because it finishes two days sooner.
+
+## Cause 2: The Alternate Is Inactive
+
+An inactive alternative, or an inactive member of a machine pool, drops out of the candidate list on the next scheduling run. If the machine you expected has been deactivated (down for a retrofit, say), the engine cannot shop to it.
+
+**How to tell:** open the alternate machine and check its active flag. A pool member that went inactive since the last run is the usual culprit when a pool that used to spread work suddenly lands everywhere else.
+
+**Fix:** reactivate the machine if it should be available, then re-run scheduling. Deactivation is the right tool for a temporarily unavailable machine, precisely because it removes the machine from consideration cleanly rather than leaving stale routing links behind.
+
+## Cause 3: A Planner Pin Is Overriding the Choice
+
+A manual work-center selection on a step beats the automatic resolver unconditionally and survives reschedule. If someone pinned the operation to the primary, no alternate will ever be chosen for that step, by design, until the pin is cleared.
+
+**How to tell:** check the step for a manual work-center selection. On a machine pool, the same pin mechanism forces one specific member.
+
+**Fix:** clear the pin to hand the choice back to the resolver, or leave it if the pin is intentional. A pin is the correct way to say "this operation runs here, full stop," so the question is whether that instruction is still wanted, not whether the engine is misbehaving.
+
+## Cause 4: A Machine Pool Concentrates, and That Is the Strategy
+
+A machine pool (a group of interchangeable machines) resolves each operation to the single member that finishes soonest under the pool's selection strategy. It does not spread one operation across members. A consistently least-loaded member will consistently win, so work concentrating on one machine is often the strategy doing exactly its job.
+
+**How to tell:** the pool has several active members but jobs keep landing on one. Check the pool's selection strategy: earliest-completion favors whoever finishes first, primary-first prefers the designated primary, earliest-start favors whoever can begin soonest even at day granularity.
+
+**Fix:** if the concentration is unwanted, verify all members are active and that no pin is forcing the winner, then let natural loading balance the pool over many jobs. If a member never wins because its shifts cannot be staffed, that is a different constraint worth checking. [Creating work center groups](/blog/how-to-create-work-center-groups-in-edgebic) covers the strategy choice, and the session log records which candidates the pool considered and why it chose the winner.
+
+## When the Alternate Should Have Been Available and Was Not
+
+One edge worth naming: on a reschedule, a machine that already has recorded actuals for the operation is locked to it. The resolver will not swap a started operation to a different machine, because the work has physically begun there. This is correct: actuals are never moved. If an alternate is being "ignored" only on reschedule and only for started jobs, this is why, and there is nothing to fix.
+
+## Prevention
+
+- **Pick the mechanism deliberately.** Substitute machine: true alternative. Runs-alongside machine: parallel. Interchangeable family: a machine pool. Getting the category right the first time avoids the most common surprise.
+- **Prefer deactivation to deletion for temporary unavailability.** It removes the machine from the candidate list cleanly and restores it when reactivated.
+- **Check pins before assuming a resolver fault.** A manual selection is invisible on the Gantt but decisive in the engine, and it is the single most common reason an alternate is "never" used.
+- **Read the session log when the reason is not obvious.** It names the candidates and the winner, which turns "the engine ignored my machine" into "the engine chose the one that finished two days sooner."
+
+<Accordion title="Why does the scheduler ignore an alternate work center I configured?">
+Usually because the alternate was never the better choice. A true-alternative machine is only used when it finishes the operation sooner than the primary; if the primary is open and finishes first, the alternate correctly sits idle. Other causes are an inactive alternate that dropped out of the candidate list, a planner pin forcing a specific machine, or the alternate configured as a parallel partner rather than a substitute, which are different mechanisms.
+</Accordion>
+
+<Accordion title="What is the difference between a true alternative and a parallel work center?">
+A true alternative replaces the primary: the engine picks one machine or the other and runs the whole operation there. A parallel work center runs alongside the primary, either splitting the work across machines or mirroring one event onto several. Configuring a substitute as a parallel partner, or the reverse, produces surprising behavior because they are entirely different scheduling mechanisms. The category on the alternate entry decides which one you get.
+</Accordion>
+
+<Accordion title="Does a machine pool guarantee my work spreads across all its machines?">
+No. A pool resolves each operation to the single member that finishes soonest under the pool's selection strategy, so a consistently least-loaded member will consistently win, and work concentrates there rather than spreading. That is the strategy doing its job. If you want deliberate balancing you rely on the strategy and the natural loading of the members over many jobs, not on a spreading rule, since each individual operation still goes to one machine.
+</Accordion>

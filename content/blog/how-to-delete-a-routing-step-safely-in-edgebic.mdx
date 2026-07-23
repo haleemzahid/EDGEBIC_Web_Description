@@ -1,0 +1,96 @@
+---
+title: "How to Delete a Routing Step Safely in EDGEBIC"
+description: "Delete a routing step in EDGEBIC without breaking the chain or orphaning scheduled work: relink the predecessor, save, reschedule, and check the anomalies report."
+published: 2026-07-26T12:00:00.000Z
+modified: 2026-07-26T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - delete a routing step
+  - remove operation from routing
+  - broken routing chain
+  - orphaned schedule rows
+  - routing step deletion
+  - EDGEBIC routing maintenance
+targetPhrase: "delete a routing step"
+wordCount: 1123
+readingTime: 6
+faqQuestions:
+  - question: "How do you delete a routing step in EDGEBIC safely?"
+    answer: "Select the row and delete it, then immediately repoint the predecessor's next-in-sequence link at the step that used to follow the deleted one. Save with Update Standard BOR and run a full reschedule for any job that used the step. Deleting without relinking leaves the chain broken, and the steps downstream of the gap become unreachable rather than simply moving up."
+  - question: "What happens to jobs that were scheduled with the deleted step?"
+    answer: "They keep running on their own frozen copy of the routing, so nothing on the shop floor changes when you delete from the standard. The risk is scheduled rows that still reference the removed step if you push the change into those jobs, which shows up as an orphaned-schedule finding in the Scheduler Anomalies report. The fix is a full reschedule for the affected jobs after the deletion."
+  - question: "Can I disable a routing step instead of deleting it?"
+    answer: "For a step you may want back, the safer pattern is to keep the routing intact and control the work elsewhere: alternates and parallels can be marked inactive on their own rows, and a step you no longer need can be relinked out of the chain before you decide to remove it permanently. Deletion is a structural change to the recipe, and it has no undo inside the routing grid."
+qaQuestions:
+  - question: "We deleted a deburr step and now the two steps after it never schedule at all. Why did they not just move up?"
+    answer: "Because the chain runs on links, not on adjacency in the grid. Milling was pointing at deburr, and deburr was pointing at assembly. Delete deburr and milling now points at nothing, so the scheduler stops there and everything downstream is unreachable. Open the milling row's next-in-sequence picker and point it at assembly. The grid marks the same condition with a warning glyph beside the step name."
+  - question: "How do we know whether a deleted step left anything broken behind on the schedule?"
+    answer: "Run the Scheduler Anomalies report under Reports, Diagnostics. Its checks include scheduled rows that no longer point at a valid routing step, which is exactly what a deletion can leave behind on jobs that had already been planned. Any non-empty result is worth acting on. A full reschedule for the affected jobs clears the orphans, because the plan is rebuilt from the routing as it stands now."
+---
+
+**To delete a routing step safely in EDGEBIC by User Solutions you remove the row, immediately repoint the predecessor's next-in-sequence link at the deleted step's successor, save, and then reschedule any job that used it.** The relink is not optional cleanup. Without it the routing has a hole, and everything past the hole becomes invisible to the scheduler.
+
+Deletion is the one routing edit with no undo inside the grid, so the sequence of actions matters more here than in [adding a step](/blog/how-to-add-a-step-to-an-existing-routing-in-edgebic) or [reordering steps](/blog/how-to-reorder-routing-steps-in-edgebic).
+
+## Before You Start
+
+- Know which step points **at** the one you are deleting, and which step it points **to**. Those two are the ends of the gap you will close.
+- Check whether any open job used the step. If yes, plan a reschedule for those jobs after the edit.
+- Take a copy if the routing is complicated. **📤 Export** on the routing toolbar writes the grid to Excel exactly as displayed, which is a ten-second record of what the routing looked like before you touched it. Switch to **Data Grid** mode first, because export snapshots the grid.
+
+## Deleting the Step
+
+1. Open the **BOR** tab and select the routing. Stay in **Data Grid** mode: the grid shows the links you are about to repair.
+2. Note the deleted step's successor from its **Next In Sequence** column before you remove the row. Once the row is gone, that information is gone with it.
+3. Select the row and delete it.
+4. Go to the **predecessor** step, click the **📝** button in its **Next In Sequence** column, and in the **Select Next in Sequence (Multi-Select)** popup tick the successor you noted in step 2. Click **Confirm**.
+5. If the deleted step was the last one, the new last step needs **End Item** instead, which links it to the finished product and closes the chain.
+6. Click **Update Standard BOR**. Read the **Validation Errors** dialog if it appears rather than answering yes to *"Do you want to save anyway?"*.
+7. Run a reschedule for any job that used the deleted step. This is what clears schedule rows that still reference it.
+
+In **Designer** mode the same work is visual: right-click the arrow into the node and choose **Delete Connector**, delete the node, then turn on **Draw Connector** and draw a fresh arrow from the predecessor to the successor. The gap is obvious on the canvas, which is why the Designer is a good place to check the result even if you did the edit in the grid.
+
+Be sure the row you are deleting is the operation itself and not one of its child rows. A step that has an alternate machine or a parallel machine carries those as child rows underneath it, marked with their own glyphs. Deleting the parent step removes the whole operation, alternates and parallels included, which is a much larger change than trimming a fallback. If your intent is to drop only the fallback machine, delete the child row, not the step. If your intent is to remove the operation, deleting the parent is correct and the children go with it by design.
+
+There is one more reason to run the reschedule promptly rather than at the end of the week. Between the deletion and the reschedule, any job you push the change into has scheduled rows that reference a routing step that no longer exists, and those rows sit in an in-between state until the plan is rebuilt. A prompt reschedule closes that window, and it is why the deletion and the reschedule are best treated as one action rather than two.
+
+## What Changes When You Save
+
+| Surface | Effect |
+|---|---|
+| New manufacturing orders | Scheduled without the step on the next Drive Schedule run |
+| Jobs already scheduled | Unchanged, because each carries its own frozen routing copy |
+| **Estimated Hour per unit =** and **Setup Time =** | Drop by exactly the deleted step's hours and setup |
+| Total cost estimate | Recalculates immediately |
+| Existing schedule rows for the step | Remain until those jobs are rescheduled |
+
+On the reference routing (sawing 0.20, milling 0.50, assembly 0.30 hours a unit), deleting the milling step takes **Estimated Hour per unit =** from 1 to 0.50 and **Setup Time =** from 2 to 1. On a 100-unit order that is 51 hours of mill time gone from the plan, which is the number to look for on the Gantt when you verify.
+
+## How to Check It Worked
+
+Read the header totals first. They should drop by exactly the deleted step's numbers. A total that did not move means the save did not take.
+
+Then look for a **⚠** marker in the **WC/Product Name** column, which is what the grid shows when a step's next-in-sequence link is empty or points at a step that no longer exists. There should be none.
+
+Switch to **Designer** mode and trace the flow to the end product node. Every remaining step should sit on a path that arrives there.
+
+Finally open **Reports**, then Diagnostics, and run **🛠 Scheduler Anomalies**. It flags scheduled rows that no longer resolve to a valid routing step, which is the exact residue a deletion can leave on previously planned work. Any finding here is cleared by a full reschedule of the affected jobs.
+
+## Common Mistakes
+
+**Deleting first and asking where the successor was second.** Write down the link before the row disappears. Recovering it means reading a Gantt or an export.
+
+**Assuming the steps below shuffle up.** They do not. Adjacency in the grid means nothing to the scheduler, which only follows links. A deleted step leaves the predecessor pointing at nothing.
+
+**Skipping the reschedule.** Saving the routing changes the recipe. Jobs planned with the old recipe keep their own copy, and any job you do push the change into needs a full reschedule so its plan is rebuilt without the removed step.
+
+**Deleting a step that was really an alternate or a parallel machine.** Those appear as child rows under their parent step, marked with their own glyphs. Removing the parent removes the operation itself, which is rarely what you meant: see [how to add an alternate work center to a step](/blog/how-to-add-an-alternate-work-center-to-a-step-in-edgebic) for what those rows actually are.
+
+**Deleting instead of correcting.** If the operation still happens but the numbers were wrong, [changing the hours on a routing step](/blog/how-to-change-the-hours-on-a-routing-step-in-edgebic) is the smaller, reversible edit. A wider list of routing traps is in [8 routing mistakes that distort your schedule](/blog/routing-setup-mistakes-edgebic).
+
+## Next Steps
+
+Browse the rest of the task library at [the EDGEBIC how-to hub](/blog/edgebic-how-to-hub), or see how routings fit the wider scheduling platform at [EDGEBIC](/edgebic).

@@ -1,0 +1,113 @@
+---
+title: "The Hours Do Not Add Up on a Job: Which Number Is Right"
+description: "A job whose hours look wrong usually traces to which figure you are reading or a routing change after scheduling. How to reconcile planned, actual, and expected hours."
+published: 2026-07-26T12:00:00.000Z
+modified: 2026-07-26T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - job hours do not add up
+  - planned vs actual hours scheduling
+  - job hours wrong manufacturing
+  - schedule hours reconcile
+  - bor expected hours drift
+  - job view hours header
+targetPhrase: "job hours do not add up"
+wordCount: 1370
+readingTime: 7
+faqQuestions:
+  - question: "Why do the hours on a job header not match the routing hours I entered?"
+    answer: "Usually because you are reading two different numbers. The job header sums the actual scheduled operations, while the routing figure is the quote estimate captured when the order was entered, which is often zero for a fully scheduled job. They are meant to differ. On top of that, setup time, an alternate machine that ran at a different rate, or a routing change made after scheduling can all move the scheduled total away from the raw routing math, and each is legitimate."
+  - question: "Where does the hours total on a job come from?"
+    answer: "The job header's total, actual, remaining, and percent-complete figures come from summing the job's scheduled operations, not from the order's stored estimate. It excludes sub-assembly rollup rows and, when the primary-hours-only setting is on, parallel siblings. Planned hours fall back to the sum of allocated resource hours when a stamped total is missing, and actual shows a dash when nothing has been logged. It reads the schedule graph, which is why it stays accurate as the schedule changes."
+  - question: "Does the anomaly report catch hours that are internally inconsistent?"
+    answer: "Yes, and it separates the harmless from the real. One critical check flags a schedule whose two internal stores of the same number disagree, which is a genuine data problem fixed by re-running scheduling for the job. A separate informational check flags a scheduled total that drifts significantly from the routing-expected hours, which is often intentional, for example after a routing edit or when an alternate machine ran the operation at a different rate."
+qaQuestions:
+  - question: "Our job header shows zero hours and zero percent complete even though the job is fully scheduled and half done. How is that possible?"
+    answer: "You are almost certainly looking at the order's stored estimate rather than the scheduled rollup. That estimate is the quote figure computed when the order was created, and it is frequently zero for scheduled work, so surfacing it makes a busy job read as empty. The header is designed to read the schedule graph instead, summing the actual operations. If a screen is showing zero for a scheduled job, it is reading the wrong source; the scheduled total and percent complete come from the operations, not the estimate."
+  - question: "A job's scheduled hours are noticeably higher than the routing hours times quantity. Nothing is wrong with the routing. Where do the extra hours come from?"
+    answer: "Three legitimate places, in rough order of likelihood. Setup time adds to run hours and is not part of the raw hours-times-quantity math. An alternate machine, if the operation ran on one, carries its own hours that can differ from the primary's. And queue time or transit between steps widens the schedule window without adding work hours, which can make a bar look longer than the hours it contains. Check the setup source and the machine each operation actually ran on before assuming a fault; the anomaly report's expected-versus-booked check will confirm whether the drift is explained."
+---
+
+**A job whose hours look wrong is usually a question of which number you are reading, not a miscount: the job header sums the real scheduled operations, while the routing estimate is a separate quote figure that is often zero for scheduled work.** Once you are reading the right source, the remaining differences trace to setup, an alternate machine, a routing change, or logged actuals, and each is legitimate.
+
+[EDGEBIC by User Solutions](/edgebic) derives a job's hours from its scheduled operations, not from a stored estimate, precisely so the number stays true as the schedule changes. This post reconciles the planned, actual, and expected figures that a job carries, and it extends the "bar longer than the math in your head" symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide).
+
+## First, Know Which Number You Are Reading
+
+A job carries more than one hours figure, and they mean different things:
+
+- **The scheduled rollup** (total, actual, remaining, percent complete on the job header) sums the job's actual scheduled operations. This is the operating number.
+- **The order's estimate** is the quote figure computed when the order was entered. It is frequently zero for a fully scheduled job, because it was never meant to track the live plan.
+
+The single most common "hours are wrong" report is a scheduled, half-finished job reading zero hours and zero percent complete. That is the estimate showing where the rollup should be. The header is designed to read the schedule graph, summing the operations, excluding sub-assembly rollup rows and, when the primary-hours-only setting is on, parallel siblings. If a screen shows zero for a scheduled job, it is reading the estimate, not the rollup. [Reading the Gantt: planned versus actual](/blog/reading-the-edgebic-gantt-planned-vs-actual) covers the operating numbers.
+
+## Cause 1: Setup Time Is Not in the Raw Math
+
+The routing math planners do in their heads is usually hours times quantity. The scheduled total also includes setup time, which is real work the machine performs and which the raw math omits. A job whose scheduled hours run higher than hours-times-quantity by a consistent amount per operation is carrying setup.
+
+**How to tell:** the excess roughly matches the setup times on the routing steps.
+
+**Fix:** none; this is correct. If the setup looks larger than expected, that is a separate question answered by the setup source, covered in [setup time looks wrong on a job](/blog/setup-time-looks-wrong-on-a-job-edgebic).
+
+## Cause 2: An Alternate Machine Ran the Operation
+
+If an operation ran on an alternate machine rather than its primary, the alternate carries its own hours, which can differ from the primary's. The scheduled total reflects what actually ran, so it will not match a calculation done against the primary machine's numbers.
+
+**How to tell:** the operation's machine on the Gantt is not the routing's primary, and the alternate's hours differ.
+
+**Fix:** none; the schedule is reporting the machine that ran the work. If you did not expect the alternate to be used at all, that is a different question, covered in [the schedule ignored my alternate work center](/blog/the-schedule-ignored-my-alternate-work-center-edgebic).
+
+## Cause 3: The Routing Changed After Scheduling
+
+If a routing's hours or setup were edited after the job was scheduled, the scheduled total reflects the old routing until the job is re-scheduled, so it drifts from the current routing math. The anomaly report has an informational check for exactly this: a scheduled total that differs significantly from the routing-expected hours.
+
+**How to tell:** the routing was edited since the last run, and the expected-versus-booked check flags the job.
+
+**Fix:** re-run scheduling for the job to regenerate against the current routing, or accept the drift if the old plan is intentionally preserved. This check is informational, not a wiring fault; it is telling you the plan and the routing have diverged, which is a decision, not a bug.
+
+## Cause 4: Actuals Legitimately Differ From Plan
+
+Once work is logged, actual hours can exceed or fall short of planned hours, and that divergence is real: the shop floor did what it did. The rollup shows planned, actual, and remaining separately so the difference is visible rather than hidden. A short confirm (fewer hours logged than planned) is handled per your policy, either trusting the stamp or forward-shifting the remainder.
+
+**How to tell:** the job has logged actuals, and the actual figure differs from planned.
+
+**Fix:** none if the actuals are correct. If the actuals themselves look wrong, that is a tracing question covered in [actual dates look wrong](/blog/actual-dates-look-wrong-edgebic). The short-confirm behavior is a policy setting, covered in [configuring scheduling policy](/blog/how-to-configure-scheduling-policy-in-edgebic).
+
+## Cause 5: A Genuine Internal Drift
+
+The one case that is a real data problem: a schedule whose two internal stores of the same hours number disagree. The anomaly report flags this as critical, because downstream capacity reports and job totals read from those stores and would show different numbers.
+
+**How to tell:** the anomaly report's consistency-drift check flags the job as critical.
+
+**Fix:** re-run scheduling for the job. Both stores are recomputed and written together on a clean run, which resolves the drift. If it survives a fresh run, the exported row belongs on a support ticket. [Running and reading the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic) covers scoping to one job.
+
+## The Reconciliation, in Order
+
+1. **Confirm you are reading the scheduled rollup, not the estimate.** A scheduled job reading zero is the estimate; the rollup reads the operations.
+2. **Account for setup** in any hours-times-quantity comparison.
+3. **Check the machine each operation actually ran on** for an alternate with different hours.
+4. **Check whether the routing changed** since the last run; the expected-versus-booked check confirms drift.
+5. **Read planned, actual, and remaining separately** rather than expecting them to match.
+6. **Run the anomaly report** for a genuine internal inconsistency; re-run scheduling to fix it.
+
+## Prevention
+
+- **Bind reports and headers to the scheduled rollup, never the estimate.** The estimate is a quoting figure; using it operationally makes busy jobs read empty.
+- **Re-run scheduling after routing edits** so the plan and the routing stay in step, and the expected-versus-booked drift clears.
+- **Log actuals before rescheduling** so planned, actual, and remaining stay coherent instead of the engine planning against stale reality.
+- **Treat a critical consistency-drift flag as a re-run trigger, not a mystery.** It has one fix, and a clean run applies it.
+
+<Accordion title="Why do the hours on a job header not match the routing hours I entered?">
+Usually because you are reading two different numbers. The job header sums the actual scheduled operations, while the routing figure is the quote estimate captured when the order was entered, which is often zero for a fully scheduled job. They are meant to differ. On top of that, setup time, an alternate machine that ran at a different rate, or a routing change made after scheduling can all move the scheduled total away from the raw routing math, and each is legitimate.
+</Accordion>
+
+<Accordion title="Where does the hours total on a job come from?">
+The job header's total, actual, remaining, and percent-complete figures come from summing the job's scheduled operations, not from the order's stored estimate. It excludes sub-assembly rollup rows and, when the primary-hours-only setting is on, parallel siblings. Planned hours fall back to the sum of allocated resource hours when a stamped total is missing, and actual shows a dash when nothing has been logged. It reads the schedule graph, which is why it stays accurate as the schedule changes.
+</Accordion>
+
+<Accordion title="Does the anomaly report catch hours that are internally inconsistent?">
+Yes, and it separates the harmless from the real. One critical check flags a schedule whose two internal stores of the same number disagree, which is a genuine data problem fixed by re-running scheduling for the job. A separate informational check flags a scheduled total that drifts significantly from the routing-expected hours, which is often intentional, for example after a routing edit or when an alternate machine ran the operation at a different rate.
+</Accordion>

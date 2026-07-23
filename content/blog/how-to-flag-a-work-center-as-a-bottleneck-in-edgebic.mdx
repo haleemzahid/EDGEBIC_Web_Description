@@ -1,0 +1,107 @@
+---
+title: "How to Flag a Work Center as a Bottleneck in EDGEBIC"
+description: "How to set the Is Bottleneck flag on a work center in EDGEBIC through import, what the flag does on its own, and why a target start date is also required."
+published: 2026-07-26T12:00:00.000Z
+modified: 2026-07-26T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - flag work center as bottleneck
+  - is bottleneck flag import
+  - bottleneck work center scheduling
+  - theory of constraints flag
+  - anchor scheduling target start date
+  - constraint work center setup
+targetPhrase: "flag work center as bottleneck"
+wordCount: 1290
+readingTime: 7
+faqQuestions:
+  - question: "How do you flag a work center as a bottleneck in EDGEBIC?"
+    answer: "Through the work center import. Put a truthy value (1, true, or yes) in the Is_Bottleneck column of the work center import file and load it with the Import button on the Work Center Management page. The flag is not on the edit dialog in the current release. Re-importing updates existing work centers, and the grid displays the flag afterward."
+  - question: "Does flagging a bottleneck automatically trigger anchor scheduling?"
+    answer: "No. The Is Bottleneck flag on its own does not activate anchor scheduling. The engine activates anchor mode only when it also finds a target start date pinned to a schedule row for the job. Both conditions are required: the flag marks the constraint and sizes protective buffers, and the target start date is the trigger that switches the job into backward-from-the-constraint scheduling."
+  - question: "What does the bottleneck flag change if it does not schedule anything by itself?"
+    answer: "It marks the resource as the plant constraint, which feeds the load-factor comparison the engine uses to confirm the flagged work center really is the tightest resource, and it activates the larger protective buffer multipliers when Theory of Constraints buffers are enabled. Dashboards also surface it: the Bottleneck KPI tile and the bottleneck panels name the constraint and show its load. The scheduling behavior change needs the target start date as well."
+qaQuestions:
+  - question: "I set Is_Bottleneck on our heat-treat oven weeks ago and nothing about the schedule looks different. Is the flag broken?"
+    answer: "The flag is doing its job, but the flag alone does not change scheduling. The engine switches a job into anchor mode only when it finds a target start date on a schedule row for that job, so a work center marked as the constraint with no target start date anywhere still schedules every job forward, exactly as before. Pin a target start date on the oven step of a real job and rerun, and you will see the upstream steps plan backward to feed the oven just in time. The full setup, flag plus target date plus the buffer decision, is in our dedicated bottleneck scheduling walkthrough."
+  - question: "We marked three work centers as bottlenecks to be safe. Now the whole plan looks strange. Did we overdo it?"
+    answer: "Almost certainly. Theory of Constraints works when the flag marks the one genuine drum, usually a single work center per plant or per routing family. Flagging several tells the engine to treat multiple resources as constraints, and when a routing passes through more than one flagged work center the engine takes the first anchor candidate it finds, which is rarely the tightest one for that job. Clear the flag on the resources that are not truly the constraint, keep it on the one that is, and confirm with the load figures the dashboards show. Identify the constraint, exploit it, and subordinate everything else to it, rather than scattering the flag."
+---
+
+**To flag a work center as a bottleneck in EDGEBIC, put a truthy value in the Is_Bottleneck column of the work center import file and load it through the Import button.** The flag is not on the edit dialog in the current release. And on its own it does not start anchor scheduling: the engine also needs a target start date pinned to a schedule row before it switches a job into constraint-first scheduling.
+
+That two-part requirement is the thing most people get wrong, so this page states it up front and returns to it. The flag marks the constraint and sizes protective buffers. The target start date is the trigger. For the full scheduling procedure (flag, pin, verify, and handle a plan that does not fit), read [how to schedule around a bottleneck work center](/blog/how-to-flag-and-schedule-around-a-bottleneck-in-edgebic) from EDGEBIC by User Solutions.
+
+## Before You Start
+
+- **You know which single resource is the genuine constraint.** Usually one work center per plant or per routing family.
+- **You have work center import access.** The two operational flags (Is Bottleneck and One Per Day) are set through import, not the edit dialog.
+- **You understand this is step one of two.** The flag without a target start date changes buffer sizing and dashboards, not the schedule itself.
+
+## Step 1: Confirm the Constraint Before You Flag It
+
+Theory of Constraints is only useful when the flag marks the real drum. Before importing anything, confirm the resource is genuinely the tightest: the highest load relative to its available capacity across the jobs that pass through it. The dashboards' Bottleneck KPI tile and bottleneck panels help here, as does simply looking at which work center is booked solid while others have gaps. Our post on [production bottleneck identification](/blog/production-bottleneck-identification) covers how to find it.
+
+Flagging a non-constraint forces backward scheduling for every job that touches it and distorts the whole plan.
+
+## Step 2: Set Is_Bottleneck in the Import File
+
+Open your work center import file. In the **Is_Bottleneck** column, put a truthy value (`1`, `true`, or `yes`) on the row for the constraint work center. Leave every other work center's cell blank or false.
+
+If you are building the file from scratch, the work center import maps the standard columns (identifier, name, instances, and the two flags among them). Re-importing an existing work center updates it in place rather than creating a duplicate. The same import path is where the One Per Day flag lives too, so if you are also setting instance counts, do that on the edit dialog first ([how to change the number of machines in a work center](/blog/how-to-change-the-number-of-machines-in-a-work-center-in-edgebic)).
+
+## Step 3: Import the File
+
+On the **Work Center Management** page, click **📥 Import** and load the file. The import applies the flag, and the grid reflects it afterward. Re-importing later with a changed value updates the flag.
+
+## Step 4: Understand What You Just Changed (and What You Did Not)
+
+Setting the flag changes three things:
+
+| Changed by the flag alone | What it does |
+|---|---|
+| Constraint identification | Feeds the engine's load-factor comparison, which confirms the flagged work center really is the tightest resource for a given job at a given quantity |
+| Buffer sizing | Activates the larger protective buffer multipliers when Theory of Constraints buffers are enabled |
+| Dashboards | The Bottleneck KPI tile and bottleneck panels name the constraint and show its load |
+
+What the flag does **not** do on its own is switch any job into anchor scheduling. The engine activates anchor mode for a job only when it finds a **target start date** pinned to one of that job's schedule rows. Without a target start date, a job whose routing passes through the flagged work center still schedules forward, exactly as if the flag were not there.
+
+Both conditions are required. The flag marks and sizes; the target start date triggers.
+
+## Step 5: Pin a Target Start Date to Activate Anchoring
+
+To actually schedule a job around the constraint, set a target start date on the schedule row for the bottleneck step of that job. On the next run, the engine detects the target start date, finds the routing step whose work center matches, and switches the whole order into anchor scheduling: it pins the constraint operation at its target time, plans the upstream steps backward so material arrives exactly on time, and plans the downstream steps forward, with protective buffers around the constraint.
+
+The step-by-step for pinning the date and verifying the anchored plan is in [how to schedule around a bottleneck work center](/blog/how-to-flag-and-schedule-around-a-bottleneck-in-edgebic).
+
+## What Changes When You Save
+
+| Surface | Effect |
+|---|---|
+| **Work Center Management** grid | Shows the flag after import |
+| Dashboards | Name the constraint and its load |
+| Buffer sizing | Uses the larger multipliers for jobs anchored on this constraint (when TOC buffers are on) |
+| Scheduling behavior | **No change** until a target start date is also set on a job's schedule row |
+
+## How to Check It Worked
+
+1. Confirm the flag on the work center's row in the grid after import.
+2. Open the dashboard and confirm the Bottleneck KPI tile names this work center.
+3. To confirm anchoring itself, pin a target start date on a real job's constraint step, run **Drive Schedule**, and check that the upstream steps now plan backward to feed the constraint. If the plan looks unchanged, the target start date is missing: the flag alone never anchors.
+
+## Common Mistakes
+
+**Expecting the flag to schedule anything by itself.** The most common misunderstanding. Marking a work center Is Bottleneck without setting a target start date on the schedule row has no scheduling effect. Both are required.
+
+**Scattering the flag across several work centers.** TOC works with one deliberate constraint. When a routing passes through more than one flagged work center, the engine takes the first anchor candidate it finds, which is rarely the right one.
+
+**Flagging a resource that is not actually the constraint.** Forces backward scheduling for every job through it and distorts the plan. Confirm the load first.
+
+**Looking for the flag on the edit dialog.** In the current release it is set through import only, alongside the One Per Day flag.
+
+## Next
+
+Flagging the constraint is the first half of Theory of Constraints scheduling in EDGEBIC. The flag marks and sizes; the target start date turns it into a real anchored plan. Do both in [how to schedule around a bottleneck work center](/blog/how-to-flag-and-schedule-around-a-bottleneck-in-edgebic), and see the mechanism worked through numerically in the [TOC anchor scheduling example](/blog/toc-bottleneck-anchor-scheduling-example-edgebic). More single-task recipes are in the [EDGEBIC how-to hub](/blog/edgebic-how-to-hub), and the platform overview is at [/edgebic](/edgebic).

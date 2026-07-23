@@ -1,0 +1,88 @@
+---
+title: "How to Switch a Product Between Make-to-Stock and Make-to-Order in EDGEBIC"
+description: "Switch one product between make-to-stock and make-to-order in EDGEBIC: the build method setting, the stocked flag that must travel with it, and what to verify."
+published: 2026-07-26T12:00:00.000Z
+modified: 2026-07-26T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - switch make-to-stock make-to-order
+  - product build method setting
+  - stocked item flag manufacturing
+  - replenishment trigger product
+  - inventory planning attributes
+  - MTS MTO product setup
+targetPhrase: "switch make-to-stock make-to-order"
+wordCount: 1350
+readingTime: 7
+faqQuestions:
+  - question: "What two settings have to change together when a product becomes make-to-stock?"
+    answer: "The build method and the stocked flag. Setting the build method to make-to-stock without also marking the product as stocked is a documented data-integrity fault that the anomaly checks flag, because the product is declared replenishment-driven while inventory posting stays switched off. Change both in the same edit, then confirm the anomaly report is clean."
+  - question: "Does switching build method move any scheduled job?"
+    answer: "No. Build method is a planning attribute on the product record, not a scheduling input, so changing it books no capacity and moves no operation. What changes is how demand for the product is generated in future: a make-to-stock product is replenished against stock triggers, while a make-to-order product waits for a customer order."
+  - question: "Can one product be make-to-stock and another make-to-order in the same plant?"
+    answer: "Yes, and mixed catalogs are the normal case. Build method is per product, so fast-moving standard items can be replenished to stock while configured or low-volume items are built only against orders. The scheduler treats the resulting jobs identically once they exist: both compete for the same finite work center capacity."
+qaQuestions:
+  - question: "We want to move our top ten sellers to make-to-stock. What else has to be set before the switch is useful?"
+    answer: "The build method and stocked flag are only the declaration. The replenishment triggers are what actually generate suggestions: a safety stock level, a reorder method, and either a reorder level with a reorder quantity or a minimum and maximum pair. A product declared make-to-stock with no reorder method produces no suggestions at all, which looks like the feature is broken when it is simply not configured. Set the triggers for all ten products in the same session, then watch one projection cycle before trusting the numbers."
+  - question: "A product moved from make-to-order to make-to-stock and now we are carrying too much finished inventory. Where do we look first?"
+    answer: "Start with the lot sizing rule and the reorder quantity. A fixed order quantity rule always orders the full reorder quantity regardless of what the net requirement was, so a large default on a slow mover accumulates stock every cycle. Lot-for-lot orders exactly the net requirement instead and is the safer starting point while you learn the demand pattern. Check safety stock at the same time, because an over-generous buffer combined with a fixed order quantity compounds the problem quietly across several cycles."
+---
+
+**To switch a product between make-to-stock and make-to-order in EDGEBIC by User Solutions, edit the product, set the build method in its inventory planning section, and change the stocked flag to match.** Those two settings travel together: a make-to-stock product needs to be marked stocked so inventory postings and netting apply to it. This post is the single task. For the strategy behind the choice, read [make-to-stock vs make-to-order in EDGEBIC](/blog/make-to-stock-vs-make-to-order-in-edgebic).
+
+The inventory planning attributes described here belong to the inventory capability. Availability varies by installation, so check with User Solutions which of these fields your build exposes before planning a catalog-wide change.
+
+## Before you start
+
+- The product exists and has a routing, so the resulting jobs can actually be scheduled.
+- You know which direction you are moving. Make-to-stock means the item is built against replenishment triggers and held. Make-to-order means it is built when a customer orders it.
+- For a switch to make-to-stock, decide the replenishment numbers in advance: safety stock, reorder method, and the quantities that go with the method you pick.
+- Note the current on-hand position for the product. A switch to make-to-stock against zero stock generates suggestions immediately.
+
+## Steps
+
+1. Open the **Product** tab and find the product using the search panel.
+2. Click the edit button in the row's **Actions** column.
+3. Go to the inventory planning section of the dialog, where the make-to-stock and make-to-order attributes live.
+4. Set the **Build Method** to make-to-stock or make-to-order as required.
+5. Set the stocked flag to match. Marking a product stocked is what enables inventory netting and receipt and issue posting for it. This step is not optional on a make-to-stock product.
+6. For a make-to-stock product, set the replenishment triggers in the same visit:
+   - **Safety Stock**, the minimum buffer the projection protects.
+   - **Reorder Method**, chosen from none, reorder point, or min/max.
+   - **Reorder Level** and **Reorder Quantity** for the reorder point method, or **Min Level** and **Max Level** for min/max.
+   - The **Lot Size Rule**, which decides whether a suggestion covers exactly the net requirement or always orders the reorder quantity.
+7. Click **Update**.
+
+## What changes when you save
+
+| Setting | Effect after the switch |
+|---|---|
+| Build method set to make-to-stock | Completed manufacturing orders for the product post a stock receipt, and demand can be satisfied from stock rather than from a fresh job |
+| Stocked flag on | Inventory netting and posting apply to this product |
+| Reorder method and levels | The projection can raise replenishment suggestions when the projected balance falls below the trigger |
+| Lot size rule | Decides the size of each suggestion |
+| The schedule | Nothing moves. Build method is not a scheduling input |
+
+The practical difference shows up upstream of the scheduler. A make-to-order product waits for demand to arrive as a customer order. A make-to-stock product is replenished against its own triggers, so the planner reviews suggestions and firms the ones worth building. Once a job exists, the engine schedules it the same way either way, against the same finite work center capacity.
+
+## How to check it worked
+
+1. Re-open the product and confirm both the build method and the stocked flag show the values you set. A mismatched pair is the single most common fault on this task.
+2. Run the anomaly checks. A product declared make-to-stock without the stocked flag is a documented integrity fault and shows up there rather than as a visible error on the form.
+3. Open the inventory projection for the product and read one full horizon. A make-to-stock product with a reorder method configured should show either a healthy projected balance or a replenishment suggestion where the balance dips below the trigger. See [how to read the projection](/blog/how-to-read-the-projection-in-edgebic).
+4. Confirm the suggestion size matches the lot size rule you chose. A fixed order quantity suggestion equal to the reorder quantity is correct; a lot-for-lot suggestion should equal the shortfall.
+
+## Common mistakes
+
+**Changing the build method and leaving the stocked flag alone.** The product then claims to be replenishment-driven while inventory posting is off. The anomaly checks catch it, but only if you look.
+
+**Leaving the reorder method at none.** A make-to-stock product with no reorder method never raises a suggestion. Nothing errors, so it reads as a broken feature rather than an unfinished setup.
+
+**A generous fixed order quantity on a slow mover.** Fixed order quantity always orders the full amount regardless of the shortfall, which builds stock steadily. Start with lot-for-lot until the demand pattern is clear.
+
+**Switching to make-to-order and expecting stock to disappear.** Existing on-hand quantity stays where it is. Only the way future demand is generated changes.
+
+Keep the rest of the record consistent while you are in the dialog: [how to set a product cost](/blog/how-to-set-a-product-cost-in-edgebic) covers the fields that drive quote margin. More single-task recipes are indexed in [the EDGEBIC how-to library](/blog/edgebic-how-to-hub), and the [EDGEBIC product page](/edgebic) shows how demand and finite capacity meet in one plan.

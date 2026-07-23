@@ -1,0 +1,111 @@
+---
+title: "A Job Will Not Schedule At All: Reading the Failure and Fixing It"
+description: "A job that comes back unscheduled has one of four documented causes. How to read the failure dialog, tell which cause you have, and fix each one at the source."
+published: 2026-07-26T12:00:00.000Z
+modified: 2026-07-26T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - job will not schedule
+  - scheduling failure dialog
+  - job failed to schedule manufacturing
+  - no available capacity error
+  - routing missing scheduling error
+  - pre-flight validation scheduling
+targetPhrase: "job will not schedule"
+wordCount: 1420
+readingTime: 7
+faqQuestions:
+  - question: "Why will one job not schedule when every other job in the run scheduled fine?"
+    answer: "Because failures are collected per job, not per run. One order with a broken routing link or an inactive work center is reported on its own line and skipped, while the other orders schedule normally. The failure dialog lists each skipped job with a category, the entity at fault, and a fix hint, so the answer for that single job is usually one line of text away."
+  - question: "What is pre-flight validation in production scheduling?"
+    answer: "Pre-flight validation is a master-data check that runs before the scheduling engine starts. It confirms the order exists, the product exists, the routing exists and has steps, and every routed work center is active with at least one instance and at least one shift. Failures caught here are labeled as pre-flight, which tells you the problem is in your setup data rather than in capacity."
+  - question: "Does a no-available-capacity failure mean the plant is genuinely full?"
+    answer: "Rarely. The engine searches a long forward window before giving up, so an empty result usually means a configuration produced zero capacity on every single day: no shift assigned, zero machine instances, a shift with no hours on the relevant weekdays, or calendars covering the whole window. Genuine capacity exhaustion is the exception, not the rule."
+qaQuestions:
+  - question: "Our failure list shows the same job twice with two different categories. Which one do we fix first?"
+    answer: "Fix the pre-flight one first, then re-run. Multiple categories can fire for one job, and they are not independent: a routing step pointing at an inactive work center produces a master-data failure, and the same gap can produce a capacity failure once the engine runs. Working top-down, pre-flight before engine failures, usually clears several lines at once. Use the Copy button to save the whole list before you start so you can compare the next run against it."
+  - question: "A synchronized three-machine operation fails while each of the three machines shows free time. How is that possible?"
+    answer: "Synchronized operations need one window where all partners are free at the same time, and they search a shorter horizon than a single-machine step. Free time scattered across three machines on three different days is worth nothing to that operation. Two things break it most often: the machines do not share the same shift record (identical hours on two different shift records do not count as common), and one partner has downtime covering the whole search window. Align the shift record across the group first, then re-check calendars."
+---
+
+**A job that comes back unscheduled is not a mystery: the run tells you why, per job, with a category, the entity at fault, and a fix hint.** The failure dialog is the first tool in the toolkit for a reason. Four documented causes account for nearly every case, and three of them are master data rather than capacity.
+
+[EDGEBIC by User Solutions](/edgebic) collects failures per order instead of aborting the run, so one broken routing never blocks the other forty orders. That design has one consequence worth naming: a failure is easy to miss if you do not look. This post is the deep version of the first symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide).
+
+## First: Read the Dialog, Not the Gantt
+
+After a run where one or more orders could not be placed, the failure dialog opens with a header line stating how many of how many orders scheduled, and one row per failed job carrying five fields:
+
+| Field | What it tells you |
+|---|---|
+| Category | The class of failure (missing routing, inactive work center, no capacity, and so on) |
+| Summary | A one-line plain-English statement of the problem |
+| Detail | The underlying message, usually naming the record that could not be resolved |
+| Affected entity | The specific work center or routing step, when the engine can identify it |
+| Fix hint | The concrete next action |
+
+Rows caught before the engine ran carry a pre-flight badge. That badge is the single most useful thing on the dialog: it splits the causes below into "your setup data is incomplete" and "the engine ran and hit a wall." Use the Copy button to put the whole list on the clipboard before you start fixing anything, so the next run can be compared against it.
+
+## Cause 1: Master Data Is Incomplete (Pre-Flight)
+
+The validator checks a short list before the engine starts: the order exists, the product exists, the routing exists, the routing has at least one step, and every work center used by those steps is active with at least one instance and at least one shift.
+
+Any of those gaps stops the job, and each has its own category and fix:
+
+- **Product missing.** The product record is absent or was soft-deleted. Restore it, or point the order at an active product. Note that a product marked inactive is not the same thing: the engine still finds it.
+- **Routing missing or empty.** No routing for the product, or a routing that exists with zero steps. Create the routing, or add at least one step with a valid work center and hours above zero. The routing also needs at least one step whose end item matches the order's product.
+- **Work center inactive, missing, or unusable.** Reactivate it, or reassign the step to an active machine. A machine count of zero instances and a machine with no shift assigned both fail here too.
+- **Shift with no daily hours.** A shift record can exist with every weekday at zero. Open it and give at least one weekday real start and end times.
+
+**How to tell it is this one:** the pre-flight badge, plus a category naming a record type rather than capacity.
+
+**Fix at the source.** These are master-data repairs, not schedule repairs. The five-field routine in [how to set up work centers](/blog/how-to-set-up-work-centers-in-edgebic) prevents most repeat offenders.
+
+## Cause 2: The Routing Loops Back on Itself
+
+Routing steps link forward to their successor. If following that chain from any step eventually returns to a step you already visited, the ordering pass cannot produce a valid sequence and the job is refused rather than guessed at.
+
+**How to tell:** the category names a circular dependency, and the detail names the job and product.
+
+**Fix:** open the routing, list the steps with their sequence numbers and their next-step pointers, and walk each chain until it either ends or revisits a step. The most common form by far is a step pointing at itself. Break the cycle by clearing that pointer or aiming it at a real downstream step, then re-run. The [routing flow-chart view](/blog/how-to-build-a-routing-as-a-flow-chart-in-edgebic) makes a loop visible in seconds, which is faster than reading pointer values in a grid.
+
+## Cause 3: No Capacity Inside the Search Window
+
+The engine searches forward day by day for a slot, across a long default window. When it finds nothing at all, it reports a no-capacity failure naming the work center.
+
+**How to tell:** the category names capacity, and the affected entity names one work center.
+
+**Fix:** treat this as a configuration finding first and a demand finding second. Walk the capacity chain on the named machine: instance count above zero, a shift actually assigned, hours on the weekdays you expect, calendars not blanketing the window, and a utilization percentage that is a real number. The [zero-capacity checklist](/blog/capacity-shows-zero-for-a-work-center-edgebic) runs that chain in order of likelihood. Only when all of it is clean does the failure mean the machine is genuinely booked solid, and then the answers are the usual ones: free lower-priority work, add an instance or a shift, or give the routing an alternate machine to shop to.
+
+## Cause 4: A Synchronized Group Cannot Find a Common Window
+
+Operations that require several machines running at the same time need one window where every partner is free together, and they search a shorter horizon than a single-machine step. This produces a distinct failure category.
+
+**How to tell:** the message refers to simultaneous capacity, and the routing step carries parallel partners.
+
+**Fix:** confirm every machine in the group is active with at least one instance, and that they share the same shift record. Two shifts with identical hours but separate records do not count as common. Then check that no partner has downtime covering the entire window. If the group has a parent machine whose own step failed, fix that first: a mirrored partner has nothing to copy until the parent is placed. [Parallel and alternate work center setup](/blog/how-to-configure-parallel-and-alternate-work-centers-in-edgebic) covers the difference between partners that run alongside and machines that substitute.
+
+One more category is worth knowing because it looks like a capacity problem and is not: a bottleneck-anchored job fails when the constrained machine has no capacity in the planning window, or when the order's target start date sits in the past. Fix the target date or the machine's calendar, not the routing.
+
+## Stop It Coming Back
+
+Three habits retire most of this page:
+
+1. **Let pre-flight do the work.** It is cheaper to be told about a missing shift before a run than to read it out of a failed run afterward.
+2. **Audit master data on a schedule, not on an incident.** Two grid filters, work centers with no shifts and products with no routing, find the whole first cause family in a few minutes.
+3. **Run the anomaly report after routing changes and imports.** [Running and reading it](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic) takes a minute and surfaces the configuration gaps that would have become next week's failure dialog.
+
+<Accordion title="Why will one job not schedule when every other job in the run scheduled fine?">
+Because failures are collected per job, not per run. One order with a broken routing link or an inactive work center is reported on its own line and skipped, while the other orders schedule normally. The failure dialog lists each skipped job with a category, the entity at fault, and a fix hint, so the answer for that single job is usually one line of text away.
+</Accordion>
+
+<Accordion title="What is pre-flight validation in production scheduling?">
+Pre-flight validation is a master-data check that runs before the scheduling engine starts. It confirms the order exists, the product exists, the routing exists and has steps, and every routed work center is active with at least one instance and at least one shift. Failures caught here are labeled as pre-flight, which tells you the problem is in your setup data rather than in capacity.
+</Accordion>
+
+<Accordion title="Does a no-available-capacity failure mean the plant is genuinely full?">
+Rarely. The engine searches a long forward window before giving up, so an empty result usually means a configuration produced zero capacity on every single day: no shift assigned, zero machine instances, a shift with no hours on the relevant weekdays, or calendars covering the whole window. Genuine capacity exhaustion is the exception, not the rule.
+</Accordion>
