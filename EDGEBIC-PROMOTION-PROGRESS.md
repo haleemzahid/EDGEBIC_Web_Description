@@ -44,19 +44,19 @@
 | 18 | edgebic-scheduling-concepts | 200 | 37 | 0 | 0 |
 | 19 | edgebic-how-to | 500 | 217 | 0 | 0 |
 | 20 | edgebic-walkthroughs | 50 | 11 | 0 | 0 |
-| 21 | edgebic-erp-integration | 150 | 42 | 0 | 0 |
+| 21 | edgebic-erp-integration | 150 | 54 | 0 | 0 |
 | 22 | edgebic-industry | 110 | 61 | 0 | 0 |
-| 23 | edgebic-glossary | 350 | 113 | 0 | 0 |
+| 23 | edgebic-glossary | 350 | 125 | 0 | 0 |
 | 24 | edgebic-troubleshooting | 120 | 45 | 0 | 0 |
-| 25 | edgebic-outcomes | 100 | 25 | 0 | 0 |
-| 26 | edgebic-optimization | 60 | 1 | 0 | 0 |
-| 27 | edgebic-visual-scheduling | 40 | 9 | 0 | 0 |
-| 28 | edgebic-shop-floor | 60 | 1 | 0 | 0 |
-| 29 | edgebic-quoting | 40 | 1 | 0 | 0 |
+| 25 | edgebic-outcomes | 100 | 37 | 0 | 0 |
+| 26 | edgebic-optimization | 60 | 13 | 0 | 0 |
+| 27 | edgebic-visual-scheduling | 40 | 21 | 0 | 0 |
+| 28 | edgebic-shop-floor | 60 | 13 | 0 | 0 |
+| 29 | edgebic-quoting | 40 | 7 | 0 | 0 |
 | 30 | edgebic-planning | 80 | 1 | 0 | 0 |
-| 31 | edgebic-migration | 40 | 0 | 0 | 0 |
+| 31 | edgebic-migration | 40 | 6 | 0 | 0 |
 | 32 | edgebic-admin | 40 | 9 | 0 | 0 |
-| | **TOTAL** | **2,120** | **720** | **0** | **0** |
+| | **TOTAL** | **2,120** | **804** | **0** | **0** |
 
 **"Written" count is derivable from disk** (don't trust memory, count files):
 PowerShell: `Select-String -Path content/blog/*.mdx -Pattern "cluster: 'edgebic-" | Group-Object { ($_.Line -split "'")[1] } | Sort-Object Name | Format-Table Name, Count`
@@ -68,6 +68,7 @@ PowerShell: `Select-String -Path content/blog/*.mdx -Pattern "cluster: 'edgebic-
 | 2026-07-23 | 1 | 50 | 15 of 16 (all but migration) | 917bdc3 | 7 parallel agents; 13 pillars + 10 walkthroughs + 8 visual + 6 ERP + 8 troubleshooting + 5 glossary; QA pass fixed 2 claims; ~110k words; no heroImage yet (screenshots pending) |
 | 2026-07-23 | 1 fix | 0 | erp-integration | c721268 | Corrected "new-jobs-only mode" claim in 4 Wave 1 posts (no user-facing mode picker exists) |
 | 2026-07-24 | 2 / flight 1 | 84 | platform (72), erp-integration (12) | 19e620c | 7 parallel agents, 4 angles x 18 chapters + 12 ERP; ~150k words; QA: 0 banned/em-dash/FCP hits, 0 dup slugs, 151/151 internal links resolve, 0 existing files touched |
+| 2026-07-31 | 4 / flight 2 | 84 | optimization (12), visual-scheduling (12), shop-floor (12), quoting (6), migration (6), ERP (12), glossary (12), outcomes (12) | see git log | 7 agents; filled the under-built clusters that were pillar-only in Wave 1. 3 agents hit an infra stream-watchdog stall (not usage limit) with 0 files written, cleanly re-dispatched. Agents substituted 1 non-existent view (operator-lanes -> work-center-lanes) and flagged ERP market-positioning as context-only. QA: all scans clean, 202/202 links resolve, 0 collisions across all 804 |
 | 2026-07-30 | 4 / flight 1 | 84 | glossary (48), scheduling-concepts (12), industry (24) | see git log | 7 parallel agents self-selecting uncovered terms; every glossary/concept agent reported NO shortfall (corpus still deep). Agents rejected internal-only terms (unit of work, repository) and roadmap items (drum-buffer-rope, CCPM, yield inflation) rather than overclaim. QA: all scans clean, 200/200 links resolve, 0 collisions across all 720. Open item logged: canonical glossary URL form (dash vs slash) needs app confirmation |
 | 2026-07-29 | 3 / flight 4 | 84 | glossary (60), scheduling-concepts (24) | see git log | 7 parallel agents; pivoted off micro-tasks to the definitions dictionary: 60 glossary terms (engine/planning/execution/reporting/diagnostics) + 24 deeper concept posts; ~105k words; QA: all scans clean, 161/161 links resolve, 0 cross-commit collisions across all 636. Fixed 3 glossary links from hyphen to canonical slash form + retargeted 2 phrases to avoid cannibalizing generic glossary terms (ATP, FPY). **WAVE 3 COMPLETE (400+ how-to/troubleshooting/glossary/concept posts across 4 flights).** |
 | 2026-07-28 | 3 / flight 3 | 84 | how-to (72), troubleshooting (12) | see git log | 7 parallel agents; work-center deep, routing internals, scheduling control, remaining reports, kiosk/operators, deployment/options, + 12 new troubleshooting symptoms; ~115k words; QA: all scans clean, 195/195 links resolve, 0 cross-commit slug collisions across all 552, 1 British UI label normalized. ~11 tasks substituted for undocumented features (the granular how-to seam is thinning; Flight 4 pivots to glossary/concepts). New product-finding note added on doc-vs-UI control gaps |

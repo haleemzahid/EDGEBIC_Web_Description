@@ -1,0 +1,119 @@
+---
+title: "The Two Layers of the EDGEBIC Optimizer Explained"
+description: "EDGEBIC ships two schedule optimizers: a never-worse multi-run search and a CP-SAT mathematical solver with a proven optimality gap. Here is when to use each."
+published: 2026-07-31T12:00:00.000Z
+modified: 2026-07-31T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - schedule optimizer layers
+  - multi-run search scheduling
+  - CP-SAT solver
+  - mathematical schedule optimization
+  - never worse than baseline
+  - production schedule optimization software
+targetPhrase: "two optimizer layers"
+wordCount: 1750
+readingTime: 9
+faqQuestions:
+  - question: "What is the difference between the multi-run search and the CP-SAT solver in EDGEBIC?"
+    answer: "The multi-run search re-runs the real scheduler with many different job orderings and keeps the best complete plan, so it reports 'best of N schedules tried.' The CP-SAT solver models the whole problem mathematically and additionally proves how close its answer is to the theoretical best, so it reports 'proven within X% of optimal.' Both are guaranteed never worse than your current plan."
+  - question: "Which optimizer layer is the default in EDGEBIC?"
+    answer: "The multi-run search is the default. It ships enabled on every install and needs no extra components. You switch to the CP-SAT mathematical solver in Options, Schedule, Optimizer Engine when you want a proven optimality gap on your considered planning run rather than a heuristic best-of-N result."
+  - question: "Is one optimizer layer more accurate than the other?"
+    answer: "Both produce complete, constraint-respecting plans and both are clamped never-worse. On small job sets they usually return the identical plan. The CP-SAT layer adds a mathematical proof of how far the answer sits from optimal, which the multi-run search cannot compute. That proof is the difference, not raw plan quality on any one run."
+qaQuestions:
+  - question: "We run about 40 jobs across 12 work centers each week. Which layer should we actually use day to day?"
+    answer: "Use the multi-run search for the quick daily pass, because it costs seconds and always respects every constraint. Reserve the CP-SAT solver for the weekly considered run where you want to end the 'could we have done better' debate with a number. At 40 jobs, the multi-run search evaluates two dozen complete orderings inside a 30-second budget, while CP-SAT will often prove the same plan optimal or return a gap under a few percent."
+  - question: "If we select CP-SAT but it is not installed on our server, does scheduling break?"
+    answer: "No. If the CP-SAT component is absent from your deployment, EDGEBIC silently falls back to the multi-run search rather than fail. You get a valid, never-worse plan either way, and the badge simply reads 'best of N schedules tried' instead of 'proven within X% of optimal.' Selecting the mathematical solver can never break a scheduling run."
+---
+
+**EDGEBIC ships two schedule optimizers that share one promise and differ in one thing.** Both propose a complete alternative plan, show it beside your current schedule, and change nothing until you press Accept. The first layer, a multi-run search, tries many job orderings through the real scheduler and returns the best one it found. The second layer, a CP-SAT mathematical solver, additionally proves how close its answer is to the theoretical best. This is the practical guide to what each layer does, what each can honestly claim, and when to reach for which.
+
+EDGEBIC by User Solutions treats optimization as a sidecar, never a rewrite of the scheduling engine. The engine that plans your jobs today keeps planning them; the optimizer sits alongside it and proposes something better only when it can prove the proposal wins. That design is why trying the optimizer costs you nothing but a few seconds.
+
+## Why two layers exist at all
+
+The base scheduler plans one job at a time, most important first. That approach is fast and always respects finite capacity, but it commits each job's entire routing before it looks at the next job. A long first operation can hold a machine while a two-hour job that would have fed the next work center sits waiting. Finding the job order that avoids that trap is an NP-hard problem: on a real plant, no fixed sort rule solves it in general.
+
+Both optimizer layers attack the same gap. They differ in method and in what they can prove.
+
+| | Multi-run search (default) | CP-SAT solver |
+|---|---|---|
+| Method | Re-runs the real scheduler with many job orderings, keeps the best | Models the whole problem as math, solves it directly |
+| Guarantee | Never worse than your current plan | Never worse, plus a proven optimality gap |
+| Badge | "Best of N schedules tried in Xs" | "Proven within X% of optimal" or "Proven optimal" |
+| Honest claim | A thorough search, no proof | Mathematical optimization with a proof |
+| Needs setup | Nothing, ships enabled | An optional solver component |
+
+## Layer one: the multi-run search
+
+The multi-run search is refreshingly simple in concept. It generates a set of candidate job orderings, runs the untouched scheduler on each one, measures every resulting plan with a single set of key performance indicators, and keeps the best. For four jobs or fewer it tries every possible ordering (four jobs give 24 orderings). For larger sets it uses dispatch heuristics (earliest due date, shortest processing time, longest processing time, critical ratio) plus seeded random shuffles, up to the candidate limit and time budget you set.
+
+Because every candidate is a real schedule produced by the same engine that runs your plant, constraint compliance is total by construction. There is no risk of the search proposing something the shop cannot physically run. The one thing this layer cannot do is prove how far the winner sits from the best possible plan. Its badge is honest about that: "best of N schedules tried," never "optimal."
+
+The never-worse promise is enforced, not assumed. After the search, EDGEBIC compares the best candidate directly against your current plan under the goal you chose. If the candidate is not strictly better, EDGEBIC returns your current plan and tells you so. A no-improvement result is a positive finding: your plan survived a serious challenge. Read more about that safeguard in [what the never-worse guarantee means for planners](/blog/what-the-never-worse-guarantee-means-for-planners).
+
+## Layer two: the CP-SAT mathematical solver
+
+The CP-SAT solver encodes your scheduling problem as a mathematical model built on Google OR-Tools. Every operation becomes an interval variable on a compressed working-hour timeline. Precedence, queue gaps, and machine capacity become constraints. Due dates become penalties. The solver optimizes the goal you chose one tier at a time and returns a plan together with a proven lower bound: a number no schedule can beat.
+
+From that bound comes the [optimality gap](/blog/what-is-an-optimality-gap-production-scheduling), the percentage between the plan it found and the best any plan could theoretically achieve. A gap of zero means proven optimal: no better schedule exists, period. A gap of three percent means no schedule can beat this one by more than three percent on your goal. Either way, the "could we do better?" question now has a mathematical answer.
+
+The solver warm-starts from the base engine's plan, which serves as both a starting hint and the never-worse floor. If the solver runs out of its time budget before proving optimality, it still returns the best plan found so far plus its current bound. The gap simply stays wider. You are never left empty-handed.
+
+## The safety both layers share
+
+Whichever layer runs, the same guarantees hold and are printed on the screen as a safety strip: nothing is saved until you Accept, completed and in-progress work is never moved, and the proposal is never worse than your current plan. Some jobs may be reproduced exactly as scheduled ("locked") when their routing uses a feature the solver does not yet rearrange natively. That is a correctness feature, covered in [locked jobs and the never-worse guarantee](/blog/locked-jobs-and-the-never-worse-guarantee-in-edgebic).
+
+## A worked example: same jobs, two badges
+
+Consider one shared day shift, Monday 08:00 to 16:00, with one saw and one mill. Three jobs release Monday morning, all the same priority:
+
+| Job | Routing | Due |
+|---|---|---|
+| A | Cut 6 h then Mill 2 h | Tuesday 12:00 |
+| B | Cut 2 h then Mill 6 h | Tuesday 12:00 |
+| C | Cut 3 h then Mill 3 h | Tuesday 16:00 |
+
+The base scheduler runs them in the order A, B, C. Job A's six-hour cut holds the saw all Monday morning while the mill sits idle. The mill then backs up: B finishes two hours late, C finishes late too. Total tardiness is three hours, only one job of three is on time, and the plan ends Wednesday morning.
+
+Run the optimizer with the on-time-first goal. Both layers discover that the short cut should go first, ordering the jobs B, A, C so the mill never starves. Now B feeds the mill by 10:00 Monday, A finishes Tuesday morning, and C finishes Tuesday afternoon. All three jobs land on time. Total tardiness drops to zero, and makespan falls from 17 working hours to 14.
+
+Here the two layers diverge only in what the badge says:
+
+| Measure | Current plan | Optimized | Multi-run badge | CP-SAT badge |
+|---|---|---|---|---|
+| Total tardiness | 3 h | 0 h | Best of 5 tried | Proven optimal |
+| On-time jobs | 1 / 3 | 3 / 3 | (heuristic) | Gap 0% |
+| Makespan | 17 h | 14 h | | |
+
+With three jobs, the multi-run search tries every ordering and finds B-A-C by exhaustion. CP-SAT finds the same plan and proves that no better one exists. That proof is the entire difference between the two badges. See it end to end in [how to run and read an optimization in EDGEBIC](/blog/how-to-run-and-read-an-optimization-in-edgebic).
+
+## Choosing your layer
+
+You pick the engine once, in Options, Schedule, Optimizer Engine, as a simple radio pair: "Multi-run search (default)" or "Mathematical solver (CP-SAT)." Both honor every capacity constraint and both are clamped never-worse, so switching is always safe. Guidance from the source documentation:
+
+- **Daily quick pass:** the multi-run search. It costs seconds, needs no extra components, and reorders whole jobs regardless of routing features.
+- **Weekly considered run:** the CP-SAT solver. The proven gap ends the "could we do better" debate with mathematics rather than opinion.
+- **Every routing feature in play:** the multi-run search reorders jobs regardless of the features they use, so it is the reliable choice when many jobs carry multi-instance machines, parallel processing, or lot streaming that the solver would lock.
+
+Both layers are described in more depth in the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide), and the broader concept of [production schedule optimization](/blog/production-schedule-optimization) puts them in context. To see the whole platform, visit [EDGEBIC](/edgebic).
+
+## What stays the same across both layers
+
+It helps to be clear about what does not change when you switch engines, because that is most of the behavior:
+
+- **The goal presets.** On-time first, Fastest overall finish, Least setup time, and Fewest changes work identically on both layers. The layer decides how the search happens; the goal decides what the search is for.
+- **The comparison screen.** Verdict, key performance indicator deltas, and the changes-only move list read the same regardless of engine. Only the badge language differs.
+- **The safety strip.** Nothing saved until Accept, completed work untouched, never worse than your current plan: all three hold on both layers.
+- **The audit record.** Accept writes the same optimizer-applied record either way, carrying the goal, the seed, and the before-and-after numbers.
+
+This uniformity is why switching engines is a low-stakes decision. You are not learning a new tool; you are choosing between a thorough search and a mathematical proof, with everything around that choice held constant. A planner who knows the multi-run screen already knows the CP-SAT screen.
+
+## The bottom line
+
+Two layers, one promise. The multi-run search gives you an honest best-of-N result with zero setup and total constraint safety. The CP-SAT solver gives you a mathematical proof of how good that result is. Neither ever makes your schedule worse, and neither writes anything until you decide to Accept. Start with the default, reach for the solver when you want the proof, and let the badge tell you exactly what kind of answer you are holding.

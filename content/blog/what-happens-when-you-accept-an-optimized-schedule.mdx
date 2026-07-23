@@ -1,0 +1,120 @@
+---
+title: "What Happens When You Accept an Optimized Schedule"
+description: "Accept is the only action that writes an EDGEBIC optimization to the database. Here is exactly what it changes, what it protects, the audit it records, and the staleness check."
+published: 2026-07-31T12:00:00.000Z
+modified: 2026-07-31T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - accept optimized schedule
+  - optimizer accept discard
+  - schedule optimization audit
+  - stale proposal check
+  - production schedule optimization software
+  - persist optimized plan
+targetPhrase: "accept an optimized schedule"
+wordCount: 1650
+readingTime: 8
+faqQuestions:
+  - question: "What does Accept do to an optimized schedule in EDGEBIC?"
+    answer: "Accept saves the proposed plan through the same persistence pipeline as a normal scheduling run, with the same protections for recorded work. The proposed starts and finishes replace the current ones for exactly the operations in the move list; everything else stays. Every schedule view refreshes, and one audit record is written capturing the goal, the before-and-after numbers, the seed, and the moves. It is the only action that writes anything."
+  - question: "Does accepting an optimization move completed work?"
+    answer: "No. Completed and in-progress steps pass through Accept unchanged, the same rule as every reschedule in EDGEBIC. The optimizer proposal only moves not-started operations, and Accept persists them through the standard pipeline that preserves recorded work. A step someone has already started or finished keeps its actual times through the whole optimize-and-accept flow."
+  - question: "What is the staleness check when I accept an optimization?"
+    answer: "Before the proposal is created, EDGEBIC takes a fingerprint of the current schedule. When you Accept, it recomputes that fingerprint. If the schedule changed while you were reviewing, because a colleague rescheduled or shop-floor actuals landed, Accept refuses rather than overwrite the newer state. You see a banner offering a Re-run that solves again on the latest data. It is a guard against silently clobbering someone else's change."
+qaQuestions:
+  - question: "I ran the optimizer, went to lunch, and now Accept shows a banner about changes. What happened and what do I do?"
+    answer: "While you were away, the schedule changed underneath your proposal: someone rescheduled, or actuals came in from the floor. Your proposal was built against the old state, so accepting it would overwrite the newer work. EDGEBIC catches that with a staleness fingerprint and shows the banner rather than clobber the change. Click Re-run and the optimizer solves again on the current data, giving you a fresh proposal that includes what changed. You lose nothing but the few seconds of the re-run."
+  - question: "If I Accept and later regret it, is there a record of what changed?"
+    answer: "Yes. Accept writes one audit record marked as an optimizer application, and its payload carries the full plain-language explanation, the goal you chose, the random seed, the solve statistics, and both the before and after key performance indicator sets. Open the job's audit trail to find it. The record is the same story the Explain dialog showed at Accept time, so months later you can see exactly why the plan was changed and by how much."
+---
+
+**Accept is the only action in EDGEBIC that writes an optimization to the database.** Until you press it, the proposal lives only on the Optimizer tab and the schedule is untouched. When you Accept, the proposed starts and finishes replace the current ones for exactly the operations in the move list, everything else stays, every schedule view refreshes, and one audit record captures the whole change. Completed work passes through unchanged, and a staleness check refuses to overwrite anything that changed while you were reviewing. This post walks through precisely what Accept does, what it protects, and what Discard does instead.
+
+EDGEBIC by User Solutions makes Accept the single write path on purpose, so that trying the optimizer is always safe and committing to it is always deliberate. For the run that precedes it, see [how to run and read an optimization in EDGEBIC](/blog/how-to-run-and-read-an-optimization-in-edgebic).
+
+## Before Accept: the proposal lives in memory
+
+A completed optimizer run produces a proposal held on your screen under a private token. It shows a verdict, a key performance indicator table comparing current to proposed, a changes-only move list, and a safety strip. None of it has touched the database. The schedule everyone else sees is exactly as it was, and closing the application at this point simply discards the proposal, which is always safe because nothing was saved.
+
+This is the sidecar design at work: the optimizer computes beside the engine and writes nothing on its own, covered in [why the optimizer is a sidecar, not a replacement](/blog/why-the-optimizer-is-a-sidecar-not-a-replacement).
+
+## What Accept changes
+
+Press Accept and EDGEBIC persists the proposal through the same pipeline as a normal scheduling run. Concretely:
+
+| Surface | Effect of Accept |
+|---|---|
+| Job plans | The proposed starts and finishes replace the current ones for exactly the operations in the move list; everything else stays |
+| Recorded work | Completed and in-progress steps pass through unchanged, the same rule as every reschedule |
+| Capacity | Work-center load re-forms around the new plan |
+| Schedule views | The Gantt, Job View, the Drive Schedule grid, and dashboards all refresh to the accepted plan |
+| Audit | One optimizer-applied record with the plain-language explanation, the goal, the seed, and the before-and-after numbers |
+
+The key phrase is "exactly the operations in the move list." Accept does not sweep the whole schedule; it applies precisely the moves the comparison showed you and nothing more. If a job was not in the move list, its plan is identical after Accept.
+
+## What Accept protects
+
+The strongest protection is around recorded work. Completed and in-progress steps are never moved by Accept, the same contract that governs every reschedule in EDGEBIC. If an operator has started or finished a step, its actual times survive the entire optimize-and-accept flow untouched. The optimizer proposal only ever moves not-started operations, and the persistence pipeline that Accept uses preserves recorded work by design.
+
+This is why the safety strip on the comparison screen states plainly that completed work is untouched. It is not a hopeful claim; it is enforced by the same machinery that protects actuals during any reschedule.
+
+## The staleness check
+
+Between running the optimizer and pressing Accept, minutes can pass. In that window the schedule can change: a colleague reschedules, or actuals arrive from the shop floor. Your proposal was built against the earlier state, so accepting it blindly would overwrite the newer work.
+
+EDGEBIC guards against this with a fingerprint. Before the proposal is created, it takes a cheap snapshot stamp of the schedule. When you Accept, it recomputes the stamp. If they differ, Accept refuses rather than overwrite, and shows a banner: changes arrived while you reviewed, re-run to include them. A Re-run button solves again on the latest data. You lose nothing but the seconds of the re-run, and no one's change is silently clobbered.
+
+## The audit record
+
+Accept writes exactly one audit record, marked as an optimizer application. Its payload is the same plain-language story the Explain dialog showed at Accept time, and it carries:
+
+- the goal you chose,
+- the random seed the run used,
+- the solve statistics,
+- both the before and after key performance indicator sets,
+- the significant moves as sentences.
+
+Open a job's audit trail to find it later. Because the stored record and the Explain dialog are literally the same story, the "why" of a plan change survives months after the fact. Anyone reviewing knows the plan was optimized, under which goal, and by how much it improved.
+
+## A worked example
+
+Your current plan shows one job, JOB-2026-0123, finishing one day late. You run the optimizer with On-time first, and the proposal shows late jobs going from one to zero across three jobs, with five operations moving. You read the move list, the trade suits you, and you press Accept.
+
+| Moment | Result |
+|---|---|
+| Before Accept | Grid shows JOB-2026-0123 one day late; database unchanged |
+| Accept pressed | Proposal persists through the standard pipeline |
+| Thirty seconds later | Grid shows zero days late on all three jobs; five Gantt bars sit in their new slots |
+| Audit | One optimizer-applied record holds the goal, numbers, and moves |
+
+Had you pressed Discard instead, the grid would still show one day late and nothing else would have happened at all. Discard drops the proposal and leaves the database byte-for-byte untouched.
+
+## Accept reuses the normal scheduling pipeline
+
+A detail worth understanding is that Accept does not have its own special save path. It persists the proposal through the exact same pipeline a normal scheduling run uses. This is deliberate and it is why Accept is safe: every protection that guards a routine reschedule guards an accepted optimization too. Merge handling, the preservation of recorded work, and the writing of audit rows all happen the same way whether the plan came from a scheduling run or from the optimizer.
+
+The practical consequence is that Accept behaves exactly as your team already expects a schedule change to behave. There is no separate set of rules to learn for optimized plans, no special case where completed work might slip through, no distinct failure mode. If you trust how a normal reschedule treats your data, you can trust how Accept treats it, because underneath they are the same operation. The optimizer's only job was to decide what the new plan should be; committing it is ordinary scheduling machinery, which is one more reason the sidecar design keeps optimization separate from persistence.
+
+## Accept versus Discard
+
+The two buttons are the whole decision:
+
+- **Accept** saves the proposal through the standard pipeline, refreshes every view, and writes the audit record. It is deliberate and reversible only by a further reschedule.
+- **Discard** drops the proposal. The database is exactly as it was, as if you had never run the optimizer.
+
+There is no third option that half-applies a plan. You either take the whole proposal, exactly as shown in the move list, or you take none of it. That clarity is what makes the optimizer safe to try as often as you like: Run, look, Discard, repeat, at no cost.
+
+For the broader optimizer picture, see the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide), [how mathematical optimization improves a schedule](/blog/how-mathematical-optimization-improves-a-schedule), and the wider view of [production schedule optimization](/blog/production-schedule-optimization). To explore the platform, visit [EDGEBIC](/edgebic).
+
+## Running the optimizer freely before you commit
+
+Because Accept is the only write and Discard costs nothing, the healthy way to use the optimizer is to run it often and commit deliberately. Try On-time first, read the result, Discard. Try Fastest overall finish on the same schedule, compare. Give the mathematical solver a longer budget to see if the gap closes. None of this touches the database, so there is no reason to hesitate. You are exploring proposals, not editing the live plan, right up until the moment you decide.
+
+That freedom is the practical payoff of making Accept the single write path. Planners who understand it stop treating the optimizer as a commitment and start treating it as an analyst they can consult as many times as they like. Only when a proposal is clearly the one to keep do they press Accept, and only then does anything change. The move list is deliberately changes-only so that final review is a thirty-second read, described in [how to run and read an optimization in EDGEBIC](/blog/how-to-run-and-read-an-optimization-in-edgebic). Everything before Accept is free exploration; Accept is the one deliberate step.
+
+## The bottom line
+
+Accept is the single write path for an optimization, and it is precise. It applies exactly the moves in the move list, refreshes every view, and records one audit entry with the goal, seed, and before-and-after numbers. Completed work passes through untouched, and a staleness fingerprint refuses to overwrite anything that changed while you reviewed, offering a Re-run instead. Discard leaves the database exactly as it was. Because nothing writes until you Accept and Accept protects recorded work, you can run the optimizer freely and commit only when the proposal is one you want to keep.
