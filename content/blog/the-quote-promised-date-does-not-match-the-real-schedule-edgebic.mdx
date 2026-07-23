@@ -1,0 +1,102 @@
+---
+title: "The Quote Promised Date Does Not Match the Real Schedule"
+description: "A quote simulation runs in memory and reserves no capacity, so the real plan can differ once other jobs load, the routing changes, or assumptions diverge. How to reconcile them."
+published: 2026-07-28T12:00:00.000Z
+modified: 2026-07-28T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - quote promised date wrong
+  - quote simulation vs schedule
+  - quote does not reserve capacity
+  - estimated date differs from schedule
+  - what if promise date
+  - quote troubleshooting
+targetPhrase: "quote promised date does not match the real schedule"
+wordCount: 1186
+readingTime: 6
+faqQuestions:
+  - question: "Why does a quote's promised date differ from the real schedule?"
+    answer: "Because a quote runs an in-memory simulation that reserves no capacity. It borrows the live scheduling engine to estimate a start and finish against the plant state at the moment you ran it, then throws the result away without touching the floor plan. If other jobs are scheduled into that capacity afterward, or the routing changes, or the quote used different assumptions than the real order, the actual schedule moves. The estimate was a snapshot, not a held slot."
+  - question: "Does running a quote reserve capacity on the schedule?"
+    answer: "No. A quote simulation is read-only with respect to real capacity: it writes no schedule rows and holds no slot, so a sales engineer can run many simulations without disturbing the plan. That is why two quotes run against the same open capacity can both promise it, and why the first real job to schedule takes it. If you need the date to hold, the order has to be created and scheduled, which is when it actually consumes capacity."
+  - question: "Do quote assumptions carry over to the real manufacturing order?"
+    answer: "The scheduling direction carries onto the order at conversion, so a quote simulated backward from a finish-by date produces an order scheduled the same way. But the real schedule is recomputed against current capacity and the current routing when you run scheduling, not copied from the quote's stored estimate. If a scenario used weekend shifts, a custom start, or capacity overrides that the real order does not carry, the recomputed dates will differ from the quoted ones."
+qaQuestions:
+  - question: "We quoted a two-week lead time on Monday and the order scheduled to four weeks on Friday. Nothing about the job changed. What happened?"
+    answer: "Capacity filled in between. The Monday quote estimated against the open capacity it saw that day and reserved none of it, so the jobs scheduled during the week consumed the windows the quote assumed. By Friday the real order scheduled against what was actually left. This is the expected behavior of a simulation that does not hold a slot. If a promised date needs to survive, convert and schedule the order promptly, or re-run the quote close to when you commit so it reflects current capacity."
+  - question: "Our quote used a weekend shift scenario and came back short, but the real job did not use the weekend and ran long. Why the gap?"
+    answer: "Because the weekend shift lived in the quote scenario, not in the plant calendar the real order schedules against. A scenario is a what-if configuration for comparison, so a weekend shift, a custom start, or a capacity override in the scenario shapes the estimate but does not change the real work center calendars. When the order schedules for real, it uses the actual calendars, which do not include the weekend, so it runs longer. Make the calendar change real if you want the real schedule to match the scenario."
+---
+
+**A quote's promised date can differ from the real schedule because the quote is an in-memory simulation that reserves no capacity: it estimates against the plant state at the moment you ran it and then discards the result without holding a slot.** Once real jobs load that capacity, the routing changes, or the quote's assumptions diverge from the order, the actual plan moves.
+
+[EDGEBIC by User Solutions](/edgebic) runs a quote as a what-if promise-date simulation. It borrows the live scheduling engine to compute a realistic start, finish, and cost, but it writes no schedule rows, so a sales engineer can run many quotes without disturbing the floor plan. That design is exactly why a quoted date is an estimate, not a commitment. This post reconciles the two; it sits in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and pairs with [quote simulation explained](/blog/edgebic-quote-simulation-explained) and [how EDGEBIC turns a quote into a promise date](/blog/how-edgebic-turns-a-quote-into-a-promise-date).
+
+## First, Understand What a Quote Is
+
+A quote runs the full scheduling engine against a temporary order, in memory, and reads back an estimated start and finish. Nothing is persisted and no capacity is held. The estimated lead time is simply the span between those two dates, and the estimated hours are the actual work hours the simulation allocated, not the wall-clock span, which is why a job can show a short hours figure and a longer promised window at the same time. The estimate reflects the plant exactly as it stood when you clicked run. Change the plant, and the estimate no longer describes it. Almost every "the dates do not match" report resolves to one of the four differences below.
+
+## Cause 1: Capacity Filled In After the Quote
+
+Because the quote holds no slot, any job scheduled into that capacity afterward consumes the windows the quote assumed. A Monday estimate that saw open capacity can schedule to a later date on Friday because the week's work took the room.
+
+**How to tell:** the quote is older than the real scheduling run, and other jobs were scheduled into the same work centers in between.
+
+**Fix:** re-run the quote close to when you commit, so it reflects current capacity, and convert and schedule the order promptly if the date matters. A date only becomes real when the order is scheduled and actually consumes capacity.
+
+## Cause 2: A Scenario Used Different Assumptions
+
+A quote scenario is a what-if configuration: a weekend shift, a custom start date, a capacity override for comparison. Those assumptions shape the estimate but do not change the real work center calendars, so the real order schedules against the actual plant and comes out differently.
+
+**How to tell:** the quote used a scenario, and its weekend shift, custom start, or override does not exist in the real calendars the order schedules against.
+
+**Fix:** if the scenario reflects a change you intend to make, make it real in the calendars and work center capacity, then re-run scheduling. If it was only exploratory, treat its date as a what-if, not a promise. Scenarios are covered in [what-if scenarios explained](/blog/edgebic-what-if-scenarios-explained).
+
+## Cause 3: The Routing Changed Between Quote and Order
+
+The quote estimates against the routing as it stood at quote time. If the routing's hours, setup, or steps changed before the order ran, the real schedule reflects the new routing and diverges from the quoted figure.
+
+**How to tell:** the routing was edited after the quote and before the order was scheduled.
+
+**Fix:** re-quote against the current routing before committing, or accept that the newer routing is the accurate one. The order should schedule against the routing you actually intend to run.
+
+## Cause 4: Direction or Dates Differ
+
+The scheduling direction carries from the quote onto the order at conversion, but the order's own start and due dates drive the real run. A quote simulated forward from a requested start and an order scheduled against a different due date will not land on the same dates.
+
+**How to tell:** the quote's requested date and the order's start or due dates differ, or the direction was changed after conversion.
+
+**Fix:** align the order's dates and direction with what you quoted, or re-quote to match the dates you will actually commit to. Forward and backward direction is covered in [forward versus backward scheduling](/blog/forward-vs-backward-scheduling).
+
+## The Reconciliation, in Order
+
+1. **Check how old the quote is** and whether capacity filled in since.
+2. **Check whether a scenario's assumptions** made it into the real calendars.
+3. **Check whether the routing changed** between quote and order.
+4. **Compare the quote's requested date and direction** with the order's actual dates.
+5. **Re-quote close to commitment** so the estimate reflects the plant you are scheduling against.
+
+## Prevention
+
+- **Quote close to the commit,** because an estimate ages as capacity fills.
+- **Make a scenario real before relying on its date.** A weekend shift in a scenario does not exist on the floor until you add it.
+- **Re-quote after routing edits,** so the estimate and the order describe the same work.
+- **Convert and schedule promptly** when a date must hold, since only a scheduled order consumes capacity.
+- **Treat the estimate as a snapshot, not a reservation.** Two quotes can both promise the same open capacity, and the first order to schedule is the one that actually takes it.
+
+A job that finished later than its due date after scheduling is a related but separate question covered in [my job finished later than the due date](/blog/my-job-finished-later-than-the-due-date-edgebic).
+
+<Accordion title="Why does a quote's promised date differ from the real schedule?">
+Because a quote runs an in-memory simulation that reserves no capacity. It borrows the live scheduling engine to estimate a start and finish against the plant state at the moment you ran it, then throws the result away without touching the floor plan. If other jobs are scheduled into that capacity afterward, or the routing changes, or the quote used different assumptions than the real order, the actual schedule moves. The estimate was a snapshot, not a held slot.
+</Accordion>
+
+<Accordion title="Does running a quote reserve capacity on the schedule?">
+No. A quote simulation is read-only with respect to real capacity: it writes no schedule rows and holds no slot, so a sales engineer can run many simulations without disturbing the plan. That is why two quotes run against the same open capacity can both promise it, and why the first real job to schedule takes it. If you need the date to hold, the order has to be created and scheduled, which is when it actually consumes capacity.
+</Accordion>
+
+<Accordion title="Do quote assumptions carry over to the real manufacturing order?">
+The scheduling direction carries onto the order at conversion, so a quote simulated backward from a finish-by date produces an order scheduled the same way. But the real schedule is recomputed against current capacity and the current routing when you run scheduling, not copied from the quote's stored estimate. If a scenario used weekend shifts, a custom start, or capacity overrides that the real order does not carry, the recomputed dates will differ from the quoted ones.
+</Accordion>

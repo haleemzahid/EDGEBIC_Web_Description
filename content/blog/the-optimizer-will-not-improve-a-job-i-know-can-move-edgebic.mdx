@@ -1,0 +1,109 @@
+---
+title: "The Optimizer Will Not Improve a Job I Know Can Move"
+description: "When the solver leaves one job exactly where it is, its routing usually carries a feature the solver does not model natively, so the job is locked on purpose. How to read the reason and act."
+published: 2026-07-28T12:00:00.000Z
+modified: 2026-07-28T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - optimizer will not move a job
+  - locked job optimizer
+  - optimizer feature lock
+  - job not optimized reason
+  - explain dialog optimizer
+  - optimizer troubleshooting
+targetPhrase: "optimizer will not improve a job"
+wordCount: 1272
+readingTime: 6
+faqQuestions:
+  - question: "Why does the optimizer refuse to move one specific job?"
+    answer: "Because that job's routing uses a feature the exact solver does not yet model natively, so the job is locked and reproduced exactly as the standard engine scheduled it. The solver only rearranges plain single-machine, sequential jobs. A routing with multiple machine instances, a one-per-day rule, transit days, lot streaming, parallel steps, alternate machines, or an unmodeled setup matrix triggers the lock. The Explain dialog names the specific reason for that job, so you can see exactly which feature held it fixed."
+  - question: "Is a locked job in the optimizer a defect?"
+    answer: "No, it is a correctness safeguard. Locking a job whose routing uses an unmodeled feature guarantees the solver can never emit an invalid plan for a capability it does not understand. The locked job still consumes its machine capacity, so the jobs the solver does optimize schedule around it honestly. Correctness comes before optimization scope by design. A locked job means the solver protected the plan, not that it failed, and the honesty counters report how many jobs were optimized versus locked."
+  - question: "How do I find out why a job was locked?"
+    answer: "Open the Explain dialog on the optimizer result. It lists each locked job with its specific reason, such as multi-instance work center, one-per-day, transit days, lot streaming, parallel processing, or alternate work centers. The result also reports an optimized-job count and a locked-job count so you can see the split at a glance. Once you know the feature that locked the job, you can decide whether to switch optimizer engines, remove the feature if it is not needed, or accept the lock."
+qaQuestions:
+  - question: "One job clearly has an earlier slot open and the solver leaves it alone every time. Explain says alternate work centers. What does that mean for us?"
+    answer: "It means the job's routing lists alternate machines on at least one step, which the exact solver does not yet choose among natively, so it locks the job and reproduces the standard engine's placement rather than risk an invalid alternate choice. The earlier slot may genuinely be reachable, but only through logic the solver is not modeling for that job. Switch the optimizer engine to the multi-run layer, which runs the full production engine for every candidate, so alternate selection and every other feature participate and that job can actually be moved."
+  - question: "Most of our jobs are locked and the solver barely changed anything. Are we using the wrong engine?"
+    answer: "Possibly, for this dataset. The exact solver optimizes plain single-machine, sequential jobs natively and locks the rest, so a plant whose routings lean on machine pools, parallel steps, lot streaming, or alternates will see many locks and little movement. The multi-run engine runs the full production engine for each candidate ordering, so every feature is honored in every candidate and locked jobs are not a concept there. Switching engines is a per-site setting, and both layers keep the never-worse guarantee, so the change is safe to try."
+---
+
+**When the optimizer leaves one specific job exactly where it is, that job's routing almost always carries a feature the exact solver does not model natively, so the job is locked on purpose and reproduced exactly as the standard engine scheduled it.** This is a correctness safeguard, not a defect, and the Explain dialog names the reason for that job.
+
+[EDGEBIC by User Solutions](/edgebic) runs its exact solver as a sidecar that natively optimizes plain single-machine, sequential jobs. A job whose routing touches anything beyond that is locked: reproduced verbatim, still consuming its machine capacity so the optimizable jobs schedule around it honestly. Locking is why the solver can never emit an invalid plan for a capability it does not understand. This post is the single-job version of the diagnosis; it sits in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and is the companion to [why the optimizer returned the same schedule](/blog/why-the-optimizer-returned-the-same-schedule-edgebic), which covers the whole-run case, and to [the optimizer guide](/blog/edgebic-optimizer-guide).
+
+## First, Open Explain and Read the Job's Reason
+
+The optimizer result carries an Explain dialog that lists each locked job with its specific reason, and the result reports an optimized-job count and a locked-job count. Open it and find your job. The reason tells you exactly which feature held it fixed, and everything below is just interpreting that reason. If the job is in the locked list, the solver did not fail to improve it; it deliberately did not touch it.
+
+## The Features That Lock a Job
+
+A job is locked when its routing uses any of these, because the exact solver does not yet optimize them natively:
+
+| Lock reason | What triggers it |
+|---|---|
+| Multi-instance work center | A routed work center with more than one machine instance |
+| One-per-day work center | A routed work center that runs one job per instance per day |
+| Transit days | A step with transit days between it and the next |
+| Lot streaming | A step with flow-step or transfer-batch overlap |
+| Parallel processing | A step configured as dependent or independent parallel |
+| Alternate work centers | A step that lists alternate machines |
+| Setup matrix | A populated changeover matrix not eligible for native modeling |
+
+Any one of these on any step of the job's routing is enough to lock the whole job. The lock protects correctness: the solver never guesses at a feature it does not model.
+
+## Cause 1: The Routing Uses an Unmodeled Feature (the Lock Is Correct)
+
+The job you expected to move uses one of the features above, so it is locked and reproduced exactly.
+
+**How to tell:** the Explain dialog lists the job with one of the reasons in the table.
+
+**Fix:** decide among three honest options. Switch the optimizer engine to the multi-run layer, which runs the full production engine for every candidate so every feature participates and the job can actually be moved. Or, if the locking feature is not actually needed on that routing (an alternate machine you never use, a transit day set to zero purpose), remove it and re-run so the job becomes optimizable. Or accept the lock, because the standard engine's placement of that job is already valid.
+
+## Cause 2: Most of the Dataset Is Locked (Wrong Engine for This Plant)
+
+If many jobs are locked and the solver barely moved anything, the plant's routings lean on features the exact solver locks, and the searchable space is small.
+
+**How to tell:** the locked-job count is high relative to the optimized-job count.
+
+**Fix:** switch to the multi-run engine for this dataset. It runs the full production engine per candidate ordering, so machine pools, parallel steps, lot streaming, and alternates are all honored in every candidate, and locked jobs are not a concept there. The engine choice is a per-site setting, and both layers keep the never-worse guarantee, so the switch cannot degrade the plan. The multi-run layer is described in [the optimizer goals and presets explained](/blog/edgebic-optimizer-goals-and-presets-explained).
+
+## Cause 3: The Goal Has Nothing to Win on That Job
+
+Even an optimizable job will not move if the chosen goal has nothing to gain from moving it. A job already on time under an on-time-first goal is a tie, not a loss.
+
+**How to tell:** the job is not in the locked list, but the goal preset has no lever on it, for example an already-on-time job under an on-time goal.
+
+**Fix:** try a different goal preset. A job that cannot improve on due dates may still have setup hours or total span to recover under a least-setup or fastest-finish goal. The whole-run version of this is covered in [why the optimizer returned the same schedule](/blog/why-the-optimizer-returned-the-same-schedule-edgebic).
+
+## The Reconciliation, in Order
+
+1. **Open Explain** and check whether the job is in the locked list.
+2. **Read the lock reason** to identify the feature on its routing.
+3. **Switch to the multi-run engine** if you want that feature optimized, since it runs the full engine per candidate.
+4. **Remove the feature** only if it is genuinely unused on that routing.
+5. **If the job is not locked, try a different goal preset,** because the current goal may have nothing to win on it.
+
+## Prevention
+
+- **Read the optimized-versus-locked counts** on every result, so a low optimized count is expected rather than surprising.
+- **Match the engine to the dataset.** Feature-heavy routings favor the multi-run layer; plain sequential work favors the exact solver.
+- **Keep routings honest,** so an unused alternate or a pointless transit day does not lock a job you wanted optimized.
+- **Trust the lock.** A locked job is a valid plan the solver chose not to risk rewriting, not a job it could not schedule.
+
+A result that appeared to make the schedule worse, rather than leaving it unchanged, is covered in [the optimizer made my schedule worse](/blog/the-optimizer-made-my-schedule-worse-edgebic), which walks through the never-worse guarantee.
+
+<Accordion title="Why does the optimizer refuse to move one specific job?">
+Because that job's routing uses a feature the exact solver does not yet model natively, so the job is locked and reproduced exactly as the standard engine scheduled it. The solver only rearranges plain single-machine, sequential jobs. A routing with multiple machine instances, a one-per-day rule, transit days, lot streaming, parallel steps, alternate machines, or an unmodeled setup matrix triggers the lock. The Explain dialog names the specific reason for that job, so you can see exactly which feature held it fixed.
+</Accordion>
+
+<Accordion title="Is a locked job in the optimizer a defect?">
+No, it is a correctness safeguard. Locking a job whose routing uses an unmodeled feature guarantees the solver can never emit an invalid plan for a capability it does not understand. The locked job still consumes its machine capacity, so the jobs the solver does optimize schedule around it honestly. Correctness comes before optimization scope by design. A locked job means the solver protected the plan, not that it failed, and the honesty counters report how many jobs were optimized versus locked.
+</Accordion>
+
+<Accordion title="How do I find out why a job was locked?">
+Open the Explain dialog on the optimizer result. It lists each locked job with its specific reason, such as multi-instance work center, one-per-day, transit days, lot streaming, parallel processing, or alternate work centers. The result also reports an optimized-job count and a locked-job count so you can see the split at a glance. Once you know the feature that locked the job, you can decide whether to switch optimizer engines, remove the feature if it is not needed, or accept the lock.
+</Accordion>

@@ -1,0 +1,101 @@
+---
+title: "My MPS Firmed Quantity Did Not Become a Job"
+description: "A master schedule quantity turns into a build order only when you firm it, and only a make-to-stock product qualifies. How to tell a saved row from a firmed one and fix it."
+published: 2026-07-28T12:00:00.000Z
+modified: 2026-07-28T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - mps firmed quantity no job
+  - master production schedule firm
+  - firm mps bucket
+  - mps did not create order
+  - released mps entry
+  - mps troubleshooting
+targetPhrase: "mps firmed quantity did not become a job"
+wordCount: 1206
+readingTime: 6
+faqQuestions:
+  - question: "Why did my MPS build quantity not create a manufacturing order?"
+    answer: "Most often because the quantity was saved but not firmed. Saving records your build decision on the bucket and leaves it in a committed state; firming is the separate action that creates the build-to-stock order and moves the row to released. A saved-but-not-firmed row shows a build number with no order behind it. Check the row's status: if it is firm rather than released, you saved the quantity but have not yet firmed it into an order."
+  - question: "What is the difference between saving and firming an MPS quantity?"
+    answer: "Saving stores your committed build quantity on the bucket without creating anything downstream, so you can plan several buckets before acting. Firming converts a committed quantity into an actual build-to-stock manufacturing order, sets a start date offset by the product's lead time, and moves the row to released with a link to the new order. The order then schedules against real capacity like any other. Until you firm, the quantity is a plan, not a job."
+  - question: "Which products can be firmed from the master production schedule?"
+    answer: "Only make-to-stock products participate in master-schedule firm demand and firming. A product built strictly to order does not source firm demand into the master schedule and does not produce a build-to-stock order when you try to firm it. If a bucket cannot be firmed or does not behave as expected, check the product's build method first. A make-to-stock product also needs to be stocked so its build can post a receipt and consumers can net against it."
+qaQuestions:
+  - question: "We firmed a bucket, the row says released, but the job is nowhere on the Gantt. Where did it go?"
+    answer: "A firmed row creates a build-to-stock manufacturing order, but the order does not appear on the Gantt until scheduling runs. Firming creates the order and sets its start date from the product's lead time; the scheduling engine places it against capacity on the next run. Look for the order in the job list by its build number, then run scheduling. If it is in the job list but not on the Gantt, it simply has not been scheduled yet, which is a one-run fix, not a lost order."
+  - question: "An MPS row shows released but the order it points to is gone. Now what?"
+    answer: "That is an orphaned released entry: the row was firmed, but the order it created was later cancelled or deleted, so the link no longer resolves. The master schedule view demotes such a row back to firm when it rebuilds, so you can re-firm it, but the stored row still reads released until you act. The plant-wide anomaly report flags this as a released entry whose firmed order no longer resolves. Re-firm the row to create a fresh order, or delete the row if the build is no longer needed."
+---
+
+**A master schedule quantity becomes a job only when you firm it, and only for a make-to-stock product, so a quantity that did not turn into an order was usually saved rather than firmed, or belongs to a product that does not qualify.** Once you read the row's status and the product's build method, the fix is one action.
+
+[EDGEBIC by User Solutions](/edgebic) uses the master production schedule as the planner-editable bridge between demand and the scheduling engine: you set a build quantity in a time bucket, then firm it into a build-to-stock order that the engine schedules against real capacity. The gap between "I entered a quantity" and "there is a job" is where this symptom lives. This post sits in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and pairs with [master production schedule explained](/blog/edgebic-master-production-schedule-explained) and [how to add a product to the MPS grid](/blog/how-to-add-a-product-to-the-mps-grid-in-edgebic).
+
+## First, Read the Row's Status
+
+A master schedule entry moves through three states: suggested, firm, and released. Suggested is a system recommendation the planner has not acted on. Firm is your committed build quantity, saved but with no order behind it yet. Released means the quantity has been firmed into an actual order, with a link to that order. The single most common cause of "no job" is a row sitting at firm when you expected released. Read the status before anything else. Once a row is released, the order it created is the scheduled receipt, and the master schedule overlay stops driving the projected balance for that bucket directly, so the released state is also the point at which the build becomes real supply rather than a plan.
+
+## Cause 1: Saved, Not Firmed
+
+Saving a build quantity records your decision and leaves the row at firm. Firming is the separate action that creates the order. A saved row shows a build number with nothing scheduled behind it.
+
+**How to tell:** the row's status is firm, not released, and there is no linked order.
+
+**Fix:** firm the row. That converts the committed quantity into a build-to-stock order, sets its start date by working back from the bucket's date by the product's lead time, and moves the row to released. The order is stamped as having come from the master schedule rather than being created by hand, so you can tell firmed builds apart later. The action is atomic and idempotent: it either creates the order and releases the row together, or leaves the row at firm if it could not complete, so you never end up with a released row and no order from the firm action itself.
+
+## Cause 2: The Product Is Not Make-to-Stock
+
+Only make-to-stock products source firm demand into the master schedule and produce a build-to-stock order on firming. A product built strictly to order does not participate.
+
+**How to tell:** the product's build method is make-to-order rather than make-to-stock, and the bucket will not firm as expected.
+
+**Fix:** if the product should be planned through the master schedule, set its build method to make-to-stock, and confirm it is flagged as stocked so its build can post a receipt and consumers can net against it. If it is genuinely make-to-order, plan it as an order directly rather than through the master schedule.
+
+## Cause 3: The Order Exists but Is Not Scheduled
+
+Firming creates the order; it does not schedule it. A released row can have a real order that simply has not been placed on the Gantt yet.
+
+**How to tell:** the row is released and links to an order, and that order appears in the job list but not on the Gantt.
+
+**Fix:** run scheduling. The engine places the build-to-stock order against capacity on the next run, using the start date firming set from the product's lead time.
+
+## Cause 4: The Firmed Order Was Removed
+
+A released row can point to an order that was later cancelled or deleted, leaving an orphan. The master schedule view demotes such a row back to firm when it rebuilds, but the stored row still reads released until you act.
+
+**How to tell:** the row reads released but the linked order no longer resolves. The plant-wide anomaly report flags a released entry whose firmed order no longer exists.
+
+**Fix:** re-firm the row to create a fresh order, or delete the row if the build is no longer needed. Run the anomaly report on a full scan (no job filter) to catch these, since the check is plant-wide.
+
+## The Reconciliation, in Order
+
+1. **Read the status:** firm means saved, released means firmed.
+2. **Firm the row** if it is only saved.
+3. **Check the build method;** only make-to-stock products firm into build orders.
+4. **Run scheduling** so a released order lands on the Gantt.
+5. **Run the plant-wide anomaly report** for orphaned released rows whose order is gone.
+
+## Prevention
+
+- **Firm, do not just save,** when you want an order; the two actions are distinct.
+- **Set make-to-stock and stocked** on products you plan through the master schedule.
+- **Run scheduling after firming** so the new order gets placed rather than sitting unscheduled.
+- **Re-firm rather than resurrect** a deleted order, and clean up orphaned released rows the anomaly report surfaces.
+
+One detail worth knowing: firming converts a decimal build quantity to a whole-number order quantity, so a difference of a unit or less between the master schedule figure and the order is expected rounding, not a fault. The projected balance that drives suggestions is covered in [projected available balance explained](/blog/edgebic-projected-available-balance-explained). A reschedule that seemed to move completed work is covered in [a completed job moved when I rescheduled](/blog/a-completed-job-moved-when-i-rescheduled-edgebic).
+
+<Accordion title="Why did my MPS build quantity not create a manufacturing order?">
+Most often because the quantity was saved but not firmed. Saving records your build decision on the bucket and leaves it in a committed state; firming is the separate action that creates the build-to-stock order and moves the row to released. A saved-but-not-firmed row shows a build number with no order behind it. Check the row's status: if it is firm rather than released, you saved the quantity but have not yet firmed it into an order.
+</Accordion>
+
+<Accordion title="What is the difference between saving and firming an MPS quantity?">
+Saving stores your committed build quantity on the bucket without creating anything downstream, so you can plan several buckets before acting. Firming converts a committed quantity into an actual build-to-stock manufacturing order, sets a start date offset by the product's lead time, and moves the row to released with a link to the new order. The order then schedules against real capacity like any other. Until you firm, the quantity is a plan, not a job.
+</Accordion>
+
+<Accordion title="Which products can be firmed from the master production schedule?">
+Only make-to-stock products participate in master-schedule firm demand and firming. A product built strictly to order does not source firm demand into the master schedule and does not produce a build-to-stock order when you try to firm it. If a bucket cannot be firmed or does not behave as expected, check the product's build method first. A make-to-stock product also needs to be stocked so its build can post a receipt and consumers can net against it.
+</Accordion>

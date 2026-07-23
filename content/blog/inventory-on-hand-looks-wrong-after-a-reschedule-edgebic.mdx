@@ -1,0 +1,102 @@
+---
+title: "Inventory On-Hand Looks Wrong After a Reschedule"
+description: "On-hand is a cache over an append-only ledger, so a wrong figure after a reschedule usually traces to cache drift, an in-flight build, or a missing consume issue. How to reconcile."
+published: 2026-07-28T12:00:00.000Z
+modified: 2026-07-28T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - inventory on hand wrong reschedule
+  - on hand cache drift
+  - inventory ledger reconcile
+  - negative on hand
+  - consume from stock issue
+  - inventory troubleshooting
+targetPhrase: "inventory on-hand looks wrong after a reschedule"
+wordCount: 1190
+readingTime: 6
+faqQuestions:
+  - question: "Why does on-hand look wrong after I reschedule?"
+    answer: "Because on-hand is a cache over an append-only ledger, and the ledger is the authoritative figure. The most common reasons after a reschedule are cache drift, where the stored on-hand number no longer matches the sum of ledger entries, a build still in progress that has issued stock but not yet posted its receipt, or a satisfied-from-stock job whose consume issue did not post. Reconcile by comparing the stored on-hand against the ledger sum in transaction history, then post an adjustment or re-run scheduling depending on which case it is."
+  - question: "What is the authoritative on-hand figure?"
+    answer: "The authoritative on-hand is the sum of all ledger entries for a product, where positive entries are receipts and negative entries are issues. The on-hand number shown as a cache is recomputed from that sum on every posting and should never be written on its own. If the cache and the ledger disagree, the ledger is right and the cache has drifted. The anomaly report has a check for exactly this drift, and the fix restores the cache to the ledger sum."
+  - question: "Is a negative on-hand always an error?"
+    answer: "Not always. A negative on-hand for a stocked product means more has been issued than received, which can be a temporary and correct state when a consume issue has posted but the matching build receipt has not, because the build is still in progress. Once the build completes and posts its receipt, the balance returns to positive. It is only a real problem if the deficit is permanent, in which case a corrective receipt or an opening balance is needed. The anomaly report flags negative on-hand so you can judge which it is."
+qaQuestions:
+  - question: "After a reschedule, on-hand for a finished good dropped below zero. The build is still running. Should we correct it?"
+    answer: "Probably not yet. A consume-from-stock job posts its issue when it is satisfied from stock, and if the producing build has not yet completed and posted its receipt, on-hand can sit negative in the meantime. That is the ledger honestly showing more issued than received at this instant. When the build finishes and posts its receipt, the balance recovers. Only post a corrective receipt if the deficit is permanent, meaning no in-flight build will ever cover it. Check transaction history for a pending receipt before adjusting."
+  - question: "The stored on-hand and the transaction history total disagree by a few units after a busy rescheduling day. Which do we trust?"
+    answer: "Trust the transaction history total, because the ledger is authoritative and the stored on-hand is a cache recomputed from it. A disagreement is cache drift, which the anomaly report flags on a full scan. To reconcile, confirm every entry in transaction history is correct, then post an adjustment equal to the difference so the cache matches the ledger sum, or re-derive the cache from the ledger. Never edit the stored on-hand directly as if it were the source; corrections go through ledger entries."
+---
+
+**On-hand is a cache over an append-only ledger, and the ledger is the authoritative figure, so an on-hand number that looks wrong after a reschedule almost always traces to cache drift, an in-flight build, or a consume issue that did not post.** Reconciling means comparing the cache against the ledger sum and correcting through ledger entries, never by editing the cache.
+
+[EDGEBIC by User Solutions](/edgebic) records every stock movement as an immutable, signed ledger entry: positive for a receipt, negative for an issue. The on-hand figure you see is recomputed from that ledger on every posting. A reschedule can reverse and re-post consume issues, which is where the confusion starts. This post reconciles a wrong-looking on-hand; it sits in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and pairs with [inventory ledger explained](/blog/edgebic-inventory-ledger-explained) and [how EDGEBIC nets demand against stock](/blog/how-edgebic-nets-demand-against-stock).
+
+## First, Compare the Cache Against the Ledger
+
+Open transaction history for the product and total the entries. Positive entries are receipts, negative entries are issues, and their sum is the authoritative on-hand. Compare it against the on-hand figure shown elsewhere. If they match, the number is right and your expectation is what needs checking. If they disagree, the cache has drifted and the ledger wins. This one comparison sorts most cases. It also tells you something the raw number cannot: the history shows each movement pegged to the order, schedule, or adjustment that caused it, so a reschedule's reversal and re-post appear as their own dated entries rather than as an unexplained change in a single figure.
+
+## Cause 1: On-Hand Cache Drift
+
+The on-hand cache should always equal the ledger sum. If a figure diverges, the cache and ledger disagree, which the anomaly report flags on a full scan as on-hand cache drift.
+
+**How to tell:** the stored on-hand differs from the transaction-history total, and the plant-wide anomaly report flags the product.
+
+**Fix:** confirm every entry in transaction history is correct, then post an adjustment equal to the difference so the cache matches the ledger sum. Corrections always go through ledger entries; never edit the stored on-hand directly. Running and reading the report is covered in [how to run and read the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic).
+
+## Cause 2: A Build Is Still in Progress (Negative On-Hand)
+
+A consume-from-stock job posts its issue when it is satisfied from stock. If the producing build has not yet completed and posted its receipt, on-hand can sit negative in the meantime. This is the ledger honestly showing more issued than received at that instant.
+
+**How to tell:** on-hand is negative for a stocked product, and transaction history shows an issue with a matching receipt still pending from an in-flight build.
+
+**Fix:** none if the build will cover it; the balance recovers when the receipt posts. Only if the deficit is permanent, meaning no build will ever cover it, post a corrective receipt or opening balance. The anomaly report flags negative on-hand so you can decide which it is.
+
+## Cause 3: A Missing Consume Issue
+
+A job satisfied from stock should post a consume issue that draws the ledger down. If that issue did not post, on-hand reads higher than it should, because the draw-down never happened.
+
+**How to tell:** a job is marked satisfied from stock but transaction history has no consume issue pegged to it, and the anomaly report flags the job on a full scan.
+
+**Fix:** re-run scheduling for the job. The persist path posts the consume issue idempotently, so a clean run restores the draw-down without double-counting. Re-importing or re-posting the same transaction never double-counts, because the ledger is append-only and postings are idempotent.
+
+## Cause 4: A Reschedule Reversal Read Mid-Flight
+
+A reschedule of a consume-from-stock job can reverse the prior issue and re-post a corrected one. Reversals are recorded as new entries, not deletions, so a snapshot taken between the reversal and the re-post can look off.
+
+**How to tell:** transaction history shows a reversal entry near the reschedule time, and the balance settles once the re-post lands.
+
+**Fix:** none; let the round-trip complete, then read the balance. Reversals correcting a mistake are the intended mechanism, since the ledger is never edited in place.
+
+## The Reconciliation, in Order
+
+1. **Total transaction history;** that sum is the authoritative on-hand.
+2. **Compare against the cache;** a difference is drift, and the ledger wins.
+3. **For a negative balance, look for a pending build receipt** before treating it as an error.
+4. **For an over-high balance, look for a missing consume issue** and re-run scheduling.
+5. **Post corrections as ledger entries,** never by editing the cache.
+
+## Prevention
+
+- **Treat the ledger as the source of truth** and the on-hand figure as a derived number.
+- **Let reschedule round-trips finish** before reading a balance, since reversals post as new entries.
+- **Re-run scheduling to repost a missing consume issue** rather than adjusting the cache to hide it.
+- **Run the plant-wide anomaly report** periodically to catch drift, negative on-hand, and missing issues early.
+- **Correct mistakes with a reversal, not a deletion.** The ledger is append-only, so a wrong entry is offset by an inverse entry that leaves the history intact and auditable.
+
+A reschedule that appeared to move finished work rather than affect stock is covered in [a completed job moved when I rescheduled](/blog/a-completed-job-moved-when-i-rescheduled-edgebic), and the mechanics of preserving finished work are in [how EDGEBIC preserves completed work on reschedule](/blog/how-edgebic-preserves-completed-work-on-reschedule).
+
+<Accordion title="Why does on-hand look wrong after I reschedule?">
+Because on-hand is a cache over an append-only ledger, and the ledger is the authoritative figure. The most common reasons after a reschedule are cache drift, where the stored on-hand number no longer matches the sum of ledger entries, a build still in progress that has issued stock but not yet posted its receipt, or a satisfied-from-stock job whose consume issue did not post. Reconcile by comparing the stored on-hand against the ledger sum in transaction history, then post an adjustment or re-run scheduling depending on which case it is.
+</Accordion>
+
+<Accordion title="What is the authoritative on-hand figure?">
+The authoritative on-hand is the sum of all ledger entries for a product, where positive entries are receipts and negative entries are issues. The on-hand number shown as a cache is recomputed from that sum on every posting and should never be written on its own. If the cache and the ledger disagree, the ledger is right and the cache has drifted. The anomaly report has a check for exactly this drift, and the fix restores the cache to the ledger sum.
+</Accordion>
+
+<Accordion title="Is a negative on-hand always an error?">
+Not always. A negative on-hand for a stocked product means more has been issued than received, which can be a temporary and correct state when a consume issue has posted but the matching build receipt has not, because the build is still in progress. Once the build completes and posts its receipt, the balance returns to positive. It is only a real problem if the deficit is permanent, in which case a corrective receipt or an opening balance is needed. The anomaly report flags negative on-hand so you can judge which it is.
+</Accordion>

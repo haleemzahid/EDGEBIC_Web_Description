@@ -1,0 +1,94 @@
+---
+title: "A Reschedule Created a Duplicate Schedule Row"
+description: "Two schedule rows for the same job step usually mean a split-op pair the merge missed, and a clean re-run collapses them. How to tell a real duplicate from a parallel sibling."
+published: 2026-07-28T12:00:00.000Z
+modified: 2026-07-28T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - duplicate schedule row reschedule
+  - split op pair not merged
+  - two rows same job step
+  - reschedule duplicate operation
+  - partial completion merge
+  - reschedule troubleshooting
+targetPhrase: "reschedule created a duplicate schedule row"
+wordCount: 1195
+readingTime: 6
+faqQuestions:
+  - question: "Why did a reschedule leave two rows for the same operation?"
+    answer: "The usual cause is a split-op pair that was not collapsed. When a job is partially complete, the engine works with a historical portion and a forward portion for the same step, and the persist step is supposed to merge them into one database row per step. If that merge was missed, two rows for the same job and step survive. A clean re-run collapses them, keeping the row that carries the completed actuals. Confirm the two rows are on the same work center first, because two rows on different work centers is a parallel setup, not a duplicate."
+  - question: "How do I tell a real duplicate from a parallel operation?"
+    answer: "Look at the work center on each row. A real duplicate is two rows for the same job and the same step on the same work center, which the anomaly report flags as a split-op pair. A parallel operation is two rows that share the step but run on different work centers, which is a synchronized or independent parallel setup and is correct by design. The consistency check deliberately excludes parallel mirrors, so two rows on different machines are expected, not a fault."
+  - question: "How do I fix a duplicate schedule row?"
+    answer: "Re-run scheduling for the affected job. The persist step collapses split-op pairs into one row per step and deduplicates the daily hour breakdown and resource rows, so a clean run removes the duplicate rather than adding to it. If the rows are historical, the merge keeps the one carrying the completed actuals. The anomaly report and the SQL regression checks both flag the duplicate before and confirm it is gone after, so you can verify the fix rather than assume it."
+qaQuestions:
+  - question: "After a reschedule the job total doubled on one step. Two rows for that step, same machine. Is our data corrupt?"
+    answer: "It is a split-op pair the merge missed, which is a known and recoverable state, not permanent corruption. A partially complete step has a historical portion and a forward portion, and the persist step should collapse them into one row; when it does not, the two rows both count and the total looks doubled. Re-run scheduling for the job. The merge collapses the pair into one row, keeps the completed actuals, and the total corrects. Verify with the anomaly report scoped to the job, which flags the split-op pair before the run and clears after."
+  - question: "We see two rows for a step but they are on different work centers. The check does not flag them. Are they duplicates we should merge?"
+    answer: "No, leave them. Two rows sharing a step across different work centers are a parallel operation, either synchronized or independent, and they are correct by design. The duplicate check specifically excludes parallel mirrors precisely so it does not flag this legitimate case. Merging them would break the parallel setup. A real duplicate is two rows on the same step and the same work center; that is what to re-run scheduling to collapse. Different machines means parallel, not duplicate."
+---
+
+**Two schedule rows for the same job and step on the same work center are a split-op pair the merge missed, and a clean scheduling re-run collapses them into one.** The important first move is telling a real duplicate from a parallel operation, because two rows across different work centers is a correct parallel setup, not a duplicate.
+
+[EDGEBIC by User Solutions](/edgebic) works a partially complete step as a historical portion plus a forward portion, then collapses them into one database row per step at the persist step. When that collapse is missed, both rows survive and the job appears to carry a step twice. This post separates the real duplicate from the look-alike; it sits in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and pairs with [rescheduling explained](/blog/edgebic-rescheduling-explained) and [how EDGEBIC preserves completed work on reschedule](/blog/how-edgebic-preserves-completed-work-on-reschedule).
+
+## First, Check the Work Center on Each Row
+
+The whole diagnosis turns on one fact: are the two rows on the same work center or different ones? Two rows for the same job and step on the same work center is a real duplicate. Two rows sharing the step but on different work centers is a parallel operation and is correct. Read the work center before doing anything else. This one distinction saves most of the wasted effort here, because the fix for a real duplicate is a scheduling re-run and the fix for a parallel pair is to leave it alone, and getting them backward either breaks a valid parallel setup or leaves a real duplicate inflating the job's hours.
+
+## Cause 1: A Split-Op Pair That Was Not Collapsed
+
+When a step is partially complete, the engine carries a historical portion and a forward portion. The persist step is supposed to merge them into one row. If that merge was missed, both rows persist and the step's hours count twice.
+
+**How to tell:** two rows share the same job and step on the same work center, and the anomaly report and SQL regression checks flag them as a split-op pair.
+
+**Fix:** re-run scheduling for the job. The merge collapses the pair into one row per step and, when the rows are historical, keeps the one carrying the completed actuals, so no finished work is lost in the collapse. Verify with the anomaly report scoped to the job: the split-op flag clears after a clean run. The same condition is one of the SQL regression checks that run against the database directly, so if you have access to that snapshot you can confirm the pair is gone there as well as in the in-app report. Both surfaces look for the same shape, two rows sharing a job and a step, so a clean read from either is sufficient.
+
+## Cause 2: A Parallel Operation Mistaken for a Duplicate
+
+Synchronized and independent parallel operations legitimately produce two rows that share a step across different work centers. The duplicate check excludes these mirrors on purpose, so it will not flag them, and it should not.
+
+**How to tell:** the two rows are on different work centers, and the duplicate check does not flag them.
+
+**Fix:** none; leave them. Merging a parallel pair would break the setup. A parallel operation that did not mirror as expected is a different question covered in [a parallel operation did not mirror](/blog/a-parallel-operation-did-not-mirror-edgebic).
+
+## Cause 3: Duplicate Daily Breakdown or Resource Rows
+
+A related symptom is not a duplicate schedule header but duplicate detail rows underneath it: two daily breakdown entries for the same date, or stale resource rows left from an earlier cycle. These inflate the step's hours without a second header.
+
+**How to tell:** one schedule row per step, but the step's hours exceed what its window and instances allow, and the anomaly report flags a total booking over the window or a duplicate daily breakdown.
+
+**Fix:** re-run scheduling. The persist step deduplicates the daily breakdown and resource rows, deleting and recreating the detail for non-completed schedules, so a clean run removes the stale detail.
+
+## The Reconciliation, in Order
+
+1. **Read the work center on each row.** Same work center is a duplicate; different is parallel.
+2. **For a same-work-center pair, confirm the split-op flag** in the anomaly report.
+3. **Re-run scheduling for the job** to collapse the pair, keeping the completed actuals.
+4. **For inflated hours with one header,** check for duplicate daily breakdown or stale resource rows and re-run.
+5. **Verify the flag clears** on a fresh run rather than assuming the fix.
+
+## Prevention
+
+- **Re-run scheduling to correct a duplicate,** never hand-edit rows, since the merge is what keeps step rows single.
+- **Log actuals before rescheduling,** so the historical and forward portions are clean when the merge runs.
+- **Read different work centers as parallel, not duplicate,** to avoid merging a legitimate parallel pair.
+- **Verify with the anomaly report scoped to the job,** which flags a split-op pair before and confirms it is gone after.
+- **Watch inflated hours as much as extra rows,** since duplicate detail underneath a single header inflates a step just as a second header does, and both clear on a clean run.
+
+A job that jumped to a different time after a reschedule, rather than duplicated, is covered in [why did my job jump after a reschedule](/blog/why-did-my-job-jump-after-a-reschedule-edgebic), and completed work that appeared to move is covered in [a completed job moved when I rescheduled](/blog/a-completed-job-moved-when-i-rescheduled-edgebic).
+
+<Accordion title="Why did a reschedule leave two rows for the same operation?">
+The usual cause is a split-op pair that was not collapsed. When a job is partially complete, the engine works with a historical portion and a forward portion for the same step, and the persist step is supposed to merge them into one database row per step. If that merge was missed, two rows for the same job and step survive. A clean re-run collapses them, keeping the row that carries the completed actuals. Confirm the two rows are on the same work center first, because two rows on different work centers is a parallel setup, not a duplicate.
+</Accordion>
+
+<Accordion title="How do I tell a real duplicate from a parallel operation?">
+Look at the work center on each row. A real duplicate is two rows for the same job and the same step on the same work center, which the anomaly report flags as a split-op pair. A parallel operation is two rows that share the step but run on different work centers, which is a synchronized or independent parallel setup and is correct by design. The consistency check deliberately excludes parallel mirrors, so two rows on different machines are expected, not a fault.
+</Accordion>
+
+<Accordion title="How do I fix a duplicate schedule row?">
+Re-run scheduling for the affected job. The persist step collapses split-op pairs into one row per step and deduplicates the daily hour breakdown and resource rows, so a clean run removes the duplicate rather than adding to it. If the rows are historical, the merge keeps the one carrying the completed actuals. The anomaly report and the SQL regression checks both flag the duplicate before and confirm it is gone after, so you can verify the fix rather than assume it.
+</Accordion>

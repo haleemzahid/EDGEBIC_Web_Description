@@ -1,0 +1,98 @@
+---
+title: "The Schedule Did Not Use My Second Shift: Where to Look"
+description: "A second shift the scheduler ignores usually is not assigned to the work center, has no hours for the day, or was simply not needed. How to tell which and fix it."
+published: 2026-07-28T12:00:00.000Z
+modified: 2026-07-28T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - second shift not used scheduling
+  - schedule ignored night shift
+  - work center shift assignment
+  - shift capacity not applied
+  - multi shift scheduling
+  - second shift troubleshooting
+targetPhrase: "second shift not used"
+wordCount: 1211
+readingTime: 6
+faqQuestions:
+  - question: "Why did the scheduler not use my second shift?"
+    answer: "The three usual reasons are: the shift is not assigned to that work center, the shift has no working hours for the days in question, or the first shift already had enough capacity so the job never needed to spill. A work center only sees a shift if it uses global shifts or has that shift assigned specifically, and a shift only contributes hours on days its daily hours are set. Check assignment first, then the day-of-week hours, then whether the first shift was simply sufficient."
+  - question: "How does a work center get a second shift?"
+    answer: "A work center gets a shift one of two ways: it uses the plant-wide global shifts, or it has that specific shift assigned to it directly. If neither is true for the second shift, the scheduler has no capacity windows for it and cannot allocate against it. The anomaly report flags a work center that has schedules but no resolvable shift at all, which is the extreme version of this. Assign the shift or turn on global shifts, then re-run scheduling."
+  - question: "Does the scheduler fill the day shift before the night shift?"
+    answer: "Yes. The allocator prefers earlier and immediately available shifts, filling the day shift before spilling into a later one, so a job that fits inside the day shift never touches the second shift by design. That is not a fault. If you want the second shift used, the work must exceed the first shift's capacity, or the first shift must be constrained, before the engine reaches for the later window. A job that finishes inside one shift leaving the second idle is the expected outcome, not a bug."
+qaQuestions:
+  - question: "We added a night shift to relieve a bottleneck and the schedule looks unchanged. What did we miss?"
+    answer: "Confirm the night shift is actually attached to the bottleneck work center, not just created in the shift list. A shift that exists globally but is not assigned to that work center, and the work center is not set to use global shifts, contributes zero capacity there. Then check the night shift has hours set for the specific weekdays the jobs run. A shift with a blank day-of-week window adds nothing on that day. Only after both are true will the allocator have a second window to fill, and even then it fills the day shift first."
+  - question: "The second shift is assigned and has hours, but only some jobs use it. Is that wrong?"
+    answer: "No, that is exactly how spill works. The allocator fills the earliest available window first, so a job whose hours fit inside the day shift completes there and never reaches the night shift, while a larger job spills into it. If you expected every job to split across both shifts, that is not the model: shifts fill in priority order until the work is placed. Jobs using the second shift only when the first runs out is efficient allocation, not an inconsistency to fix."
+---
+
+**A second shift the scheduler seems to ignore is almost always one of three things: it is not assigned to the work center, it has no working hours on the days you expect, or the first shift already had enough capacity and the job never needed it.** Each has a distinct check, and only the first two are anything to fix.
+
+[EDGEBIC by User Solutions](/edgebic) allocates a job across the shifts a work center actually has, filling earlier windows first and spilling into later ones only when the work exceeds what the first can hold. This post covers a second shift that does not appear to be used; it sits in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and pairs with [how to add a second shift](/blog/how-to-add-a-second-shift-in-edgebic), [shifts and calendars explained](/blog/edgebic-shifts-and-calendars-explained), and [how EDGEBIC allocates hours across shifts](/blog/how-edgebic-allocates-hours-across-shifts).
+
+## First, Confirm the Work Center Can See the Shift
+
+A work center only schedules against a shift it is connected to. There are two valid connections: the work center uses the plant-wide global shifts, or the specific shift is assigned to that work center directly. If the second shift is neither global nor assigned to this work center, the engine has no capacity windows for it and will never place work there. This is the single most common cause.
+
+**How to tell:** open the work center's shift assignment and confirm either global shifts is on, or the second shift is listed. The anomaly report has a check for a work center that carries schedules but has no resolvable shift at all, which is the extreme case of this gap.
+
+**Fix:** turn on global shifts for the work center, or assign the second shift to it directly through the work center's shifts tab. Then re-run scheduling so the engine can use the new window.
+
+## Cause 1: The Shift Has No Hours for Those Days
+
+A shift only contributes capacity on days its daily hours are set. A second shift with a blank window on Tuesday adds nothing on Tuesday, even though it is assigned.
+
+**How to tell:** the shift is assigned but its daily hours are empty or zero for the day-of-week the jobs run. The anomaly report and the scheduling failure message both call out a shift with no daily hours.
+
+**Fix:** open the shift and set non-zero start and end times for every day-of-week it should run. Save, then re-run scheduling.
+
+## Cause 2: The First Shift Was Enough
+
+The allocator fills earlier and immediately available shifts before spilling into later ones. A job whose hours fit inside the day shift completes there and never touches the second shift. That is correct behavior, not a fault. The engine ranks windows by how soon they are available and how much capacity they carry, so an open day shift beats a later night shift for the same work, and a job only reaches the night shift once the day shift on the days available cannot hold the remaining hours.
+
+**How to tell:** the job's total hours are within what the first shift, times its instances, can hold on the days available. The second shift sits idle because the work was already placed.
+
+**Fix:** none needed. If you specifically want the second shift used, the work has to exceed the first shift's capacity, or the first shift has to be constrained, before the engine reaches the later window. Adding work or reducing first-shift availability is a planning decision, not a repair.
+
+## Cause 3: The Shift Is Blocked or Inactive
+
+An assigned shift with hours can still be unavailable on the target dates if it is inactive, sits under a shift holiday, or is consumed by downtime.
+
+**How to tell:** the shift is inactive, or the anomaly report flags a booking on a shift holiday or inside a downtime window, or those calendar entries cover the days you expected the shift to work.
+
+**Fix:** reactivate the shift, or remove or adjust the shift holiday or downtime that blocks the dates, then re-run scheduling.
+
+## The Reconciliation, in Order
+
+1. **Confirm the work center can see the shift:** global shifts on, or the shift assigned directly.
+2. **Check the shift's daily hours** for the specific days the jobs run.
+3. **Compare the job's hours to the first shift's capacity;** a job that fits never spills.
+4. **Rule out inactive shifts, shift holidays, and downtime** on the target dates.
+5. **Re-run scheduling** after any assignment or calendar change so the engine uses the corrected windows.
+
+## Prevention
+
+- **Assign every shift a work center should use,** or set the work center to global shifts, at setup time rather than after a schedule looks wrong.
+- **Fill the daily hours for every working day** on each shift, so no day silently contributes zero.
+- **Expect spill, not splitting.** Shifts fill in priority order; a job using only the first shift is efficient, not broken.
+- **Re-run scheduling after calendar edits.** A newly assigned shift does not change an existing plan until the next run.
+- **Check the load view before assuming a fault.** A work center that finishes its work on the first shift shows the second shift idle, which is the efficient outcome, not a shift the engine failed to use.
+
+If capacity reads zero for the work center entirely, that is a broader gap covered in [capacity shows zero for a work center](/blog/capacity-shows-zero-for-a-work-center-edgebic), and a calendar closure that behaved unexpectedly is covered in [a holiday did not reduce capacity](/blog/a-holiday-did-not-reduce-capacity-edgebic). The full model is in [multi-shift scheduling explained](/blog/edgebic-multi-shift-scheduling-explained).
+
+<Accordion title="Why did the scheduler not use my second shift?">
+The three usual reasons are: the shift is not assigned to that work center, the shift has no working hours for the days in question, or the first shift already had enough capacity so the job never needed to spill. A work center only sees a shift if it uses global shifts or has that shift assigned specifically, and a shift only contributes hours on days its daily hours are set. Check assignment first, then the day-of-week hours, then whether the first shift was simply sufficient.
+</Accordion>
+
+<Accordion title="How does a work center get a second shift?">
+A work center gets a shift one of two ways: it uses the plant-wide global shifts, or it has that specific shift assigned to it directly. If neither is true for the second shift, the scheduler has no capacity windows for it and cannot allocate against it. The anomaly report flags a work center that has schedules but no resolvable shift at all, which is the extreme version of this. Assign the shift or turn on global shifts, then re-run scheduling.
+</Accordion>
+
+<Accordion title="Does the scheduler fill the day shift before the night shift?">
+Yes. The allocator prefers earlier and immediately available shifts, filling the day shift before spilling into a later one, so a job that fits inside the day shift never touches the second shift by design. That is not a fault. If you want the second shift used, the work must exceed the first shift's capacity, or the first shift must be constrained, before the engine reaches for the later window. A job that finishes inside one shift leaving the second idle is the expected outcome, not a bug.
+</Accordion>

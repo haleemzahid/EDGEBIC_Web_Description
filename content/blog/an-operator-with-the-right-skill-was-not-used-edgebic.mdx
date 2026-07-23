@@ -1,0 +1,102 @@
+---
+title: "An Operator With the Right Skill Was Not Used: Certification, Roster, Time Off"
+description: "A qualified operator the scheduler skips is usually filtered by an expired certification, a missing roster row, or time off. How to read the pool and fix each."
+published: 2026-07-28T12:00:00.000Z
+modified: 2026-07-28T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - operator not used scheduling
+  - certification expired scheduling
+  - operator roster not matched
+  - qualified operator pool empty
+  - skill step slid to next day
+  - operator scheduling troubleshooting
+targetPhrase: "operator with the right skill was not used"
+wordCount: 1258
+readingTime: 6
+faqQuestions:
+  - question: "Why did the scheduler skip an operator who has the right skill?"
+    answer: "Because being certified is only one of three conditions to enter the qualified pool for a shift. The operator must also be rostered for that shift and day of week, and not on time off for the date. A lapsed certification, a missing roster row, or a time-off entry each removes the person even though the certification record still exists. The engine filters expired certifications out entirely on the next run, so a person who was qualified last week can drop out silently after a renewal date passes."
+  - question: "How is the qualified operator pool built for a step?"
+    answer: "For a given skill on a given date and shift, the pool is the set of operators who are certified and unexpired for that skill, rostered for that shift and day of week, and not on time off. Each qualified person contributes their remaining unbooked hours to the window. If nobody clears all three conditions, the step slides to the next window where someone does, rather than scheduling the machine with no one to run it. The staffing decision is recorded per skill step in the session log."
+  - question: "Why did a skilled job slide to a later day when the machine was free earlier?"
+    answer: "Because the machine being free is only half the requirement. The engine checks machine availability and operator availability together, so a day when the machine is open but no qualified, rostered, present operator exists is not offered. The step slides to the next window where a qualified person is rostered and not on time off. This is deliberate: a staffing gap surfaces as visible schedule movement instead of a plan that assumes a person who is not actually there."
+qaQuestions:
+  - question: "Our certified welder is rostered and present, but the schedule still routed around him. What is left to check?"
+    answer: "Check certification expiry first: an expired certification is filtered out entirely, so a lapsed renewal removes the welder even though the record is still on file and looks valid at a glance. Second, check the shift the step ran on. Rosters key to a global shift, so if the step runs on a custom machine shift that is not one of the global shifts, no roster row can reference it and the pool reads empty. Third, confirm the roster row is active and covers that specific day of week. The session log names why the pool came up empty for the step."
+  - question: "Two welders hold the skill but only one ever gets booked. Is the other one being wasted?"
+    answer: "Not necessarily. The engine draws from the qualified pool and books the least-loaded person first, so on light days one welder can cover everything and the other is simply not needed yet, the same way a second shift stays idle when the first is enough. If you expected both booked, check that the second welder is certified and unexpired, rostered for the same shift and day, and not on time off. If all three hold and the work still fits one person, nothing is wrong; the pool is being used efficiently."
+---
+
+**A qualified operator the scheduler skips is almost always filtered out of the pool for a specific, checkable reason: an expired certification, a missing roster row for that shift and day, or a time-off entry.** Certification alone does not put a person in the pool, and the engine tells you which condition failed.
+
+[EDGEBIC by User Solutions](/edgebic) treats the operator as a second constraint alongside the machine, so a step needing a certified person only schedules when a qualified one is genuinely present. This post covers the case where the person clearly has the skill but was not used; it sits in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and pairs with [operator and skill scheduling explained](/blog/edgebic-operator-and-skill-scheduling-explained) and [how EDGEBIC books operator hours](/blog/how-edgebic-books-operator-hours).
+
+## First, Understand What "Qualified" Means
+
+For a given skill on a given date and shift, the qualified pool is the set of operators who clear all three of these at once: certified and unexpired for the skill, rostered for that shift and day of week, and not on time off. Certification is necessary but not sufficient. If a person misses any one condition, they are not in the pool for that window, and the step either uses someone else or slides to a window where a qualified person exists. Each qualified person contributes only their remaining unbooked hours for that window, so a person who is already fully booked on the shift is in the pool but has nothing left to give, and the step still moves on. The engine books the least-loaded qualified person first, which spreads work across the pool rather than leaning on one name.
+
+## Cause 1: The Certification Expired
+
+A certification carries an optional expiry date. Once that date passes, the certification is filtered out entirely when the scheduling data is built, so the operator stops counting as qualified on the next run. The record still exists and looks fine at a glance, which is what makes this easy to miss.
+
+**How to tell:** open the operator's certifications and check the expiry date against the schedule date. A lapsed renewal is the culprit.
+
+**Fix:** renew the certification with a current expiry (or set it to never expire if that fits your policy), then re-run scheduling. A suspended certification, one turned inactive pending a re-test, has the same effect and the same fix: reactivate it once the person is cleared.
+
+## Cause 2: The Operator Is Not Rostered for That Shift and Day
+
+The roster is a weekly pattern: a person works a given shift on given days of the week. If the operator has no active roster row for the shift and day-of-week the step would run, they are not in that window's pool, and the machine being free does not help.
+
+**How to tell:** the operator holds a current certification but has no roster row for that shift and day, or the row is inactive.
+
+**Fix:** add or reactivate a roster row placing the operator on that shift for the relevant days. Note that rosters key to a global shift; if the step runs on a custom machine shift that is not derived from a global shift, no roster row can reference it and the pool reads empty. In that case, align the work center to a global shift the roster can point at.
+
+## Cause 3: The Operator Is on Time Off
+
+A time-off range removes the operator from the pool for every date it covers, regardless of certification and roster.
+
+**How to tell:** the schedule date falls inside a time-off range for that operator.
+
+**Fix:** if the time off is wrong, correct or remove it and re-run. If it is real, the step correctly waited for a day the person is present; the slide is the system showing you the staffing gap rather than hiding it.
+
+## Cause 4: The Wrong Skill Is on the Step
+
+If the step requires a different skill than the one the operator holds, the operator is not qualified for it no matter how present they are.
+
+**How to tell:** the skill named on the routing step does not match the certification the operator holds.
+
+**Fix:** set the step's required skill to the one the work actually needs, or certify the operator for the skill the step requires. When no active operator holds the required skill at all, the step fails fast with a message naming the skill, rather than searching fruitlessly.
+
+## The Reconciliation, in Order
+
+1. **Check certification expiry;** an expired cert is filtered out silently.
+2. **Check the roster** for an active row on that shift and day of week.
+3. **Check time off** for the specific date.
+4. **Confirm the step's required skill** matches the certification you expect to use.
+5. **Confirm the shift is a global shift** the roster can key to, not an unreferenced custom shift.
+6. **Re-run scheduling** after any change; the fix applies on the next run, not retroactively.
+
+## Prevention
+
+- **Track expiry dates actively.** A renewal that lapses removes a person quietly on the next run, so review upcoming expiries before they bite.
+- **Roster to global shifts.** Keep the shift a skilled step runs on aligned to a global shift so roster rows can reference it.
+- **Enter time off before scheduling,** so the plan reflects real availability rather than planning against someone who is out.
+- **Re-run after certification, roster, or time-off edits,** because operator changes only take effect on the next scheduling run.
+
+If the problem is that you cannot pin a specific person to a step at all, that is a different question covered in [I cannot assign an operator to a step](/blog/an-operator-cannot-be-assigned-to-a-step-edgebic). To set up operators, skills, and rosters from scratch, see [how to set up operators, skills, and rosters](/blog/how-to-set-up-operators-skills-and-rosters-in-edgebic).
+
+<Accordion title="Why did the scheduler skip an operator who has the right skill?">
+Because being certified is only one of three conditions to enter the qualified pool for a shift. The operator must also be rostered for that shift and day of week, and not on time off for the date. A lapsed certification, a missing roster row, or a time-off entry each removes the person even though the certification record still exists. The engine filters expired certifications out entirely on the next run, so a person who was qualified last week can drop out silently after a renewal date passes.
+</Accordion>
+
+<Accordion title="How is the qualified operator pool built for a step?">
+For a given skill on a given date and shift, the pool is the set of operators who are certified and unexpired for that skill, rostered for that shift and day of week, and not on time off. Each qualified person contributes their remaining unbooked hours to the window. If nobody clears all three conditions, the step slides to the next window where someone does, rather than scheduling the machine with no one to run it. The staffing decision is recorded per skill step in the session log.
+</Accordion>
+
+<Accordion title="Why did a skilled job slide to a later day when the machine was free earlier?">
+Because the machine being free is only half the requirement. The engine checks machine availability and operator availability together, so a day when the machine is open but no qualified, rostered, present operator exists is not offered. The step slides to the next window where a qualified person is rostered and not on time off. This is deliberate: a staffing gap surfaces as visible schedule movement instead of a plan that assumes a person who is not actually there.
+</Accordion>

@@ -1,0 +1,80 @@
+---
+title: "How to Switch from SQLite to SQL Server in EDGEBIC"
+description: "Switch EDGEBIC from the local SQLite file to a shared SQL Server database: back up first, change the provider, and understand what does not migrate."
+published: 2026-07-28T12:00:00.000Z
+modified: 2026-07-28T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - switch SQLite to SQL Server
+  - migrate scheduling database
+  - local file to shared server
+  - what does not migrate
+  - production scheduling database migration
+  - multi user scheduling database
+targetPhrase: "switch SQLite to SQL Server"
+wordCount: 1220
+readingTime: 6
+faqQuestions:
+  - question: "How do you switch EDGEBIC from SQLite to SQL Server?"
+    answer: "Open Settings and then DataSource, click Export current first to back up the local file, then choose SQL Server as the provider and enter the server and database. Pick Windows authentication, click Test connection, and click Apply and restart. EDGEBIC restarts against SQL Server and builds the schema on first launch. The switch changes only where data is read and written; it does not copy your existing data into the new database."
+  - question: "Does switching providers move my data?"
+    answer: "No. Switching from SQLite to SQL Server points EDGEBIC at a different database; it does not copy anything across. The old local file keeps everything, and the new SQL Server database starts empty and builds its schema on first connection. That is why the switch dialog offers Export current first. Plan the data step deliberately: either migrate the contents with database tooling, or rebuild master data by re-running your standard import files against the new database."
+  - question: "Can I switch back to the local file if the shared setup goes wrong?"
+    answer: "Yes, from the same screen. The old SQLite file is untouched by the switch, so selecting SQLite again and restarting returns you to exactly the data you left. That property is what makes the move low-risk: your fallback is a settings change, not a restore. Keep the old local file until the shared SQL Server deployment has run a full week of real scheduling, then archive it as a backup."
+qaQuestions:
+  - question: "We ran the switch and now the schedule is empty. Did we lose a year of data?"
+    answer: "Almost certainly not. Switching providers creates an empty SQL Server database; it does not migrate the contents of the local file. Your year of data is safe in the original SQLite file, which the switch never touched. Confirm this by switching the provider back to SQLite and restarting from Settings and then DataSource; the full plan should reappear. Then plan the data step properly: rebuild master data by re-running your standard import files against the SQL Server database, or migrate the contents with database tooling, and spot-check row counts against the old file before you rely on the shared setup."
+  - question: "What actually carries over when we move to the shared database, and what do we rebuild?"
+    answer: "The application install carries over, and so does anything stored in a file rather than in the database: your exported scheduler display configuration and your exported localization label set both import into the new deployment. Everything stored inside the database does not carry over: users and roles, products, work centers, routings, orders, schedules, actuals, import masks, and personal grid layouts. A brand-new SQL Server database asks you to create an administrator again, so plan to recreate accounts and re-run your import masks before the other planners start."
+---
+
+**To switch EDGEBIC from the local SQLite file to a shared SQL Server database, back up the current file with Export current first, then on Settings and the DataSource tab choose SQL Server, enter the server and database, test the connection, and Apply and restart; the switch changes where data lives but does not copy your existing data across.** EDGEBIC by User Solutions treats the provider switch as a settings change, so the move is low-risk and reversible, but the empty new database is the one detail that surprises people: plan the data step, do not assume it migrates.
+
+This post covers the switch mechanics and what does not carry over. For the broader single-planner-to-team story and the habits a shared plan needs, see [moving EDGEBIC from one planner to a shared server](/blog/moving-from-single-user-to-shared-server-edgebic); the full task library is at the [EDGEBIC how-to hub](/blog/edgebic-how-to-hub).
+
+## Before You Start
+
+- You have a SQL Server instance name and rights to create or use a database on it. See [how to connect EDGEBIC to SQL Server](/blog/how-to-connect-edgebic-to-sql-server) for the connection detail.
+- You have your standard import files ready, so you can rebuild master data against the new database.
+- You accept that the switch is a settings change, not a data copy. The old file stays intact as your fallback.
+
+## The Steps
+
+1. **Back up the local file first.** On **Settings** and then **DataSource**, click **Export** on the active-connection card, or use **Export current first** on the switch warning card. This creates a timestamped copy so you can return to the exact data you have today.
+2. **Select SQL Server.** Under **Database provider**, choose **SQL Server**. (PostgreSQL and MySQL are listed but not available; only SQLite and SQL Server are supported.)
+3. **Enter the server and database.** Type the **Server** and a **Database** name. The database does not need to exist; EDGEBIC creates it on first launch.
+4. **Choose Windows authentication.** It stores no password and avoids the per-account password pitfall. Use SQL authentication only if your server requires it.
+5. **Test the connection.** Click **Test connection**. A message that the server is reachable and the database will be created is the expected result for a new database.
+6. **Apply and restart.** Click **Apply and restart**. EDGEBIC restarts against SQL Server and builds the schema. The new database is empty, so it prompts you to create an administrator again.
+7. **Rebuild the data.** Recreate your import masks and re-run your standard files for products, work centers, routings, and orders, then spot-check counts against the old file.
+
+## What Changes When You Save
+
+| Surface | Effect |
+|---|---|
+| Active database | EDGEBIC now reads and writes the SQL Server database. |
+| The old SQLite file | Untouched; it remains your fallback and your data of record until migration is confirmed. |
+| The new database | Starts empty, builds its schema on first launch, and asks for a new administrator. |
+| File-stored settings | An exported display configuration and localization label set can be imported into the new deployment. |
+| Database-stored data | Users, master data, routings, orders, schedules, actuals, masks, and layouts do not carry over. |
+
+## How to Check It Worked
+
+After the restart, the connection card on **Settings** and **DataSource** should show SQL Server, the server, and the database with a green Connected chip. Because the database is new, you will have just created an administrator again. Once you re-run your import masks, open **Job View** and confirm the rebuilt orders schedule the same way they did on the local file. When they match, the switch is complete.
+
+## Common Mistakes
+
+**Skipping the backup.** Export first, every time. The old file is your fallback, and one click makes a timestamped copy before you leave it.
+
+**Expecting data to appear.** The new database is empty on purpose. If the schedule looks blank, that is the switch working as designed, not data loss. Switch back to SQLite to confirm the old data is safe, then rebuild.
+
+**Rebuilding by hand instead of by mask.** Your import masks re-create products, work centers, routings, and orders far faster and more reliably than typing. Prepare them before you switch.
+
+**Leaving accounts to the last minute.** A new database has no users. Create roles and named accounts before the other planners arrive, not after they are locked out.
+
+## What to Do Next
+
+Once the shared database is live, set up people and backups. [Moving EDGEBIC from one planner to a shared server](/blog/moving-from-single-user-to-shared-server-edgebic) covers the six habits a shared plan needs, and [how to back up the EDGEBIC database](/blog/how-to-back-up-the-edgebic-database) covers the SQL Server side. If you later need to point the same provider at a different database, [how to change the database connection in EDGEBIC](/blog/how-to-change-the-database-connection-in-edgebic) is the narrower task, and the [EDGEBIC product page](/edgebic) shows where the shared database fits in the platform.

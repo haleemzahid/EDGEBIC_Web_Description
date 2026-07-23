@@ -1,0 +1,101 @@
+---
+title: "My Imported Hours Came In Wrong: Minutes, Hours, and the Conversion Factor"
+description: "Imported setup or run hours that are 60 times too big or too small almost always trace to a units mismatch. How to read the conversion factor and fix an import mask."
+published: 2026-07-28T12:00:00.000Z
+modified: 2026-07-28T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - imported hours wrong
+  - import minutes vs hours
+  - conversion factor import mask
+  - setup time import scaling
+  - routing import units
+  - import mask troubleshooting
+targetPhrase: "imported hours came in wrong"
+wordCount: 1214
+readingTime: 6
+faqQuestions:
+  - question: "Why did my imported setup time come in 60 times too large?"
+    answer: "Your source file stores the value in minutes and the import mask left it as hours. A file that says 30 (meaning 30 minutes) lands as 30 hours unless the mask multiplies it down. The fix is a conversion factor of 0.016667 on that field's mask row, which turns 30 minutes into 0.5 hours before the value is saved. Run one known row to confirm the number is right before importing the whole file."
+  - question: "What is the conversion factor on an import mask field?"
+    answer: "The conversion factor is a decimal multiplier applied to a numeric cell before the value is stored. Its classic use is unit conversion: a source that keeps setup time in minutes needs a factor of 0.016667 to become hours, because one minute is one sixtieth of an hour. The factor applies to every numeric cell in that mapped field, including zeros, so a blank or zero cell stays zero. It is set per field row in the mask, not globally."
+  - question: "Does the conversion factor apply to zero cells too?"
+    answer: "Yes, and that is correct behavior. A cell of 0 multiplied by any factor is still 0, so a step with zero setup stays zero after conversion. If a non-numeric value lands in a field that has a conversion factor, the factor is skipped rather than causing a crash, and the cell fails to parse as a number. Only genuine numeric cells are scaled, which is why a stray text value in an hours column reads as unparseable instead of wrong."
+qaQuestions:
+  - question: "Our run hours imported fine but setup came in huge. Both are in the same file. How can only one be wrong?"
+    answer: "Because units are a per-column property, not a per-file one. Many source systems store run time in hours and setup time in minutes in the same routing export, so the run column needs no conversion while the setup column needs a factor of 0.016667. Check each mapped numeric field independently: the run hours column should have no conversion factor, and the setup minutes column should carry 0.016667. Import one known routing and confirm both numbers match what you expect before running the full file."
+  - question: "We set a conversion factor of 0.0167 and a five-hour job still looks slightly off. Is rounding to blame?"
+    answer: "Partly. One minute is 1 divided by 60, which is 0.0166666 repeating, so 0.0167 is a truncated approximation that drifts on large values. Use 0.016667 for a closer result, and remember that a source already in hours needs no factor at all, not 0.0167. If the drift is larger than rounding can explain, the source column is probably not in the units you think; open the file and check whether a single step's raw value looks like minutes or hours before adjusting the factor."
+---
+
+**Imported hours that are 60 times too large or too small almost always come from a units mismatch, not a miscalculation: the source file stores the value in minutes while EDGEBIC stores it in hours, and the import mask did not convert it.** The fix is a conversion factor on that field, and confirming it takes one known row.
+
+[EDGEBIC by User Solutions](/edgebic) stores run time, setup time, queue time, and transit as decimal hours. When a source file keeps any of those in minutes, the mask has to scale the value down before it is saved. This post covers the units traps in a routing or product import; it sits in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and is the companion to [how to build an import mask](/blog/how-to-build-an-import-mask-in-edgebic) and the mechanics in [import masks explained](/blog/edgebic-import-masks-explained).
+
+## First, Confirm the Direction of the Error
+
+A units error has a signature: the number is off by roughly a factor of 60. A 30-minute setup that imports as 30 hours is 60 times too large. A value that was already in hours but got a minutes factor applied comes in 60 times too small. Before changing anything, open one routing you know well and compare a single raw cell against what landed. That tells you which direction to move and which column is at fault. The conversion factor is a per-field property on the mask, applied by the projection layer before the value ever reaches the field that stores it, so the fix is always on the mask row for the guilty column, never in the source file's numbers themselves.
+
+## Cause 1: Minutes Left as Hours (No Conversion Factor)
+
+The most common case. The source column holds minutes, the mask maps it straight to an hours field, and no conversion factor is set. A cell reading 30 lands as 30 hours instead of 0.5 hours.
+
+**How to tell:** the imported value is about 60 times larger than the real time, and the mask row for that field has no conversion factor.
+
+**Fix:** set the conversion factor to 0.016667 on that field's mask row (one minute is one sixtieth of an hour). The projection layer multiplies the cell by the factor before the value is saved, so 30 minutes becomes 0.5 hours. To convert minutes to hours in general, this factor is the setting to use.
+
+## Cause 2: A Factor Applied to a Column Already in Hours
+
+The opposite mistake. A column that already holds hours gets a minutes factor by copy-paste from another field, so a 2-hour step imports as 0.033 hours.
+
+**How to tell:** the imported value is about 60 times smaller than the real time, and the mask row carries 0.016667 on a field whose source is already in hours.
+
+**Fix:** clear the conversion factor on that row. A column already in hours needs no factor at all. Set factors only on the columns that genuinely arrive in minutes, and check each numeric field independently, because a single export often mixes units between run time and setup time.
+
+## Cause 3: A Truncated Factor
+
+A factor of 0.0167 or 0.017 is a rounded stand-in for one sixtieth, which is 0.0166666 repeating. On small values the drift is invisible; on a large setup it shows.
+
+**How to tell:** the number is close but consistently a little off, and the discrepancy grows with the size of the value.
+
+**Fix:** use 0.016667. It is close enough that rounding at the hour level is negligible for scheduling.
+
+## Cause 4: A Non-Numeric Cell in a Converted Field
+
+If a text value (a note, a dash, an em-quote) lands in a field that has a conversion factor, the factor is skipped and the cell does not parse as a number. The row may fail rather than import a wrong number.
+
+**How to tell:** the import log shows a failed row, or the field is empty where you expected a value, and the source cell contains something other than a plain number.
+
+**Fix:** clean the source cell to a plain decimal. The conversion factor multiplies numeric cells only, including zeros, so a genuine 0 stays 0, but text is not scaled.
+
+## The Reconciliation, in Order
+
+1. **Compare one known routing** raw cell against what imported, to fix the direction and the guilty column.
+2. **Check each numeric field's conversion factor** independently: run hours usually needs none; a minutes column needs 0.016667.
+3. **Use 0.016667, not a truncated 0.0167,** for minute-to-hour conversion.
+4. **Re-import the corrected file.** A routing re-import wipes and recreates each end product's steps from the file, so a corrected re-run replaces the bad values cleanly rather than duplicating steps.
+5. **Spot-check the result** on the same known routing before trusting the run.
+
+## Prevention
+
+- **Record the source file's units on the mask name** (for example "BOR minutes-source") so the next planner knows a factor is required.
+- **Set the conversion factor once per minutes column** and leave hours columns with no factor. Never copy a factor across fields blindly.
+- **Import one routing first, confirm the numbers, then run the batch.** A units error caught on one file is a two-minute fix; caught after a 300-routing import, it means a full corrected re-run.
+- **Keep the source in a single unit per column.** A column that mixes minutes and hours row to row cannot be corrected with one factor.
+
+If the routing came in with the right hours but the wrong sequence instead, that is a different problem covered in [my imported routing came in out of order](/blog/my-imported-routing-came-in-out-of-order-edgebic), and a run that reports rejected rows is covered in [the import said failed rows](/blog/the-import-said-failed-rows-edgebic).
+
+<Accordion title="Why did my imported setup time come in 60 times too large?">
+Your source file stores the value in minutes and the import mask left it as hours. A file that says 30 (meaning 30 minutes) lands as 30 hours unless the mask multiplies it down. The fix is a conversion factor of 0.016667 on that field's mask row, which turns 30 minutes into 0.5 hours before the value is saved. Run one known row to confirm the number is right before importing the whole file.
+</Accordion>
+
+<Accordion title="What is the conversion factor on an import mask field?">
+The conversion factor is a decimal multiplier applied to a numeric cell before the value is stored. Its classic use is unit conversion: a source that keeps setup time in minutes needs a factor of 0.016667 to become hours, because one minute is one sixtieth of an hour. The factor applies to every numeric cell in that mapped field, including zeros, so a blank or zero cell stays zero. It is set per field row in the mask, not globally.
+</Accordion>
+
+<Accordion title="Does the conversion factor apply to zero cells too?">
+Yes, and that is correct behavior. A cell of 0 multiplied by any factor is still 0, so a step with zero setup stays zero after conversion. If a non-numeric value lands in a field that has a conversion factor, the factor is skipped rather than causing a crash, and the cell fails to parse as a number. Only genuine numeric cells are scaled, which is why a stray text value in an hours column reads as unparseable instead of wrong.
+</Accordion>
