@@ -1,0 +1,63 @@
+---
+title: "What Is Queue Time in Manufacturing Scheduling?"
+description: "Queue time is a shift-aware buffer between two operations that counts only during working shifts. Learn how it protects staging, inspection, and cooling gaps."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - queue time manufacturing
+  - queue time definition
+  - queue time scheduling
+  - shift aware buffer
+  - buffer between operations
+  - staging time production
+targetPhrase: "queue time in manufacturing scheduling"
+wordCount: 1120
+readingTime: 6
+faqQuestions:
+  - question: "What is queue time in manufacturing scheduling?"
+    answer: "Queue time is a fixed buffer of hours inserted between two sequential operations to allow for staging, inspection, cooling, or waiting. It is shift-aware: the hours are only counted while a work center's shifts are active, so nights, weekends, and holidays never eat into the buffer. A four-hour queue that starts late Friday finishes when four active shift hours have actually elapsed, which may be Monday morning."
+  - question: "Is queue time counted during nights and weekends?"
+    answer: "No. Queue time only ticks during active working shifts. If a four-hour queue begins at 14:00 on a Friday with an 08:00 to 16:00 shift, it consumes two hours that afternoon, then the overnight and weekend gaps do not count, and it consumes the remaining two hours starting Monday 08:00. This shift-aware behavior keeps the buffer honest: it represents real elapsed working time, not raw clock time."
+  - question: "How is queue time different from transit time?"
+    answer: "Queue time is a shift-aware buffer counted in working hours, for waiting that happens inside the plant, like inspection or cooling. Transit time is measured in whole days, for parts that physically leave the facility to an outside vendor or another plant. Queue respects your shift calendar; transit can be counted as flat calendar days regardless of your shifts, because the vendor's clock is not yours."
+  - question: "How is queue time different from setup time?"
+    answer: "Setup time is machine preparation on the operation itself: installing tooling, cleaning, calibrating, all counted as part of the operation's run. Queue time is a gap between two operations where no machine is working the part, reserved for staging, inspection, or cooling. Setup adds to a step's duration; queue adds a buffer before the next step can start."
+qaQuestions:
+  - question: "We need four hours of inspection between machining and assembly, but jobs keep scheduling assembly the same afternoon. What is the fix?"
+    answer: "Add four hours of queue time on the machining step. The engine will hold assembly's earliest start until four active shift hours have elapsed after machining finishes. Because queue time is shift-aware, it does the arithmetic correctly across shift boundaries: if machining ends Monday 14:30 on an 08:00 to 16:00 shift, the queue consumes ninety minutes that afternoon, then picks up Tuesday morning and finishes at 10:30, so assembly cannot start before Tuesday 10:30. You do not have to reason about the overnight gap yourself; the engine walks the shift calendar and only counts hours the plant is actually open."
+  - question: "Should I use queue time or setup time for the changeover wait on our furnace?"
+    answer: "It depends on whether a machine is working the part during that time. If the furnace is preparing or the part is being loaded and calibrated as part of the operation, that is setup time and belongs on the operation itself. If the part is simply waiting, staging before the next step, cooling after this one, or sitting in an inspection queue with no machine touching it, that is queue time and belongs as a buffer between the two steps. The practical test is: is a resource busy? If yes, it is setup or run time. If the part is just waiting, it is queue time, and modeling it as queue keeps your capacity numbers honest because no machine hours are consumed during the wait."
+---
+
+**Queue time is a fixed buffer of hours inserted between two sequential operations to allow for staging, inspection, cooling, or waiting, and it is shift-aware: the hours count only while a work center's shifts are active.** Nights, weekends, and holidays never consume the buffer. That makes queue time represent real elapsed working time rather than raw clock time, so a buffer set on Friday afternoon carries over correctly into Monday.
+
+[EDGEBIC by User Solutions](/edgebic) walks the shift calendar to consume queue hours, so you never have to reason about overnight gaps yourself. This article defines the term and its neighbors. The full composition order, where queue, flow, and transit interact, is in [how EDGEBIC handles queue and transit times](/blog/edgebic-queue-and-transit-times-explained).
+
+## How It Works
+
+You set queue time as a number of hours on a routing step. After that step finishes, the engine holds the next step's earliest start until the queue hours have elapsed. The consumption is shift-aware: the engine walks forward through the work center's active shifts, subtracting queue hours only from time the plant is actually open.
+
+The result is that a queue buffer never gets eaten by idle time. Set four hours of queue starting at 14:00 on a Friday with an 08:00 to 16:00 shift, and the engine consumes two hours that afternoon, skips the overnight and weekend, and consumes the remaining two hours starting Monday 08:00. The buffer represents four real working hours, wherever they land on the calendar.
+
+Queue time is distinct from the other gaps. It is not [setup time](/blog/what-is-a-machine-instance-in-scheduling), which is machine preparation counted as part of the operation. It is not [transit time](/blog/what-is-transit-time-in-production-scheduling), which is whole-day travel to an outside process. And when a step also carries a flow overlap, the flow value replaces the queue result, so the two should not sit on the same step.
+
+## A Concrete Example
+
+Think of a dentist's fifteen-minute gap between appointments so the hygienist can clean the room. No one is treating a patient during that gap, but the next appointment cannot start until it passes. Queue time is that gap, scaled to working hours.
+
+Take a drilling step that ends Monday 14:30, feeding an assembly step, with a four-hour queue for inspection and an 08:00 to 16:00 shift. The engine starts consuming queue at 14:30. It has ninety minutes left in Monday's shift, so it uses those, leaving two and a half hours. The overnight gap does not count. Tuesday 08:00 it resumes, consumes the remaining two and a half hours, and lands at Tuesday 10:30. Assembly cannot begin before Tuesday 10:30. The overnight hours between Monday 16:00 and Tuesday 08:00 never touched the buffer.
+
+## Where Queue Time Sits in the Sequence
+
+Queue time is the first of three gaps the engine can apply between two operations, and the order is fixed. Queue time is computed first, walking the shift calendar to hold the downstream start by its working hours. A flow overlap, if set, is computed next and replaces the queue result, which is why queue and flow should not sit on the same step. Transit days, if set, are added last, after queue and flow, to model parts leaving the plant.
+
+Knowing that order lets you stack gaps deliberately. A step can carry a queue for on-site inspection and then a transit for an outside vendor, and the two combine predictably: the parts finish the operation, wait out the shift-aware inspection queue, then start their day-based transit from there. Because each gap has a defined place in the sequence, you can reason about a routing that mixes waiting, overlap, and travel without guessing how they interact. The one combination to avoid is queue plus flow on a single step, where the flow value silently wins and the queue you set has no effect.
+
+## How EDGEBIC Uses It
+
+Queue time is a field on a routing step, and the engine applies it as the first gap in the sequence between two operations. The Gantt shows the downstream step held back by the buffer, and because the arithmetic is shift-aware, the held start always lands on real working time.
+
+Queue time composes with transit and flow in a fixed order, so you can stack an inspection queue and an outside-vendor transit on the same step and know exactly how they combine. The [manufacturing glossary](/blog/manufacturing-glossary) covers the related terms, [what is transit time](/blog/what-is-transit-time-in-production-scheduling) explains the day-based sibling, and [how to add queue time before an operation](/blog/how-to-add-queue-time-before-an-operation-in-edgebic) gives the configuration steps.

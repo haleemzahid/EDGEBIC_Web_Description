@@ -1,0 +1,106 @@
+---
+title: "How Mathematical Optimization Improves a Schedule"
+description: "How EDGEBIC searches for a better job order: a multi-run heuristic layer guaranteed never worse than the baseline, and a CP-SAT solver that reports a proven optimality gap."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - schedule optimization
+  - mathematical optimization scheduling
+  - CP-SAT solver
+  - optimality gap
+  - production sequencing
+  - multi-run optimization
+targetPhrase: "mathematical schedule optimization"
+wordCount: 1650
+readingTime: 8
+faqQuestions:
+  - question: "What does mathematical optimization do to a production schedule?"
+    answer: "It searches for a better order to run the jobs in. EDGEBIC's greedy engine commits to each job's whole routing before it looks at the next job, which can leave a machine idle while a short feeder job waits. The optimizer evaluates alternative job orderings, scores each complete schedule against a goal such as on-time delivery, and proposes the best one. Nothing is applied until the planner clicks Accept."
+  - question: "What is the difference between the multi-run layer and the CP-SAT solver?"
+    answer: "The multi-run layer runs the same scheduling engine many times with different job orderings and returns the best complete schedule it found, guaranteed never worse than the current plan. The CP-SAT solver encodes the whole problem mathematically and returns a plan plus a proven lower bound, so it can report how far the plan is from the mathematical optimum. The multi-run layer is a heuristic search; the solver adds a proof of quality."
+  - question: "What is an optimality gap?"
+    answer: "An optimality gap is the distance between the plan a solver returns and the best possible plan, expressed as a percentage. A gap of 0 percent means the solver proved no better schedule exists for that goal. A gap of 3 percent means the plan is provably within 3 percent of the mathematical optimum. EDGEBIC's CP-SAT solver reports this number so a planner knows exactly how much room, if any, is left."
+  - question: "Can optimization make a schedule worse than it was?"
+    answer: "No. Both optimizer layers compare the candidate plan directly against the current baseline under the chosen goal and return the baseline unless the candidate is strictly better. This never-worse guarantee is enforced after the search, not merely hoped for. The optimizer can only propose a plan that improves the goal you selected or leave the current plan unchanged."
+qaQuestions:
+  - question: "Our two machines both sit idle every Monday morning while a long first job blocks the saw. Can an optimizer actually fix that?"
+    answer: "Yes, and this is the exact case optimization is built for. With three jobs, if a long 6-hour cut runs first, the mill idles all morning while a 2-hour cut that would have fed it waits behind the long job. The greedy engine commits the long job's whole routing before it ever looks at the short one, so no static priority rule fixes it in general. The optimizer tries the ordering that puts the short feeder first, and in the worked example that single change takes total tardiness from 3 hours to 0, makes all three jobs on time, and the CP-SAT solver proves the result is optimal with a 0 percent gap."
+  - question: "What can I honestly tell a customer about how EDGEBIC optimizes? I do not want to overclaim."
+    answer: "Be precise about which layer you run. The default multi-run layer is a heuristic search: it evaluates dozens of complete schedules and is guaranteed never worse than before, so call it exactly that and do not call it a solver or proven optimal. If you switch to the CP-SAT engine, you may say it is mathematical, solver-based optimization that reports a proven optimality gap, and when that gap is 0 percent you may say the plan is proven optimal for the goal you chose. Neither layer is ever always optimal, and neither is AI magic. The honest framing is the credible one."
+---
+
+**Mathematical optimization in EDGEBIC by User Solutions searches for a better order to run your jobs in. The greedy scheduling engine commits to each job's entire routing before it considers the next, which can leave a machine idle while a short feeder job waits behind a long one. The optimizer proposes a complete alternative plan, and depending on which layer you run, it is either guaranteed never worse than your current schedule or provably within a stated percentage of the mathematical optimum.** Nothing changes until you click Accept.
+
+The greedy engine is fast, correct, and respects every constraint, and it produces the schedule the rest of the platform runs on. But its one-job-at-a-time habit leaves measurable time on the table. Optimization is the sidecar that looks for the ordering the greedy engine could not see, and EDGEBIC ships two layers of it with deliberately different honesty guarantees.
+
+## The problem optimization solves
+
+A greedy scheduler places one job completely, then the next, then the next. That is efficient but myopic. If a job's first operation is a long cut, the machine downstream of it sits idle for the whole cut, even though a different job with a two-hour cut could have fed the downstream machine hours earlier. No amount of tuning a static priority rule fixes this in general, because the best first job depends on the whole set of jobs and their routings. This is the hard core of scheduling, and it is exactly where searching over orderings pays off.
+
+## Layer one: multi-run search, never worse than before
+
+The default optimizer layer is a multi-run search. It runs the same battle-tested scheduling engine many times with different global job orderings: for a handful of jobs it tries every permutation, and for larger sets it tries dispatch heuristics (earliest due date, shortest processing time, longest processing time, critical ratio) plus seeded shuffles. Each run produces a complete, real schedule, which the engine scores against your chosen goal. It keeps the best one.
+
+The guarantee here is precise and worth stating carefully: the multi-run layer is a heuristic search, and its result is **guaranteed never worse than the baseline** you started from. It evaluates dozens of complete schedules and returns the best of N. What it does not do is prove how far that best is from the theoretical optimum, so it is honestly described as "best of N schedules tried," never as "mathematical" or "proven optimal." That distinction is not marketing caution; it is the exact line between the two layers.
+
+## Layer two: the CP-SAT solver and a proven gap
+
+The second layer encodes the whole scheduling problem as a mathematical model and hands it to a constraint solver (CP-SAT). It warm-starts from the greedy plan, solves the goal, and returns two things: a plan, and a proven lower bound on how good any plan could be. From those it computes an **optimality gap**.
+
+A gap of 0 percent means the solver proved that no better schedule exists for your goal: the plan is proven optimal. A gap of 3 percent means the plan is provably within 3 percent of the mathematical optimum, with the remaining 3 percent being the most any other plan could improve on it. This is the difference between the two badges a planner sees: the multi-run layer reads "best of N schedules tried in X seconds," and the solver reads "proven optimal" or "proven within X percent of optimal." The [optimality gap definition](/blog/what-is-an-optimality-gap-production-scheduling) covers exactly what that percentage means and why it is the most trustworthy number an optimizer can give you.
+
+Even the solver is never "always optimal." It is time-boxed, and when the budget runs out it returns the best plan it found so far along with the current bound, so the gap simply stays wider. Every solve is also seeded, so the same inputs produce the same plan and a support case is reproducible.
+
+## Goals, not a single answer
+
+Optimization only means something relative to a goal. EDGEBIC expresses goals as ordered priorities compared one tier at a time, so "protect due dates, then reduce nervousness, then shorten makespan" is a real ranking rather than a pile of weights. The shipped presets include on-time first (the default), fastest overall finish, least setup time, and fewest changes to the current plan. The least-setup goal becomes genuinely powerful once you have configured a [sequence-dependent setup matrix](/blog/how-sequence-dependent-setup-shapes-a-schedule), because the solver can then model changeovers natively and hunt for the sequence that minimizes them. The [optimizer goals and presets explainer](/blog/edgebic-optimizer-goals-and-presets-explained) walks each preset and when to pick it.
+
+## A worked example: three jobs, two machines
+
+Two work centers, WC-CUT and WC-MILL, one instance each, sharing a single day shift. Three jobs, all released Monday 08:00:
+
+| Job | Routing | Due |
+|---|---|---|
+| A | Cut 6 h, then Mill 2 h | Tue 12:00 |
+| B | Cut 2 h, then Mill 6 h | Tue 12:00 |
+| C | Cut 3 h, then Mill 3 h | Tue 16:00 |
+
+**Greedy baseline.** The default sort runs A, B, C, committing each job whole. A's long cut blocks the saw all Monday morning, so the mill idles until A's cut finishes. B ends 2 hours late, C ends late too: total tardiness 3 hours, only 1 of 3 jobs on time.
+
+**Optimized.** Put the short cut that feeds the long mill job first: B, A, C. B's 2-hour cut clears the saw early, the mill starts on B by mid-morning, and everything downstream slots in.
+
+| Metric | Greedy baseline | Optimized |
+|---|---|---|
+| Total tardiness | 3 h | 0 h |
+| On-time jobs | 1 of 3 | 3 of 3 |
+| Makespan | 17 working hours | 14 working hours |
+
+With only three jobs, the multi-run layer tries every permutation and finds B-A-C by exhaustion, reporting "best of N schedules tried." The CP-SAT solver finds the same plan and proves no better one exists, reporting a 0 percent gap: proven optimal. That proof is the entire difference between the two badges on the same result.
+
+## Why you can trust the proposal
+
+Two safety properties make this usable on a live floor. First, the optimizer never persists anything on its own: it proposes a plan, shows a side-by-side comparison of the KPIs and the specific moves, and waits for you to Accept or Discard. Second, when you Accept it runs through the same persist pipeline as a normal schedule, so completed work stays untouched exactly as it does in any [reschedule that preserves finished operations](/blog/how-a-scheduler-preserves-completed-work). The [never-worse guarantee](/blog/what-the-never-worse-guarantee-means-for-planners) is the companion contract that makes running the optimizer risk-free: at worst it hands you back the plan you already had.
+
+Optimization is one layer on top of the engine described in the [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and it is the most direct answer to the idle-machine problem that shows up whenever you work to [identify a production bottleneck](/blog/production-bottleneck-identification) and then try to keep it fed. The [optimizer guide](/blog/edgebic-optimizer-guide) covers the comparator screen and the accept flow in full.
+
+To see the optimizer surface a better ordering on your own jobs, with the gap reported honestly, [bring your data to a demo](/contact-us).
+
+<Accordion title="What does mathematical optimization do to a production schedule?">
+It searches for a better order to run the jobs in. EDGEBIC's greedy engine commits to each job's whole routing before it looks at the next job, which can leave a machine idle while a short feeder job waits. The optimizer evaluates alternative job orderings, scores each complete schedule against a goal such as on-time delivery, and proposes the best one. Nothing is applied until the planner clicks Accept.
+</Accordion>
+
+<Accordion title="What is the difference between the multi-run layer and the CP-SAT solver?">
+The multi-run layer runs the same scheduling engine many times with different job orderings and returns the best complete schedule it found, guaranteed never worse than the current plan. The CP-SAT solver encodes the whole problem mathematically and returns a plan plus a proven lower bound, so it can report how far the plan is from the mathematical optimum. The multi-run layer is a heuristic search; the solver adds a proof of quality.
+</Accordion>
+
+<Accordion title="What is an optimality gap?">
+An optimality gap is the distance between the plan a solver returns and the best possible plan, expressed as a percentage. A gap of 0 percent means the solver proved no better plan exists for that goal. A gap of 3 percent means the plan is provably within 3 percent of the mathematical optimum. EDGEBIC's CP-SAT solver reports this number so a planner knows exactly how much room, if any, is left.
+</Accordion>
+
+<Accordion title="Can optimization make a schedule worse than it was?">
+No. Both optimizer layers compare the candidate plan directly against the current baseline under the chosen goal and return the baseline unless the candidate is strictly better. This never-worse guarantee is enforced after the search, not merely hoped for. The optimizer can only propose a plan that improves the goal you selected or leave the current plan unchanged.
+</Accordion>

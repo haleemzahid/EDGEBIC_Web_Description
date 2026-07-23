@@ -1,0 +1,109 @@
+---
+title: "Campaign Sequencing to Minimize Changeovers"
+description: "Campaign sequencing to minimize changeovers: how sequence-dependent setup works, why grouping like with like frees capacity, and worked paint booth numbers."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - campaign sequencing
+  - minimize changeovers
+  - sequence-dependent setup
+  - setup matrix scheduling
+  - changeover reduction
+  - setup family grouping
+targetPhrase: "campaign sequencing to minimize changeovers"
+wordCount: 1520
+readingTime: 8
+faqQuestions:
+  - question: "What is campaign sequencing?"
+    answer: "Campaign sequencing is ordering the jobs on a work center so that similar jobs run back to back, cutting the total changeover time across the day. It matters most where setup is sequence-dependent, meaning the changeover duration depends on what ran before, such as a paint booth that switches from light to dark colors quickly but takes hours to flush from dark back to light. Running all the light colors together, then the dark ones, collapses a day of changeovers into a fraction of it."
+  - question: "How does a scheduler know the real cost of a changeover?"
+    answer: "A scheduler with a sequence-dependent setup matrix looks up the changeover time for each from-product, to-product pair on each machine, instead of using a single flat setup value from the routing. A paint booth entry might say white to black is 60 minutes but black to white is 240 minutes. With that matrix loaded, the engine charges the true changeover for each transition, so the schedule reflects floor reality rather than an optimistic flat number that hides hours of flushing."
+  - question: "Does campaign sequencing reduce quality or flexibility?"
+    answer: "Campaign sequencing does not reduce quality; it reduces wasted setup time by ordering jobs sensibly, and you keep full control because the optimizer proposes a sequence rather than forcing one. The trade-off is that grouping by setup can push some jobs slightly later than a pure due-date order would, so the engine weighs due dates first and setup savings second by default. You accept a proposed campaign only when it does not put a delivery at risk."
+qaQuestions:
+  - question: "My paint booth loses hours a day to color changes. How much can sequencing actually save?"
+    answer: "It depends on your changeover matrix, but the savings are often dramatic because the worst transitions dominate. In a four-job case with two white and two black orders, running them in due-date order white, black, white, black incurs a cold start plus a 1-hour white-to-black, a 4-hour black-to-white, and another 1-hour white-to-black, about 6.5 hours of setup. Grouping them white, white, black, black cuts that to a cold start plus one 1-hour transition, about 1.5 hours. That is 5 hours of booth capacity recovered on four jobs, and the effect compounds across a full queue."
+  - question: "If I group jobs by setup, won't some orders end up late?"
+    answer: "They can, which is why the engine ranks due dates ahead of setup savings by default and only proposes a campaign, never imposes one. The least-setup goal orders jobs to minimize changeover, but the on-time-first goal protects delivery dates above everything and treats setup as a lower tier. You pick the goal that fits the week: chase setup savings when the queue has slack, protect due dates when it does not. Because nothing persists until you accept, you always see the delivery impact before committing."
+---
+
+**Campaign sequencing orders the jobs on a machine so similar work runs back to back, which collapses total changeover time wherever setup is sequence-dependent.** The classic case is a paint booth: white to light grey is a five-minute wipe, but black to white is a four-hour solvent flush. Run the colors in a careless order and half the shift disappears into changeovers; run all the lights together, then the darks, and the setup nearly vanishes. EDGEBIC by User Solutions models the real cost of each transition with a setup matrix and can propose the least-setup sequence for you.
+
+## Why setup is sequence-dependent
+
+A flat setup time on a routing step says every changeover on that machine costs the same. On a lot of equipment that is simply false. The time to re-prepare a machine depends on what it ran before, not just on what it runs next. A furnace switching alloys needs 90 minutes; running the same alloy again needs zero. A paint booth going lighter needs minutes; going darker to lighter needs hours.
+
+When the schedule uses a single flat number, it lies about the floor. The plan finishes on paper at noon while the real floor, dragged down by the flushes the plan never counted, finishes half a day later. The first fix is not sequencing at all; it is telling the engine the truth.
+
+## The setup matrix: charging the real cost
+
+A sequence-dependent setup matrix is a per-machine lookup table of from-product, to-product changeover times. Instead of one flat value, the engine reads the actual minutes for each transition:
+
+| From to on the paint booth | Setup |
+|---|---|
+| Same color | 0 |
+| White to black | 60 min |
+| Black to white | 240 min |
+| Red to black | 30 min |
+| Black to red | 120 min |
+
+To keep this manageable, products are grouped into setup families, so eight families covering a hundred products collapse a ten-thousand-cell matrix to sixty-four cells. A per-product override handles the rare pair that breaks its family rule. The matrix ships empty, so the feature is a no-op until a planner enters a value, and the full model is covered in [what a setup family is](/blog/what-is-a-setup-family-sequence-dependent-changeover).
+
+With the matrix loaded, the engine charges the true changeover for every transition. The schedule stops lying. But it does not yet reorder anything.
+
+## Campaign sequencing: reorder to minimize the total
+
+Knowing the cost of each transition, the next move is to sequence the queue so the expensive transitions rarely happen. That is campaign sequencing.
+
+Take four orders on the booth: two white jobs and two black jobs. In due-date order they might queue white, black, white, black.
+
+```
+Due-date order: W, B, W, B
+Setups: cold 0.5 h + (W->B 1 h) + (B->W 4 h) + (W->B 1 h) = 6.5 h changeover
+```
+
+The two color reversals dominate: one four-hour black-to-white flush and two one-hour white-to-black transitions. Now group like with like:
+
+```
+Campaign order: W, W, B, B
+Setups: cold 0.5 h + (W->W 0) + (W->B 1 h) + (B->B 0) = 1.5 h changeover
+```
+
+Five hours of booth capacity recovered on four jobs, from one reordering. Across a full weekly queue with more colors, the effect compounds, and shops that campaign their finishing lines routinely reclaim one or two extra jobs per shift on the constrained resource. The [paint shop changeover example](/blog/paint-shop-changeover-sequencing-example-edgebic) walks a fuller case.
+
+## How the engine proposes a campaign
+
+The engine sequences jobs by priority, start date, then due date by default, which is not setup-aware. Campaign sequencing comes from the optimizer. Its least-setup goal re-runs the schedule under different job orderings, scores each complete plan's total setup using the matrix, and proposes the sequence with the lowest changeover. The least-setup goal only appears once you have populated the matrix, because there is nothing to optimize against without it.
+
+The proposal is exactly that, a proposal. You see the setup saved, the KPI deltas, and the moves before anything persists, and the plan is clamped never worse than the standard sequence. That protects you from the one real risk of campaigning: pushing a job late to save a changeover.
+
+## The trade-off, weighed by goal
+
+Grouping by setup can move some orders later than a pure due-date order would. The engine handles this by ranking objectives in tiers. The default on-time-first goal protects delivery dates above everything and treats setup as a lower tier, so it only reorders for setup where due dates allow. The least-setup goal flips that emphasis for weeks where the queue has slack and changeover is your real cost.
+
+| Goal | Ranks first | Use when |
+|---|---|---|
+| On-time first (default) | Due dates, then stability, then setup | Delivery is tight |
+| Least setup | Setup, then due dates | The queue has slack and changeover dominates |
+
+You pick the goal that fits the week. Because you accept a proposal rather than have one imposed, the delivery impact is always visible first. How the underlying sequence forms is covered in [how a scheduler decides which job runs first](/blog/how-a-scheduler-decides-which-job-runs-first), and the broader levers for cutting changeover are in [changeover time reduction](/blog/changeover-time-reduction).
+
+## Getting started
+
+Load the setup matrix so the schedule tells the truth about your changeovers, then let the least-setup goal propose campaigns where the queue allows. Even before you optimize, an honest matrix stops the plan from overpromising, which is worth the effort on its own. The full engine context, including how setup composes with lot streaming and the anchor path, lives in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide). Enter your own changeover matrix and watch the proposed campaign in [EDGEBIC](/edgebic).
+
+<Accordion title="What is campaign sequencing?">
+Campaign sequencing is ordering the jobs on a work center so that similar jobs run back to back, cutting the total changeover time across the day. It matters most where setup is sequence-dependent, meaning the changeover duration depends on what ran before, such as a paint booth that switches from light to dark colors quickly but takes hours to flush from dark back to light. Running all the light colors together, then the dark ones, collapses a day of changeovers into a fraction of it.
+</Accordion>
+
+<Accordion title="How does a scheduler know the real cost of a changeover?">
+A scheduler with a sequence-dependent setup matrix looks up the changeover time for each from-product, to-product pair on each machine, instead of using a single flat setup value from the routing. A paint booth entry might say white to black is 60 minutes but black to white is 240 minutes. With that matrix loaded, the engine charges the true changeover for each transition, so the schedule reflects floor reality rather than an optimistic flat number that hides hours of flushing.
+</Accordion>
+
+<Accordion title="Does campaign sequencing reduce quality or flexibility?">
+Campaign sequencing does not reduce quality; it reduces wasted setup time by ordering jobs sensibly, and you keep full control because the optimizer proposes a sequence rather than forcing one. The trade-off is that grouping by setup can push some jobs slightly later than a pure due-date order would, so the engine weighs due dates first and setup savings second by default. You accept a proposed campaign only when it does not put a delivery at risk.
+</Accordion>

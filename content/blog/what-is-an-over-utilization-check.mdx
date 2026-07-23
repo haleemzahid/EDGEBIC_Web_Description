@@ -1,0 +1,71 @@
+---
+title: "What Is an Over-Utilization Check in Scheduling?"
+description: "An over-utilization check flags a work center booked past its physical hours in a day. Definition, the 24-hour and shift-cap thresholds, and how EDGEBIC reports it."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - what is an over-utilization check
+  - over-utilization scheduling
+  - work center capacity exceeded
+  - overbooked machine schedule
+  - physical capacity limit check
+  - shift design cap
+targetPhrase: "what is an over-utilization check"
+wordCount: 980
+readingTime: 5
+faqQuestions:
+  - question: "What is an over-utilization check?"
+    answer: "An over-utilization check flags any work center whose scheduled hours on a given day exceed the capacity it physically has. It compares the total booked hours per machine per day against a hard limit (24 hours times the number of machine instances) and against a softer shift-design limit (the sum of the shifts' maximum hours). Crossing the hard limit is impossible and marked critical; crossing only the shift limit is a warning that the plan assumes more capacity than the shifts define."
+  - question: "What is the difference between the physical limit and the shift-design limit?"
+    answer: "The physical limit is the wall of reality: no machine can run more than 24 hours in a day, multiplied by how many identical machines the work center has. The shift-design limit is how much capacity you actually staffed and defined through shifts, which is usually well under 24 hours. Passing the shift limit but staying under the physical limit means the plan borrowed hours you have not scheduled; passing the physical limit means the numbers are corrupted."
+  - question: "Why would a work center ever get booked past 24 hours in a day?"
+    answer: "Almost always a data or wiring problem, not a normal scheduling decision. The most common cause is synchronized parallel machines whose mirrored bookings were not counted against shared capacity, so the same work center appears double or triple booked. A stale allocation left over from a reschedule can also inflate the daily total. The over-utilization check exists to catch exactly these cases before the plan reaches the floor."
+qaQuestions:
+  - question: "The over-utilization check flagged a work center at 32 hours in one day. It only has one machine. What happened?"
+    answer: "One machine caps at 24 hours a day, so 32 hours is impossible and correctly critical. The usual cause is duplicate resource rows from a reschedule that did not collapse a split operation, or a synchronized parallel mirror that bypassed the shared-capacity count. Re-run the schedule and check whether the number drops to a legal value. If it persists, the daily total is being written by two code paths that disagree, and the row points you straight at the job to inspect."
+  - question: "We got a warning that a work center exceeded its shift cap but not the 24-hour limit. Do we need to act?"
+    answer: "It is a warning, so it will not corrupt anything, but it means the plan is counting on hours you have not defined through shifts. Either the work center genuinely runs beyond its scheduled shifts (add the shift hours so the plan is honest) or the allocation is optimistic and the job will slip when the shift actually runs out. Reconcile the shift definition with what the machine really does before you promise the date."
+---
+
+**An over-utilization check flags any work center whose scheduled hours on a given day exceed the capacity it physically has, comparing the total booked hours per machine per day against a hard limit (24 hours times the number of identical machines) and a softer shift-design limit (the hours your shifts actually define). Crossing the hard limit is physically impossible and marked critical; crossing only the shift limit is a warning that the plan borrowed capacity you never scheduled.** It is the check that catches a machine promised to two jobs at once, or the same work booked twice by a reschedule that did not clean up after itself.
+
+This entry belongs to the EDGEBIC glossary; for the wider vocabulary, see the [manufacturing glossary](/blog/manufacturing-glossary), and for the neighboring concept, the definition of a [scheduling anomaly](/blog/what-is-a-scheduling-anomaly).
+
+## How the Over-Utilization Check Works
+
+A work center has a real, countable capacity for any single day: the number of hours in the day times the number of identical machine instances it runs. A cell with three machines has at most 72 machine-hours in a 24-hour day. That is the physical ceiling, and nothing legal can cross it.
+
+The check sums every scheduled hour booked against a work center for a given date and compares that total to two thresholds. The **physical threshold** is 24 hours times the instance count, the wall of reality. The **shift-design threshold** is lower: the sum of the maximum hours your shifts define for that work center, times its instances. That is the capacity you actually staffed and calendared.
+
+When the daily total passes the physical threshold, the check reports a critical anomaly, because the arithmetic is now impossible. When the total stays under the physical wall but passes the shift-design cap, the check reports a warning: the plan is not corrupt, but it is counting on hours you have not scheduled through shifts. There is a third, tighter form of the same idea that watches a single machine instance for more than 24 hours in a day, which is likewise impossible and critical.
+
+## Why a Machine Gets Over-Booked
+
+In normal operation this check stays green, so a firing is worth understanding.
+
+The most common cause is **synchronized parallel processing**. When several machines run the same operation in lockstep (three drill heads on one large frame, for example), the engine mirrors the parent booking onto each machine. If a mirror is not counted against that machine's own shared capacity, an unrelated job can be booked into the same window, and the machine's daily total balloons past what one machine can do.
+
+A second cause is a **stale or duplicate allocation** left over from a reschedule. If a split operation was not collapsed into a single row, the historical hours and the fresh forward hours both count, inflating the day. The over-utilization check catches both patterns before the plan reaches the floor, where the symptom would be a job that simply cannot run.
+
+## Reading a Firing
+
+When the check fires, the severity tells you how hard to look. A critical firing (past the physical wall) is corrupted data: no amount of shift redefinition makes 32 hours fit in a single machine's day, so the fix is upstream, in the allocation or the reschedule that produced the double count. A warning firing (past the shift cap but under the physical wall) is a reconciliation question: the plan is counting on hours the shifts do not define, so either the shifts are understated or the allocation is optimistic.
+
+The fastest first move for a critical firing is to re-run the schedule. If the daily total drops to a legal value, the excess came from a transient reschedule artifact that a clean run cleared. If it persists, the number is being written by two paths that disagree, and the flagged job is the exact one to open. This is why the over-utilization check is a stop-and-investigate rather than a tune-later item: a machine cannot be told to work more hours than the day contains.
+
+## A Concrete Example
+
+A milling cell has one machine and an eight-hour day shift, so its shift cap is 8 hours and its physical ceiling is 24. After a reschedule, the anomaly report flags the cell at 14 hours on Tuesday.
+
+Fourteen is under the 24-hour physical wall, so the check reports it as a warning, not corruption. The planner opens the flagged job and finds two resource rows for the same milling step: the original six hours plus a forward-shifted eight, which never merged into one. Re-running the schedule collapses them, the Tuesday total drops back to eight, and the warning clears. Had the number been over 24, the same investigation would have started from a red critical chip instead.
+
+## How EDGEBIC Reports Over-Utilization
+
+In EDGEBIC, over-utilization sits inside the Scheduler Anomalies report under the Reports menu. Run it for a single job during active debugging or plant-wide to sweep the whole plant. The summary strip shows the over-utilization chips: green when every work center stays within capacity, amber or red when a day is over-booked. Click the row to open the job and see which step contributed the excess hours.
+
+The companion view for planned load, rather than impossible load, is the [work center utilization report](/blog/how-to-run-the-work-center-utilization-report-in-edgebic), which shows how full each cell is against its defined capacity. To keep utilization high without over-booking, see [how EDGEBIC raises bottleneck utilization](/blog/how-edgebic-raises-bottleneck-utilization) and the guide to [configuring instances and utilization](/blog/how-to-configure-instances-and-utilization-in-edgebic). For the full catalogue of what every check looks for, read [what the EDGEBIC anomaly checks actually look for](/blog/what-the-edgebic-anomaly-checks-actually-look-for).
+
+A green over-utilization strip is a small but load-bearing promise: every machine in the plan is booked to something it can physically do. Run the check after any reschedule, and treat a red chip as a stop-and-investigate before the plan leaves your desk.

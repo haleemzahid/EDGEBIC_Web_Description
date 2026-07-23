@@ -1,0 +1,105 @@
+---
+title: "How a Scheduler Recovers From a Mid-Shift Disruption"
+description: "How a scheduler recovers from a mid-shift disruption: the three zones of a reschedule, why completed work never moves, and worked reschedule numbers."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - reschedule after disruption
+  - actuals preservation
+  - mid-shift reschedule
+  - machine breakdown reschedule
+  - in-progress operation rescheduling
+  - remaining hours scheduling
+targetPhrase: "reschedule after a disruption"
+wordCount: 1520
+readingTime: 8
+faqQuestions:
+  - question: "What happens to completed work when you reschedule after a disruption?"
+    answer: "Completed work is never moved by a reschedule. Any operation with a logged actual start and end is historical fact: the hours were worked and the costs were incurred, so the engine preserves the row verbatim and carries it into the new plan unchanged. A reschedule re-plans only the remaining work, forward from where the shop floor actually is. This is why a reschedule during a machine breakdown cannot rewrite the two operations an operator already finished."
+  - question: "How does a scheduler handle an operation that is only partly done?"
+    answer: "An operation with an actual start but no actual end is treated as in progress: the work center locks to where it started, and only the remaining balance is rescheduled forward. If an operator logged 4 hours against a 12-hour operation, the engine preserves the 4 hours as history and re-plans exactly 8 hours from the resume point. The hours already clocked are never reinvented or discarded, so the plan stays honest about what has physically happened."
+  - question: "Why does a reschedule sometimes push a step later than expected?"
+    answer: "A step usually shifts later because a real disruption moved the resume point, but occasionally a stale reservation is the cause. The engine releases the old, not-yet-started reservations of any job it is rescheduling before it re-plans, so the job's own out-of-date plan cannot block its new one. Remaining steps then cascade forward from the latest actual timestamp. If a step still lands unexpectedly late, check whether an upstream operation's actual end moved, since that is the resume point everything downstream chains from."
+qaQuestions:
+  - question: "A machine went down mid-shift with two operations already finished on the job. If I reschedule, do I lose that finished work?"
+    answer: "No, the two finished operations are preserved exactly as they happened, with their actual dates unchanged, and only the remaining steps re-plan around the outage. Say steps 1 and 2 completed and steps 3 and 4 had not started when the machine went down. The reschedule keeps steps 1 and 2 verbatim, sets the resume point to step 2's actual end, and slides steps 3 and 4 to the next available capacity after the machine returns. The past is frozen and the future is honest."
+  - question: "An operator marked a 16-hour job complete but only logged 10 hours. What does the reschedule do with the missing 6 hours?"
+    answer: "The engine detects the short confirm and forward-shifts the 6-hour gap rather than trusting the early close blindly. It preserves the historical block with the 10 logged hours and the operator's completion stamp, then schedules the remaining 6 hours from that point on the same machine. You end up with two rows for the step, the historical portion and the forward-shifted gap, and downstream steps queue after the gap finishes. No hours are invented and none are discarded."
+---
+
+**A scheduler recovers from a mid-shift disruption by re-planning only the remaining work, forward from where the shop floor actually is, while every completed operation stays frozen in place.** A reschedule is surgical, not a full reset. It distinguishes three zones: completed work that is permanent history, in-progress work whose remaining balance shifts, and not-yet-started work that re-plans from scratch. EDGEBIC by User Solutions builds this on one non-negotiable rule, that an operation with logged actuals is never re-placed, which is what keeps a schedule honest when a machine breaks or an operator goes home early.
+
+## The three zones of a reschedule
+
+When you press reschedule after a disruption, the engine classifies every operation of the affected job into one of three zones.
+
+| Zone | Condition | What happens |
+|---|---|---|
+| Completed | Actual start and end logged | Preserved verbatim, carried into the new plan as history |
+| In progress | Actual start, no end | Work center locks, only the remaining hours re-plan |
+| Remaining | No actuals | Fully re-planned from the resume point |
+
+The resume point becomes the latest actual timestamp on the job, and the remaining steps cascade forward from there. Most scheduling systems treat a reschedule as wipe-and-rerun, which loses shop-floor reality. The three-zone model keeps the past intact and only optimizes the future.
+
+## Why completed work never moves
+
+An operation with a logged actual end is a fact. The hours were worked, the labor was paid, the reports depend on it. Rewriting its dates on a reschedule would corrupt the audit trail and confuse the floor. So the engine preserves that row exactly as recorded and re-plans around it. This claim is documented and firm: completed work is never moved by a reschedule.
+
+The rule extends to the messy middle. An operator who logs a start but no end has an in-progress operation. The engine locks its work center and schedules only the remaining balance forward. It never backfills a projected end that would freeze the row as complete, because the operator's real end still has to be honored later.
+
+## A worked recovery: machine down, two steps done
+
+A four-step job. Steps 1 and 2 finished this morning; steps 3 and 4 had not started when the machine went down for two days.
+
+```
+Step 1 Cut:    actual Mon 08:30 to Mon 15:15   COMPLETED  -> preserved
+Step 2 Drill:  actual Mon 15:15 to Tue 11:00   COMPLETED  -> preserved
+Step 3 Paint:  no actuals                       REMAINING  -> rescheduled
+Step 4 QC:     no actuals                       REMAINING  -> rescheduled
+```
+
+The reschedule sets the resume point to step 2's actual end, Tuesday 11:00, keeps steps 1 and 2 exactly as they happened, and slides steps 3 and 4 to the next available capacity after the machine returns. The finished work is untouched; only the remaining steps move. The [machine breakdown walkthrough](/blog/machine-breakdown-reschedule-walkthrough-edgebic) shows a full outage with the date arithmetic.
+
+## A worked recovery: the short confirm
+
+Disruptions are not only breakdowns. An operator who closes a job early is one too. Take a 16-hour operation where the operator marks it complete Wednesday morning but only logged 10 hours over two days.
+
+The engine detects the gap, 16 planned minus 10 actual, and forward-shifts it rather than trusting the early close blindly:
+
+```
+Historical block: 10 h preserved, operator's completion stamp kept
+Remaining 6 h:    scheduled forward from the resume point
+Downstream steps: queue after the 6-hour gap finishes
+```
+
+You get two rows for the step, the historical portion and the forward-shifted gap. No hours are invented and none are discarded. The site policy governs whether a short confirm forward-shifts, is trusted as-is, or is flagged per step, so a shop can choose how much to trust an early close.
+
+## The stale-reservation guard
+
+There is one subtlety that makes reschedules behave. Before re-planning, the engine releases the old reservations of any job it is rescheduling, keeping only the rows that carry actuals. If it did not, the job's own out-of-date plan would still look booked, and the new allocation for a remaining step could get pushed days into the future because the machine appears full of the job's own stale reservations. Releasing them first is what lets the remaining steps slot into the real gap the disruption opened.
+
+Jobs not in the reschedule keep every reservation, so re-planning one job never disturbs another's committed capacity. That targeting is why you can reschedule a single order after an operator logs actuals and leave the rest of the plant untouched.
+
+## Direction after a disruption is always forward
+
+A job that has started always re-plans forward from its resume point, even if it was originally a backward or just-in-time job. Once execution has begun, "start as late as possible" is meaningless, so actuals override a backward request. This is a fixed rule in the direction precedence, covered alongside the other cases in [push vs pull scheduling](/blog/push-vs-pull-scheduling-in-a-finite-capacity-system).
+
+## The payoff: a plan the floor trusts
+
+The reschedule reads the way a supervisor expects: the past is frozen, the future is honest. That trust is the whole point. A schedule that rewrites finished work on every reschedule gets ignored; a schedule that preserves reality gets used. How much the future is allowed to churn is a separate lever, covered in [why schedule stability can beat schedule optimality](/blog/why-schedule-stability-can-beat-schedule-optimality). The full six-phase reschedule pipeline lives in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide). Log an actual and reschedule your own job to see the three zones in [EDGEBIC](/edgebic).
+
+<Accordion title="What happens to completed work when you reschedule after a disruption?">
+Completed work is never moved by a reschedule. Any operation with a logged actual start and end is historical fact: the hours were worked and the costs were incurred, so the engine preserves the row verbatim and carries it into the new plan unchanged. A reschedule re-plans only the remaining work, forward from where the shop floor actually is. This is why a reschedule during a machine breakdown cannot rewrite the two operations an operator already finished.
+</Accordion>
+
+<Accordion title="How does a scheduler handle an operation that is only partly done?">
+An operation with an actual start but no actual end is treated as in progress: the work center locks to where it started, and only the remaining balance is rescheduled forward. If an operator logged 4 hours against a 12-hour operation, the engine preserves the 4 hours as history and re-plans exactly 8 hours from the resume point. The hours already clocked are never reinvented or discarded, so the plan stays honest about what has physically happened.
+</Accordion>
+
+<Accordion title="Why does a reschedule sometimes push a step later than expected?">
+A step usually shifts later because a real disruption moved the resume point, but occasionally a stale reservation is the cause. The engine releases the old, not-yet-started reservations of any job it is rescheduling before it re-plans, so the job's own out-of-date plan cannot block its new one. Remaining steps then cascade forward from the latest actual timestamp. If a step still lands unexpectedly late, check whether an upstream operation's actual end moved, since that is the resume point everything downstream chains from.
+</Accordion>

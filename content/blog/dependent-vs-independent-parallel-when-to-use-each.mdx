@@ -1,0 +1,102 @@
+---
+title: "Dependent vs Independent Parallel: When to Use Each"
+description: "Dependent vs independent parallel work centers: when machines split the work to finish faster, when they must run in lockstep, and worked scheduling numbers."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - dependent vs independent parallel
+  - parallel work centers scheduling
+  - simultaneous machine scheduling
+  - dependent mirroring
+  - independent parallel machines
+  - synchronized operation scheduling
+targetPhrase: "dependent vs independent parallel"
+wordCount: 1550
+readingTime: 8
+faqQuestions:
+  - question: "What is the difference between dependent and independent parallel work centers?"
+    answer: "Independent parallel machines split one operation's work between them and each has its own capacity checked and consumed, so the job finishes faster. Dependent parallel machines run in exact lockstep with a primary machine: their start and end times are copied from the primary, their hours are scaled by a factor, and capacity is bypassed for the mirror copies. Independent is about dividing work to save time; dependent is about several machines physically working the same operation together, like a multi-spindle drilling job."
+  - question: "When should machines run in lockstep instead of splitting the work?"
+    answer: "Machines should run in lockstep when the operation physically requires them together, such as multi-spindle drilling, synchronized robotic assembly, or a large workpiece worked by several stations at once. In those cases the machines are not alternatives that divide the load; they are one operation spread across hardware that must start and stop together. Use dependent parallel there. When the machines are interchangeable and you simply want the job done sooner, use independent parallel so the work splits and completes faster."
+  - question: "Why does a dependent parallel machine bypass capacity checks?"
+    answer: "A dependent machine bypasses capacity checks because it is a mirror of one operation physically running on extra hardware at the same time, not a separate job competing for the resource. If the primary machine has capacity, the mirrors are added at the identical times with hours scaled by their factor. This can push a shift's recorded allocation above 100 percent, which is intended for synchronized operations, because the same physical work is being counted on several machines that are locked together."
+qaQuestions:
+  - question: "I need to drill 300 holes and a single drill takes 30 hours. I have three drill heads. How do I model this to finish in one shift?"
+    answer: "Model the three drill heads as dependent parallel with the two extra heads mirroring the primary at a factor that splits the work. If all three run together, the operation completes in about 10 hours instead of 30, because each head drills a third of the holes at the same time. The engine copies the primary's start and end onto the mirrors and only searches for a slot where all three heads are simultaneously free, so they truly run in lockstep rather than at different times."
+  - question: "My independent parallel job would not schedule and reported no simultaneous capacity. What went wrong?"
+    answer: "Independent parallel is all-or-nothing: the engine needs one time slot where every machine in the group has capacity at the same start, so if even one machine is fully booked, the whole group waits. It searches forward for a common free slot across all the machines and their shared shifts. Check that all the machines have a common shift on the target day and that none is saturated. If one machine is down or booked solid, the group slides to the next date where all of them are free together."
+---
+
+**Independent parallel machines split one operation's work so the job finishes faster, while dependent parallel machines run in exact lockstep with a primary machine, copying its timing and scaling its hours by a factor.** The two look similar on a Gantt, several bars on several machines at the same time, but they answer opposite questions. Independent asks "how do I divide this load to finish sooner?" Dependent asks "how do I run this one operation on several machines that must move together?" EDGEBIC by User Solutions supports both, and picking the wrong one either wastes speed you could have had or breaks an operation that must stay synchronized.
+
+## Independent parallel: divide the work
+
+Independent parallel treats several machines as interchangeable runners for one operation. The engine splits the hours across them, checks and consumes each machine's capacity separately, and the job finishes when the slowest split finishes. This is the tool when the machines are genuinely alternatives and your goal is speed.
+
+A paint shop with a rush order shows the shape. One thousand units, two booths at 100 units per day, five days to deliver:
+
+```
+Without parallel: 1000 / 100 per day = 10 days -> miss the date
+With two independent booths: 500 each over 5 days = 1000 in 5 days -> meet it
+```
+
+Each booth is scheduled independently with its own capacity consumed, and both run at once. The constraint is that all the machines in the group must find a common free slot at the same start. That is the all-or-nothing rule: the engine searches forward for a date and shift where every machine has capacity together, and if one is fully booked the whole group waits for the next common opening.
+
+## Dependent parallel: run in lockstep
+
+Dependent parallel is mirroring. One primary machine drives the operation, and one or more secondary machines copy its schedule exactly: the same start, the same end, the same instance assignment. The mirrors' hours are scaled by a factor, and capacity is bypassed for the copies, because they are not separate jobs competing for the resource. They are one physical operation spread across hardware that must move together.
+
+Multi-spindle drilling is the classic case. Three hundred holes, 30 hours on a single drill, three drill heads that must work the part at once:
+
+```
+Single drill: 30 hours
+Three dependent heads at a splitting factor: 10 hours
+
+08:00 to 18:00
+Drill-1 (primary):  holes 1 to 100    (10 h)
+Drill-2 (mirror):   holes 101 to 200  (10 h, same start and end)
+Drill-3 (mirror):   holes 201 to 300  (10 h, same start and end)
+```
+
+All three start and finish together. Because the mirrors bypass capacity, a shift can show more than 100 percent allocation, which is correct: the same physical work is counted on three machines locked together. The engine only ever schedules the group when all the machines share a common shift and can start simultaneously.
+
+## The trade-off, in a table
+
+| | Independent parallel | Dependent parallel |
+|---|---|---|
+| Purpose | Divide the load to finish faster | Run one operation on several machines together |
+| Timing | Each machine scheduled on its own | Mirrors copy the primary's start and end |
+| Capacity | Checked and consumed per machine | Bypassed for the mirror copies |
+| Factor | Splits the work | Scales the mirrored hours |
+| Fails when | No common slot where all have capacity | Same, plus no common shift |
+| Typical use | Paint booths, assembly lines, machining cells | Multi-spindle drilling, synchronized robotics |
+
+The deciding question is physical. If the machines could each finish their share and hand off separately, they are independent. If the operation only makes sense with them moving as one, they are dependent.
+
+## What the factor does in each mode
+
+The factor behaves differently between the two. In independent parallel, it governs how the work splits across machines. In dependent parallel, it scales the hours the mirror is charged relative to the primary, without touching the timestamps. A factor of 1.0 mirrors the parent exactly; 0.5 charges half the hours, modeling a faster mirror; 2.0 charges double for a slower one. The start and end never move for a dependent mirror, only the hours it books.
+
+Setup is never scaled by the factor in either mode. A machine can run fast and set up slow, so setup is handled independently.
+
+## Choosing between them
+
+Reach for independent parallel when you want an urgent order done sooner and the machines are interchangeable for the split. Reach for dependent parallel when the operation physically requires several machines in lockstep. Getting it wrong is visible: an independent configuration on a multi-spindle job would let the heads drift to different times and the part would be wrong; a dependent configuration on two paint booths would mirror one job onto both instead of splitting two jobs across them.
+
+Both are distinct from splitting work across identical machines inside one work center, which is instance [load balancing vs dedicated instance scheduling](/blog/load-balancing-vs-dedicated-instance-scheduling), and from offering the engine a choice of interchangeable machines, which is [a machine pool vs an alternate work center](/blog/when-to-use-a-machine-pool-vs-an-alternate-work-center). For the full mechanism, including the four validation gates that guarantee a simultaneous start, see [parallel and alternate work centers explained](/blog/edgebic-parallel-work-centers-explained), and the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide) places parallel scheduling inside the whole pipeline. Model your own synchronized operations in [EDGEBIC](/edgebic).
+
+<Accordion title="What is the difference between dependent and independent parallel work centers?">
+Independent parallel machines split one operation's work between them and each has its own capacity checked and consumed, so the job finishes faster. Dependent parallel machines run in exact lockstep with a primary machine: their start and end times are copied from the primary, their hours are scaled by a factor, and capacity is bypassed for the mirror copies. Independent is about dividing work to save time; dependent is about several machines physically working the same operation together, like a multi-spindle drilling job.
+</Accordion>
+
+<Accordion title="When should machines run in lockstep instead of splitting the work?">
+Machines should run in lockstep when the operation physically requires them together, such as multi-spindle drilling, synchronized robotic assembly, or a large workpiece worked by several stations at once. In those cases the machines are not alternatives that divide the load; they are one operation spread across hardware that must start and stop together. Use dependent parallel there. When the machines are interchangeable and you simply want the job done sooner, use independent parallel so the work splits and completes faster.
+</Accordion>
+
+<Accordion title="Why does a dependent parallel machine bypass capacity checks?">
+A dependent machine bypasses capacity checks because it is a mirror of one operation physically running on extra hardware at the same time, not a separate job competing for the resource. If the primary machine has capacity, the mirrors are added at the identical times with hours scaled by their factor. This can push a shift's recorded allocation above 100 percent, which is intended for synchronized operations, because the same physical work is being counted on several machines that are locked together.
+</Accordion>

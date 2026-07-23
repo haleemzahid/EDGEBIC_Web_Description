@@ -1,0 +1,97 @@
+---
+title: "How a Scheduler Decides Which Job Runs First"
+description: "How a scheduler decides which job runs first: the priority, start date, due date sort, deterministic tie-breaking, and how dispatch rules fit in, with worked numbers."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - which job runs first
+  - job sequencing rules
+  - priority scheduling
+  - dispatch rules manufacturing
+  - deterministic scheduling
+  - earliest due date sequencing
+targetPhrase: "which job runs first"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "How does a scheduler decide which job runs first?"
+    answer: "The engine sorts every order before it places any work, using three keys in strict order: priority first, then start date, then due date. The lowest priority number wins the first claim on contested machine time. Ties break by the earlier release date, and if those match too, the earlier due date wins. The sort is deterministic, so the same input always produces the same sequence, and a change in output always traces back to a change in the data."
+  - question: "What happens when two jobs have the same priority?"
+    answer: "When two jobs share a priority, the engine breaks the tie by start date, giving the earlier-released job first claim on the machine. If the start dates also match, the earlier due date wins. There is no random tie-breaking anywhere, which matters more than it sounds: run the same data twice and you get the same schedule twice, so results are reproducible and any difference between two runs is explained by a difference in the inputs."
+  - question: "Is priority the only thing that determines job sequence?"
+    answer: "Priority is the primary sort key, but two other factors shape the final order. Start date and due date break priority ties. And when make-to-stock netting is active, a job that builds stock is placed before any job that consumes that stock in the same run, regardless of priority, so the consumer sees the inventory it needs. Beyond the standard sort, the optimizer can propose a different global sequence, but it never persists one without your approval."
+qaQuestions:
+  - question: "I set two jobs to priority 1 but one always schedules first. Is that a bug?"
+    answer: "No, that is the deterministic tie-break working as designed. With equal priority, the engine sorts by start date, so the job with the earlier release date claims the machine first; if start dates match, the earlier due date wins. If you want the other job first, lower its priority number, since a lower number means higher priority, or adjust its start date. The behavior is stable, which is exactly why you can trust that the same data always gives the same order."
+  - question: "A make-to-stock build keeps scheduling before my higher-priority customer order. Why?"
+    answer: "Because the customer order consumes the stock that build produces, and the engine places the producer first so the consumer can net against it. If it did not, the priority 1 customer order would run first, find zero on hand, and schedule the full quantity from raw material, while the build stocked inventory nobody used. The producer-before-consumer rule overrides priority only for this netting relationship, and only within the same run. Everything else still sorts by priority, start date, then due date."
+---
+
+**A finite capacity engine decides which job runs first by sorting every order before it places a single operation, using three keys in strict order: priority, then start date, then due date.** The lowest priority number gets the first claim on contested machine time; ties break by the earlier release date, and then by the earlier due date. EDGEBIC by User Solutions applies this sort deterministically, which means the same inputs always produce the same sequence, and any change in the schedule traces directly back to a change in the data. Understanding the sort answers most "why did that job jump the queue?" questions before you ever open the Gantt.
+
+## The sort happens once, up front
+
+Sequencing is not decided operation by operation as the engine goes. Before any placement, the engine orders the whole job list, then processes jobs in that order, each getting first claim on the capacity the earlier jobs left behind. The sort keys, in order:
+
+```
+ORDER BY Priority ASC, StartTime ASC, DueDate ASC
+```
+
+Priority is the primary, user-visible key. Lower integer means higher priority, matching the drag-to-reorder convention in the orders grid. Start date and due date are tie-breakers, so two jobs of equal priority still schedule in a stable, meaningful order rather than at random.
+
+## Why deterministic tie-breaking matters
+
+There is no randomness anywhere in the sort. That property is worth more than it first appears. If you run the same data twice you get the same schedule twice, so a difference between two runs is never noise; it always points to a real change in the inputs: a new order, an edited due date, a logged actual. When a planner asks "why did the plan move?" the answer is always in the data, never in the engine's mood.
+
+This is the opposite of a system that shuffles ties, where the same inputs can yield different plans and you can never fully trust a diff. Determinism is what makes a schedule auditable.
+
+## A worked example
+
+Three orders enter a fresh plant:
+
+| Order | Priority | Start date |
+|---|---|---|
+| MO-101 | 2 | 2026-06-15 |
+| MO-102 | 1 | 2026-06-15 |
+| MO-103 | 2 | 2026-06-16 |
+
+The sort produces MO-102, MO-101, MO-103. MO-102 is first because priority 1 beats priority 2. MO-101 and MO-103 both sit at priority 2, so the start-date tie-break puts MO-101 (June 15) ahead of MO-103 (June 16). Every job then claims machine time in that order, and MO-102's operations get first pick of contested slots.
+
+Change nothing but MO-101's priority to 1 and it jumps ahead of MO-102 only if its start date is earlier or equal and its due date wins the tie; otherwise the two priority-1 jobs sort between themselves by start date. The rule composes cleanly, one key at a time.
+
+## The one override: producer before consumer
+
+There is a single case where priority does not decide first place. When make-to-stock netting is active, a job that builds stock is sorted ahead of any job that consumes that stock in the same run, even if the consumer has higher priority. Without this, a priority-1 make-to-order job could run first, find zero on hand, and schedule its full quantity from raw material, while the stocking build produced inventory nobody consumed. The producer-first rule keeps netting honest, and it applies only to that relationship; everything else still sorts by priority, start date, then due date.
+
+## Where dispatch rules and the optimizer fit
+
+The three-key sort is the engine's standard sequencing. It is not the only sequence worth considering. Classic [dispatch rules](/blog/priority-rules-job-shop) such as earliest due date, shortest processing time, and critical ratio each order jobs by a different logic, and the best sequence for minimizing lateness is genuinely hard to find because it is an NP-hard problem.
+
+This is where the optimizer sidecar comes in. It re-runs the same engine under different global job orderings, including earliest due date, shortest and longest processing time, critical ratio, and seeded shuffles, scores each complete schedule, and proposes the best one. Crucially, it proposes only. Nothing changes until you accept, and the proposed plan is clamped never worse than the standard sort. A short milling job that should feed a downstream machine early, but that the priority sort buried behind a long job, is exactly the kind of gain the optimizer surfaces. The [optimizer guide](/blog/edgebic-optimizer-guide) covers this, and a worked case appears in [why schedule stability can beat schedule optimality](/blog/why-schedule-stability-can-beat-schedule-optimality).
+
+## Reading a sequence like the engine wrote it
+
+When a job lands earlier or later than you expected, walk the keys in order:
+
+1. **Did a higher-priority job claim the slot?** Lower priority number wins.
+2. **Same priority?** The earlier start date wins, then the earlier due date.
+3. **Is this a make-to-stock producer?** It sorts ahead of its consumers in the same run.
+4. **Was the optimizer accepted?** Then the sequence came from an approved proposal, not the standard sort.
+
+Nine surprises out of ten resolve at the first two checks. The sort is simple on purpose: a planner can predict it, reproduce it, and explain it. The direction of scheduling within that sequence, forward or backward, is a separate decision covered in [push vs pull scheduling](/blog/push-vs-pull-scheduling-in-a-finite-capacity-system), and the full engine pipeline lives in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide). See how the sequence forms on your own orders in [EDGEBIC](/edgebic).
+
+<Accordion title="How does a scheduler decide which job runs first?">
+The engine sorts every order before it places any work, using three keys in strict order: priority first, then start date, then due date. The lowest priority number wins the first claim on contested machine time. Ties break by the earlier release date, and if those match too, the earlier due date wins. The sort is deterministic, so the same input always produces the same sequence, and a change in output always traces back to a change in the data.
+</Accordion>
+
+<Accordion title="What happens when two jobs have the same priority?">
+When two jobs share a priority, the engine breaks the tie by start date, giving the earlier-released job first claim on the machine. If the start dates also match, the earlier due date wins. There is no random tie-breaking anywhere, which matters more than it sounds: run the same data twice and you get the same schedule twice, so results are reproducible and any difference between two runs is explained by a difference in the inputs.
+</Accordion>
+
+<Accordion title="Is priority the only thing that determines job sequence?">
+Priority is the primary sort key, but two other factors shape the final order. Start date and due date break priority ties. And when make-to-stock netting is active, a job that builds stock is placed before any job that consumes that stock in the same run, regardless of priority, so the consumer sees the inventory it needs. Beyond the standard sort, the optimizer can propose a different global sequence, but it never persists one without your approval.
+</Accordion>

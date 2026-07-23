@@ -1,0 +1,108 @@
+---
+title: "How a Scheduler Preserves Completed Work"
+description: "Why a reschedule in EDGEBIC never moves finished operations: the three-zone model that freezes completed work, forward-shifts partial work, and re-plans only what has not started."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - reschedule with actuals
+  - preserve completed work
+  - actuals preservation
+  - production rescheduling
+  - in-progress operation
+  - schedule integrity
+targetPhrase: "reschedule without moving completed work"
+wordCount: 1550
+readingTime: 8
+faqQuestions:
+  - question: "Does rescheduling move work that is already finished?"
+    answer: "No. In EDGEBIC, any operation with logged actual start and end dates is treated as historical fact and is preserved verbatim through every reschedule. The engine classifies each operation as completed, in progress, or not started, then re-plans only the remaining work forward from where the shop floor actually is. Completed operations keep their dates, hours, and machine assignment exactly as recorded."
+  - question: "What happens to a partly finished operation when I reschedule?"
+    answer: "EDGEBIC splits it. The hours already logged stay locked as history on the same machine, and only the remaining balance is forward-shifted by the allocator. If a 12-hour operation has 4 hours logged, the reschedule places exactly 8 hours forward from now, not the full 12. The machine assignment is held so the operator is not moved to a different machine mid-job."
+  - question: "What is the resume point after a partial completion?"
+    answer: "The resume point is the earliest moment the remaining steps may begin, computed as the latest of every completed step's actual end date and any in-progress step's projected end. EDGEBIC sets the job's start time to that resume point, so all downstream operations queue behind where reality actually reached, not behind the original plan."
+  - question: "Why is preserving completed work important for trust?"
+    answer: "Because the past is what the reports, the costs, and the operators depend on. If a reschedule quietly moved finished operations, actual-versus-planned variance would be meaningless, the audit trail would be fiction, and the floor would stop believing the schedule. By freezing completed work and re-planning only the future, EDGEBIC keeps the plan honest: the past stays fixed and the future stays optimizable."
+qaQuestions:
+  - question: "An operator logged 4 hours on a 19-hour operation and went home. If I reschedule the whole shop tonight, does that job restart from scratch tomorrow?"
+    answer: "No. EDGEBIC sees the actual start with no actual end, classifies the operation as in progress, and locks the machine assignment. It preserves the historical portion (the 4 logged hours) and reschedules exactly the remaining 15 hours forward from now, on the same machine. The operator's evening work is not discarded and not double-counted, and the operation's own eventual actual end date is still respected when it finally lands, because the in-progress row is deliberately left without an end date so the next reschedule re-classifies it correctly."
+  - question: "A downstream kiosk only captured actuals on steps 3 and 4, but steps 1 and 2 obviously ran. Will the engine try to re-run steps 1 and 2?"
+    answer: "No. When a later step has actuals and an earlier step on the same job does not, EDGEBIC infers the earlier step must also be done and backfills its actuals from its scheduled dates before classifying anything. So steps 1 through 4 all read as completed, the filter removes them from the reschedule set, and the engine re-plans only what genuinely has not started. This inferred-completion rule is why a partial kiosk capture never causes finished upstream work to reappear on the board."
+---
+
+**A reschedule in EDGEBIC by User Solutions never moves an operation that has already been done. The engine treats any operation with logged actual dates as historical fact, preserves it verbatim, and re-plans only the work that remains, forward from where the shop floor actually is.** This one rule is where a scheduling engine earns or loses the trust of the people running it, and it is the difference between a tool the floor believes and a tool the floor prints once and then ignores.
+
+Most systems treat a reschedule as a full reset: wipe every allocation, rerun the engine, stamp new dates. That is fine on paper and disastrous in practice, because it moves work that physically already happened. EDGEBIC takes the opposite approach. A reschedule is a surgical operation that recognizes three distinct zones of work and touches only the ones it is allowed to.
+
+## The three zones of a running job
+
+When you reschedule a job that has actuals, the engine sorts every operation into one of three buckets:
+
+- **Completed.** Both an actual start and an actual end are logged. The dates, the hours, and the machine allocation are permanent. They are copied into the new plan unchanged.
+- **In progress.** An actual start is logged but no actual end. The hours already clocked are locked in on the same machine, and only the remaining balance is forward-shifted.
+- **Not started.** No actual dates at all. These are re-planned from scratch, queuing behind whatever the in-progress work finishes.
+
+The engine reads shop-floor reality, decides where the boundary between past and future sits, and re-plans across that boundary rather than through it. Completed work is a wall the reschedule cannot cross.
+
+## The resume point
+
+The single most important number the engine computes is the resume point: the earliest moment the remaining steps may begin. It is the latest of two things: every completed step's actual end date, and any in-progress step's projected end. EDGEBIC sets the job's start time to that resume point, so downstream operations queue behind where reality reached, not behind the original plan.
+
+This is why a delayed job stays realistic. If the first two steps finished late, the resume point moves later, and the remaining steps inherit that delay automatically. The plan reflects the true position of the job, not the fiction that it is still on its original timeline.
+
+## A worked example: two steps done, one in progress
+
+Take a three-step job. Step 1 finished. Step 2 started three hours ago with 4 hours logged out of a planned 12. Step 3 has not started.
+
+| Step | Work center | Planned | Actual start | Actual end | Logged |
+|---|---|---|---|---|---|
+| 1 Forge | Forge-1 | Mon 08:00 to 16:00 | Mon 08:00 | Mon 16:15 | 8 h |
+| 2 Grind | Grind-2 | Mon 16:00 to Wed 12:00 | Mon 16:00 | (running) | 4 h |
+| 3 QC | QC-Lab | Wed 12:00 to 15:00 | | | |
+
+The engine classifies Step 1 as completed and preserves it. Step 2 is in progress: its planned total is 12 hours, its logged total is 4, so its remaining balance is 8 hours. The resume math points at Step 2's actual start because only 4 hours are logged there. The reschedule then:
+
+- Preserves Step 1 verbatim.
+- Preserves Step 2's 4 logged hours as history on Grind-2, and schedules exactly 8 hours (not 12) forward on the same machine. If that lands the next slot at Tuesday, Step 2's remaining work runs Tuesday 08:00 to 16:00.
+- Queues Step 3 after Step 2's new end and places its 3 hours, spanning a shift boundary as needed.
+
+The operator's evening work is neither lost nor double-counted, the machine assignment holds, and the eventual real end date on Step 2 is still honored, because EDGEBIC deliberately leaves the in-progress row without an end date so the next reschedule re-classifies it as in progress rather than locking it into "complete."
+
+## Two subtleties that keep the past whole
+
+Two behaviors make this robust in the field rather than just in theory.
+
+**Inferred completion.** Shop floors do not always log every step. A downstream kiosk may capture actuals only on the last two operations. If a later step has actuals and an earlier one does not, EDGEBIC infers the earlier step must have run and backfills its actuals from its scheduled dates before it classifies anything. The result is that steps 1 through 4 all read as completed, and none of them reappears on the board. Without this rule, a partial capture would make finished upstream work look unscheduled and the engine would try to re-run it.
+
+**Short-confirm handling.** Sometimes an operator marks an operation complete but logged fewer hours than planned, for example pressing "done" after 10 hours on a 16-hour run. Depending on the site's policy, EDGEBIC can detect the gap and forward-shift the missing hours as a fresh allocation, so the premature close is respected and no hours are invented or discarded. The planner sees a historical block plus a forward-shifted remainder, and the schedule stays honest either way.
+
+## Why the boundary is absolute
+
+The rule that a completed operation is never re-placed is not a convenience; it is a contract. The reports depend on it, the cost accounting depends on it, and the operators depend on it. If a reschedule could quietly move finished work, actual-versus-planned variance would be noise, the audit history would be fiction, and every "why did that job move?" conversation would become a debugging session. By freezing the past and re-planning only the future, EDGEBIC gives supervisors exactly what they expect: yesterday stays fixed, tomorrow stays flexible.
+
+This behavior is also what makes a reschedule safe to run often. Because it can only re-plan not-started and remaining work, you can regenerate the schedule after every machine breakdown, rush order, or shift-end actuals entry without fear that the act of rescheduling will corrupt what the floor already did.
+
+## Where this fits
+
+Preserving completed work is closely tied to two other pieces of the engine. The [frozen routing snapshot](/blog/how-a-frozen-routing-snapshot-protects-a-running-job) keeps a running job on the routing it was scheduled with, so a mid-order engineering change does not silently re-route an operator's remaining steps. And the [actuals tracking explainer](/blog/edgebic-actuals-tracking-explained) covers how those start and end dates and logged hours arrive from the kiosk and the Job View in the first place. The [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide) shows how the reschedule path sits inside the wider pipeline, and if you have hit the specific symptom of finished work appearing to move, the troubleshooting note on [a completed job moving after a reschedule](/blog/a-completed-job-moved-when-i-rescheduled-edgebic) walks the causes.
+
+To see a running job ride through a machine outage untouched while its remaining steps slide, [bring your data to a demo](/contact-us). Watching the past stay frozen while the future re-plans is the fastest way to understand why the floor trusts it.
+
+<Accordion title="Does rescheduling move work that is already finished?">
+No. In EDGEBIC, any operation with logged actual start and end dates is treated as historical fact and is preserved verbatim through every reschedule. The engine classifies each operation as completed, in progress, or not started, then re-plans only the remaining work forward from where the shop floor actually is. Completed operations keep their dates, hours, and machine assignment exactly as recorded.
+</Accordion>
+
+<Accordion title="What happens to a partly finished operation when I reschedule?">
+EDGEBIC splits it. The hours already logged stay locked as history on the same machine, and only the remaining balance is forward-shifted by the allocator. If a 12-hour operation has 4 hours logged, the reschedule places exactly 8 hours forward from now, not the full 12. The machine assignment is held so the operator is not moved to a different machine mid-job.
+</Accordion>
+
+<Accordion title="What is the resume point after a partial completion?">
+The resume point is the earliest moment the remaining steps may begin, computed as the latest of every completed step's actual end date and any in-progress step's projected end. EDGEBIC sets the job's start time to that resume point, so all downstream operations queue behind where reality actually reached, not behind the original plan.
+</Accordion>
+
+<Accordion title="Why is preserving completed work important for trust?">
+Because the past is what the reports, the costs, and the operators depend on. If a reschedule quietly moved finished operations, actual-versus-planned variance would be meaningless, the audit trail would be fiction, and the floor would stop believing the schedule. By freezing completed work and re-planning only the future, EDGEBIC keeps the plan honest: the past stays fixed and the future stays optimizable.
+</Accordion>

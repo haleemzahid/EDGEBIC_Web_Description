@@ -1,0 +1,71 @@
+---
+title: "What Is a Dependency Violation in Scheduling?"
+description: "A dependency violation is when a routing step starts before the step it depends on has finished. Definition, when overlap is legitimate, and how EDGEBIC flags it."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - what is a dependency violation in scheduling
+  - dependency violation production
+  - operation sequence error
+  - step starts before predecessor
+  - routing precedence
+  - schedule overlap check
+targetPhrase: "what is a dependency violation in scheduling"
+wordCount: 910
+readingTime: 5
+faqQuestions:
+  - question: "What is a dependency violation in scheduling?"
+    answer: "A dependency violation is when a routing step is scheduled to start before the step it depends on has finished, so a downstream operation begins on work that is not yet ready. Within a single job, it means step N+1 starts before step N ends. It is flagged as a warning because a raw overlap usually signals a sequencing or configuration fault, though some overlaps are intentional lot streaming and are excluded from the check."
+  - question: "Is overlapping two operations always a violation?"
+    answer: "No. Deliberate lot streaming lets a downstream step start while the upstream step is still running, because partial batches move forward as they are finished. Those overlaps are legitimate and the check excludes any step configured with a start-to-start overlap or a piece-count transfer batch. A violation is only flagged when steps overlap with no such setting behind them, meaning the downstream step is genuinely working on material that does not exist yet."
+  - question: "How is a dependency violation different from an instance collision?"
+    answer: "A collision is two jobs fighting for one machine at the same time. A dependency violation is one job's own steps running out of order, where a later operation starts before an earlier one it needs is done. Collisions are about resource contention and are always critical; dependency violations are about precedence within a routing and are warnings, because intentional overlap exists and the check has to allow for it."
+qaQuestions:
+  - question: "Our drilling step is scheduled to start before the milling step it follows has finished. There is no overlap setting on it. What went wrong?"
+    answer: "The routing's dependency was not honored, and with no overlap setting behind it, that is a genuine violation. The usual cause is a broken or missing link between the two steps, so the engine did not know drilling depends on milling and scheduled them independently. Check that the milling step points to drilling as its successor in the routing. Once the link is correct, a reschedule will place drilling after milling finishes and the warning clears."
+  - question: "The report flagged an overlap between two steps, but we intentionally overlap them with lot streaming. Is that a false alarm?"
+    answer: "It should not be flagged at all if the streaming is configured. The check excludes any step with a start-to-start overlap or a transfer-batch size set, because those are intentional overlaps. If the warning appears anyway, the streaming field is probably not actually set on the step you think it is, or it is set on the wrong step. Confirm the overlap or transfer-batch value is on the upstream step of the pair, and the warning will resolve."
+---
+
+**A dependency violation is when a routing step is scheduled to start before the step it depends on has finished, so a downstream operation begins on work that is not yet ready. Within a single job it means step N+1 starts before step N ends, and it is flagged as a warning because a raw overlap usually signals a sequencing fault, though deliberate lot streaming is an intentional overlap that the check excludes.** It is the anomaly that catches a routing whose precedence got lost.
+
+This entry is part of the EDGEBIC glossary; see the [manufacturing glossary](/blog/manufacturing-glossary) for the wider vocabulary and the [scheduling anomaly](/blog/what-is-a-scheduling-anomaly) definition for the family.
+
+## How a Dependency Violation Works
+
+A routing is an ordered chain of operations: mill, then drill, then finish, then inspect. Each step depends on the one before it, and the schedule must respect that order. The engine builds the chain forward, placing each step only after its predecessor's end time, so a freshly generated plan should never violate its own precedence.
+
+The dependency check reads the plan and, within each job, compares consecutive steps. If a later step's start time falls before the earlier step's end time, the two overlap, and the downstream operation is scheduled to work on material the upstream step has not finished producing. That raw overlap is the violation, reported as a warning so the planner can look at why the order broke.
+
+It is a warning rather than a critical error for one important reason: not all overlap is wrong. Lot streaming deliberately overlaps operations, and the check has to distinguish an intentional overlap from a broken one.
+
+## When Overlap Is Legitimate
+
+Overlapping two operations can be exactly right. In lot streaming, partial batches move downstream as they are finished, so the next station starts while the current one is still running. A tray of 25 machined parts can move to deburring while the lathe keeps turning the remaining 175. That overlap compresses the schedule and is a deliberate planning choice.
+
+The dependency check knows this. It excludes any step configured with a **start-to-start overlap** (downstream begins a set number of hours after upstream starts) or a **piece-count transfer batch** (downstream begins once a set number of pieces exist). When either is set, the overlap is intentional and not flagged. A violation is only reported when steps overlap with no such setting behind them, which means the precedence was genuinely lost, not deliberately relaxed.
+
+So the check reads as: this downstream step starts before its predecessor ends, and nothing in the routing says that overlap was meant to happen.
+
+This is why a dependency violation is a warning rather than a critical error, unlike a collision or an inversion. The two of those describe something physically impossible; a dependency overlap describes something that might be exactly what the planner wanted (streaming) or might be a broken link. The check cannot always tell intent from data alone once you strip out the streaming settings it knows about, so it surfaces the overlap and leaves the judgment to the planner. Most violations turn out to be missing links, but the warning severity respects that some are deliberate.
+
+## A Concrete Example
+
+A job routes through milling and then drilling. Milling is scheduled 8 a.m. to noon; drilling is scheduled to start at 11 a.m., an hour before milling finishes. The routing has no overlap or transfer-batch setting on the milling step.
+
+The dependency check flags a violation: drilling starts on parts milling has not yet produced. The planner opens the routing and finds the link between milling and drilling was never set, so the engine scheduled the two steps independently and they happened to overlap. Correcting the successor link so milling points to drilling, then re-running the schedule, places drilling after milling's noon end. The warning clears, and the job now runs in its correct order.
+
+Had the planner actually intended the overlap, they would have set a start-to-start overlap or a transfer-batch size on milling instead, and the check would have excluded the pair from the start.
+
+## How EDGEBIC Flags Dependency Violations
+
+In EDGEBIC, dependency checking lives in the Scheduler Anomalies report under the Reports menu, in the dependency-violation category. Run it per job or plant-wide. The summary strip shows the dependency chips: green when every job's steps run in order, amber when an unexplained overlap is found. Clicking a flagged row opens the job so you can see which two steps overlap and by how much.
+
+The engine prevents most violations by ordering operations from the routing's dependency links before it schedules them. When a violation still appears, it points at the routing configuration (a missing or broken link between two steps) rather than an allocation mistake. For how the engine builds and honors that order, see [how EDGEBIC orders operations with dependency graphs](/blog/how-edgebic-orders-operations-dependency-graphs), and for the common setup slips, [dependency and sequencing mistakes](/blog/dependency-and-sequencing-mistakes-edgebic).
+
+If the overlap you see is meant to be lot streaming, the [transfer batch](/blog/what-is-a-transfer-batch) definition covers how to configure the intentional version so the check treats it correctly. For the full validation catalogue, read [what the EDGEBIC anomaly checks actually look for](/blog/what-the-edgebic-anomaly-checks-actually-look-for) and the [schedule diagnostics overview](/blog/edgebic-schedule-diagnostics-explained).
+
+A plan with no dependency violations is one where every job does its steps in the order the routing demands, and any overlap that remains is overlap you asked for. That is the difference between a compressed schedule and a broken one.

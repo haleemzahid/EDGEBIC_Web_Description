@@ -1,0 +1,71 @@
+---
+title: "What Is Last-Write-Wins Concurrency?"
+description: "Last-write-wins is the concurrency model where the most recent save overwrites earlier ones with no conflict alert. Definition, the trade-off, and how it works in EDGEBIC."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - what is last-write-wins concurrency
+  - last write wins definition
+  - concurrent edits overwrite
+  - optimistic concurrency disabled
+  - two planners editing same record
+  - concurrency model scheduling
+targetPhrase: "what is last-write-wins concurrency"
+wordCount: 940
+readingTime: 5
+faqQuestions:
+  - question: "What is last-write-wins concurrency?"
+    answer: "Last-write-wins is a concurrency model in which, when two people save changes to the same record, the most recent save simply overwrites the earlier one with no conflict warning. There is no version check that stops the second writer or alerts them that the record changed underneath them. It is the plain-sticky-note model: two people edit the same shared note, and whoever saves last is the version that survives."
+  - question: "What is the trade-off with last-write-wins?"
+    answer: "The trade-off is simplicity for the risk of a silent overwrite. Last-write-wins never blocks a save with a false conflict or a confusing prompt, so edits always go through cleanly. The cost is that if two people happen to edit the same record at the same time, one person's changes vanish without either being told. For a single-planner shop this never comes up; for concurrent editing, it means coordinating who edits what."
+  - question: "Is optimistic concurrency the same as last-write-wins?"
+    answer: "They are opposites. Optimistic concurrency checks a version marker on save and rejects the write if the record changed since it was read, forcing the second writer to reconcile. Last-write-wins skips that check and lets the later save win. A system can have the plumbing for optimistic concurrency in place but disabled, which is the case here: the version field exists but is not enforced, so the effective behavior is last-write-wins."
+qaQuestions:
+  - question: "Two of us edited the same work center and my changes disappeared. Why did nothing warn me?"
+    answer: "Because the current model is last-write-wins: the later save overwrites the earlier one with no conflict alert. Both saves succeeded from the system's point of view; yours was simply the one that got overwritten when the other person saved after you. There is no version check to catch it. The practical fix is coordination: agree who owns which records during a shared editing session, or refresh before you edit so you are working from the latest values."
+  - question: "We are a single-planner shop. Does last-write-wins ever affect us?"
+    answer: "In practice, no. Last-write-wins only bites when two people, or two sessions, edit the exact same record at overlapping times. With one planner working one record at a time, there is never a competing writer, so nothing is ever silently overwritten. The model is a consideration for multi-user coordination, not something a single planner needs to work around. Save normally and your changes are always the ones that stand."
+---
+
+**Last-write-wins is a concurrency model in which, when two people save changes to the same record, the most recent save overwrites the earlier one with no conflict warning: there is no version check that stops the second writer or tells them the record changed underneath them.** The plain analogy is a shared sticky note: two people edit the same note, and whoever saves last is the version that survives, with no alert to the one whose edits were replaced.
+
+This entry is part of the EDGEBIC glossary; see the [manufacturing glossary](/blog/manufacturing-glossary) for the wider vocabulary and the [scheduling policy](/blog/what-is-a-scheduling-policy) definition for another site-wide behavior planners work within.
+
+## How Last-Write-Wins Works
+
+When you open a record (a work center, a routing, an order) and save a change, the system writes your version to the database. The concurrency question is what happens if someone else opened the same record and saves too. Under last-write-wins, the answer is simple: whichever save lands second is the one that persists. The first save is not protected, and the second writer is not told anything changed.
+
+There is no version marker being checked at save time. Some systems keep a hidden version number on each record and reject a save if the record changed since it was read, forcing the second writer to reconcile. That is optimistic concurrency, and it is the opposite behavior. Last-write-wins skips the check entirely, so both saves always succeed cleanly and the later one simply overwrites.
+
+It is worth being precise about one detail: the plumbing for optimistic concurrency can exist in the data model (a version field on the record) while being switched off, so it is not enforced. When that is the case, the effective behavior is last-write-wins even though the version field is present. The field is there for a future in which conflict checks are turned on; today it is inert.
+
+That inert-but-present arrangement is a deliberate design choice, not an oversight. Keeping the version field in place means conflict enforcement can be switched on later without a data migration, when the way a shop uses the system grows past a single planner. Until then, enforcing it would cost more than it saves: version checks that fire on stale reads can reject perfectly good saves and produce confusing prompts, which is worse than the rare silent overwrite for a shop that is not editing the same record from two seats. The model matches the current usage rather than a hypothetical one.
+
+## The Trade-Off
+
+Every concurrency model trades one risk for another, and last-write-wins is a deliberate choice.
+
+The benefit is clean, predictable saves. Nobody is ever blocked by a version conflict, nobody sees a confusing "this record changed, please reload" prompt mid-edit, and edits always go through. For a shop where one planner works one record at a time, that simplicity is exactly right and the downside never appears.
+
+The cost is the silent overwrite. If two people do edit the same record at overlapping times, one person's changes vanish and neither is warned. The lost edits are not corrupted or half-applied; they are simply gone, replaced by the later save. That is why last-write-wins is a coordination consideration for multi-user setups: the safeguard is people agreeing who edits what, or refreshing before editing, rather than the system enforcing it.
+
+## A Concrete Example
+
+Two planners open the same work center to adjust its settings. Planner A changes the number of machine instances and saves at 10:00. Planner B, who opened the record a minute earlier, changes the machine's color and saves at 10:01, working from the values as they were before A's save.
+
+Under last-write-wins, B's save is the second one to land, so it overwrites the record with B's version, which still carries the old instance count. Planner A's instance change is gone, and neither planner is told. The record now shows B's color and the original instance count, as if A never edited it. The fix is not technical: A and B need to coordinate, or B needed to refresh before editing so their save carried A's change forward.
+
+Had optimistic concurrency been enforced, B's save would have been rejected with a notice that the record changed, prompting B to reload and reapply. Last-write-wins trades that safety net for never interrupting a save.
+
+## How This Works in EDGEBIC
+
+In [EDGEBIC by User Solutions](/edgebic), the current concurrency model is last-write-wins. Records carry the field that a version check would use, but the check is not enforced, so concurrent saves resolve by whoever writes last. For a single planner, this is invisible: there is never a competing writer, so nothing is ever silently overwritten, and saves always behave exactly as expected.
+
+For shops where more than one person edits master data at the same time, the practical guidance is coordination. Agree who owns which records during a shared session, and refresh a record before editing it so you are working from the latest values rather than a stale copy. That habit sidesteps the one situation where last-write-wins can cost you: two people, one record, overlapping edits.
+
+The model is separate from anything the scheduling engine does; it governs how saved records resolve, not how the plan is built. For the standing rules that do shape scheduling behavior, see the [scheduling policy](/blog/what-is-a-scheduling-policy) and [scheduling mode](/blog/what-is-a-scheduling-mode) definitions, and for the broader planning vocabulary, [what is production scheduling](/blog/what-is-production-scheduling).
+
+Last-write-wins is a straightforward, predictable model that fits single-planner and lightly-coordinated shops well. Know it is there, coordinate around shared records, and the one case it does not protect you from stays out of your way.

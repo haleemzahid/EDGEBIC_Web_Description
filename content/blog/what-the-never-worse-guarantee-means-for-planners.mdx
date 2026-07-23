@@ -1,0 +1,99 @@
+---
+title: "What the Never-Worse Guarantee Means for Planners"
+description: "Why running the EDGEBIC optimizer is risk-free: the clamp that compares every candidate plan against your baseline and returns the baseline unless the candidate is strictly better."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - never-worse guarantee
+  - schedule optimization safety
+  - optimizer baseline
+  - production scheduling optimization
+  - accept discard schedule
+  - optimizer clamp
+targetPhrase: "never-worse optimization guarantee"
+wordCount: 1450
+readingTime: 7
+faqQuestions:
+  - question: "What is the never-worse guarantee in schedule optimization?"
+    answer: "The never-worse guarantee means the EDGEBIC optimizer can never hand you a plan that is worse than the one you started with. After it searches, it compares the best candidate directly against your current baseline plan under the goal you chose. If the candidate is not strictly better, it returns the baseline unchanged. So the worst possible outcome of running the optimizer is that nothing improves and your existing plan stands."
+  - question: "Is the never-worse guarantee enforced or just assumed?"
+    answer: "It is enforced after the search, not assumed. The optimizer scores the candidate plan and the baseline plan with the same KPI calculator and compares them tier by tier under your chosen goal. Only a strict win returns the candidate; anything else returns the baseline. This holds for both the multi-run heuristic layer and the CP-SAT solver, so switching engines never changes the safety contract."
+  - question: "Does the optimizer change my schedule automatically?"
+    answer: "No. The optimizer runs entirely in memory and persists nothing on its own. It shows a side-by-side comparison of the current plan and the proposed plan, with the KPI deltas and the specific operations that moved, and waits. Only when you click Accept does it write, and Accept runs through the same persist pipeline as a normal schedule. Discard leaves the database exactly as it was."
+  - question: "What happens to completed work when I accept an optimized plan?"
+    answer: "Nothing. Accepting an optimized plan runs through the same persist pipeline as any reschedule, so operations with logged actuals are preserved verbatim. The optimizer only rearranges work that has not started. Completed and in-progress operations keep their dates, hours, and machine assignments, so optimization can never disturb what the shop floor already did."
+qaQuestions:
+  - question: "I want to try optimizing mid-week but I am nervous it will blow up a schedule my supervisors already built their day around. Is that a real risk?"
+    answer: "It is not, for two independent reasons. First, the never-worse clamp means the optimizer returns your current plan unless a candidate strictly beats it on the goal you picked, so at worst you see no change. Second, nothing happens until you click Accept: the optimizer only ever shows you a comparison, and you can Discard it and the database is byte-identical to before you ran it. If you pick the fewest-changes goal, the optimizer will also actively prefer plans that move the least, so a mid-week run can improve the numbers while barely disturbing what your supervisors set up."
+  - question: "The optimizer says it found no improvement. Did it actually try, or did it just give up?"
+    answer: "It tried and reported honestly. When the optimizer cannot beat your baseline it tells you the plan is retained and, where relevant, how close the nearest challenger came, so you know the search ran rather than stalled. That is the point of the clamp: a heuristic search that occasionally cannot improve a plan is normal and expected, and the honest thing is to hand back the baseline rather than ship a lateral or slightly worse plan dressed up as an improvement. No improvement found is a real, trustworthy result, not a failure."
+---
+
+**The never-worse guarantee means that running the EDGEBIC by User Solutions optimizer can never leave you with a schedule worse than the one you already had. After the optimizer searches, it compares the best candidate plan directly against your current baseline under the goal you chose, and it returns the candidate only if it is strictly better. Otherwise it returns your baseline unchanged.** The practical consequence is simple: pressing the optimize button carries no downside. At worst, nothing improves and your existing plan stands.
+
+Optimizers make planners nervous for a good reason. A tool that reorders the whole shop is exactly the kind of thing that can turn a carefully built day into chaos if it gets something wrong. EDGEBIC removes that fear with two independent safeguards, and the never-worse clamp is the first of them.
+
+## The clamp: how "never worse" is actually enforced
+
+The word that matters in never-worse is "enforced." A warm start or a good heuristic might usually produce a better plan, but usually is not a guarantee. EDGEBIC does not rely on the search behaving well. After the search finishes, it takes the best candidate it found and the original baseline plan, scores both with the same KPI calculator, and compares them tier by tier under your selected goal. If the candidate does not strictly win, the baseline is returned.
+
+This clamp runs regardless of which optimizer engine you use. The multi-run heuristic layer and the CP-SAT solver both compute their candidate, then both submit it to the same direct comparison. That is why switching between the [multi-run search and the mathematical solver](/blog/how-mathematical-optimization-improves-a-schedule) never changes the safety story: the guarantee lives outside the search, in the comparison that gates the result.
+
+Because the comparison is direct rather than a chain through intermediate candidates, it is also immune to a subtle trap where a series of "slightly better" steps drifts away from the real baseline. The candidate is measured against the plan you actually started with, not against some intermediate incumbent, so a strict win is a strict win against reality.
+
+## Nothing moves until you accept
+
+The second safeguard is that the optimizer never writes anything on its own. Every proposal lives entirely in memory. What you see is a comparison screen: your current plan on one side, the proposed plan on the other, with the KPI deltas laid out (tardiness, on-time count, makespan, setup, and how much the plan moved) plus a changes-only list naming the specific operations that shifted. Unmoved operations are not cluttering the list. You then have exactly two choices.
+
+- **Accept** writes the plan through the same persist pipeline a normal schedule uses, with the same merge guards and audit trail.
+- **Discard** drops the in-memory proposal. The database is byte-identical to before you ran the optimizer.
+
+There is no third path where the optimizer quietly commits something. A run you do not accept has no effect at all, which means you can optimize freely to see what is possible without committing to anything.
+
+## Completed work is still untouched
+
+The never-worse clamp protects the goal metric; a separate rule protects history. When you accept an optimized plan, it goes through the same persist pipeline as any reschedule, so operations with logged actuals are preserved exactly. The optimizer only ever rearranges work that has not started. Completed and in-progress operations keep their dates, their hours, and their machine assignments, just as they do in a [reschedule that preserves completed work](/blog/how-a-scheduler-preserves-completed-work). So optimization can improve tomorrow without disturbing what the floor did yesterday.
+
+This matters for the mid-week case specifically. Half the reason planners avoid optimizing on a live day is fear of disrupting operations that are already set up. Between the actuals-preservation rule and the fewest-changes goal (which actively prefers plans that move the least), a mid-week optimize can tighten the numbers while barely touching what supervisors already arranged.
+
+## Why "no improvement found" is a good answer
+
+A heuristic search will sometimes fail to beat a plan, and that is not a defect. It is exactly what the clamp is for. When the optimizer cannot improve your baseline, it says so plainly and, where it can, tells you how close the nearest challenger came. That honest "no improvement found, retained the baseline" is far more useful than a tool that ships a lateral or marginally worse plan dressed up as a win.
+
+Consider a schedule that is already well-sequenced. Run the optimizer against the on-time goal and it may report that the baseline stands. That is the guarantee working: the search ran, evaluated its candidates, found none strictly better, and returned your plan. You lost nothing and confirmed your current sequence is hard to beat, which is itself worth knowing.
+
+The comparison also depends on which goal you picked, and that is a feature rather than a limitation. A candidate that trims makespan but pushes one job late is a win under the fastest-finish goal and a loss under the on-time goal. Because the clamp measures the candidate against the baseline under the goal you selected, "strictly better" always means better at the thing you actually asked for. Switch the goal and the same candidate can flip from accepted to retained, so the guarantee is honest about tradeoffs instead of hiding them behind a single blended score. That is why choosing the goal before you run matters: it is the definition of what "worse" would even mean.
+
+## What the guarantee lets you do
+
+The combined effect of the clamp and the accept flow is that optimization becomes something you can reach for casually rather than ceremonially. You can:
+
+- Run it before a shift to check whether a better sequence exists, and discard if not.
+- Try different goals (on-time, least setup, fastest finish) and compare, without any of them touching the live plan until you choose one.
+- Optimize after a rush order lands, confident that the worst case is your existing recovery plan and the best case is a measurably better one.
+
+The guarantee does not promise the optimizer always finds gold. It promises the search can only help or leave things as they are, and that you decide whether to keep whatever it found. That is the difference between a tool you trust and a tool you fear, and it is why the never-worse contract is written into the engine rather than left to good behavior.
+
+For the search mechanics behind the candidates, see [how mathematical optimization improves a schedule](/blog/how-mathematical-optimization-improves-a-schedule) and the [optimizer guide](/blog/edgebic-optimizer-guide); for the proof-of-quality number the solver adds on top, the [optimality gap definition](/blog/what-is-an-optimality-gap-production-scheduling) explains it. The [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide) shows where the optimizer sits in the wider platform.
+
+To run the optimizer against your own jobs and watch the clamp hand back your plan when nothing beats it, [bring your data to a demo](/contact-us).
+
+<Accordion title="What is the never-worse guarantee in schedule optimization?">
+The never-worse guarantee means the EDGEBIC optimizer can never hand you a plan that is worse than the one you started with. After it searches, it compares the best candidate directly against your current baseline plan under the goal you chose. If the candidate is not strictly better, it returns the baseline unchanged. So the worst possible outcome of running the optimizer is that nothing improves and your existing plan stands.
+</Accordion>
+
+<Accordion title="Is the never-worse guarantee enforced or just assumed?">
+It is enforced after the search, not assumed. The optimizer scores the candidate plan and the baseline plan with the same KPI calculator and compares them tier by tier under your chosen goal. Only a strict win returns the candidate; anything else returns the baseline. This holds for both the multi-run heuristic layer and the CP-SAT solver, so switching engines never changes the safety contract.
+</Accordion>
+
+<Accordion title="Does the optimizer change my schedule automatically?">
+No. The optimizer runs entirely in memory and persists nothing on its own. It shows a side-by-side comparison of the current plan and the proposed plan, with the KPI deltas and the specific operations that moved, and waits. Only when you click Accept does it write, and Accept runs through the same persist pipeline as a normal schedule. Discard leaves the database exactly as it was.
+</Accordion>
+
+<Accordion title="What happens to completed work when I accept an optimized plan?">
+Nothing. Accepting an optimized plan runs through the same persist pipeline as any reschedule, so operations with logged actuals are preserved verbatim. The optimizer only rearranges work that has not started. Completed and in-progress operations keep their dates, hours, and machine assignments, so optimization can never disturb what the shop floor already did.
+</Accordion>

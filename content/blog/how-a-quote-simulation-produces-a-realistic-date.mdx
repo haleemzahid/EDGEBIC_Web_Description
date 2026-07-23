@@ -1,0 +1,99 @@
+---
+title: "How a Quote Simulation Produces a Realistic Date"
+description: "Why an EDGEBIC quote date holds up: the simulation borrows the live scheduling engine, runs against real capacity in memory, writes nothing, and reports the same date the real run gives."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - quote simulation
+  - realistic delivery date
+  - what-if scheduling
+  - finite capacity quoting
+  - lead time estimate
+  - promise date
+targetPhrase: "quote simulation delivery date"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "How does a quote simulation produce a realistic delivery date?"
+    answer: "EDGEBIC runs the full scheduling engine against your real work centers, real routings, and real committed schedules, in memory, using a temporary order. It returns the earliest completion for that order given current finite capacity, then discards the run without writing any schedule rows. Because the simulation uses the same engine as live scheduling, the date it reports is the date a real run would produce, not a rough estimate."
+  - question: "Does running a quote simulation disturb the live schedule?"
+    answer: "No. The simulation is read-only with respect to production. It creates a temporary order only so the engine has something to schedule, runs entirely in memory, and deletes the temporary order afterward regardless of success or failure. Nothing is written to the schedule, so a sales engineer can run twenty simulations for different quantities and dates without touching the floor plan."
+  - question: "Why does the quote use work hours instead of the calendar span for cost?"
+    answer: "Because the calendar span overstates labor. A job that starts Friday afternoon and finishes Monday morning spans roughly 66 clock hours but contains only a few hours of actual work across the weekend gap. EDGEBIC computes estimated hours from the productive time allocated per shift and instance, not from the end date minus the start date, so labor cost reflects real work content rather than elapsed time."
+  - question: "Can I check whether a customer's requested date is achievable?"
+    answer: "Yes, most directly with a backward simulation. If you set the quote to schedule backward with the customer's requested date as the finish-by date, the engine right-aligns the job to end at or before that date. If it cannot fit, it falls back to a forward run and reports a later end date, so comparing the estimated end against the requested date tells you directly whether the date is achievable and, if not, when the job would actually finish."
+---
+
+**A quote simulation in EDGEBIC by User Solutions produces a realistic date because it borrows the live scheduling engine rather than a separate estimating formula. It builds a temporary order, runs the full engine against your real work centers, routings, and committed schedules in memory, reads back the earliest completion, and then discards everything without writing a single schedule row.** The date it hands to sales is the date the real run would produce, because it was computed by the same decisions against the same capacity.
+
+Quoting is where most scheduling systems quietly cheat. They estimate a lead time from a rough formula, or they assume infinite capacity, and the promised date bears no relationship to what the floor can actually deliver. EDGEBIC takes the harder and more honest path: it schedules the quote for real, in a sandbox, and reports what it finds.
+
+## One engine, two uses
+
+The key architectural fact is that the quote simulation and live scheduling run identical engine logic. When sales asks for a promise date, EDGEBIC:
+
+1. Creates a temporary order for the quoted product and quantity, with the requested date carried onto it.
+2. Runs the same finite-capacity engine that produces live schedules, in memory, on a background thread.
+3. Reads the returned schedule's earliest start and end for the order.
+4. Rolls up estimated hours and costs from the returned operations.
+5. Deletes the temporary order in a cleanup step that always runs, whether the simulation succeeded or failed.
+
+The two paths diverge only at the final step: a real run persists its schedule, and the simulation discards it. Everything before that persist step, the same capacity buckets, the same shift calendars, the same holidays and downtime, the same [sequence-dependent setup](/blog/how-sequence-dependent-setup-shapes-a-schedule), the same routing sequence, is shared. That is why a quoted date and the schedule you get after converting the quote agree: they were computed the same way. If they disagreed, the quote would be a guess, and the whole point is that it is not.
+
+Because the run is read-only with respect to production, a sales engineer can simulate twenty variations, different quantities, different dates, without ever disturbing the floor plan. The simulation also filters out any leftover temporary orders from prior runs, so old sandbox rows never contaminate a new estimate.
+
+## Real capacity, not a formula
+
+What makes the date realistic is that it respects the same constraints a live schedule does. The simulation sees the committed schedules already on the floor, so a quote runs behind the work that is already booked rather than assuming an empty plant. It sees finite capacity, so it cannot overload a machine. It sees the calendar, so weekends, holidays, and downtime push the completion out exactly as they would in production.
+
+This matters most for the cost side. EDGEBIC computes estimated hours from the productive time allocated per shift and instance, not from the calendar span between start and end. The distinction is not academic: a job that starts Friday afternoon and finishes Monday morning spans roughly 66 clock hours but contains only a few hours of actual work, because the weekend costs zero machine time. Using the span for cost would massively overstate labor. Using the real allocated hours keeps the estimate grounded, and it is the same hour accounting the [multi-shift allocator](/blog/how-multi-shift-allocation-fills-capacity) uses when it places the work.
+
+## A worked example: 200 widgets, forward simulation
+
+Take Widget A with a two-step routing: mill at 8 hours per unit, then assembly at 2 hours per unit. Milling runs $55 an hour, assembly $30, and the product's unit material cost is $12. The quote is for 200 pieces, scheduled forward from a target start of today.
+
+The simulation creates a temporary order for 200 pieces, runs the engine against current capacity, and returns a schedule. Suppose it starts the job June 16 and finishes August 22. The cost rollup reads:
+
+| Work center | Hours | Rate | Cost |
+|---|---|---|---|
+| Mill-1 | 1,600 | $55 | $88,000 |
+| Assembly-1 | 400 | $30 | $12,000 |
+| Material | 200 x $12 | | $2,400 |
+
+Estimated total cost is $102,400. With a 25 percent markup that is a unit price of $640 and a total price of $128,000 on an estimated total of 2,000 work hours. The estimated lead time (67 days) comes from the returned start and end. Every one of those numbers came from actually scheduling the order, so if the customer wanted delivery by mid-September, the planner can see at a glance that an August 22 finish clears it.
+
+The planner is free to substitute a manual cost override (to capture tooling wear or scrap the routing does not model) without losing the rolled-up breakdown, and the rolled-up labor and material figures are still stored so that quote-versus-actual variance reporting works once the job runs for real.
+
+## Asking "can we hit this date?" directly
+
+A forward simulation answers "if we start now, when do we finish?" To answer the customer's actual question, "can you deliver by this date?", the cleanest tool is a backward simulation. Set the quote to schedule backward with the customer's requested date as the finish-by date, and the engine right-aligns the job to end at or before that date, starting as late as capacity allows.
+
+If the job fits, the estimated end is at or before the requested date and the answer is yes. If it does not fit, the engine falls back to a forward run and reports a later end date, which is itself the answer: no, and here is when it would actually finish. That fallback is honest by design, and it means comparing the estimated end against the requested date tells you both whether the date is achievable and, if not, the real date you can promise instead. The general trade-off between the two directions is covered in [forward versus backward scheduling](/blog/forward-vs-backward-scheduling).
+
+## Why this is a simulation, not a separate promise engine
+
+It is worth being precise about what this is. EDGEBIC's quoting is a what-if simulation of the real scheduler: it borrows the engine, runs a sandbox, and reports a promise date grounded in current capacity. It is not a separate estimating module with its own assumptions, which is exactly why its numbers hold up when the quote becomes a job. When you convert the quote, the resulting order carries the same scheduling direction and cost basis, so the real schedule reproduces the quoted plan.
+
+That grounding is the whole value. A promise date is only worth something if the shop can hit it, and the only way to know that is to schedule the work against real capacity before you commit. The [quote simulation explainer](/blog/edgebic-quote-simulation-explained) walks the create-simulate-convert flow step by step, and the [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide) shows how the same engine powers both quoting and live scheduling. If your promise dates feed an ERP or a customer portal, the [EDGEBIC ERP integration](/edgebic-erp-integration) page covers how quote and order data move through flexible import and export masks.
+
+To run a simulation against your own capacity and see a promise date you can actually stand behind, [bring your data to a demo](/contact-us).
+
+<Accordion title="How does a quote simulation produce a realistic delivery date?">
+EDGEBIC runs the full scheduling engine against your real work centers, real routings, and real committed schedules, in memory, using a temporary order. It returns the earliest completion for that order given current finite capacity, then discards the run without writing any schedule rows. Because the simulation uses the same engine as live scheduling, the date it reports is the date a real run would produce, not a rough estimate.
+</Accordion>
+
+<Accordion title="Does running a quote simulation disturb the live schedule?">
+No. The simulation is read-only with respect to production. It creates a temporary order only so the engine has something to schedule, runs entirely in memory, and deletes the temporary order afterward regardless of success or failure. Nothing is written to the schedule, so a sales engineer can run twenty simulations for different quantities and dates without touching the floor plan.
+</Accordion>
+
+<Accordion title="Why does the quote use work hours instead of the calendar span for cost?">
+Because the calendar span overstates labor. A job that starts Friday afternoon and finishes Monday morning spans roughly 66 clock hours but contains only a few hours of actual work across the weekend gap. EDGEBIC computes estimated hours from the productive time allocated per shift and instance, not from the end date minus the start date, so labor cost reflects real work content rather than elapsed time.
+</Accordion>
+
+<Accordion title="Can I check whether a customer's requested date is achievable?">
+Yes, most directly with a backward simulation. If you set the quote to schedule backward with the customer's requested date as the finish-by date, the engine right-aligns the job to end at or before that date. If it cannot fit, it falls back to a forward run and reports a later end date, so comparing the estimated end against the requested date tells you directly whether the date is achievable and, if not, when the job would actually finish.
+</Accordion>

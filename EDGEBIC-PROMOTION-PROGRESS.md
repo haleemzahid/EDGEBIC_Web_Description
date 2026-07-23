@@ -41,12 +41,12 @@
 | Cluster | Slug | Target | Written | Published | Indexed |
 |---|---|---|---|---|---|
 | 17 | edgebic-platform | 180 | 155 | 0 | 0 |
-| 18 | edgebic-scheduling-concepts | 200 | 1 | 0 | 0 |
+| 18 | edgebic-scheduling-concepts | 200 | 25 | 0 | 0 |
 | 19 | edgebic-how-to | 500 | 217 | 0 | 0 |
 | 20 | edgebic-walkthroughs | 50 | 11 | 0 | 0 |
 | 21 | edgebic-erp-integration | 150 | 42 | 0 | 0 |
 | 22 | edgebic-industry | 110 | 37 | 0 | 0 |
-| 23 | edgebic-glossary | 350 | 5 | 0 | 0 |
+| 23 | edgebic-glossary | 350 | 65 | 0 | 0 |
 | 24 | edgebic-troubleshooting | 120 | 45 | 0 | 0 |
 | 25 | edgebic-outcomes | 100 | 25 | 0 | 0 |
 | 26 | edgebic-optimization | 60 | 1 | 0 | 0 |
@@ -56,7 +56,7 @@
 | 30 | edgebic-planning | 80 | 1 | 0 | 0 |
 | 31 | edgebic-migration | 40 | 0 | 0 | 0 |
 | 32 | edgebic-admin | 40 | 9 | 0 | 0 |
-| | **TOTAL** | **2,120** | **552** | **0** | **0** |
+| | **TOTAL** | **2,120** | **636** | **0** | **0** |
 
 **"Written" count is derivable from disk** (don't trust memory, count files):
 PowerShell: `Select-String -Path content/blog/*.mdx -Pattern "cluster: 'edgebic-" | Group-Object { ($_.Line -split "'")[1] } | Sort-Object Name | Format-Table Name, Count`
@@ -68,6 +68,7 @@ PowerShell: `Select-String -Path content/blog/*.mdx -Pattern "cluster: 'edgebic-
 | 2026-07-23 | 1 | 50 | 15 of 16 (all but migration) | 917bdc3 | 7 parallel agents; 13 pillars + 10 walkthroughs + 8 visual + 6 ERP + 8 troubleshooting + 5 glossary; QA pass fixed 2 claims; ~110k words; no heroImage yet (screenshots pending) |
 | 2026-07-23 | 1 fix | 0 | erp-integration | c721268 | Corrected "new-jobs-only mode" claim in 4 Wave 1 posts (no user-facing mode picker exists) |
 | 2026-07-24 | 2 / flight 1 | 84 | platform (72), erp-integration (12) | 19e620c | 7 parallel agents, 4 angles x 18 chapters + 12 ERP; ~150k words; QA: 0 banned/em-dash/FCP hits, 0 dup slugs, 151/151 internal links resolve, 0 existing files touched |
+| 2026-07-29 | 3 / flight 4 | 84 | glossary (60), scheduling-concepts (24) | see git log | 7 parallel agents; pivoted off micro-tasks to the definitions dictionary: 60 glossary terms (engine/planning/execution/reporting/diagnostics) + 24 deeper concept posts; ~105k words; QA: all scans clean, 161/161 links resolve, 0 cross-commit collisions across all 636. Fixed 3 glossary links from hyphen to canonical slash form + retargeted 2 phrases to avoid cannibalizing generic glossary terms (ATP, FPY). **WAVE 3 COMPLETE (400+ how-to/troubleshooting/glossary/concept posts across 4 flights).** |
 | 2026-07-28 | 3 / flight 3 | 84 | how-to (72), troubleshooting (12) | see git log | 7 parallel agents; work-center deep, routing internals, scheduling control, remaining reports, kiosk/operators, deployment/options, + 12 new troubleshooting symptoms; ~115k words; QA: all scans clean, 195/195 links resolve, 0 cross-commit slug collisions across all 552, 1 British UI label normalized. ~11 tasks substituted for undocumented features (the granular how-to seam is thinning; Flight 4 pivots to glossary/concepts). New product-finding note added on doc-vs-UI control gaps |
 | 2026-07-27 | 3 / flight 2 | 84 | how-to (72), troubleshooting (12) | see git log | 7 parallel agents; inventory, MPS/sales orders, quoting/scenarios, admin/import, advanced-scheduling config, Gantt/options, + 12 new troubleshooting symptoms; ~110k words; QA: all scans clean, 183/183 links resolve. Genericized internal FCP filesystem paths + env flag out of 3 posts (see product-finding note); 2 more feature gaps surfaced (no filter-Gantt-by-WC, no optimizer job-freeze button); docs-vs-code disagreement on scenario step-overrides logged |
 | 2026-07-26 | 3 / flight 1 | 84 | how-to (72), troubleshooting (12) | see git log | 7 parallel agents; task-level recipes (products, calendars/capacity, routing, orders/scheduling, actuals, reports) + 12 new troubleshooting symptoms; ~120k words; QA: all scans clean, 159/159 links resolve, 2 em dashes fixed. 3 feature gaps surfaced by "flag don't invent" (inert On Hold, no cross-product routing clone, bottleneck-flag activation) logged Q14/Q15 |
@@ -114,6 +115,16 @@ All were normalized before commit. This matters beyond taste: US buyers search
 Add a US-spelling check to every future QA pass, and beware the false positives
 (optimistic, optimism, analysis are correct US spellings).
 
+**Glossary link + cannibalization rules (added Wave 3 flight 4).** The 185 live generic
+glossary terms render at `/blog/glossary/<term>` (slash). Link that canonical slash form,
+NOT the `/blog/glossary-<term>` hyphen form (which only 301-redirects; the .mdx file is
+named with the hyphen so a naive file-existence check passes anyway). Where a new EDGEBIC
+`what-is-X` post covers a term that also has a generic glossary entry, it must (a) take the
+product-behavior angle, (b) link the generic entry, and (c) use a DISTINCT targetPhrase
+(not the bare term) so the two do not cannibalize. Pre-existing corpus has ~210 hyphen-form
+links that redirect fine; a scripted slash-normalization pass across ALL posts is a future
+tidy-up, not urgent.
+
 ## OPEN QUESTIONS FOR THE PRODUCT / BUSINESS OWNER
 
 Raised by writing agents cross-checking sources. Each blocks or qualifies published
@@ -152,7 +163,10 @@ these are real UI/doc gaps for engineering:
 - **Pieces capacity fields** — recipe puts them on the WC editor; UserGuide shows them as
   read-only columns with piece-rate set on the routing step.
 - **TOC buffers** — architecture: default off, toggled via a DB context row, no UI;
-  UserGuide: presented as automatic on anchoring.
+  UserGuide: presented as automatic on anchoring. ALSO the buffer-sizing percentages
+  disagree between sources: the owning chapter says constraint ~50% / shipping ~25% /
+  feeding ~10% of upstream path, the A2 appendix says shipping ~15% / feeding ~20%.
+  Surfaced in 3 separate flights; content uses the owning chapter's worked numbers.
 - **Scenario step-overrides** — UserGuide presents Skip/Replace/ModifyTime as functional
   via Run Simulation; a recipe notes the base simulation does not yet apply them.
 - **UI label spelling** — "Partial-Confirm Behaviour" and "Work Centre Performance" are

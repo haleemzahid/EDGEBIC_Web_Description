@@ -1,0 +1,110 @@
+---
+title: "How Multi-Shift Allocation Fills Capacity"
+description: "How EDGEBIC spreads one operation across shifts, days, and machine instances: the per-shift capacity bucket, the priority search, and the three ways it splits work."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - multi-shift scheduling
+  - capacity allocation
+  - finite capacity scheduling
+  - machine instances
+  - load balancing scheduling
+  - shift capacity
+targetPhrase: "multi-shift capacity allocation"
+wordCount: 1550
+readingTime: 8
+faqQuestions:
+  - question: "How does a scheduler spread one operation across multiple shifts?"
+    answer: "EDGEBIC pre-computes a capacity bucket for every work center, date, and shift, then walks the calendar forward from the operation's earliest start. It consumes each shift's available hours in priority order until the operation's total hours are placed. A 12-hour operation on a single machine with one 8-hour shift takes 8 hours the first day and 4 the next, finishing at noon on day two."
+  - question: "What is a shift capacity bucket made of?"
+    answer: "A shift capacity bucket is the effective hours available for one work center, date, and shift. EDGEBIC computes it as shift hours minus downtime and partial-holiday hours, multiplied by the number of machine instances, multiplied by the utilization percentage. A two-instance milling center on an 8-hour shift at 80 percent utilization offers 12.8 hours. A capacity override for one date replaces the formula outright."
+  - question: "How does load balancing across machine instances work?"
+    answer: "When a work center has several instances and load balancing is on (the default for multi-instance centers), EDGEBIC divides an operation's hours evenly across the instances so they all finish together. A 20-hour operation on a four-instance center takes about 5 elapsed hours because each machine runs 5 hours simultaneously, rather than one machine running 20 hours while the others sit idle."
+  - question: "Why does a job span more calendar days than its hours suggest?"
+    answer: "Because the calendar has gaps that cost zero machine hours but real elapsed time. If a 20-hour job starts Friday at noon with a Monday-to-Friday day shift, it uses 4 hours Friday, jumps the weekend, and resumes Monday, finishing Tuesday. The weekend is real calendar time but consumes no capacity, so the operation's 20 hours land across four calendar days even though the shop was only open for three of them."
+qaQuestions:
+  - question: "I have a 28-hour milling operation, two machines, day and night shifts, and it cannot start before Monday 10:00. When does it finish?"
+    answer: "Monday's day shift gives two instances but only from 10:00, so 6 hours remain per machine: 12 hours placed, 16 left on the job. Monday's night shift runs both machines full for 16 hours, which is exactly the remainder, so the operation completes at the end of Monday's night shift. EDGEBIC load-balances each shift so both machines finish together, which is why the job clears in one calendar day pair instead of stretching a single machine across two more nights. The 12,16 hour display on the job row tells you exactly how the work landed."
+  - question: "Two jobs both want the same single machine tomorrow. How does EDGEBIC decide which one gets the slot?"
+    answer: "The engine fills capacity in a fixed priority order, so it is never random. Within a job's own step search it prefers shifts that can start immediately, then shifts with more available capacity, then earlier shifts in the day. Across jobs, order is decided before the search runs: priority first, then start date, then due date. So the higher-priority job claims the slot; if priorities tie, the job released earlier wins, and if those tie too, the earlier due date wins. Run the same data twice and you get the same result twice."
+---
+
+**Multi-shift allocation is how EDGEBIC by User Solutions places a single operation's hours onto real machine time when that operation is too big for one shift. The engine pre-computes a capacity bucket for every work center, date, and shift, walks the calendar forward from the operation's earliest start, and consumes the best available slots in order until every hour has a home.** It is the mechanism that makes finite capacity actually finite: no shift is ever booked past what it can hold, and a job that needs 28 hours lands on real shifts, real machines, and real days.
+
+A run time in a routing is just a number of hours. Turning that number into "starts Tuesday 10:00 on Mill-2, finishes Wednesday afternoon" is the allocator's job, and understanding how it works explains most of the "why did that land there?" questions a schedule raises.
+
+## What a shift slot is worth
+
+Before scheduling any job, EDGEBIC builds a bucket for every combination of work center, date, and shift the calendar says is active. Each bucket holds a total capacity and tracks how much has been consumed. The total comes from one formula:
+
+```
+capacity = (shift hours - downtime - partial holiday hours)
+           x number of instances
+           x utilization %
+```
+
+A milling center with two machine instances on an 8-hour shift running at 80 percent utilization offers 12.8 hours in that bucket. A whole-day holiday zeroes it. A capacity override for one specific date replaces the formula entirely, which is how you model an authorized Saturday of overtime without touching the standing calendar. This is the same [capacity resolution that drives holidays and downtime](/blog/how-a-schedule-accounts-for-holidays-and-downtime), so the number the allocator sees always matches the number your capacity dashboards show.
+
+The bucket is the unit of finite capacity. Once an operation consumes hours from it, no other job can claim those same hours. That single rule is what separates a real schedule from a wish list.
+
+## The search: walking the calendar for real hours
+
+Once an operation knows its earliest start (usually the end of the step before it), the allocator walks forward day by day. For each day it asks three things: is the work center available at all, which shifts run on this weekday, and how much unconsumed capacity remains in each slot. The candidate slots it finds are then ranked by a priority score that encodes sensible instincts:
+
+- A shift that can start immediately outranks everything else.
+- More available capacity outranks less.
+- An earlier shift in the day outranks a later one.
+
+The engine then consumes the ranked slots in order until the operation's hours run out. A 12-hour operation on a single-instance machine with one 8-hour shift takes 8 hours Monday and 4 hours Tuesday, finishing Tuesday at noon. A late constraint clips the first slot: a job that cannot start before 10:00 gets only the 6 remaining hours of an 08:00 to 16:00 shift on day one.
+
+Weekends and holidays cost zero machine hours but consume real elapsed time. A 20-hour job that starts Friday at noon uses 4 hours Friday, jumps the weekend, resumes Monday, and finishes Tuesday afternoon. That is why a job's span in calendar days is often longer than its hour count implies, and it is correct behavior, not a bug.
+
+## Three ways to split the work across instances
+
+When a work center has more than one machine instance, EDGEBIC chooses among three allocation strategies:
+
+| Strategy | Behavior | Typical use |
+|---|---|---|
+| Load balancing (default for multi-instance) | Split the hours evenly so all instances finish together | General machining, assembly |
+| One-per-day | Each instance takes one job per day and keeps it across shifts | Furnaces, paint booths, anything where changeover owns the day |
+| Single instance | Everything goes on instance 1 | Single-machine work centers |
+
+Load balancing is the one that surprises people. A 20-hour operation on a four-instance work center finishes in about 5 elapsed hours because each machine runs 5 hours at the same time. The engine is not stretching one machine across a long span; it is running four in parallel and finishing together. One-per-day is the opposite instinct, used where you deliberately dedicate a machine to a single job for the day (a heat-treat furnace changeover, for instance), so the allocator assigns each instance one job and holds it across the shifts it needs.
+
+## A worked example: 28 hours, two machines, two shifts
+
+Take a CNC center with two instances, a day shift (08:00 to 16:00) and a night shift (16:00 to midnight), each giving 16 hours of total capacity. An operation needs 28 hours and cannot start before Monday 10:00.
+
+**Monday day shift.** The 10:00 constraint clips it: from 10:00 to 16:00 is 6 hours per instance, so 12 hours of capacity are available. Load balancing places 6 hours on each machine, both running 10:00 to 16:00. Placed: 12 hours. Remaining: 16.
+
+**Monday night shift.** Full 16 hours available, both instances 16:00 to midnight, 8 hours each. The operation needs exactly 16, so it completes at midnight Monday.
+
+The operation started Monday 10:00 and finished at the end of Monday's night shift, a single calendar day pair, and the job row shows a "12,16" hour display: 12 hours on the day shift, 16 on the night shift. Every date in that trace came from a rule already stated: capacity per shift from the formula, the 10:00 clip on the first slot, and load balancing splitting each shift so both machines finish together.
+
+## Why the order never changes between runs
+
+None of this involves random tie-breaking. Within a step's search the ranking is deterministic; across jobs the sort order is priority, then start date, then due date. So the same inputs produce the same schedule every time, and a difference between two runs always traces to a difference in the data between them. That reproducibility is what lets a planner audit a placement: pick any bar, and the reason it landed there is recoverable by walking the same rules the engine walked.
+
+Multi-shift allocation is one layer of a larger pipeline. The [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide) places it in context alongside dependency ordering and the timing mechanisms between steps, and the [multi-shift explainer](/blog/edgebic-multi-shift-scheduling-explained) walks the same machinery from the product side. If the finite-versus-infinite distinction is the piece that is new, [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) covers why respecting the bucket matters at all. Setup time is part of what fills these buckets too: a [sequence-dependent changeover](/blog/how-sequence-dependent-setup-shapes-a-schedule) is added to the operation's hours before the search runs, so a longer changeover simply consumes more of the slot.
+
+To watch the allocator place your own routings against your own shifts, [bring your data to a demo](/contact-us) and see where your real constraint surfaces in the first run.
+
+<Accordion title="How does a scheduler spread one operation across multiple shifts?">
+EDGEBIC pre-computes a capacity bucket for every work center, date, and shift, then walks the calendar forward from the operation's earliest start. It consumes each shift's available hours in priority order until the operation's total hours are placed. A 12-hour operation on a single machine with one 8-hour shift takes 8 hours the first day and 4 the next, finishing at noon on day two.
+</Accordion>
+
+<Accordion title="What is a shift capacity bucket made of?">
+A shift capacity bucket is the effective hours available for one work center, date, and shift. EDGEBIC computes it as shift hours minus downtime and partial-holiday hours, multiplied by the number of machine instances, multiplied by the utilization percentage. A two-instance milling center on an 8-hour shift at 80 percent utilization offers 12.8 hours. A capacity override for one date replaces the formula outright.
+</Accordion>
+
+<Accordion title="How does load balancing across machine instances work?">
+When a work center has several instances and load balancing is on (the default for multi-instance centers), EDGEBIC divides an operation's hours evenly across the instances so they all finish together. A 20-hour operation on a four-instance center takes about 5 elapsed hours because each machine runs 5 hours simultaneously, rather than one machine running 20 hours while the others sit idle.
+</Accordion>
+
+<Accordion title="Why does a job span more calendar days than its hours suggest?">
+Because the calendar has gaps that cost zero machine hours but real elapsed time. If a 20-hour job starts Friday at noon with a Monday-to-Friday day shift, it uses 4 hours Friday, jumps the weekend, and resumes Monday, finishing Tuesday. The weekend is real calendar time but consumes no capacity, so the operation's 20 hours land across four calendar days even though the shop was only open for three of them.
+</Accordion>

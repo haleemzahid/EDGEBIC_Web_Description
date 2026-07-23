@@ -1,0 +1,88 @@
+---
+title: "What Is a Partial Completion in Scheduling? Definition and Example"
+description: "A partial completion is a step that ran some but not all of its hours before a reschedule. Definition, the three handling policies, a worked example, and how EDGEBIC uses it."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - what is a partial completion
+  - partial completion scheduling
+  - in progress operation reschedule
+  - remaining hours scheduling
+  - short confirm production
+  - forward shift remaining hours
+targetPhrase: "what is a partial completion in scheduling"
+wordCount: 1160
+readingTime: 6
+faqQuestions:
+  - question: "What is a partial completion in production scheduling?"
+    answer: "A partial completion is a routing step that has run some but not all of its planned hours at the moment of a reschedule. The step has an actual start but is not finished, or an operator marked it done with fewer hours logged than planned. On reschedule the engine keeps the hours already worked and replans only the remaining hours, so a 12-hour step with 4 hours logged is rescheduled for the missing 8 rather than the full 12."
+  - question: "What happens to the unlogged hours of a partial completion?"
+    answer: "It depends on the site's partial-completion policy. Under forward-shift-remaining, the default, the engine reschedules the missing hours onto the next available slot. Under trust-actual-end, the operator's close-out is final and the shortfall is written off. Under trust-unless-flagged, the close is trusted except on specific steps flagged to always re-allocate their shortfall. The logged hours are never invented or discarded; only the treatment of the gap changes."
+  - question: "What is the difference between a partial completion and a completed step?"
+    answer: "A completed step has an actual end date and all its hours accounted for; the rescheduler treats it as immutable and never touches it. A partial completion has hours worked but hours still owed: either an in-progress step with an actual start and no end, or a short-confirmed step where the operator marked done early. The engine preserves the worked portion as history and replans the remaining hours, so a partial completion is part frozen and part fresh plan."
+qaQuestions:
+  - question: "A 16-hour CNC run had 6 hours logged Monday and 4 Tuesday, then the operator marked it complete Wednesday morning. What does the schedule do with the 6-hour gap?"
+    answer: "The engine sees 10 hours logged against a planned 16, a 6-hour shortfall, and the operator's completion stamp. Under the default forward-shift policy, it preserves a historical block for the two logged days and reschedules the missing 6 hours from Wednesday morning onto the machine's next available slot, so the planner sees the historical block plus a forward-shifted 6-hour block. The premature close is respected and no hours are invented or thrown away."
+  - question: "An in-progress step shows an actual start but no actual end. Why does the next reschedule keep treating it as in progress instead of finished?"
+    answer: "Because the engine deliberately leaves the actual end null on an in-progress partial. It preserves a historical row for the hours logged so far and schedules the remaining hours forward, but it never writes an actual end onto that historical row. That keeps the round trip idempotent: the next reschedule re-reads the row, sees a start with no end, and classifies it as in progress again, so repeated reschedules of a job still mid-step behave consistently."
+---
+
+**A partial completion is a routing step that has run some but not all of its planned hours at the moment of a reschedule, and the engine keeps the hours already worked while replanning only the hours still owed.** A step with 4 of its 12 planned hours logged is rescheduled for the missing 8, not the full 12. It is the middle ground between an untouched step and a finished one: part of it is history, and part of it still needs a slot on a machine.
+
+This entry is part of the [EDGEBIC by User Solutions](/edgebic) glossary series; for the broader vocabulary of production planning, see the [manufacturing glossary](/blog/manufacturing-glossary).
+
+## How a Partial Completion Works
+
+A step arrives at a reschedule in one of three states. Untouched steps have no actuals and are planned freely. Completed steps have an [actual end date](/blog/what-is-an-actual-date-in-scheduling) and are immutable. A partial completion is neither: it has hours worked but hours still owed.
+
+There are two ways a step becomes partial. It can be genuinely in progress, with an actual start and no actual end, still running when you reschedule. Or it can be short-confirmed: an operator pressed complete but logged fewer hours than planned, leaving a gap between the planned total and what was recorded.
+
+Either way, the engine preserves the worked portion as a historical block and computes the remaining hours as planned total minus logged hours. It then replans that remainder. For an in-progress step it resumes from the actual start; for a short-confirm it resumes from the operator's completion stamp. Crucially, the engine leaves the historical block's actual end null on an in-progress partial, so the next reschedule re-reads it as in progress and the round trip stays consistent.
+
+## The Three Handling Policies
+
+What happens to the unlogged hours is a site policy, chosen once and applied to every partial completion.
+
+- **Forward-shift-remaining** (the default) reschedules the missing hours onto the next available slot. The gap is honored: the work still has to happen, so it is placed on the machine again.
+- **Trust-actual-end** treats the operator's close-out as final. The shortfall is written off: if the operator says done, the job is done, and the missing hours are not re-allocated.
+- **Trust-unless-flagged** trusts the close on most steps but re-allocates the shortfall on specific steps flagged to always account for it, so a forgiving paint step and a strict precision-grinding step can coexist under one rule.
+
+In every policy the logged hours are real and untouched. Only the treatment of the gap differs.
+
+## A Concrete Example
+
+A 16-hour CNC run is planned across Monday and Tuesday. The operator logs 6 hours Monday and 4 Tuesday, then presses complete on Wednesday morning. That is 10 logged against 16 planned: a 6-hour shortfall with a completion stamp.
+
+Under the default forward-shift policy, the engine:
+
+- Preserves a historical block for CNC-3 spanning the two logged days, with the daily hours truncated to the days that actually carried work.
+- Computes the remaining 6 hours and reschedules them from Wednesday morning onto CNC-3's next available slot: Wednesday 09:00 to 15:00.
+- Queues the following step after Wednesday 15:00.
+
+The planner now sees two rows for the step: the historical block and the forward-shifted 6-hour block. The operator's early close is respected, and the missing hours are placed on the machine rather than invented or discarded.
+
+## How EDGEBIC Uses It
+
+In EDGEBIC partial completions are handled at every reschedule, governed by the site's partial-completion policy.
+
+- **The worked portion is preserved.** A historical block holds the hours already logged, with its daily breakdown reflecting only the days that carried work.
+- **The remainder is replanned.** The engine schedules planned-minus-logged hours from the resume point, not the whole step again.
+- **In-progress rows stay in progress.** The historical row's actual end is left null so repeated reschedules classify it consistently.
+- **The persist boundary merges cleanly.** The engine's two-row output (historical plus forward) is collapsed to one database row per step, keyed on the step and its work center so a parallel sibling on another machine is not wrongly merged, and duplicate daily rows are removed.
+
+Partial completion sits directly on top of [actuals preservation on reschedule](/blog/what-is-actuals-preservation-on-reschedule): completed steps are frozen, and partial steps are the finer case where a single step is split between history and remaining work. To choose the policy, see [how to set how partial completions are handled in EDGEBIC](/blog/how-to-set-how-partial-completions-are-handled-in-edgebic), and the [partial completion reschedule walkthrough](/blog/partial-completion-reschedule-walkthrough-edgebic) steps through the timelines bar by bar.
+
+<Accordion title="What is a partial completion in production scheduling?">
+A partial completion is a routing step that has run some but not all of its planned hours at the moment of a reschedule. The step has an actual start but is not finished, or an operator marked it done with fewer hours logged than planned. On reschedule the engine keeps the hours already worked and replans only the remaining hours, so a 12-hour step with 4 hours logged is rescheduled for the missing 8 rather than the full 12.
+</Accordion>
+
+<Accordion title="What happens to the unlogged hours of a partial completion?">
+It depends on the site's partial-completion policy. Under forward-shift-remaining, the default, the engine reschedules the missing hours onto the next available slot. Under trust-actual-end, the operator's close-out is final and the shortfall is written off. Under trust-unless-flagged, the close is trusted except on specific steps flagged to always re-allocate their shortfall. The logged hours are never invented or discarded; only the treatment of the gap changes.
+</Accordion>
+
+<Accordion title="What is the difference between a partial completion and a completed step?">
+A completed step has an actual end date and all its hours accounted for; the rescheduler treats it as immutable and never touches it. A partial completion has hours worked but hours still owed: either an in-progress step with an actual start and no end, or a short-confirmed step where the operator marked done early. The engine preserves the worked portion as history and replans the remaining hours, so a partial completion is part frozen and part fresh plan.
+</Accordion>

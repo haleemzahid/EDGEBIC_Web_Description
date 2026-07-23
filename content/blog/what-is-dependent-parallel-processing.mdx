@@ -1,0 +1,61 @@
+---
+title: "What Is Dependent Parallel Processing?"
+description: "Dependent parallel processing runs secondary machines in exact lockstep with a primary. Learn how mirroring works and when synchronized machines belong together."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - dependent parallel processing
+  - dependent parallel definition
+  - synchronized machines scheduling
+  - mirrored schedule manufacturing
+  - parallel work centers
+  - lockstep machine scheduling
+targetPhrase: "dependent parallel processing"
+wordCount: 1140
+readingTime: 6
+faqQuestions:
+  - question: "What is dependent parallel processing in scheduling?"
+    answer: "Dependent parallel processing runs one or more secondary machines in exact lockstep with a primary machine on the same operation. The primary earns the time slot through normal capacity checks, and each dependent machine mirrors its start and end times exactly. The machines share a fixed schedule because they physically work as one synchronized unit, like several drill heads on a single gantry."
+  - question: "How is dependent parallel different from independent parallel?"
+    answer: "Independent parallel splits the work across machines that each check and consume their own capacity, and the job finishes faster. Dependent parallel copies the primary's exact timing to each mirror without splitting work or checking the mirrors' capacity. Independent is about speed through division. Dependent is about synchronization: the machines must run together because the operation cannot happen otherwise."
+  - question: "What is the Factor in dependent parallel processing?"
+    answer: "The Factor is a multiplier on the mirror's allocated hours, not its timing. A Factor of 1.0 means the mirror does the same hours as the primary. A Factor of 0.5 means the mirror logs half the hours, for a lighter or faster secondary machine. The Factor never changes the start and end timestamps: those are copied verbatim from the primary, because the machines run at the same moment."
+  - question: "Does a dependent machine get its own capacity check?"
+    answer: "No, and that is deliberate. A dependent mirror is written from the primary's schedule regardless of the mirror machine's own load, because the machines are treated as one physical operation. This is why dependent parallel is reserved for genuinely synchronized setups: the engine trusts that if the primary can run, its mirrors run with it. Machines that need real capacity checking should be modeled as independent parallel instead."
+qaQuestions:
+  - question: "We have a three-spindle drilling head where all three drills must run together on the same part. How do we model that?"
+    answer: "That is the textbook case for dependent parallel. Make one drill the primary and list the other two as dependent alternatives. The primary earns the slot through the normal capacity search, then each of the other two mirrors its schedule exactly: same start, same end, same instance timing. If the primary runs eight hours Monday and two hours Tuesday, both mirrors run eight Monday and two Tuesday. You set a Factor of 1.0 on each so they log the same hours, or a lower Factor if a spindle does lighter work. The three appear on the Gantt as one synchronized block, and you should never drag one independently, because it represents one physical operation."
+  - question: "Why does my dependent mirror show up as booked on a machine that is also running an unrelated job at the same time?"
+    answer: "Because dependent mirrors are written from the primary without checking the mirror machine's own capacity, it is possible to mirror onto a machine that is genuinely busy with something else. That is a known limitation of the mirroring model: it assumes the mirror machine is dedicated to the synchronized operation. If your secondary machine also takes independent work, it is not really a dependent mirror, it is an independent resource, and you should model it as independent parallel so its capacity is checked and consumed properly. Reserve dependent parallel for machines that only ever run in lockstep with their primary."
+---
+
+**Dependent parallel processing runs one or more secondary machines in exact lockstep with a primary machine on the same operation: the primary earns the time slot, and each dependent machine mirrors its start and end times verbatim.** The machines are treated as a single physical operation that happens to occupy several work centers at once, so their timing is copied rather than independently planned. The classic case is a multi-spindle head where every drill must turn at the same moment on the same part.
+
+[EDGEBIC by User Solutions](/edgebic) models this as mirroring: one primary schedule and one or more copies. This article defines the term and contrasts it with the alternative. The full validation and rollback mechanics are in [how EDGEBIC handles parallel work centers](/blog/edgebic-parallel-work-centers-explained).
+
+## How It Works
+
+You pick one machine as the primary and list the synchronized machines as dependent alternatives on the same routing step. When the engine schedules that step, only the primary goes through the normal capacity search. Once the primary has its slot, each dependent machine receives a mirror: a schedule row with identical start dates, end dates, and instance timing.
+
+The mirror's hours are scaled by a Factor. A Factor of 1.0 means the mirror logs the same hours as the primary. A lower Factor means it logs proportionally fewer, for a machine doing lighter work in the same window. The Factor touches only the hours, never the timestamps, because the whole point is that the machines run at the same moment.
+
+Dependent mirrors are not capacity-checked. The engine writes them from the primary regardless of the mirror machine's own load. That is intentional: a synchronized head is one operation, and the mirror machines are assumed dedicated to it. Machines that also take unrelated work should be modeled as independent parallel instead, so their capacity is genuinely tracked.
+
+## A Concrete Example
+
+Picture three synchronized drill heads on a single gantry drilling one large part. They are not three separate jobs. They are one operation that needs three tools turning together. In the plan, one drill is the primary. It goes through the capacity search and lands on, say, Monday 08:00 to 16:00 with two more hours Tuesday morning. The other two drills mirror it exactly: same eight hours Monday, same two hours Tuesday, each with a Factor of 1.0 so they log the same time. All three appear on the Gantt as a single synchronized block that starts and ends together. Touch one and you have broken the operation, which is why the plan treats them as inseparable.
+
+## When to Use It, and When Not To
+
+Reserve dependent parallel for machines that physically run as one operation and are dedicated to it. A multi-spindle head, a set of synchronized robots on one car body, a paired press-and-die that must fire together: these are genuine mirroring cases. The machines have no independent existence in the plan, so copying one schedule to all of them is exactly right.
+
+The wrong case is a machine that also takes unrelated work. Because a mirror is written from the primary without checking the mirror machine's own capacity, mirroring onto a machine that runs other jobs can book it in two places at once. The plan then shows a machine committed to a synchronized operation and to a separate job in the same window, which the floor cannot honor. If a secondary machine ever runs on its own, it is not a dependent mirror, it is an [independent resource](/blog/what-is-independent-parallel-processing), and modeling it as independent parallel gives it the capacity check it needs. The test is simple: does this machine ever run without the primary? If yes, it is not a mirror.
+
+## How EDGEBIC Uses It
+
+Dependent parallel shows up wherever a routing step lists synchronized secondary machines. The engine writes the primary through the normal multi-shift allocator, then mirrors each dependent machine and labels the mirror rows as copied from the parent. On the shop floor board, a supervisor sees the same job block on several machines at once and knows they move as a unit.
+
+Because the mirrors are regenerated from the primary on every run, they stay consistent through rescheduling. When the primary shifts, its mirrors shift with it, and completed work is never moved. The [manufacturing glossary](/blog/manufacturing-glossary) covers the related terms. If your machines instead split work to finish faster, read [what is independent parallel processing](/blog/what-is-independent-parallel-processing), and for the full engine behavior see [the parallel work centers guide](/blog/edgebic-parallel-work-centers-explained).

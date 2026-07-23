@@ -1,0 +1,108 @@
+---
+title: "How Operator Skills Constrain a Schedule"
+description: "How EDGEBIC adds people as a second finite resource: a per-operator hours ledger that stops one certified welder from being scheduled on five machines at once."
+published: 2026-07-29T12:00:00.000Z
+modified: 2026-07-29T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - operator scheduling
+  - skill constraint scheduling
+  - labor constraint
+  - operator certification
+  - finite capacity people
+  - attend fraction
+targetPhrase: "operator skill scheduling constraint"
+wordCount: 1600
+readingTime: 8
+faqQuestions:
+  - question: "How does a scheduler account for operator skills?"
+    answer: "EDGEBIC treats the operator as a second finite resource alongside the machine. A routing step can require a skill, and the engine only staffs that step from operators who are certified, rostered on that shift, and not on time off. It tracks each operator's hours in a per-operator, per-day, per-shift ledger, so a step with a skill requirement cannot be scheduled unless a qualified person actually has hours free to run it."
+  - question: "Why does a job slide to a later day when the machine is free?"
+    answer: "Because the machine being free is not enough when the step needs a certified operator who is not. If your only Inconel-certified welder is fully booked Monday, a second Inconel job cannot run Monday even on an idle welding machine, so EDGEBIC slides it to the next day the welder has hours. The scheduling log records that the window was skipped for lack of qualified operator hours, so the reason is always visible."
+  - question: "What is the operator attend fraction?"
+    answer: "The attend fraction is how much operator attention a step's run phase needs per machine hour. A value of 0 means setup only, so the machine can run itself unattended after setup. A value of 1 means fully attended, one operator hour per machine hour. A value of 0.5 means one person tends two machines, and a value above 1 models a crew. Setup always books one operator hour per hour regardless of the fraction."
+  - question: "Can I pin a specific person to a step?"
+    answer: "Yes. EDGEBIC lets you pin a step to one named operator. When pinned, the qualified pool narrows to exactly that person, and no one else is a fallback. If that operator is on time off, the step slides to their first day back rather than quietly running with someone else, so a named person's absence surfaces as visible schedule movement instead of a silent substitution the planner never approved."
+qaQuestions:
+  - question: "We have one welder certified on Inconel and five welding machines. What stops the schedule from booking five Inconel jobs at once?"
+    answer: "The operator-hours ledger does. When each Inconel job carries the Inconel skill requirement, EDGEBIC only counts hours from operators who hold that certification, are rostered on the shift, and are not on time off. Your one welder has, say, 8 hours on Monday's day shift, full stop, no matter how many machines exist. The first job books him and drains his pool; the second job finds zero qualified hours left on Monday and slides to the next day he is available. Certify and roster a second welder and both jobs run Monday in parallel, exactly as you would staff it by hand."
+  - question: "We want to run seven CNC mills overnight with one operator doing only the setups. Does the skill constraint make that impossible?"
+    answer: "No, that is exactly what the attend fraction is for. Set each step's attend fraction to 0, meaning setup only. Each 1-hour setup books 1 hour of your operator, but the run hours after setup book nobody, so the machines run themselves lights-out. With one operator and 8 hours available, seven or eight setups fit in a day and the machines run into the unstaffed evening; a ninth setup would slide to the next day because the operator ran out of setup hours, not because the machines are busy. You get a legitimate lights-out cell without the schedule ever overselling the one person."
+---
+
+**Operator skills constrain a schedule by making the person a second finite resource alongside the machine. In EDGEBIC by User Solutions, a routing step can require a skill, and the engine will only place that step in a window where a qualified operator (certified, rostered, and not on time off) actually has hours free to run it.** It tracks every operator's availability in a per-operator, per-day, per-shift hours ledger, so the schedule can no longer pretend one certified welder is standing at five machines at the same time.
+
+For years, finite capacity scheduling meant machine capacity. A work center had shifts, holidays, and instances, and that was the constraint. But a plant with one Inconel-certified welder can happily schedule five Inconel jobs on five machines in the same shift, and the plan is fiction before the first arc strikes. Adding the operator as a real constraint is what closes that gap.
+
+## The machine is one dimension, the person is the other
+
+EDGEBIC composes two constraints on a single routing step. The machine dimension is the work center (which machine, or which pool of machines). The human dimension is the required skill (which certification the operator must hold). A step can carry both, and both must be satisfiable for the step to run in a given window.
+
+The supporting data mirrors the way machines are already modeled. Operators hold certifications, each with an optional expiry. They are rostered on shifts by a weekly pattern (Joe works the day shift on Mondays), exactly the way a shift's working hours are a weekly pattern. Absences are recorded as time-off ranges, the people equivalent of a machine holiday. An expired certification, an inactive operator, or a missing roster row simply drops that person out of the picture for the affected windows.
+
+## Why an hours ledger and not a presence check
+
+The naive way to add operators is a presence check: is a qualified person rostered? That fails immediately, because five jobs would all pass the check and all claim the same welder. A per-skill pool of hours fails differently: a welder certified in two skills would be counted twice, selling 8 hours into each skill's pool for 16 hours of one person per day.
+
+EDGEBIC uses a per-operator hours ledger instead. Joe has 8 hours on Monday's day shift, and that is the whole truth regardless of how many skills he holds or how many machines want him. When a step books him, those hours leave his pool, and no other step can claim them. Two of his bookings on different machines may overlap on the wall clock within a shift (the machine side has the same property), but no day can ever oversell his hours. That single rule is what makes the constraint honest.
+
+## The attend fraction: not every machine needs a full-time person
+
+Machines vary in how much attention they need. A weld cell needs the welder for the whole run. A CNC mill needs a setter for setup and then runs itself. A step's attend fraction captures this: it is how much operator attention the run phase consumes per machine hour.
+
+| Fraction | Meaning | Effect |
+|---|---|---|
+| 0 | Setup only | The run books nobody; the machine runs unattended after setup |
+| 0.5 | One person tends two machines | 8 operator hours buy 16 run machine-hours |
+| 1 | Fully attended | One operator hour per machine hour |
+| 2 | Two-person crew | Each machine hour books two operator hours |
+
+Setup always books one operator hour per hour, whatever the fraction, because a machine still needs a human to set it up. This is the mechanism behind lights-out machining: with an attend fraction of 0, the setup hours gate on operators but the run hours do not, so one setter can start a whole cell and let it run into unstaffed evening hours. The [attend fraction definition](/blog/what-is-attend-fraction-operator-scheduling) covers the model and its edge cases in depth.
+
+## A worked example: one welder, two machines
+
+Two welding centers, Weld-A and Weld-B, one machine each, day shift 08:00 to 16:00. One skill, TIG-Inconel. One certified operator, Joe, rostered Monday to Friday. Two jobs, each 8 hours, each requiring TIG-Inconel with an attend fraction of 1.
+
+Without the operator constraint, both jobs schedule Monday 08:00 to 16:00 in parallel. One welder, two simultaneous machines: fiction.
+
+With the constraint:
+
+- Job 1 schedules first. Monday's TIG-Inconel pool is 8 hours (Joe, nothing booked yet). The 8-hour job fits, so it runs Weld-A Monday 08:00 to 16:00 and books all 8 of Joe's hours.
+- Job 2 looks at Monday: the TIG-Inconel pool is now 0. EDGEBIC never even offers Monday for this step, and the log says the window was skipped for lack of qualified operator hours. The engine continues the search, finds Tuesday with a full pool, and runs Weld-B Tuesday 08:00 to 16:00.
+
+Certify a second welder and roster her Mondays, and both jobs run Monday in parallel, one welder per machine. The schedule now staffs exactly the way a supervisor would, because the constraint is the real one.
+
+## Pinning a person, and how absence surfaces
+
+Sometimes a step must run with a specific person, not just anyone qualified. EDGEBIC lets you pin a step to one named operator. When pinned, the qualified pool narrows to exactly that person and no one else is a fallback. This has a deliberate consequence: if the pinned operator is on time off, the step slides to their first day back rather than quietly running with a substitute.
+
+Take the two-welder plant above with Weld-A's step pinned to Joe, and Joe out Monday through Wednesday. Unpinned, the step would run Monday staffed by the second welder. Pinned, the step slides to Thursday, Joe's first day back, and the slip is visible on the board. That visibility is the whole point: a named person's absence should surface as schedule movement the planner can see and approve, not as a silent hand-off nobody noticed.
+
+## How it stacks with the machine calendar
+
+Operator availability never replaces machine capacity; it stacks on top of it. A window still has to survive the machine's own gates first: it must be a day the [work center is open](/blog/how-a-schedule-accounts-for-holidays-and-downtime), and it must have machine hours after downtime and overrides. Only then does the operator gate ask whether anyone qualified can actually stand there. So a skill-constrained step sliding past an apparently open machine slot has exactly one of three causes: a machine holiday, an operator time-off range, or a missing roster row, and the scheduling log names which one fired.
+
+Two configuration notes follow from this. Rosters key on the global shift, so rostering an operator once on the day shift covers every machine that mirrors it. And when you force capacity onto an otherwise non-working day with an override, the roster requirement relaxes there, because you deliberately created that capacity and are assumed to have arranged the staffing.
+
+The operator layer is documented in full, with the ledger mechanics and the pin rules, in the [operator and skill scheduling explainer](/blog/edgebic-operator-and-skill-scheduling-explained), and it sits inside the wider pipeline covered by the [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide). Because operators are a real constraint, they also compose with machine capacity in exactly the way the [multi-shift allocator fills capacity](/blog/how-multi-shift-allocation-fills-capacity): the person's hours clamp how much of a machine slot a skill-constrained step can consume.
+
+To see your certified operators become a real constraint on your own routings, [bring your data to a demo](/contact-us) and watch a job slide off an idle machine because the right person was not there.
+
+<Accordion title="How does a scheduler account for operator skills?">
+EDGEBIC treats the operator as a second finite resource alongside the machine. A routing step can require a skill, and the engine only staffs that step from operators who are certified, rostered on that shift, and not on time off. It tracks each operator's hours in a per-operator, per-day, per-shift ledger, so a step with a skill requirement cannot be scheduled unless a qualified person actually has hours free to run it.
+</Accordion>
+
+<Accordion title="Why does a job slide to a later day when the machine is free?">
+Because the machine being free is not enough when the step needs a certified operator who is not. If your only Inconel-certified welder is fully booked Monday, a second Inconel job cannot run Monday even on an idle welding machine, so EDGEBIC slides it to the next day the welder has hours. The scheduling log records that the window was skipped for lack of qualified operator hours, so the reason is always visible.
+</Accordion>
+
+<Accordion title="What is the operator attend fraction?">
+The attend fraction is how much operator attention a step's run phase needs per machine hour. A value of 0 means setup only, so the machine can run itself unattended after setup. A value of 1 means fully attended, one operator hour per machine hour. A value of 0.5 means one person tends two machines, and a value above 1 models a crew. Setup always books one operator hour per hour regardless of the fraction.
+</Accordion>
+
+<Accordion title="Can I pin a specific person to a step?">
+Yes. EDGEBIC lets you pin a step to one named operator. When pinned, the qualified pool narrows to exactly that person, and no one else is a fallback. If that operator is on time off, the step slides to their first day back rather than quietly running with someone else, so a named person's absence surfaces as visible schedule movement instead of a silent substitution the planner never approved.
+</Accordion>
