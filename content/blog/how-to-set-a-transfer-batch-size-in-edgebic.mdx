@@ -1,0 +1,72 @@
+---
+title: "How to Set a Transfer Batch Size in EDGEBIC"
+description: "Overlap operations by piece count in EDGEBIC. Set a transfer batch size on a routing step so the next operation starts as soon as the first batch of pieces is ready."
+published: 2026-07-27T12:00:00.000Z
+modified: 2026-07-27T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - transfer batch size
+  - piece count lot streaming
+  - overlap operations by pieces
+  - one piece flow scheduling
+  - EDGEBIC transfer batch
+targetPhrase: "set a transfer batch size"
+wordCount: 1330
+readingTime: 7
+faqQuestions:
+  - question: "How do you set a transfer batch size in EDGEBIC?"
+    answer: "Open the routing for the product, select the upstream step, and set its Transfer Batch Size to the number of pieces that should move as one batch. Leave Flow Step at zero and make sure the machine's continuous-process flag is off, then save and reschedule. The next operation can start as soon as the first batch is finished instead of waiting for the whole run, which shortens overall cycle time."
+  - question: "What is the formula EDGEBIC uses for a transfer batch?"
+    answer: "The downstream step's earliest start is the upstream start plus the flow time, where flow time equals the setup time plus the transfer batch size times the per-piece run hours. For a batch of 20 pieces at 0.05 hours each, flow time is the setup plus one hour, so the next step can begin about one hour after the first step starts. Any transfer delay you set is added on top of that."
+  - question: "What happens if the transfer batch size is larger than the order quantity?"
+    answer: "EDGEBIC caps the effective batch at the order quantity at run time, so a batch of 200 on an order of 50 pieces is treated as 50. The schedule is still correct, but the anomaly check flags the mismatch so you can fix the routing. The stored value is not changed automatically, so correct the transfer batch size in the routing editor to clear the warning."
+qaQuestions:
+  - question: "Deburring still waits for the whole machining run to finish. Why did the overlap not happen?"
+    answer: "Check three things on the machining step: the transfer batch size must be greater than zero, the flow step must be zero, and the machining work center must not be flagged as continuous process. The continuous-process flag suppresses the piece-count model even when a batch size is set, so the step falls back to the time-lag model. Fix whichever is wrong and reschedule."
+  - question: "We want one-piece flow on a cell. What do we set?"
+    answer: "Set the transfer batch size to 1 on the upstream step and make sure the upstream machine is not flagged as continuous process. With a batch of one, flow time is the setup plus one piece of run time, so the next operation starts as soon as the first piece is done. Watch out for a large queue time on the downstream work center, which can dominate the tiny flow time and erase the benefit."
+---
+
+**To set a transfer batch size in EDGEBIC by User Solutions, open the upstream routing step and set its Transfer Batch Size to the number of pieces that move as one batch.** The control lives on the routing (Bill of Routing) step for the operation that feeds the next one. Once you save and reschedule, the downstream step can start as soon as the first batch of pieces is finished, rather than waiting for the entire run to complete. This piece-count overlap, sometimes called lot streaming, shortens the total cycle time for a two-step sequence without changing either operation's own duration.
+
+This is one specific configuration task. For the mechanism behind both overlap models and when each fires, read [EDGEBIC lot streaming explained](/blog/edgebic-lot-streaming-explained) and the broader recipe [how to overlap operations](/blog/how-to-overlap-operations-in-edgebic).
+
+## Before You Start
+
+- The routing (Bill of Routing) open, with the upstream step (the one that feeds the next operation) identified.
+- Confirmation that the upstream machine is a discrete, piece-making work center with its continuous-process flag off. Piece-count overlap only fires on discrete machines.
+- The transfer batch size you want, in pieces. This is the quantity that must be finished before the next step may begin.
+
+## Step by Step
+
+1. Confirm the upstream machine has **Is Continuous Process** set to off (the default). This is what lets the piece-count model run.
+2. Open the routing and select the upstream step (for example, the machining operation that feeds deburring).
+3. Set **Transfer Batch Size** to the number of pieces in a batch (for example, 20).
+4. Leave **Flow Step** at **0** so the piece-count branch fires rather than the time-lag branch.
+5. If there is a physical move time after the batch is ready, set **Transfer Delay** to that many hours (for example, 0.5 for 30 minutes). Otherwise leave it at zero.
+6. Save the routing.
+7. Run **Generate Schedule**.
+
+## What Changes When You Save
+
+On the next run, EDGEBIC computes a flow time for the step: the setup time plus the transfer batch size times the per-piece run hours. The downstream step's earliest start becomes the upstream start plus that flow time, plus any transfer delay. Concretely, if a piece takes 0.05 hours and the batch is 20, flow time is the setup plus one hour, so the next operation can begin about one hour after the first begins. The two steps now overlap on the Gantt, and the sequence finishes sooner.
+
+The change is opt-in per step. Every other routing step with a transfer batch size of zero keeps its existing behavior, so this is a safe, targeted edit.
+
+## How to Check It Worked
+
+Open the Job View and find the two steps in the sequence. The downstream step should now start before the upstream step ends, rather than after it. If you set a transfer delay, confirm the gap between the batch-ready point and the downstream start matches it. For an in-progress upstream step, EDGEBIC reads the actual pieces recorded so far to decide whether the batch threshold has been crossed, so the overlap tracks real production once work is logged.
+
+## Common Mistakes
+
+- **The upstream machine is flagged continuous process.** That flag suppresses the piece-count model entirely, so the batch size is ignored and the step falls back to the time-lag model. Turn the flag off for a discrete, piece-making machine.
+- **Flow step is also set.** Setting both a flow step and a transfer batch size on the same routing step makes the intent ambiguous, and the anomaly report flags it. Pick one model: for piece count, set flow step to zero.
+- **Batch size larger than the order quantity.** EDGEBIC caps the effective batch at the order quantity, so an oversized batch still schedules correctly, but the anomaly check warns you and the stored value stays wrong. Lower the transfer batch size to at most the order quantity.
+- **Using transfer delay for a calendar gap.** Transfer delay is a sub-hour handling lag added on top of the flow time. For a multi-day shipping gap between plants, use transit days instead, as covered in [how to add transit days between two steps](/blog/how-to-add-transit-days-between-two-steps-in-edgebic).
+
+## Where to Go Next
+
+Piece-count overlap has a sibling model that measures the lag in hours rather than pieces. If your machine runs continuously, read [how to set a flow step overlap](/blog/how-to-set-a-flow-step-overlap-in-edgebic). For a plain-language comparison of the two, see [piece count versus time lag overlap](/blog/piece-count-vs-time-lag-overlap-in-edgebic). The full platform is at [EDGEBIC](/edgebic), and more recipes are in the [EDGEBIC How-To Library](/blog/edgebic-how-to-hub).

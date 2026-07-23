@@ -1,0 +1,94 @@
+---
+title: "How to Reverse an Inventory Transaction in EDGEBIC"
+description: "Reverse an inventory transaction in EDGEBIC without deleting history: post an equal-and-opposite entry for manual movements, or reopen the order for engine-posted ones."
+published: 2026-07-27T12:00:00.000Z
+modified: 2026-07-27T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - reverse an inventory transaction
+  - inventory reversal edgebic
+  - undo ledger entry
+  - reopen order reversal
+  - equal and opposite adjustment
+  - append-only audit trail
+targetPhrase: "reverse an inventory transaction"
+wordCount: 1122
+readingTime: 6
+faqQuestions:
+  - question: "How do you reverse an inventory transaction in EDGEBIC?"
+    answer: "There is no delete: a reversal appends new rows instead. For a manual entry, post an equal and opposite movement, so a mistaken receipt is unwound by an issue or adjustment of the same size. For an engine-posted entry, reopen or delete the manufacturing order that created it, which triggers a reversal of every entry pegged to that order. In both cases the original stays in the ledger and an inverse entry cancels it out."
+  - question: "Why does EDGEBIC keep the original entry after a reversal?"
+    answer: "Because the ledger is an audit trail, not a scratchpad. A reversal flags the original as reversed and appends an inverse entry that carries a reversal type and a link back to the original. Both rows stay permanently and net to zero, so on-hand is correct while the history shows what happened and what corrected it. Deleting the original would leave no evidence of the mistake or the fix."
+  - question: "How do you undo the stock consumed by a completed build order?"
+    answer: "Reopen the completed order. Reopening triggers a reversal of every non-reversed entry pegged to that order, including the finished-goods receipt, and posts inverse entries so on-hand drops back to the pre-completion level. Deleting the order does the same reversal before the order record is removed, and the surviving ledger rows keep the history with their order link cleared. Either way the receipt is unwound cleanly."
+qaQuestions:
+  - question: "A supervisor marked a make-to-stock build complete by mistake, adding 200 to stock. How do I unwind exactly that?"
+    answer: "Reopen the order rather than posting a manual issue. Reopening reverses every entry pegged to that order, so the 200-unit Build to Inventory receipt is flagged reversed and an inverse entry of minus 200 is appended, dropping on-hand back to where it was. A manual issue would also reduce on-hand, but it would not link to the order and the audit trail would not show the completion being undone. Confirm in Transaction History that a receipt-reversal row now sits against the order."
+  - question: "I posted a manual receipt for the wrong product. Can I just delete it?"
+    answer: "No, the ledger has no delete, so you reverse it with an equal and opposite movement. Post an issue of the same quantity against the wrong product, with a comment explaining the correction, and on-hand returns to where it was. Then post the correct receipt against the right product. Both the erroneous receipt and its reversing issue remain in the ledger and net to zero, which is the audit trail doing its job rather than hiding the slip."
+---
+
+**To reverse an inventory transaction in EDGEBIC, you append an inverse entry rather than delete the original.** In [EDGEBIC by User Solutions](/edgebic) the ledger is append-only, so a correction leaves the original in place, flags it as reversed, and adds a new entry that cancels it. This post covers the two routes: an equal-and-opposite movement for anything you posted by hand, and reopening or deleting the order for anything the engine posted.
+
+The reversal design is part of the ledger model. For why stock records work this way, read [the inventory ledger explained](/blog/edgebic-inventory-ledger-explained). This post is the narrow task of undoing a specific entry. Availability varies by installation, so check which inventory features your build exposes.
+
+The instinct when you spot a wrong entry is to delete it, and the ledger deliberately does not let you. That constraint feels awkward for a moment and then proves its worth: a stock record you can quietly edit is a stock record no one can fully trust. By forcing every correction to be a new, visible entry, the design guarantees that the history shows both the mistake and its fix. An auditor can see exactly what went wrong and what set it right, and on-hand still lands on the correct figure because the original and its inverse cancel. Reversing is not a workaround for the missing delete; it is the intended way to correct stock without destroying evidence.
+
+## Before You Start
+
+- You know which entry is wrong. Open the Transaction History pane for the product and identify the row, its type, and whether it carries an order reference.
+- You know whether it was posted by hand or by the engine. Manual entries carry no order reference; engine-posted receipts and issues are pegged to a manufacturing order.
+- You accept that nothing gets deleted. Both the original and the reversal will remain in the ledger.
+
+## Route One: Reverse a Manual Entry With an Equal-and-Opposite Movement
+
+Use this for a hand-posted receipt, issue, or adjustment.
+
+1. Open the **Inventory** tab and select the product.
+2. Open the **Adjustments** sub-pane.
+3. Post the opposite of the mistake:
+   - A wrong receipt is unwound by an **Issue** of the same quantity.
+   - A wrong issue is unwound by a **Receipt** of the same quantity.
+   - A wrong adjustment is unwound by an **Adjustment** with the opposite sign.
+4. Put the reason in the **Comment**, such as "Reverses receipt posted to wrong product".
+5. Post it.
+
+On-hand returns to where it was. Both entries stay in the ledger and net to zero.
+
+## Route Two: Reverse an Engine-Posted Entry by Reopening the Order
+
+Engine-posted entries, such as a finished-goods receipt from a completed build or a consume issue from a scheduling run, are tied to a manufacturing order. The clean way to unwind them is through the order, not a manual counter-entry.
+
+1. Open **Manufacturing Orders** and locate the order that created the entry.
+2. Use **Reopen** if the order was completed by mistake, or **Delete** if the order should not exist at all.
+
+Reopening triggers a reversal of every non-reversed entry pegged to that order and resets the order to a scheduled state. Deleting runs the same reversal first, then removes the order record while the ledger rows survive with their order link cleared. In both cases inverse entries are appended and on-hand is restored.
+
+## Reversing Consumption Only, Before a Reschedule
+
+Not every order reversal should touch everything the order posted. There is a narrower operation for one specific case: releasing the stock a scheduling run consumed, without disturbing any build receipt the order also produced. When an order is about to be rescheduled, its earlier consume issue needs to be undone so the engine can re-net against the restored on-hand, but a finished-goods receipt from a completed build on the same order must stay. The narrow operation reverses only the consume issues pegged to the order and leaves the receipts intact. Reaching for the full order reversal here would wrongly unwind the build receipt too, overstating or understating stock. Match the reversal to the intent: full reversal to undo everything, consume-only reversal to release netted stock before a rerun.
+
+## What Changes When You Save
+
+The original entry is flagged as reversed. A new entry is appended carrying a reversal type and a link back to the original it cancels. On-hand recomputes from the full ledger sum, which now includes both the original and its inverse, so it settles at the corrected figure. Any dependent views refresh once the reversal commits.
+
+Two properties make order reversals safe to run. First, they are idempotent: reversing an order that has already been reversed does nothing and reports that nothing was left to reverse, so a double click cannot double-unwind. Second, deleting an order preserves its ledger history. The reversal runs first, then the order record is removed, but the surviving ledger rows keep their movements with the order link cleared, so the audit trail of what happened does not vanish with the order.
+
+## How to Check It Worked
+
+1. Open the **Transaction History** pane for the product with all entries shown, not manual-only.
+2. Confirm the original row is now marked reversed, and a reversal row of the opposite sign sits below it.
+3. Read the **Balance After** on the reversal row, or better, trust the KPI strip's **Current On-Hand**, which sums the authoritative ledger.
+4. For an order reversal, confirm the order's status changed as expected and that a receipt-reversal or issue-reversal row references it.
+
+## Common Mistakes
+
+- **Trying to delete the row.** There is no delete. Every correction is a new entry. Reaching for a delete button that is not there wastes time.
+- **Posting a manual counter-entry for an engine entry.** A manual issue can drop on-hand, but it does not link to the order or show the completion being undone. Reopen or delete the order so the reversal is traceable.
+- **Reversing every entry when you only meant to undo a consume.** Reopening an order reverses its build receipt too. If you only want to release consumed stock before rescheduling, that is a narrower operation than a full order reversal; do not use the full reversal for it.
+- **Not checking Balance After.** The stored balance on old rows is a snapshot and does not update when a later reversal changes things. Read the authoritative on-hand or the KPI strip for the true current figure.
+
+To read the history you are reversing against, use [how to audit the inventory ledger for a part](/blog/how-to-audit-the-inventory-ledger-for-a-part-in-edgebic). For simple count corrections that do not need a reversal, see [how to make an inventory adjustment](/blog/how-to-make-an-inventory-adjustment-in-edgebic), and browse every task in the [EDGEBIC how-to library](/blog/edgebic-how-to-hub).

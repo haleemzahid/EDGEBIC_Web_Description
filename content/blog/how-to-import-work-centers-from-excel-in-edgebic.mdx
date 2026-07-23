@@ -1,0 +1,114 @@
+---
+title: "How to Import Work Centers from Excel in EDGEBIC"
+description: "Import work centers from Excel into EDGEBIC: build a Workcenter mask, map the work center id and capacity fields, run Do It, and verify instances, shifts, and bottleneck flags."
+published: 2026-07-27T12:00:00.000Z
+modified: 2026-07-27T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - import work centers from Excel EDGEBIC
+  - workcenter master data import
+  - number of instances import
+  - is bottleneck flag
+  - shift names import
+  - EDGEBIC import mask
+targetPhrase: "import work centers from Excel in EDGEBIC"
+wordCount: 1157
+readingTime: 6
+faqQuestions:
+  - question: "How do you import work centers from Excel into EDGEBIC?"
+    answer: "Open Settings, the Import tab, and select Workcenter in the Entity Type list. Click Define New, name the mask, click Get File and pick your xlsx, then map your columns onto the fields. The work center id is mandatory. Save the mask, select it, and click Do It. The result dialog shows Created, Updated, Reused, and Failed counts. New and updated work centers appear immediately in the Workcenter grid."
+  - question: "Which work center fields can I import besides the id?"
+    answer: "Beyond the mandatory work center id, the optional fields include name, number of instances, setup time in hours, use global shifts, is active, hourly rate, color, type, capacity, efficiency, one per day flag, is bottleneck, minimum and maximum batch size, and shift names. Number of instances defaults to 1 when a cell is blank. Is bottleneck set to true marks the work center as a constraint so the scheduler anchors around it."
+  - question: "Do imported work centers get shifts automatically?"
+    answer: "Only if you map them. The Shift Names column lets an import associate a work center with named global shifts, and Use Global Shifts controls whether it inherits the global calendar. A work center with no shift has no capacity windows, so any operation routed to it has nowhere to land. After importing, confirm each work center has shifts before you schedule against it."
+qaQuestions:
+  - question: "We imported 30 work centers but the scheduler will not place any operations on eight of them. What is the likely cause?"
+    answer: "Those eight almost certainly have no shifts. A work center is capacity only when it has a shift assigned, because shifts define the hours it is open. If your import file left the Shift Names column blank for those rows, or Use Global Shifts was not set, they came in with no calendar. Open each on the Workcenter grid and assign a shift, or re-import with the shift columns mapped. Number of instances also matters: a blank instance count defaults to 1, which is usually right, but zero would starve capacity."
+  - question: "One machine is our clear constraint. Can the import mark it as the bottleneck, or is that a manual step?"
+    answer: "The import can do it. Add an Is Bottleneck column to your file with true on the constraint row and map it in the mask. On import, that work center is flagged as a bottleneck, and the scheduler treats it as an anchor: it plans the constraint first and sequences the rest of each job around it. Set true on only the machines that genuinely gate throughput. Marking everything a bottleneck defeats the purpose, because the scheduler cannot anchor around a plant full of anchors."
+---
+
+**To import work centers from Excel in EDGEBIC by User Solutions you build a Workcenter import mask that maps your spreadsheet columns to the work center fields, run Do It, and then confirm the imported machines have instances and shifts.** The mask matches each row by the work center id, so that column is the one that must always be filled and mapped.
+
+This is the specific task of loading work centers. For the general mechanics of masks, read [import masks explained](/blog/edgebic-import-masks-explained), and for building any mask see [how to build an import mask](/blog/how-to-build-an-import-mask-in-edgebic).
+
+## Before You Start
+
+- Your file is `.xlsx`, `.csv`, `.txt`, or `.tsv`, and every row has a filled work center id.
+- You can see the **Settings** tab. Import is permission-controlled.
+- You know that a work center needs a shift to have capacity. If your file does not carry shift information, plan to assign shifts afterward.
+- You have decided update or reuse: reuse leaves existing work centers alone, update overwrites matched records.
+
+## Building and Running the Workcenter Mask
+
+1. Open **Settings → 📥 Import**. The Import Data page opens.
+2. Select **Workcenter** in the **Entity Type** list.
+3. Click **➕ Define New…**. Name the mask, for example `Work Center Load`.
+4. Click **📂 Get File**, pick your spreadsheet, and choose the worksheet in **Sheet** for an `.xlsx`. The column headings list under **File Header Titles**.
+5. Map the columns by dragging headings onto the matching **Source Header** cells. The **Req**-ticked row is the mandatory one:
+
+   | Field | Required | Notes |
+   |---|---|---|
+   | **Workcenter Id** | Yes | The natural key; matched case-insensitively |
+   | Workcenter Name | No | Display name |
+   | Number Of Instances | No | Parallel machines; blank defaults to 1 |
+   | Capacity, Capacity Type, Efficiency | No | Capacity model inputs |
+   | Setup Time Hours, Hourly Rate | No | Time and cost |
+   | One Per Day Flag | No | One job per instance per day |
+   | Is Bottleneck | No | true marks a scheduling constraint |
+   | Use Global Shifts, Shift Names | No | Calendar association |
+   | Color, Type, Min/Max Batch Size, Is Active | No | Display and batching |
+
+6. Set **Header Present** on, keep the delimiter on **Excel** for `.xlsx`, and click **Save**.
+7. To control whether matches update, select the mask, click **⚙️ Options…**, and tick **UpdateExistingRecords** only when the run is meant to change values.
+8. With the mask selected, click **▶ Do It**. Choose the file if prompted, and watch the Importing progress window.
+
+## What Changes When You Save
+
+| Outcome | Meaning |
+|---|---|
+| **Created** | A new work center |
+| **Updated** | An existing one changed (with updates on) |
+| **Reused** | An existing one found and left alone |
+| **Failed** | The row had a problem; the reason is logged |
+
+New and updated work centers appear immediately in the Workcenter grid and in the routing pickers. The schedule itself is not recalculated by the import: run the scheduler afterward to plan against the new capacity.
+
+## How to Check It Worked
+
+Read the summary line on the **Import Result** dialog, then open the Workcenter grid. For each imported machine, confirm three things: the **Number Of Instances** looks right (blank cells came in as 1), a **shift** is assigned so it has open hours, and any constraint machine shows the bottleneck flag you intended. A quick way to prove capacity exists is to schedule a small test order routed through the new work center and see the bar land on it. If it will not land, the machine has no shift.
+
+## Getting Capacity Right on Import
+
+Three fields decide whether an imported work center actually schedules work, so it is worth being deliberate about each.
+
+**Number Of Instances** is how many identical machines the work center represents. A cell left blank comes in as 1, which is correct for a single machine but wrong for a station with three lathes. If the count is off, the scheduler either starves the station or over-plans it, so fill this column whenever a work center is more than one machine.
+
+**Shifts** define the hours the work center is open. Capacity only exists where a shift is assigned, so the **Shift Names** column, together with **Use Global Shifts**, is what gives an imported machine open windows. A work center imported with neither has no calendar and no capacity, and every operation routed to it stalls.
+
+**Is Bottleneck** changes how the scheduler treats the machine. Set to true, it becomes an anchor: the scheduler plans that constraint first and sequences each job around it. Mark true only on the machines that genuinely gate throughput, because anchoring works by having a small number of constraints to plan around.
+
+## Order of Loading
+
+Work centers rarely come in alone. The reliable sequence is products first, then work centers, then routings that reference both, then the orders that consume them. Loading in that order means each import finds the records it depends on already present, and you avoid leaning on the auto-create options to invent bare parent records mid-run.
+
+## Common Mistakes
+
+**Importing work centers with no shift.** A shift-less work center has no capacity windows, so operations routed to it never place. Map the shift columns, or assign shifts on the grid after import.
+
+**Leaving Number Of Instances blank when you meant more than one.** Blank defaults to 1. If a station has three identical machines, the file must say 3, or the scheduler treats it as a single resource. This and similar traps are in [import mask mistakes](/blog/import-mask-mistakes-edgebic).
+
+**Flagging too many bottlenecks.** The bottleneck flag anchors scheduling around a constraint. Mark only the machines that truly gate throughput; a plant of anchors gives the scheduler nothing to sequence around.
+
+**Expecting the import to schedule.** It loads capacity only. Run the scheduler afterward to use it.
+
+## A Note on Colors and Types
+
+Two optional fields shape how work centers read on the schedule rather than how they compute. **Color** takes a hex value such as `#1E88E5` and drives the shade a work center's bars show on the Gantt, which is worth setting on import so a freshly loaded plant is legible from day one rather than a wall of the same tone. **Type** and the batch-size fields carry the work center's classification and batching limits. None of these change capacity, so leaving them blank is harmless, but filling Color in the import file saves a round of manual recoloring later.
+
+## Next Steps
+
+Products are the companion master-data load, and usually come in first: see [how to import products from Excel](/blog/how-to-import-products-from-excel-in-edgebic). With products and work centers in place, [how to import a routing from Excel](/blog/how-to-import-a-routing-from-excel-in-edgebic) ties them together. For the full task library, see [the EDGEBIC how-to hub](/blog/edgebic-how-to-hub), and for the wider platform, [EDGEBIC](/edgebic).

@@ -1,0 +1,101 @@
+---
+title: "The Optimizer Made My Schedule Worse: Why It Almost Never Did"
+description: "The optimizer is clamped to be never worse than your current schedule, so a worse result is almost always a misread: a proposal not yet accepted, a different goal, or locked jobs."
+published: 2026-07-27T12:00:00.000Z
+modified: 2026-07-27T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - optimizer made schedule worse
+  - optimizer never worse than baseline
+  - optimizer proposal not accepted
+  - optimizer goal preset
+  - optimizer locked jobs
+  - optimizer comparison view
+targetPhrase: "optimizer made my schedule worse"
+wordCount: 1363
+readingTime: 7
+faqQuestions:
+  - question: "Can the EDGEBIC optimizer actually make my schedule worse?"
+    answer: "Not on the goal you select. The optimizer computes your current schedule first, then compares any candidate directly against it under the chosen goal, and returns your current schedule unchanged unless the candidate is strictly better. This never-worse clamp is enforced, not assumed, so an accepted optimization can only be equal to or better than what you had on the goal you picked. A result that looks worse is almost always a misread of the comparison view, a different goal, or a job the optimizer left locked."
+  - question: "Why does the optimizer sometimes say it changed nothing?"
+    answer: "When every job in the plan uses a feature the exact solver does not yet rearrange natively, the optimizer verifies the current plan and reports that it changed nothing, honestly, rather than claiming an improvement it could not find. Those jobs are locked, meaning reproduced exactly as scheduled. Reading an unchanged plan as worse is a misread: it is identical to what you had. The explain view lists each locked job and the reason, so you can see why the optimizer left it alone."
+  - question: "Does anything change before I press Accept?"
+    answer: "No. The optimizer holds its proposal in memory and writes nothing to your schedule until you press Accept. The comparison view shows a proposed plan side by side with your current one, but your live schedule is untouched while you review. If you were reading the proposal as if it had already been applied, that explains a schedule that looks changed when nothing was committed. Discard leaves the database exactly as it was."
+qaQuestions:
+  - question: "The optimizer's proposed schedule shows a job finishing later than before. Did it make things worse?"
+    answer: "Almost certainly not on the goal you selected. The optimizer compares its candidate directly against your current schedule under the chosen goal and returns your current schedule unchanged if the candidate is not strictly better, so the accepted result can only be equal or better on that goal. A single job finishing later can be part of a plan that improves the goal overall, for example fewer total late jobs. Read the goal you picked and the goal-level numbers in the comparison, not one job's date, before concluding it got worse."
+  - question: "I accepted an optimization and the floor says the schedule is worse. What could have happened?"
+    answer: "Two things are worth checking. First, confirm the goal you optimized matches what the floor cares about: minimizing makespan can move an individual due date while improving overall finish time, so a plan that is better on its goal can look worse on a metric you did not optimize. Second, check whether the schedule drifted between running and accepting; if someone rescheduled or actuals landed, the proposal goes stale and the tool warns you rather than applying an outdated plan. Re-run the optimizer on the current state with the goal that matches your priority."
+---
+
+**The optimizer is built to be never worse than your current schedule, so a result that looks worse is almost always a misread rather than a real regression.** [EDGEBIC by User Solutions](/edgebic) computes your existing plan first, then compares any optimized candidate directly against it under the goal you chose, and returns your existing plan unchanged unless the candidate is strictly better. That clamp is enforced on every run, so an accepted optimization can only be equal to or better than what you had on the goal you picked.
+
+This post is the honest version of the optimizer-made-it-worse symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). The three real explanations are a proposal read as if accepted, a goal that differs from what you are measuring, and jobs the optimizer left locked. For the mechanism, [how to run and read an optimization](/blog/how-to-run-and-read-an-optimization-in-edgebic) walks the comparison view.
+
+## The Never-Worse Guarantee, Plainly
+
+Every optimizer run starts by producing your baseline: the plan your current schedule represents. Whatever the optimizer explores, it scores each candidate against that baseline under your selected goal and keeps a candidate only if it strictly wins. If nothing wins, it hands back the baseline. So the accepted plan is, by construction, no worse than what you started with on the goal you optimized. The multi-run search cannot prove it found the mathematical best, but it can and does guarantee it is never worse. The exact solver adds a proof of how close to optimal it got. Neither can hand you a worse plan than your baseline. [The optimizer guide](/blog/edgebic-optimizer-guide) covers both engines.
+
+Given that, "it made my schedule worse" points at one of the following, not at the optimizer breaking its own clamp.
+
+## Cause 1: You Are Reading a Proposal, Not a Committed Plan
+
+The optimizer holds its result in memory and writes nothing until you press Accept. The comparison view shows a proposed plan beside your current one so you can weigh them, but your live schedule is untouched while you review. If you read the proposal as if it were already applied, a plan you have not accepted can look like a change that happened to your schedule.
+
+**How to tell:** check whether you pressed Accept. If you only ran the optimizer and are looking at the comparison, nothing has changed. Discard leaves the database exactly as it was.
+
+**Fix:** nothing is broken. Review the comparison, and Accept only if the proposed plan is one you want. If you already accepted and still see a concern, read on.
+
+## Cause 2: You Are Measuring a Different Goal Than You Optimized
+
+The clamp guarantees never-worse on the goal you selected, in priority order. If you optimize for the fastest overall finish and then judge the result by a single job's due date, a plan that genuinely improves overall makespan can move one job later. That is not the optimizer getting worse; it is you measuring a metric that was not the goal.
+
+**How to tell:** read the goal you picked at the top of the run, then read the goal-level numbers in the comparison, not one job's date. The default goal protects due dates first; other goals prioritize fastest finish, least setup, or fewest changes. [Optimizer goals and presets explained](/blog/edgebic-optimizer-goals-and-presets-explained) covers what each optimizes.
+
+**Fix:** re-run with the goal that matches what you actually care about. If due dates are the priority, pick the on-time goal and the plan will protect them ahead of everything else.
+
+## Cause 3: Jobs Were Locked, So the Plan Is Unchanged
+
+The exact solver rearranges plain sequential work natively; a job whose routing uses a feature it does not yet model natively, such as parallel processing, lot streaming, transit days, alternate machines, or a multi-machine work center, is locked, meaning reproduced exactly as it was scheduled. When every job is locked, the optimizer verifies the plan and reports honestly that it changed nothing. An unchanged plan read as worse is simply the plan you already had.
+
+**How to tell:** open the explain view on the result. It lists each locked job with the reason the optimizer left it alone, and it says plainly when there was nothing to optimize.
+
+**Fix:** nothing is wrong. A locked job is reproduced faithfully by design, so correctness comes first and optimization scope second. If you want more jobs rearranged, the multi-run engine considers whole-schedule orderings and may improve where the exact solver locks. [Why the optimizer returned the same schedule](/blog/why-the-optimizer-returned-the-same-schedule-edgebic) covers the no-change case in depth.
+
+## Cause 4: The Schedule Drifted Before You Accepted
+
+If the schedule changed between running the optimizer and accepting, because a colleague rescheduled or actuals landed, the proposal is stale. The tool takes a fingerprint of the schedule before it solves and re-checks it at Accept, and it warns you rather than applying a plan built against an outdated baseline.
+
+**How to tell:** a stale-proposal warning at Accept is the signal. If you saw it and accepted anyway after re-solving, you are fine; if you dismissed it, the plan may not reflect the current state.
+
+**Fix:** re-run the optimizer on the current schedule and accept the fresh proposal. This is also why comparing an old proposal against a schedule that has since changed can look like a regression.
+
+## How to Diagnose a Worse-Looking Result, in Order
+
+1. **Confirm you accepted.** An unaccepted proposal changed nothing; you are reading a preview.
+2. **Read the goal you optimized** and judge by its goal-level numbers, not one job's date.
+3. **Open the explain view** for locked jobs and the changed-versus-verified summary.
+4. **Watch for a stale-proposal warning** at Accept, and re-run on the current state if you saw one.
+5. **Compare against the baseline the run captured**, not a schedule that has since moved.
+
+## Prevention
+
+- **Pick the goal before you run.** The never-worse guarantee is per goal, so the goal is the single most important choice and prevents most confusion.
+- **Treat the comparison as a preview.** Nothing commits until Accept, and Discard is always safe.
+- **Read the explain view every time.** It tells you what changed, what was verified unchanged, and why any job was left locked, which forestalls a misread.
+- **Re-run rather than accept a stale proposal.** A warning at Accept means the baseline moved; a fresh run keeps the guarantee meaningful. [Optimizer usage mistakes](/blog/optimizer-usage-mistakes-edgebic) covers the common misreads, and if a job moved after a plain reschedule rather than an optimization, [why did my job jump after a reschedule](/blog/why-did-my-job-jump-after-a-reschedule-edgebic) covers that case.
+
+<Accordion title="Can the EDGEBIC optimizer actually make my schedule worse?">
+Not on the goal you select. The optimizer computes your current schedule first, then compares any candidate directly against it under the chosen goal, and returns your current schedule unchanged unless the candidate is strictly better. This never-worse clamp is enforced, not assumed, so an accepted optimization can only be equal to or better than what you had on the goal you picked. A result that looks worse is almost always a misread of the comparison view, a different goal, or a job the optimizer left locked.
+</Accordion>
+
+<Accordion title="Why does the optimizer sometimes say it changed nothing?">
+When every job in the plan uses a feature the exact solver does not yet rearrange natively, the optimizer verifies the current plan and reports that it changed nothing, honestly, rather than claiming an improvement it could not find. Those jobs are locked, meaning reproduced exactly as scheduled. Reading an unchanged plan as worse is a misread: it is identical to what you had. The explain view lists each locked job and the reason, so you can see why the optimizer left it alone.
+</Accordion>
+
+<Accordion title="Does anything change before I press Accept?">
+No. The optimizer holds its proposal in memory and writes nothing to your schedule until you press Accept. The comparison view shows a proposed plan side by side with your current one, but your live schedule is untouched while you review. If you were reading the proposal as if it had already been applied, that explains a schedule that looks changed when nothing was committed. Discard leaves the database exactly as it was.
+</Accordion>

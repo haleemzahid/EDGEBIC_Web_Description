@@ -1,0 +1,105 @@
+---
+title: "How to Import Sales Orders from Excel in EDGEBIC"
+description: "Import sales orders and jobs from Excel into EDGEBIC: map Product_Id, Qty and Job_Date, group lines by an order reference, run Do It, then schedule the new jobs."
+published: 2026-07-27T12:00:00.000Z
+modified: 2026-07-27T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - import sales orders from Excel EDGEBIC
+  - import jobs demand
+  - sales order reference grouping
+  - Product_Id Qty Job_Date
+  - auto create missing products
+  - EDGEBIC import mask
+targetPhrase: "import sales orders from Excel in EDGEBIC"
+wordCount: 1180
+readingTime: 6
+faqQuestions:
+  - question: "How do you import sales orders from Excel into EDGEBIC?"
+    answer: "Open Settings, the Import tab, and select SalesOrder in the Entity Type list. Click Define New, name the mask, pick your file, and map the mandatory fields: product id, quantity, and job date. Optionally map an order reference, customer name, and due date. Save the mask and click Do It. Imported orders appear on the Drive Schedule tab as jobs ready to schedule. Nothing is scheduled automatically; run the scheduler afterward."
+  - question: "How does EDGEBIC group multiple lines into one sales order?"
+    answer: "When you map and fill the optional order reference column, all rows sharing the same reference are grouped under one sales order and their jobs are auto-numbered as the reference plus a line number. Rows with a blank reference each become a standalone job. So a five-line purchase order with one reference becomes one sales order of five jobs, while five unrelated demand rows with blank references become five independent jobs."
+  - question: "What happens if the file names a product that does not exist yet?"
+    answer: "By default the AutoCreateMissingProducts option is on, so a product named in a sales order file that does not exist yet is created on the fly, and the same applies to customers with AutoCreateMissingCustomers. This keeps a load from failing on a product you have not entered. The trade-off is a bare product record with only a name, so for real master data it is better to import products first, then the orders."
+qaQuestions:
+  - question: "We imported 40 orders on Monday morning but the Gantt is still empty. Did the import fail?"
+    answer: "No. Imports never schedule anything. After the run, the Drive Schedule tab shows the 40 orders as jobs ready to plan, but they are not on the Gantt until you run the scheduler. Open Drive Schedule, run the scheduler in new-jobs-only mode, and the 40 jobs plan around everything already on the floor. Only then do they appear in Job View. Import loads demand; the scheduler turns demand into a plan, and the two steps are deliberately separate."
+  - question: "Our file has only a due date, not a job start date, for each order. Will the import reject the rows?"
+    answer: "Not if you set the mapping up for it. Job date is the mandatory timing field, but the SalesOrder options include controls for how job date and due date relate when only one is present, so you can have the job date derived from the due date. Map the due date column, turn on the option that derives the job date, and the rows import with a sensible job date. Check a handful of imported orders on Drive Schedule to confirm the dates came in as you expect before scheduling."
+---
+
+**To import sales orders from Excel in EDGEBIC by User Solutions you build a SalesOrder mask that maps the product id, quantity, and job date, optionally group lines by an order reference, and run Do It, after which the orders appear as jobs ready to schedule.** The import loads demand only; turning that demand into a plan is a separate scheduler run.
+
+This is the task of loading orders. For the general mechanics of masks, read [import masks explained](/blog/edgebic-import-masks-explained), and for building any mask see [how to build an import mask](/blog/how-to-build-an-import-mask-in-edgebic).
+
+## Before You Start
+
+- Your file is `.xlsx`, `.csv`, `.txt`, or `.tsv`, with one row per job line.
+- Every row has a product id, a quantity, and a job date. Those are the mandatory fields.
+- The products and customers named in the file exist, or you leave the auto-create options on so the import creates missing ones.
+- You can see the **Settings** tab, and you plan to run the scheduler after the import.
+
+## Building and Running the SalesOrder Mask
+
+1. Open **Settings → 📥 Import** and select **SalesOrder** in the **Entity Type** list.
+2. Click **➕ Define New…** and name the mask, for example `Weekly Orders`.
+3. Click **📂 Get File**, pick the file, and choose the worksheet in **Sheet**. The headings list under **File Header Titles**.
+4. Map the columns. The mandatory fields are ticked in **Req**:
+
+   | Field | Required | Meaning |
+   |---|---|---|
+   | **Product Id** | Yes | The product this job builds |
+   | **Qty** | Yes | Order quantity |
+   | **Job Date** | Yes | The job's date |
+   | Sales Order reference | No | Groups lines under one order |
+   | Job Number | No | Explicit job identifier |
+   | Customer Name | No | Resolved to a customer record |
+   | Due Date, Order Date, Priority, Unit Price, User Notes | No | Order detail |
+
+5. Click **Save**.
+6. Select the mask and click **⚙️ Options…**. Keep **AutoCreateMissingProducts** and **AutoCreateMissingCustomers** on if you want the load to tolerate names not yet in the system. Set the job-date and due-date options if your file carries only one of the two dates.
+7. Click **▶ Do It**. Choose the file if prompted, and watch the progress window.
+
+## What Changes When You Save
+
+| Surface | Effect |
+|---|---|
+| Drive Schedule (jobs) | Imported orders appear as jobs ready to schedule |
+| The Gantt / Job View | Nothing appears until you run the scheduler |
+| Products and customers | Missing ones are created if the auto-create options are on |
+| The schedule | Never recalculated by an import; run the scheduler afterward |
+
+When you fill the order reference column, lines that share a reference are grouped under one sales order and their jobs are auto-numbered as the reference plus a line number. A blank reference makes each row a standalone job.
+
+## How to Check It Worked
+
+Read the summary line on the **Import Result** dialog, then open the **Drive Schedule** tab. The new orders should be listed as jobs, with the quantities and dates you expect and, where you used a reference, grouped under one sales order. Spot-check the dates on a couple of orders, especially if you derived job date from due date. Then run the scheduler in new-jobs-only mode and confirm the jobs land on the Gantt. If an order is missing from Drive Schedule, check the log for a failed row: a blank product id, quantity, or job date is the usual cause.
+
+## How Order Grouping Works
+
+The order reference column is the difference between a pile of independent jobs and a structured set of sales orders. When you map it and fill it, EDGEBIC gathers every row that shares a reference into one sales order and numbers the resulting jobs as the reference plus a line number. A five-line purchase order that carries one reference on all five rows becomes a single sales order of five jobs, which is how it should look for a customer who placed one order. Rows with a blank reference each stand alone as their own job. This is worth getting right in the source file, because two unrelated jobs that accidentally share a reference will be merged, and a multi-line order with mismatched references will scatter into separate orders.
+
+## The Import-then-Schedule Rhythm
+
+The most common confusion with sales-order imports is expecting jobs to appear on the Gantt. They do not, by design. Picture Monday at 08:00: you import 40 orders for Acme Industries, and at 08:01 the **Drive Schedule** tab shows 40 new jobs, none of them planned yet. At 08:05 you run the scheduler in new-jobs-only mode, and the 40 jobs are planned around everything already on the floor. Only then do they appear in Job View and on the Gantt. Import loads demand; the scheduler turns demand into a plan. Keeping those two steps separate is what lets you review the imported orders before committing the plant's capacity to them.
+
+## Common Mistakes
+
+**Expecting the import to schedule the orders.** It loads demand only. The orders sit on Drive Schedule until you run the scheduler. This is the most common "nothing appeared on the Gantt" report.
+
+**Relying on auto-create for real master data.** Auto-created products and customers are bare records with little more than a name. For proper master data, import [products](/blog/how-to-import-products-from-excel-in-edgebic) first, then the orders.
+
+**A blank mandatory field.** A row missing a product id, quantity, or job date fails. Fix it in the source and re-run; already-imported orders come back Reused or Updated rather than duplicating. More of these traps are in [import mask mistakes](/blog/import-mask-mistakes-edgebic).
+
+**Reusing an order reference you did not mean to group.** Rows sharing a reference are merged into one sales order. If two unrelated jobs accidentally carry the same reference, they group together. Blank the reference for standalone jobs.
+
+## Job Dates When the File Has Only One
+
+Order files rarely carry both a job start date and a due date; often they have one or the other. Job date is the mandatory timing field, but the SalesOrder options include controls for how job date and due date relate when only one is present, so a file with only a due date can still import cleanly. Map the due date column, turn on the option that derives the job date from it, and the rows land with a sensible job date rather than failing. It is worth checking a handful of imported orders on Drive Schedule afterward to confirm the derived dates match what you expect, because the relationship between the two dates is exactly the kind of thing that is easy to set backward.
+
+## Next Steps
+
+Orders need routings to schedule cleanly, so [how to import a routing from Excel](/blog/how-to-import-a-routing-from-excel-in-edgebic) is the usual companion. Once jobs run, [how to import actuals from a file](/blog/how-to-import-actuals-from-a-file-in-edgebic) brings real hours back in. For the full task library, see [the EDGEBIC how-to hub](/blog/edgebic-how-to-hub), and for the wider platform, [EDGEBIC](/edgebic).

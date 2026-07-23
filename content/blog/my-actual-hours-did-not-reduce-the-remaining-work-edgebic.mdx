@@ -1,0 +1,101 @@
+---
+title: "My Actual Hours Did Not Reduce the Remaining Work: Causes and Fixes"
+description: "Logging hours records them, but the remaining balance only recalculates on the next reschedule. Why logged hours can look like they had no effect, and how to make them count."
+published: 2026-07-27T12:00:00.000Z
+modified: 2026-07-27T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - actual hours did not reduce remaining work
+  - logged hours no effect
+  - remaining hours not recalculated
+  - reschedule after logging actuals
+  - partial completion hours
+  - forward shift remaining hours
+targetPhrase: "actual hours did not reduce the remaining work"
+wordCount: 1268
+readingTime: 6
+faqQuestions:
+  - question: "Why did logging actual hours not reduce the remaining work on my job?"
+    answer: "Logging hours records them, but the remaining balance is only recalculated when you reschedule the job. Until then the plan still shows the original planned hours. The other causes are that the step was marked complete under a policy that trusts the operator's close and does not forward-shift the shortfall, and that the reschedule ran in a mode that did not analyze actuals. Reschedule the job after logging, and confirm the hours landed on the right step."
+  - question: "Do I have to reschedule after logging hours for the remaining work to update?"
+    answer: "Yes. Recording actual hours captures shop-floor reality, but the engine computes the remaining balance as planned minus actual only when it reschedules the job. A partially finished step keeps its logged hours and forward-shifts the balance on the next reschedule, so the shortened remaining work appears after you rerun scheduling, not the moment you log the hours. Logging and rescheduling are two separate actions."
+  - question: "What is the difference between trusting an operator's close and forward-shifting the remainder?"
+    answer: "When an operator marks a step complete with fewer hours than planned, the site policy decides what happens. Trust-the-close accepts the early completion and moves on, so no remainder is scheduled. Forward-shift-remaining treats the shortfall as work still to do and schedules the gap after the historical portion. If your logged hours are not reducing remaining work the way you expect, check which policy is in effect, because trust-the-close intentionally does not create a remainder."
+qaQuestions:
+  - question: "I logged six hours against a twelve-hour operation this morning, but the schedule still shows twelve hours to go. Is the logging broken?"
+    answer: "No. Logging recorded the six hours, but the plan only recalculates remaining work on a reschedule, so until you rerun scheduling the operation still displays its original twelve hours. Reschedule the job and the in-progress step keeps the six logged hours and forward-shifts the remaining six as a separate block. If after rescheduling it still shows twelve, confirm the hours were logged against that exact step and day rather than a neighboring step."
+  - question: "An operator marked a long CNC run complete with fewer hours than planned, and the leftover work never got scheduled. Should it have?"
+    answer: "It depends on the site policy for short completions. Under trust-the-close, an early complete is accepted as final and no remainder is scheduled, which is why the leftover work did not appear. Under forward-shift-remaining, the shortfall is treated as work still to do and scheduled after the historical block. If you want short completions to leave a remainder, set the policy to forward-shift-remaining; if you want the operator's close to be final, trust-the-close is doing exactly what it should."
+---
+
+**Logging actual hours records them, but the remaining balance only recalculates when you reschedule the job, so logged hours can look like they had no effect until you rerun scheduling.** [EDGEBIC by User Solutions](/edgebic) captures shop-floor hours as you enter them and computes remaining work as planned minus actual during a reschedule, which means logging and rescheduling are two separate actions.
+
+The controls you use to diagnose this are the reschedule action and the site's partial-completion policy. This post is the detailed version of the logged-hours symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the mechanism, [how to log actual hours and pieces](/blog/how-to-log-actual-hours-and-pieces-in-edgebic) covers recording, and [partial completion reschedule walkthrough](/blog/partial-completion-reschedule-walkthrough-edgebic) covers how the balance updates.
+
+## Logging and Rescheduling Are Separate Steps
+
+Recording hours writes them to the operation. Reducing the remaining work is a scheduling decision the engine makes when it reschedules the job: it reads the hours logged against each step, computes the balance as planned minus actual, keeps the logged portion in place, and forward-shifts only the remainder. Until that reschedule runs, the plan still shows the original planned hours, because nothing has recalculated. So the most common version of this symptom is simply that the job has not been rescheduled since the hours were logged.
+
+## Cause 1: The Job Has Not Been Rescheduled
+
+If you log hours and read the same job's plan without rescheduling, the remaining work is unchanged by design. The engine has not been asked to recompute anything.
+
+**How to tell:** check whether a reschedule has run since you logged the hours. If not, the plan is showing pre-log numbers.
+
+**Fix:** reschedule the job. The in-progress step keeps its logged hours and forward-shifts the balance, and the shortened remaining work appears in the new plan. [How actuals flow into the schedule](/blog/how-actuals-flow-into-the-edgebic-schedule) covers this handoff.
+
+## Cause 2: The Hours Landed on the Wrong Step or Day
+
+Remaining work shrinks only when the actual hours are attached to the operation they belong to. Hours logged against a different step, a different day, or as pieces without the corresponding hours will not reduce the intended step's balance.
+
+**How to tell:** open the operation and read the logged hours per day. If the hours are missing there but present on a neighboring step, they landed in the wrong place.
+
+**Fix:** correct where the hours are recorded so they sit on the right operation and day, then reschedule. [How to record a partially finished operation](/blog/how-to-record-a-partially-finished-operation-in-edgebic) shows the correct entry, and [actuals logging mistakes](/blog/actuals-logging-mistakes-edgebic) covers the common slips.
+
+A related version of this trips up pieces-based steps. On a step tracked by pieces, the completion that reduces remaining work is the piece count, and the engine relates pieces and hours for that operation. If an operator logs hours on a step the plant tracks by pieces, or logs pieces on a step tracked by hours, the entry may not reduce the balance the way you expect. Confirm the step's unit and record completion in that unit, then reschedule and re-read the remaining figure.
+
+## Cause 3: The Site Policy Trusts the Operator's Close
+
+When an operator marks a step complete with fewer hours than planned, the site's partial-completion policy decides what happens to the shortfall. Under trust-the-close, the early completion is accepted as final and no remainder is scheduled, so the leftover hours never become remaining work. Under forward-shift-remaining, the shortfall is treated as work still to do and scheduled after the historical block. If you expected leftover work to appear and it did not, the policy may be trust-the-close.
+
+**How to tell:** check the partial-completion policy in the scheduling settings. Trust-the-close intentionally creates no remainder from a short completion.
+
+**Fix:** if you want short completions to leave a remainder, set the policy to forward-shift-remaining, or flag the specific steps that need it under the per-step variant. If the operator's close should be final, trust-the-close is correct and no remainder is the right outcome.
+
+## Cause 4: The Reschedule Did Not Analyze Actuals
+
+A reschedule preserves and applies actuals only when it runs against the existing schedule with actuals analysis engaged. A run that regenerates from the master routing without reading the existing rows does not fold in the logged hours, so the remaining work is not reduced.
+
+**How to tell:** enable the scheduling session log and look for the actuals lines for the job. If the analysis did not run or found no actuals, the reschedule did not fold them in.
+
+**Fix:** reschedule using a mode that analyzes the existing schedule, so the engine reads the logged hours and forward-shifts the balance. If the log shows the actuals were not found, confirm they were recorded against the schedule the reschedule is reading.
+
+## How to Diagnose Unreduced Remaining Work, in Order
+
+1. **Confirm a reschedule has run** since you logged the hours. Logging alone does not recalculate.
+2. **Read the logged hours on the operation and day.** Missing hours there mean they landed elsewhere.
+3. **Check the partial-completion policy.** Trust-the-close makes no remainder from a short completion by design.
+4. **Read the session log actuals lines.** They confirm the reschedule analyzed and applied the hours.
+5. **Re-run the reschedule after any correction** and confirm the remaining work shrank.
+
+## Prevention
+
+- **Reschedule after logging.** The habit that makes logged hours count is rerunning scheduling; logging captures reality, rescheduling applies it.
+- **Log hours to the exact step and day.** Hours on the wrong operation reduce nothing where you meant, so precise entry matters.
+- **Choose the partial-completion policy deliberately.** Trust-the-close and forward-shift-remaining produce very different outcomes for short completions, and picking the one your floor expects prevents the surprise.
+- **Use the session log to confirm the analysis ran.** The actuals lines tell you the reschedule read and applied the hours, so you never wonder whether they took effect. If actual dates rather than hours look wrong, [actual dates look wrong](/blog/actual-dates-look-wrong-edgebic) covers that, and if a completed step appears to have moved, [a completed job moved when I rescheduled](/blog/a-completed-job-moved-when-i-rescheduled-edgebic) covers the preservation rules.
+
+<Accordion title="Why did logging actual hours not reduce the remaining work on my job?">
+Logging hours records them, but the remaining balance is only recalculated when you reschedule the job. Until then the plan still shows the original planned hours. The other causes are that the step was marked complete under a policy that trusts the operator's close and does not forward-shift the shortfall, and that the reschedule ran in a mode that did not analyze actuals. Reschedule the job after logging, and confirm the hours landed on the right step.
+</Accordion>
+
+<Accordion title="Do I have to reschedule after logging hours for the remaining work to update?">
+Yes. Recording actual hours captures shop-floor reality, but the engine computes the remaining balance as planned minus actual only when it reschedules the job. A partially finished step keeps its logged hours and forward-shifts the balance on the next reschedule, so the shortened remaining work appears after you rerun scheduling, not the moment you log the hours. Logging and rescheduling are two separate actions.
+</Accordion>
+
+<Accordion title="What is the difference between trusting an operator's close and forward-shifting the remainder?">
+When an operator marks a step complete with fewer hours than planned, the site policy decides what happens. Trust-the-close accepts the early completion and moves on, so no remainder is scheduled. Forward-shift-remaining treats the shortfall as work still to do and schedules the gap after the historical portion. If your logged hours are not reducing remaining work the way you expect, check which policy is in effect, because trust-the-close intentionally does not create a remainder.
+</Accordion>

@@ -1,0 +1,92 @@
+---
+title: "How to Set a Starting On-Hand Quantity in EDGEBIC"
+description: "Set a starting on-hand quantity in EDGEBIC for a new product: post the physical count as an opening receipt so the ledger and projection begin from a clean base."
+published: 2026-07-27T12:00:00.000Z
+modified: 2026-07-27T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - set starting on-hand quantity
+  - opening balance inventory edgebic
+  - initial stock level
+  - seed inventory on-hand
+  - new product opening stock
+  - reset on-hand after clear
+targetPhrase: "set a starting on-hand quantity"
+wordCount: 1142
+readingTime: 6
+faqQuestions:
+  - question: "How do you set a starting on-hand quantity in EDGEBIC?"
+    answer: "Open the Inventory tab, select the new product, switch to the Adjustments pane, enter the physical count as a positive quantity, add a comment such as Opening balance, and click Post Receipt. That seeds the ledger with a clean base entry and sets on-hand to your count. A dedicated opening-balance operation also exists at the service level for setup scripts that carry a unit cost."
+  - question: "Is opening inventory a delete-and-replace, or does it add on top?"
+    answer: "It adds on top. Posting a starting quantity appends a receipt entry, it does not reset the balance to that number. If a product already has stock and you post an opening quantity again, the ledger sums both and on-hand climbs. Set the starting balance once per product at setup, and use a signed adjustment rather than a second opening post if you later need to correct it."
+  - question: "How do you reset on-hand for every product after clearing the ledger?"
+    answer: "Post a fresh starting quantity for each stocked product after a clear, because the on-hand cache shows stale values until a new movement recomputes it. For each product, open the Adjustments pane and post a Receipt for the true physical count, or run the service-level opening-balance call in a setup script. Skipping this step leaves stale caches that the anomaly report flags as on-hand drift."
+qaQuestions:
+  - question: "We are bringing 60 SKUs into EDGEBIC from a spreadsheet. What is the least error-prone way to seed their on-hand?"
+    answer: "Seed each SKU with one opening post that carries the physical count and, where you track cost, the unit cost. For a handful of products, work through the Adjustments pane: select the product, enter the count as a positive quantity, comment Opening balance, and Post Receipt. For 60 at once, the service-level opening-balance operation is the better fit because it accepts a unit cost and an actor name and is meant to run once per product in a setup routine. Either way, each post recomputes on-hand inside its own transaction, so the projection is correct the moment you open the calendar."
+  - question: "After a data clear the on-hand numbers still show the old values. Did the clear fail?"
+    answer: "No, the clear worked; what you are seeing is a stale cache. Clearing the ledger removes the movement rows but leaves each product's cached on-hand figure untouched until a new movement recomputes it. The fix is to post a starting quantity for every stocked product: a Receipt for the physical count from the Adjustments pane, or the opening-balance call in a script. Until you do, the anomaly report will flag on-hand drift for each product, which is the system telling you the cache and the empty ledger disagree."
+---
+
+**To set a starting on-hand quantity in EDGEBIC, you post the physical count as an opening receipt so the ledger begins from a real base.** In [EDGEBIC by User Solutions](/edgebic) on-hand is never typed directly into a balance field; it is the sum of every ledger entry, so the starting quantity has to enter the ledger as a movement. This post covers the planner-facing route through the Adjustments pane, the dedicated opening-balance operation, and the one behavior that surprises people: opening posts add, they do not reset.
+
+If append-only stock records are new to you, read [the inventory ledger explained](/blog/edgebic-inventory-ledger-explained) first. This post is the narrow task of giving a product its first number. Availability varies by installation, so check which inventory features your build exposes before scripting a setup.
+
+Seeding a starting quantity is a setup task you do once per product, and it pays to do it carefully because everything downstream builds on it. The projection reads current on-hand as the opening balance for its first bucket, so a wrong starting figure quietly distorts every projected balance, every days-of-cover reading, and every replenishment suggestion that follows. A correct seed, posted as a real movement with the physical count and, where you track it, the unit cost, gives the projection an honest base and gives valuation the right starting point. Treat the opening balance as the foundation of the part's whole inventory record rather than a throwaway number. It is also the one number you are least likely to revisit: receipts and issues get scrutinized as they happen, but a starting balance is entered once and then trusted for months, so an error in it can hide in plain sight far longer than a mistaken daily movement would.
+
+## Before You Start
+
+- The product exists and is flagged as a stocked item.
+- You have a physical count for it, from a shelf count or an opening balance in the system you are migrating from.
+- If you track valuation, you have the unit cost to attach to the opening quantity.
+- The product currently has no on-hand, or you understand that a new opening post adds to whatever is already there.
+
+## Route One: Post an Opening Balance From the Adjustments Pane
+
+This is the planner-facing route and needs no code.
+
+1. Click **Inventory** in the left navigation.
+2. Select the new product in the dropdown at the top of the view.
+3. Open the **Adjustments** sub-pane.
+4. Enter the physical count in the **Qty** field as a positive number.
+5. Type a **Comment** such as "Opening balance" or "Migration seed".
+6. Click **Post Receipt**.
+
+This appends a receipt entry and sets on-hand to your count, which is exactly what a starting balance needs to do.
+
+## Route Two: The Dedicated Opening-Balance Operation
+
+There is also a purpose-built opening-balance operation. It is a service-level call rather than a button on the calendar, so it belongs in a setup script or a migration routine rather than day-to-day planning. It writes an opening-balance entry, carries a unit cost so valuation starts correctly, and records an actor name for the audit trail. Reach for it when you are seeding many products at once and want the unit cost captured cleanly. For a few products by hand, the Adjustments-pane route above is simpler.
+
+## What Changes When You Save
+
+A ledger entry is appended and on-hand recalculates from the full ledger sum inside the same transaction. The product appears in the inventory matrix as a supply row, and the projection calendar reads the new on-hand as the opening balance for its first bucket. If you attached a unit cost, valuation runs use it from that point forward.
+
+## Make Sure the Product Is Ready to Hold Stock
+
+A starting quantity only means something if the product is set up to track inventory. The controlling flag is whether the product is stocked. A product that is not flagged stocked is skipped by the projection and the netting engine, so an opening balance posted against it changes a number that nothing reads. Before you seed a quantity, open the product and confirm it is flagged as a stocked item. If the product is also meant to build to finished-goods stock, that build method and the stocked flag need to agree: a make-to-stock product that is not flagged stocked is a configuration mismatch the anomaly report will flag, because it would silently skip inventory posting.
+
+This is a common trap right after an import. Products brought in from a spreadsheet can arrive with the stocked flag off by default, so a batch of opening balances appears to post but leaves the products invisible on the matrix. Check the flag on every imported product before you seed, not after.
+
+## Verifying the Seeded Balance Is Authoritative
+
+The surest check that a starting quantity took hold is to compare the on-hand cache against the ledger sum directly. The authoritative on-hand is computed by summing every ledger entry for the product, which is always correct even if a cache has drifted. Right after seeding, the two should match exactly: the KPI on-hand, the ledger sum, and your physical count are the same number. If they diverge, a post was interrupted, and re-posting a movement heals the cache.
+
+## How to Check It Worked
+
+1. Open the **Transaction History** pane for the product.
+2. Confirm one entry appears with your opening comment and the count as a positive quantity.
+3. Read the **Balance After** column: it should equal your physical count.
+4. Glance at the KPI strip. **Current On-Hand** should match your count, because it sums the authoritative ledger rather than a cached figure.
+
+## Common Mistakes
+
+- **Posting an opening quantity twice.** An opening post adds; it does not reset. A second post stacks another receipt on top and inflates on-hand. Correct an overstated balance with a signed adjustment, not another opening post.
+- **Forgetting to reseed after a data clear.** Clearing the ledger empties the movement rows but leaves each product's cached on-hand stale. Until you post a fresh starting quantity per product, the anomaly report flags on-hand drift.
+- **Leaving valuation empty when you track cost.** The Adjustments-pane route records the count cleanly, but if the unit cost matters for valuation, use the dedicated opening-balance operation that captures it, or follow up with a cost-bearing receipt.
+- **Seeding a product that is not flagged stocked.** A non-stocked product is skipped by the projection and netting engine, so an opening balance on it does nothing useful. Flag the product as stocked first.
+
+Once a product has its starting quantity, the everyday task of bringing more stock in is [how to record an inventory receipt](/blog/how-to-record-an-inventory-receipt-in-edgebic). For the wider set of manual movements, read [how to record receipts, issues and adjustments](/blog/how-to-record-receipts-issues-and-adjustments-in-edgebic), and browse every task in the [EDGEBIC how-to library](/blog/edgebic-how-to-hub).

@@ -1,0 +1,107 @@
+---
+title: "How to Import Actuals from a File in EDGEBIC"
+description: "Import actual hours and pieces from a file into EDGEBIC: map Job_Number, WorkCenter_Id and Actual_Date, decide the replace and auto-calc options, and run Do It safely."
+published: 2026-07-27T12:00:00.000Z
+modified: 2026-07-27T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - import actuals from a file EDGEBIC
+  - actual hours pieces import
+  - Job_Number WorkCenter_Id Actual_Date
+  - ReplaceExisting actuals
+  - AutoCalcHours
+  - EDGEBIC actuals import
+targetPhrase: "import actuals from a file in EDGEBIC"
+wordCount: 1112
+readingTime: 6
+faqQuestions:
+  - question: "How do you import actuals from a file into EDGEBIC?"
+    answer: "Open Settings, the Import tab, and select Actuals in the Entity Type list. Build a mask that maps the mandatory fields (job number, work center id, and actual date) plus actual hours and pieces. Save it and click Do It. Each row finds the matching scheduled operation by job number and work center and writes the hours and pieces onto that day. The job must already be scheduled for its operations to match."
+  - question: "Is it safe to re-import the same actuals file twice?"
+    answer: "Yes. The days the file carries are always overwritten with the file's values, so importing the same file twice never double-counts, and importing a corrected file simply fixes the earlier numbers. Days the file does not mention are preserved by default. If you want the imported file to be the complete record and clear uncovered days too, tick ReplaceExisting in the mask options. Either way, re-running is a safe way to correct actuals."
+  - question: "The file has only pieces for some days, not hours. Will those rows import?"
+    answer: "Yes, if AutoCalcHours is on, which is the default. A row carrying only pieces gets its hours derived from the operation's rate, and a row carrying only hours gets pieces derived the same way. So a day with a piece count but no hours still lands complete. You only need both columns when you want to record both explicit values; otherwise let the auto-calculation fill the missing side from the plan's rate."
+qaQuestions:
+  - question: "Every actuals row is failing to find its operation even though the job numbers look right. What should I check first?"
+    answer: "Two things. First, the job must already be scheduled: actuals write onto scheduled operations, so an order that was imported but never scheduled has no operation for the row to land on. Run the scheduler for those jobs, then import the actuals. Second, check the work center id in the file against the Job View grid, because a mismatched or misspelled work center is the other reason a row cannot find its operation. Open the log file to see the exact reason on each failed row."
+  - question: "We collect actuals in a shop-floor spreadsheet and want the import to be the single source of truth for each day. How do we set that up?"
+    answer: "Tick ReplaceExisting in the Actuals mask options. Without it, the import only overwrites the days present in the file and leaves other days alone, which is safe but means a day you removed from the file keeps its old value. With ReplaceExisting on, the imported file becomes the complete record: days it covers are written and uncovered days are cleared. Use it only when the file genuinely is the whole truth for the range, or you will erase legitimately logged days that were not in this file."
+---
+
+**To import actuals from a file in EDGEBIC by User Solutions you build an Actuals mask that maps the job number, work center id, and actual date, set the replace and auto-calc options, and run Do It, and each row writes real hours and pieces onto the matching scheduled operation.** The one prerequisite that catches people out is that the job must already be scheduled, because actuals land on operations, not on orders.
+
+This is the task of loading actuals in bulk. For the manual counterpart, see [how to log actual hours and pieces](/blog/how-to-log-actual-hours-and-pieces-in-edgebic), and for the general mechanics of masks, [import masks explained](/blog/edgebic-import-masks-explained).
+
+## Before You Start
+
+- The jobs whose actuals you are importing are already scheduled. Actuals write onto scheduled operations; an unscheduled job has nowhere for them to land.
+- Your file has one row per job, work center, and day, with a filled job number, work center id, and actual date on every row.
+- You can see the **Settings** tab.
+- You have decided whether the file is the complete record for its date range (which drives the ReplaceExisting option).
+
+## Building and Running the Actuals Mask
+
+1. Open **Settings → 📥 Import** and select **Actuals** in the **Entity Type** list.
+2. Click **➕ Define New…** and name the mask, for example `Daily Actuals`.
+3. Click **📂 Get File**, pick the file, and choose the worksheet in **Sheet**. The headings list under **File Header Titles**.
+4. Map the columns. The mandatory fields are ticked in **Req**:
+
+   | Field | Required | Meaning |
+   |---|---|---|
+   | **Job Number** | Yes | Identifies the job |
+   | **WorkCenter Id** | Yes | Identifies the operation's work center |
+   | **Actual Date** | Yes | The day the hours or pieces belong to |
+   | Actual Hours | No | Real hours for that day |
+   | Actual Pieces | No | Real pieces for that day |
+   | Complete | No | A truthy value marks that operation finished |
+   | Actual Start | No | An explicit start time |
+
+5. Click **Save**.
+6. Select the mask and click **⚙️ Options…**:
+   - Keep **AutoCalcHours** on so a day with only pieces (or only hours) has the other value derived from the operation's rate.
+   - Leave **ReplaceExisting** off unless the file is the complete record for its range and you want uncovered days cleared.
+   - Set **MarkCompleteOnImport** and the actual-start option to suit how your shop records completion.
+7. Click **▶ Do It**. Choose the file if prompted, and watch the progress window.
+
+## What Changes When You Save
+
+| Surface | Effect |
+|---|---|
+| Job View / Log Actuals | Imported actuals appear exactly as if typed into the Log Actuals grid |
+| Days the file carries | Always overwritten with the file's values, so re-importing never double-counts |
+| Days the file omits | Preserved, unless ReplaceExisting is on |
+| Missing pieces or hours | Derived from the operation's rate when AutoCalcHours is on |
+| The schedule | Not recalculated by the import; reschedule from actuals separately if you want the plan to react |
+
+Actuals import is designed to be safe to re-run: a corrected file simply fixes the earlier numbers on the days it covers.
+
+## How to Check It Worked
+
+Read the summary line on the **Import Result** dialog. Then open a job that received actuals in Job View and confirm the hours and pieces sit on the right days, matching the file. Reversed or missing values are worth checking against the log, which records the exact outcome per row. If rows failed to find their operation, the log usually says so plainly, and the cause is almost always an unscheduled job or a mismatched work center id.
+
+## Why Re-running Is Safe
+
+Actuals import is built to be run again and again without corrupting the record, and understanding why removes the fear of doing it. The days a file carries are always overwritten with the file's values, so importing the same file twice never adds the hours a second time, and importing a corrected file simply replaces the earlier numbers on the days it covers. Days the file does not mention are left exactly as they were. That default (overwrite what I cover, preserve what I omit) is what makes a daily or hourly actuals feed harmless to repeat.
+
+The **ReplaceExisting** option changes only the second half of that rule. With it on, the imported file becomes the complete record for its range: days it covers are written, and days it does not cover are cleared. Use it only when the file genuinely is the whole truth for that range, such as a nightly export from a shop-floor system that holds every operation. Turn it on for a partial correction file and you will erase legitimately logged days that simply were not in this file.
+
+## Letting the Rate Fill the Gaps
+
+Shop-floor collection is often one-sided: an operator counts pieces but not hours, or logs hours without a piece count. With **AutoCalcHours** on (the default), EDGEBIC fills the missing side from the operation's rate, so a day with only a piece count still lands complete with derived hours, and a day with only hours gets derived pieces. You only need to supply both columns when you want to record two explicit measured values rather than let the plan's rate infer one from the other.
+
+## Common Mistakes
+
+**Importing actuals for jobs that are not scheduled yet.** There is no operation to write onto, so every row fails. Schedule the jobs first, then import.
+
+**A mismatched work center id.** The row matches by job number plus work center. A misspelled or wrong id cannot find the operation. Check ids against the Job View grid.
+
+**Leaving ReplaceExisting on by habit.** With it on, the file becomes the complete record and days it omits are cleared. If the file is only a partial update, that erases legitimately logged days. Use ReplaceExisting only when the file truly is the whole truth for the range.
+
+**Assuming an actuals import reschedules the plan.** It records what happened; it does not move future work. Reschedule from actuals separately if you want the plan to respond. For how logged actuals ripple through a schedule, see [how actuals flow into the schedule](/blog/how-actuals-flow-into-the-edgebic-schedule).
+
+## Next Steps
+
+Actuals belong to jobs, so [how to import sales orders](/blog/how-to-import-sales-orders-from-excel-in-edgebic) is the upstream step, and [how to re-run a saved import mask](/blog/how-to-re-run-a-saved-import-mask-in-edgebic) is the routine you will use every day once the mask is built. For the full task library, see [the EDGEBIC how-to hub](/blog/edgebic-how-to-hub), and for the wider platform, [EDGEBIC](/edgebic).

@@ -1,0 +1,103 @@
+---
+title: "A Work Center Group Scheduled the Wrong Machine: Causes and Fixes"
+description: "When a machine-pool routing lands on a machine you did not expect, the cause is usually the group's selection strategy working as designed. How to read the choice and steer it."
+published: 2026-07-27T12:00:00.000Z
+modified: 2026-07-27T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - work center group wrong machine
+  - machine pool picked wrong machine
+  - group selection strategy
+  - resource group scheduling
+  - primary first strategy
+  - earliest completion strategy
+targetPhrase: "work center group scheduled the wrong machine"
+wordCount: 1362
+readingTime: 7
+faqQuestions:
+  - question: "Why did my machine-pool routing land on a machine I did not expect?"
+    answer: "A work center group picks a member using its selection strategy, and the most common surprise is that the default strategy, earliest completion, chooses the machine that finishes the job soonest given current load, not the one you think of as primary. A fast machine that is booked up loses to a slower one that is free. The other causes are a member efficiency factor changing effective speed, no member designated as primary when using the primary-first strategy, and a member that keeps its machine on reschedule because work already started on it."
+  - question: "What do the group selection strategies do?"
+    answer: "Earliest completion, the default, picks the member that finishes the operation soonest given both its speed and its current queue, minimizing that job's lead time. Primary-first always tries the designated primary member and spills to others only when the primary has no capacity, giving predictable routing. Earliest start picks the member that can begin soonest and is day-granular, so a member that can start today beats a faster one that can only start tomorrow. The strategy is set on the group."
+  - question: "How can I make a machine pool always prefer one specific machine?"
+    answer: "Set that machine as the group's primary member and set the group's strategy to primary-first. With primary-first, the engine schedules on the primary whenever it has capacity on the target date and only spills to other members when the primary is full. If you need to force one job onto a specific member regardless of strategy, pin that member on the routing step; the pin beats the strategy and survives reschedule."
+qaQuestions:
+  - question: "My milling group has three mills and jobs keep landing on the newest one even when the routing looks generic. Is that a bug?"
+    answer: "No, it is the earliest-completion strategy plus an efficiency factor doing exactly what they should. If the newest mill carries a factor that makes it run faster, it will finish sooner and win the job whenever it is free, which is the point of a capacity-aware pool. If you want steadier routing across the three, switch the group to primary-first with a designated primary, or set earliest start if getting work moving today matters more than cycle time. Check the session log group lines to see the per-machine effective hours the engine compared."
+  - question: "A job started on Mill-2 last week, and after a reschedule it stayed on Mill-2 even though Mill-1 is now free and faster. Why did it not re-shop the pool?"
+    answer: "Because work already started on Mill-2, the operation is locked to that machine to keep the actuals intact, so the pool is not re-shopped for it. That is the actuals-immutability rule: a member with recorded actuals keeps its machine on reschedule regardless of strategy. Only operations that have not started yet re-shop the pool against current capacity. If nothing had started, the reschedule would have re-evaluated all three mills and could have moved the job, surfacing the change as a replaced-from-to indicator."
+---
+
+**When a work center group lands a job on a machine you did not expect, the usual cause is the group's selection strategy working exactly as designed, not a fault.** [EDGEBIC by User Solutions](/edgebic) treats a work center group as a pool of interchangeable machines and picks the member on every scheduling run using the group's configured strategy, so the machine that wins depends on the strategy, each member's speed, and current load.
+
+The controls you use to diagnose this are the group's strategy setting, the session log group lines, and the replaced-from-to indicator on the schedule. This post is the detailed version of the wrong-machine symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the mechanism, [what a work center group is](/blog/what-is-a-work-center-group-machine-pool) covers the pool concept.
+
+## What a Group Actually Decides
+
+A routing step bound to a group does not name a machine; it names the pool. At schedule time the engine explodes the group into its members and picks one using the group's strategy, capacity-aware, on every run. That is the whole value of a pool: add or free a machine and every group-bound step reconsiders it without a routing edit. So "the wrong machine" almost always means "a machine the strategy preferred over the one you had in mind." [Creating work center groups](/blog/how-to-create-work-center-groups-in-edgebic) shows how a group is defined and its strategy set.
+
+## Cause 1: Earliest Completion Chose the Available Machine
+
+The default strategy, earliest completion, picks the member that finishes the operation soonest given both its speed and its current queue. This means the machine you think of as fastest can lose to a slower one that happens to be free, because a fast machine booked solid for two days finishes later than a slower machine that can start now.
+
+**How to tell:** enable the scheduling session log and read the group lines, which list each member's effective hours and the strategy used. The engine picked the earliest finisher; if that surprised you, the fast machine was busy.
+
+**Fix:** none is needed if you want shortest lead time, which is what earliest completion delivers. If you want steadier, more predictable routing, change the strategy, covered next.
+
+## Cause 2: A Member Efficiency Factor Changed the Speed
+
+Each member carries an efficiency factor that scales its run time within the group relative to the routing's base hours. A member with a factor below one runs faster and finishes sooner, so it wins earliest-completion ties more often. A factor above one runs slower. This is deliberate: it lets a pool mix a fast new machine and a slow old one honestly.
+
+**How to tell:** the group lines in the session log show each member's factored hours, for example a base of four hours becoming two on a member with a factor of one half. Check the member factors in the group editor.
+
+**Fix:** confirm the factors reflect real speed differences. A factor entered by mistake makes the wrong machine look fastest. Note that the factor scales run time only, never setup.
+
+## Cause 3: Primary-First With No Designated Primary
+
+If you set the group to primary-first expecting it to prefer one machine, it needs a member marked as primary to prefer. Without a designated primary, the strategy falls back to the members' priority order, so the machine you meant to favor may not be the one chosen.
+
+**How to tell:** open the group and check whether exactly one member is marked primary. If none is, primary-first uses priority order instead.
+
+**Fix:** mark the intended machine as the primary member and keep the strategy on primary-first. With a primary set, the engine schedules on it whenever it has capacity on the target date and only spills to other members when it is full. The service allows only one primary per group, so promoting a new one demotes the old.
+
+## Cause 4: The Job Kept a Machine Because Work Started
+
+On reschedule, an operation that already started keeps its resolved machine, because the actuals recorded against it are permanent. So a job that began on one member stays on that member after a reschedule even if a faster member is now free. Only operations that have not started re-shop the pool against current capacity.
+
+**How to tell:** check whether the operation has a recorded actual start. A started operation is locked to its machine by the actuals-immutability rule; a not-started one is free to move and surfaces the change as a replaced-from-to indicator.
+
+**Fix:** none is needed for started work; keeping its machine is correct. If a not-started operation moved to a machine you did not want, use the strategy levers above or pin the member.
+
+## Steering the Choice Directly
+
+Two levers override the strategy. Setting the group to primary-first with a designated primary gives predictable routing to one preferred machine. Pinning a specific member on the routing step forces one job onto that machine regardless of strategy, and the pin survives reschedule the same way a manual alternate pin does. Use the pin for a one-off; use primary-first for a standing preference. [Work center group mistakes](/blog/work-center-group-mistakes-edgebic) covers the common misconfigurations, and [combining parallel work centers and machine pools](/blog/combining-parallel-work-centers-and-machine-pools-edgebic) covers how pools interact with parallel steps.
+
+## How to Diagnose a Wrong-Machine Pick, in Order
+
+1. **Read the group's strategy.** Earliest completion optimizes lead time; primary-first optimizes predictability; earliest start optimizes getting moving today.
+2. **Read the session log group lines** for the per-member effective hours the engine compared and the machine it chose.
+3. **Check the member efficiency factors.** A mistaken factor makes the wrong machine look fastest.
+4. **Confirm a primary is designated** if you use primary-first.
+5. **Check for a recorded actual start.** A started operation correctly keeps its machine; a not-started one re-shops the pool.
+
+## Prevention
+
+- **Choose the strategy for what you value.** Shortest lead time, predictable routing, or fastest start each map to a different strategy; picking one deliberately prevents most surprises.
+- **Set member factors to real speed differences only.** Leave homogeneous machines at a factor of one so speed does not skew the pick.
+- **Designate a primary when you use primary-first.** The strategy has nothing to prefer without one.
+- **Watch the replaced-from-to indicator after a reschedule.** It tells you plainly when a not-started group step moved machines, so a re-shop never surprises you silently. If a job routed to a plain alternate rather than a group, [the schedule ignored my alternate work center](/blog/the-schedule-ignored-my-alternate-work-center-edgebic) covers that case.
+
+<Accordion title="Why did my machine-pool routing land on a machine I did not expect?">
+A work center group picks a member using its selection strategy, and the most common surprise is that the default strategy, earliest completion, chooses the machine that finishes the job soonest given current load, not the one you think of as primary. A fast machine that is booked up loses to a slower one that is free. The other causes are a member efficiency factor changing effective speed, no member designated as primary when using the primary-first strategy, and a member that keeps its machine on reschedule because work already started on it.
+</Accordion>
+
+<Accordion title="What do the group selection strategies do?">
+Earliest completion, the default, picks the member that finishes the operation soonest given both its speed and its current queue, minimizing that job's lead time. Primary-first always tries the designated primary member and spills to others only when the primary has no capacity, giving predictable routing. Earliest start picks the member that can begin soonest and is day-granular, so a member that can start today beats a faster one that can only start tomorrow. The strategy is set on the group.
+</Accordion>
+
+<Accordion title="How can I make a machine pool always prefer one specific machine?">
+Set that machine as the group's primary member and set the group's strategy to primary-first. With primary-first, the engine schedules on the primary whenever it has capacity on the target date and only spills to other members when the primary is full. If you need to force one job onto a specific member regardless of strategy, pin that member on the routing step; the pin beats the strategy and survives reschedule.
+</Accordion>

@@ -1,0 +1,95 @@
+---
+title: "My Transfer Batch Size Was Ignored: Causes and Fixes"
+description: "When a transfer batch size has no effect on the schedule, the cause is a continuous-process machine, a batch as large as the order, or a competing flow step. How to tell which."
+published: 2026-07-27T12:00:00.000Z
+modified: 2026-07-27T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - transfer batch size ignored
+  - transfer batch not working
+  - piece count streaming ignored
+  - continuous process transfer batch
+  - transfer batch equals order quantity
+  - flow step overrides transfer batch
+targetPhrase: "transfer batch size was ignored"
+wordCount: 1265
+readingTime: 6
+faqQuestions:
+  - question: "Why is EDGEBIC ignoring the transfer batch size I set on a routing step?"
+    answer: "Three documented conditions make a transfer batch size have no effect. The work center is flagged continuous-process, where piece-count streaming does not apply and the engine falls back to a flow step. The batch size is as large as or larger than the order quantity, so the engine caps it and behaves serially. Or a flow step is also set on the step, but the step ran on a machine where the engine prefers one model over the other. The anomaly report flags all three."
+  - question: "Does a transfer batch size work on a continuous-process work center?"
+    answer: "No. A continuous-process work center, such as a paint line or chemical reactor, has no meaningful discrete piece count, so the engine ignores the transfer batch size on steps routed to it and uses a flow step instead. The anomaly report flags a transfer batch on a continuous-process machine so you know the piece-count setting has no effect. If the machine truly is continuous, set a flow step in hours; if it is actually discrete, clear the continuous-process flag."
+  - question: "What happens when the transfer batch size equals the order quantity?"
+    answer: "The engine caps the transfer batch at the order quantity, so a batch as large as the order becomes the whole lot, and the downstream step waits for every piece exactly as it would with no streaming. The anomaly report flags a batch that meets or exceeds the maximum order quantity for that step. Lower the batch size to a fraction of the smallest order that routes through the step to get real overlap."
+qaQuestions:
+  - question: "I set a transfer batch on my oven routing but nothing changed. The oven is flagged continuous-process. Related?"
+    answer: "Yes, directly. A continuous-process machine ignores the piece-count model, so the transfer batch you set has no effect and the engine falls back to a flow step. The anomaly report will show a transfer-batch-on-continuous-process flag for that step. Decide which the oven really is: if it processes a continuous stream, clear the batch and set a flow step in hours; if it actually handles discrete pieces and the flag is wrong, turn the continuous-process flag off and the batch takes effect."
+  - question: "The transfer batch works on our big orders but does nothing on small ones. Why?"
+    answer: "The engine caps the transfer batch at the order quantity, so on a small order the batch can equal the whole lot and the step behaves serially, while a large order still leaves the batch below the quantity and streams normally. Set the batch to a fraction of your smallest routine order rather than a value tuned to big runs. The batch-equals-or-exceeds-order-quantity flag in the anomaly report points at exactly the small orders where the cap kicked in."
+---
+
+**When a transfer batch size has no effect on the schedule, it is one of three documented conditions: the machine is continuous-process, the batch is as large as the order, or a competing flow step took priority.** [EDGEBIC by User Solutions](/edgebic) uses the piece-count model only under specific conditions, and outside them the transfer batch silently does nothing, so the fix is to find which condition applies.
+
+The controls you use to diagnose this are the anomaly report and the routing and machine fields. This post is the detailed version of the ignored-transfer-batch symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). It is the piece-count-specific companion to [lot streaming did not overlap my operations](/blog/lot-streaming-did-not-overlap-my-operations-edgebic), which covers both overlap models. For the concept, [what a transfer batch is](/blog/what-is-a-transfer-batch) explains the piece-count idea.
+
+## What the Transfer Batch Is Supposed to Do
+
+A transfer batch size tells the engine how many pieces must accumulate on an upstream step before the first sublot moves downstream and the next step can begin. Set a batch of 50 on a 200-piece order and the downstream step can start after a quarter of the run instead of waiting for the whole lot. This is the piece-count model, and it applies only to discrete work centers. When any of the conditions below hold, the batch is ignored and the step reverts to full-lot behavior. [Lot streaming explained](/blog/edgebic-lot-streaming-explained) covers the full model.
+
+## Cause 1: The Machine Is Continuous-Process
+
+A work center flagged as continuous-process, such as a paint line, extruder, or chemical reactor, has no meaningful discrete piece count. The engine therefore ignores the transfer batch on any step routed to such a machine and falls back to the flow-step model. If no flow step is set, the step shows no overlap at all.
+
+**How to tell:** the anomaly report flags a transfer batch on a continuous-process machine, noting that piece-count is ignored and which flow-step value is in effect. Check the continuous-process flag on the machine record.
+
+**Fix:** decide what the machine really is. If it genuinely processes a continuous stream, clear the transfer batch and set a flow step in hours instead. If the machine actually handles discrete pieces and the flag was set by mistake, turn the continuous-process flag off and the transfer batch takes effect. [Continuous-process work centers](/blog/continuous-process-work-centers-edgebic) explains the flag and its consequences.
+
+## Cause 2: The Batch Is as Large as the Order
+
+The engine caps the transfer batch at the order quantity, because it cannot wait for pieces that will never be made. When the batch is set as large as or larger than the order, the cap makes the first sublot equal to the whole lot, and the downstream step waits for every piece, which is indistinguishable from no streaming.
+
+**How to tell:** the anomaly report flags a transfer batch that meets or exceeds the maximum order quantity across the step's schedules. The tell is that streaming works on big orders and does nothing on small ones, because the small order hits the cap.
+
+**Fix:** lower the transfer batch to a fraction of the smallest order that routinely runs through the step, commonly 10 to 25 percent of a typical order. Size it to your small orders, not your large ones, so the cap never turns it serial.
+
+## Cause 3: A Flow Step Competed for the Same Step
+
+If a step carries both a transfer batch and a flow step, the two models compete. On a discrete machine, the engine prefers the transfer batch and ignores the flow step; on a continuous-process machine, it uses the flow step and ignores the batch. Either way one of the two you set has no effect, which reads as "ignored" for whichever lost.
+
+**How to tell:** the anomaly report flags a step with both a flow step and a transfer batch set as an ambiguous configuration. Open the step and confirm both fields carry values.
+
+**Fix:** clear the field you do not want. Keep the transfer batch for piece-count streaming on a discrete machine, or keep the flow step for a continuous process, but not both on one step. Making the intent explicit removes the ambiguity.
+
+## Confirm the Batch Is Actually Set
+
+Before chasing the conditions above, rule out the simplest case: the field is zero. A transfer batch defaults to zero on every routing step, and a value that was cleared, reverted by a routing copy, or never entered produces no streaming. Read the field on the step directly; a zero there means the batch was never in play.
+
+## How to Diagnose an Ignored Batch, in Order
+
+1. **Read the transfer batch field on the step.** A zero means it was never set.
+2. **Check the continuous-process flag** on the machine. It disables the batch entirely.
+3. **Compare the batch to the order quantity.** A batch as large as the order caps to serial, most visibly on small runs.
+4. **Check whether a flow step is also set.** The two compete and one is ignored.
+5. **Run the anomaly report** for the continuous-process, batch-versus-quantity, and both-fields-set flags, then re-run scheduling after any fix.
+
+## Prevention
+
+- **Match the streaming model to the machine.** A transfer batch belongs on discrete work centers; a flow step belongs on continuous-process ones.
+- **Size the batch below your smallest routine order.** A batch that can equal the order quantity silently turns serial exactly when small orders run.
+- **Set one streaming field per step.** A step with both a flow step and a batch always ignores one of them.
+- **Audit with the anomaly report after routing edits.** The lot-streaming checks fire on a save, so a dead batch surfaces before a job runs rather than on the floor. If the downstream step is out of order rather than merely not overlapping, [steps scheduled out of sequence](/blog/steps-scheduled-out-of-sequence-edgebic) covers that symptom, and [how to overlap operations](/blog/how-to-overlap-operations-in-edgebic) shows the correct setup.
+
+<Accordion title="Why is EDGEBIC ignoring the transfer batch size I set on a routing step?">
+Three documented conditions make a transfer batch size have no effect. The work center is flagged continuous-process, where piece-count streaming does not apply and the engine falls back to a flow step. The batch size is as large as or larger than the order quantity, so the engine caps it and behaves serially. Or a flow step is also set on the step, but the step ran on a machine where the engine prefers one model over the other. The anomaly report flags all three.
+</Accordion>
+
+<Accordion title="Does a transfer batch size work on a continuous-process work center?">
+No. A continuous-process work center, such as a paint line or chemical reactor, has no meaningful discrete piece count, so the engine ignores the transfer batch size on steps routed to it and uses a flow step instead. The anomaly report flags a transfer batch on a continuous-process machine so you know the piece-count setting has no effect. If the machine truly is continuous, set a flow step in hours; if it is actually discrete, clear the continuous-process flag.
+</Accordion>
+
+<Accordion title="What happens when the transfer batch size equals the order quantity?">
+The engine caps the transfer batch at the order quantity, so a batch as large as the order becomes the whole lot, and the downstream step waits for every piece exactly as it would with no streaming. The anomaly report flags a batch that meets or exceeds the maximum order quantity for that step. Lower the batch size to a fraction of the smallest order that routes through the step to get real overlap.
+</Accordion>

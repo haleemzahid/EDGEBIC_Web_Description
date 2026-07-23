@@ -1,0 +1,112 @@
+---
+title: "How to Firm an MPS Quantity into a Job in EDGEBIC"
+description: "Firm an MPS quantity into a job in EDGEBIC: commit a build quantity to a bucket, then firm the bucket into a build-to-stock manufacturing order in one step."
+published: 2026-07-27T12:00:00.000Z
+modified: 2026-07-27T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - firm mps quantity
+  - commit build quantity
+  - build to stock manufacturing order
+  - mps status released
+  - firm mps bucket into job
+targetPhrase: "firm an MPS quantity into a job in EDGEBIC"
+wordCount: 1138
+readingTime: 6
+faqQuestions:
+  - question: "What is the difference between committing a build quantity and firming it?"
+    answer: "Committing records your intended build in a bucket without creating anything on the floor. You click the bucket, adjust the build quantity field, and save; the status becomes Firm and the MPS build column shows your number, but no manufacturing order exists and the projected balance does not move. Firming is the next step: it converts that committed quantity into a real build-to-stock manufacturing order in one transaction, flips the bucket to Released, and links the order to the row. Commit is the decision; firm is the release."
+  - question: "What does the manufacturing order look like after I firm a bucket?"
+    answer: "It is a build-to-stock order carrying the committed quantity rounded up to a whole number, so 30.4 becomes 31. Its due date is the bucket start, and its start date is the due date minus the product's lead time. It is flagged as a build to inventory and tagged as MPS-sourced, so you can always tell later where it came from. The bucket's status becomes Released and stores the new order's identity. The order joins the scheduling queue but is not yet scheduled."
+  - question: "If I firm the same bucket twice, do I get two jobs?"
+    answer: "Not while the first order is still alive. Firming a bucket whose order still exists returns that same order rather than creating a second one, so the action is safe to repeat. The only time a second firm creates a new order is when the first order was deleted or cancelled elsewhere; then the bucket has already demoted itself back to Firm with no live link, and firming again correctly creates a fresh order. So repeated firming is idempotent as long as the order is live."
+qaQuestions:
+  - question: "We committed a quantity last week but never released it. Is it lost, and how do we finish the job now?"
+    answer: "It is not lost. A committed quantity stays on the grid as a Firm bucket with your number in the MPS build column until you either firm it or clear it, so last week's decision is still there. To finish, select that bucket and firm it: one transaction creates the build-to-stock order, rounds the quantity up to a whole number, sets the due date to the bucket start and the start date to due minus lead time, and marks the bucket Released. Then run the schedule so the order gets a real completion date."
+  - question: "We need to reduce a released build. The save button will not change the quantity. What is the route?"
+    answer: "Once a bucket is Released you cannot revise the quantity directly, because a real order now carries that number. The documented route is to cancel or delete that manufacturing order, reload the grid so the row demotes itself back to Firm, revise the committed quantity, and firm again to create a new order. Do not delete the master schedule entry first: that removes the row without touching the order and leaves a build nothing explains. Cancel the order, then revise, then re-firm."
+---
+
+**Firming an MPS quantity into a job in EDGEBIC** is a two-move sequence: first commit a build quantity to a bucket, then firm that bucket into a real manufacturing order. In EDGEBIC by User Solutions committing sets the bucket to Firm and records your number without creating anything; firming converts it, in one transaction, into a build-to-stock order and flips the bucket to Released. Keeping the two separate is what lets decisions accumulate before you release them on your own cadence. This guide walks both moves.
+
+For the whole grid workflow this sits inside, read [how to work the MPS grid](/blog/how-to-work-the-mps-grid-in-edgebic). For getting a product onto the grid first, see [how to add a product to the MPS grid](/blog/how-to-add-a-product-to-the-mps-grid-in-edgebic). This is documented behavior of [EDGEBIC](/edgebic); the full task set is in the [how-to hub](/blog/edgebic-how-to-hub).
+
+## Before You Start
+
+- You need a make-to-stock product loaded on the MPS grid, with demand so buckets are worth acting on.
+- Identify the bucket where the projected balance dips or where you intend to build.
+- Confirm the product's lead time is set, since it drives the firmed order's start date.
+
+## Step 1: Select the Bucket
+
+On the MPS grid, click the target bucket row. It becomes the selected row. The **build quantity** field pre-fills with the bucket's existing committed quantity, or, when that is zero, with the system's suggested quantity. The pre-fill is a convenience, not a decision.
+
+## Step 2: Commit the Build Quantity
+
+Adjust the build quantity field to the number you intend to build, then click **Save build qty**. Three things happen and three do not.
+
+**What happens:** the quantity is stored against the product, bucket type, and bucket date; the MPS build column shows it; the status changes to **Firm**.
+
+**What does not happen:** no manufacturing order is created, nothing reaches the shop floor, and the projected balance does not move.
+
+Two limits: a negative quantity is rejected, and saving zero is allowed, which clears the commitment without deleting the row.
+
+## Step 3: Firm the Bucket into an Order
+
+When the decision is ready to release, select the bucket and click **Firm into a build-to-stock order**. One transaction does all of the following:
+
+- Creates one build-to-stock manufacturing order.
+- Sets its quantity to your committed quantity rounded up to a whole number, so 30.4 becomes 31.
+- Sets its due date to the bucket start.
+- Sets its start date to the due date minus the product's lead time.
+- Flags it as a build to inventory and tags it as MPS-sourced.
+- Flips the bucket to **Released** and stores the new order's identity on the row.
+
+Because it is one transaction, a failure anywhere leaves neither an orphan order nor a row pointing at nothing.
+
+## What Changes When You Firm
+
+A real manufacturing order now exists. The bucket reads Released, and the order carries your quantity, due date, and lead-time-offset start. The order joins the scheduling queue, competing for work center capacity with every other job, but it is not scheduled yet. Run the schedule to place it and give it a real completion date, which then feeds back into the projection as a scheduled receipt.
+
+Firming the same bucket again while its order is still alive returns that same order rather than creating a second one, so the action is safe to repeat. That idempotency guards against the classic double-click: two firm clicks on a live bucket produce one order, not two.
+
+## Repairing a Released Bucket
+
+Two situations come up often enough to rehearse.
+
+**The firmed order was deleted elsewhere.** Someone removes the order from the manufacturing order list. The next time the grid loads, the row shows as Firm with its committed quantity intact and no order attached, because the link no longer resolves to a live order. Confirm the quantity and firm again: a new order is created and the stale link is overwritten. The system's anomaly report also flags this state, so a Released row pointing at a dead order does not go unnoticed.
+
+**You need to revise a released quantity.** Once a bucket is Released, the save button will not revise the quantity, because a real order now carries it. The route is to cancel or delete that order, reload the grid so the row demotes itself back to Firm, revise the committed quantity, and firm again. Do not delete the master schedule entry first: that removes the row without touching the order and leaves a build nothing explains.
+
+## The Three Statuses
+
+Firming moves a bucket through a small lifecycle, and reading the status column tells you exactly where a decision stands.
+
+| Status | Meaning | What exists |
+|---|---|---|
+| Suggested | You have not decided | No entry; the grid shows the system's proposal |
+| Firm | You committed a quantity | A committed number, no order |
+| Released | You firmed it into a job | A build-to-stock order linked to the bucket |
+
+That progression is the whole value of keeping commit and firm separate. Suggested is the engine talking. Firm is your decision, recorded but not yet released. Released is the decision on the floor. Decisions can pile up as Firm rows across a planning session, and you release them on your own cadence rather than the instant you type a number, which is what keeps the projection honest while you think.
+
+## How to Check It Worked
+
+Two checks:
+
+1. **On the grid.** The bucket should read Released, and the MPS build column should show your quantity.
+2. **On the order list.** Find the new build-to-stock order, recognizable as MPS-sourced. Confirm its quantity is your committed figure rounded up, its due date is the bucket start, and its start date is due minus the product's lead time.
+
+## Common Mistakes
+
+- **Expecting the projected balance to move on commit.** It does not. Committing records a number in its own column; only a firmed, scheduled order lifts the projection.
+- **Trying to revise a released quantity with the save button.** Once Released, the quantity is locked to the order. Cancel or delete the order, let the row demote to Firm on reload, revise, and firm again.
+- **Deleting the master schedule entry to fix a build.** Deleting the entry does not delete the order, leaving a build nothing explains. Cancel the order first.
+- **Assuming a firmed order is scheduled.** Firming creates the order; scheduling places it. Run the schedule before you trust its completion date.
+
+## What Comes Next
+
+A firmed order is only planned once you schedule it, so this hands off to the scheduling run. To see the shortfall that prompted the build in the first place, read [how to see net requirements for a product](/blog/how-to-see-net-requirements-for-a-product-in-edgebic). The [how-to hub](/blog/edgebic-how-to-hub) links every neighboring task.

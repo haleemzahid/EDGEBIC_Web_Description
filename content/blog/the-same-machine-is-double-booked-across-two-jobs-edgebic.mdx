@@ -1,0 +1,99 @@
+---
+title: "The Same Machine Is Double-Booked Across Two Jobs: Causes and Fixes"
+description: "You have confirmed a real cross-job collision on one machine instance. The documented root causes are stale reservations, a synchronized-mirror capacity gap, and a wrong instance count."
+published: 2026-07-27T12:00:00.000Z
+modified: 2026-07-27T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - same machine double booked two jobs
+  - cross job instance collision
+  - stale allocation rows reschedule
+  - one per day flag violation
+  - dependent parallel over booking
+  - re-run scheduling to clear collision
+targetPhrase: "same machine double-booked across two jobs"
+wordCount: 1311
+readingTime: 7
+faqQuestions:
+  - question: "What causes one machine instance to be booked to two different jobs at once?"
+    answer: "A confirmed cross-job collision on a single instance has a few documented root causes. Stale allocation rows left behind by repeated reschedule cycles can inflate a machine past its real limit and overlap two jobs. A dependent-parallel mirror can land on an instance already used by an unrelated job because the mirror copies the parent's slot. And an overstated instance count hides a real limit. Re-running scheduling rebuilds the allocations cleanly and clears most collisions; one that survives points at a wiring issue."
+  - question: "Will re-running scheduling fix a double-booked machine?"
+    answer: "In most cases, yes. The allocator validates that no instance is simultaneously used before it books, and re-running scheduling rebuilds the allocation map from scratch, which drops stale reservation rows left by earlier reschedules. So a clean run resolves the common causes on its own. If the same collision reappears after a fresh, clean reschedule, it is not a planner mistake but a deeper issue worth a support ticket with the exported anomaly rows."
+  - question: "What is the one-per-day version of a machine double-booking?"
+    answer: "On a machine flagged one-per-day, which suits batch equipment that cannot switch jobs mid-day, two different jobs on the same instance on the same date is a violation even without a clock overlap. The anomaly report flags it separately from a clock collision. The fix is to re-run scheduling; if two jobs genuinely need that machine the same day, add an instance so each gets its own, because one-per-day deliberately limits an instance to a single job per calendar day."
+qaQuestions:
+  - question: "After several reschedules, one mill shows two jobs overlapping on the same instance. The routings look fine. What is the root cause?"
+    answer: "Repeated reschedule cycles can leave stale allocation rows behind when a write path did not clean up after itself, and those ghosts overlap a fresh booking on the same instance. The tell is a physical over-utilization row on the machine alongside duplicate allocations for the same date and instance in the anomaly report. Re-run scheduling for the affected jobs, which rebuilds the allocations from scratch and drops the ghosts. If the overlap survives a clean run, export the rows and raise a ticket."
+  - question: "A synchronized drilling job and an unrelated single-drill job both landed on the same drill at the same time. How did that slip through?"
+    answer: "A dependent-parallel mirror copies the parent operation's exact slot onto its partner machines, and in the over-booking case a mirror can land on an instance that an unrelated job already uses, because the mirror reproduces the parent's timing rather than re-checking that instance's capacity. The anomaly report flags the resulting collision as critical. Re-run scheduling for both jobs; the allocator's simultaneous-use check resolves it. If it recurs on a clean run, it is a wiring issue rather than a routing mistake."
+---
+
+**Once you have confirmed that one machine instance is genuinely booked to two different jobs at the same time, the documented root causes are stale reservations from repeated reschedules, a synchronized-mirror capacity gap, and an overstated instance count, and re-running scheduling clears most of them.** [EDGEBIC by User Solutions](/edgebic) validates that no instance is simultaneously used before it books, so a real cross-job collision points at one of a short list of causes rather than a routine plan.
+
+The controls you use to diagnose this are the anomaly report and a clean reschedule. This post is the root-cause version of the confirmed collision; to first decide whether an overlap is even a collision or something working as designed, read [two jobs on the same machine at the same time](/blog/two-jobs-are-on-the-same-machine-at-the-same-time-edgebic). Both sit under the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide).
+
+## Confirm It Is a Cross-Job Collision First
+
+A collision is defined narrowly: the same instance, on the same date, carrying two different jobs whose clock windows overlap. Two rows from the same job on one instance are a normal split of one operation across the day, and the anomaly report deliberately ignores them. So before treating this as a collision, read the two job numbers. Same number: nothing to fix. Different numbers on one instance with overlapping windows: a real collision, and the causes below apply. The anomaly report's instance-collision check names both jobs, the machine, the instance, the date, and the overlap in hours. [Running and reading the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic) shows how to scope and export it.
+
+## Cause 1: Stale Reservations From Repeated Reschedules
+
+Repeated reschedule cycles can leave old allocation rows behind if a write path did not clean up after itself. Those ghost rows still count against the machine, so a fresh booking on the same instance overlaps them and the day reads past its physical limit. This is the most common source of a collision that appears after several reschedules on routings that otherwise look correct.
+
+**How to tell:** in the anomaly report, a physical over-utilization row on the machine alongside duplicate allocations for the same date and instance points at stale data rather than a genuinely over-booked plan.
+
+**Fix:** re-run scheduling for the affected jobs. The engine rebuilds the allocation map from scratch and releases the stale reservations, and the allocator's simultaneous-use check keeps the fresh booking clean. [The work center overload post](/blog/work-center-overloaded-in-edgebic-causes-fixes) covers the over-capacity-from-stale-rows symptom in full.
+
+## Cause 2: A Synchronized Mirror Over-Booked the Instance
+
+A dependent-parallel operation copies the parent operation's exact slot onto its partner machines. In the over-booking case, a mirror can land on an instance that an unrelated job already uses, because the mirror reproduces the parent's timing rather than re-checking that instance's own capacity. The result is two different jobs on one instance at once.
+
+**How to tell:** one of the two colliding jobs is a dependent-parallel job whose mirror row sits on the shared instance, and the other is an unrelated job. The anomaly report flags the collision as critical regardless of the cause.
+
+**Fix:** re-run scheduling for both jobs. The allocator's simultaneous-use validation resolves the overlap on a clean run. If the collision recurs after a fresh reschedule, it is a wiring issue rather than a routing mistake and belongs on a support ticket with the exported rows. [Parallel work center mistakes](/blog/parallel-work-center-mistakes-edgebic) covers dependent-parallel setup.
+
+## Cause 3: The Instance Count Understates the Machine
+
+The instance count tells the engine how many jobs a work center can run at once. An overstated count lets the engine book more jobs than the machine physically has slots, which reads as jobs sharing an instance. An understated count, conversely, makes legitimate parallel work look like an over-book. Getting the count right is the foundation the collision checks rest on.
+
+**How to tell:** compare the machine's instance count to the number of physical machines it represents. A count that does not match the floor is the root of both false and real over-booking symptoms.
+
+**Fix:** set the instance count to the real number of machines, then re-run scheduling. [Machine instances explained](/blog/edgebic-machine-instances-explained) covers how the count maps to physical equipment, and [configuring instances and utilization](/blog/how-to-configure-instances-and-utilization-in-edgebic) shows where to set it.
+
+## The One-Per-Day Variant
+
+On a machine flagged one-per-day, which suits batch equipment that cannot switch jobs mid-day, two different jobs on the same instance on the same date is a violation even without a clock overlap. The anomaly report flags this separately from a clock collision.
+
+**How to tell:** the one-per-day check names the machine, the instance, the date, and the two jobs. The machine carries the one-per-day flag.
+
+**Fix:** re-run scheduling. If two jobs genuinely need that machine the same day, add an instance so each gets its own, because one-per-day deliberately limits an instance to a single job per calendar day.
+
+## How to Diagnose a Confirmed Collision, in Order
+
+1. **Read the two job numbers.** Same job is a split, not a collision; different jobs on one instance is the real thing.
+2. **Run the anomaly report** and open the instance-collision and over-utilization checks for the machine and date.
+3. **Look for duplicate allocations** on the same instance and date, which point at stale reservations.
+4. **Check whether one job is a dependent-parallel mirror** landing on a shared instance.
+5. **Confirm the instance count** matches the physical machine count, then re-run scheduling and re-check the report.
+
+## Prevention
+
+- **Keep the instance count equal to the real machine count.** It is the single setting that makes the collision checks meaningful, and a wrong count produces both false and real over-booking.
+- **Re-run scheduling after routing or parallel changes.** A clean rebuild drops stale reservations before they collide, and the allocator's simultaneous-use check keeps new bookings honest.
+- **Reserve the one-per-day flag for equipment that truly cannot switch jobs mid-day.** On everything else it manufactures apparent scarcity and forces jobs apart unnecessarily.
+- **Run the anomaly report before go-live weeks.** A clean report is a one-minute confirmation, and catching a collision the day you introduce it is far cheaper than finding it on the floor. A collision that survives a clean reschedule is not a planner error and belongs on a support ticket with the exported rows.
+
+<Accordion title="What causes one machine instance to be booked to two different jobs at once?">
+A confirmed cross-job collision on a single instance has a few documented root causes. Stale allocation rows left behind by repeated reschedule cycles can inflate a machine past its real limit and overlap two jobs. A dependent-parallel mirror can land on an instance already used by an unrelated job because the mirror copies the parent's slot. And an overstated instance count hides a real limit. Re-running scheduling rebuilds the allocations cleanly and clears most collisions; one that survives points at a wiring issue.
+</Accordion>
+
+<Accordion title="Will re-running scheduling fix a double-booked machine?">
+In most cases, yes. The allocator validates that no instance is simultaneously used before it books, and re-running scheduling rebuilds the allocation map from scratch, which drops stale reservation rows left by earlier reschedules. So a clean run resolves the common causes on its own. If the same collision reappears after a fresh, clean reschedule, it is not a planner mistake but a deeper issue worth a support ticket with the exported anomaly rows.
+</Accordion>
+
+<Accordion title="What is the one-per-day version of a machine double-booking?">
+On a machine flagged one-per-day, which suits batch equipment that cannot switch jobs mid-day, two different jobs on the same instance on the same date is a violation even without a clock overlap. The anomaly report flags it separately from a clock collision. The fix is to re-run scheduling; if two jobs genuinely need that machine the same day, add an instance so each gets its own, because one-per-day deliberately limits an instance to a single job per calendar day.
+</Accordion>
