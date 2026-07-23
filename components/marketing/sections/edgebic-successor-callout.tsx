@@ -13,7 +13,7 @@ const VARIANT_COPY: Record<
   },
   edgebi: {
     heading: 'EDGEBI users: the graphical experience grew into EDGEBIC',
-    body: 'Everything you value in EDGEBI, interactive Gantt charts, drag-and-drop adjustments, and visual scheduling, is now built directly into EDGEBIC alongside the full scheduling engine. One application, one database, no separate install. EDGEBI remains fully supported while you evaluate the upgrade.'
+    body: 'Everything you value in EDGEBI (interactive Gantt charts, drag-and-drop adjustments, visual scheduling) is now built directly into EDGEBIC alongside the full scheduling engine. One application, one database, no separate install. EDGEBI remains fully supported while you evaluate the upgrade.'
   },
   rmx: {
     heading: 'Outgrowing Excel? EDGEBIC is the next step',

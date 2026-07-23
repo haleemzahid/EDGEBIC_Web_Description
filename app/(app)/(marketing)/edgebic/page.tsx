@@ -39,7 +39,7 @@ const FAQS = [
   {
     question: 'Which ERP systems does EDGEBIC work with?',
     answer:
-      'Any ERP that can exchange data through Excel, CSV, or a database connection, which in practice is virtually all of them, including JobBOSS, Epicor, Fourth Shift, SAP, Oracle, Sage, and Macola. This import-export approach is the same one behind User Solutions integrations documented across 35 years, including a complete Fourth Shift ERP integration delivered in 5 days and an approach the Fourth Shift vendor itself recommended.'
+      'Any ERP that can exchange data through Excel, CSV, or a database connection. In practice that is virtually all of them: JobBOSS, Epicor, Fourth Shift, SAP, Oracle, Sage, Macola, and more. This import-export approach is the same one behind User Solutions integrations documented across 35 years, including a complete Fourth Shift ERP integration delivered in 5 days and an approach the Fourth Shift vendor itself recommended.'
   },
   {
     question: 'What happens to my RMDB or EDGEBI investment if I upgrade?',

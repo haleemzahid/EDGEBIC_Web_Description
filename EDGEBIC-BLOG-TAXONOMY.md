@@ -296,7 +296,54 @@ before resuming.
 - Honesty guardrails from strategy §5.
 - Passes the existing pre-publish checklist in SEO-CONTENT-STRATEGY.md §8.
 
-## 5. MEASUREMENT
+## 5. EDITORIAL VOICE & WRITING STANDARDS (every post is edited against this)
+
+Added after a dedicated editorial review of the launch pages. These rules are the
+house voice for all EDGEBIC content, site pages and blog posts alike.
+
+### Voice
+- Write to one planner, in second person, present tense. The reader runs a shop;
+  respect their time and their vocabulary.
+- Concrete beats abstract, always: "on-time shipping tripled from 30% to 90%" not
+  "dramatically improved delivery performance". If a sentence has no number, name, or
+  mechanism in it, ask whether it earns its place.
+- Confidence without hype. The product proof does the selling; adjectives do not.
+- The brand pun "US" (Contact US, Give US a chance) is house voice; use it in CTAs,
+  never mid-paragraph where it reads as "U.S.".
+
+### Sentence mechanics (what the editorial pass actually catches)
+- **No buried clauses**: subject and verb stay close. If a list interrupts a sentence,
+  split the sentence or use parentheses. Bad: "Any system that can export, which
+  includes A, B, and C, integrates fast." Good: "Any system that can export integrates
+  fast. That includes A, B, and C."
+- **Quotable sentences**: every FAQ answer opens with a sentence that stands alone out
+  of context (that is the sentence an LLM will quote).
+- No em dashes in body prose (hyphen, colon, parentheses, or split the sentence).
+  Metadata titles may keep the site's existing "X — Y" convention.
+- Sentence-length variance: follow a long sentence with a short one. Read CTAs aloud;
+  they must be verb-led and specific ("Bring your ERP export to a demo", never
+  "Learn more").
+
+### Banned phrases (AI-slop and empty-marketing tells)
+"in today's fast-paced world", "game-changer", "seamless(ly)", "unlock", "leverage"
+(as a verb), "cutting-edge", "robust" (unqualified), "empower", "revolutionize",
+"take X to the next level", "look no further", "it's important to note", "delve",
+"navigate the complexities", "in conclusion". If a competitor could paste the sentence
+into their site unchanged, rewrite it.
+
+### Terminology consistency (grep-enforceable)
+- "EDGEBIC" all caps, never "EdgeBIC"/"Edgebic" in prose. "RMDB" and "EDGEBI" likewise.
+- "work center" (two words), "finite capacity scheduling" (no hyphen as a noun phrase),
+  "import mask", "routing" (not "router"), "shop floor" (noun) / "shop-floor" (modifier).
+- First mention per post: "EDGEBIC by User Solutions". "FCP" never appears in public copy.
+- Fact values only from the strategy §7 consistency contract.
+
+### Review gate
+Every post gets one editorial pass by a second reader (human or a dedicated editor
+pass distinct from the writer) against this section plus the strategy §5 honesty
+guardrails before publish. The writer never self-approves.
+
+## 6. MEASUREMENT
 
 - GSC page group "EDGEBIC blog" tracked weekly; KPI = indexed %, impressions, avg
   position for `edgebic` + product-task queries.

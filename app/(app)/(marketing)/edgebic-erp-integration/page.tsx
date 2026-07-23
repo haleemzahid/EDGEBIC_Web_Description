@@ -29,7 +29,7 @@ const FAQS = [
   {
     question: 'Does EDGEBIC have a native JobBOSS or Epicor connector?',
     answer:
-      'EDGEBIC integrates through its universal import-export masks rather than per-ERP connectors. Any system that can export to Excel or CSV, which includes JobBOSS, Epicor, Fourth Shift, SAP, Oracle, Sage, and Macola, integrates the same afternoon you map the columns. This is deliberately the same architecture behind 35 years of User Solutions ERP integrations, including one the Fourth Shift vendor itself recommended to its customers.'
+      'EDGEBIC integrates through its universal import-export masks rather than per-ERP connectors. Any system that can export to Excel or CSV integrates the same afternoon you map the columns, and that includes JobBOSS, Epicor, Fourth Shift, SAP, Oracle, Sage, and Macola. This is deliberately the same architecture behind 35 years of User Solutions ERP integrations, including one the Fourth Shift vendor itself recommended to its customers.'
   },
   {
     question: 'What data goes in, and what comes back out?',
