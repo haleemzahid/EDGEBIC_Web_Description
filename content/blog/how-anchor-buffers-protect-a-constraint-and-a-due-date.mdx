@@ -1,0 +1,96 @@
+---
+title: "How Anchor Buffers Protect a Constraint and a Due Date"
+description: "How EDGEBIC sizes the constraint, feeding, and shipping buffers around an anchored bottleneck, when they are demand-proportional, and when they are small fixed values."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - constraint buffer
+  - shipping buffer
+  - feeding buffer
+  - theory of constraints buffer
+  - anchor scheduling
+  - bottleneck protection
+targetPhrase: "anchor scheduling buffers"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "What are the three buffers in anchor scheduling?"
+    answer: "EDGEBIC's anchor scheduling can place three protective buffers around the constraint. The constraint buffer sits between the last upstream step and the anchor's start, protecting the constraint from upstream variation. The feeding buffer adds time to the step that directly feeds the anchor. The shipping buffer sits between the anchor's finish and the first downstream step, protecting the due date from post-constraint variation."
+  - question: "How are anchor buffers sized in EDGEBIC?"
+    answer: "When buffer sizing is enabled and the anchored work center is the true highest-load constraint, the buffers are demand-proportional: the constraint buffer is 50 percent of the upstream path time, the shipping buffer is 25 percent of the downstream path time, and the feeding buffer is 10 percent of the upstream path applied to the direct feeder. When the anchored work center is not the real constraint, small fixed buffers of 2, 4, and 1 hours are used instead."
+  - question: "Are anchor buffers on by default?"
+    answer: "No. Dynamic buffer sizing is opt-in. By default the three buffers are zero, so an anchored job schedules tight, with the constraint pinned at its target date and no protective padding. You enable buffer sizing per job when you want the engine to add safety time around the constraint. This keeps the default behavior predictable and lets you decide where protection is worth the extra lead time."
+qaQuestions:
+  - question: "My anchored job has 30 hours of upstream work and 16 hours of downstream work, and I enabled buffers. How much protection does the engine add?"
+    answer: "With buffers enabled and the anchor confirmed as the true constraint, the engine sizes them from those path totals. The constraint buffer is 50 percent of the 30 upstream hours, so about 15 hours, placed before the anchor's start. The shipping buffer is 25 percent of the 16 downstream hours, about 4 hours, placed after the anchor's finish. The feeding buffer is 10 percent of the upstream path, about 3 hours, added to the one step that directly feeds the anchor. Those margins mean an upstream step running a few hours late no longer pushes the constraint's start, and the finish you commit to already includes room for post-constraint variation."
+  - question: "Is EDGEBIC doing real critical-chain buffer management with red-yellow-green consumption tracking?"
+    answer: "Not today. The buffers described here are sized once, as percentages of the upstream and downstream path times or as small fixed values, and inserted into the schedule. What EDGEBIC does not yet do is track buffer consumption against chain progress and color it red, yellow, or green as the job runs, which is the full critical-chain mechanism. That live consumption tracking is a planned enhancement, not current behavior. So use the buffers as static protective padding around the constraint, and do not expect a dynamic buffer-burn signal yet."
+---
+
+**Anchor scheduling buffers are the protective time EDGEBIC by User Solutions can place around a pinned constraint so that upstream variation does not delay the bottleneck and post-constraint variation does not threaten the due date. There are three: a constraint buffer before the anchor, a feeding buffer on the step that directly feeds it, and a shipping buffer after it. When enabled, they are sized as percentages of the upstream and downstream path times if the anchor is the true constraint, or as small fixed values if it is not.** They turn a tight, optimistic anchored plan into one with deliberate room for the real variability of a shop.
+
+Buffers are opt-in. By default they are zero, which keeps the anchored plan tight and predictable, and you turn on sizing when the protection is worth the extra lead time. Understanding how they are sized tells you exactly how much lead time you are buying.
+
+## Three buffers, three jobs
+
+An anchored job pins the constraint step to a target date, back-schedules the upstream steps to feed it, and forward-schedules the downstream steps from its finish. The three buffers sit at the seams of that structure.
+
+The **constraint buffer** sits between the last upstream step and the anchor's start. Its job is to protect the constraint from upstream variation: if a feeder step runs late, the buffer absorbs the delay so the constraint still starts on its target date. Because the constraint is the plant's slowest resource, an hour lost there is an hour lost for the whole job, so this is the buffer that matters most.
+
+The **feeding buffer** adds time to the single step that directly feeds the anchor. It is extra protection concentrated on the last link before the constraint, where a stumble has the least time left to recover.
+
+The **shipping buffer** sits between the anchor's finish and the first downstream step. It protects the due date from variation that happens after the constraint. If the constraint finishes a little early or a downstream step runs a little long, the shipping buffer keeps the committed completion honest.
+
+## How the sizes are computed
+
+When buffer sizing is enabled, how big the buffers are depends on whether the anchored work center is genuinely the constraint.
+
+The engine first checks this by computing a load factor for every work center in the routing: the demand hours on that resource divided by its daily available capacity. If the anchored work center has the highest load factor, it is confirmed as the true constraint and earns demand-proportional buffers:
+
+- **Constraint buffer** is 50 percent of the total upstream path time.
+- **Shipping buffer** is 25 percent of the total downstream path time.
+- **Feeding buffer** is 10 percent of the upstream path time, applied only to the direct feeder step.
+
+If the anchored work center is not the highest-load resource, the engine uses small fixed buffers instead: 2 hours for the constraint buffer, 4 hours for the shipping buffer, and 1 hour for the feeding buffer. The reasoning is that a buffer proportional to the path only makes sense when the anchor really is the bottleneck; anchoring a non-constraint deserves conservative padding, not large demand-scaled margins.
+
+## A worked example
+
+Take an anchored job whose upstream steps total 30 hours of path time and whose downstream steps total 16 hours, with buffers enabled and the anchor confirmed as the true constraint.
+
+The constraint buffer is 50 percent of 30, so about 15 hours, inserted before the anchor's start. The engine back-schedules the upstream steps to finish 15 hours before the constraint begins, so a feeder that slips a few hours no longer pushes the constraint's start.
+
+The shipping buffer is 25 percent of 16, so about 4 hours, inserted after the anchor's finish before the first downstream step. The feeding buffer is 10 percent of 30, about 3 hours, added to the one step that directly feeds the anchor, giving the last link before the constraint extra room.
+
+The effect is concrete. Without buffers, an upstream step running two hours late would delay the constraint by two hours, and because the constraint is the pace-setter, the whole job by two hours. With the 15-hour constraint buffer, that two-hour slip is absorbed and the constraint still starts on time. The completion the engine reports now already includes the shipping margin, so it is a date you can commit to rather than an optimistic best case.
+
+## What the buffers are, and what they are not
+
+It is important to be precise about what this mechanism does. The buffers are sized once, from the path totals or the fixed values, and inserted into the schedule as protective time. They are static: the plan is built with room around the constraint.
+
+What EDGEBIC does not yet do is track buffer consumption against chain progress as the job runs and signal it as red, yellow, or green, which is the full critical-chain buffer-management technique. That live buffer-burn tracking is a planned enhancement, not current behavior. So treat the buffers as deliberate padding around the bottleneck, and do not expect a dynamic consumption gauge today. The value now is real: a plan with sized protection at the constraint is far more robust than a tight one, and it costs only the lead time you choose to add by enabling sizing.
+
+## When to enable buffers
+
+Turn on buffer sizing when the constraint's reliability matters more than the last hours of lead time, which is most of the time on a genuine bottleneck. A furnace or a single critical cell that the whole plant waits on is exactly where a 50 percent constraint buffer earns its keep, because protecting that resource's start protects everything downstream.
+
+Leave buffers off when you want the tightest possible anchored plan and you are willing to manage variation manually, or when you are anchoring to explore timing rather than to commit. Because buffers are opt-in per job, you can protect the jobs that matter and keep the rest tight.
+
+Buffers only exist inside anchor scheduling, so start with [why a bottleneck needs a target date to anchor a schedule](/blog/why-a-bottleneck-needs-a-target-date-to-anchor-a-schedule) to see how the anchor itself is triggered, and [anchor scheduling versus plain backward scheduling](/blog/anchor-scheduling-vs-plain-backward-scheduling) for how anchoring compares to right-aligning a whole order. Why the constraint deserves this protection at all is covered in [why the bottleneck sets the pace](/blog/why-the-bottleneck-sets-the-pace) and [production bottleneck identification](/blog/production-bottleneck-identification). The wider engine that carries all of this is the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+To see how buffers reshape one of your anchored jobs, [bring your data to a demo](/contact-us) and compare a tight run against a buffered one.
+
+<Accordion title="What are the three buffers in anchor scheduling?">
+EDGEBIC's anchor scheduling can place three protective buffers around the constraint. The constraint buffer sits between the last upstream step and the anchor's start, protecting the constraint from upstream variation. The feeding buffer adds time to the step that directly feeds the anchor. The shipping buffer sits between the anchor's finish and the first downstream step, protecting the due date from post-constraint variation.
+</Accordion>
+
+<Accordion title="How are anchor buffers sized in EDGEBIC?">
+When buffer sizing is enabled and the anchored work center is the true highest-load constraint, the buffers are demand-proportional: the constraint buffer is 50 percent of the upstream path time, the shipping buffer is 25 percent of the downstream path time, and the feeding buffer is 10 percent of the upstream path applied to the direct feeder. When the anchored work center is not the real constraint, small fixed buffers of 2, 4, and 1 hours are used instead.
+</Accordion>
+
+<Accordion title="Are anchor buffers on by default?">
+No. Dynamic buffer sizing is opt-in. By default the three buffers are zero, so an anchored job schedules tight, with the constraint pinned at its target date and no protective padding. You enable buffer sizing per job when you want the engine to add safety time around the constraint. This keeps the default behavior predictable and lets you decide where protection is worth the extra lead time.
+</Accordion>

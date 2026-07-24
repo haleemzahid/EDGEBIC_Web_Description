@@ -1,0 +1,94 @@
+---
+title: "How One-Per-Day Dedicates a Machine for a Full Day"
+description: "How EDGEBIC's one-per-day flag makes each instance of a furnace or paint booth take a single job for the day, and when to use it instead of pooled capacity."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - one per day scheduling
+  - dedicated machine scheduling
+  - furnace scheduling
+  - paint booth scheduling
+  - batch process capacity
+  - machine instance allocation
+targetPhrase: "one-per-day scheduling"
+wordCount: 1520
+readingTime: 8
+faqQuestions:
+  - question: "What does the one-per-day flag do in a scheduler?"
+    answer: "The one-per-day flag makes each physical instance of a work center accept only one job per day. A furnace with three chambers and the flag set can run three different jobs at once, one per chamber, but a fourth job that day waits for the next day even if a chamber has idle hours. It is the setting for equipment where a changeover effectively consumes the whole day, so mixing jobs on one instance is not physical."
+  - question: "When should I use one-per-day instead of pooled capacity?"
+    answer: "Use one-per-day when a single setup or campaign dominates the day and a machine cannot practically switch jobs mid-shift: heat-treat furnaces, paint booths, autoclaves, plating lines. Use pooled capacity, the default, when a machine can freely move between jobs within a shift, such as general CNC or assembly. The difference is physical, not preference: one-per-day trades some idle hours for guaranteed single-job-per-machine days."
+  - question: "Does one-per-day keep a job on the same machine across shifts?"
+    answer: "Yes. When a job is first placed on an instance, EDGEBIC records that assignment for the run and reuses the same instance for every later shift the job needs at that work center. This keeps a multi-shift job on one chamber or booth rather than scattering it, which preserves setup continuity. The assignment is sticky even if another instance frees up later in the run."
+qaQuestions:
+  - question: "Three jobs arrive Monday for a furnace with three chambers, each needing about 6 hours. What happens?"
+    answer: "With one-per-day set and three instances, EDGEBIC assigns the first job to chamber 1, sees chamber 1 is now taken and puts the second job on chamber 2, then the third on chamber 3. All three run Monday in parallel, each on its own chamber, finishing within the day shift. The shift's total capacity was 24 hours across three chambers and the jobs used 18, but the remaining 6 hours cannot absorb a fourth job that day, because the fourth job would have to share a chamber that is already committed for the day. That fourth job schedules Tuesday."
+  - question: "My furnace has one-per-day set but only one chamber, and it behaves like a normal machine. Is that a bug?"
+    answer: "No, that is expected. One-per-day only changes behavior when the work center has more than one instance, because the flag is about dedicating separate instances to separate jobs. With a single instance there is nothing to dedicate: the machine fills sequentially like any single-machine work center, and the flag has no effect. If you want one-per-day behavior you need to model the real chambers or booths as instances, then the engine assigns one job per chamber per day."
+---
+
+**One-per-day scheduling is how EDGEBIC by User Solutions handles equipment where a single setup owns the day. When the one-per-day flag is set on a work center with more than one instance, each instance accepts only one job per day, so a three-chamber furnace runs three different jobs at once but never mixes two jobs on the same chamber in a single day, even when hours appear to be left over.** It is the correct model for furnaces, paint booths, autoclaves, and plating lines, where the physical reality is "this machine is committed to one job today," not "this machine has hours to sell all shift."
+
+The default is the opposite: pooled capacity, where all the instances of a work center share their hours and the engine fills them freely within a shift. Knowing when to switch is a small decision with a large effect on how a schedule reads.
+
+## The two capacity models
+
+Every work center in EDGEBIC has a number of instances, meaning physical machines or benches. How the engine treats those instances depends on one flag.
+
+With the flag off (the default), the instances pool their capacity. A four-machine cell on an 8-hour shift offers 32 hours, and the engine hands out slices of that pool to as many jobs as fit, splitting or sequencing across the machines as needed. This is right for general machining and assembly, where a machine can move from one job to the next inside a shift with only a modest changeover.
+
+With the flag on, the engine stops pooling. It scans the instances one at a time and assigns each job its own instance for the day. A machine that already has a job today is skipped, so the next job lands on the next free machine. When the instances run out, further jobs wait for the next day, regardless of how many raw hours the shift still shows. This models equipment where the setup is the day: you cannot flush a paint booth of one color and refill it with another between two customer jobs without losing most of a shift, so the schedule should never pretend you can.
+
+## How the engine assigns an instance
+
+When a one-per-day job needs a slot, EDGEBIC does not look at the shift's aggregate hours. It scans each instance individually and reports the availability of the most-free one, which prevents it from double-counting a chamber that is already committed to another job. If any instance is genuinely free, the job can be placed.
+
+Choosing which instance goes through a small piece of run memory. The first time a job lands at a work center, the engine records the instance it was assigned. Every later shift that same job needs at that work center reuses the recorded instance, so a job that spans two days stays on one chamber rather than hopping between them. That stickiness is intentional: it preserves the setup you paid for. When a job has no prior assignment, the engine picks the least-loaded free instance, which spreads new jobs across the available machines rather than piling them on the first one.
+
+There is one boundary worth remembering. The one-per-day path only engages when the work center has more than one instance. A one-per-day work center with a single instance behaves exactly like any single-machine resource, filling sequentially, because there is nothing to dedicate. To get the behavior, model the real chambers or booths as instances.
+
+## A worked example: a three-chamber furnace
+
+Consider a heat-treat work center with three chambers, the one-per-day flag on, an 8-hour day shift, and 100 percent utilization. Its shift capacity is three chambers times 8 hours, so 24 hours on paper. Three jobs arrive Monday morning:
+
+| Job | Hours needed |
+|---|---|
+| Job A | 6 |
+| Job B | 7 |
+| Job C | 5 |
+
+The engine schedules Job A first. It has no prior assignment, all three chambers are free, so the least-loaded rule picks chamber 1. Job A runs 08:00 to 14:00.
+
+Job B is next. Chamber 1 now carries 6 hours, chambers 2 and 3 are empty, so the engine picks chamber 2. Job B runs 08:00 to 15:00.
+
+Job C follows. Chambers 1 and 2 are loaded, chamber 3 is empty, so Job C takes chamber 3 and runs 08:00 to 13:00.
+
+All three jobs run Monday in parallel, each on its own chamber. The shift consumed 18 of its 24 hours. Now suppose a fourth 4-hour job arrives. On paper 6 hours remain, but every chamber is already committed for the day, so the fourth job cannot share one. It schedules Tuesday. That is the trade the flag makes: some idle hours in exchange for the guarantee that no chamber ever tries to run two incompatible jobs in one day.
+
+## When to use it, and when not
+
+Reach for one-per-day when the setup dominates the day and mid-shift job switching is not physical: heat treatment, painting, coating, curing, plating. In those shops, a plan that pooled capacity would promise impossible same-day switches, and the shop floor would quietly ignore it.
+
+Stay with the default pooled model when a machine genuinely moves between jobs within a shift. A CNC cell, a welding bench, or an assembly line usually wants pooled capacity so the engine can fill every available hour and, where useful, [split a job across instances to finish sooner](/blog/load-balancing-vs-dedicated-instance-scheduling). Forcing one-per-day on such a work center would strand real hours for no physical reason.
+
+The decision is not a preference knob; it is a description of the equipment. Set it to match the machine, and the schedule will match the shop.
+
+One-per-day is one of three ways EDGEBIC assigns work to instances, alongside pooled load balancing and single-machine allocation, all of which sit inside [multi-shift allocation](/blog/how-multi-shift-allocation-fills-capacity). The broader engine that calls this layer is covered in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and the trade-off between dedicating a machine and pooling capacity is explored in [load balancing versus dedicated instance scheduling](/blog/load-balancing-vs-dedicated-instance-scheduling). For the general principle of respecting real machine limits, see [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+To see how your furnaces and booths schedule under one-per-day against your real shifts, [bring your data to a demo](/contact-us).
+
+<Accordion title="What does the one-per-day flag do in a scheduler?">
+The one-per-day flag makes each physical instance of a work center accept only one job per day. A furnace with three chambers and the flag set can run three different jobs at once, one per chamber, but a fourth job that day waits for the next day even if a chamber has idle hours. It is the setting for equipment where a changeover effectively consumes the whole day, so mixing jobs on one instance is not physical.
+</Accordion>
+
+<Accordion title="When should I use one-per-day instead of pooled capacity?">
+Use one-per-day when a single setup or campaign dominates the day and a machine cannot practically switch jobs mid-shift: heat-treat furnaces, paint booths, autoclaves, plating lines. Use pooled capacity, the default, when a machine can freely move between jobs within a shift, such as general CNC or assembly. The difference is physical, not preference: one-per-day trades some idle hours for guaranteed single-job-per-machine days.
+</Accordion>
+
+<Accordion title="Does one-per-day keep a job on the same machine across shifts?">
+Yes. When a job is first placed on an instance, EDGEBIC records that assignment for the run and reuses the same instance for every later shift the job needs at that work center. This keeps a multi-shift job on one chamber or booth rather than scattering it, which preserves setup continuity. The assignment is sticky even if another instance frees up later in the run.
+</Accordion>

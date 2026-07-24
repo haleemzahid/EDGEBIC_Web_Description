@@ -1,0 +1,98 @@
+---
+title: "How a Greedy Schedule Leaves Capacity on the Table"
+description: "A greedy scheduler commits each job's whole routing before it looks at the next one. Here is exactly how that myopia idles a work center, and how optimization recovers it."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - greedy scheduling limitation
+  - production schedule optimization
+  - job ordering optimization
+  - work center idle time
+  - finite capacity scheduling
+  - schedule sequencing
+targetPhrase: "greedy schedule optimization"
+wordCount: 1450
+readingTime: 7
+faqQuestions:
+  - question: "Why does a greedy scheduler leave capacity unused?"
+    answer: "A greedy scheduler places each job at its earliest feasible slot and commits that job's entire routing before it looks at the next job. That one-job-at-a-time commitment is fast and always feasible, but it is blind to the order the jobs are taken in. A long first operation can hold one machine while a short job that would have fed the downstream work center waits, so a downstream machine sits idle even though work is queued."
+  - question: "How does the EDGEBIC optimizer recover the wasted capacity?"
+    answer: "The optimizer runs the same scheduling engine many times with different global job orderings, scores each complete schedule, and returns the best one, clamped never worse than the original. It finds the sequence that feeds the downstream machine sooner, which the one-job-at-a-time engine could not discover because it committed to the first job before seeing the rest. The planner reviews the proposal and Accepts or Discards it."
+  - question: "Is a greedy schedule wrong or just suboptimal?"
+    answer: "A greedy schedule is correct, not wrong. It respects every capacity, calendar, and routing constraint, so it is always a runnable plan. It is only suboptimal in that a different job ordering could finish more jobs on time or free capacity sooner. The optimizer does not fix errors, it searches for a better ordering of the same feasible decisions and never returns a plan worse than the one you started with."
+qaQuestions:
+  - question: "My saw finishes a big job at noon but the mill sat idle all morning. Is that a scheduling bug?"
+    answer: "No, that is the classic greedy myopia, not a bug. The engine committed the big saw job first because it came first in the sort, and it held the saw all morning while the mill waited for its first feed. A two-hour job could have fed the mill by mid-morning, but the engine had already placed the long job before it considered the short one. Run the optimizer with On-time first and it will test the ordering that feeds the mill early, usually recovering exactly that idle morning."
+  - question: "If greedy leaves money on the table, why not just replace it with the optimizer?"
+    answer: "Because greedy is the battle-tested engine that respects every constraint, and it is also the optimizer's safety floor. The optimizer runs beside it, not instead of it: it uses the greedy plan as its starting point and as the never-worse baseline every candidate must beat. You keep a fast, always-feasible default and add a search that only ever proposes something better, which you can Accept or walk away from."
+---
+
+**A greedy scheduler leaves capacity on the table because it commits each job's entire routing before it has looked at the next job, and that blindness to sequence can idle a whole work center.** The engine is fast and always produces a runnable plan, but it takes the jobs in a fixed order and places each one completely before moving on. When a long first operation holds one machine, a downstream machine can sit idle even though a short job is queued that would have fed it. Nothing is broken. The plan is simply not the best ordering of the same feasible choices, and recovering that gap is the whole reason the optimizer exists.
+
+EDGEBIC by User Solutions builds every schedule with a greedy engine first, then offers an optimizer as a sidecar that searches for a better sequence. This post shows exactly how the myopia costs you capacity, with the book's worked numbers, so you can recognize the pattern on your own floor. For the wider picture, see the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide) and the foundational concept in [what is production scheduling](/blog/what-is-production-scheduling).
+
+## What greedy scheduling actually does
+
+The engine walks your order list one job at a time. For each job it places every routing step at the earliest slot where the required work center has capacity, respecting shifts, holidays, and the job's own step sequence. Then it locks that job in and moves to the next one. This is called greedy because it takes the best-looking local choice at each step and never reconsiders.
+
+The strength is real. Every plan it produces is feasible, it runs in a predictable amount of time, and it handles the full breadth of shop realities: multi-instance work centers, parallel operations, lot streaming, alternate routings. The weakness is equally real and lives in one place: the order the jobs are taken. The engine sorts them (priority, then start date, then due date) and never asks whether a different order would produce a better whole.
+
+## The worked example
+
+Two work centers, a cut station and a mill, one instance each, sharing a single day shift Monday to Friday 08:00 to 16:00. Three jobs, all released Monday morning, all the same priority:
+
+| Job | Routing | Due |
+|---|---|---|
+| A | Cut 6 h then Mill 2 h | Tuesday 12:00 |
+| B | Cut 2 h then Mill 6 h | Tuesday 12:00 |
+| C | Cut 3 h then Mill 3 h | Tuesday 16:00 |
+
+The greedy sort yields A, B, C (A and B tie on due date, A wins by list position). Each job is committed completely before the next is looked at:
+
+```
+          Mon 08:00 ---------------- 16:00   Tue 08:00 ---------------- 16:00   Wed
+Cut       [A cut 6h        ][B cut 2h]        [C cut 3h]
+Mill      ~~~~ idle 6h ~~~~[A mill  ]         [B mill 6h        ][C mill 2h]  [C 1h]
+```
+
+Job A finishes Monday 16:00, on time. Job B finishes Tuesday 14:00, two hours late. Job C finishes Wednesday morning, late. The failure is visible in the second row: the mill idles all Monday morning while A's six-hour cut blocks the saw. B's two-hour cut would have fed the mill by 10:00, but the engine committed A's entire routing before it ever considered B. That is the money on the table, one idle morning on your second machine.
+
+## Why no sort rule fixes this by itself
+
+A natural reaction is to change the sort. Put shortest jobs first, or sort by due date more aggressively. The trouble is that no single static rule wins on every dataset. Shortest-processing-time first helps this example but hurts others where a long critical job needed to start early. Earliest-due-date first is a good default but blind to the feed-the-downstream-machine effect shown above. The best ordering depends on the specific mix of routings, durations, and due dates in front of you today, and it changes tomorrow when the mix changes. This is the hard core of job shop scheduling, and it is why [job shop scheduling challenges](/blog/job-shop-scheduling-challenges) resist a one-rule answer.
+
+The pattern also concentrates on your constraint. When the idle machine is your [bottleneck](/blog/production-bottleneck-identification), an idle morning is lost throughput you never get back. That is precisely where a better ordering pays the most.
+
+## How the optimizer recovers the gap
+
+The optimizer does not rewrite the engine or invent new placements. It reruns the same engine with different global job orderings, scores each complete schedule with one shared calculator, and keeps the best. On this example it tests the ordering B, A, C:
+
+```
+          Mon 08:00 ---------------- 16:00   Tue 08:00 ---------------- 16:00
+Cut       [B 2h][A cut 6h          ]         [C cut 3h]
+Mill      ~2h~ [B mill 6h          ]         [A mill 2h][C mill 3h]
+```
+
+Now B's short cut feeds the mill by mid-morning, the mill runs all day, and every job lands on time. The comparison the planner sees:
+
+| Measure | Greedy baseline | Optimized | Change |
+|---|---|---|---|
+| Total tardiness | 3 h | 0 h | 3 h better |
+| On-time jobs | 1 of 3 | 3 of 3 | 2 better |
+| Makespan | 17 working h | 14 working h | 18% better |
+
+Every number improves because the reorder freed the idle morning. This is the reorder no one-job-at-a-time scheduler can find on its own, because finding it means looking at all three jobs together before committing any of them.
+
+## The guarantees that make it safe
+
+Two rules keep this honest, and both matter. First, the greedy plan is the baseline: the optimizer computes it first, uses it as the starting point, and every candidate must strictly beat it or the baseline is returned unchanged. The proposal is [guaranteed never worse than the plan you started with](/blog/what-the-never-worse-guarantee-means-for-planners). Second, nothing is saved until you Accept. The optimizer proposes a complete alternative, shows the side-by-side, and persists nothing on its own.
+
+The multi-run search carries an honest badge, "Best of N schedules tried," because it evaluates many complete real schedules and keeps the best. It does not claim to prove optimality. For the layer that adds a mathematical proof of how close to optimal the plan is, see [the two layers of the EDGEBIC optimizer](/blog/the-two-layers-of-the-edgebic-optimizer), and for why the optimizer sits beside the engine rather than inside it, [why the optimizer is a sidecar](/blog/why-the-optimizer-is-a-sidecar-not-a-replacement).
+
+## The bottom line
+
+A greedy schedule is correct and fast, but it commits each job before it sees the next, so a long operation can idle a downstream machine that a short job would have fed. The cost is real and it lands hardest on your constraint. The optimizer recovers it by searching orderings of the same feasible decisions, clamped never worse than where you started, and proposing the winner for you to Accept. To try it, open the Optimizer tab in Schedule Jobs, pick a goal, and run. See it in context on [EDGEBIC](/edgebic).

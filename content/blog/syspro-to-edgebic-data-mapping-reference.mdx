@@ -1,0 +1,189 @@
+---
+title: "SYSPRO to EDGEBIC: The Data Mapping Reference"
+description: "SYSPRO data export scheduling field by field: map stock codes, work centers, BOM operations, WIP jobs and labor into EDGEBIC masks with load order and upsert rules."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - SYSPRO data export scheduling
+  - SYSPRO field mapping scheduling
+  - SYSPRO BOM export
+  - import mask field reference
+  - SYSPRO WIP job export
+  - discrete manufacturing data mapping
+targetPhrase: "SYSPRO data export scheduling"
+wordCount: 2170
+readingTime: 11
+faqQuestions:
+  - question: "Which columns must a SYSPRO export contain before EDGEBIC will import it?"
+    answer: "Each entity type has a short mandatory list. Products need a stock code. Work centers need a work center id. BOM operations need end product, step name, an operation flag, and hours required. WIP jobs need product, quantity, and a job date. Labor rows need job number, work center id, and the actual date. Everything else is optional, and an unmapped mandatory field aborts the run before any row is read."
+  - question: "Can EDGEBIC read a SYSPRO database view instead of a report export?"
+    answer: "Yes. An import mask can read an Excel workbook, a delimited text file, or a database source such as a view over the SYSPRO tables. The mapping works the same way in every case: point the mask at the source, confirm the delimiter or sheet, and drag each source column onto the matching EDGEBIC field. A database view is the lowest-maintenance source because the column names stay stable across every run."
+  - question: "In what order should SYSPRO files be imported?"
+    answer: "Dependency order: stock codes first, then work centers, then BOM operations, then open WIP jobs, then labor. BOM operations reference both items and work centers, and jobs reference items, so loading upstream data first stops the auto-create behavior from inventing thin placeholder records. Auto-create is on by default, but a record it creates carries only the name the file gave it."
+qaQuestions:
+  - question: "We run multiple SYSPRO sites and some stock codes exist at more than one plant. Will the same code across sites confuse the match?"
+    answer: "The stock code is matched as a case-insensitive natural key, so the same code refers to the same product wherever it appears, which is usually what you want since the product is the same item. The variation between sites lives on the work centers and their calendars, not on the product. If two plants genuinely make different things under the same code, resolve that in the export by giving them distinct codes before import, because EDGEBIC treats one code as one product. The cleaner your codes are on the export, the less reconciliation you do later, and blank cells preserve existing values so a narrow refresh never wipes the descriptive data."
+  - question: "Our WIP jobs sometimes carry only a due date and no start date. Does EDGEBIC handle that?"
+    answer: "Yes, through a mask option. One setting treats the single date in your export as the job date, and another derives the job date backward from the due date, so a due-date-only file schedules correctly without a spreadsheet step. You set whichever matches your export once on the job mask, and it applies to every run. If your export carries both dates, map both: the job date drives when the work can start and the due date drives the promise the schedule is measured against. The backward-scheduling behavior is the same idea as [forward versus backward scheduling](/blog/forward-vs-backward-scheduling) applied at the job level."
+---
+
+**Mapping SYSPRO data into EDGEBIC is a column-mapping exercise rather than a development project: you export stock codes, work centers, BOM operations, open WIP jobs, and optionally labor hours to Excel, CSV, or a database view, then drag each source column heading onto the matching EDGEBIC field once and save it as a reusable import mask.** This reference lists what maps to what, which columns are mandatory, how conversions and upserts behave, and what every row outcome means when a run finishes.
+
+EDGEBIC by User Solutions integrates with SYSPRO through those masks rather than a service integration, so nothing is installed in SYSPRO and no integration credential exists to maintain. If you have not read the end-to-end version yet, start with the [complete SYSPRO integration guide](/blog/edgebic-syspro-integration-guide). This post is the lookup table you keep open while building masks.
+
+A note on column names: SYSPRO report writer and query output varies by version and configuration, so the source headings on your export may not match another site's. That does not matter. You map headings to EDGEBIC fields once per mask, and the EDGEBIC target fields below are the stable side of the mapping. Where a source column is genuinely unclear, map only what you are sure of; unmapped columns are ignored.
+
+## The load order
+
+Import in dependency order. Later files reference records that earlier files created.
+
+| # | SYSPRO export | EDGEBIC entity type | Depends on |
+|---|---|---|---|
+| 1 | Stock codes | Product | Nothing |
+| 2 | Work centers | Workcenter | Nothing |
+| 3 | BOM / routing operations | BOR (bill of routing) | Items and work centers |
+| 4 | Open WIP jobs | SalesOrder | Items |
+| 5 | Labor hours (optional) | Actuals | Scheduled jobs |
+
+Two entity types have no SYSPRO origin and come from a spreadsheet you write: **Shift** (one row per shift with a start and end pair per weekday, a blank pair meaning the day is off) and **PlantHoliday** (closures by name and date). Together they define the calendar every scheduled date is computed against, which makes them the ten minutes with the widest effect in the whole load. In a multi-site setup you write more than one shift pattern and assign each site's work centers to the one that matches its hours.
+
+Auto-create is on by default, so a BOM file naming a work center that has not been imported yet creates it on the fly. Good safety net, poor strategy: an auto-created work center carries a name and nothing else, meaning one machine, no shift assignment, and no efficiency.
+
+## Reading the file itself
+
+SYSPRO exports have their own habits, and all of them are handled on the mask rather than by editing files.
+
+| Export characteristic | Mask setting |
+|---|---|
+| Comma, semicolon, tab, or space delimited | Delimiter selector |
+| Text values wrapped in quotation marks | Text-enclosed-in-quotes |
+| First row is column headings | Header present (on) |
+| Raw extract with no headings | Header present (off), map by column position |
+| Excel workbook with several sheets | Sheet name on the mask |
+| Database view | Database source on the mask |
+
+If a worksheet is renamed later, the reader falls back to the first sheet rather than failing, which is forgiving but worth knowing: re-pick the file on the mask when a workbook's structure changes so the choice stays explicit.
+
+## Stock codes to Product
+
+| EDGEBIC target field | Mandatory | Source column |
+|---|---|---|
+| `Product_Id` | Yes | The stock code. Natural key, matched case-insensitively |
+| `Product_Name`, `Description` | | Descriptive text |
+| `UOM` | | Unit of measure |
+| `Unit_Price`, `Lead_Time`, `Category` | | Optional planning and quoting attributes |
+| `Size`, `Weight`, `Country_Of_Origin` | | Optional descriptive columns |
+
+Only the stock code is required. Everything else can arrive later through a narrower refresh file, because blank cells preserve existing values on an update run. Keep the code rendered identically across every export: matching ignores case, so `BRK-200` finds `brk-200`, but it does not reconcile a genuine spelling difference or a stray suffix.
+
+## Work centers to Workcenter
+
+This is where scheduling accuracy is won or lost, because this file carries capacity.
+
+| EDGEBIC target field | Mandatory | What it drives |
+|---|---|---|
+| `Workcenter Id` | Yes | Natural key. BOM operations match on it |
+| `Workcenter Name` | | Label on the Gantt and in reports |
+| `Number_Of_Instances` | | How many identical machines the center holds. Blank defaults to 1 |
+| `Capacity`, `Efficiency` | | Rated capacity and the efficiency applied to it |
+| `Setup_Time_Hours` | | Default setup, overridden per operation where present |
+| `Hourly_Rate` | | Cost rollups |
+| `Is_Bottleneck` | | Marks the constraint so the engine can anchor around it |
+| `One_Per_Day_Flag` | | One job per machine per day, for long-changeover centers |
+| `Use_Global_Shifts`, `Shift_Names` | | Calendar assignment, per site in a multi-site setup |
+| `Pieces_Per_Hour` | | Rate-based capacity where the center is measured in output |
+| `Min_Batch_Size`, `Max_Batch_Size` | | Batching limits |
+| `Is_Active`, `Color`, `Type` | | Housekeeping and Gantt color |
+
+`Number_Of_Instances` is the single highest-value column here and the one ERP exports rarely carry, because a work center is usually modeled as one resource with a capacity figure. A cell of four identical machines imported as one instance produces a plan roughly four times too long, and it fails quietly: nothing errors, the dates are simply wrong. Fill it deliberately for every multi-machine center; the arithmetic is in [how EDGEBIC calculates work center capacity](/blog/how-edgebic-calculates-work-center-capacity).
+
+## Machine pools have no export column
+
+Where machines are genuinely interchangeable, EDGEBIC models a **work center group**: a named pool whose membership is re-evaluated on every reschedule. A routing step bound to the group picks by strategy (earliest completion, primary first, or earliest start) and applies a per-member efficiency factor, so a slower machine is chosen only when it still finishes first. Operations already started keep their machine, because recorded work is never moved.
+
+None of that exists as an export column. Import the members as ordinary work centers, then build the group inside EDGEBIC: a one-time configuration per pool that changes the schedule more than most imported columns do. The setup path is [how to create work center groups](/blog/how-to-create-work-center-groups-in-edgebic).
+
+## BOM operations to BOR
+
+| EDGEBIC target field | Mandatory | What to put in it |
+|---|---|---|
+| `End_Prod` | Yes | Item identifier this routing builds |
+| `Sub_Prod` | Yes | Work center id (operation row) or component item (material row) |
+| `Op_Flag` | Yes | True for an operation, false for a material or component |
+| `No_Req` | Yes | Hours required per unit |
+| `Seq_No` | | Operation sequence, in gaps of 10 |
+| `Next_Seq` | | Leave blank; chaining happens automatically |
+| `Setup_Time` | | Setup hours at this step |
+| `Queue_Time` | | Buffer hours before the step may start |
+| `Flow_Step`, `Transit_Days` | | Overlap between steps, and transport time (including between sites) |
+| `Parallel_Op` | | Parent step's work center name for parallel or alternate steps |
+| `Alt_Type` | | `Parallel-Independent`, `Parallel-Dependent`, or `Alternative` |
+| `Res_Mult` | | Applicable machine instances for this step |
+| `Fam_Dept` | | Department for auto-created work centers |
+
+`Op_Flag` is the field most often set wrong on a first load. True means the row is an operation running on a work center. False means the row is a component consumed at that point in the routing, which is exactly how a subassembly is attached to its parent. Getting the flag backwards turns components into work centers, and the graphical designer shows it immediately.
+
+### Why the import takes two passes
+
+A routing cannot be written row by row, because step 10 must point at step 20 and step 20 does not exist yet. The import therefore runs in two passes. Pass one validates each row, resolves or creates the items and work centers it names, and buffers the row. Pass two groups the buffer by end product, sorts by sequence number, writes the steps, and wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished item so the routing renders connected rather than floating free.
+
+Two rules follow. All of one item's operations must travel in one file, because a run wipes and recreates that item's steps on first reference, so splitting one item across two runs means the second wipe deletes the first run's work. And re-importing is safe for jobs in progress, because every scheduled job carries a frozen snapshot of the routing it was planned with.
+
+## WIP jobs to SalesOrder
+
+| EDGEBIC target field | Mandatory | Source |
+|---|---|---|
+| `Product_Id(BOR)` | Yes | Item being built |
+| `Qty` | Yes | Order quantity |
+| `Job_Date` | Yes | Release or start date |
+| `Sales_Order(Ref#)` | | Order reference: shared references group into one order, jobs auto-number `{Ref}-{line}` |
+| `Job_Number` | | Your SYSPRO job number carried across |
+| `Due_Date`, `Order_Date`, `Priority` | | Promise, entry, and ranking |
+| `Customer_Name` | | Auto-created when missing |
+| `Unit_Price`, `User_Notes` | | Optional |
+
+Two mask options handle the case where an export carries only one date: one treats the job date as the due date, the other derives the job date backward from the due date. Set whichever matches your export once, on the mask. Carrying the SYSPRO job number into `Job_Number` keeps the reference your floor already recognizes on a dispatch list.
+
+## Labor to Actuals
+
+Job number, work center id, and actual date are mandatory. Hours and pieces are each optional, and either can be derived from the other using the operation's rate. A `Complete` column marks the operation finished, and an explicit start column overrides the default of using the earliest imported date.
+
+The import always overwrites the days a file carries, so re-running a corrected extract fixes the numbers rather than doubling them. Days a file does not mention are preserved unless you ask for them to be cleared. Actuals go last because every row has to find an operation on a job that is already scheduled.
+
+## Conversions, blanks, and zeros
+
+| Situation | Behavior |
+|---|---|
+| Minutes in the export | Conversion factor `0.016667` on that mask column |
+| Seconds in the export | Conversion factor `0.000278` |
+| Hours quoted per 100 pieces | Conversion factor `0.01` |
+| Blank cell on an update | Existing value preserved |
+| Zero in a cell on an update | Zero is written: it is a value, not a blank |
+| Unmapped column | Ignored entirely |
+| Mandatory field unmapped | Run aborts before reading any row |
+| One bad row | Fails alone and the run continues, unless you choose strict mode |
+
+## Reading the outcomes
+
+Every row resolves to **Created**, **Updated**, **Reused**, or **Failed**. Reused is the default for a record that already exists, so a weekly stock file of 3,000 rows reporting Created 9, Reused 2,991 is the desired result rather than a problem. When counts look wrong, the per-run log file has one line per row with the exact reason for each failure.
+
+## What import cannot bring, and why it matters
+
+The settings that most differentiate a schedule have no column in any ERP export: the sequence-dependent setup matrix, operator skills and rosters, work center group strategies, bottleneck anchoring, and lot streaming transfer batches. They are configured once in EDGEBIC and then apply to every imported job afterwards. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) explains why one mask design serves every platform.
+
+For the questions that come up before a project starts, see the [SYSPRO integration FAQ](/blog/edgebic-syspro-integration-faq). The [Acumatica](/blog/acumatica-to-edgebic-data-mapping-reference) and [MIE Trak Pro](/blog/mie-trak-pro-to-edgebic-data-mapping-reference) references show how little changes from one platform to the next, and the [ERP integration hub](/edgebic-erp-integration) frames the category.
+
+<Accordion title="Which columns must a SYSPRO export contain before EDGEBIC will import it?">
+Each entity type has a short mandatory list. Products need a stock code. Work centers need a work center id. BOM operations need end product, step name, an operation flag, and hours required. WIP jobs need product, quantity, and a job date. Labor rows need job number, work center id, and the actual date. Everything else is optional, and an unmapped mandatory field aborts the run before any row is read.
+</Accordion>
+
+<Accordion title="Can EDGEBIC read a SYSPRO database view instead of a report export?">
+Yes. An import mask can read an Excel workbook, a delimited text file, or a database source such as a view over the SYSPRO tables. The mapping works the same way in every case: point the mask at the source, confirm the delimiter or sheet, and drag each source column onto the matching EDGEBIC field. A database view is the lowest-maintenance source because the column names stay stable across every run.
+</Accordion>
+
+<Accordion title="In what order should SYSPRO files be imported?">
+Dependency order: stock codes first, then work centers, then BOM operations, then open WIP jobs, then labor. BOM operations reference both items and work centers, and jobs reference items, so loading upstream data first stops the auto-create behavior from inventing thin placeholder records. Auto-create is on by default, but a record it creates carries only the name the file gave it.
+</Accordion>

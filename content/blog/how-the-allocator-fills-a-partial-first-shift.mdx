@@ -1,0 +1,85 @@
+---
+title: "How the Allocator Fills a Partial First Shift"
+description: "How EDGEBIC clips the first shift of a job to a mid-shift earliest start, computing usable hours from the start time forward so the first day is never over-allocated."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - partial shift scheduling
+  - late start penalty
+  - mid-shift start
+  - capacity allocation
+  - earliest start time
+  - finite capacity scheduling
+targetPhrase: "partial first shift"
+wordCount: 1490
+readingTime: 8
+faqQuestions:
+  - question: "What happens when a job cannot start until the middle of a shift?"
+    answer: "EDGEBIC clips the first shift to only the hours remaining from the earliest start. If a job cannot begin before 13:00 and the day shift runs 08:00 to 16:00, the engine offers only the 3 hours from 13:00 to 16:00, multiplied by the number of instances. The rest of the operation spills into the next shift. This late-start clip stops the first day from being credited with hours the job could not physically use."
+  - question: "Why does a shift show full capacity but only offer part of it to my job?"
+    answer: "The shift's total capacity is the whole window's worth of hours, but a job that arrives mid-shift can only use the time from its arrival onward. EDGEBIC computes the usable hours as the smaller of the time remaining in the shift from the effective start and the shift's unconsumed capacity. So a shift with 8 hours total offers only its remaining window to a late-arriving job, even though its full number looks larger."
+  - question: "What sets a job's earliest start on the first shift?"
+    answer: "The earliest start is usually the end of the previous step in the routing, adjusted for any queue, move, or transit time, or on a reschedule it is the resume point from actuals. Whatever that moment is, the allocator uses it as a floor: the first shift can only offer hours from that moment forward. If the moment falls after a shift's window has already ended, that shift is skipped entirely."
+---
+
+**When a job cannot begin until the middle of a shift, EDGEBIC by User Solutions clips that first shift to only the hours remaining from the earliest start. If the earliest start is 13:00 and the day shift runs 08:00 to 16:00, the engine offers 3 hours, not 8, multiplied by the machine instances, and the rest of the operation spills into the next shift. This late-start clip is what keeps the first day of a multi-day job from being credited with hours it could never have used.** It is a small rule with a large effect on accuracy: without it, a job arriving mid-afternoon would appear to get a full day of work, and the whole plan downstream would be optimistic by that phantom time.
+
+The earliest start of an operation is rarely the start of a shift. It is the end of the previous step plus any timing between steps, or on a reschedule it is the resume point from actuals. Handling that mid-shift start honestly is the allocator's job on the first slot.
+
+## Total capacity versus usable capacity
+
+Every shift has a total capacity, computed once from the shift length, the instances, and the utilization. That number describes the whole window. It is not what a mid-shift arrival can use.
+
+When an operation's earliest start lands inside a shift, the allocator computes usable capacity differently. It works out the effective start (the later of the shift's own start and the operation's earliest start), and from there it measures the time remaining until the shift ends. The usable hours are the smaller of that remaining window and the shift's unconsumed capacity, and then that per-instance figure is multiplied back up by the instances.
+
+So a shift can show a healthy total number and still offer only a sliver to a particular job, because the job arrived late in the window. The total is the shift's capacity; the offered amount is what this operation can actually reach.
+
+## The clip in one step
+
+The mechanics are a short chain. Take the shift's start and the operation's earliest start, and keep the later of the two as the effective start. If that effective start is at or past the shift's end, the shift is unusable and skipped, because there is no time left in it. Otherwise, the remaining time in the shift is the shift end minus the effective start, and the usable capacity is the lesser of that remaining time and whatever capacity the shift has not already consumed. Multiply by the instances, and that is what the operation may place on this first shift.
+
+Everything the operation cannot fit in that clipped first slot flows to the next shift, which, if it starts fresh, offers its full window.
+
+## A worked example
+
+Take an assembly work center with two instances, an 8-hour day shift from 08:00 to 16:00, no prior usage, and 100 percent utilization. An operation arrives with an earliest start of Monday 13:00.
+
+The effective start is the later of 08:00 and 13:00, so 13:00. The remaining time in the shift is 16:00 minus 13:00, which is 3 hours. The shift's unconsumed capacity per instance is the full 8 hours, so the usable amount per instance is the smaller of 3 and 8, which is 3. Across two instances that is 6 hours available on Monday.
+
+If the operation needs more than 6 hours, only 6 land Monday afternoon, both instances running 13:00 to 16:00, and the remainder spills into Tuesday, which offers its full window. The plan never credits Monday with the 16 hours the shift could hold in principle, because the job could not have used the morning it arrived too late to attend.
+
+The same clip applies to the very first operation of a job whose start time is mid-morning, and to a rescheduled job resuming mid-shift from actuals. In every case the first slot is trimmed to reality.
+
+## When a late start empties a shift entirely
+
+There is a boundary worth naming. If the effective start falls at or past the end of a shift, that shift offers zero and is skipped. This can happen when the earlier part of the shift was already consumed by other work: the used capacity pushes the effective position to the shift end, and a mid-shift arrival finds nothing left.
+
+This is correct, but it can briefly puzzle a planner who sees a work center listed with remaining capacity yet no job placed on that day. The remaining hours belong to a window the arriving job could not reach, so they sit unused for this operation and wait for a job whose earliest start lands in them. The capacity is real; it just does not line up with this job's arrival.
+
+## Why the clip matters
+
+The late-start clip is one of those quiet rules that keeps a finite schedule honest. Its absence is easy to imagine: a job that arrives at 13:00 would be credited with a full day, the operation would appear to finish earlier than it can, the next step would be timed off that false finish, and the error would compound down the routing. By trimming the first shift to the hours actually reachable, the allocator keeps every downstream estimate grounded.
+
+It is also why a job's calendar span often looks longer than its hour count. A late first-shift start, combined with the reality that weekends and holidays cost elapsed time but no machine hours, stretches an operation across more days than a naive hours-divided-by-shift calculation suggests. Both effects are correct, and both come from the allocator respecting when work can genuinely happen.
+
+The partial-shift clip lives inside multi-shift allocation, so the full search context is in [how multi-shift allocation fills capacity](/blog/how-multi-shift-allocation-fills-capacity), and the way candidate shifts are ranked once they are found is in [how shift priority scoring orders the capacity search](/blog/how-shift-priority-scoring-orders-the-capacity-search). The reason the search walks forward at all, rather than assuming a slot exists, is in [why a scheduler searches forward in time for capacity](/blog/why-a-scheduler-searches-forward-in-time-for-capacity). What sets a step's earliest start in the first place, the timing that accumulates between operations, is in [lead time as the sum of its parts](/blog/lead-time-as-the-sum-of-its-parts).
+
+All of this sits inside the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and the clip only matters because EDGEBIC treats each shift's hours as [genuinely finite](/blog/finite-vs-infinite-capacity-scheduling).
+
+To see how a mid-shift arrival trims the first day on your own jobs, [bring your data to a demo](/contact-us).
+
+<Accordion title="What happens when a job cannot start until the middle of a shift?">
+EDGEBIC clips the first shift to only the hours remaining from the earliest start. If a job cannot begin before 13:00 and the day shift runs 08:00 to 16:00, the engine offers only the 3 hours from 13:00 to 16:00, multiplied by the number of instances. The rest of the operation spills into the next shift. This late-start clip stops the first day from being credited with hours the job could not physically use.
+</Accordion>
+
+<Accordion title="Why does a shift show full capacity but only offer part of it to my job?">
+The shift's total capacity is the whole window's worth of hours, but a job that arrives mid-shift can only use the time from its arrival onward. EDGEBIC computes the usable hours as the smaller of the time remaining in the shift from the effective start and the shift's unconsumed capacity. So a shift with 8 hours total offers only its remaining window to a late-arriving job, even though its full number looks larger.
+</Accordion>
+
+<Accordion title="What sets a job's earliest start on the first shift?">
+The earliest start is usually the end of the previous step in the routing, adjusted for any queue, move, or transit time, or on a reschedule it is the resume point from actuals. Whatever that moment is, the allocator uses it as a floor: the first shift can only offer hours from that moment forward. If the moment falls after a shift's window has already ended, that shift is skipped entirely.
+</Accordion>

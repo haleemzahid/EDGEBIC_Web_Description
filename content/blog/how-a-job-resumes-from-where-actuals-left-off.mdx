@@ -1,0 +1,88 @@
+---
+title: "How a Job Resumes From Where Actuals Left Off"
+description: "How EDGEBIC uses recorded actuals to compute a resume point, schedule only the remaining hours of a part-finished step, and queue the rest of the job behind it."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - reschedule with actuals
+  - resume point scheduling
+  - remaining hours
+  - in-progress operation
+  - short confirm
+  - production tracking
+targetPhrase: "resume from actuals"
+wordCount: 1540
+readingTime: 8
+faqQuestions:
+  - question: "How does a scheduler resume a job that is partway done?"
+    answer: "EDGEBIC computes a resume point from the actuals: the later of the last completed step's actual end and any in-progress step's projected end. It then starts the remaining steps from that point rather than the job's original start. Completed work stays fixed, and only the not-yet-done work is re-placed on the calendar, so the schedule reflects where the job actually stands on the floor."
+  - question: "What happens to a step that is half finished when I reschedule?"
+    answer: "EDGEBIC splits it in effect. The hours already logged are preserved as a historical block that keeps its dates. The remaining hours are computed as planned minus logged, and only that remainder is re-scheduled forward from the resume point. A 12-hour grinding step with 4 hours logged keeps the 4-hour history and schedules 8 fresh hours, so the operator's work is never discarded or double-counted."
+  - question: "What is a short-confirm and how does the engine handle it?"
+    answer: "A short-confirm is when an operator marks a step complete but logged materially fewer hours than planned. If the site policy allows it, EDGEBIC treats the gap as remaining work: it keeps the historical hours, respects the operator's completion stamp as the resume point, and forward-shifts the leftover hours as a fresh block. So a 16-hour step confirmed with only 10 hours logged keeps the 10 and schedules the remaining 6 from the confirmation moment."
+qaQuestions:
+  - question: "Step one of my job finished late and step two started but is not done. Where does step three end up?"
+    answer: "Step three starts from the resume point, which is the latest actual boundary in the job. The engine takes the maximum of step one's actual end and step two's projected end, and uses that as the earliest start for everything remaining. Step two's already-logged hours are preserved as history, its remaining hours are scheduled forward from the resume point, and step three then queues behind step two's new forward finish. Nothing is anchored to the original planned dates anymore; the whole tail of the job is re-timed off where the floor actually is, which is why a late step one honestly pushes step three later rather than pretending the plan still holds."
+  - question: "My operator marked a long CNC step done early with fewer hours than planned. Will the leftover work just vanish?"
+    answer: "No, and that is the point of the short-confirm handling. If your site policy forward-shifts remaining hours, EDGEBIC keeps the hours the operator actually logged as a historical block, takes the completion stamp as the resume point, and schedules the leftover hours, planned minus logged, as a fresh forward block starting from that stamp. So a 16-hour step confirmed with 10 hours logged shows a 10-hour history and a separate 6-hour forward block, and the next step queues after the 6-hour block finishes. The operator's early close is respected, no hours are invented, and none are discarded. If instead your policy trusts the completion outright, the step is treated as fully done and no remainder is scheduled."
+---
+
+**When EDGEBIC by User Solutions reschedules a part-finished job, it does not restart from the original plan. It computes a resume point from the recorded actuals, the later of the last completed step's actual end and any in-progress step's projected end, and schedules the remaining work forward from there. Completed hours stay fixed as history, a half-finished step schedules only its leftover hours, and the rest of the job queues behind that. The plan tracks where the job actually is on the floor, not where it was supposed to be.** This is what makes a reschedule honest: it re-times the future without touching the past.
+
+The mechanism rests on three distinctions the engine draws from actuals: what is done, what is running, and what has not started. Each is handled differently, and the resume point is the hinge that connects them.
+
+## Reading the actuals
+
+At the start of rescheduling a job, EDGEBIC reads every existing schedule row and classifies it. A row with both an actual start and an actual end is a completed step. A row with an actual start but no actual end is in-progress. A row with no actuals at all is remaining work, unless a later step has actuals, in which case the engine infers the earlier step must have run and backfills its actuals from its scheduled dates.
+
+From this classification it computes the resume point: the maximum of all completed steps' actual ends and all in-progress steps' projected ends. That single moment becomes the earliest start for everything the engine still has to place. The job's start time is shifted to it, so every downstream slot search begins after the last real boundary rather than at the stale original start.
+
+The resume point is why a late early step honestly pushes the whole tail of a job later. If step one finished behind schedule, its actual end raises the resume point, and everything after it moves accordingly. The plan does not pretend the delay never happened.
+
+## A half-finished step schedules only the remainder
+
+The most interesting case is a step that started but is not done. The engine does not throw away the hours already logged, and it does not re-schedule the whole step. It splits the work.
+
+The hours already logged are preserved as a historical block that keeps its dates exactly. The remaining hours are computed as planned hours minus logged hours, and only that remainder is scheduled forward from the resume point as a fresh block. A 12-hour grinding step with 4 hours logged keeps the 4-hour history and schedules 8 fresh hours starting from the resume point. The operator's work is neither discarded nor double-counted.
+
+One subtlety protects future accuracy: the historical portion of an in-progress step is written with its actual end left blank. That way, when the operator eventually records the real completion, the next reschedule still recognizes the step as in-progress and honors the true end, rather than freezing it as complete from a projected value.
+
+## Short-confirms: done early, hours left over
+
+There is a related case where an operator marks a step complete but has logged materially fewer hours than planned. This is a short-confirm, and how the engine handles it depends on a site policy.
+
+If the policy forward-shifts remaining hours, the engine treats the gap as work still to do. It keeps the hours actually logged as a historical block, takes the operator's completion stamp as the resume point, and schedules the leftover hours, planned minus logged, as a fresh forward block from that stamp. A 16-hour step confirmed with only 10 hours logged shows a 10-hour history and a separate 6-hour forward block, and the next step queues after the 6-hour block finishes. The early close is respected, the logged hours are honored, and the missing hours are neither invented nor lost.
+
+If instead the policy trusts the completion outright, the short-confirm is taken at face value: the step is fully done, no remainder is scheduled, and the next step starts from the confirmation. The choice belongs to the site, because both interpretations are legitimate depending on whether an early confirmation means "the rest is not needed" or "the rest still has to happen."
+
+## A worked example
+
+Take a three-step job. Step one, forging, is complete: actual start Monday 08:00, actual end Monday 16:15. Step two, grinding, started Monday 16:00 with 4 hours logged of a planned 12. Step three, inspection, has not started.
+
+The engine classifies step one as completed, step two as in-progress, and step three as remaining. The resume point is the latest actual boundary, driven by step two's start and logged progress. Step one is preserved verbatim. Step two's 4 logged hours are kept as history, and its remaining 8 hours are scheduled forward from the resume point onto the next available grinding slot, landing, say, Tuesday 08:00 to 16:00. Step three then queues behind step two's new forward finish, scheduling from Tuesday 16:00 onward.
+
+The whole tail of the job re-timed off the floor's reality. Step three did not stay on its original Wednesday slot; it moved because step two's remaining work moved. That is the correct behavior: the plan reflects the actual state of the job.
+
+## Why this beats a full reset
+
+The alternative, wiping the job and re-planning from scratch, would lose the shop-floor record and produce fiction: completed steps re-dated, logged hours ignored, no way to compare actual against planned. EDGEBIC's resume-from-actuals model keeps the past immutable and re-plans only the future, so the schedule stays trustworthy to the operators who feed it.
+
+That trust compounds. Because completed work never moves, planners and supervisors can rely on the plan reflecting reality, which is the foundation of [schedule stability](/blog/why-schedule-stability-can-beat-schedule-optimality). The resume mechanism works hand in hand with two siblings: [how a scheduler preserves completed work](/blog/how-a-scheduler-preserves-completed-work), which covers the immutability of finished steps, and [how a reschedule frees stale capacity reservations](/blog/how-a-reschedule-frees-stale-capacity-reservations), which keeps the not-started steps from colliding with their own history. Recovering from an unexpected event mid-shift uses the same pipeline, described in [how a scheduler recovers from a mid-shift disruption](/blog/how-a-scheduler-recovers-from-a-mid-shift-disruption).
+
+The whole reschedule flow sits inside the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide). To see your own part-finished jobs resume from their real state, [bring your data to a demo](/contact-us).
+
+<Accordion title="How does a scheduler resume a job that is partway done?">
+EDGEBIC computes a resume point from the actuals: the later of the last completed step's actual end and any in-progress step's projected end. It then starts the remaining steps from that point rather than the job's original start. Completed work stays fixed, and only the not-yet-done work is re-placed on the calendar, so the schedule reflects where the job actually stands on the floor.
+</Accordion>
+
+<Accordion title="What happens to a step that is half finished when I reschedule?">
+EDGEBIC splits it in effect. The hours already logged are preserved as a historical block that keeps its dates. The remaining hours are computed as planned minus logged, and only that remainder is re-scheduled forward from the resume point. A 12-hour grinding step with 4 hours logged keeps the 4-hour history and schedules 8 fresh hours, so the operator's work is never discarded or double-counted.
+</Accordion>
+
+<Accordion title="What is a short-confirm and how does the engine handle it?">
+A short-confirm is when an operator marks a step complete but logged materially fewer hours than planned. If the site policy allows it, EDGEBIC treats the gap as remaining work: it keeps the historical hours, respects the operator's completion stamp as the resume point, and forward-shifts the leftover hours as a fresh block. So a 16-hour step confirmed with only 10 hours logged keeps the 10 and schedules the remaining 6 from the confirmation moment.
+</Accordion>

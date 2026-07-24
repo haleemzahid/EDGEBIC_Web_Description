@@ -1,0 +1,147 @@
+---
+title: "EDGEBIC + MIE Trak Pro: The Complete Scheduling Integration Guide"
+description: "MIE Trak Pro production scheduling integration with EDGEBIC: export parts, work centers, routers and work orders, map columns once, schedule at finite capacity."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - MIE Trak Pro production scheduling integration
+  - MIE Trak Pro finite capacity scheduling
+  - MIE Trak Pro scheduling add-on
+  - EDGEBIC MIE Trak Pro integration
+  - MIE Trak Pro router export
+  - job shop scheduling integration
+targetPhrase: "MIE Trak Pro production scheduling integration"
+wordCount: 2020
+readingTime: 10
+faqQuestions:
+  - question: "Does EDGEBIC connect to MIE Trak Pro through a native connector?"
+    answer: "No. EDGEBIC integrates with MIE Trak Pro through reusable import masks fed by the Excel, CSV, or database exports MIE Trak Pro already produces. There is no certified connector to license, no add-on installed inside the ERP, and no API sync to version-match. You map an export's columns onto EDGEBIC fields once, and every later run is two clicks with a per-run log recording each row."
+  - question: "What MIE Trak Pro data does EDGEBIC need to build a schedule?"
+    answer: "Four exports carry a complete scheduling model: parts, work centers with capacity detail, routers with operation sequence and run and setup times, and open work orders with quantities and dates. A fifth optional export carries labor hours from the floor. Each file goes through its own import mask, and every row returns as Created, Updated, Reused, or Failed."
+  - question: "Do imported MIE Trak Pro work orders schedule themselves on import?"
+    answer: "No, and the separation is deliberate. An import changes data; the scheduler changes the plan. Imported work orders appear as unscheduled demand and stay there until you run the scheduler, which states how many jobs are new and how many are being rescheduled before it plans anything. An import can therefore never silently rearrange the floor."
+qaQuestions:
+  - question: "We are a small aerospace shop with one planner and a lot of low-volume, high-mix work orders. Is a finite capacity scheduler overkill for us?"
+    answer: "It is the opposite. High-mix, low-volume is exactly where finite capacity earns its keep, because the constraint moves from job to job and a spreadsheet cannot keep up with which work center is the bottleneck this week. With one planner the twenty-minute routine matters more, not less: export the four files, run the saved masks, run the scheduler, publish the dispatch lists. Because recorded work is never moved by a reschedule, your operators keep working from a stable plan while you re-run against new orders. The engine also handles the aerospace realities that break simple tools, sequence-dependent setups, alternate machines, and inspection queue time, without you scripting anything."
+  - question: "Our routers change often as engineering revises parts. Does re-importing a revised router break jobs already on the floor?"
+    answer: "No. A routing re-import wipes and recreates that part's steps, so the revised router replaces the old one cleanly with no leftover steps, and it applies to future jobs. Jobs already scheduled are untouched, because every scheduled job carries a frozen snapshot of the router it was planned with. Any operation with a recorded actual start and end stays exactly where it is, since recorded work is never moved. So you can push an engineering revision into EDGEBIC the same day it lands in MIE Trak Pro, schedule new work against it, and the parts already running never see the change."
+---
+
+**Integrating MIE Trak Pro with EDGEBIC means exporting the parts, work centers, routers, and open work orders MIE Trak Pro already holds to Excel, CSV, or a database view, mapping those columns once with a reusable import mask, and letting EDGEBIC schedule the work against finite capacity: real shift hours, real machine counts, and sequence-dependent setups.** Executable dates then go back as Excel. There is no certified connector to license, no add-on to install inside the ERP, and no API sync to maintain when either side updates.
+
+EDGEBIC by User Solutions is the newest generation of a scheduling line that has integrated with ERPs this way since 1991. Across 35+ years the same file-based approach has fed schedules for the US Navy, GE, BAE Systems, and Cummins. This guide covers the MIE Trak Pro case: what to export, how the masks work, what the engine does with the result, and what a realistic first week looks like.
+
+## Why a job-shop ERP still needs a finite capacity scheduler
+
+MIE Trak Pro handles the job-shop business well: quotes, parts, routers, work orders, purchasing, and the costing that hangs off them. What most MIE Trak Pro shops report is that the daily sequencing decision still lands in a spreadsheet, because the questions a planner asks each morning are finite capacity questions:
+
+- Which of these open work orders actually fit on the two brake presses this week?
+- If this AOG rush order jumps the queue, whose promise date moves and by how much?
+- Is the CMM inspection queue loaded to 80 percent or 160 percent next Thursday?
+
+Those require modeling shifts, machine instances, changeover sequences, and operator availability against every open work order at once. It is a different computation from recording a work order, which is why a dedicated finite capacity layer beside the ERP is the standard pattern. The general case is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling), and the mix problem specifically is in [job shop scheduling challenges](/blog/job-shop-scheduling-challenges). The wider category view is on the [EDGEBIC ERP integration hub](/edgebic-erp-integration).
+
+## The integration in one table
+
+The [EDGEBIC ERP integration architecture](/edgebic-erp-integration) is identical for every ERP, MIE Trak Pro included:
+
+| Direction | Data | How it moves |
+|---|---|---|
+| MIE Trak Pro to EDGEBIC | Parts | Excel or CSV export to Product import mask |
+| MIE Trak Pro to EDGEBIC | Work centers | Export to Workcenter import mask |
+| MIE Trak Pro to EDGEBIC | Routers / operations | Export to BOR (bill of routing) import mask, two-pass |
+| MIE Trak Pro to EDGEBIC | Open work orders | Export to SalesOrder import mask |
+| MIE Trak Pro to EDGEBIC | Labor hours (optional) | Export to Actuals import mask |
+| EDGEBIC to MIE Trak Pro | Executable start and end dates, dispatch lists | Excel export from Job View and reports |
+
+An **import mask** is a saved recipe. It remembers which kind of data you are importing, what format it arrives in (Excel workbook, or comma, semicolon, tab, or space delimited text), whether the first row is headings, whether text values are quoted, and how each column of your file maps onto an EDGEBIC field. You build it once by dragging your file's column headings onto EDGEBIC's target fields. Every run after that is two clicks.
+
+Every row produces exactly one outcome: **Created**, **Updated**, **Reused** (matched and deliberately left alone), or **Failed** (rejected, with the reason recorded). A result dialog shows the counts and a per-run log file records every row individually.
+
+## The file is the interface, and that is the advantage
+
+A native connector is a dependency: it has a version, a credential, and a failure mode that follows the vendor's release schedule rather than yours. A file or a database view has a much smaller failure surface. The only thing that can break is a column heading, and the fix is re-mapping one row in a mask.
+
+Three practical consequences follow for a MIE Trak Pro shop:
+
+- **Nothing is installed in the ERP.** No add-on, no stored procedure to support through an upgrade, no schema change.
+- **No integration credential exists.** The scheduler never authenticates against MIE Trak Pro, so there is no permission surface to review or rotate.
+- **Scheduling keeps working offline.** The plan is computed locally, so a database or network problem stops the export, not the shop's dispatch list.
+
+## Step 1: the four exports
+
+Four exports carry a complete scheduling model. MIE Trak Pro produces these as grid or report output to Excel or CSV; the exact column headings depend on your version and configuration, which is fine, because you map headings to fields once.
+
+1. **Parts.** The part number, description, unit of measure, and any cost or lead-time columns worth having visible. The part number is the natural key, matched case-insensitively, so `BRK-200` in a file finds `brk-200` in the database.
+2. **Work centers.** Identifier, how many identical machines the center really holds, default setup hours, efficiency, and an hourly rate for cost rollups. Bottleneck and shift-assignment flags ride in the same file.
+3. **Routers.** One row per operation: end product, work center, sequence number, hours per unit, setup time, queue time.
+4. **Open work orders.** Product, quantity, order reference, and dates.
+
+Any MIE Trak Pro grid or report that saves to Excel or CSV is a valid source. A database view against the ERP tables works equally well, since a mask can read a database source directly.
+
+## Step 2: map the columns once
+
+Build one mask per file and name it after the routine rather than the file: `Weekly MIE Trak Work Orders` outlives `wo-week31.xlsx`. Mandatory fields are flagged, and the run refuses to start until they are mapped, so a half-built mask fails before it reads a single row.
+
+Two mask features carry most of the weight:
+
+**Unit conversion.** Set a conversion factor on any numeric column and the multiplication happens before the value is stored. Minutes to hours is `0.016667`, seconds to hours `0.000278`, and a standard time quoted per lot of 100 pieces becomes per piece with `0.01`. Different columns in the same file can carry different factors, which matters when a router quotes setup in minutes and run in hours.
+
+**Blank-cell preservation.** On an update run, a blank cell keeps the existing value rather than wiping it, so a partial refresh file is safe. Watch the matching rule: a zero is a value, not a blank. Leave a column out of the export rather than filling it with zeros you do not mean.
+
+## Step 3: the router import, and why it takes two passes
+
+Routers are the hardest data to move between systems, because operations reference each other: step 10 feeds step 20 feeds step 30. A row-by-row import cannot wire those links, because step 20 does not exist yet when step 10 is written.
+
+EDGEBIC's routing import runs in **two passes**. Pass one reads and validates every row, auto-creates any work center or product the file names that does not exist yet, and buffers the steps. Pass two groups the buffered rows by end product, sorts them by sequence number, writes them, and then wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished product, so the router renders as one connected flow in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour).
+
+Conventions that pay off immediately:
+
+- **Number sequences in gaps of 10** so a later insert becomes 25 and nothing renumbers.
+- **Keep all of one part's steps in one file.** A routing import wipes and recreates that part's steps once per run, which is what makes re-imports idempotent; splitting one part across two runs means the second run's wipe deletes the first.
+- **Re-importing is safe for running work orders.** Every scheduled job carries a frozen snapshot of the router it was planned with, so an engineering revision applies to future jobs and leaves work in progress untouched.
+
+## Step 4: work orders in, then run the scheduler
+
+The order import maps product, quantity, reference, and dates. When your export carries an order or job reference, rows sharing that reference group under one order and their jobs auto-number as `{Ref}-{line}`, keeping a multi-line order together while still carrying your original MIE Trak Pro work order number.
+
+**Imports never schedule anything.** Imported work orders sit as unscheduled demand until you run the scheduler, which states its scope in plain numbers before it plans. Data movement and planning stay separate on purpose. The choices are covered in [EDGEBIC scheduling modes explained](/blog/edgebic-scheduling-modes-explained).
+
+Once the data is in, the full engine applies: finite capacity across multiple shifts and machine instances, [work center groups](/blog/edgebic-work-center-groups-explained) that re-shop the machine pool on every reschedule, a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained), lot streaming with transfer batches, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine.
+
+## Step 5: sending dates back
+
+The return trip is Excel. The Job View grid exports the job schedule as a workbook with colored cells and a legend sheet, the work center schedule exports the same way, and every report dialog exports to Excel or PDF using the column layout you saved. Revised dates then go back into MIE Trak Pro through the work order date-maintenance path your process already uses. There is no automated write-back, which keeps your ERP data under your team's control.
+
+## A realistic first week
+
+The method has a documented benchmark in the User Solutions lineage: at Plastilite Corporation the ERP vendor itself recommended User Solutions scheduling, and the team went from first export to a complete optimized schedule with ERP integration in 5 days. A small MIE Trak Pro shop usually follows the same shape, and often faster because there are fewer work centers to model.
+
+| Day | Work |
+|---|---|
+| 1 | Export parts and work centers; build and run those two masks; verify counts |
+| 2 | Export routers; build the routing mask with unit conversions; review the routing designer |
+| 3 | Export open work orders; import; run the first full finite capacity schedule |
+| 4 | Compare EDGEBIC dates to current promises; correct instance counts, shifts, and setups where reality disagrees |
+| 5 | Lock the weekly rhythm: saved masks, import order, scheduler run, exports back |
+
+The [green-field setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough) covers the from-empty sequence, and the [MIE Trak Pro to EDGEBIC data mapping reference](/blog/mie-trak-pro-to-edgebic-data-mapping-reference) is the field-level lookup to keep open while building masks.
+
+## Test it with your own export
+
+Export this week's open work orders and a router file, then [bring them to a demo](/contact-us). Mapping them live takes minutes, and you leave having watched your own shop scheduled against its own capacity. If you are evaluating more than one ERP, the [SYSPRO](/blog/edgebic-syspro-integration-guide) and [Made2Manage](/blog/edgebic-made2manage-integration-guide) versions of this guide follow the same method, which is the point of a universal import layer.
+
+<Accordion title="Does EDGEBIC connect to MIE Trak Pro through a native connector?">
+No. EDGEBIC integrates with MIE Trak Pro through reusable import masks fed by the Excel, CSV, or database exports MIE Trak Pro already produces. There is no certified connector to license, no add-on installed inside the ERP, and no API sync to version-match. You map an export's columns onto EDGEBIC fields once, and every later run is two clicks with a per-run log recording each row.
+</Accordion>
+
+<Accordion title="What MIE Trak Pro data does EDGEBIC need to build a schedule?">
+Four exports carry a complete scheduling model: parts, work centers with capacity detail, routers with operation sequence and run and setup times, and open work orders with quantities and dates. A fifth optional export carries labor hours from the floor. Each file goes through its own import mask, and every row returns as Created, Updated, Reused, or Failed.
+</Accordion>
+
+<Accordion title="Do imported MIE Trak Pro work orders schedule themselves on import?">
+No, and the separation is deliberate. An import changes data; the scheduler changes the plan. Imported work orders appear as unscheduled demand and stay there until you run the scheduler, which states how many jobs are new and how many are being rescheduled before it plans anything. An import can therefore never silently rearrange the floor.
+</Accordion>

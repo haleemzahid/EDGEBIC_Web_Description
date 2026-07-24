@@ -1,0 +1,90 @@
+---
+title: "How Operator Skills Gate Work Center Assignment in EDGEBIC"
+description: "A routing step with a required skill only schedules where a certified, rostered operator has hours. Learn how the labor constraint composes with machine capacity."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - operator skills scheduling
+  - labor constraint
+  - required skill routing
+  - certified operator capacity
+  - skill gated scheduling
+  - unstaffed shift capacity
+targetPhrase: "operator skills scheduling"
+wordCount: 1450
+readingTime: 7
+faqQuestions:
+  - question: "How do operator skills affect scheduling in EDGEBIC?"
+    answer: "A routing step can name a required skill. Once it does, the scheduler will only place that step into a shift window where at least one certified, rostered, present operator still has hours left. The machine's free hours are no longer enough on their own: the step also needs a qualified person available. Steps without a required skill are unaffected, so the labor constraint is strictly opt-in, step by step."
+  - question: "What does 'an unstaffed shift is unusable capacity' mean?"
+    answer: "For a skill-gated step, a machine that is physically free is worthless if no qualified operator is rostered and available that shift. The scheduler will not place the step there. It slides the step to the next staffed window instead, and nothing announces that the machine sat idle, because for that step the machine was not truly available. It is the labor constraint stopping a plan that would have been fiction on the floor."
+  - question: "Do I have to configure operators for EDGEBIC to schedule?"
+    answer: "No. With no operators configured, or on any step without a required skill, EDGEBIC schedules exactly as it always has. The skill gate is opt-in per step. When no operator data is present or a step names no skill, every operator check is a no-op, so shops that never touch the feature see byte-identical scheduling to before it existed."
+qaQuestions:
+  - question: "A weld step scheduled days later than the machine's free hours suggested. What causes that?"
+    answer: "The qualified pool for the step's skill was empty or exhausted on the earlier days. The machine had free hours, but no certified, rostered, present operator did, so those days were unusable for that step. Check the Resource Calendar's operator lens for the skill pool on those days: you will likely see zero available hours. Roster or certify more people for that skill, or accept that the step slides to the next staffed window."
+  - question: "Steps routed to one work center never staff, even though people are rostered. Why?"
+    answer: "That work center almost certainly uses a custom shift that is not derived from any global shift. Operators are rostered onto global shifts, so a parentless custom work-center shift can never match a roster row, and its skill pool is always zero. The fix is to derive the work-center shift from a global parent shift, or roster people on the global shift the work center mirrors. This is deliberate: a silent pass here would reintroduce the one-welder-two-machines bug."
+---
+
+**A routing step with a required skill in EDGEBIC by User Solutions only schedules into a shift window where at least one certified, rostered, present operator still has hours, so the machine and the person must both be available.** Adding this labor constraint is what stops a plant with one Inconel-certified welder from cheerfully scheduling five Inconel jobs on five machines in the same shift, a schedule that was fiction before the first arc struck. Operators and skills ship and work today, and they sit on top of the existing [shop floor](/blog/edgebic-shop-floor-guide) and machine model.
+
+For years a scheduler's only question at a work center was "does the machine have free hours?" Real plants ask a second question: "and is there a qualified person to stand at it?" The skill gate makes the scheduler ask both, and it does so without changing anything for steps that do not name a skill.
+
+## The Second Constraint Dimension
+
+Every routing step already answers "which machine" through its work center (or work center group). A step that names a required skill now also answers "which human." The two compose on the same step: the machine dimension picks the equipment, the skill dimension picks the certified person. Neither replaces the other.
+
+A skill is a named certification, such as TIG-Inconel or CMM Inspection. An operator is a shop-floor person who can hold certifications, work a weekly roster, and take time off. A step names exactly one required skill; an operation that needs two certifications models the combination as its own skill.
+
+## The Qualified Pool
+
+For a given skill on a given date and shift, the qualified pool is the set of operators who are all of:
+
+- **Certified and unexpired** in that skill (expired certifications drop out automatically on the next run),
+- **Rostered** for that shift on that weekday, and
+- **Not on time off** that day.
+
+Each qualified operator contributes their remaining unbooked hours for that shift. The step can only land in a window where the pool has hours to spare. If the pool is empty, the window is simply not offered, and the scheduler walks forward to the next staffed one. To understand how the roster feeds this, see [how the shift operator roster works](/blog/how-the-shift-operator-roster-works).
+
+## People Are Budgeted in Hours, Not Presence
+
+The gate is not a yes/no presence check, which would let five jobs all "pass" and share one welder. Instead, people are budgeted in hours per shift per day. If Joe has 8 hours on Monday's Day Shift and one job books all 8, a second skill-gated job cannot also use Joe on Monday: it waits for Tuesday or for another qualified person. One person's hours can never be sold to two machines at once. A multi-skilled operator holds one budget of hours regardless of how many skills they carry, so booking Joe through his TIG work leaves fewer hours for his other skills, exactly like reality.
+
+## The Attention Fraction
+
+Not every machine needs a person for its whole run, so a step also carries an operator attention value that scales how much of a person the running machine consumes:
+
+| Value | Meaning |
+|---|---|
+| 0.0 (default) | Setup-only. A person sets the machine up; the run books nobody, and post-setup hours can even land on unstaffed days |
+| 0.5 | One person tends two machines: 8 operator-hours buy 16 machine-hours of running |
+| 1.0 | Fully attended: one operator-hour per machine-hour |
+| 2.0 | Two-person crew: each machine-hour books two operator-hours |
+
+The default is deliberately setup-only, so a forgotten fraction under-books visibly rather than silently overselling people. If your welders must stand at the machine, set attention to 1.0 explicitly. A skill step with zero setup and zero attention has no operator involvement and schedules as if it had no skill at all.
+
+## The Machine Must Be Available First
+
+The operator gate stacks on top of the machine calendar; it never replaces it. A shift window must first survive the machine's own availability (holidays, idle windows, weekends) and its capacity (downtime, overrides). Only then does the operator gate ask "and can anyone qualified actually stand there?" So the labor constraint narrows the machine's availability; it never widens it. This is the same [finite capacity](/blog/finite-vs-infinite-capacity-scheduling) discipline applied to a second resource.
+
+## Unstaffed Shift, Unusable Capacity
+
+The single lesson to internalize: for a skill-gated step, an unstaffed shift is unusable capacity. A machine can sit with 8 free hours, and if nobody qualified is rostered and available that shift, the scheduler will not place the step there. It slides to the next staffed window, and nothing announces that the machine was "free," because for that step it was not. This is the labor constraint stopping a plan that would have failed on the floor.
+
+## A Worked Example
+
+Two weld machines, Weld-A and Weld-B, one instance each, Day Shift Monday through Friday. Skill TIG-Inconel, attention 1.0. Two jobs, each 8 hours, one per machine. Joe is the only certified welder, rostered Monday through Friday.
+
+- **J-100** schedules first on Monday: the pool has Joe's 8 hours, the machine needs 8, so Weld-A runs Monday and Joe is booked for the day.
+- **J-200** wants Monday on Weld-B, but the pool is now zero (Joe is fully booked). Monday is never offered. The scheduler walks to Tuesday, where Joe has 8 hours again, and Weld-B runs Tuesday.
+
+Certify a second welder, Mia, roster her Mondays, and reschedule: both jobs run Monday in parallel, Joe on one machine and Mia on the other, exactly as a planner would staff it. The constraint did not invent scarcity; it reflected the real one and then relieved it when you added a person.
+
+## The Bottom Line
+
+Operator skills add the second question every real plant asks, and EDGEBIC answers it honestly: a skill-gated step only schedules where a certified, rostered, present operator has hours, budgeted in hours per shift so one person is never promised to two machines. The attention fraction tunes how much of a person a run needs, the machine calendar still gates first, and an unstaffed shift is correctly treated as unusable capacity. Steps without a skill are untouched, so the feature is opt-in and zero-regression. Explore the labor model in the [shop floor execution guide](/blog/edgebic-shop-floor-guide), pin a specific person with the [operator pin](/blog/how-the-operator-pin-pins-a-person-to-a-job), and see the platform at [EDGEBIC](/edgebic).

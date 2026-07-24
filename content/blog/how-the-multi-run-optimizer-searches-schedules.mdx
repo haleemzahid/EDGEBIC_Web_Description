@@ -1,0 +1,81 @@
+---
+title: "How the Multi-Run Optimizer Searches Schedules"
+description: "The multi-run optimizer reruns the scheduling engine with many different job orderings, scores every complete plan, and keeps the best one. Here is exactly which orderings it tries."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - multi-run schedule optimization
+  - job ordering heuristics
+  - EDD SPT LPT scheduling
+  - candidate schedule search
+  - best of N schedules
+  - production scheduling software
+targetPhrase: "multi-run optimizer search"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "How does the multi-run optimizer search for a better schedule?"
+    answer: "The multi-run optimizer reruns the unchanged scheduling engine many times, each time feeding it a different global job ordering, then scores every complete schedule with one shared calculator and keeps the best. For four or fewer jobs it tries every possible ordering. For more jobs it tries proven dispatch rules (earliest due date, shortest and longest work content, critical ratio) plus seeded random shuffles, up to a candidate limit and a time budget."
+  - question: "What job orderings does the multi-run optimizer test?"
+    answer: "It tests the engine default order plus several named heuristics: earliest due date, priority then due date, shortest processing time first, longest processing time first, and critical ratio (slack divided by work content). When jobs number four or fewer it enumerates all permutations exhaustively instead. Beyond the heuristics it adds seeded random shuffles until it hits the maximum candidate count or the time budget."
+  - question: "Does the multi-run optimizer guarantee the best possible schedule?"
+    answer: "No. The multi-run layer is a heuristic search: it evaluates many complete real schedules and returns the best one it found, guaranteed never worse than the baseline. It does not prove that no better schedule exists, which is why its badge reads Best of N schedules tried rather than proven optimal. The mathematical solver layer adds that proof and reports a proven optimality gap."
+qaQuestions:
+  - question: "I have 30 jobs. Does the optimizer really try every possible order?"
+    answer: "No, and it should not. Thirty jobs have more orderings than any computer could evaluate in your lifetime. Exhaustive enumeration is used only for four or fewer jobs, where the total is at most 24 orders. For 30 jobs the optimizer runs a curated set of dispatch heuristics (earliest due date, shortest and longest work content, critical ratio) plus seeded shuffles, all inside your time budget, and keeps the best complete schedule it produced."
+  - question: "Two runs on the same jobs gave me the same proposal. Is the search random or fixed?"
+    answer: "It is deterministic by design. The random shuffles are seeded, so the same inputs with the same seed produce the same candidates in the same order every time. That is what lets you reproduce a result for a support case or trust that a rerun will not quietly change the plan. The search explores widely, but it is repeatable, not random in the unpredictable sense."
+---
+
+**The multi-run optimizer searches by rerunning the unchanged scheduling engine many times, each with a different global job ordering, scoring every complete plan with one shared calculator and keeping the best.** It does not tinker inside the engine or invent new placements. It changes only the order the jobs are taken and lets the same battle-tested engine build a full schedule for each order, then compares them. For four or fewer jobs it tries every possible ordering. For more, it tries a curated set of dispatch rules plus seeded random shuffles, bounded by a candidate limit and a wall-clock time budget. The winner is guaranteed never worse than the baseline you started with.
+
+EDGEBIC by User Solutions ships this multi-run search as the default optimizer engine. This post opens the hood on the exact orderings it evaluates and why that set is chosen, so you know what "Best of N schedules tried" really means. For the layered picture, read [the two layers of the EDGEBIC optimizer](/blog/the-two-layers-of-the-edgebic-optimizer), and for why the search matters at all, [how a greedy schedule leaves capacity on the table](/blog/how-a-greedy-schedule-leaves-capacity-on-the-table).
+
+## Why reorder the jobs, not the placements
+
+The reason a schedule can improve almost always comes down to the sequence the jobs are committed in, not the placement of any single operation. The engine already places each step at its earliest feasible slot. What it cannot do is reconsider whether taking job B before job A would have fed a downstream machine sooner. So the search space the optimizer explores is exactly the space of global job orderings. Feed the engine a good order and it produces a good plan, using all its normal constraint handling. This is why the optimizer needs only one seam into the engine: a hook that lets it supply the dispatch order, with everything else untouched.
+
+## The exhaustive case: four jobs or fewer
+
+When the run has four or fewer jobs, the optimizer enumerates every ordering. Four jobs have twenty-four possible orders, three jobs have six, and so on. Evaluating all of them is cheap and it is guaranteed to find the best ordering the engine can produce, because none is skipped. The candidates are labeled internally (perm-0, perm-1, and so on) so the result can name which permutation won. For small runs this is as thorough as the search can be, short of the mathematical solver's proof that no better plan exists at all.
+
+## The heuristic case: more than four jobs
+
+Beyond four jobs the number of orderings explodes past anything worth enumerating, so the optimizer runs a set of proven dispatch heuristics. Each produces one ordering, the engine builds one complete schedule from it, and the schedule is scored:
+
+| Candidate label | Ordering rule |
+|---|---|
+| edd | Earliest due date first, then priority |
+| priority-edd | Priority first, then due date |
+| spt | Shortest total work content first |
+| lpt | Longest total work content first |
+| critical-ratio | (Due minus start) divided by work content, ascending |
+| shuffle-i | Seeded random permutations, up to the candidate limit |
+
+Work content here means the sum of run and setup hours across a job's routing, multiplied by quantity. Each heuristic is good at a different pattern: earliest due date protects delivery dates, shortest processing time first tends to feed downstream machines early, longest first front-loads big jobs, and critical ratio balances urgency against remaining work. Because no one rule wins on every dataset, running several and keeping the best is more reliable than betting on any single rule.
+
+After the named heuristics, the optimizer fills the remaining budget with seeded random shuffles. These catch good orderings that no tidy rule happens to produce. The engine-default order is registered first so it is never re-run as a candidate, which keeps every evaluation productive.
+
+## The bounds: time budget and candidate limit
+
+The search is capped two ways so it always returns promptly. A candidate limit (24 by default) caps how many complete schedules are evaluated. A time budget (you choose 10, 30, or 60 seconds) caps the wall-clock spend, measured after the baseline run. Whichever cap is hit first ends the search, and the best candidate found so far is returned. You are never waiting on an unbounded search, and a bigger budget simply lets more shuffles run. For how the budget and interrupt behave, see [setting the optimizer time budget](/blog/setting-the-optimizer-time-budget).
+
+## Every candidate is a real, complete schedule
+
+This is the point that makes the multi-run layer trustworthy. Each candidate is not a sketch or an estimate. It is a full schedule produced by the same engine that runs your production plan, so it obeys every capacity, calendar, and routing constraint by construction. There is no way for the search to propose something the engine could not actually run. The scoring uses one shared calculator so the numbers in the comparison are the same math the optimizer used to pick the winner, never a second estimate. Read how that scoring works in [how the optimizer scores a schedule](/blog/how-the-optimizer-scores-a-schedule).
+
+## The never-worse clamp closes the loop
+
+After the search, the winning candidate is compared directly against the greedy baseline under your chosen goal. If it does not strictly beat the baseline, the baseline is returned instead. This single direct comparison is what guarantees the result is never worse than where you started, even if every heuristic happened to produce a plan no better than greedy. The optimizer's honest promise is that trying it can only help or leave you exactly where you were.
+
+## What the search can and cannot claim
+
+Because it evaluates many complete real schedules, the multi-run search can honestly say it found the best of N plans it tried, guaranteed never worse than the baseline. What it cannot say is that no better schedule exists anywhere, because it did not examine every possibility for large runs. That proof is the job of the mathematical solver layer, which reports a [proven optimality gap](/blog/how-a-proven-optimality-gap-builds-trust). Both layers share the same never-worse clamp and the same scoring, so switching between them is safe. For the full tour of both, see the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide).
+
+## The bottom line
+
+The multi-run optimizer searches the space of job orderings: all of them for four jobs or fewer, and a curated set of dispatch heuristics plus seeded shuffles for larger runs, all bounded by a candidate limit and a time budget. Every candidate is a complete real schedule from the production engine, scored by one shared calculator, and the winner is clamped never worse than the baseline. The search is deterministic, so it reproduces. To run it, open the Optimizer tab in Schedule Jobs, keep the default multi-run engine, pick a goal and budget, and click Run. Explore the platform at [EDGEBIC](/edgebic).

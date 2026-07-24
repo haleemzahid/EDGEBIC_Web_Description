@@ -1,0 +1,92 @@
+---
+title: "How Dependent-Parallel Mirroring Locks Machines Together"
+description: "How EDGEBIC schedules synchronized multi-machine operations by mirroring a parent machine's exact timing onto its partners, scaling hours by a factor without moving the clock."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - dependent parallel scheduling
+  - synchronized machines
+  - multi-spindle operation
+  - schedule mirroring
+  - parallel work centers
+  - lockstep scheduling
+targetPhrase: "dependent parallel mirroring"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "What is dependent-parallel mirroring in scheduling?"
+    answer: "Dependent-parallel mirroring is how EDGEBIC schedules machines that must run in exact lockstep, such as three drill heads on one fixture. One machine is the parent and is scheduled normally against capacity. Its partners are mirrors: they copy the parent's start and end times exactly, so all machines begin and finish together. The mirror's hours can be scaled by a factor, but the timestamps are never changed."
+  - question: "Why do mirror machines skip the capacity check?"
+    answer: "Because a dependent machine is not doing separate work, it is doing the same operation on the same job at the same moment as the parent. The engine bypasses the capacity check on mirrors deliberately: the parent already earned the time slot, and the mirrors are physical copies of that one operation running on extra heads. Checking capacity again would try to reserve the slot twice for what is really one synchronized event."
+  - question: "What does the factor do on a dependent machine?"
+    answer: "The factor scales the hours booked on a mirror relative to the parent, without touching the start or end time. A factor of 1.0 means the mirror does the same work as the parent; 0.5 means half the work in the same wall-clock window (a faster or lighter head); 2.0 means twice the work. Setup hours are never scaled, because both machines physically set up for the same duration at the same time."
+qaQuestions:
+  - question: "I have a three-spindle drilling step. The parent runs 8 hours Monday and 2 hours Tuesday. What do the other two spindles show?"
+    answer: "Exactly the same timing. EDGEBIC schedules the parent spindle first against real capacity, producing an 8-hour block Monday and a 2-hour block Tuesday. It then mirrors both blocks onto the two partner spindles, copying the start and end timestamps verbatim, so all three spindles show Monday 08:00 to 16:00 and Tuesday 08:00 to 10:00. With a factor of 1.0 each mirror books the same hours as the parent. The three machines are locked together: they start together, they finish together, and on the shop floor they are one synchronized operation, not three independent jobs."
+  - question: "One of my dependent machines is a newer, faster unit. How do I model that without changing the timing?"
+    answer: "Set the factor on that machine's alternative entry to reflect how much work it does relative to the parent, keeping the timestamps synchronized. If the newer head does only 70 percent of the parent's output per hour, set the factor to about 1.43, so the mirror books 43 percent more hours to represent the same physical output over the shared window. If it does the same work, leave the factor at 1.0. Either way the start and end times stay identical to the parent, because the machines physically run together. The factor changes the hours attributed to that head, not when it runs."
+---
+
+**Dependent-parallel mirroring is how EDGEBIC by User Solutions schedules machines that must run in exact lockstep, such as several drill heads working one fixture at once. One machine is designated the parent and is scheduled against real capacity like any operation. Its partners are mirrors: the engine copies the parent's start and end times onto them verbatim, so every machine starts and finishes at the same instant, and only the hours attributed to each machine are scaled by a factor.** It is the model for synchronized operations where the machines are not doing separate work, they are doing one operation together.
+
+This is different from independent parallel, where machines share a job to finish faster and each earns its own capacity. Dependent parallel is about physical simultaneity: the machines are bolted to the same rhythm.
+
+## Parent and mirror
+
+A routing step can list more than one work center. When a step is marked dependent-parallel, one of those work centers is the parent and the rest are mirrors, distinguished by a single setting: mirrors are marked as not consuming finite capacity, which is what tells the engine they are copies rather than independent runners.
+
+The engine schedules the parent first, through the normal multi-shift path, so the parent's placement respects real capacity and lands on genuine open time. Then, for each mirror, the engine reads the parent's schedule and builds a matching one. Every timing field is copied exactly: the same start, the same end, the same shift, the same day, the same instance number. Only the machine identity and the scaled hours differ.
+
+The reason the copy is exact is physical. If three spindles are drilling one part in one fixture, they cannot start at slightly different times or finish at slightly different times. They are one event. Mirroring guarantees that on the schedule, just as it is guaranteed on the machine.
+
+## Why mirrors bypass the capacity check
+
+The most surprising part of mirroring is that mirrors are not checked against capacity. The engine adds a mirror's booking directly, without asking whether the mirror machine has room.
+
+This is deliberate, and it follows from what a mirror is. The parent already earned the time slot by passing the capacity check. The mirror is a physical copy of that same operation running on an extra head at the same moment. It is not a second job competing for the machine; it is the same job on more hardware. Checking capacity again would try to reserve the slot twice for one synchronized event, which would push the mirror to a different time and break the lockstep the model exists to guarantee.
+
+The consequence to keep in mind is that a machine used as a dependent mirror should be a machine dedicated to that synchronized role in that window. Because the mirror does not compete for capacity, you are asserting that the machine is genuinely available to run in lockstep with the parent. That is true for a fixed multi-spindle setup and should be configured with that reality in mind.
+
+## The factor scales hours, not the clock
+
+Each mirror carries a factor, which scales the hours attributed to it relative to the parent, while leaving the start and end times untouched.
+
+A factor of 1.0 means the mirror does the same amount of work as the parent, so it books the same hours. A factor of 0.5 represents a faster or lighter head that does half the work in the same window, so it books half the hours. A factor of 2.0 represents a slower head that needs twice the hours to cover the same physical window. In every case the timestamps stay identical to the parent, because the machines physically run together; only the hours on the mirror's books change.
+
+One thing the factor never touches is setup. Both machines set up for the same clock duration at the same time, so setup hours are mirrored one to one, not scaled. A factor that halved setup would misrepresent a physical changeover that happens simultaneously on both heads.
+
+## A worked example: three synchronized spindles
+
+Take a drilling step marked dependent-parallel, with Drill-1 as the parent and Drill-2 and Drill-3 as mirrors, each with a factor of 1.0. The job needs 10 hours on the parent, and the day shift is 8 hours.
+
+The engine schedules Drill-1 first, against real capacity. It places 8 hours Monday, 08:00 to 16:00, and the remaining 2 hours Tuesday, 08:00 to 10:00.
+
+Then it mirrors. For Drill-2 and Drill-3 it copies both of the parent's blocks exactly: Monday 08:00 to 16:00, and Tuesday 08:00 to 10:00. With a factor of 1.0, each mirror books the same 8 and 2 hours. No capacity check runs on the mirrors.
+
+The result is six schedule rows, two per machine, and within each time window all three machines share identical start and end times. On the shop floor this is one operation: three spindles, one fixture, one start, one finish. If Drill-3 were a newer head doing 70 percent of the output per hour, you would set its factor to about 1.43 so it books proportionally more hours to represent the same physical output, and the timestamps would still match the other two exactly.
+
+## When mirroring is the right tool
+
+Use dependent-parallel mirroring when the machines are physically coupled and must run together: multi-spindle drilling, synchronized multi-head machining, twin welders on one weldment, any operation where the partners are extensions of one setup rather than separate resources.
+
+Do not use it for machines that merely happen to be doing similar work and could each take a share to finish sooner. That is [independent parallel](/blog/how-independent-parallel-splits-a-job-across-machines), where every machine earns its own capacity and the engine searches for a moment when all of them are genuinely free at once. Choosing between the two is a real design decision, covered in [dependent versus independent parallel](/blog/dependent-vs-independent-parallel-when-to-use-each): dependent copies timing and bypasses capacity, independent checks capacity and splits work.
+
+Mirroring plugs into the wider engine described in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide). The parent is placed by [multi-shift allocation](/blog/how-multi-shift-allocation-fills-capacity) exactly like any operation, and the mirrors ride on that placement. If you are weighing single machines against pools, [when to use a machine pool versus an alternate work center](/blog/when-to-use-a-machine-pool-vs-an-alternate-work-center) sits alongside this decision.
+
+To see your synchronized operations mirror correctly against your real shifts, [bring your data to a demo](/contact-us).
+
+<Accordion title="What is dependent-parallel mirroring in scheduling?">
+Dependent-parallel mirroring is how EDGEBIC schedules machines that must run in exact lockstep, such as three drill heads on one fixture. One machine is the parent and is scheduled normally against capacity. Its partners are mirrors: they copy the parent's start and end times exactly, so all machines begin and finish together. The mirror's hours can be scaled by a factor, but the timestamps are never changed.
+</Accordion>
+
+<Accordion title="Why do mirror machines skip the capacity check?">
+Because a dependent machine is not doing separate work, it is doing the same operation on the same job at the same moment as the parent. The engine bypasses the capacity check on mirrors deliberately: the parent already earned the time slot, and the mirrors are physical copies of that one operation running on extra heads. Checking capacity again would try to reserve the slot twice for what is really one synchronized event.
+</Accordion>
+
+<Accordion title="What does the factor do on a dependent machine?">
+The factor scales the hours booked on a mirror relative to the parent, without touching the start or end time. A factor of 1.0 means the mirror does the same work as the parent; 0.5 means half the work in the same wall-clock window (a faster or lighter head); 2.0 means twice the work. Setup hours are never scaled, because both machines physically set up for the same duration at the same time.
+</Accordion>

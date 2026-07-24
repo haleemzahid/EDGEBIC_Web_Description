@@ -1,0 +1,70 @@
+---
+title: "How the Optimizer Preserves Completed and Started Work"
+description: "The optimizer never moves work that is already done. Completed rows pass through optimize and Accept byte-identical, using the same actuals-preservation machinery as any reschedule."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - actuals immutability optimization
+  - completed work preservation
+  - reschedule with actuals
+  - optimizer safety
+  - production schedule optimization
+  - in progress job scheduling
+targetPhrase: "preserve completed work optimizer"
+wordCount: 1450
+readingTime: 7
+faqQuestions:
+  - question: "Does the optimizer move work that has already been done?"
+    answer: "No. Completed operations pass through the optimizer and through Accept byte-identical. The optimizer uses the same actuals-preservation machinery as any reschedule, so work that already happened on the floor keeps its recorded actual dates and hours. The optimizer only rearranges work that has not started yet. This is a documented guarantee: a reschedule, optimizer-driven or not, never moves completed work."
+  - question: "What happens to a job that is partway done when I optimize?"
+    answer: "The completed operations stay exactly where they are, with their recorded actuals intact, and the optimizer only considers the remaining not-started operations. A partly-finished job is not rescheduled from scratch. The steps already run are treated as fixed history that later steps must follow, so the optimizer plans the remaining work forward from where the job actually is, never rewriting what the floor already did."
+  - question: "How can I trust that Accept will not disturb my recorded actuals?"
+    answer: "Because Accept persists through the same pipeline as a normal Generate Schedule, including the actuals-capture and merge-guard machinery that protects completed rows on every reschedule. The optimizer does not have a separate write path that could bypass those protections. A validity check also rejects any candidate that produced an inverted or impossible row before it can ever reach persistence."
+qaQuestions:
+  - question: "Half my shift is logged as complete. If I optimize now, will this morning's records change?"
+    answer: "No. This morning's completed operations carry recorded actual start and end times, and the optimizer treats them as fixed history. They pass through both the optimize step and Accept unchanged, byte for byte. The optimizer will only propose moving operations that have not started. You can optimize mid-shift without any risk to what your operators already logged."
+  - question: "If completed work cannot move, what is the optimizer actually rearranging on an in-progress plan?"
+    answer: "The not-started operations, which is usually most of the remaining plan. On a plan where the early jobs are underway and a queue of later jobs has not begun, the optimizer reorders that queue to feed machines better or protect due dates, while the in-progress and completed work stays put. The comparison shows moves only on the operations it actually touched, so you see exactly what changed and confirm nothing historical did."
+---
+
+**The optimizer never moves work that is already done: completed operations pass through both the optimize step and Accept byte-identical, using the same actuals-preservation machinery as any reschedule.** Work that has happened on the floor keeps its recorded actual dates and hours, no matter which goal you run or which engine you pick. The optimizer only rearranges operations that have not started. This is the same documented rule that governs every reschedule in the platform, applied unchanged to optimizer-driven changes, because the optimizer persists through the identical pipeline rather than a separate write path.
+
+EDGEBIC by User Solutions treats completed work as fixed history everywhere, and the optimizer is no exception. This post explains how that preservation works, what happens to a partly-finished job, and why you can optimize mid-shift with confidence. For the wider actuals story, see [what happens when you accept an optimized schedule](/blog/what-happens-when-you-accept-an-optimized-schedule), and for the pillar, the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide).
+
+## Completed work is history, not a variable
+
+When an operation is finished, its recorded actual start and end times are facts about what happened on your floor. A scheduling tool that rewrote those facts to make a plan look tidier would be worse than useless, it would be dishonest about your own history. So the platform draws a firm line: completed operations are immutable. A reschedule plans the future around them, it never edits them.
+
+The optimizer inherits this line without exception. Whichever goal you choose and whichever engine you run, the completed rows are carried through the optimization unchanged and written back unchanged. The guarantee is not a special optimizer feature bolted on, it is the ordinary reschedule behavior, and the optimizer simply does not have a way around it.
+
+## What happens to an in-progress job
+
+A job partway through its routing is the interesting case. Suppose a job's first two operations are complete and logged, and its next three have not started. The optimizer treats the two finished operations as fixed history and considers only the three remaining ones. It will not reschedule the job from scratch or second-guess the steps already run. The completed steps anchor the job, and the remaining steps are planned forward from where the job actually is.
+
+This matters because it keeps the plan honest about reality. The optimizer is not planning an idealized job that starts fresh, it is planning the real job as the floor left it, with its history intact and its future open to improvement.
+
+## The same pipeline on Accept
+
+The preservation is not only in the optimize step, it is in the write. When you Accept a proposal, it persists through the same pipeline as a normal Generate Schedule. That pipeline carries the actuals-capture and merge-guard machinery that protects completed rows on every reschedule the platform performs. Because the optimizer reuses it rather than writing directly, there is no path where an optimizer Accept could bypass the protections that keep your history intact. The audit row written at Accept records what changed, and completed work is not among it.
+
+## A validity check backs it up
+
+Before any proposed plan can even reach persistence, a structural check inspects it. Among other things, it rejects any candidate that produced an inverted or impossible row, where an operation appears to end before it starts. This is a backstop, not the primary protection, but it means a modeling slip could never quietly corrupt a completed row on its way to Accept. The candidate would be rejected and your baseline kept. Read how Accept guards against other drift in [staleness protection in the optimizer](/blog/staleness-protection-in-the-optimizer).
+
+## Why this lets you optimize mid-shift
+
+The practical payoff is that you can run the optimizer at any time without fear of touching what has already been logged. Half a shift complete, a job underway, a machine that just finished a run, none of it is at risk. The optimizer looks only at the not-started work, which on most in-progress plans is still the bulk of the remaining schedule: the queue of jobs waiting their turn. Reordering that queue to feed machines better or protect due dates is exactly where optimization pays, and it is fully available even while the floor is running.
+
+The comparison confirms it plainly. The move list shows changes only on the operations the optimizer actually touched, and completed or in-progress operations do not appear there because they did not move. You can read the list and see for yourself that nothing historical changed. See [reading the optimizer move list](/blog/reading-the-optimizer-move-list).
+
+## How it relates to a normal reschedule
+
+If you already trust the platform's reschedule to preserve completed work, you already trust the optimizer on this point, because they are the same mechanism. A reschedule with actuals plans the remaining steps forward from the last completed step and leaves history alone. The optimizer does the same, adding only a search over the ordering of the not-started jobs. There is no new risk surface. The difference between an ordinary reschedule and an optimizer run is the search for a better order, not a different treatment of your actuals.
+
+## The bottom line
+
+The optimizer preserves completed and started work absolutely: finished operations pass through optimize and Accept byte-identical, an in-progress job keeps its history and only its remaining steps are planned, and Accept persists through the same actuals-protecting pipeline as any reschedule. A validity check rejects impossible rows as a backstop. This is the ordinary reschedule guarantee, unchanged, which is why you can optimize mid-shift without disturbing a single logged record. To try it, open the Optimizer tab in Schedule Jobs on a live plan and read the move list. Start at [EDGEBIC](/edgebic).

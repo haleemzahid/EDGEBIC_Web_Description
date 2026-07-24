@@ -1,0 +1,72 @@
+---
+title: "Setting the Optimizer Time Budget"
+description: "The optimizer runs on a time budget of 10, 30, or 60 seconds. Here is how the budget shapes the search, what an interrupt returns, and how to pick the right one for the run."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - optimizer time budget
+  - schedule optimization runtime
+  - time boxed solver
+  - interruptible optimization
+  - production schedule optimization
+  - optimizer settings
+targetPhrase: "optimizer time budget"
+wordCount: 1400
+readingTime: 7
+faqQuestions:
+  - question: "What is the optimizer time budget in EDGEBIC?"
+    answer: "The time budget is the wall-clock limit you set for an optimizer run: 10, 30, or 60 seconds, with 30 the default. It caps how long the search spends after computing the baseline. When the budget is reached, the optimizer stops and returns the best result it found so far. A larger budget lets the search evaluate more candidate schedules, which can find a better plan on a large or complex run."
+  - question: "What does the optimizer return if the time budget runs out mid-search?"
+    answer: "It returns the best result found so far, never nothing. The search is interruptible: when the budget expires, the optimizer stops and hands back the best candidate it has, clamped never worse than your baseline. On the mathematical solver, an interrupted run also returns the plan plus whatever optimality bound it had reached, so the proven gap is simply wider than it would be with more time."
+  - question: "Should I always use the 60-second budget?"
+    answer: "Not necessarily. For a small run the 10-second budget often finds the same plan as 60 seconds, because the search exhausts the useful candidates quickly. A longer budget helps most on large or complex runs where there are many orderings worth testing. Start with the 30-second default, and step up to 60 seconds only when you have many jobs and want the search to explore further before you commit."
+qaQuestions:
+  - question: "I gave it 60 seconds but it finished in 8. Did something go wrong?"
+    answer: "No. The budget is a ceiling, not a target. On a small run the optimizer can exhaust the useful candidates well before the limit, and once there is nothing productive left to try it stops and returns the best plan. Eight seconds to a solid result on a small run is a good outcome, not a truncated one. The budget only matters when the search has more candidates worth evaluating than it can reach quickly."
+  - question: "My large plan improved more at 60 seconds than at 10. Is that expected?"
+    answer: "Yes, on a large run that is exactly the trade the budget controls. More time means more candidate schedules evaluated, and on a big plan with many job orderings worth testing, a wider search can find a better one. The 10-second run still returned a valid, never-worse plan; the 60-second run simply searched further. Use the longer budget when the job count is high and the extra minute is worth a better plan."
+---
+
+**The optimizer runs on a time budget you set, 10, 30, or 60 seconds, that caps how long the search spends after computing the baseline, and when the budget is reached it returns the best result found so far.** The budget is a ceiling, not a target: a small run can finish well under it once the useful candidates are exhausted, while a large run uses the full time to evaluate more orderings. Whatever happens, the search is interruptible and always returns a valid plan, clamped never worse than your baseline. A bigger budget buys a wider search, which pays off most on large, complex runs.
+
+EDGEBIC by User Solutions exposes the budget as a simple choice in the Optimizer tab, defaulting to 30 seconds. This post explains how the budget shapes the search, what an interrupt hands back, and how to pick the right setting. For the search it bounds, see [how the multi-run optimizer searches schedules](/blog/how-the-multi-run-optimizer-searches-schedules), and for the pillar, the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide).
+
+## What the budget actually bounds
+
+The budget is a wall-clock limit measured after the baseline is computed. The optimizer first builds the greedy baseline, which is quick and not counted against your time. Then it spends up to your chosen budget searching: rerunning the engine with different job orderings on the multi-run engine, or solving objective tiers on the mathematical engine. When the clock hits the limit, the search stops.
+
+Two other limits sit alongside the clock on the multi-run engine. A candidate limit caps how many complete schedules are evaluated regardless of time, and the search naturally ends when it runs out of productive orderings to try. Whichever limit is reached first ends the run. This is why a small job set can finish in a few seconds even with a 60-second budget: there simply were not more candidates worth testing.
+
+## What an interrupt returns
+
+The single most important property of the budget is that hitting it never costs you a result. The search is interruptible by design. When the budget expires mid-search, the optimizer stops and returns the best candidate it had found up to that point, and that candidate is still clamped never worse than your baseline. You never get an empty result or a broken plan from a timeout.
+
+On the mathematical solver, an interrupt returns the incumbent plan plus whatever optimality bound the solver had reached. That means the proven gap is simply wider than it would be with more time: the plan is still valid and still never worse than baseline, and the certificate honestly reports how close to optimal it could prove the plan given the time it had. More budget narrows the gap; less budget widens it; neither produces a wrong answer. See [how a proven optimality gap builds trust](/blog/how-a-proven-optimality-gap-builds-trust).
+
+## Choosing the right budget
+
+The right budget depends on the size and complexity of the run, and the choice is genuinely simple:
+
+| Run | Suggested budget | Why |
+|---|---|---|
+| A few jobs | 10 seconds | The search exhausts useful candidates fast; more time rarely changes the plan |
+| A typical planning run | 30 seconds (default) | Enough to test the standard heuristics and a good spread of shuffles |
+| A large or complex plan | 60 seconds | Many orderings worth testing; the extra time buys a wider search |
+
+Start with the 30-second default. Step down to 10 seconds when the run is small and you want a fast answer, since a small search often lands the same plan either way. Step up to 60 seconds when the job count is high and you want the search to explore further before you commit. Because the result is always never-worse, experimenting with the budget costs nothing but the seconds themselves.
+
+## The budget does not change the guarantees
+
+It is worth being clear that the budget affects only how far the search explores, never the safety of what it returns. A 10-second run and a 60-second run both produce a plan clamped never worse than your baseline, both preserve completed work, and both persist nothing until you Accept. The budget is a knob on thoroughness, not on correctness. You cannot get a worse-than-baseline plan by choosing a short budget; you can only get a plan that was searched less widely, which at worst is the baseline itself returned unchanged. That is the never-worse clamp doing its job regardless of the clock. Read it in [what the never-worse guarantee means](/blog/what-the-never-worse-guarantee-means-for-planners).
+
+## Reproducibility holds across budgets
+
+Because the search is deterministic and seeded, a run with a given budget and seed reproduces the same plan every time. Changing the budget changes how far the search goes, but with the same budget and seed you get the same result on every rerun. This is what lets you reproduce a support case or trust that a scheduled rerun will not quietly drift. The budget and the seed together fully determine the search. See [determinism and reproducibility](/blog/determinism-and-reproducibility-in-schedule-optimization).
+
+## The bottom line
+
+The optimizer time budget caps the search at 10, 30, or 60 seconds after the baseline, and it is a ceiling rather than a target: small runs finish early, large runs use the full time to search wider. An interrupt always returns the best plan found so far, clamped never worse than baseline, and on the solver it returns the plan plus its bound with a wider gap. Start at the 30-second default, drop to 10 for small runs, and raise to 60 for large ones. To set it, pick the budget on the Optimizer tab in Schedule Jobs before you click Run. Start at [EDGEBIC](/edgebic).

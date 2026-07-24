@@ -1,0 +1,81 @@
+---
+title: "How the Optimizer Scores a Schedule"
+description: "One calculator produces every optimizer number: weighted tardiness, late jobs, makespan, setup, and instability. Here is how EDGEBIC scores a plan so the comparison you read is the math it chose by."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - schedule scoring optimization
+  - key performance indicators scheduling
+  - weighted tardiness makespan
+  - schedule KPI calculator
+  - production schedule comparison
+  - lexicographic scheduling goal
+targetPhrase: "how the optimizer scores a schedule"
+wordCount: 1450
+readingTime: 7
+faqQuestions:
+  - question: "How does the EDGEBIC optimizer score a schedule?"
+    answer: "One shared calculator turns every plan into a fixed set of key performance indicators: job count, late and on-time job counts, total and weighted tardiness, makespan, total assigned hours, total setup hours, and instability against the committed plan. The optimizer ranks candidates by comparing these numbers in the order set by your chosen goal. The same calculator feeds both the ranking and the comparison table you read, so there is no second set of math."
+  - question: "What is the difference between total tardiness and weighted tardiness?"
+    answer: "Total tardiness sums how many hours each job finishes past its due date, counting every job equally. Weighted tardiness scales each job's lateness by its priority, so a top-priority late job counts fully while a lower-priority late job counts less. Goals that protect delivery, like On-time first, rank weighted tardiness first because it captures both how many jobs are late and how much each one matters."
+  - question: "Why does the optimizer use one calculator for everything?"
+    answer: "Using one calculator means the number the optimizer optimized by is exactly the number you see in the comparison. If scoring and display used different math, you could face a plan the optimizer called better that looked worse on screen, or the reverse. A single source removes that mismatch entirely, so the verdict, the key performance indicator table, and the ranking all agree by construction."
+qaQuestions:
+  - question: "The optimizer said a plan was better but the makespan went up. How is that better?"
+    answer: "Because your goal ranks other measures above makespan. On-time first, for example, ranks weighted tardiness, then late job count, then stability, and only then makespan. If the proposed plan gets an extra job in on time, it wins on the first measure and the higher makespan never enters the decision. The comparison table shows every number including the makespan that rose, so you can see the exact trade the goal accepted."
+  - question: "What does the instability number mean and when is it zero?"
+    answer: "Instability measures how far the proposed plan moves operations from your committed schedule, summed as the absolute start-time change across matched operations, with a count of moved operations alongside. It is meaningful only when a committed plan exists to compare against. On a first schedule there is nothing to disturb, so the instability tiers are stripped from the goal and the measure is not used until a committed plan is in place."
+---
+
+**The optimizer scores a schedule by running it through one shared calculator that produces a fixed set of key performance indicators, then ranking candidates by comparing those numbers in the order your chosen goal specifies.** Every plan becomes the same measurements: how many jobs are late, how much total and priority-weighted lateness there is, how long the plan spans, how much setup and how much disturbance to your committed floor. The optimizer picks the winner by walking your goal's list of measures from most important to least, and the identical numbers appear in the comparison you read. There is no separate display math, so the verdict and the table always agree.
+
+EDGEBIC by User Solutions computes these numbers with a single calculator used by the optimizer, the comparison screen, and its own tests alike. This post explains each measure in plain planner language and shows how they combine into a ranking. For the search that generates the candidates being scored, see [how the multi-run optimizer searches schedules](/blog/how-the-multi-run-optimizer-searches-schedules), and for the wider tour, the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide).
+
+## The measures the calculator produces
+
+Every plan is reduced to the same set of numbers. These are the ones that drive ranking and fill the comparison table:
+
+| Measure | Plain meaning |
+|---|---|
+| Late job count | Jobs finishing after their due date |
+| On-time job count | Jobs finishing by their due date |
+| Total tardiness | Sum of hours past due, every job counted equally |
+| Weighted tardiness | Same sum, each job scaled by its priority |
+| Makespan | Calendar hours from the first start to the last finish |
+| Total assigned hours | Total allocated work across the plan |
+| Total setup hours | Sum of setup, when a setup map is supplied |
+| Instability | How far the plan moves operations from the committed plan |
+
+Two of these deserve a closer look because they carry most goals.
+
+## Weighted tardiness, in plain terms
+
+For each job, tardiness is the hours it finishes past its due date, floored at zero so an early job earns no credit. Weighted tardiness scales that by the job's priority: a top-priority job counts at full weight, a second-priority job at half, and so on, with a small floor so nothing counts as nothing. Sum across all jobs and you have the weighted tardiness. It is the workhorse measure for due-date-driven goals because it captures both how many jobs are late and how badly, weighted by how much each one matters. Set your priorities honestly and it protects your important customers first. See [minimizing weighted tardiness with the optimizer](/blog/minimizing-weighted-tardiness-with-the-optimizer) for the full treatment.
+
+## Instability, and why it needs a committed plan
+
+Instability measures nervousness: how much the proposed plan disturbs the schedule your floor already committed to. It is the sum of the absolute start-time change across operations that appear in both plans, matched within a one-minute tolerance, reported alongside a count of moved operations. A plan that reaches the same good outcome while moving fewer operations is less disruptive and scores lower on instability.
+
+This measure only means something when there is a committed plan to compare against. On a first schedule there is nothing to disturb, so the optimizer strips the instability tiers from your goal for that run. Scoring nervousness against a plan the floor never saw would be noise, and it would deaden every measure ranked below it. Once a committed plan exists, instability is measured against the exact plan your floor knows.
+
+## How the numbers become a ranking
+
+The optimizer does not blend the measures into a single score with weights. It compares two plans one measure at a time, in the order your goal lists, and declares a winner on the first measure where they differ by more than a small tolerance. This is a lexicographic comparison, the way a phone book orders names: the first letter decides unless it ties, then the second letter, and so on.
+
+So the On-time first goal ranks weighted tardiness, then late job count, then instability, then makespan. Two plans are compared on weighted tardiness first. If one has less, it wins outright, no matter what the lower measures say. Only a tie moves the comparison to the next measure. This is why a goal can accept a longer makespan to get one more job on time: makespan is a lower tier and never enters the decision when the top tier already separated the plans. The tier boundaries are real, never faked with giant weights, so the goal's priorities hold exactly.
+
+## Why one calculator matters
+
+It would be easy to compute scores one way for the search and display another way for the screen. That would be a mistake, and the platform deliberately avoids it. Because a single calculator feeds the ranking, the comparison table, and the internal tests, the number the optimizer chose by is the number you read. You will never face a plan the optimizer called better that looks worse on screen, or the reverse, because both come from the same math. When you read the comparison in [what happens when you accept an optimized schedule](/blog/what-happens-when-you-accept-an-optimized-schedule), the deltas are plain subtraction of the calculator's numbers, nothing more.
+
+## Setup hours are honest but approximate
+
+The total setup measure sums setup hours using a supplied map from each routing step to its setup time. This keeps the setup column truthful for comparison. When a sequence-dependent setup matrix is active, the true setup of a plan depends on the realized order of jobs on a machine, which the flat map does not fully capture. The measure stays honest as a comparison column, and sequence-aware setup accounting is a tracked expansion, not a claim made today. For the setup-focused goal, see [how the optimizer cuts total setup time](/blog/how-the-optimizer-cuts-total-setup-time).
+
+## The bottom line
+
+The optimizer scores a schedule by reducing it to one fixed set of measures with a single calculator, then ranking candidates by comparing those measures in your goal's order, most important first, on a strict lexicographic basis. Weighted tardiness protects delivery, instability protects your committed floor and only applies once one exists, and makespan and setup fill out the picture. Because the same calculator scores and displays, the comparison you read is the math the optimizer chose by. To see it, open the Optimizer tab in Schedule Jobs and read the key performance indicator grid after a run. Start at [EDGEBIC](/edgebic).

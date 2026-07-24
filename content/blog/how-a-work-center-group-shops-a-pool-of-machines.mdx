@@ -1,0 +1,88 @@
+---
+title: "How a Work Center Group Shops a Pool of Machines"
+description: "How EDGEBIC explodes a routing step bound to a work center group into a primary plus alternates, lets the resolver pick the best member, and re-shops the pool on every run."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - work center group
+  - resource group scheduling
+  - machine pool
+  - alternate work center
+  - capability scheduling
+  - member selection
+targetPhrase: "work center group scheduling"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "What is a work center group in scheduling?"
+    answer: "A work center group is a named pool of interchangeable machines that a routing step can target instead of one specific machine. Instead of routing a step to Mill-1, you route it to the MILLING group, and EDGEBIC picks the best available member at schedule time. Add or retire a machine in the group and every step bound to it immediately considers the change, with no edits to individual routings."
+  - question: "How does the engine choose which machine in the group runs the step?"
+    answer: "At schedule time EDGEBIC explodes the group step into a primary member plus one alternate per remaining member, then hands them to the same resolver that handles hand-configured alternates. Depending on the group's strategy, the resolver picks the member that completes earliest, or the designated primary first, or the one that can start earliest. The chosen machine's own speed and setup are used, and the step is scheduled on it as if it had been routed there directly."
+  - question: "Does a group step re-pick a machine when I reschedule?"
+    answer: "Yes, as long as that step has not started. The binding to the group is kept on the step through persistence, so on a reschedule a not-yet-started group step re-explodes and the resolver picks again against current capacity. A step that has already started keeps the machine it ran on, because its actuals lock it there. This re-shopping is the whole value of a group: the pool is re-evaluated as conditions change."
+qaQuestions:
+  - question: "I have three mills of different ages that can all do the same work. Should I model them as one work center with three instances or as a group?"
+    answer: "Model them as a group, because the three mills are different, not identical. Instances of one work center share a single shift calendar, one utilization percentage, and one speed, which only fits genuinely identical machines. Your mills each have their own calendar, their own speed, and possibly their own setup, so a group is the honest model: each mill is its own work center with its own capacity, and the group ties them together as interchangeable choices for a class of work. The scheduler then shops the pool and picks a member per run, using that member's real speed. Add a fourth mill to the group later and every group-bound step considers it immediately, with no routing edits."
+  - question: "One member of my group is faster than the others. How does the engine account for the speed difference?"
+    answer: "Each membership carries an efficiency factor that scales the step's base hours for that member, applied to run time only and always computed from the planner-entered base hours so it never compounds across reschedules. A member with a factor that makes it twice as fast will show roughly half the run hours of the baseline member for the same step, and the resolver takes that into account when it compares projected completion. Setup time is handled separately per member and is never scaled by the speed factor. So the pool is not treated as uniform: a faster member genuinely looks faster to the resolver, which is part of how it decides the best machine for the step on a given run."
+---
+
+**A work center group is how EDGEBIC by User Solutions lets a routing step target a pool of interchangeable machines instead of one. At schedule time the engine explodes the group-bound step into a concrete primary member plus one alternate per remaining member, hands them to the same resolver that handles hand-configured alternates, and lets it pick the best member for the group's strategy. The step then schedules on the chosen machine using that member's own speed and setup, and on the next run it re-shops the pool.** It is the reusable answer to "these three machines can all do this work," maintained in one place rather than copied onto every routing.
+
+Groups add no new scheduling mechanism. They feed the machinery that already exists for alternate machines, so once a group step is exploded, nothing downstream even knows a group was involved.
+
+## The problem groups solve
+
+Most shops have clusters of machines that are different but interchangeable for a class of work: three mills of different vintages, two nearly identical welding cells, a fast laser and a slow backup. Before groups, a planner had three unsatisfying options. Pin every step to one machine, and the others idle while jobs queue on the pinned one. Hand-maintain an alternate list on every routing, and the same list drifts the first time a machine is added or retired. Or model the cluster as one work center with several instances, which is only correct when the machines are truly identical, sharing one calendar, one utilization, and one speed. Three different mills are not three instances.
+
+A group is the centrally maintained answer. Define the pool once, bind any number of routing steps to it, and let the scheduler shop the pool on every run. Add a fourth mill to the group and every group-bound step in every routing immediately considers it, with no routing edits.
+
+## Why a group is its own thing, not a work center
+
+It is tempting to model a group as a special work center that contains other work centers. EDGEBIC deliberately does not, and the reason is capacity. The engine seeds a real capacity bucket for every work center that has shifts. A group-that-is-a-work-center would therefore offer schedulable hours of its own, hours no physical machine backs, and jobs could land "on the group," double-counting the pool's capacity. That is exactly the class of error the engine's validators exist to catch.
+
+So a group has no capacity of its own and never enters the scheduler's set of real work centers. Every pool number a user sees, on the group's resource calendar or its rollups, is a live sum of the member machines' cells, computed for display. The capacity always lives on the real machines.
+
+## Explosion: turning a group into a primary plus alternates
+
+The translation happens in a pre-pass, immediately before the alternate-machine resolver runs. For each group-bound step, the engine sorts the members deterministically (designated primary first, then by priority, then by machine id) and stamps the top member onto the step as its concrete work center, computing that member's effective run hours and setup. Every remaining member becomes an alternate candidate carrying its own pre-computed hours. The group's selection strategy is stamped onto the step too.
+
+From that point the step looks exactly like a normal step with hand-configured alternates. The battle-tested resolver compares the primary against the alternates using live capacity and picks a winner, and the core engine never sees a group at all. This reuse is the design's whole point: groups inherit years of proven alternate-selection behavior instead of introducing a parallel path.
+
+## Choosing the member: the group's strategy
+
+The resolver picks the member according to the group's configured strategy. It can favor the member that completes the step earliest, which is the usual default and directly minimizes the step's finish. It can favor a designated primary member first, using an alternate only when the primary cannot serve, which suits a shop with a preferred machine and backups. Or it can favor the member that can start earliest, which prioritizes getting the work moving.
+
+Whichever member wins, the step is scheduled on it with that member's real characteristics. Each membership carries an efficiency factor that scales the step's base hours for that member, applied to run time only and always computed from the planner-entered base hours, so it never compounds across reschedules. A faster member genuinely shows fewer run hours and genuinely looks faster to the resolver. Setup time is handled per member and is never scaled by the speed factor.
+
+## Re-shopping on reschedule
+
+The binding to the group stays on the step through persistence, and that is deliberate. On a reschedule, a step that has not started re-explodes and the resolver picks again against current capacity, so the pool is re-evaluated as load shifts. A step that has already started keeps the machine it ran on, because its actuals lock it there, in line with the rule that completed and running work is never moved.
+
+This re-shopping is the entire value of a group. A step is not permanently welded to whichever member won last time; it re-competes across the pool whenever the plan is redone, so a machine that frees up can pull the step onto itself on the next run.
+
+## When to use a group
+
+Use a group when you have several different-but-interchangeable machines for a class of work and you want that flexibility maintained in one place. Use instances of a single work center only when the machines are genuinely identical, sharing calendar, utilization, and speed. And keep in mind that a group is the alternate list for its steps: you bind a step to a group or you hand-configure alternates on it, not both.
+
+Groups sit alongside the other multi-machine tools. The trade-off between a pool and a single alternate machine is covered in [when to use a machine pool versus an alternate work center](/blog/when-to-use-a-machine-pool-vs-an-alternate-work-center), and the resolver that both share is described in [how a scheduler chooses between alternate machines](/blog/how-a-scheduler-chooses-between-alternate-machines). If your machines run one operation together rather than as substitutes, that is [independent parallel](/blog/how-independent-parallel-splits-a-job-across-machines), a different tool.
+
+Group scheduling plugs into the wider [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and the reason a group cannot own capacity is the same reason capacity matters everywhere, covered in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+To see a group shop your real machines and pick a member per run, [bring your data to a demo](/contact-us).
+
+<Accordion title="What is a work center group in scheduling?">
+A work center group is a named pool of interchangeable machines that a routing step can target instead of one specific machine. Instead of routing a step to Mill-1, you route it to the MILLING group, and EDGEBIC picks the best available member at schedule time. Add or retire a machine in the group and every step bound to it immediately considers the change, with no edits to individual routings.
+</Accordion>
+
+<Accordion title="How does the engine choose which machine in the group runs the step?">
+At schedule time EDGEBIC explodes the group step into a primary member plus one alternate per remaining member, then hands them to the same resolver that handles hand-configured alternates. Depending on the group's strategy, the resolver picks the member that completes earliest, or the designated primary first, or the one that can start earliest. The chosen machine's own speed and setup are used, and the step is scheduled on it as if it had been routed there directly.
+</Accordion>
+
+<Accordion title="Does a group step re-pick a machine when I reschedule?">
+Yes, as long as that step has not started. The binding to the group is kept on the step through persistence, so on a reschedule a not-yet-started group step re-explodes and the resolver picks again against current capacity. A step that has already started keeps the machine it ran on, because its actuals lock it there. This re-shopping is the whole value of a group: the pool is re-evaluated as conditions change.
+</Accordion>
