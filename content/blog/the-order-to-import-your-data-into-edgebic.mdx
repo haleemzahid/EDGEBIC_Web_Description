@@ -1,0 +1,89 @@
+---
+title: "The Order to Import Your Data Into EDGEBIC"
+description: "Import your data into EDGEBIC in dependency order: products and work centers first, then routings, then orders. References link by name, so the thing pointed at must exist before the pointer."
+published: 2026-08-03T12:00:00.000Z
+modified: 2026-08-03T12:00:00.000Z
+category: Upgrade & Comparison
+author: user-solutions
+cluster: edgebic-migration
+keywords:
+  - import order EDGEBIC
+  - data dependency order
+  - reference data first
+  - import products before routings
+  - migration sequence
+  - EDGEBIC import sequence
+targetPhrase: "import your data into EDGEBIC"
+wordCount: 1460
+readingTime: 7
+faqQuestions:
+  - question: "What order do I import data into EDGEBIC?"
+    answer: "Import in dependency order: products and work centers first, then customers, then routings, then open orders. In EDGEBIC by User Solutions, routings link to products and work centers by name, and orders link to products and customers by name, so the referenced records must exist before the file that points at them lands. Getting the sequence right means every import resolves cleanly instead of failing on a missing reference."
+  - question: "What happens if I import routings before work centers?"
+    answer: "A routing step that names a work center EDGEBIC has not seen yet has nothing to attach to, so the link is broken. Because steps link to work centers by name, importing routings before work centers leaves those references dangling. The fix is simple: import work centers and products first, so every routing step finds the record it points at. The two-pass routing import handles order within a file, but not the order between files."
+  - question: "Does the two-pass routing import remove the need to sequence my imports?"
+    answer: "No, the two-pass import solves a different problem. It handles row order inside the routing file, reading every step before wiring sequences so operations connect correctly even when a successor appears earlier than its predecessor. It does not create the products and work centers a routing references, though. You still import those first. Think of it as two levels: sequence your files by dependency, and let the two-pass import handle order within the routing file."
+qaQuestions:
+  - question: "We tried a quick import and half our routings came in with broken work center links. What did we get wrong?"
+    answer: "You almost certainly imported routings before the work centers they reference, which is the single most common sequencing mistake. Routing steps link to work centers by name, so if the work center does not exist yet when the routing lands, the step has nothing to attach to and the link breaks. The fix is to import in dependency order: products and work centers first, then customers, then routings, then orders. Re-import your work centers, confirm the names match exactly between the work center file and the routing file, then re-run the routing mask, which is one click because it is saved. The links resolve this time because the targets exist. It is worth noting the two-pass routing import handles order inside the routing file, so out-of-sequence steps are fine, but it cannot conjure a work center that was never imported, which is why file order still matters."
+  - question: "Master data changes constantly. During a parallel run, do we have to re-import everything in order every time, or just the thing that changed?"
+    answer: "You re-import just the thing that changed, as long as its dependencies already exist in EDGEBIC. The dependency order matters for the initial load, when nothing is there yet. Once the foundation is in place, a routine refresh is targeted: if orders changed, re-run the orders mask; if a routing changed, re-run the routing mask. You only need to re-establish order when you are loading dependencies that are not present. The one case to watch is a new product on a new order: if the order references an item EDGEBIC has never seen, import that product first, then the order. In practice, refresh the changed entity, and only step back to its dependencies when you have added something genuinely new that they rely on."
+---
+
+**Import your data into EDGEBIC in dependency order: products and work centers first, then customers, then routings, then open orders.** In EDGEBIC by User Solutions, references are made by name, so the record being pointed at has to exist before the file that points at it lands. Get the sequence right and every import resolves cleanly. Get it wrong and you spend an afternoon chasing broken links that were only ever a matter of order.
+
+## Why order matters at all
+
+A scheduling model is a web of references. A routing step says "run this on the mill." An order says "make 200 of this part for this customer." Those statements are links, and in EDGEBIC every link is made by name. The mill has to exist as a work center for the routing step to attach to it. The part has to exist as a product for the order to reference it.
+
+So the import is not a pile of independent files. It is a layered structure, and each layer stands on the one below. Load a layer before its foundation and the references dangle. Load them in order and each file finds everything it needs. This is why sequencing is a required step in every phased migration, including the one on the [RMDB to EDGEBIC guide](/rmdb-to-edgebic).
+
+## The dependency order
+
+Here is the sequence, and the reason for each position.
+
+1. **Products and work centers.** These are the foundation. Nothing references them until they exist, and almost everything references them once they do. Migrating the item master is covered in [migrating your item and customer master to EDGEBIC](/blog/migrating-your-item-and-customer-master-to-edgebic), and work centers in [migrating your work center and shift definitions to EDGEBIC](/blog/migrating-work-centers-and-shifts-to-edgebic).
+2. **Customers.** Light reference data that orders point at. Load them before orders so the order-to-customer link resolves.
+3. **Routings.** Each step links to a product and a work center by name. Both must already be present, which is why routings come after products and work centers.
+4. **Open orders.** Each order links to a product and a customer. Both must already be present, which is why orders come last.
+
+Sub-assemblies fold into the product layer: a routing that references a sub-assembly needs that sub-assembly to exist as a product with its own routing, so bring the whole tree in the first layer.
+
+## Two levels of ordering
+
+There is a subtlety worth being explicit about, because it causes confusion. There are two different kinds of order, and they solve different problems.
+
+**Order between files** is the dependency sequence above. You control it by importing files in the right order.
+
+**Order within the routing file** is handled for you by the two-pass routing import. Inside a single routing export, a step's successor can appear anywhere: step 30 before step 20, a successor listed before its predecessor. The two-pass import reads every row first, then wires each step to its next-in-sequence, so row order in the file is irrelevant. The mechanism is described in [how EDGEBIC imports routings in two passes](/blog/how-edgebic-imports-routings-in-two-passes).
+
+The trap is assuming the two-pass import removes the need to sequence files. It does not. It handles order inside the routing file, but it cannot create a work center that was never imported. Sequence your files by dependency, and let the two-pass import handle order within the routing file.
+
+## A worked example
+
+A shop loads a fresh EDGEBIC model from RMDB exports.
+
+1. **Products and work centers.** The planner imports the item tree and the work centers. The foundation exists.
+2. **Customers.** They import the 60 customer names from the orders export.
+3. **Routings.** They run the routing mask. Because products and work centers are already present, every step resolves its links, and the two-pass import wires the sequences. All routings come in connected.
+4. **Orders.** They import the open orders. Each finds its product and customer.
+5. **Schedule.** With every layer in place and every reference resolved, EDGEBIC schedules the model.
+
+Nothing dangled, because nothing was loaded before its foundation.
+
+## After the initial load, refresh is targeted
+
+The strict dependency order is for the first load, when nothing is there yet. Once the foundation is in EDGEBIC, a routine refresh during a parallel run is targeted, not a full re-sequence. If orders changed, re-run the orders mask. If a routing changed, re-run the routing mask. You only step back to dependencies when you add something new that relies on them.
+
+The one case to watch is a new product arriving on a new order. If the order references an item EDGEBIC has never seen, import that product first, then the order. Otherwise, refresh the changed entity alone. This is what keeps a parallel run cheap: the mechanics of the saved-mask refresh are in [exporting your RMDB data to Excel for EDGEBIC](/blog/exporting-rmdb-data-to-excel-for-edgebic).
+
+## Common pitfalls
+
+- **Routings before work centers.** The classic mistake, and the classic broken-link symptom. Work centers first, always.
+- **Orders before products or customers.** An order that references a missing product or customer will not resolve. Load both first.
+- **Name drift across files.** References link by name, so a name spelled two ways breaks the link even when the order is right. Keep names identical, a discipline covered in [cleaning your data before importing to EDGEBIC](/blog/cleaning-your-data-before-importing-to-edgebic).
+- **Forgetting sub-assemblies in the product layer.** A referenced sub-assembly with no product record breaks the rollup. Bring the whole tree first.
+
+## The takeaway
+
+Import your data into EDGEBIC in dependency order: products and work centers first, then customers, then routings, then open orders, because references link by name and the target must exist before the pointer. The two-pass routing import handles order within the routing file, but not the order between files, so you still sequence the files yourself. After the initial load, refresh the changed entity alone and step back to dependencies only when you add something new. See the platform in full on the [EDGEBIC overview](/edgebic), read the whole path on the [RMDB to EDGEBIC guide](/rmdb-to-edgebic), and pair this with [an EDGEBIC migration checklist](/blog/an-edgebic-migration-checklist).

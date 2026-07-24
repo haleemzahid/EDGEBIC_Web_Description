@@ -8,7 +8,7 @@
 > [EDGEBIC-BLOG-TAXONOMY.md](EDGEBIC-BLOG-TAXONOMY.md) (the 2,120-post plan + voice
 > standards), and [EDGEBIC-IMAGE-PLAN.md](EDGEBIC-IMAGE-PLAN.md) (screenshots).
 
-**Last updated**: 2026-08-02 · **Branch**: `feature/edgebic-promotion` (not merged)
+**Last updated**: 2026-08-03 · **Branch**: `feature/edgebic-promotion` (not merged)
 
 ---
 
@@ -41,22 +41,22 @@
 | Cluster | Slug | Target | Written | Published | Indexed |
 |---|---|---|---|---|---|
 | 17 | edgebic-platform | 180 | 153 | 0 | 0 |
-| 18 | edgebic-scheduling-concepts | 200 | 73 | 0 | 0 |
+| 18 | edgebic-scheduling-concepts | 200 | 85 | 0 | 0 |
 | 19 | edgebic-how-to | 500 | 229 | 0 | 0 |
 | 20 | edgebic-walkthroughs | 50 | 23 | 0 | 0 |
-| 21 | edgebic-erp-integration | 150 | 78 | 0 | 0 |
-| 22 | edgebic-industry | 110 | 67 | 0 | 0 |
-| 23 | edgebic-glossary | 350 | 171 | 0 | 0 |
+| 21 | edgebic-erp-integration | 150 | 90 | 0 | 0 |
+| 22 | edgebic-industry | 110 | 79 | 0 | 0 |
+| 23 | edgebic-glossary | 350 | 183 | 0 | 0 |
 | 24 | edgebic-troubleshooting | 120 | 69 | 0 | 0 |
 | 25 | edgebic-outcomes | 100 | 49 | 0 | 0 |
 | 26 | edgebic-optimization | 60 | 25 | 0 | 0 |
-| 27 | edgebic-visual-scheduling | 40 | 21 | 0 | 0 |
+| 27 | edgebic-visual-scheduling | 40 | 33 | 0 | 0 |
 | 28 | edgebic-shop-floor | 60 | 25 | 0 | 0 |
-| 29 | edgebic-quoting | 40 | 7 | 0 | 0 |
+| 29 | edgebic-quoting | 40 | 19 | 0 | 0 |
 | 30 | edgebic-planning | 80 | 43 | 0 | 0 |
-| 31 | edgebic-migration | 40 | 6 | 0 | 0 |
+| 31 | edgebic-migration | 40 | 18 | 0 | 0 |
 | 32 | edgebic-admin | 40 | 15 | 0 | 0 |
-| | **TOTAL** | **2,120** | **1,054** | **0** | **0** |
+| | **TOTAL** | **2,120** | **1,138** | **0** | **0** |
 
 **"Written" count is derivable from disk** (don't trust memory, count files):
 PowerShell: `Select-String -Path content/blog/*.mdx -Pattern "cluster: 'edgebic-" | Group-Object { ($_.Line -split "'")[1] } | Sort-Object Name | Format-Table Name, Count`
@@ -65,6 +65,7 @@ PowerShell: `Select-String -Path content/blog/*.mdx -Pattern "cluster: 'edgebic-
 
 | Date | Wave | Posts added | Clusters touched | Commit | Notes |
 |---|---|---|---|---|---|
+| 2026-08-03 | 6 / flight 6 | 84 | glossary (12), scheduling-concepts (12), quoting (12), migration (12), industry (12), erp-integration (12), visual-scheduling (12) | see git log | 7 agents; opened the 3 most under-built clusters (quoting 7->19, migration 6->18, visual-scheduling 21->33) plus deep glossary/concepts/ERP. INFRA EVENT: a mid-stream stall wave killed 5 of 7 agents after they finished research; resumed all 5 in place via SendMessage (research + locked slugs intact), each told to re-check disk and fill only gaps — clean recovery, migration's partial batch-1 not duplicated. Convention-fix worked: every agent matched the live sibling's exact category/pillar on disk instead of trusting the brief (ERP -> "ERP Integration (EDGEBIC)"/no pillar/`/edgebic-erp-integration`; migration -> "Upgrade & Comparison"; quoting -> "Quoting & Promising"; industry -> "Industry Applications (EDGEBIC)"; visual -> "Visual Scheduling"). Agents fixed 5 "unlock" verbs, rejected roadmap-only + unmodeled terms (kanban/takt/backflush not in product; critical-path viz build-flag-gated; no operator-lanes view). Fixed 3 British "cancelled"->"canceled". QA: 0 banned/em-dash/FCP/British/CTP/ControlTower, 84/84 author, 653/653 links resolve, 0 existing files touched. Product gaps logged: no operator/skill Gantt swimlane; critical-path viz gated behind build flag; move/teardown composition order + global order-sort key list under-specified in source (doc-consistency); CTP still appears in the source dictionary. |
 | 2026-08-02 | 5 / flight 5 | 82 | glossary (22), scheduling-concepts (12), erp-integration (12), planning (12), optimization (12), shop-floor (12) | see git log | 7 agents; weighted to the deepest + most under-built clusters (opened optimization 13->25 and shop-floor 13->25). 84 written, 2 deleted at QA: both glossary agents independently wrote a Theory-of-Constraints + a Critical-Path definition, kept the canonical slugs and repointed 3 referrers. Fixed 12 ERP posts (brief error: dropped nonexistent pillarSlug edgebic-erp-integration-hub, repointed body link to the real /edgebic-erp-integration page, normalized category to "ERP Integration (EDGEBIC)"). Optimization + shop-floor + planning agents self-corrected pillar/category to live convention. All agents rejected roadmap-only items (drum-buffer-rope, CCPM, yield inflation, Balanced/JIT presets, bottleneck-util/flow-time goals) rather than overclaim. Corrected scoreboard drift to disk-authoritative counts (platform 161->153 etc.). QA: 0 banned/em-dash/FCP/British/CTP/ControlTower, 82/82 author, 565/565 links resolve, 0 existing files touched. Product gap logged: no overhead/standard-cost/contribution-margin in the costing engine. |
 | 2026-07-23 | 1 | 50 | 15 of 16 (all but migration) | 917bdc3 | 7 parallel agents; 13 pillars + 10 walkthroughs + 8 visual + 6 ERP + 8 troubleshooting + 5 glossary; QA pass fixed 2 claims; ~110k words; no heroImage yet (screenshots pending) |
 | 2026-07-23 | 1 fix | 0 | erp-integration | c721268 | Corrected "new-jobs-only mode" claim in 4 Wave 1 posts (no user-facing mode picker exists) |

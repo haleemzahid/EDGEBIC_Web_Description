@@ -1,0 +1,94 @@
+---
+title: "How Efficiency Scales Run Time but Not Setup"
+description: "A faster or slower machine changes how long the parts take to make, but not how long the changeover takes. Here is why EDGEBIC applies an efficiency factor to run hours only, and what that means for alternate machines and machine pools."
+published: 2026-08-03T12:00:00.000Z
+modified: 2026-08-03T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - efficiency factor
+  - run time scaling
+  - alternate work center
+  - work center group
+  - setup time
+  - finite capacity scheduling
+targetPhrase: "efficiency factor run time"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "Does a machine's efficiency factor change its setup time?"
+    answer: "No. In EDGEBIC an efficiency or speed factor scales an operation's run hours, the per-piece work, but never its setup. A faster machine makes each piece in less time, so its run hours shrink, but the changeover to get ready is a fixed preparation that a speed multiplier does not touch. Setup on an alternate machine is carried as its own value, not derived by scaling the primary's setup."
+  - question: "Why is setup excluded from efficiency scaling?"
+    answer: "Because setup is preparation, not production. Loading a fixture or changing a tool takes the time it takes regardless of how fast the machine then runs parts. Run time is proportional to output, so a machine that is twenty percent faster produces the batch in twenty percent less run time, but the setup does not become twenty percent faster just because the run does. Modeling it any other way would understate changeover on a fast machine and overstate it on a slow one."
+  - question: "How does the efficiency factor work when a job runs on an alternate machine?"
+    answer: "Each alternate machine can carry its own speed factor and its own setup. When the engine considers an alternate, it scales the operation's run hours by that machine's factor and uses that machine's setup value, rather than scaling the primary's numbers. So a slower backup machine shows a longer run but keeps whatever setup its own changeover really costs, which is often different from the primary's."
+qaQuestions:
+  - question: "Our backup machine is slower, so we set a factor above one, but the schedule made the whole operation proportionally longer including the setup. Is that right?"
+    answer: "The run portion should scale, the setup should not. If your operation looks entirely stretched, check whether the setup was folded into the run number or whether the alternate is carrying its own setup value. In EDGEBIC the factor multiplies run hours only, so a slower machine shows longer run time while its setup stays at whatever that machine's changeover actually costs. If the setup also appears scaled, it usually means setup was baked into the per-piece rate rather than kept as a separate setup value. Separate them and the factor will scale only the run, which is the honest behavior."
+  - question: "We have a pool of interchangeable machines at different speeds. How does the schedule pick fairly between a fast one and a slow one?"
+    answer: "Each member of the pool carries its own efficiency factor, so the engine computes the real run hours for the operation on each candidate before it chooses. A faster member produces shorter run hours and a slower member longer ones, and setup is each member's own value rather than a scaled copy. The engine then shops the pool by the group's strategy, earliest completion for example, using those true per-machine hours. So a slower machine is not penalized on setup it does not incur, and a faster machine's speed advantage shows up exactly where it is real, in the run."
+---
+
+**An efficiency or speed factor in EDGEBIC by User Solutions scales an operation's run hours, the per-piece work, but never its setup. A faster machine produces the batch in less run time, yet the changeover to get it ready is a fixed preparation that a speed multiplier does not touch.** This one rule keeps alternate machines and machine pools honest: a slower backup shows a longer run but is not charged a proportionally longer changeover it does not actually incur, and a fast machine's advantage appears exactly where it is real.
+
+Machines that do the same job at different speeds are everywhere: a new mill and an old one, a primary line and a backup, a pool of interchangeable but non-identical units. To schedule across them, the engine needs a way to say "this machine is faster or slower than the reference." That is the efficiency factor. The subtlety is what it applies to.
+
+## Two components, one factor
+
+Recall that an operation is composed of a fixed setup and a run that scales with quantity, as covered in [how setup time composes into a step's duration](/blog/how-setup-time-composes-into-a-steps-duration). The efficiency factor multiplies the run and leaves the setup alone.
+
+The reasoning is physical. Run time is proportional to output: a machine that runs parts twenty percent faster makes the same batch in twenty percent less run time. Setup is not production. Loading a fixture, threading material, or dialing in a temperature takes the time it takes, and the machine's running speed does not change how long that preparation is. A fast machine still has to be set up; a slow machine's setup is not longer just because its run is.
+
+So the composition on a given machine is:
+
+```
+operation hours = machine's own setup + (base run hours x machine's efficiency factor)
+```
+
+A factor below one means faster than reference, shrinking the run. A factor above one means slower, stretching it. The setup term sits outside the multiply entirely.
+
+## Why baking setup into the factor is wrong
+
+It is tempting to apply one multiplier to the whole operation for simplicity. That understates changeover on fast machines and overstates it on slow ones, and the error grows with setup size. On a long-changeover work center, a paint booth or a heat-treat furnace, scaling the setup by a speed factor would produce nonsense: a booth that runs parts faster would appear to flush and mask faster too, which is not how solvent and cure times behave.
+
+Keeping setup out of the factor also matters for alternate machines, because an alternate often changes over differently from the primary, not proportionally. EDGEBIC handles this by letting each alternate carry its own setup value rather than deriving it from the primary. When the engine evaluates an alternate, it uses that machine's setup and scales only the run by that machine's factor. The changeover is whatever the alternate's real changeover is, independent of its speed.
+
+## A worked example: the same job on two machines
+
+Take an operation with a base run of 10 hours (for the order quantity) and consider two machines.
+
+**Primary, factor 1.0, setup 1.0 hour.** Run is 10 x 1.0 = 10 hours. Plus 1 hour setup. Total 11 hours.
+
+**Faster alternate, factor 0.8, setup 1.5 hours.** Run is 10 x 0.8 = 8 hours, because this machine makes parts faster. But its own changeover is 1.5 hours, not a scaled version of the primary's. Total 9.5 hours.
+
+The faster machine wins overall despite a longer setup, because its speed advantage is real in the run and its setup is its own honest number. Now flip it:
+
+**Slower alternate, factor 1.25, setup 0.5 hours.** Run is 10 x 1.25 = 12.5 hours. Its setup happens to be quick, 0.5 hours. Total 13 hours.
+
+Notice the slower machine's setup did not balloon to 1.25 x something. It is 0.5 hours because that is what that machine's changeover costs. If the factor had scaled setup too, this machine would have been charged a longer changeover it never incurs, and the comparison between machines would be distorted. By scaling run only, the engine compares machines on the two things that actually differ: how fast they run, and how long they take to set up, each measured on its own terms.
+
+## Where this shows up
+
+The rule is not academic. It drives three common situations:
+
+- **Alternate work centers.** When the engine [chooses between alternate machines](/blog/how-a-scheduler-chooses-between-alternate-machines), it computes real run hours per candidate using each one's factor and uses each one's setup, so the choice reflects true totals rather than a scaled approximation.
+- **Machine pools.** In a [work center group](/blog/how-a-work-center-group-shops-a-pool-of-machines), each member carries its own efficiency, so shopping the pool by earliest completion uses honest per-machine run hours. A slower member is not penalized on setup it does not incur.
+- **A single machine at reduced efficiency.** A work center planned below full speed scales its run accordingly, which is a different mechanism from [running a fractional machine count](/blog/how-a-fractional-machine-count-schedules-a-half-speed-unit) but rests on the same run-versus-setup distinction.
+
+The practical guidance is to keep setup as its own value and let the factor describe only speed. If an operation on a slower machine looks entirely stretched, including the changeover, it usually means setup was folded into the per-piece run rate rather than kept separate. Separate them, and the factor scales only what should scale.
+
+For the broader pipeline, the [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide) shows how per-machine hours feed capacity and placement, and [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) covers why honest per-machine hours matter once capacity is finite. To see the factor scale your own routings across your real machines, explore [the EDGEBIC engine](/edgebic) or [bring your data to a demo](/contact-us).
+
+<Accordion title="Does a machine's efficiency factor change its setup time?">
+No. In EDGEBIC an efficiency or speed factor scales an operation's run hours, the per-piece work, but never its setup. A faster machine makes each piece in less time, so its run hours shrink, but the changeover to get ready is a fixed preparation that a speed multiplier does not touch. Setup on an alternate machine is carried as its own value, not derived by scaling the primary's setup.
+</Accordion>
+
+<Accordion title="Why is setup excluded from efficiency scaling?">
+Because setup is preparation, not production. Loading a fixture or changing a tool takes the time it takes regardless of how fast the machine then runs parts. Run time is proportional to output, so a machine that is twenty percent faster produces the batch in twenty percent less run time, but the setup does not become twenty percent faster just because the run does. Modeling it any other way would understate changeover on a fast machine and overstate it on a slow one.
+</Accordion>
+
+<Accordion title="How does the efficiency factor work when a job runs on an alternate machine?">
+Each alternate machine can carry its own speed factor and its own setup. When the engine considers an alternate, it scales the operation's run hours by that machine's factor and uses that machine's setup value, rather than scaling the primary's numbers. So a slower backup machine shows a longer run but keeps whatever setup its own changeover really costs, which is often different from the primary's.
+</Accordion>

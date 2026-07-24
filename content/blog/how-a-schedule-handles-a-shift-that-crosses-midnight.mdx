@@ -1,0 +1,85 @@
+---
+title: "How a Schedule Handles a Shift That Crosses Midnight"
+description: "A night shift that starts in the evening and ends after midnight spans two calendar dates. Here is how EDGEBIC computes the shift's true end, places work across the day boundary, and attributes the hours correctly."
+published: 2026-08-03T12:00:00.000Z
+modified: 2026-08-03T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - night shift scheduling
+  - shift crossing midnight
+  - multi-shift scheduling
+  - shift capacity
+  - finite capacity scheduling
+  - day boundary
+targetPhrase: "shift crossing midnight scheduling"
+wordCount: 1450
+readingTime: 8
+faqQuestions:
+  - question: "How does a scheduler handle a night shift that ends after midnight?"
+    answer: "EDGEBIC recognizes that a shift whose end time is earlier on the clock than its start time actually ends on the following calendar day. A shift defined 20:00 to 04:00 is understood to run from 20:00 on its date to 04:00 the next morning, an eight-hour block. The engine computes the true end datetime that way, so work placed near midnight flows continuously across the day boundary instead of being cut off at 00:00."
+  - question: "Does a job's hours split across two dates when it runs through midnight?"
+    answer: "Yes. An operation that runs from 22:00 to 02:00 has two hours on the first calendar date and two on the second, and EDGEBIC attributes the hours to the dates on which they actually occur. The operation itself is continuous, it does not restart at midnight, but the per-day record reflects that the work touched two dates, which is what a load report by date needs to show correct daily totals."
+  - question: "Why does a night-shift job show a start date one day and a finish date the next?"
+    answer: "Because the shift itself spans two dates. If a job starts at 23:00 on Monday's night shift and finishes at 03:00, it genuinely began Monday and ended Tuesday. EDGEBIC carries the real start and end datetimes, so the job row shows Monday to Tuesday even though it was a single short run. That is correct: the calendar boundary fell in the middle of the shift, not a sign the job took a full day."
+qaQuestions:
+  - question: "Our night shift runs 22:00 to 06:00 and jobs on it show odd two-date spans. Is the schedule double-counting the time?"
+    answer: "No, it is attributing the time to the dates where it actually happens. A job that runs 23:00 to 03:00 is a four-hour operation, but two of those hours fall before midnight on one date and two after midnight on the next, so the per-day breakdown shows two dates. The total is still four hours, not eight. EDGEBIC computes the shift's true end as the following morning because the end clock time is earlier than the start, then places the work continuously across the boundary. If your daily load report sums correctly to four hours across the two dates, it is working as intended."
+  - question: "We want to run around the clock with three shifts. Will a job flow from the night shift straight into the next morning's day shift?"
+    answer: "Yes, as long as the calendar has both shifts active. When a night shift ends, say at 06:00, and a day shift begins at 06:00 or later, a job with hours remaining continues into the day shift's capacity just as it would across any shift boundary. The midnight crossing does not interrupt that; it is simply that the night shift's own hours are split across two dates. So a long operation can start on the evening of one day, run through the night across midnight, and finish in the following day shift, flowing across each boundary in turn."
+---
+
+**A shift that crosses midnight, such as a night shift running 20:00 to 04:00, spans two calendar dates, and EDGEBIC by User Solutions handles it by recognizing that a shift whose end time is earlier on the clock than its start time ends on the following day. The engine computes the shift's true end datetime accordingly, places work continuously across the midnight boundary, and attributes each hour to the date it actually occurs on.** The result is that round-the-clock operations schedule naturally, without work being severed at 00:00 or a short night job appearing to take a whole day.
+
+Most shifts sit inside one calendar day: 08:00 to 16:00, start before end, no ambiguity. Night shifts break that assumption. A shift that starts at 20:00 and ends at 04:00 has an end clock time that is numerically earlier than its start. Read naively, that is a negative-length shift. Read correctly, it is an eight-hour block that happens to straddle midnight. Getting this right is what lets a night operation behave like any other.
+
+## Recognizing a shift that wraps
+
+A shift is defined by a start time of day and an end time of day. EDGEBIC compares them. When the end is later than the start, the shift is an ordinary same-day block. When the end is earlier than or equal to the start, the shift is understood to end on the next calendar day.
+
+So a shift defined 20:00 to 04:00 resolves to a true window from 20:00 on its date to 04:00 the following morning, which is eight hours. A shift defined 16:00 to 00:00 resolves to 16:00 through midnight, also treated as ending on the following date, eight hours again. The engine builds the shift's real end datetime from that rule, so every downstream calculation, available hours, where an operation lands, when it finishes, works from a correct window rather than a broken one.
+
+This is the same shift-capacity machinery described in [how capacity is computed for a work center, shift, and day](/blog/how-capacity-is-computed-for-a-work-center-shift-and-day). The midnight-crossing rule simply ensures the shift's length and boundaries are right before that formula runs.
+
+## Placing work across the boundary
+
+Once the shift's true window is known, the [multi-shift allocator](/blog/how-multi-shift-allocation-fills-capacity) treats it like any other slot. An operation placed on the night shift can begin at any point in the window and run forward. If it starts at 22:00 and needs four hours, it runs to 02:00 the next morning, straight through midnight. The operation does not stop and restart at 00:00; midnight is not a boundary the work cares about, only one the calendar cares about.
+
+What does change at midnight is which date the hours belong to. The two hours from 22:00 to 00:00 fall on the first date, and the two from 00:00 to 02:00 fall on the second. EDGEBIC attributes each hour to the date it actually occurs on, so a per-day load report shows two hours on each of the two dates, summing to the correct four. The operation is continuous; the accounting is split. Both are true at once, and both need to be, because the floor experiences one continuous run while a daily capacity report needs honest per-date totals.
+
+## A worked example: a night-shift job through midnight
+
+Take a work center with a night shift defined 20:00 to 04:00, a true eight-hour window from 20:00 to 04:00 next morning. A job needs six hours and cannot start before 22:00.
+
+The 22:00 constraint clips the first two hours of the window, so from 22:00 the shift offers six usable hours to 04:00. The operation places all six:
+
+| Segment | Clock | Calendar date | Hours |
+|---|---|---|---|
+| Evening portion | 22:00 to 00:00 | Monday | 2 |
+| Morning portion | 00:00 to 04:00 | Tuesday | 4 |
+
+The job started Monday 22:00 and finished Tuesday 04:00. The job row shows a Monday-to-Tuesday span, which is correct: the operation was six continuous hours, but the calendar boundary fell in the middle. A planner glancing at the two dates should read "ran across midnight," not "took most of a day."
+
+Now extend it. Suppose the job needed ten hours instead of six. Eight fit in the night shift's window (22:00 to 04:00 is only six after the clip, so it fills those six and needs four more). If a day shift begins at 06:00, the remaining four hours flow into it, so the job runs 22:00 Monday to 04:00 Tuesday on nights, then 06:00 to 08:00 Tuesday on days. The midnight crossing did not interrupt anything; the operation simply flowed across each shift boundary in turn, the night-shift one of which happened to contain midnight.
+
+## Why this matters for round-the-clock shops
+
+For a single day-shift operation, none of this ever comes up. It matters the moment a shop runs nights or a full three-shift pattern. Without the wrap rule, a night shift would be mis-measured, work near midnight would be severed, and every night job would carry confusing dates. With it, a night shift is just another eight-hour slot that happens to straddle a date line, and a job can start one evening and finish the next morning as smoothly as any daytime job finishes in the afternoon.
+
+The two things to keep straight are the operation and the accounting. The operation is continuous and does not care about midnight. The accounting attributes hours to real dates, so daily reports stay correct. EDGEBIC keeps both true, which is why a night-shift schedule reads sensibly rather than looking like a string of one-day jobs that all somehow finish at dawn.
+
+For the wider mechanics, the [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide) shows how shift windows feed the allocator, and [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) covers why an accurate shift window is the foundation of an honest plan. To see how your own night and rotating shifts place work across the day boundary, explore [the EDGEBIC engine](/edgebic) or [bring your data to a demo](/contact-us).
+
+<Accordion title="How does a scheduler handle a night shift that ends after midnight?">
+EDGEBIC recognizes that a shift whose end time is earlier on the clock than its start time actually ends on the following calendar day. A shift defined 20:00 to 04:00 is understood to run from 20:00 on its date to 04:00 the next morning, an eight-hour block. The engine computes the true end datetime that way, so work placed near midnight flows continuously across the day boundary instead of being cut off at 00:00.
+</Accordion>
+
+<Accordion title="Does a job's hours split across two dates when it runs through midnight?">
+Yes. An operation that runs from 22:00 to 02:00 has two hours on the first calendar date and two on the second, and EDGEBIC attributes the hours to the dates on which they actually occur. The operation itself is continuous, it does not restart at midnight, but the per-day record reflects that the work touched two dates, which is what a load report by date needs to show correct daily totals.
+</Accordion>
+
+<Accordion title="Why does a night-shift job show a start date one day and a finish date the next?">
+Because the shift itself spans two dates. If a job starts at 23:00 on Monday's night shift and finishes at 03:00, it genuinely began Monday and ended Tuesday. EDGEBIC carries the real start and end datetimes, so the job row shows Monday to Tuesday even though it was a single short run. That is correct: the calendar boundary fell in the middle of the shift, not a sign the job took a full day.
+</Accordion>

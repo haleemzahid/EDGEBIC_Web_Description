@@ -1,0 +1,87 @@
+---
+title: "Migrating Open Jobs and Their Actuals to EDGEBIC"
+description: "The cleanest way to migrate open jobs to EDGEBIC is to let in-flight work finish on RMDB and start new jobs on EDGEBIC. When you must carry WIP across, actuals import and completed work is preserved."
+published: 2026-08-03T12:00:00.000Z
+modified: 2026-08-03T12:00:00.000Z
+category: Upgrade & Comparison
+author: user-solutions
+cluster: edgebic-migration
+keywords:
+  - migrate open jobs to EDGEBIC
+  - work in progress migration
+  - actuals import mask
+  - completed work preserved reschedule
+  - WIP cutover
+  - open orders import
+targetPhrase: "migrate open jobs to EDGEBIC"
+wordCount: 1580
+readingTime: 8
+faqQuestions:
+  - question: "How do I migrate open jobs to EDGEBIC?"
+    answer: "The cleanest approach is to let in-flight jobs finish on Resource Manager DB and start new jobs on EDGEBIC by User Solutions, so you never carry partial work across a cutover. When you must bring open jobs mid-flight, import the open orders through the sales order mask and their progress through the actuals import, and EDGEBIC preserves completed work when it reschedules, moving only the steps that have not run yet."
+  - question: "Does EDGEBIC move completed work when it reschedules a migrated job?"
+    answer: "No, completed work is never moved by a reschedule. This is a documented guarantee: once a step is recorded as done, with its actual start and end, a reschedule leaves it exactly where it is and re-plans only the remaining steps forward from where the job actually stands. That is what makes it safe to bring a partially finished job into EDGEBIC, because the history you import is treated as fixed fact, not as something to re-optimize."
+  - question: "Should I migrate every open job or just new ones?"
+    answer: "Migrate as few open jobs as you can, and prefer starting new jobs fresh in EDGEBIC. Jobs already in progress carry the most migration risk, because their partial state has to be represented accurately, so the lowest-effort path is to let them drain on RMDB during a parallel run. New jobs, which have not started, import cleanly as open orders with no actuals to reconcile, which is why a cutover that draws a line at new work is the smoothest one."
+qaQuestions:
+  - question: "We can never fully stop the plant to migrate. Half our jobs are always in progress. How do we move without losing that state?"
+    answer: "You do not stop the plant, and you do not migrate the in-progress state all at once. The pattern that works is a rolling cutover during a parallel run. Keep RMDB as the system of record and let the jobs already on the floor finish there, because they are the hardest to represent cleanly and there is no reason to move a job that is halfway done. At the same time, start scheduling new jobs, the ones that have not begun, in EDGEBIC as open orders imported through the sales order mask. Over a few weeks the RMDB work-in-progress naturally drains as those jobs complete, and EDGEBIC's share grows as new work lands there. You never migrate a snapshot of the whole floor mid-flight; you let the line between old and new fall on job boundaries, which is both the safest and the least work."
+  - question: "A few long-running jobs will still be open at cutover and we cannot wait for them. Can we bring those across with their progress intact?"
+    answer: "Yes, and EDGEBIC is built to handle exactly that without disturbing what is already done. For the handful of long jobs you cannot let drain, import the open order and then bring the recorded progress across through the actuals import, so each completed step arrives with its actual start and end. When EDGEBIC schedules the job, it preserves those completed steps and plans only the remaining ones forward, resuming from where the job actually stands rather than starting over. So a job that is three operations into a seven-operation routing comes across with those three locked as history and the last four scheduled against real capacity. Keep this to the few jobs that truly need it, and let everything shorter finish on RMDB."
+---
+
+**The cleanest way to migrate open jobs to EDGEBIC is to let in-flight work finish on RMDB and start new jobs on EDGEBIC, so you never move partial work across a cutover.** In EDGEBIC by User Solutions, when a few long jobs must come across mid-flight, you import the open order and its recorded progress, and EDGEBIC preserves completed work when it reschedules, planning only the remaining steps forward. The guiding principle is to migrate as little work-in-progress as possible and let job boundaries draw the line between old and new.
+
+## Open jobs are the hardest data to migrate, so migrate the least of it
+
+Master data migrates cleanly. Products, work centers, and routings are static definitions: you export them, map them once, and import them, and they mean the same thing on both sides. Open jobs are different, because a job in progress carries state. It has started, some steps are done, hours have been logged, and the next operation is waiting. Representing that partial state accurately across two systems is the genuinely tricky part of any scheduling migration.
+
+The response is not a clever tool. It is to minimize the problem. The fewer partial jobs you carry across, the less there is to get wrong, so the best migration moves almost no work-in-progress at all. That is why the recommended cutover draws its line at new work: jobs already on the floor finish where they started, and EDGEBIC picks up the jobs that have not begun. This is the same phased discipline behind [running RMDB and EDGEBIC side by side](/blog/running-rmdb-and-edgebic-side-by-side).
+
+## The default: let WIP drain on RMDB
+
+During a parallel run, RMDB stays the system of record, so the jobs already scheduled there keep running there. You do not touch them. They complete on RMDB over the following days and weeks, and as they do, the plant's work-in-progress on the old system drains to zero on its own.
+
+Meanwhile, new jobs, the ones that have not started, go into EDGEBIC as open orders. These import cleanly, because a job that has not begun has no actuals to reconcile: it is just demand with a due date, placed against EDGEBIC's finite capacity. Over a few weeks the balance tips naturally, RMDB finishing its last in-flight jobs while EDGEBIC owns everything new. No snapshot of the whole floor is ever migrated mid-flight, which is exactly what keeps the cutover safe.
+
+## Importing the open orders
+
+The new jobs come in through the sales order import mask, the same export-map-import path as every other entity. You export your open orders, map the columns to EDGEBIC's fields (product, quantity, due date, customer), and import. Because these jobs have not started, there is nothing to preserve and nothing to reconcile: EDGEBIC schedules them from scratch against real capacity.
+
+Import products and customers first, so the orders resolve their references, and keep names consistent across files. The dependency order is covered in [the order to import your data into EDGEBIC](/blog/the-order-to-import-your-data-into-edgebic).
+
+## When you must carry a job across mid-flight
+
+Some jobs run for weeks, and a few will still be open at cutover with no realistic way to wait for them. For those, EDGEBIC brings the progress across without disturbing it.
+
+You import the open order, then bring its recorded progress through the actuals import, so each completed step arrives with its actual start and end. When EDGEBIC schedules the job, it preserves those completed steps exactly and plans only the remaining ones forward, resuming from where the job actually stands. A job three operations into a seven-operation routing comes across with the first three locked as history and the last four scheduled against current capacity.
+
+This works because of a documented guarantee: completed work is never moved by a reschedule. Once a step is recorded as done, every future reschedule leaves it in place and re-plans only what has not run. That is what makes it safe to import a partially finished job, because the history you bring is treated as fixed fact, not as something to re-optimize. Keep this path for the few long jobs that genuinely need it, and let everything shorter finish on RMDB.
+
+## Actuals become live once the kiosk is in use
+
+After cutover, actuals stop being something you import and become something the shop reports. EDGEBIC includes a shop-floor kiosk where operators start work, count pieces, pause with a reason, and complete. Those actual hours and dates flow straight into the schedule with no planner retyping, and they appear on the Gantt as planned-versus-actual.
+
+From then on, every reschedule uses the same completed-work-preserved rule automatically: it moves only future work and resumes from where the floor actually is. So the actuals import is a one-time migration step for the handful of jobs you carry across, and live actuals from the kiosk take over for everything that runs in EDGEBIC afterward.
+
+## A worked example
+
+A shop cuts over its machining area during a parallel run. At the moment of cutover, 30 jobs are open: 22 short jobs on the floor, 6 new jobs not yet started, and 2 long fabrications a third of the way through.
+
+1. **Let the 22 drain.** These short jobs finish on RMDB over the next two weeks. Nothing about them is migrated.
+2. **Import the 6 new jobs.** The planner imports them as open orders through the sales order mask. EDGEBIC schedules them fresh against capacity.
+3. **Carry the 2 long jobs.** For the fabrications that cannot wait, the planner imports the orders and brings their completed steps through the actuals import. EDGEBIC preserves the finished operations and schedules the remaining steps forward.
+4. **Kiosk takes over.** As operators begin working the EDGEBIC jobs, they report actuals at the kiosk, and reschedules from then on preserve completed work automatically.
+
+Only 2 of 30 jobs were migrated with state. The other 28 were either left to finish on RMDB or imported clean.
+
+## Common pitfalls
+
+- **Migrating too much WIP.** The temptation is to move the whole floor at once. Resist it: let short jobs finish on RMDB and carry only the long ones.
+- **Missing actual dates on carried jobs.** A completed step imported without its actual start and end cannot be preserved correctly. Bring the dates with the progress.
+- **Orders before their references.** Import products and customers before open orders, or the orders will not resolve.
+- **Trying to reconcile finished history.** Completed steps are fixed fact. Do not expect a reschedule to touch them, and do not try to re-optimize them.
+
+## The takeaway
+
+Migrate open jobs to EDGEBIC by moving as little work-in-progress as you can. Let in-flight jobs finish on RMDB, import new jobs clean as open orders, and for the few long jobs that cannot wait, bring their progress through the actuals import, where EDGEBIC preserves completed work and schedules only the remaining steps forward. After cutover, the kiosk makes actuals live and every reschedule keeps completed work in place. See the platform in full on the [EDGEBIC overview](/edgebic), read the whole path on the [RMDB to EDGEBIC guide](/rmdb-to-edgebic), and when you plan the switch itself, read [completing the cutover to EDGEBIC](/blog/completing-the-cutover-to-edgebic).

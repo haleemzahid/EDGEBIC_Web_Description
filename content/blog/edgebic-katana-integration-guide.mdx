@@ -1,0 +1,147 @@
+---
+title: "EDGEBIC + Katana: The Complete Scheduling Integration Guide"
+description: "Katana production scheduling integration with EDGEBIC: export products, resources, operations and manufacturing orders, map columns once, schedule at finite capacity."
+published: 2026-08-03T12:00:00.000Z
+modified: 2026-08-03T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - Katana production scheduling integration
+  - Katana finite capacity scheduling
+  - Katana MRP scheduling add-on
+  - EDGEBIC Katana integration
+  - Katana CSV export scheduling
+  - cloud MRP scheduling integration
+targetPhrase: "Katana production scheduling integration"
+wordCount: 1960
+readingTime: 10
+faqQuestions:
+  - question: "Does EDGEBIC connect to Katana through an API?"
+    answer: "No. EDGEBIC reads the CSV or Excel exports Katana already produces through reusable import masks. There is no API integration to build, no app installed in the Katana account, and no certified connector to version-match. You map an export's columns onto EDGEBIC fields once and save the mask, and every run after that is two clicks with a per-run log recording each row."
+  - question: "What Katana data does EDGEBIC need to schedule?"
+    answer: "Four exports carry a complete scheduling model: products, resources or work centers with a real machine count, operations or routings with sequence and run and setup times, and open manufacturing orders with quantities and dates. A fifth optional export carries logged labor from the floor. Each goes through its own import mask, and every row returns as Created, Updated, Reused, or Failed."
+  - question: "Do imported Katana manufacturing orders schedule themselves?"
+    answer: "No, and that separation is deliberate. An import changes data, the scheduler changes the plan. Imported manufacturing orders appear as unscheduled demand and stay there until you run the scheduler, which states how many jobs are new and how many are being rescheduled before it plans anything. An import can therefore never silently rearrange the floor."
+qaQuestions:
+  - question: "Katana already shows me a production timeline. Why add a separate scheduler at all?"
+    answer: "Because the two views answer different questions. Katana sequences orders and flags material shortages well, which is exactly what a cloud MRP should do. What it does not model is your shop as a set of finite machines: four identical mills as one work center with four instances, a paint booth that can run one job per day, sequence-dependent changeovers that cost four hours going light to dark, operators who are only certified on two of the five cells. EDGEBIC loads those constraints and answers the finite capacity question directly: given every open manufacturing order at once, which one fits where, and what promise dates actually hold. Katana stays the system of record. EDGEBIC is the compute layer the planner runs on demand."
+  - question: "Our resource records in Katana are one row per machine type with no real count of identical units. Will the schedule be wrong?"
+    answer: "It will be wrong in a specific, fixable way, and it is the single most common first-load issue on any cloud MRP. A cell of four identical machines imported as one instance produces a plan roughly four times too long, and it fails quietly: nothing errors, the dates are simply pessimistic. The fix is one column. In the work center mask you map a machine-count column onto Number_Of_Instances, or if the export does not carry one, you set the count for each multi-machine center once inside EDGEBIC after the first import. It is set once and then every later import preserves it, so the correction does not repeat weekly."
+---
+
+**Integrating Katana with EDGEBIC means exporting the products, resources, operations, and open manufacturing orders Katana already holds to CSV or Excel, mapping those columns once with a reusable import mask, and letting EDGEBIC schedule the work against finite capacity: real shift hours, real machine counts, and sequence-dependent setups.** Executable dates then go back as Excel. There is no API project, no app installed in the account, and no certified connector to version-match when either side updates.
+
+EDGEBIC by User Solutions is the newest generation of a scheduling line that has integrated with ERP and MRP systems this way since 1991. Across 35+ years the same file-based approach has fed schedules for the US Navy, GE, BAE Systems, and Cummins. This guide covers the Katana case: what to export, how the masks work, what the engine does with the result, and what a realistic first week looks like.
+
+## Why a cloud MRP still needs a finite capacity layer
+
+Katana is strong at what a cloud MRP is meant to do: live inventory, material availability, order tracking, and a production timeline that sequences manufacturing orders. What most Katana users report is that the daily sequencing decision against real machine constraints still happens somewhere else, usually a spreadsheet, because the questions a planner asks each morning are finite capacity questions:
+
+- Which of these 50 open manufacturing orders fit on the two CNC cells this week?
+- If this rush order jumps the queue, which promise dates move and by how much?
+- Is the assembly line loaded to 80 percent or 160 percent next Thursday?
+
+Those require modeling shifts, machine instances, changeover sequences, and operator availability against every open order at once. It is a different computational problem from tracking inventory, which is why a dedicated finite capacity layer beside the MRP is the standard pattern. The general case is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+## The integration in one table
+
+The [EDGEBIC ERP integration architecture](/edgebic-erp-integration) is identical for every system, Katana included:
+
+| Direction | Data | How it moves |
+|---|---|---|
+| Katana to EDGEBIC | Products | CSV or Excel export to Product import mask |
+| Katana to EDGEBIC | Resources / work centers | Export to Workcenter import mask |
+| Katana to EDGEBIC | Operations / routings | Export to BOR (bill of routing) import mask, two-pass |
+| Katana to EDGEBIC | Open manufacturing orders | Export to SalesOrder import mask |
+| Katana to EDGEBIC | Logged labor (optional) | Export to Actuals import mask |
+| EDGEBIC to Katana | Executable start and end dates, dispatch lists | Excel export from Job View and reports |
+
+An **import mask** is a saved recipe. It remembers which kind of data you are importing, what format it arrives in (Excel workbook, or comma, semicolon, tab, or space delimited text), whether the first row is headings, whether text values are quoted, and how each column of your file maps onto an EDGEBIC field. You build it once by dragging your file's column headings onto EDGEBIC's target fields. Every run after that is two clicks.
+
+Every row produces exactly one outcome: **Created**, **Updated**, **Reused** (matched and deliberately left alone), or **Failed** (rejected, with the reason recorded). A result dialog shows the counts and a per-run log file records every row individually.
+
+## The file is the interface, and that is the advantage
+
+Cloud platforms change on the vendor's schedule, not yours. That is usually fine, and occasionally it breaks an integration built against an API surface. A file-based interface has a much smaller failure mode: the only thing that can break is a column heading, and the fix is re-mapping one row in a mask.
+
+Three practical consequences follow for a Katana account:
+
+- **Nothing is installed in your account.** No app, no custom automation, no webhook to maintain. There is nothing to promote or version.
+- **No integration credential is created.** The scheduler never authenticates against Katana, so there is no permission surface to review or rotate.
+- **Scheduling keeps working offline.** The plan is computed locally, so a connectivity problem stops the export, not the shop's dispatch list.
+
+## Step 1: the four exports
+
+Four exports carry a complete scheduling model. Any list in Katana that saves to CSV or Excel is a valid source.
+
+1. **Products.** The product identifier, description, unit of measure, and any cost or lead-time columns worth having visible. The identifier is the natural key, matched case-insensitively, so `BRK-200` in a file finds `brk-200` in the database.
+2. **Resources or work centers.** Identifier, how many identical machines the resource really holds, default setup hours, efficiency, and an hourly rate for cost rollups.
+3. **Operations or routings.** One row per operation: end product, work center, sequence number, hours per unit, setup time, queue time.
+4. **Open manufacturing orders.** Product, quantity, order reference, and dates.
+
+If a Katana export names a column differently than the examples above, that is fine. You are mapping your file's headings, whatever they say, onto EDGEBIC's fields. Describe the export generically and map what you have.
+
+## Step 2: map the columns once
+
+Build one mask per file and name it after the routine rather than the file: `Weekly Katana MOs` outlives `mo-week29.csv`. Mandatory fields are flagged, and the run refuses to start until they are mapped, so a half-built mask fails before it reads a single row.
+
+Two mask features carry most of the weight:
+
+**Unit conversion.** Set a conversion factor on any numeric column and the multiplication happens before the value is stored. Minutes to hours is `0.016667`, seconds to hours `0.000278`, and a standard time quoted per lot of 100 pieces becomes per piece with `0.01`. Different columns in the same file can carry different factors, which matters when Katana exports a cycle time in minutes next to a setup time in hours.
+
+**Blank-cell preservation.** On an update run, a blank cell keeps the existing value rather than wiping it, so a partial refresh file is safe. A zero, however, is a value and will be written. Leave a column out of the export rather than filling it with zeros you do not mean.
+
+## Step 3: the routing import, and why it takes two passes
+
+Routings are the hardest data to move between systems, because operations reference each other: step 10 feeds step 20 feeds step 30. A row-by-row import cannot wire those links, because step 20 does not exist yet when step 10 is written.
+
+EDGEBIC's routing import runs in **two passes**. Pass one reads and validates every row, auto-creates any work center or product the file names that does not exist yet, and buffers the steps. Pass two groups the buffered rows by end product, sorts them by sequence number, writes them, and then wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished product, so the routing renders as one connected flow in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour).
+
+Conventions that pay off immediately:
+
+- **Number sequences in gaps of 10** so a later insert becomes 25 and nothing renumbers.
+- **Keep all of one product's steps in one file.** A routing import wipes and recreates that product's steps once per run, which is what makes re-imports idempotent. Splitting one product across two runs means the second run's wipe deletes the first run's steps.
+- **Re-importing is safe for running work orders.** Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing change applies to future jobs and leaves work in progress untouched.
+
+## Step 4: manufacturing orders in, then run the scheduler
+
+The order import maps product, quantity, reference, and dates. When your export carries an order reference, rows sharing that reference group under one sales order and their jobs auto-number as `{Ref}-{line}`, keeping a multi-line order together.
+
+**Imports never schedule anything.** Imported manufacturing orders sit as unscheduled demand until you run the scheduler, which states its scope in plain numbers before it plans. Data movement and planning stay separate on purpose, and the choice of run is covered in [EDGEBIC scheduling modes explained](/blog/edgebic-scheduling-modes-explained).
+
+Once the data is in, the full engine applies: finite capacity across multiple shifts and machine instances, [work center groups](/blog/edgebic-work-center-groups-explained) that re-shop the machine pool on every reschedule, a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained), lot streaming with transfer batches, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine.
+
+## Step 5: sending dates back
+
+The return trip is Excel. The Job View grid exports the job schedule as a workbook with colored cells and a legend sheet, the work center schedule exports the same way, and every report dialog exports to Excel or PDF using the column layout you saved. Revised dates then go back into Katana through the order-maintenance path your process already uses. There is no automated write-back, which keeps your MRP data under your team's control. The category framing is on the [ERP scheduling add-on page](/erp-scheduling-add-on).
+
+## A realistic first week
+
+The method has a documented benchmark in the User Solutions lineage: at Plastilite Corporation the ERP vendor itself recommended User Solutions scheduling, and the team went from first export to a complete optimized schedule with ERP integration in 5 days. A Katana shop usually follows the same shape.
+
+| Day | Work |
+|---|---|
+| 1 | Export products and resources; build and run those two masks; verify counts |
+| 2 | Export operations; build the routing mask with unit conversions; review the routing designer |
+| 3 | Export open manufacturing orders; import; run the first full finite capacity schedule |
+| 4 | Compare EDGEBIC dates to current promises; correct instance counts, shifts, and setups where reality disagrees |
+| 5 | Lock the weekly rhythm: saved masks, import order, scheduler run, exports back |
+
+The [green-field setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough) covers the from-empty sequence, and the [Katana to EDGEBIC data mapping reference](/blog/katana-to-edgebic-data-mapping-reference) is the field-level lookup to keep open while building masks.
+
+## Test it with your own export
+
+Export this week's open manufacturing orders and an operations file, then [bring them to a demo](/contact-us). Mapping them live takes minutes, and you leave having watched your own shop scheduled against its own capacity. If you are evaluating more than one system, the [MRPeasy](/blog/edgebic-mrpeasy-integration-guide) and [Odoo](/blog/edgebic-odoo-integration-guide) versions of this guide follow the same method, which is the point of a universal import layer.
+
+<Accordion title="Does EDGEBIC connect to Katana through an API?">
+No. EDGEBIC reads the CSV or Excel exports Katana already produces through reusable import masks. There is no API integration to build, no app installed in the Katana account, and no certified connector to version-match. You map an export's columns onto EDGEBIC fields once and save the mask, and every run after that is two clicks with a per-run log recording each row.
+</Accordion>
+
+<Accordion title="What Katana data does EDGEBIC need to schedule?">
+Four exports carry a complete scheduling model: products, resources or work centers with a real machine count, operations or routings with sequence and run and setup times, and open manufacturing orders with quantities and dates. A fifth optional export carries logged labor from the floor. Each goes through its own import mask, and every row returns as Created, Updated, Reused, or Failed.
+</Accordion>
+
+<Accordion title="Do imported Katana manufacturing orders schedule themselves?">
+No, and that separation is deliberate. An import changes data, the scheduler changes the plan. Imported manufacturing orders appear as unscheduled demand and stay there until you run the scheduler, which states how many jobs are new and how many are being rescheduled before it plans anything. An import can therefore never silently rearrange the floor.
+</Accordion>

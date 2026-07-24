@@ -1,0 +1,80 @@
+---
+title: "How a Material Step Schedules as an Instant Gate"
+description: "Material lines in a routing consume no machine capacity, yet they still control when the next operation can start. Here is how EDGEBIC treats a material step as an instant gate on the timeline."
+published: 2026-08-03T12:00:00.000Z
+modified: 2026-08-03T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - material step scheduling
+  - routing dependency
+  - instant assignment
+  - operation gating
+  - finite capacity scheduling
+  - bill of routing
+targetPhrase: "material step scheduling"
+wordCount: 1450
+readingTime: 8
+faqQuestions:
+  - question: "Does a material step consume machine capacity in a schedule?"
+    answer: "No. In EDGEBIC a material step is a component or input on the routing, not a machine operation, so it takes no shift hours and books no capacity bucket. It schedules instantly at the point its predecessors allow. What it does contribute is a gate: its completion time becomes the earliest start for the operations that depend on it, so a material that is not ready holds up the work that needs it."
+  - question: "What is the difference between a material step and a work-center step?"
+    answer: "A work-center step is a machine operation with setup and run hours that consume finite capacity across shifts. A material step is a component the routing pulls in, with no machine time of its own. EDGEBIC assigns the material step instantly rather than searching for capacity, then uses its completion as a start constraint on the downstream operation. One competes for machine hours, the other only sets timing."
+  - question: "How can a step with no duration still delay a job?"
+    answer: "Because scheduling is driven by dependencies, not just by hours. A downstream operation cannot start before every step it depends on has completed. A material step completes instantly in the normal case, so it adds no delay, but it still sits in the dependency chain. When the material's availability is later than the operation would otherwise start, that availability date becomes the gate and the operation waits for it."
+qaQuestions:
+  - question: "Our routing has a raw-material line before the first machine operation. Why does it show up in the plan if it takes no time?"
+    answer: "It shows up because it is part of the dependency graph, and the first machine operation is linked to start after it. In the normal case the material step resolves instantly, so it adds nothing to the timeline and the machine operation starts exactly when it otherwise would. Keeping it in the routing is what lets EDGEBIC gate the operation on material readiness rather than assuming components are always on hand. If you ever attach an availability date to that material, the same step stops being a formality and becomes the constraint that decides the earliest start."
+  - question: "We want the schedule to wait for a long-lead component but not burn any work-center capacity while it waits. How do we model that?"
+    answer: "That is exactly what a material step does. Model the component as a material line that the downstream operation depends on, not as a machine operation. It will consume no shift hours, so no work center shows phantom load, but its completion gates the operation that needs it. The machine operation then starts at the later of its predecessor's end and the material's readiness. You get the wait without inventing fake capacity, which keeps your utilization numbers honest while still protecting the sequence."
+---
+
+**A material step schedules as an instant gate: it consumes no work-center capacity and takes no shift hours, but its completion time becomes the earliest start for the operations that depend on it. EDGEBIC by User Solutions assigns a material step immediately rather than searching for machine capacity, then feeds its completion into the timing of the next operation.** The result is a routing element that never competes for a machine yet still controls the sequence, which is precisely what a component or raw-material line should do.
+
+Not every line in a routing is a machine operation. Some represent the components, sub-parts, or raw materials that flow into the work. Those lines have no setup, no run time, and no place on any shift, but they are far from irrelevant. They are the reason a downstream operation cannot start until its inputs exist.
+
+## Two kinds of routing line
+
+A work-center step is a machine operation. It carries setup and run hours, it competes for finite capacity, and the [multi-shift allocator](/blog/how-multi-shift-allocation-fills-capacity) has to find real slots for it across shifts and instances. A material step is different in kind. It stands for an input to the process, so it has no machine time of its own and nothing to place on a shift.
+
+EDGEBIC recognizes the difference and handles each accordingly. When a step is a machine operation, the engine runs the capacity search. When a step is a material line, the engine skips the search entirely and assigns it instantly at the point its predecessors allow. There is no bucket to consume, so there is nothing to look for.
+
+## Instant assignment, but not zero influence
+
+"Instant" describes the material step's own duration, not its effect on the plan. Scheduling is driven by the dependency graph: an operation's earliest start is the latest completion among all the steps it depends on. A material step sits in that graph like any other node. In the ordinary case it completes the moment it is reached, so it contributes no delay and the operation that needs it starts exactly when it otherwise would.
+
+The value of keeping it in the routing is that the gate is now explicit. The downstream operation is defined as starting after the material, so the sequence is protected. If the material's availability is ever later than the operation's other predecessors, that availability becomes the binding constraint and the operation waits for it. This is how [a plan absorbs a late material delivery](/blog/how-a-plan-absorbs-a-late-material-delivery) without pretending the component was on hand.
+
+The engine composes it the same way it composes any predecessor timing. An operation's start is the maximum of its predecessors' end times, and a material step is simply one of those predecessors that happens to resolve instantly in the good case.
+
+## A worked example: a component gating a machine operation
+
+Take a two-line routing. Line 10 is a material step, a purchased casting. Line 20 is a machining operation on Mill-2 with 6 hours of work, linked to start after Line 10. The job can start Monday 08:00, and Mill-2 has an 08:00 to 16:00 day shift.
+
+**Casting on hand.** Line 10 resolves instantly at 08:00. Line 20 sees its only predecessor complete at 08:00, so it starts at 08:00 and, with 6 hours of work, finishes at 14:00. The material step cost nothing on the timeline. It simply confirmed the input was available.
+
+**Casting available Wednesday.** Now Line 10 carries a readiness of Wednesday 08:00. Line 20's earliest start is the later of Monday 08:00 and Wednesday 08:00, so it starts Wednesday 08:00 and finishes Wednesday 14:00. Mill-2 was free on Monday and Tuesday, but the operation correctly waited on its input. Crucially, Mill-2 never showed two days of phantom load while it waited, because the material step booked no capacity.
+
+That last point is what makes the instant gate valuable. The machine's utilization stays honest. The wait is real, the sequence is respected, and no work center is falsely marked busy during the delay.
+
+## Why model it this way
+
+The instant-gate design keeps two things separate that are easy to conflate: what consumes capacity and what controls timing. A machine operation does both. A material line does only the second. By assigning material steps instantly and using them purely as start constraints, EDGEBIC avoids two opposite errors. It never invents machine load for a component that needs no machine, which would inflate utilization and distort the [capacity picture](/blog/how-capacity-is-computed-for-a-work-center-shift-and-day). And it never lets an operation start before its inputs exist, which would produce a plan the floor cannot execute.
+
+This is the same discipline that makes [finite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) trustworthy. Every constraint that should shape the plan is represented, and nothing that should not consume capacity does. A material step is the clean expression of a constraint that is about availability, not about machine time.
+
+For where material fits in the wider flow, [how a scheduler nets demand against inventory](/blog/how-a-scheduler-nets-demand-against-inventory) covers the planning side, and the [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide) shows how dependency ordering, capacity, and timing gates combine into one pipeline. To see how your own routings gate on their inputs, explore [the EDGEBIC engine](/edgebic) or [bring your data to a demo](/contact-us).
+
+<Accordion title="Does a material step consume machine capacity in a schedule?">
+No. In EDGEBIC a material step is a component or input on the routing, not a machine operation, so it takes no shift hours and books no capacity bucket. It schedules instantly at the point its predecessors allow. What it does contribute is a gate: its completion time becomes the earliest start for the operations that depend on it, so a material that is not ready holds up the work that needs it.
+</Accordion>
+
+<Accordion title="What is the difference between a material step and a work-center step?">
+A work-center step is a machine operation with setup and run hours that consume finite capacity across shifts. A material step is a component the routing pulls in, with no machine time of its own. EDGEBIC assigns the material step instantly rather than searching for capacity, then uses its completion as a start constraint on the downstream operation. One competes for machine hours, the other only sets timing.
+</Accordion>
+
+<Accordion title="How can a step with no duration still delay a job?">
+Because scheduling is driven by dependencies, not just by hours. A downstream operation cannot start before every step it depends on has completed. A material step completes instantly in the normal case, so it adds no delay, but it still sits in the dependency chain. When the material's availability is later than the operation would otherwise start, that availability date becomes the gate and the operation waits for it.
+</Accordion>

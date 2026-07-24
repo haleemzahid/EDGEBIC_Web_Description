@@ -1,0 +1,89 @@
+---
+title: "How a Job Sticks to the Same Machine Instance"
+description: "When a work center has several identical machines, EDGEBIC prefers to keep one job on the same instance across shifts and days. Here is why that continuity matters and when the engine relaxes it."
+published: 2026-08-03T12:00:00.000Z
+modified: 2026-08-03T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - machine instance
+  - job continuity
+  - resource instance selection
+  - multi-instance work center
+  - finite capacity scheduling
+  - load balancing
+targetPhrase: "job machine instance continuity"
+wordCount: 1450
+readingTime: 8
+faqQuestions:
+  - question: "Does a job stay on the same machine when a work center has several?"
+    answer: "By default EDGEBIC prefers to keep one job on the same machine instance across the shifts and days it runs, rather than hopping it between identical machines. When a job first lands on an instance, the engine remembers that assignment and tries to use the same instance for the rest of the job's work at that center. This preserves continuity, which reduces changeover churn and keeps the job's trail on the floor coherent."
+  - question: "Why does keeping a job on one instance matter?"
+    answer: "Because moving a job between machines can mean re-fixturing, re-setup, and a confused trail on the shop floor. If a job runs three hours today and five tomorrow, it is usually better to run both on the same machine than to split them across two, which would risk paying setup twice and make the operator hunt for where the job is. Continuity keeps the physical reality simple and the changeover cost honest."
+  - question: "When does the scheduler put a job on a different instance instead?"
+    answer: "When the preferred instance is not available for the shift and hours the job needs. Instance continuity is a preference, not a hard lock, so if the remembered machine is fully booked or down, the engine falls back to selecting another available instance rather than delaying the job. It also gives way to explicit policies such as one-per-day dedication or deliberate load balancing across instances, which serve different goals."
+qaQuestions:
+  - question: "Our two-machine center keeps a long job on one machine even though the other sits idle at times. Is that wasting the second machine?"
+    answer: "Not necessarily. EDGEBIC prefers to keep a job on the instance it started on, because moving it to the idle machine can mean a second setup and a broken trail on the floor. If the job fits its timeline on one machine, continuity is usually the cheaper answer even if the second machine has gaps. If your goal is genuinely to finish that one job faster by running both machines in parallel, that is load balancing, a different strategy you can select, which deliberately splits the job across instances. Continuity and load balancing are two answers to two different questions, and you choose per work center which one fits."
+  - question: "A job ran on Mill-1 yesterday but today it went to Mill-2. Why did the continuity preference not hold?"
+    answer: "Continuity is a preference the engine relaxes when the preferred instance cannot take the work. If Mill-1 was fully booked, down for maintenance, or otherwise unavailable for the shift and hours today's portion needed, EDGEBIC selects an available instance rather than leaving the job waiting on a machine that has no room. The preference kept the job on Mill-1 while it could; when Mill-1 could not serve it, moving to Mill-2 was the right call over stalling. If continuity is critical for a particular center, a one-per-day dedication is the stronger tool."
+---
+
+**When a work center has several identical machines, EDGEBIC by User Solutions prefers to keep a single job on the same machine instance across every shift and day it runs there, rather than scattering its hours across different machines. The engine remembers where a job first landed and tries to reuse that instance, relaxing the preference only when the machine cannot take the work.** Continuity keeps changeover cost honest and the job's trail on the floor coherent, which is why it is the default instinct on a multi-machine center.
+
+A work center is often not one machine but several interchangeable ones, called instances. When a job needs more hours than a single shift holds, or spans several days, the engine has a choice each time it places another chunk of that job: put it back on the machine the job is already on, or send it to a different one. The default answer is to keep it together.
+
+## Why continuity is the default
+
+Moving a job between identical machines is not free on the floor. It can mean re-fixturing on the new machine, re-dialing a setup, and, just as costly in practice, a confused physical trail: an operator who expects the job on Mill-1 finds half of it on Mill-2. Keeping a job on one instance avoids all of that. The setup is paid once, the job stays in one place, and the record matches reality.
+
+So EDGEBIC treats instance selection with a memory. The first time a job's operation lands on an instance at a center, that assignment is remembered, and subsequent portions of the same job at the same center prefer that instance. A job that runs three hours today and five tomorrow runs both on the same machine when it can, rather than being split across two for no benefit.
+
+This is a genuinely different question from which shift a job's hours land on, covered in [how multi-shift allocation fills capacity](/blog/how-multi-shift-allocation-fills-capacity). The allocator decides when; instance continuity decides on which of the identical machines.
+
+## A preference, not a lock
+
+Continuity is a strong default, but it is a preference, not a hard constraint. If the remembered instance is not available for the shift and hours the next portion of the job needs, because it is fully booked or down for maintenance, the engine does not stall the job waiting for it. It falls back to selecting another available instance, usually the least loaded one that can take the work.
+
+That fallback is the right trade. Holding a job idle on a busy machine just to preserve continuity would cost more than the second setup it avoids. So the rule is: keep the job together while the preferred machine can serve it, and move it rather than delay it when the machine cannot.
+
+Two explicit policies also override the continuity instinct, because they serve different goals:
+
+- **One-per-day dedication** deliberately assigns each machine a single job for the whole day, a stronger form of continuity used where changeover owns the day, as in [how one-per-day dedicates a machine for a full day](/blog/how-oneperday-dedicates-a-machine-for-a-full-day).
+- **Load balancing** deliberately splits a job across instances to finish it faster in parallel, the opposite instinct, chosen when speed on one job matters more than continuity. The two are contrasted in [load balancing versus dedicated instance scheduling](/blog/load-balancing-vs-dedicated-instance-scheduling).
+
+Continuity is the default when neither of those policies is in force.
+
+## A worked example: a job across two days
+
+Take a milling center with two instances, Mill-1 and Mill-2, on an 8-hour day shift. A job needs 12 hours at this center and can start Monday.
+
+**Monday.** The engine places the first 8 hours. It selects Mill-1 (say Mill-2 already has other work), and remembers that this job is on Mill-1.
+
+**Tuesday.** Four hours remain. The continuity preference points back to Mill-1. Mill-1 has room Tuesday, so the remaining 4 hours go on Mill-1 too. The job ran entirely on one machine across two days, one setup, one coherent trail.
+
+Now change Tuesday. Suppose Mill-1 is down for maintenance Tuesday. The continuity preference cannot be satisfied, so rather than delay the job to Wednesday when Mill-1 returns, the engine places Tuesday's 4 hours on Mill-2, the available instance. The job moved, but only because staying would have meant waiting. The replaced assignment is visible, so a planner can see the job used two machines and why.
+
+The same job, and whether it stays on one machine or moves depends entirely on whether the preferred instance could serve it, exactly as a preference-with-fallback should behave.
+
+## When to lean on it, and when to override
+
+Rely on the default continuity when setup and re-fixturing between identical machines are real costs and you want jobs to stay put. Reach for load balancing when finishing one large job quickly, by running it on several machines at once, is worth splitting it up. Reach for one-per-day when a machine should own a single job for the day regardless of hours, typically where changeover dominates.
+
+The reason EDGEBIC exposes all three, rather than hard-coding one, is that shops genuinely differ. A fixture-heavy machining center wants continuity. A bank of identical CNC mills clearing a backlog wants load balancing. A heat-treat furnace wants one-per-day. The engine's default is continuity because it is the safest general instinct, and the other two are there for the cases that need them.
+
+For the wider picture, the [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide) shows how instance selection sits inside the allocator, and [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) explains why respecting each instance's real capacity is what keeps these choices honest. To see how your own multi-machine centers keep jobs together, explore [the EDGEBIC engine](/edgebic) or [bring your data to a demo](/contact-us).
+
+<Accordion title="Does a job stay on the same machine when a work center has several?">
+By default EDGEBIC prefers to keep one job on the same machine instance across the shifts and days it runs, rather than hopping it between identical machines. When a job first lands on an instance, the engine remembers that assignment and tries to use the same instance for the rest of the job's work at that center. This preserves continuity, which reduces changeover churn and keeps the job's trail on the floor coherent.
+</Accordion>
+
+<Accordion title="Why does keeping a job on one instance matter?">
+Because moving a job between machines can mean re-fixturing, re-setup, and a confused trail on the shop floor. If a job runs three hours today and five tomorrow, it is usually better to run both on the same machine than to split them across two, which would risk paying setup twice and make the operator hunt for where the job is. Continuity keeps the physical reality simple and the changeover cost honest.
+</Accordion>
+
+<Accordion title="When does the scheduler put a job on a different instance instead?">
+When the preferred instance is not available for the shift and hours the job needs. Instance continuity is a preference, not a hard lock, so if the remembered machine is fully booked or down, the engine falls back to selecting another available instance rather than delaying the job. It also gives way to explicit policies such as one-per-day dedication or deliberate load balancing across instances, which serve different goals.
+</Accordion>

@@ -1,0 +1,85 @@
+---
+title: "How Move and Teardown Time Fit Into a Schedule"
+description: "Beyond setup and run, a routing step can carry move hours and teardown hours. Here is what each represents, how they extend an operation's footprint, and when to bother modeling them."
+published: 2026-08-03T12:00:00.000Z
+modified: 2026-08-03T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - move time
+  - teardown time
+  - routing step time
+  - operation footprint
+  - finite capacity scheduling
+  - bill of routing
+targetPhrase: "move and teardown time scheduling"
+wordCount: 1400
+readingTime: 7
+faqQuestions:
+  - question: "What are move hours and teardown hours on a routing step?"
+    answer: "They are two additional time components a routing can carry beyond setup and run. Teardown hours represent the work of breaking down an operation after the run finishes, such as removing a fixture or cleaning a machine before it is free for the next job. Move hours represent moving the completed work toward the next operation. EDGEBIC stores both on the routing step so an operation's real footprint is not understated by setup and run alone."
+  - question: "How do move and teardown differ from setup and run?"
+    answer: "Setup and run are the front and body of an operation: getting ready, then making the parts. Teardown is the tail, the time after the run before the machine is genuinely available again. Move is about transporting the output onward. Setup and run are always the core of the hours the capacity search places, while move and teardown describe the edges of the step that a fully modeled routing should not ignore."
+  - question: "Do I have to populate move and teardown on every step?"
+    answer: "No. They default to zero and most steps can leave them there. Populate teardown where breaking down an operation takes meaningful time you would otherwise lose track of, such as a furnace that needs cooling or a fixture that takes real minutes to strip. Populate move where transporting work to the next operation is slow enough to matter. On the majority of steps both are negligible and leaving them at zero keeps the routing clean."
+qaQuestions:
+  - question: "Our machine looks free right after a run ends, but on the floor the operator still needs 40 minutes to strip the fixture before the next job. How do we capture that?"
+    answer: "Put those 40 minutes in the step's teardown time. Setup and run only describe getting ready and making the parts, so a routing that stops there tells the schedule the machine is available the instant the last piece is done, which is not true when there is real breakdown work to do. Teardown hours are exactly the field for that tail. Populating them keeps the machine's real availability honest, so the next job is not planned to start into a machine that is still being torn down."
+  - question: "Should slow material movement between operations go in move hours or in transit days?"
+    answer: "It depends on the scale and the calendar. Use move hours for a short in-process handoff measured in minutes or a couple of hours, the time to walk or cart the work to the next station. Use transit days when the movement is a whole-day affair, such as shipping a batch to another building, where you also want to choose calendar-day or working-day counting. Move hours describe the tail of an operation, while transit days are a day-scale gap that composes into the successor's start. Match the field to how the delay actually behaves."
+---
+
+**Move hours and teardown hours are two time components a routing step can carry beyond setup and run. Teardown is the work of breaking an operation down after the run so the machine is genuinely free, and move is transporting the finished work toward the next operation. EDGEBIC by User Solutions stores both on the routing step so an operation's real footprint on the timeline is not understated.** Most steps leave them at zero, but where they are real, populating them is what keeps a machine's true availability honest.
+
+Setup and run get all the attention because they are the bulk of an operation's hours. But an operation does not end the instant the last piece is made. There is often a tail: breaking down the setup, cleaning, cooling, stripping a fixture, then carting the work onward. Those minutes are real, and a routing that ignores them quietly overstates how soon the machine is available and how soon the next operation can begin.
+
+## The full shape of an operation
+
+Think of an operation as having four parts in order: prepare, run, break down, move on. Setup covers the prepare. Run covers making the parts. Teardown covers the break down. Move covers handing the work to the next stage.
+
+- **Setup** is the one-time preparation before the run, resolved as described in [how the setup time resolver picks a changeover time](/blog/how-the-setup-time-resolver-picks-a-changeover-time).
+- **Run** is the per-piece work, scaled by quantity, as covered in [how setup time composes into a step's duration](/blog/how-setup-time-composes-into-a-steps-duration).
+- **Teardown** is the tail after the run: the machine is done making parts but is not yet available, because a fixture has to come off, a bath has to drain, a chamber has to cool.
+- **Move** is getting the output to where the next operation will pick it up.
+
+Keeping these as distinct fields means a planner can model as much of the real operation as matters, rather than folding everything into one lump that hides where the time actually goes.
+
+## Where move and teardown sit on the timeline
+
+Teardown extends the machine's occupation past the end of the run. Until teardown is complete, the machine is not genuinely free for the next job, so modeling teardown keeps the machine's availability honest. If a run finishes at 14:00 but teardown takes 40 minutes, the machine is realistically not free until 14:40, and a routing with teardown captured reflects that instead of planning the next job to start into a machine that is still being stripped.
+
+Move describes getting the work to the next operation. It belongs to the tail of the step in the same way, part of the operation's own footprint rather than a machine-capacity draw on the next work center. For short in-process handoffs measured in minutes, move hours are the right home. For whole-day movements such as shipping to another building, the day-scale [transit mechanism](/blog/how-queue-flow-and-transit-stack-after-an-operation) is the better fit, because it lets you choose calendar-day or working-day counting. The dividing line is scale: minutes and short hauls belong in move, day-length shipments belong in transit.
+
+Because these are the edges of the step rather than the successor's start gate, they complement the queue, flow, and transit layers that compose between operations. Queue, flow, and transit answer "when can the next step begin." Move and teardown answer "what is still true about this step after the run ends." A complete routing accounts for both.
+
+## A worked example: the tail nobody counted
+
+Take a fixture-heavy milling operation on a single-instance machine, day shift 08:00 to 16:00. The step has a 1-hour setup, a 5-hour run, and, on the floor, a 45-minute fixture strip and a 15-minute cart to the inspection bench.
+
+**Without move and teardown modeled.** The routing shows 1 hour setup plus 5 hours run, so 6 hours. Start 08:00, finish 14:00. The schedule assumes the machine is free at 14:00 and the work reaches inspection at 14:00. Neither is quite true.
+
+**With move and teardown modeled.** Add 0.75 hours teardown and 0.25 hours move. The machine is realistically occupied until 14:45 for the strip, and the work does not reach inspection until 15:00. A downstream inspection operation planned to start at 14:00 was optimistic by an hour. Captured, the tail is visible and the plan stops overpromising the handoff.
+
+Same operation, and the only difference is whether the routing accounted for the edges. On one fixture-heavy step an hour of hidden tail is easy to shrug off; across a shift of them it is the difference between a plan that fits and a plan that is quietly an hour behind on every job.
+
+## When to bother
+
+Both fields default to zero, and that default is correct for most steps. A quick handoff and a trivial breakdown are not worth the data-entry cost. Reach for teardown where the breakdown genuinely takes time you would otherwise lose: furnace cooling, fixture stripping, cleaning between colors. Reach for move where the transport between operations is slow enough to notice. Everywhere else, leave them zero and keep the routing clean.
+
+The value of having the fields is that when the tail is real, you are not forced to fake it by padding setup or run, which would misprice the operation for other purposes. Move and teardown let the real shape of the operation be recorded where it belongs.
+
+For the wider picture of how a routing becomes a schedule, the [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide) covers the full pipeline, and [lead time as the sum of its parts](/blog/lead-time-as-the-sum-of-its-parts) shows how these small components add up across a whole job. The broader principle is the one behind [finite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling): a plan is only as honest as the time it accounts for. To model your own operations end to end, explore [the EDGEBIC engine](/edgebic) or [bring your data to a demo](/contact-us).
+
+<Accordion title="What are move hours and teardown hours on a routing step?">
+They are two additional time components a routing can carry beyond setup and run. Teardown hours represent the work of breaking down an operation after the run finishes, such as removing a fixture or cleaning a machine before it is free for the next job. Move hours represent moving the completed work toward the next operation. EDGEBIC stores both on the routing step so an operation's real footprint is not understated by setup and run alone.
+</Accordion>
+
+<Accordion title="How do move and teardown differ from setup and run?">
+Setup and run are the front and body of an operation: getting ready, then making the parts. Teardown is the tail, the time after the run before the machine is genuinely available again. Move is about transporting the output onward. Setup and run are always the core of the hours the capacity search places, while move and teardown describe the edges of the step that a fully modeled routing should not ignore.
+</Accordion>
+
+<Accordion title="Do I have to populate move and teardown on every step?">
+No. They default to zero and most steps can leave them there. Populate teardown where breaking down an operation takes meaningful time you would otherwise lose track of, such as a furnace that needs cooling or a fixture that takes real minutes to strip. Populate move where transporting work to the next operation is slow enough to matter. On the majority of steps both are negligible and leaving them at zero keeps the routing clean.
+</Accordion>

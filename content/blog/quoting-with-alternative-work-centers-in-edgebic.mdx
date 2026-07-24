@@ -1,0 +1,78 @@
+---
+title: "Quoting With Alternative Work Centers in EDGEBIC"
+description: "When a quote's primary machine is loaded, EDGEBIC can route a step to an alternative work center. See how the simulation uses alternates and how scenarios test a vendor swap."
+published: 2026-08-03T12:00:00.000Z
+modified: 2026-08-03T12:00:00.000Z
+category: Quoting & Promising
+author: user-solutions
+cluster: edgebic-quoting
+pillarSlug: edgebic-quoting-guide
+keywords:
+  - alternative work centers quote
+  - alternate routing quote
+  - work center substitution
+  - outside vendor scenario
+  - step override replace
+  - EDGEBIC quoting
+targetPhrase: "quoting with alternative work centers"
+wordCount: 1520
+readingTime: 8
+faqQuestions:
+  - question: "How does EDGEBIC use alternative work centers when quoting?"
+    answer: "A quote simulation in EDGEBIC by User Solutions borrows the live scheduling engine, so it honors alternative work centers exactly as a real run does. If a routing step lists alternates and the primary machine is fully loaded in the window, the engine can schedule the step on an available alternate, applying that alternate's speed factor to the time. The quoted date reflects the routing the engine actually chose, so an alternate that clears the backlog can produce an earlier promise than the primary alone."
+  - question: "What is a step override in a quote scenario?"
+    answer: "A step override is a per-step change inside a named scenario that leaves the real routing untouched. On a routing step you can replace the work center with another (including an outside vendor's), change its setup or process time, skip it, or move it in the sequence. Replacing the work center is how you model an outside vendor for one operation. The scenario then simulates the vendor for that step while keeping the rest of the routing in-house, and stores its own date and cost for comparison."
+  - question: "Does the quote's alternate become permanent on the order?"
+    answer: "It depends on where the alternate came from. If the routing itself lists alternative work centers, the engine chooses among them at each scheduling run, on the quote and later on the converted order, based on what is available then. If instead you modeled an alternate through a scenario step override, that override lives only in the scenario. To make it real on the order, you edit the actual routing before converting, because applying a scenario updates the quote's numbers, not the routing."
+qaQuestions:
+  - question: "Our primary mill is buried for a month, but we have a second mill that is slower. Will the quote automatically use it, or do I have to force it?"
+    answer: "If the milling step's routing lists the second mill as an alternative work center, the simulation can use it automatically when the primary is loaded, applying the second mill's speed factor to the time. So a step that would queue a month behind the primary might instead schedule on the slower-but-open second mill and finish sooner, and the quoted date reflects that choice. If the routing does not list the alternate, the engine will not invent it; you would model it as a scenario step override to test the swap. The practical move is to keep genuine alternates on your routings so the engine can load-balance across them at quote time without you forcing anything."
+  - question: "We quoted a job on an outside-vendor scenario to hit a tight date, converted it, and the shop ran it in-house anyway. Why?"
+    answer: "Because the vendor lived only in the scenario. A scenario step override that replaced the cutting work center with the vendor changed the simulation for that scenario, not the product's real routing. When you applied the winning scenario to the quote, it copied the dates and cost across, but the routing the converted order carries is still the in-house one. The fix is to make the routing change real in the routing editor before converting, so the order actually uses the vendor step. The rule is that a scenario is a what-if until you make its change real; applying it updates the numbers, and the routing edit makes them happen."
+---
+
+**A quote simulation in EDGEBIC uses the same scheduling engine as production, so it can route a step to an alternative work center when the primary is loaded, and it can test a vendor swap through a scenario.** In EDGEBIC by User Solutions, alternative work centers give a routing flexibility: if the primary machine is buried in the window you are quoting, the engine can schedule the step on an available alternate, applying that alternate's speed factor. The result is a quoted date built on the routing the engine actually chose, not a fantasy that ignores a jammed machine. This article covers both kinds of alternate: the ones baked into the routing, and the ones you model in a scenario.
+
+## Two ways an alternate reaches a quote
+
+There are two distinct ways an alternative work center shows up in a quote, and keeping them straight avoids the most common conversion mistake.
+
+The first is a **routing alternate**. A routing step can list alternative work centers alongside its primary, each with a speed factor. This is permanent routing data. Because the quote simulation borrows the live engine, it honors these alternates the same way a real scheduling run does: when the primary is unavailable, the engine can pick an available alternate.
+
+The second is a **scenario step override**. Inside a named what-if scenario, you can replace a step's work center with a different one, including an outside vendor's, without touching the real routing. This is a temporary experiment that lives only in that scenario.
+
+The difference matters at conversion. A routing alternate is chosen fresh at every scheduling run, so it carries to the order automatically. A scenario override does not; you must make it real in the routing before converting.
+
+## How the engine uses routing alternates at quote time
+
+When a routing step lists alternatives, the engine treats the primary and its alternates as a set of candidates for that operation. At each scheduling run, including the quote simulation, it schedules the step on the best available candidate given current load. If the primary work center has open capacity, the step runs there. If the primary is fully booked in the window, an available alternate can take the work.
+
+The alternate's speed factor adjusts the time. A factor of 1.0 means the alternate runs the step in the same time as the primary; a factor above 1.0 means it is slower, and below 1.0 means it is faster. So a slower alternate that is open can still beat a faster primary that is jammed for a month, because the queue behind the primary dwarfs the extra run time on the alternate.
+
+This is why keeping genuine alternates on your routings pays off at quote time. The engine can load-balance across them automatically, and a quoted date can come back earlier than the primary alone would allow, without anyone forcing a machine by hand. The underlying idea is the same [bottleneck](/blog/production-bottleneck-identification) logic that governs real scheduling: when the constraint is busy, flexible routing finds the next best path.
+
+## Modeling a vendor with a scenario step override
+
+Sometimes the alternate you want to test is not on the routing at all, such as sending one operation to an outside vendor for a rush. That is what scenario step overrides are for. In a scenario, add an override on the step, set its type to replace, and point it at the vendor's work center. The scenario then simulates the vendor for that step and keeps the rest of the routing in-house, storing its own date and cost.
+
+This lets you answer "what would it cost and when would it finish if we outsourced the cutting?" without editing the real routing or cloning the quote. You can build several such scenarios, one per option, and compare them side by side. The full scenario mechanics are in [comparing routing options for a quote](/blog/comparing-routing-options-for-a-quote-in-edgebic).
+
+## A worked example
+
+Acme needs 200 units of Widget-A, and the milling step's primary machine, the busiest work center on the routing, is booked solid for weeks. Two paths to a better date:
+
+**A routing alternate.** The milling step already lists a second, slightly slower mill as an alternative with a speed factor above 1.0. The simulation, seeing the primary jammed, schedules the milling on the open second mill. The extra run time is small next to the weeks of backlog it skips, so the quoted date comes back earlier than the primary alone would allow. No manual intervention is needed, and because the alternate is on the routing, the converted order will make the same choice at its scheduling run.
+
+**A scenario vendor swap.** Suppose there is no in-house alternate. You build a scenario, add a step override that replaces the milling work center with an outside vendor's, and simulate. The vendor cuts faster and clears the date, at a vendor premium on cost. You compare it against the standard scenario, and if it wins, you apply it to the quote.
+
+The two paths look similar on screen but behave differently at conversion, which is the next point.
+
+## Do not forget to make a scenario alternate real
+
+The one mistake that bites teams: applying a winning vendor scenario updates the quote's dates and cost, but it does not change the real routing. If you convert without editing the routing, the order carries the original in-house routing, and the shop runs the job in-house, missing the date you sold.
+
+The rule is that a scenario is a what-if until you make its change real. Before converting a quote sold on a vendor scenario, edit the actual routing so the step points at the vendor, then convert. Applying the scenario moves the numbers; the routing edit makes them happen. Routing alternates do not have this trap, because they were real routing data all along. See [how a quote becomes an order](/blog/how-a-quote-becomes-an-order-in-edgebic) for what conversion carries.
+
+## The takeaway
+
+Quoting with alternative work centers gives a quote the same routing flexibility your real schedule has. Routing alternates let the engine automatically shift a step to an open machine when the primary is jammed, applying a speed factor, so a quoted date can beat what the primary alone would offer, and the choice carries to the order at conversion. Scenario step overrides let you test an off-routing option like an outside vendor without disturbing the routing, but they must be made real before you convert. Keep genuine alternates on your routings, test the rest with scenarios, and follow through on the winner. Walk the full workflow in the [EDGEBIC quoting guide](/blog/edgebic-quoting-guide), compare options in [comparing routing options for a quote](/blog/comparing-routing-options-for-a-quote-in-edgebic), and see the platform in full on the [EDGEBIC overview](/edgebic).

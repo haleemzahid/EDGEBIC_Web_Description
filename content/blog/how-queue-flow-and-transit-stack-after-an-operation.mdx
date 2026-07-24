@@ -1,0 +1,98 @@
+---
+title: "How Queue, Flow, and Transit Stack After an Operation"
+description: "Between one operation ending and the next beginning, EDGEBIC layers three different delays in a fixed order: queue time, lot-streaming flow, and transit days. Here is how they compose and where they interact."
+published: 2026-08-03T12:00:00.000Z
+modified: 2026-08-03T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - queue time
+  - flow time
+  - transit days
+  - lot streaming
+  - operation timing
+  - finite capacity scheduling
+targetPhrase: "queue flow transit composition"
+wordCount: 1650
+readingTime: 9
+faqQuestions:
+  - question: "What delays sit between one operation ending and the next starting?"
+    answer: "EDGEBIC composes up to three timing layers after an operation ends, in a fixed order: queue time, a shift-aware buffer before the next operation; flow or lot-streaming time, which lets a downstream step begin before the upstream finishes; and transit days, a calendar or working-day delay for moving material. Each is optional, and together they set the earliest start of the successor operation."
+  - question: "Does lot streaming and queue time add up, or does one replace the other?"
+    answer: "When a lot-streaming model is active, its result replaces the queue-adjusted end rather than adding on top of it, because the streaming time is itself the successor gate. If you also need a flat handling lag on top of streaming, EDGEBIC provides a separate transfer-delay value for that. Transit days always compose after whichever gate applies, so material movement is added last."
+  - question: "What is the difference between calendar-day and working-day transit?"
+    answer: "Transit days delay the successor by a number of days after the material is ready. In calendar mode the days count straight through weekends and holidays, so a four-day transit that starts Thursday lands the following Monday. In working-day mode only shop-open days count, so the same four days skip the weekend. EDGEBIC lets you pick the mode per step so shipping lag and internal moves can be modeled differently."
+qaQuestions:
+  - question: "We set both a queue time and a flow overlap on the same operation and the queue seems to be ignored. Is that a bug?"
+    answer: "No, that is the documented interaction. When a lot-streaming flow is active on a step, the flow time becomes the successor's start gate and replaces the queue-adjusted end, because the two are competing to answer the same question, when can the next step begin. It is not that the queue was lost, it is that the flow overrode it. If your intent was streaming plus a fixed handling lag, use the separate transfer-delay value, which does stack on top. EDGEBIC even flags the queue-plus-flow combination as an anomaly so a planner can confirm which one they meant."
+  - question: "A job moves between two buildings and the transit keeps landing on a Sunday when nothing is received. How do we fix that?"
+    answer: "Switch that step's transit to working-day mode. In calendar mode the transit counts every day including weekends, so a shipment that leaves late in the week can land on a day the receiving dock is closed. Working-day mode counts only shop-open days, so the transit skips weekends and holidays and the material arrives on a day someone is there to receive it. You set the mode per step, so a same-day internal move and a multi-day inter-plant shipment can each use the mode that matches reality."
+---
+
+**After an operation ends, EDGEBIC by User Solutions composes up to three timing layers before the next operation may start, and it applies them in a fixed order: queue time first, then lot-streaming flow, then transit days. Each layer is optional, each answers a different question, and the order they stack in determines the successor's earliest start.** Understanding the stack explains why a gap between two operations is sometimes longer than any single field suggests, and why turning on lot streaming can make a queue time appear to vanish.
+
+The time an operation occupies a machine is only part of a step's footprint. Just as important is what happens in the gap before the next operation begins. That gap is not one thing. It is a small stack of distinct mechanisms, and they interact in ways worth knowing.
+
+## Three layers, three jobs
+
+Each layer models a different real-world delay.
+
+- **Queue time** is a buffer the successor waits before it may start, a deliberate cushion that absorbs variability so the downstream operation is not starved the instant the upstream one finishes. It is shift-aware, meaning it is measured against the calendar of working hours rather than raw clock time. The case for keeping it is covered in [why queue time is not wasted time](/blog/why-queue-time-is-not-wasted-time).
+- **Flow time**, or lot streaming, is the opposite instinct. Instead of making the successor wait, it lets the successor begin before the upstream operation fully completes, because the first transfer batch of parts is already available. This is what overlaps two operations and shrinks total lead time.
+- **Transit days** model the physical movement of material after it is ready, such as shipping a batch to another building or plant. This is a whole-day delay layered on after the work is done.
+
+Queue and flow are competing answers to the same question, when can the next step begin. Transit is a separate concern, when does the material arrive, so it composes after whichever gate applies.
+
+## The order the engine applies them
+
+EDGEBIC composes these in a fixed sequence at the point it finishes an operation:
+
+```
+operation end
+  -> apply queue time (shift-aware)
+  -> apply flow / lot streaming (if active, this becomes the gate)
+  -> apply transit days (calendar or working-day)
+  = successor earliest start
+```
+
+The order matters because of one interaction. When a lot-streaming flow is active on a step, the flow result replaces the queue-adjusted end rather than adding to it. The streaming time is itself the successor's start gate, so it overrides the queue rather than stacking behind it. If you genuinely need a fixed handling lag on top of streaming, that is a separate transfer-delay value, which does add. EDGEBIC surfaces the queue-plus-flow case as an anomaly so a planner can confirm which behavior they intended rather than being surprised by it.
+
+Transit days sit at the bottom of the stack. Whatever gate came out of the queue-or-flow step, transit adds its whole-day delay after it. So a job with a flow overlap and a transit still gets the transit, because material still has to move once the streamed parts are ready.
+
+## Calendar days versus working days
+
+Transit has one more choice: how to count its days. In calendar mode, the days run straight through, so a four-day transit that departs Thursday lands the following Monday, weekend included. In working-day mode, only shop-open days count, so the same four-day transit skips Saturday and Sunday and arrives later in the following week. You choose the mode per step, which lets an over-the-road shipment (which does not care about your shop calendar) use calendar days while an internal move that depends on a receiving dock being staffed uses working days. The plant-to-plant version of this is explored in [how transit time between plants affects a schedule](/blog/how-transit-time-between-plants-affects-a-schedule).
+
+## A worked example: the same gap, three ways
+
+Take two operations. Op 10 finishes Thursday at 14:00 on a Monday-to-Friday day-shift calendar, 08:00 to 16:00. Op 20 depends on it. The step carries a 4-hour queue time, and we will vary the flow and transit.
+
+**Queue only.** The 4-hour shift-aware queue runs from Thursday 14:00 to Friday 10:00 (2 hours Thursday afternoon, 2 hours Friday morning, jumping the overnight). Op 20's earliest start is Friday 10:00.
+
+**Queue plus a 2-day calendar transit.** The queue lands Friday 10:00, then transit adds 2 calendar days: Saturday and Sunday. Op 20's earliest start is Sunday 10:00, which the calendar then rounds forward to the next open shift, Monday 08:00, because Sunday is not a working day.
+
+**Queue plus a 2-day working-day transit.** The queue lands Friday 10:00, then transit counts only shop-open days: Monday and Tuesday. Op 20's earliest start is Tuesday 10:00. The weekend was skipped by the counting itself, not just rounded away afterward.
+
+**Flow instead of queue.** Now suppose Op 10 has a lot-streaming flow that makes the first transfer batch ready 1 hour into its run. The flow becomes the gate and replaces the queue-adjusted end, so Op 20 can begin as soon as that batch exists rather than waiting the 4-hour queue. If the step also carries transit, the transit still applies after the streamed batch is ready.
+
+Same two operations, same 4-hour queue field, and four different successor starts depending on which layers are active and how transit counts. None of it is arbitrary. Each result is the fixed stack applied to the data on the step.
+
+## When to use which layer
+
+Reach for queue time when you want a protective buffer between operations, a cushion against upstream variability. Reach for flow, or a [transfer batch](/blog/what-is-a-transfer-batch), when the operations can overlap and you want to compress lead time by starting the successor early. Reach for transit when material physically moves and that movement takes real days, and pick working-day mode when the arrival depends on the shop being open. The one combination to be deliberate about is queue plus flow on the same step, because flow wins and the queue you entered will not add. When both are set, decide whether you meant streaming with a handling lag (use transfer delay) or a plain buffer (drop the flow).
+
+This stack is one slice of the larger pipeline. The [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide) places it alongside dependency ordering and capacity, and [how one late operation ripples through a job](/blog/how-one-late-operation-ripples-through-a-job) shows how a delay in any layer cascades to the finish. The reason these gaps are honored at all rather than assumed away is the same one behind [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling): a plan is only trustworthy when every real delay is on it. To see how your own routings compose these delays, explore [the EDGEBIC engine](/edgebic) or [bring your data to a demo](/contact-us).
+
+<Accordion title="What delays sit between one operation ending and the next starting?">
+EDGEBIC composes up to three timing layers after an operation ends, in a fixed order: queue time, a shift-aware buffer before the next operation; flow or lot-streaming time, which lets a downstream step begin before the upstream finishes; and transit days, a calendar or working-day delay for moving material. Each is optional, and together they set the earliest start of the successor operation.
+</Accordion>
+
+<Accordion title="Does lot streaming and queue time add up, or does one replace the other?">
+When a lot-streaming model is active, its result replaces the queue-adjusted end rather than adding on top of it, because the streaming time is itself the successor gate. If you also need a flat handling lag on top of streaming, EDGEBIC provides a separate transfer-delay value for that. Transit days always compose after whichever gate applies, so material movement is added last.
+</Accordion>
+
+<Accordion title="What is the difference between calendar-day and working-day transit?">
+Transit days delay the successor by a number of days after the material is ready. In calendar mode the days count straight through weekends and holidays, so a four-day transit that starts Thursday lands the following Monday. In working-day mode only shop-open days count, so the same four days skip the weekend. EDGEBIC lets you pick the mode per step so shipping lag and internal moves can be modeled differently.
+</Accordion>
