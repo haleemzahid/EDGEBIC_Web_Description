@@ -1,0 +1,104 @@
+---
+title: "What Each Scheduling Mode Rebuilds"
+description: "The five EDGEBIC scheduling modes decide which orders a run touches and which existing capacity it keeps: new-only, full reschedule, all unstarted, smart incremental, and single-job, with worked outcomes."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - scheduling modes
+  - full reschedule vs incremental
+  - incremental scheduling
+  - capacity reservation
+  - reschedule existing orders
+  - schedule stability
+targetPhrase: "scheduling modes"
+wordCount: 1620
+readingTime: 8
+faqQuestions:
+  - question: "What is the difference between a full reschedule and an incremental one?"
+    answer: "A full reschedule clears every existing capacity reservation and rebuilds all orders from scratch, so nothing from the prior plan is assumed. An incremental run touches only some orders and leaves the rest of the plan in place, replaying the untouched orders' capacity so their slots stay reserved. Full is for after a major change to routings or work centers; incremental is for slotting in new work or re-optimizing unstarted jobs without disturbing everything else."
+  - question: "Does scheduling ever move work that has already started on the floor?"
+    answer: "No. Across every mode, an operation with a logged actual start or end is immutable and is never re-placed. The engine preserves those rows exactly, keeps their capacity reserved, and reschedules only the not-yet-started work around them. This is the one invariant that holds regardless of which mode you pick, because moving completed work would make the plan diverge from what actually happened."
+  - question: "What does new-only scheduling leave untouched?"
+    answer: "New-only scheduling processes just the orders that have no schedule yet. Every order that already has a schedule is left exactly as it is, and its reserved capacity is replayed into the engine so new work is placed around it rather than on top of it. It is the safest daily run: it fills in newly entered jobs without touching a single existing bar on the Gantt."
+qaQuestions:
+  - question: "I ran a schedule to add three new jobs and half my existing plan shifted. Which mode should I have used?"
+    answer: "You most likely ran a full reschedule, which clears all reservations and rebuilds everything, so existing jobs re-placed themselves and moved. To add new work without disturbing the current plan, use the new-only mode: it processes only the orders that have no schedule yet and replays every existing order's capacity so the new jobs slot into the gaps around them. Existing bars stay put. Reserve the full reschedule for when you have genuinely changed routings, shifts, or work centers and want the whole plan rebuilt against the new reality."
+  - question: "We re-optimize the shop every Monday but today's jobs must not change. What mode does that?"
+    answer: "The smart incremental mode. It reschedules unstarted orders to take advantage of the latest priorities and capacity, exactly like the all-unstarted mode, but it also honors a near-term frozen window so operations inside the immediate horizon are left alone. That gives you a fresh plan for the rest of the week while the work the floor is already set up for stays fixed. Jobs with actuals are preserved in every mode, but the frozen window additionally protects imminent unstarted work that a supervisor has already committed to."
+---
+
+**EDGEBIC by User Solutions offers five scheduling modes, and the only thing they really differ on is scope: which orders the run touches and which of the existing plan's capacity it keeps reserved. A full reschedule clears everything and rebuilds; the incremental modes touch a subset and replay the rest so untouched slots stay booked; and across all of them, any operation that already has a shop-floor actual is preserved and never moved.** Choosing the right mode is the difference between quietly slotting in three new jobs and accidentally reshuffling the whole shop.
+
+Every scheduling run starts by deciding what to keep. That decision is the mode. Once it is made, the same placement engine runs; the mode only shapes the world the engine sees before it starts.
+
+## The one rule every mode obeys
+
+Before the modes diverge, they agree on an invariant: actuals are immutable. Any schedule row carrying a logged actual start or end represents work the floor has already done or begun, and the engine never re-places it. Its capacity stays reserved, its dates stay fixed, and the engine reschedules only around it. This is why even a full reschedule cannot rewrite history: it clears the *reservations for unstarted work*, but a step someone actually ran keeps its place. Everything below is about the unstarted work.
+
+## The five modes
+
+Each mode answers two questions: which orders are in scope, and what happens to the orders that are not.
+
+| Mode | Orders it processes | What it does with the rest |
+|---|---|---|
+| New only | Orders with no schedule yet | Left untouched; their capacity is replayed so new work fits around them |
+| Full reschedule | Every order | All unstarted reservations cleared; the plan is rebuilt from scratch |
+| All unstarted | New orders plus any order with no actuals | Orders with shop-floor activity are preserved |
+| Smart incremental | Same as all unstarted | Same, plus a near-term frozen window is protected from change |
+| Single-job reschedule | Only the specific job you select | Every other order is left exactly as it is |
+
+**New only** is the safe daily run. You entered some orders this morning; this mode places them into the gaps in the current plan and touches nothing else.
+
+**Full reschedule** is the reset. It releases every unstarted reservation and rebuilds the entire plan, so it is the mode to use after you change a routing, add a work center, or alter shifts, when the old plan was built against a reality that no longer holds.
+
+**All unstarted** re-optimizes: it re-places every job that has not started, taking advantage of the latest priorities and capacity, while leaving jobs that are underway alone.
+
+**Smart incremental** is all-unstarted with a guardrail. It additionally protects a near-term frozen window, so imminent work the floor is already set up for does not churn even though it has no actuals yet.
+
+**Single-job reschedule** is the surgical mode: reschedule one job, from where its actuals leave off, and leave the rest of the shop exactly where it was.
+
+## Why "replay" matters
+
+The subtle part is what happens to orders *not* in scope. They are not simply ignored. The engine replays their committed capacity into its internal picture of the shop before it places any new work. If it did not, a new job would be placed as if those machines were free, and two jobs would claim the same hours.
+
+So in a new-only run, every existing order's whole schedule is replayed, and the three new jobs are threaded into whatever capacity is genuinely left. In an all-unstarted run, only the orders being kept, the ones with actuals, are replayed; the unstarted orders' old reservations are released so their work can be re-placed on better slots.
+
+This replay is also the fix for a classic reschedule bug. If a job with a partial actual on step one kept step two's and step three's old reservations alive, the engine would see those machines as booked and push the new step two days into the future. The rule is precise: for a job being rescheduled, keep only the rows that have actuals, and release the rest. That is why [a reschedule frees stale capacity reservations](/blog/how-a-reschedule-frees-stale-capacity-reservations) rather than tripping over them.
+
+## A worked example
+
+Five orders. MO-10 through MO-13 are already scheduled; MO-14 was entered this morning. MO-11 has an actual start logged on its first operation.
+
+**New only.** Only MO-14 is processed. MO-10 through MO-13 are replayed verbatim into the capacity picture, and MO-14 is placed into the gaps around them. Result: four untouched plans plus one new one. Nothing on the existing Gantt moves.
+
+**Full reschedule.** All five are in scope. The engine clears every unstarted reservation and rebuilds. MO-11's actual-started operation is preserved, but its later unstarted steps, and all of MO-10, MO-12, MO-13, and MO-14, are re-placed from scratch against current priorities. This is the mode that "moved half my plan," and that is exactly what it is for.
+
+**All unstarted.** MO-14 plus the unstarted parts of MO-10, MO-12, MO-13, and the unstarted tail of MO-11 are re-placed. MO-11's actual-started operation is preserved and replayed. You get a re-optimized plan that still respects what the floor has begun.
+
+**Smart incremental.** The same as all-unstarted, except any operation inside the near-term frozen window, say the next shift the floor is already set up for, is left alone even though it has no actuals. You re-optimize next week while today stays put.
+
+**Single-job reschedule of MO-12.** Only MO-12 is rebuilt, from where its actuals stand. The other four plans, including the just-entered MO-14 if it was already scheduled, are untouched.
+
+## Choosing a mode
+
+The decision is really about how much disruption you are willing to accept in exchange for how much re-optimization. New-only accepts none and re-optimizes nothing existing. Full reschedule accepts total churn to get a plan fully consistent with changed data. The incremental modes sit between: re-place the unstarted work for a better plan, but keep the started work fixed, and with smart incremental, keep the imminent work fixed too.
+
+The reason the modes exist at all is [schedule stability](/blog/why-schedule-stability-can-beat-schedule-optimality): a plan the floor cannot trust because it reshuffles every run is worse than a slightly less optimal plan that holds steady. New-only and smart incremental exist to protect that trust; full reschedule exists for the moments when the underlying reality has changed enough that stability would just preserve a wrong plan.
+
+For the full engine pipeline these modes feed, see the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and for the general reason a run respects existing bookings at all, [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) covers why capacity has to be honored. To watch each mode's effect on your own plan, explore [EDGEBIC](/edgebic) or [bring your data to a demo](/contact-us).
+
+<Accordion title="What is the difference between a full reschedule and an incremental one?">
+A full reschedule clears every existing capacity reservation and rebuilds all orders from scratch, so nothing from the prior plan is assumed. An incremental run touches only some orders and leaves the rest of the plan in place, replaying the untouched orders' capacity so their slots stay reserved. Full is for after a major change to routings or work centers; incremental is for slotting in new work or re-optimizing unstarted jobs without disturbing everything else.
+</Accordion>
+
+<Accordion title="Does scheduling ever move work that has already started on the floor?">
+No. Across every mode, an operation with a logged actual start or end is immutable and is never re-placed. The engine preserves those rows exactly, keeps their capacity reserved, and reschedules only the not-yet-started work around them. This is the one invariant that holds regardless of which mode you pick, because moving completed work would make the plan diverge from what actually happened.
+</Accordion>
+
+<Accordion title="What does new-only scheduling leave untouched?">
+New-only scheduling processes just the orders that have no schedule yet. Every order that already has a schedule is left exactly as it is, and its reserved capacity is replayed into the engine so new work is placed around it rather than on top of it. It is the safest daily run: it fills in newly entered jobs without touching a single existing bar on the Gantt.
+</Accordion>

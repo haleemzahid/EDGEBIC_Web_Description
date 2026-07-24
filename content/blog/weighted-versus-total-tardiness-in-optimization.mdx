@@ -1,0 +1,86 @@
+---
+title: "Weighted Versus Total Tardiness in Optimization"
+description: "The EDGEBIC optimizer tracks two lateness measures. Total tardiness sums all late hours; weighted tardiness scales each job by priority so a critical job late counts for more."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - weighted tardiness
+  - total tardiness
+  - schedule optimization metrics
+  - job priority scheduling
+  - production schedule optimization software
+  - on-time delivery
+targetPhrase: "weighted versus total tardiness"
+wordCount: 1520
+readingTime: 8
+faqQuestions:
+  - question: "What is the difference between total and weighted tardiness in the optimizer?"
+    answer: "Total tardiness adds up every job's hours past its due date with all jobs counted equally. Weighted tardiness scales each job's late hours by its priority, so a late high-priority job contributes more to the total than a late low-priority one. The EDGEBIC optimizer tracks both, and its default On-time first goal ranks weighted tardiness first, so it protects your most important jobs before it worries about total late hours."
+  - question: "How does job priority affect weighted tardiness?"
+    answer: "Priority sets each job's weight. A Priority 1 job carries full weight, a Priority 2 job carries half, a Priority 3 job about a third, and so on, with a small floor so even the lowest-priority job still counts for something and is never ignored entirely. The optimizer multiplies each job's late hours by its weight, so slipping a critical job hurts the weighted score far more than slipping a minor one, which steers the optimizer toward protecting the jobs you marked important."
+  - question: "Which tardiness measure should I optimize toward?"
+    answer: "For most plants, weighted tardiness, which is what On-time first uses. It matches the real business cost of lateness, where a late shipment to a key customer matters more than a late stock-replenishment order. Total tardiness is useful as a raw picture of overall lateness, but on its own it treats every job as equally important, which rarely matches how a shop actually prioritizes. Set your job priorities carefully and let the weighted measure do the work."
+qaQuestions:
+  - question: "The optimizer accepted a plan with more total late hours than my current one. Why is that an improvement?"
+    answer: "Because it cut weighted lateness by protecting your important jobs. Under On-time first, the optimizer minimizes weighted tardiness, not raw total. If it can take a critical Priority 1 job off the late list by letting a low-priority job slip further, the weighted score improves even though the total late hours rise. That is usually the trade you want: on-time delivery to the customers who matter, at the cost of a minor order finishing a little later."
+  - question: "I did not set priorities on my jobs. Does weighted tardiness still work?"
+    answer: "It works, but it cannot tell your jobs apart. If every job carries the same priority, each one gets the same weight, so weighted and total tardiness move together and the optimizer has no basis to prefer protecting one job over another. To get the benefit of weighted tardiness, set real priorities that reflect which orders matter most. Then the optimizer will defend the high-priority jobs first when the week cannot fit everything on time."
+---
+
+**The optimizer tracks two lateness measures: total tardiness adds up every job's hours past its due date equally, while weighted tardiness scales each job's late hours by its priority so a critical job running late counts for more than a minor one.** The default On-time first goal in EDGEBIC ranks weighted tardiness first, which means it protects your most important jobs before it worries about total late hours.
+
+EDGEBIC by User Solutions computes both measures on every optimizer run, so you can see the raw lateness and the priority-adjusted lateness side by side. This post explains how each is calculated, why they can disagree, and which one to steer by. For how these measures fit into a goal, see [how the optimizer ranks goals in strict order](/blog/how-the-optimizer-ranks-goals-in-strict-order) and the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide).
+
+## Total tardiness: the raw picture
+
+Total tardiness is the straightforward sum. For each job, take the hours it finishes past its due date, counting zero if the job is on time or early, then add those hours across every job in the plan. A plan where one job is 4 hours late and another is 2 hours late has a total tardiness of 6 hours.
+
+It is an honest, simple measure of how late the plant is overall. Its limitation is that it treats every job as equally important. Four hours late on a rush order for your biggest customer counts exactly the same as four hours late on a routine stock order. Most shops do not see lateness that way, which is why the optimizer also carries a priority-aware version.
+
+## Weighted tardiness: lateness that respects priority
+
+Weighted tardiness takes each job's late hours and multiplies them by a weight derived from the job's priority. Higher-priority jobs carry more weight, so their lateness dominates the score:
+
+| Job priority | Weight | 4 hours late contributes |
+|---|---|---|
+| Priority 1 | 1.0 | 4.0 |
+| Priority 2 | 0.5 | 2.0 |
+| Priority 3 | about 0.33 | about 1.33 |
+| Priority 4 | 0.25 | 1.0 |
+
+The weight is one divided by the priority number, with a small floor so that even a very low-priority job still counts for a little and is never completely ignored. The effect is that a late Priority 1 job hurts the weighted score four times as much as the same lateness on a Priority 4 job. That is the whole point: the measure encodes which jobs you care about most, drawing directly on the [priority rules](/blog/glossary-priority-rules) you set on your orders.
+
+## When the two measures disagree
+
+The two measures usually point the same way, but the interesting cases are when they diverge. Consider two plans for an overbooked week:
+
+- **Plan A** protects a minor order and lets a Priority 1 job slip 4 hours. Total tardiness 4 hours; weighted tardiness 1.0 times 4, which is 4.0.
+- **Plan B** protects the Priority 1 job and lets a Priority 3 order slip 8 hours. Total tardiness 8 hours; weighted tardiness about 0.33 times 8, which is about 2.67.
+
+Total tardiness prefers Plan A, because 4 late hours beats 8. Weighted tardiness prefers Plan B, because 2.67 beats 4.0. Under On-time first, the optimizer minimizes weighted tardiness, so it chooses Plan B: it protects your important customer even though the plant racks up more total late hours doing it. That is almost always the trade a real shop wants, and it is exactly the trade a raw total would get backward.
+
+## Why the optimizer ranks weighted first
+
+The default goal, [On-time first](/blog/the-ontimefirst-optimizer-preset-explained), puts weighted tardiness at the top of its ranking, above late-job count, stability, and overall span. Ranking it first means the optimizer defends your high-priority delivery promises before it optimizes anything else, and it treats due dates as strongly weighted targets rather than casual suggestions, the design covered in [why the optimizer treats due dates as soft targets](/blog/why-the-optimizer-treats-due-dates-as-soft-targets).
+
+Because weighted tardiness is the primary on-time measure, setting accurate job priorities is not a cosmetic step. It is the input that tells the optimizer which jobs to protect when the week cannot fit everything on time. The deeper mechanics of driving this measure down are covered in [minimizing weighted tardiness with the optimizer](/blog/minimizing-weighted-tardiness-with-the-optimizer).
+
+## Why both measures are still reported
+
+If weighted tardiness drives the decision, why show total at all? Because the two together tell a fuller story than either alone. The weighted number tells you whether the plan served your priorities; the total number tells you the raw scale of lateness in the plant. Seeing weighted fall while total rises is the signal that the optimizer made a deliberate priority trade, and having both on screen lets you confirm that trade was the one you wanted rather than an accident.
+
+Both numbers come from the same calculator that feeds the goal ranking and the audit record, so the figure you read on the comparison screen is the exact figure the optimizer decided on. Reading the whole comparison, including which rows appear conditionally, is covered in [reading the optimizer KPI comparison table](/blog/reading-the-optimizer-move-list).
+
+## The role of good priorities
+
+Weighted tardiness is only as smart as your priorities. If every job carries the same priority, every weight is equal, weighted and total tardiness move together, and the optimizer has no basis to prefer protecting one job over another. To get the benefit, set priorities that reflect which orders truly matter: key customers, penalty-clause contracts, and rush work get the high numbers, and routine replenishment sits lower. Then the optimizer knows exactly which promises to defend first.
+
+To try the optimizer on your own orders and see both measures on real jobs, visit [EDGEBIC](/edgebic).
+
+## The bottom line
+
+Total tardiness sums all late hours equally; weighted tardiness scales each job's lateness by its priority. The optimizer tracks both and ranks the weighted version first under its default goal, so it protects your important jobs even when that means more total late hours overall. The measures diverge exactly when a priority trade is on the table, and that is the moment weighted tardiness earns its place. Set real priorities, watch the weighted number, and let the total confirm the trade.

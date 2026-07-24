@@ -1,0 +1,102 @@
+---
+title: "How a Supervisor Corrects a Kiosk Punch in EDGEBIC"
+description: "A bad punch is never edited in place. See how a supervisor corrects kiosk hours, pieces, or a reason code with an append-only adjustment that keeps the original record intact."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - correct kiosk punch
+  - punch adjustment audit
+  - supervisor punch edit
+  - append only correction
+  - shop floor actuals correction
+  - recompute daily breakdown
+targetPhrase: "correct kiosk punch"
+wordCount: 1420
+readingTime: 7
+faqQuestions:
+  - question: "How does a supervisor correct a bad punch in EDGEBIC?"
+    answer: "A supervisor opens the history drawer on the affected schedule, edits the punch's hours, pieces, or reason code, and types a mandatory reason. The original punch row is never changed. Instead the system writes a separate adjustment record that carries the old value, the new value, the field that changed, who made the change, and why. The daily hours are then rebuilt from the corrected punch set."
+  - question: "Does correcting a punch overwrite the operator's original entry?"
+    answer: "No. Corrections in EDGEBIC are append-only. The original production punch stays exactly as the operator left it, and every edit is recorded as its own adjustment row alongside it. To reverse a correction, a supervisor writes another adjustment with the counter-value, never a delete. That makes the history drawer a full forensic trail of who changed what, when, and for what reason."
+  - question: "Why does an edit to a reported value require a reason?"
+    answer: "A reason is mandatory because the first entry stands as a record and every later change has to be attributable. If the reason box is left empty, the save cancels rather than quietly overwriting the earlier number. The reason is stored on the adjustment row, so anyone reading the drawer or an audit report later sees not just that a value moved but the justification a supervisor gave at the time."
+qaQuestions:
+  - question: "An operator tapped Complete an hour early, so the run shows 4.83 hours instead of 5.83. How do I fix it without corrupting the day?"
+    answer: "Open the history drawer on that schedule, find the closed run punch for the day, and change its actual hours from 4.83 to 5.83 with a reason such as 'tapped Complete early, corrected from the time-study sheet.' EDGEBIC writes an adjustment row capturing the 4.83 to 5.83 change and your name, leaves the original punch untouched, then click Recompute Breakdown so the day's rolled-up hours move from 4.83 to 5.83 to match."
+  - question: "I see a zero-hour punch from a double-tap in the drawer. Is that a problem, and can I clean it up?"
+    answer: "It is harmless. When a punch opens and closes in the same instant, EDGEBIC clamps its duration to zero rather than writing a negative number, so it contributes nothing to the day's hours. You cannot delete it because punches are append-only, but you can annotate it with an adjustment carrying a reason like 'duplicate tap' so the drawer reads cleanly and nobody wonders whether the zero row hides a data problem."
+---
+
+**In EDGEBIC by User Solutions, a bad kiosk punch is never edited in place. A supervisor corrects the hours, pieces, or reason through the history drawer, and the system records the change as a separate append-only adjustment while the operator's original punch stays exactly as it was.** That design is the point: the record of what happened on the floor is a fact, and a correction is a second fact stacked on top of it, not an erasure. This is [shop floor data collection](/blog/edgebic-shop-floor-guide) treated as an audit trail rather than a scratchpad.
+
+Every shop has mis-punches. An operator taps Complete a shift too early, fat-fingers a piece count, or picks the wrong reason tile in a hurry. What matters is not that the mistake happened but that the fix leaves a clean, defensible record. This article walks the correction path end to end so you know exactly what each edit writes.
+
+## Why Actuals Are Not Edited in Place
+
+A production punch is one uninterrupted stretch of a single work state, opened and closed by an operator tapping the kiosk. Once closed, its start time, end time, computed hours, and piece counts describe a moment that already passed. Overwriting those values would destroy the original signal, and it would leave no way to answer "what did the operator actually enter, and who changed it?"
+
+So EDGEBIC keeps two layers. The punch is the operator's record. A correction is a **PunchAdjustment**, a separate row that carries the field that changed, the old value, the new value, who made the change, the date of the entry being adjusted, and a mandatory reason. Nothing is deleted. For the wider rule behind this, see [why actuals are immutable in EDGEBIC](/blog/why-actuals-are-immutable-in-edgebic).
+
+## The Fields an Adjustment Records
+
+Every correction writes the same shape, whatever the field:
+
+| Adjustment field | What it holds |
+|---|---|
+| Field changed | The name of the corrected field, such as actual hours, good pieces, or reason code |
+| Old value | The value before the edit, stored as text |
+| New value | The value after the edit, stored as text |
+| Adjusted by | Free-text name of the supervisor who made the change |
+| Adjustment date | The date of the entry being corrected, not the clock time of the edit |
+| Reason | The mandatory explanation, refused if left blank |
+
+Storing old and new as plain text means the same adjustment record works for an hours change, a piece count, or a swapped reason code without any special casing. The drawer reads them back as a running list.
+
+## The Correction Path, Step by Step
+
+The supervisor never touches raw data. The flow is deliberately narrow:
+
+1. Open the **history drawer** on the schedule that carries the bad punch.
+2. Locate the closed punch for the day in question.
+3. Edit the field: the actual hours, the good or scrap pieces, or the reason code.
+4. Type a reason. If the reason is empty, the save is canceled.
+5. Save. EDGEBIC writes the adjustment row and leaves the original punch intact.
+6. Click **Recompute Breakdown** so the day's rolled-up hours rebuild from the corrected punch set.
+
+That last step matters. Punches are the source, but the scheduler and the reports read the daily rollup. Recompute wipes and rebuilds the day's productive-hours rows from the current punches, so the corrected value flows through to every downstream screen. When it runs, the day's entry is re-tagged as a human entry, overwriting any earlier system-backfilled tag.
+
+## A Worked Correction
+
+Carlos tapped Complete at 13:30 instead of 14:30. The run punch closed at 4.83 hours instead of the true 5.83, and the day's rollup showed 4.83.
+
+The supervisor opens the drawer, finds the run punch, and changes actual hours from 4.83 to 5.83 with the reason "operator tapped Complete one hour early, corrected from time-study sheet." EDGEBIC writes:
+
+```
+Field changed : actual hours
+Old value     : 4.83
+New value     : 5.83
+Adjusted by   : Maria S. (Supervisor)
+Reason        : operator tapped Complete one hour early, corrected from time-study sheet
+```
+
+A click on Recompute Breakdown moves the day's rolled-up hours from 4.83 to 5.83. The original 4.83 punch is unchanged. The 5.83 is now what every plan, report, and reschedule reads. The correction is a permanent, explained part of the record, which is exactly [why one clean operation record matters](/blog/why-one-clean-operation-record-matters).
+
+## Operators Get a Small Correction of Their Own
+
+Not every fix needs a supervisor. Right after any piece tap, an **Undo** button appears for ten seconds. Tapping it decrements the counter by one and writes its own adjustment row with the reason "operator undo," so a fat-fingered piece count can be pulled back on the spot. Crucially, the undo is still visible to supervisors in the drawer: an operator cannot silently hide a miscount, only correct it in the open.
+
+## Corrections That Cannot Drift
+
+Two invariants keep the trail honest. First, adjustments are append-only, with no delete path. To reverse an earlier correction a supervisor writes another adjustment carrying the counter-value, so the drawer holds the full sequence of changes forever. Second, a parallel work center's actuals always follow their primary, so you never correct a mirrored sibling row directly: fix the primary and the mirror re-propagates on the next save.
+
+The planner side follows the same rule. Editing a previously reported value in the Log Actuals dialog also demands a reason and writes an adjustment against the day, so a correction typed from the office is audited identically to one made at the machine. See [logging actuals from the planner in EDGEBIC](/blog/logging-actuals-from-the-planner-in-edgebic) for that path.
+
+## Reading the Result
+
+Once corrected, the schedule reflects reality and the drawer explains how it got there. Because none of this moves the plan by itself, the corrected hours only reshape remaining work on the next reschedule, where completed steps stay frozen at their real dates. Corrections upstream of that are visible, attributable, and reversible only by another visible correction. That is the whole contract: the floor's numbers can always be trusted, and the story of every edit survives with them.
+
+For the broader picture of how captured actuals feed planning, start with [what is production scheduling](/blog/what-is-production-scheduling) and the [EDGEBIC kiosk and actuals guide](/blog/edgebic-shop-floor-guide), or bring the whole thing together at the [EDGEBIC product overview](/edgebic).

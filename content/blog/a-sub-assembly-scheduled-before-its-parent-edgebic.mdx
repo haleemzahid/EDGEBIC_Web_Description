@@ -1,0 +1,94 @@
+---
+title: "A Sub-Assembly Scheduled Before Its Parent: Causes and Fixes"
+description: "When a lower-level component step lands ahead of the parent step that needs it, the cause is usually a broken sequence link or two steps sharing one work center. How to trace it."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - sub-assembly scheduled out of order
+  - component step before parent
+  - routing sequence link broken
+  - dependency ordering scheduler
+  - topological sort routing
+  - steps out of sequence
+targetPhrase: "sub-assembly scheduled before its parent"
+wordCount: 1230
+readingTime: 6
+faqQuestions:
+  - question: "Why did a sub-assembly step schedule before the parent step it feeds?"
+    answer: "The usual cause is a missing or unmatched sequence link between the two steps. The scheduler orders steps by following the next-in-sequence identifier that ties a component step to the step that consumes it. When that link is empty, points at a name the engine cannot resolve, or two steps share one work center with no explicit dependency, the ordering falls back to sequence numbers and can place the component after the step that needs it. A clean re-run with the links populated corrects the order."
+  - question: "Do sub-assemblies and parents that share a work center schedule in the right order?"
+    answer: "Only if the dependency link between them is explicit. When a component step and the parent step it feeds run on the same work center, the scheduler needs the next-in-sequence link to know one must finish before the other starts. Without it, both compete for the same capacity by sequence number alone, and the component can land after the parent. The link, not the shared machine, is what enforces the order."
+  - question: "How do I fix a sub-assembly that scheduled out of order?"
+    answer: "Open the routing and confirm the component step carries a next-in-sequence link to the step that consumes it, resolved by identifier rather than by name alone. Populate any empty link, correct any that points at a renamed step, then re-run scheduling. The engine sorts steps by their real dependencies, so once the links resolve, the component schedules ahead of its parent. Verify on the Gantt that the component finishes before the parent starts."
+qaQuestions:
+  - question: "Our machined bracket feeds the final weld, and both run on the same cell. After a run the weld started before the bracket finished. Why?"
+    answer: "The two steps share a work center, so the scheduler needs the explicit next-in-sequence link to know the bracket must precede the weld. If that link is empty or points at a step name the engine cannot match, the ordering falls back to sequence numbers, and on a shared cell the two can interleave in the wrong order. Open the bracket step, confirm its next-in-sequence identifier resolves to the weld step, populate it if missing, and re-run. The bracket then finishes before the weld starts because the dependency, not the sequence number, drives the order."
+  - question: "The routing looks numbered correctly, ten then twenty then thirty, but a component still landed late. Is the numbering ignored?"
+    answer: "Sequence numbers are a fallback, not the primary ordering rule. The scheduler builds the real order from the dependency links between steps and only leans on the numbers when a link is missing. If a component's link to its parent is empty, the number gives a hint but cannot express that the component feeds the parent, so a shared work center or a parallel branch can still reorder them. Confirm the link is populated and resolves by identifier, then re-run so the dependency, not the number, decides."
+---
+
+**When a sub-assembly step schedules ahead of the parent step it feeds, the cause is almost always a broken dependency link between the two, most often a next-in-sequence connection that is empty or points at a step the engine cannot resolve by name.** [EDGEBIC by User Solutions](/edgebic) orders every routing by following the real dependencies between steps, so a component that genuinely feeds a parent is never placed after it once the link between them resolves.
+
+This is the deeper version of the out-of-order symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). It differs from [steps scheduled out of sequence](/blog/steps-scheduled-out-of-sequence-edgebic), which covers a single routing's internal order, because here a lower-level component and the parent that consumes it are the pair that inverted. For the structure that ties components to parents, see [what a bill of materials is](/blog/what-is-a-bill-of-materials), and for why ordering matters at all, [what production scheduling is](/blog/what-is-production-scheduling).
+
+## What You Are Seeing
+
+A component operation (a machined part, a welded sub-frame, a painted panel) finishes on the Gantt after the parent operation that needs it has already started, or the two overlap when one should clearly precede the other. The routing looks numbered in the right order, yet the plan runs them out of order, and it is worse when both steps use the same work center.
+
+## Why It Happens
+
+### Cause 1: The Sequence Link Is Missing or Unmatched
+
+The scheduler sorts steps by following the next-in-sequence link that ties a component step to the step that consumes it. When that link is empty, the engine has no way to know the component must come first. When the link points at a step by name and that name was changed or does not match, the link fails to resolve and is treated as absent.
+
+**How to tell:** the component step's next-in-sequence field is blank, or it names a step that no longer exists under that name.
+
+### Cause 2: The Two Steps Share One Work Center
+
+When a component and its parent run on the same work center, they compete for the same capacity. Without an explicit dependency between them, the scheduler has only the sequence number to separate them, and two steps on one machine can interleave. The shared machine is what exposes the missing link, because on different machines a later start is less visible.
+
+**How to tell:** the inverted pair runs on the same work center, and removing the shared machine (routing one to an alternate) makes the order correct.
+
+### Cause 3: The Link Resolves by Name Instead of Identifier
+
+The engine resolves the next step by its identifier first and only falls back to matching by name. A link carried only by name survives everyday edits poorly: rename the target step and the name-only link silently stops matching. The identifier-based link is the durable one.
+
+**How to tell:** the link worked before a step was renamed and stopped after.
+
+## How to Fix It
+
+- **Populate the empty link.** On the component step, set its next-in-sequence connection to the step that consumes it so the dependency is explicit.
+- **Confirm the link resolves by identifier.** A link matched by identifier survives renames; one matched only by name does not. Re-point any name-only link.
+- **Re-run scheduling.** The engine rebuilds the order from the real dependencies, so once the links resolve, the component schedules ahead of its parent.
+- **If a shared work center is the trigger,** the fix is still the link, not moving the work. An explicit dependency orders two steps on one machine correctly.
+
+## How to Diagnose It, in Order
+
+1. **Read the two steps' work centers.** A shared work center points straight at a missing dependency rather than a capacity problem.
+2. **Check the component step's next-in-sequence link.** Empty or unmatched is the most common single cause.
+3. **Confirm the link resolves by identifier,** especially if a step was recently renamed.
+4. **Re-run scheduling** and read the Gantt: the component should finish before the parent starts.
+5. **If it persists,** route one of the pair to an alternate work center as a test; if the order corrects, the dependency link was the issue all along.
+
+## How to Prevent It
+
+- **Always populate next-in-sequence links** on component steps that feed a parent, so the dependency is explicit rather than inferred from numbers.
+- **Prefer identifier-based links** over name-only links, since renaming a step breaks a name-only connection quietly.
+- **Watch shared work centers closely.** A component and its parent on one machine need the dependency spelled out, because the machine cannot enforce order on its own.
+- **Verify on the Gantt after any routing edit,** not just the sequence numbers, since the numbers are a fallback and the dependency is what actually orders the plan. A single job's internal ordering is covered in [steps scheduled out of sequence](/blog/steps-scheduled-out-of-sequence-edgebic).
+
+<Accordion title="Why did a sub-assembly step schedule before the parent step it feeds?">
+The usual cause is a missing or unmatched sequence link between the two steps. The scheduler orders steps by following the next-in-sequence identifier that ties a component step to the step that consumes it. When that link is empty, points at a name the engine cannot resolve, or two steps share one work center with no explicit dependency, the ordering falls back to sequence numbers and can place the component after the step that needs it. A clean re-run with the links populated corrects the order.
+</Accordion>
+
+<Accordion title="Do sub-assemblies and parents that share a work center schedule in the right order?">
+Only if the dependency link between them is explicit. When a component step and the parent step it feeds run on the same work center, the scheduler needs the next-in-sequence link to know one must finish before the other starts. Without it, both compete for the same capacity by sequence number alone, and the component can land after the parent. The link, not the shared machine, is what enforces the order.
+</Accordion>
+
+<Accordion title="How do I fix a sub-assembly that scheduled out of order?">
+Open the routing and confirm the component step carries a next-in-sequence link to the step that consumes it, resolved by identifier rather than by name alone. Populate any empty link, correct any that points at a renamed step, then re-run scheduling. The engine sorts steps by their real dependencies, so once the links resolve, the component schedules ahead of its parent. Verify on the Gantt that the component finishes before the parent starts.
+</Accordion>

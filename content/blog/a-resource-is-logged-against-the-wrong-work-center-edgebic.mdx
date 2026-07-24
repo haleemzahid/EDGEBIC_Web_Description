@@ -1,0 +1,94 @@
+---
+title: "A Resource Is Logged Against the Wrong Work Center"
+description: "When a resource row credits a different machine than the operation's work center, resource-load reports mis-credit that machine. Why the mismatch appears and how a clean run corrects it."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - resource logged wrong work center
+  - resource work center mismatch
+  - resource load mis-credit
+  - schedule resource anomaly
+  - stale resource row
+  - resource instance mismatch
+targetPhrase: "resource is logged against the wrong work center"
+wordCount: 1170
+readingTime: 6
+faqQuestions:
+  - question: "Why does a resource row credit a different work center than the operation it belongs to?"
+    answer: "The usual cause is a stale resource row left from an earlier scheduling cycle, most often after the operation was moved to an alternate work center or resolved through a group to a different member. The resource detail underneath a schedule should always name the same work center as the operation, and the anomaly report flags any row where they disagree. A clean scheduling re-run rebuilds the resource detail against the current work center, so the mismatch clears. Until then, resource-load reports credit the wrong machine for those hours."
+  - question: "What does a resource work-center mismatch break?"
+    answer: "It distorts resource load. The resource rows are what credit hours to a specific machine, so a row naming the wrong work center adds those hours to a machine that did not do the work and removes them from the one that did. The Gantt operation still shows the correct work center, but the load and utilization figures for both machines are off by the mismatched hours. The schedule is not lost; the detail underneath it is stale and needs a fresh run to reconcile."
+  - question: "How do I fix a resource logged against the wrong work center?"
+    answer: "Re-run scheduling for the affected job. The persist step rebuilds the resource detail against the operation's current work center, deleting and recreating the rows for non-completed schedules, so a clean run removes the stale mismatch. Verify with the anomaly report scoped to the job: the work-center mismatch flag clears after the run. If the operation was recently moved to an alternate or a group member, the stale row from before the move is the likely source."
+qaQuestions:
+  - question: "Our resource-load report shows hours on a machine that was never scheduled for that job. The Gantt shows the right machine. Which is correct?"
+    answer: "The Gantt is correct; the resource-load figure is being fed by a stale resource row that names the wrong work center. Resource rows are what credit hours to a specific machine, so a leftover row from before the operation moved to its current work center adds hours to the old machine and understates the new one. The operation itself is on the right machine, which is why the Gantt looks fine. Re-run scheduling for the job so the resource detail is rebuilt against the current work center, then re-check the report: the phantom hours clear."
+  - question: "This started after we routed a step to an alternate work center. Are the two related?"
+    answer: "Very likely. When an operation moves to an alternate work center or resolves through a group to a different member, its resource detail must be rebuilt to name the new machine. If a resource row from before the move survived, it still credits the original work center, which is exactly the mismatch you are seeing. The move is the trigger and a stale row is the mechanism. A clean scheduling re-run rebuilds the detail against the current machine and clears the leftover row; the anomaly report confirms the mismatch is gone."
+---
+
+**When a resource row credits a different work center than the operation it belongs to, it is almost always a stale resource row left from an earlier cycle, and a clean scheduling re-run rebuilds the detail against the operation's current work center.** [EDGEBIC by User Solutions](/edgebic) expects the resource detail underneath a schedule to name the same work center as the operation, and the anomaly report flags any row where the two disagree so the mismatch does not quietly distort resource load.
+
+This post covers the resource-mismatch symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). It is related to [the same machine is double booked across two jobs](/blog/the-same-machine-is-double-booked-across-two-jobs-edgebic), which is about capacity contention rather than a mislabeled resource. To confirm the flag before and after a fix, [run the scheduler anomalies report](/blog/how-to-run-the-scheduler-anomalies-report-in-edgebic), and for the machine categories involved, [what a work center type is](/blog/what-is-a-work-center-type).
+
+## What You Are Seeing
+
+An operation shows the correct work center on the Gantt, but its resource detail credits a different machine, so resource-load and utilization figures put those hours on a work center that did not do the work. The anomaly report flags the operation for a resource whose work center does not match the schedule's.
+
+## Why It Happens
+
+### Cause 1: A Stale Resource Row After a Move (the Usual Answer)
+
+When an operation is moved to an alternate work center, or resolves through a group to a different member, its resource detail must be rebuilt to name the new machine. If a row from before the move survived, it still credits the original work center. The operation is right; the leftover detail is wrong.
+
+**How to tell:** the mismatch appeared after the step was routed to an alternate or a group member.
+
+### Cause 2: The Detail Was Not Rebuilt on the Last Run
+
+The persist step rebuilds resource detail for non-completed schedules by deleting and recreating the rows. If that rebuild was missed, an earlier cycle's rows persist and can name a stale work center.
+
+**How to tell:** a clean re-run removes the mismatch, confirming the detail was simply out of date.
+
+### Cause 3: It Is Really a Different Symptom
+
+If the operation itself is on the wrong machine, that is a routing or capacity question, not a resource mismatch. The resource mismatch is specifically the detail naming a machine the operation does not use.
+
+**How to tell:** the Gantt operation is correct and only the resource detail disagrees.
+
+## How to Fix It
+
+- **Re-run scheduling for the job.** The persist step rebuilds the resource detail against the operation's current work center and removes the stale row.
+- **Verify with the anomaly report** scoped to the job: the work-center mismatch flag clears after a clean run.
+- **If the operation itself is on the wrong machine,** treat it as a routing issue, since that is a different symptom than a mislabeled resource.
+- **Re-check resource load** after the run, since the corrected detail moves the mismatched hours back to the right machine.
+
+## How to Diagnose It, in Order
+
+1. **Confirm the Gantt operation shows the right work center.** If it does, the problem is the detail, not the operation.
+2. **Read the resource detail** and note which machine it credits.
+3. **Ask what changed:** an alternate work center or group resolution is the common trigger.
+4. **Re-run scheduling** to rebuild the detail against the current machine.
+5. **Verify the anomaly flag clears** and resource load moves the hours back.
+
+## How to Prevent It
+
+- **Re-run scheduling after routing a step to an alternate or a group member,** so the resource detail is rebuilt to name the new machine.
+- **Read resource-load surprises against the Gantt first,** since the operation is usually correct and the detail is the stale part.
+- **Verify with the anomaly report scoped to the job,** which flags the mismatch before and confirms it is gone after.
+- **Never hand-edit resource rows to patch the credit,** since a fresh run rebuilds them and the merge is what keeps them consistent. For contention over a machine rather than a mislabeled one, see [the same machine is double booked across two jobs](/blog/the-same-machine-is-double-booked-across-two-jobs-edgebic).
+
+<Accordion title="Why does a resource row credit a different work center than the operation it belongs to?">
+The usual cause is a stale resource row left from an earlier scheduling cycle, most often after the operation was moved to an alternate work center or resolved through a group to a different member. The resource detail underneath a schedule should always name the same work center as the operation, and the anomaly report flags any row where they disagree. A clean scheduling re-run rebuilds the resource detail against the current work center, so the mismatch clears. Until then, resource-load reports credit the wrong machine for those hours.
+</Accordion>
+
+<Accordion title="What does a resource work-center mismatch break?">
+It distorts resource load. The resource rows are what credit hours to a specific machine, so a row naming the wrong work center adds those hours to a machine that did not do the work and removes them from the one that did. The Gantt operation still shows the correct work center, but the load and utilization figures for both machines are off by the mismatched hours. The schedule is not lost; the detail underneath it is stale and needs a fresh run to reconcile.
+</Accordion>
+
+<Accordion title="How do I fix a resource logged against the wrong work center?">
+Re-run scheduling for the affected job. The persist step rebuilds the resource detail against the operation's current work center, deleting and recreating the rows for non-completed schedules, so a clean run removes the stale mismatch. Verify with the anomaly report scoped to the job: the work-center mismatch flag clears after the run. If the operation was recently moved to an alternate or a group member, the stale row from before the move is the likely source.
+</Accordion>

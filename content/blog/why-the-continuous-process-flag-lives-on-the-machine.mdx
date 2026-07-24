@@ -1,0 +1,99 @@
+---
+title: "Why the Continuous-Process Flag Lives on the Machine"
+description: "Why the continuous-process setting is a property of the work center, not the routing, how it selects the lot-streaming model, and the anomaly that flags a model mismatch."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - continuous process work center
+  - lot streaming model selection
+  - transfer batch
+  - flow step
+  - discrete vs continuous manufacturing
+  - finite capacity scheduling
+targetPhrase: "continuous process work center"
+wordCount: 1520
+readingTime: 8
+faqQuestions:
+  - question: "What does the continuous-process flag do in scheduling?"
+    answer: "It tells EDGEBIC that a work center produces a continuous stream rather than countable pieces, which changes how the engine overlaps that step with the next one. A continuous-process work center uses the start-to-start flow lag for lot streaming and ignores any transfer-batch piece count, because there is no meaningful piece to count. A discrete work center does the opposite: it streams by transfer batch, waiting for a set number of finished pieces."
+  - question: "Why is continuous-process a work center setting and not a routing setting?"
+    answer: "Because it describes the physical equipment, not the product. A chemical reactor is continuous by nature and a milling machine is discrete by nature, and that character does not change from one product to the next. Putting the flag on the machine means it is set once when the equipment is configured and never has to be maintained per routing step. Putting it on the routing would invite the nonsense of declaring that a particular product makes a mill continuous."
+  - question: "What happens if I set a transfer batch on a step routed to a continuous work center?"
+    answer: "The engine ignores the transfer batch and uses the start-to-start flow lag instead, because the continuous flag on the machine wins. This is a model mismatch: piece-count streaming configured on a resource that has no pieces to count. EDGEBIC surfaces it as an anomaly so a planner can confirm the intent, either by clearing the transfer batch or by moving the step to a discrete work center where the piece count is meaningful."
+qaQuestions:
+  - question: "We run a paint line into a curing oven and I keep trying to set a transfer batch to overlap them, but it never takes effect. What am I missing?"
+    answer: "The paint line is almost certainly marked as a continuous-process work center, which is correct, and that flag makes the engine ignore the transfer batch and use the start-to-start flow lag instead. A paint line does not produce a countable twentieth piece; it produces a stream, so a piece count has nothing to bite on. Set a flow lag in hours on that step, for example one hour, so the oven can begin an hour after the line starts, and use a flat transfer delay on top if a fixed cure or cool must follow. Leave the transfer batch at zero. If you genuinely have a discrete station feeding a discrete station, that is where a transfer batch belongs, not on the continuous line."
+  - question: "One of our resources both fills liquid and caps discrete bottles. Should it be continuous or discrete?"
+    answer: "Pick the character that governs the constraint you actually schedule against, and model the resource as one or the other rather than trying to make it both. If the binding limit is a continuous fill rate, mark it continuous and use the flow lag. If it is discrete bottle handling where you can count units moving to the next station, leave it discrete and use a transfer batch. Mixed-use resources that are physically continuous and discrete at the same instant are rare, and the honest approach is to schedule against whichever behavior sets the pace. If a real mixed case appears, the cleaner fix is to split the operation across two work centers, each with its own true character, rather than overload one flag."
+---
+
+**The continuous-process flag in EDGEBIC by User Solutions is a property of the work center, not the routing step, because it describes the physical character of the equipment: a reactor or a paint line produces a continuous stream, while a mill or a press produces countable pieces. That character never changes from one product to the next, so the setting is made once on the machine and it selects which lot-streaming model the engine uses to overlap that step with the next one.** Understanding where the flag lives, and why, explains a common surprise: a transfer batch that quietly does nothing because the resource it was set on has no pieces to count.
+
+Lot streaming, the trick of letting a downstream operation begin before the upstream one fully finishes, comes in two flavors. One counts pieces. The other counts hours. The continuous-process flag is the switch that decides which one a given work center can use.
+
+## Two streaming models, one selector
+
+A discrete work center streams by transfer batch. You set a number of pieces, and the downstream step may start once that many finished parts have accumulated upstream. This is the natural model for a lathe feeding a drill: a supervisor can stand at the machine and count "twenty done, send them." The choice between the two models and their formulas is worked out in [piece count vs time lag lot streaming](/blog/piece-count-vs-time-lag-lot-streaming-which-to-use).
+
+A continuous-process work center cannot use that model, because a continuous stream has no meaningful twentieth piece. A paint line, a chemical reactor, an extruder: these produce output without discrete units to tally. For them the engine uses a start-to-start flow lag measured in hours. The downstream step may begin a fixed number of hours after the upstream step starts, independent of any piece count.
+
+The flag on the work center is what chooses between these. Marked continuous, the engine reaches for the flow lag and ignores a transfer batch even if one is set. Left discrete, which is the default, the engine uses the transfer batch when one is present. One setting, on the machine, selects the model.
+
+## Why the machine, not the routing
+
+It is a fair question why this lives on the work center rather than on the routing step, where so much other timing detail sits. The answer is that continuous-versus-discrete is a fact about the equipment, and equipment does not change its nature per product.
+
+A reactor is continuous because of how it physically works, not because of what it is making today. A milling machine is discrete for the same reason in reverse. If the flag lived on the routing step, a planner could set it differently for two products that both run on the same reactor, which would amount to declaring that one product makes the reactor continuous and another makes it discrete. That is not a real distinction; it is a configuration error waiting to happen.
+
+Placing the flag on the machine also means it is set once, when the equipment is added, and never touched again. A shop with a handful of work centers and hundreds of routing steps would otherwise have to carry the same continuous-or-discrete value on every step that visits a given machine, and keep them all in agreement. One value per machine is both correct and far less to maintain.
+
+## The model-mismatch anomaly
+
+Because the flag can override a routing field, the two can disagree, and EDGEBIC watches for that. The specific case is a transfer batch set on a step that is routed to a continuous-process work center. The transfer batch says "stream by pieces," and the machine says "I have no pieces." The machine wins, so the transfer batch is ignored and the flow lag is used instead.
+
+That is a safe outcome, but a silent one, and a silent override is exactly the kind of thing that leaves a planner puzzled about why an overlap they configured never appeared. So the engine's anomaly report flags the combination. It does not block the schedule; it surfaces the mismatch so a planner can confirm the intent. Usually the fix is to clear the transfer batch on that step and set a flow lag instead, or to recognize that the step really belongs on a discrete resource where the piece count is meaningful.
+
+The mismatch is a documentation of intent, not an error the engine cannot handle. The engine already did the right thing by honoring the machine's character. The flag exists so a human can catch a configuration that will not behave the way its author expected.
+
+## A worked example: a discrete line and a continuous line
+
+Consider two two-step routings, one on each kind of resource.
+
+**Discrete: turning then drilling.** A lathe (discrete) runs 100 shafts, 0.5 hours per piece with a 2-hour setup. A transfer batch of 20 is set on the lathe step. The drill may start once 20 pieces are done:
+
+```
+flow time = setup + min(transfer batch, order qty) x hours per piece
+          = 2 + min(20, 100) x 0.5 = 12 hours from the lathe start
+```
+
+The drill begins 12 hours in and runs alongside the lathe. The transfer batch works because pieces are countable.
+
+**Continuous: spraying then curing.** A paint line (continuous) runs a 4-hour job starting at 08:00. A planner, out of habit, sets a transfer batch of 20 on the paint step. The engine ignores it, because the line is continuous, and the anomaly report flags the combination. The planner replaces the transfer batch with a 1-hour flow lag:
+
+```
+oven earliest start = line start + flow lag (hours) = 08:00 + 1 = 09:00
+```
+
+The oven starts at 09:00, an hour after the line starts, giving three hours of overlap against the 12:00 finish. Same instinct, overlap two steps, but the correct mechanism differs because the equipment differs. A flat [transfer delay](/blog/what-is-a-transfer-batch) can sit on top of either model when a fixed cure or handling lag must follow.
+
+## Getting the flag right
+
+Mark a work center continuous when its output is a stream with no countable unit: reactors, paint and coating lines, extruders, ovens fed continuously. Leave it discrete, the default, for anything where a supervisor could count finished pieces moving to the next station. Then stream the discrete resources with a transfer batch and the continuous ones with a flow lag, and let the anomaly report catch any step where the two disagree.
+
+The continuous flag is one small switch, but it sits at a real fork in the engine, and getting it right is what makes the overlap you configure actually appear. It composes with the wider timing stack described in [how queue, flow, and transit stack after an operation](/blog/how-queue-flow-and-transit-stack-after-an-operation), and it plugs into the full pipeline in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide). The reason honest overlap matters at all is the same reason [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) matters: a plan is only trustworthy when it models the floor as it really is. To set the flag on your own resources and watch the right model fire, explore [the EDGEBIC engine](/edgebic) or [bring your data to a demo](/contact-us).
+
+<Accordion title="What does the continuous-process flag do in scheduling?">
+It tells EDGEBIC that a work center produces a continuous stream rather than countable pieces, which changes how the engine overlaps that step with the next one. A continuous-process work center uses the start-to-start flow lag for lot streaming and ignores any transfer-batch piece count, because there is no meaningful piece to count. A discrete work center does the opposite: it streams by transfer batch, waiting for a set number of finished pieces.
+</Accordion>
+
+<Accordion title="Why is continuous-process a work center setting and not a routing setting?">
+Because it describes the physical equipment, not the product. A chemical reactor is continuous by nature and a milling machine is discrete by nature, and that character does not change from one product to the next. Putting the flag on the machine means it is set once when the equipment is configured and never has to be maintained per routing step. Putting it on the routing would invite the nonsense of declaring that a particular product makes a mill continuous.
+</Accordion>
+
+<Accordion title="What happens if I set a transfer batch on a step routed to a continuous work center?">
+The engine ignores the transfer batch and uses the start-to-start flow lag instead, because the continuous flag on the machine wins. This is a model mismatch: piece-count streaming configured on a resource that has no pieces to count. EDGEBIC surfaces it as an anomaly so a planner can confirm the intent, either by clearing the transfer batch or by moving the step to a discrete work center where the piece count is meaningful.
+</Accordion>

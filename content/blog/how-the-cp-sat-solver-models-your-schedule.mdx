@@ -1,0 +1,84 @@
+---
+title: "How the CP-SAT Solver Models Your Schedule"
+description: "Inside the mathematical solver in EDGEBIC: one interval variable per operation, no-overlap and precedence rules, and due dates as penalties, all solved as one problem."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - CP-SAT scheduling
+  - constraint programming scheduling
+  - interval variables
+  - mathematical schedule optimization
+  - production schedule optimization software
+  - no-overlap constraint
+targetPhrase: "CP-SAT solver model"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "How does the CP-SAT solver represent a schedule?"
+    answer: "The mathematical solver in EDGEBIC represents each operation as an interval variable with a fixed duration and a movable start time. It then adds rules that tie the intervals together: precedence links between routing steps, queue-time gaps, no-overlap constraints so one machine runs one job at a time, and due-date penalties. The solver searches over all valid arrangements of those start times at once, rather than placing one job at a time like the base scheduler."
+  - question: "What is a no-overlap constraint in schedule optimization?"
+    answer: "A no-overlap constraint tells the solver that a single-instance work center can run only one operation at a time, so no two of its intervals may overlap. It is the mathematical form of finite capacity for one machine. Work centers that are closed for part of the horizon also get their closed ranges as fixed blocking intervals inside the same no-overlap rule, so an operation that spans a closure is correctly stretched past it."
+  - question: "Does the solver treat due dates as hard deadlines?"
+    answer: "No. Due dates are modeled as heavily weighted penalties, not as hard walls. The solver measures each job's tardiness as the hours it finishes past its due date and works to drive that penalty down, but it will still return a plan where a job is late if no feasible plan meets every date. A hard deadline would reject legal schedules the base engine can produce, so the penalty approach keeps the solver honest and always able to answer."
+qaQuestions:
+  - question: "The solver rearranged my jobs but every routing still ran its steps in order. How does it guarantee that?"
+    answer: "Through precedence constraints. For each job, the solver requires that step two cannot start until step one finishes, plus any queue-time gap you configured. Those links are hard constraints in the model, so no matter how the solver reshuffles jobs against each other, a single job's own steps always run in sequence. Reordering happens between jobs competing for the same machine, never within a routing."
+  - question: "If the solver starts from my current plan anyway, what is it actually adding?"
+    answer: "It uses your current plan as a warm-start hint, which helps it search faster, but the hint does not decide the answer. The solver still explores arrangements the base scheduler never tried, because the base engine commits each job whole before looking at the next. The solver sees all operations at once, so it can make one job give way to let two others hit their dates. Then it proves how close its result is to the best possible, which the hint alone can never do."
+---
+
+**The CP-SAT solver models your schedule as a set of interval variables, one per operation, connected by precedence, capacity, and due-date rules, and it solves the whole thing as a single math problem.** Instead of placing one job at a time, the mathematical optimizer in EDGEBIC reasons about every operation's start time simultaneously, which is what lets it find reorderings the base scheduler cannot see.
+
+EDGEBIC by User Solutions ships two optimizer engines. The default multi-run search re-runs the real scheduler with different job orderings. The mathematical solver, built on Google OR-Tools CP-SAT, takes a different route: it translates your plant into a formal model and searches it with a proof engine. This post walks through that model in planner language. For the wider context of both engines, start with the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide).
+
+## One interval variable per operation
+
+The core building block is the interval variable. The solver creates one for every work-center-backed routing step in scope. Each interval has a fixed duration, computed once when the model is built, and a start time that the solver is free to move. Think of each operation as a bar of fixed length that can slide along the timeline but cannot stretch or shrink.
+
+Fixing the duration and moving only the start keeps the problem clean: the solver is choosing when each operation runs, not how long it takes. The length of the bar already reflects run time plus setup, taken straight from the routing. What the solver decides is where each bar lands and, by extension, which bar goes first when two compete for the same machine.
+
+Every interval also carries a release lower bound from its order's start time. An operation cannot begin before its job is released, so that date becomes the earliest tick its interval may occupy.
+
+## Precedence and queue-time gaps
+
+A routing is a sequence, and the solver enforces that sequence with precedence constraints. For each job, the steps in sequence order must satisfy a simple rule: the next step cannot start until the previous step finishes, plus any queue-time gap configured on the routing.
+
+These links are hard constraints. However the solver reshuffles whole jobs against each other, a single job's own steps always run in order. That is the guarantee that keeps a rearranged plan physically sane: reordering happens between jobs competing for a machine, never inside one routing. If you have set a [queue time](/blog/glossary-queue-time) between two steps, the solver preserves it as a minimum gap between the two intervals.
+
+## Capacity as a no-overlap rule
+
+Finite capacity for a single machine has a precise mathematical form: no two of that machine's operation intervals may overlap. The solver adds a no-overlap constraint over every single-instance work center's operations, so the machine runs one job at a time. This is the same finite capacity discipline the base engine applies, expressed as an algebraic rule the solver can reason about.
+
+Closed time folds into the same constraint. When a work center is dark for part of the horizon, its closed ranges enter the model as fixed blocking intervals inside the no-overlap rule. An operation that would span the closure is pushed past it, exactly as it would be on the floor. Work centers with more than one identical machine are modeled with a cumulative capacity rule that allows several operations at once up to the instance count, though in the current version jobs routed through multi-instance work centers are locked to the base scheduler's decision rather than rearranged natively.
+
+## Due dates as penalties, not walls
+
+Due dates are where the solver makes a deliberate honesty choice. Rather than force every job to finish by its due date, the model measures each job's tardiness as the hours it finishes past due and treats that as a heavily weighted penalty to minimize.
+
+The reason is practical. A hard deadline constraint would reject any plan where a job is late, even when no feasible plan meets every date. The base scheduler has a forward fallback that always produces a plan, late jobs and all, and the solver must be able to match it. So due dates dominate the objective as a strong penalty, which drives the solver toward on-time plans without ever leaving it unable to answer. The penalty is weighted by job priority, so a late high-priority job counts for more than a late low-priority one, the same weighting described in [weighted versus total tardiness in optimization](/blog/weighted-versus-total-tardiness-in-optimization).
+
+## Solving the goal in strict tiers
+
+Your chosen goal preset is an ordered list of measures, and the solver honors that order literally. It optimizes the top measure first, fixes that result as a constraint, then optimizes the next measure, and so on down the list. This is a lexicographic multi-pass solve, and it never simulates the ordering with giant weights. The mechanics of that ordering are covered in [how the optimizer ranks goals in strict order](/blog/how-the-optimizer-ranks-goals-in-strict-order).
+
+## Warm-starting from your current plan
+
+Before solving, the solver feeds your current plan in as a hint: every operation's current start tick is offered as a suggested value. This speeds the search, because the solver begins near a known-good arrangement instead of from nothing, described in [how warm start makes scheduling optimization fast](/blog/how-warm-start-makes-scheduling-optimization-fast).
+
+The hint is advisory only. It helps the solver search, but it does not decide the answer, and it does not guarantee the result is at least as good as your plan. That guarantee comes from a separate step after solving, the never-worse clamp explained in [how the never-worse clamp is enforced](/blog/the-never-worse-guarantee-in-schedule-optimization). When a goal includes stability, the same current plan is also the reference the solver measures disruption against.
+
+## Why model the whole plant at once
+
+The payoff of all this structure is the reordering the base scheduler cannot reach. A one-job-at-a-time engine commits each job's full routing before it looks at the next, so a long first operation can leave a downstream machine idle while a short job waits. That blind spot is described in [how a greedy schedule leaves capacity on the table](/blog/how-a-greedy-schedule-leaves-capacity-on-the-table).
+
+By representing every operation as an interval and every rule as a constraint, the solver sees all of the interactions at once. It can deliberately make one job give way so two others hit their dates, then prove that no arrangement does better on your chosen goal. That combination of a global view and a mathematical proof is what separates the solver from any fixed priority rule, and it is why the optimizer earns its place in [job shop scheduling](/blog/job-shop-scheduling-challenges) where ordering genuinely matters.
+
+To see where the intervals actually sit in time, read [the working-hour timeline in schedule optimization](/blog/the-working-hour-timeline-in-schedule-optimization). To choose between the solver and the multi-run search, see [choosing the optimizer engine](/blog/choosing-the-optimizer-engine-multi-run-or-cp-sat). And to run the optimizer on your own orders, visit [EDGEBIC](/edgebic).
+
+## The bottom line
+
+The CP-SAT solver turns your plant into a formal model: one interval per operation, precedence links per routing, no-overlap per machine, and due dates as weighted penalties. It warm-starts from your current plan, solves your goal in strict tiers, and reasons about every operation at once. That whole-plant view is what finds the reorderings a job-at-a-time pass never sees, and the mathematical form is what lets it prove how close the result is to the best possible.

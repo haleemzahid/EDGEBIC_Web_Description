@@ -1,0 +1,96 @@
+---
+title: "Earliest Start vs Earliest Completion Machine Selection"
+description: "The three strategies EDGEBIC uses to pick a machine from a pool or alternate list, why earliest start and earliest completion can disagree, and the day-granular quirk that decides the winner."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - machine selection strategy
+  - earliest completion
+  - earliest start
+  - primary first
+  - alternate work center
+  - work center group
+targetPhrase: "machine selection strategy"
+wordCount: 1540
+readingTime: 8
+faqQuestions:
+  - question: "What strategies can a scheduler use to pick a machine from a pool?"
+    answer: "EDGEBIC offers three: earliest completion, which picks the member that finishes the step soonest; primary first, which prefers a designated member and uses another only when the primary cannot serve; and earliest start, which picks the member that can begin the work soonest. Each answers a slightly different question, and a work center group or an alternate list carries one of them as its strategy, applied every time the pool is shopped."
+  - question: "Why do earliest start and earliest completion sometimes disagree?"
+    answer: "Because starting soonest and finishing soonest are not the same thing. A slow machine that is free right now may start earlier but finish later than a fast machine that is booked until tomorrow. Earliest start rewards getting the work moving; earliest completion rewards the shortest finish. When one machine is faster and another is freer, the two strategies can pick different members, which is exactly why the choice of strategy matters."
+  - question: "Why can a same-day free machine beat a faster one under earliest start?"
+    answer: "Because earliest start compares start availability at day granularity, so a member that can begin today is treated as starting sooner than one that can only begin tomorrow, even if the second is fast enough to finish first. Earliest start is about the calendar day the work can move, not the exact finish, so a machine available now wins the tie against a faster machine that has to wait a day to start. If shortest finish is what you want, earliest completion is the strategy that measures it."
+qaQuestions:
+  - question: "My pool has a fast new mill and a slow old one. Sometimes the schedule picks the slow one and I do not understand why. How do I read that?"
+    answer: "Check the pool's strategy. If it is set to earliest start, the engine picks whichever mill can begin the work soonest, and if the fast mill is busy until tomorrow while the slow mill is free today, the slow mill starts sooner and wins, even though it would finish later. That is the strategy doing exactly what it says. If your real goal is the shortest finish for the step, switch the pool to earliest completion, which computes each mill's projected finish using its own speed and picks the one that ends first, which will favor the fast mill whenever its speed advantage outweighs its later start. The two strategies are answering different questions, so pick the one that matches what you actually want to optimize."
+  - question: "We have a preferred machine we want used whenever possible, with the others only as backup. Which strategy fits?"
+    answer: "Primary first. Designate the preferred machine as the primary member of the pool, and the engine will schedule the step there whenever the primary can serve it, only reaching for another member when the primary genuinely cannot, for instance when it has no capacity in a reasonable horizon. This keeps work concentrated on the machine you trust, which can be the right call when the primary is better tooled, better understood, or cheaper to run, and you would rather wait a little for it than spread work across the pool. If instead you care only about speed or finish, earliest start or earliest completion will spread the load based on availability rather than preference."
+---
+
+**When a routing step can run on more than one machine, whether through a hand-configured alternate list or a work center group, EDGEBIC by User Solutions picks the member using one of three strategies: earliest completion, which finishes the step soonest; primary first, which prefers a designated machine and falls back only when it cannot serve; and earliest start, which begins the work soonest. The strategy is a property of the pool, applied every time it is shopped, and the choice between them is a real decision because starting soonest and finishing soonest are not the same thing.** The most instructive case is when earliest start and earliest completion disagree, because that reveals what each one actually optimizes.
+
+Both a work center group and an alternate list hand a set of candidate machines to the same resolver, described in [how a scheduler chooses between alternate machines](/blog/how-a-scheduler-chooses-between-alternate-machines) and [how a work center group shops a pool of machines](/blog/how-a-work-center-group-shops-a-pool-of-machines). The resolver's job is to pick one. The strategy tells it how.
+
+## Three questions, three strategies
+
+Each strategy answers a different question about the pool.
+
+- **Earliest completion.** "Which member finishes this step soonest?" The resolver computes each candidate's projected finish, using that member's own speed and setup, and picks the smallest. This is the usual default because it directly minimizes the step's finish, which usually helps the job finish sooner too.
+- **Primary first.** "Can my preferred machine do it?" The resolver tries a designated primary member first and only reaches for another when the primary cannot serve. This suits a shop with a machine it trusts and others as backup.
+- **Earliest start.** "Which member can begin soonest?" The resolver picks the member that can start the work at the earliest moment, prioritizing getting the work moving over how long it then takes.
+
+Each membership carries its own speed factor and its own setup, computed from the base hours, so the resolver always compares real per-machine numbers rather than a scaled approximation. That the speed factor scales run time but not setup is covered in [how efficiency scales run time but not setup](/blog/how-efficiency-scales-run-time-but-not-setup).
+
+## Where earliest start and earliest completion diverge
+
+On a lightly loaded pool where every machine is free, the three strategies often agree, because the freest machine is also the one that starts and finishes soonest. The interesting behavior appears under load, when the fast machine is busy and a slower one is free.
+
+Earliest completion looks at the finish. It will accept a later start on the fast machine if that machine's speed still makes it end first. Earliest start looks at the start. It will take the slow machine that is free now, because it begins the work sooner, even though it finishes later.
+
+There is a subtlety in earliest start that sharpens the divergence: it compares start availability at day granularity. A member that can begin today is treated as starting sooner than one that can only begin tomorrow, regardless of the finish. So under earliest start, a machine available today wins over a faster machine that has to wait until tomorrow to start, even when the faster machine would have finished the step first. That is not a flaw; it is the strategy being literal about what it optimizes, which is the day the work can move.
+
+## A worked example: fast-but-busy versus slow-but-free
+
+Take a step needing 10 base run hours, shopped across two members of a pool.
+
+**Mill-A**, factor 0.6 (fast), is booked until tomorrow morning. Its run for this step would be 10 x 0.6 = 6 hours. If it starts tomorrow at 08:00, it finishes tomorrow at 14:00.
+
+**Mill-B**, factor 1.2 (slow), is free today at 13:00. Its run would be 10 x 1.2 = 12 hours. Starting today at 13:00 on an 08:00-to-16:00 shift, it works 3 hours today and 9 tomorrow, finishing tomorrow at 17:00, rounded onto the next open slot.
+
+Now apply each strategy:
+
+- **Earliest completion** compares finishes: Mill-A ends tomorrow 14:00, Mill-B ends tomorrow 17:00. Mill-A wins, because its speed beats its later start.
+- **Earliest start** compares start days: Mill-B can begin today, Mill-A only tomorrow. Mill-B wins, because it gets the work moving a day sooner, even though it finishes later.
+- **Primary first**, if Mill-A is the designated primary, tries Mill-A and uses it as long as it can serve within the horizon, so it picks Mill-A regardless of Mill-B being free today.
+
+Three strategies, potentially three different winners, on the same pool and the same step. None is wrong. Each is right for a different objective.
+
+## Choosing the strategy
+
+The strategy should match what the pool is for.
+
+Reach for **earliest completion** when the shortest finish of the step is what matters, which is most of the time, especially when the step is on or near the job's critical path and finishing it sooner pulls the whole job in. It rewards speed honestly.
+
+Reach for **earliest start** when getting work moving is the priority, for instance to keep material flowing and avoid a pile-up in front of a downstream station, or when you would rather see a machine start now than sit idle waiting for a faster one. Just know that it can pick a slower machine, and that its day-granular comparison means a same-day start beats a faster next-day one.
+
+Reach for **primary first** when you have a preferred machine, better tooled, better understood, or cheaper, and you want work concentrated on it, accepting a wait for the primary over spreading load across the pool.
+
+Whichever you pick, the chosen machine is scheduled with its own real speed and setup, and on a reschedule a not-yet-started step re-shops the pool and the strategy runs again against current load. Because there is no random tie-breaking, the same data and the same strategy always produce the same pick, so a choice that surprises you is always explainable by the strategy and the state of the pool.
+
+Machine selection sits alongside the other multi-machine tools in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and the trade-off between a pool and a single alternate is covered in [when to use a machine pool versus an alternate work center](/blog/when-to-use-a-machine-pool-vs-an-alternate-work-center). The reason honest per-machine numbers matter at all is the same reason behind [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling). To set a strategy on your own pools and watch it pick against your real load, explore [the EDGEBIC engine](/edgebic) or [bring your data to a demo](/contact-us).
+
+<Accordion title="What strategies can a scheduler use to pick a machine from a pool?">
+EDGEBIC offers three: earliest completion, which picks the member that finishes the step soonest; primary first, which prefers a designated member and uses another only when the primary cannot serve; and earliest start, which picks the member that can begin the work soonest. Each answers a slightly different question, and a work center group or an alternate list carries one of them as its strategy, applied every time the pool is shopped.
+</Accordion>
+
+<Accordion title="Why do earliest start and earliest completion sometimes disagree?">
+Because starting soonest and finishing soonest are not the same thing. A slow machine that is free right now may start earlier but finish later than a fast machine that is booked until tomorrow. Earliest start rewards getting the work moving; earliest completion rewards the shortest finish. When one machine is faster and another is freer, the two strategies can pick different members, which is exactly why the choice of strategy matters.
+</Accordion>
+
+<Accordion title="Why can a same-day free machine beat a faster one under earliest start?">
+Because earliest start compares start availability at day granularity, so a member that can begin today is treated as starting sooner than one that can only begin tomorrow, even if the second is fast enough to finish first. Earliest start is about the calendar day the work can move, not the exact finish, so a machine available now wins the tie against a faster machine that has to wait a day to start. If shortest finish is what you want, earliest completion is the strategy that measures it.
+</Accordion>

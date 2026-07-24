@@ -1,0 +1,82 @@
+---
+title: "The End-of-Day Actual End Snap Explained"
+description: "When you mark an operation complete without a specific end time, EDGEBIC snaps the actual end to 23:59 of the last day with logged hours. See why that prevents a broken record."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - actual end snap
+  - same day completion
+  - inverted date validator
+  - actual end before start
+  - shop floor completion
+  - end of day timestamp
+targetPhrase: "actual end snap"
+wordCount: 1350
+readingTime: 7
+faqQuestions:
+  - question: "What is the end-of-day actual end snap in EDGEBIC?"
+    answer: "When an operation is marked complete without an explicit end time, EDGEBIC sets the actual end to 23:59 of the last day that has logged hours. It finds the most recent day with real hours or pieces and stamps the end at the final tick of that day. This guarantees the actual end lands after the actual start, so a job started and finished the same day can never record an impossible date range."
+  - question: "Why not just use midnight as the completion time?"
+    answer: "Midnight is the start of a day, not the end. If completion used the plain calendar date, a step that started at 08:00 and finished the same day would get an actual end of 00:00, which falls before the 08:00 start. EDGEBIC rejects any actual end that is not strictly after the actual start, so that pair would be blocked as inverted. Snapping to 23:59 of the day places the end after the start every time."
+  - question: "Does the snap change my logged hours or my reports?"
+    answer: "No. The snap sets only the actual end timestamp, not the daily hours. Your productive hours per day come from run and rework time and are unaffected. Reports that measure output read the logged hours, while the end date drives completion status and the resume point for the next reschedule. The snap makes completion safe without inflating or shifting any hour figure."
+qaQuestions:
+  - question: "An operator started a job at 08:30 and tapped Complete at 11:30 the same morning. What actual end gets stored?"
+    answer: "The end snaps to 23:59 of that day, not 11:30 and not midnight. EDGEBIC finds the last day with logged hours, which is that same day, and stamps the end at its final tick. The inverted-date check then compares 08:30 against 23:59 and passes, so the operation completes cleanly. Without the snap, a plain-date end of 00:00 would fall before the 08:30 start and the save would be blocked as an inverted pair."
+  - question: "Can I still record an exact completion time when I need one?"
+    answer: "Yes. The snap only applies when you mark complete without specifying an end. If the precise finish matters, open Edit Actual Dates and set the actual end explicitly with End = Now or by typing the time. EDGEBIC accepts any end that is strictly after the start. The snap is a safe default for the common case where you just want to close the operation on the day it finished, not a rule that hides the real clock when you have it."
+---
+
+**In EDGEBIC by User Solutions, when you mark an operation complete without giving an explicit end time, the platform snaps the actual end to 23:59 of the last day that has logged hours.** This small rule exists to prevent a specific and common failure: an operation started at 08:00 and completed the same day recording an actual end of midnight, which falls before the start. The snap guarantees the end always lands after the start, so completed work is never stored as an impossible date range. It is a quiet piece of [shop floor data collection](/blog/edgebic-shop-floor-guide) hygiene that keeps every downstream reschedule safe.
+
+## The Problem the Snap Solves
+
+Every completed operation carries two timestamps: an actual start and an actual end. EDGEBIC enforces one hard rule on that pair. The actual end must be strictly greater than the actual start. If both are set and the end is at or before the start, the save is blocked with a clear message, because a zero-length or backwards actual is always a data-entry glitch rather than a real state.
+
+Now consider the most ordinary completion of all. An operator, or a planner, finishes a step on the same day it started and just wants to close it, without typing a precise clock time. If completion used the plain calendar date, the end would resolve to 00:00 of that day, the very first instant. Compare 08:00 start against 00:00 end and the end is earlier. The inverted-date check would reject the save. Marking complete on the day you started would be impossible without manually typing a time every single time.
+
+The snap removes that trap.
+
+## How the Snap Works
+
+When completion is recorded without an explicit end, EDGEBIC does not guess. It looks at the operation's real activity.
+
+1. Find every day of the operation that has logged actual hours or pieces.
+2. Take the most recent of those days, the last day real work happened.
+3. Stamp the actual end at the final tick of that day, which reads as 23:59.
+
+If for some reason no day carries logged activity, the snap falls back to the operation's actual start date, and stamps 23:59 of that day. Either way the resulting end is the end of a real day, which sits after any start that occurred earlier the same day or on an earlier day.
+
+## A Worked Example
+
+Take a simple same-day operation.
+
+| Field | Value |
+|---|---|
+| Actual start | Jan 12, 08:30 |
+| Logged hours | 3.0 hours on Jan 12 |
+| Completion action | Mark Complete, no explicit end |
+
+The snap looks for the last day with logged hours, finds Jan 12, and resolves the end to Jan 12 at 23:59. The inverted-date check compares 08:30 against 23:59 and passes. The operation completes cleanly.
+
+Had the snap not run and the plain date been used, the end would have been Jan 12 at 00:00, and the comparison of 08:30 against 00:00 would have failed the check. Marking complete on the same day you started is always safe precisely because of the snap.
+
+## What the Snap Does Not Do
+
+The snap sets only the end timestamp. It does not touch your daily hours. Productive hours come from run and rework time and roll up per day exactly as logged, so the snap never inflates output. What the end timestamp does drive is completion status and the resume point: on the next reschedule, downstream steps queue behind the real finish of the last completed step. Because the end sits at 23:59 of the final active day rather than at some fictional later date, the resume point is honest and the plan for remaining work stays tight.
+
+The snap is also a default, not a lock. If you need the exact minute a step finished, set the actual end explicitly in Edit Actual Dates with End = Now or by typing the time. EDGEBIC accepts any end that is strictly after the start. The snap applies only when you complete without specifying an end, which is the common case where you simply want the operation closed on the day it finished.
+
+## Where It Fits in the Bigger Picture
+
+The snap is one of a family of guards that keep actuals trustworthy. The inverted-date check runs at every entry point, whether a value arrives from a Gantt drag, the Log Actuals dialog, or a kiosk Complete tap. The check is repeated at each site rather than trusting callers to validate for one another, because the paths converge from different screens. The snap is what lets the most common completion pass that check without friction.
+
+That reliability matters because completed work is [immutable](/blog/why-actuals-are-immutable-in-edgebic). Once an operation has both a start and an end, no reschedule will move it. So the end you store is the end you keep, which is exactly why it must be correct the first time. When an operator taps Complete at the kiosk, the same snap applies, so [marking a job complete from the floor](/blog/marking-a-job-complete-from-the-floor) is just as safe as completing it from the planner.
+
+## The Bottom Line
+
+The end-of-day actual end snap is a small rule with a big payoff. By stamping completion at 23:59 of the last day with logged hours, EDGEBIC guarantees the actual end lands after the actual start, so a same-day operation never records a broken date range. It changes no hours and hides no real time you choose to enter, and it keeps completed work clean for the next reschedule. See how completion feeds the wider loop in the [shop floor execution guide](/blog/edgebic-shop-floor-guide), and explore the platform at [EDGEBIC](/edgebic).

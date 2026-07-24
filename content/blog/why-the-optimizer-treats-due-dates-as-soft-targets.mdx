@@ -1,0 +1,76 @@
+---
+title: "Why the Optimizer Treats Due Dates as Soft Targets"
+description: "The EDGEBIC optimizer models due dates as strongly weighted targets, not hard walls, so it always returns the best achievable plan even when some dates cannot be met."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - due dates scheduling
+  - soft constraints optimization
+  - schedule optimization software
+  - tardiness penalty
+  - production schedule optimization
+  - on-time delivery scheduling
+targetPhrase: "due dates as soft targets"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "Does the EDGEBIC optimizer treat due dates as hard deadlines?"
+    answer: "No. The optimizer treats each due date as a strongly weighted target to hit, not a hard wall. It works aggressively to finish every job on time, and under the On-time first goal lateness is the very first thing it protects. But if no feasible plan can meet every date, it still returns the best achievable plan with the least lateness, rather than refusing to answer. The soft-target design is what keeps it always able to give you a usable schedule."
+  - question: "Why not make due dates hard constraints so nothing is ever late?"
+    answer: "Because a hard deadline would reject every plan in which any job is late, even when the plant is genuinely overloaded and no on-time plan exists. The base scheduler always produces a plan, late jobs included, so the optimizer must be able to match it. Modeling due dates as heavy penalties lets the optimizer drive lateness down hard while still answering with a real, workable plan when the dates simply cannot all be met."
+  - question: "How does the optimizer measure lateness?"
+    answer: "It measures each job's tardiness as the hours the job finishes past its due date, counting zero when a job is on time or early. It then weights that lateness by job priority, so a late high-priority job counts for more than a late low-priority one. The optimizer minimizes this weighted lateness as its main on-time measure, and the comparison screen reports it as weighted lateness in hours."
+qaQuestions:
+  - question: "Our plant is overbooked this week and three jobs cannot possibly ship on time. Will the optimizer just fail?"
+    answer: "No, it will give you the least-bad plan. Because due dates are soft targets, the optimizer never refuses to schedule an overloaded week. It arranges the work to minimize weighted lateness, so the jobs that do slip are the lower-priority ones and the total lateness is as small as the constraints allow. You get an honest picture of what is achievable, which is far more useful than an error that tells you only that everything cannot fit."
+  - question: "If a due date is soft, what stops the optimizer from letting jobs run late whenever it is convenient?"
+    answer: "The weight on lateness, and where it sits in your goal. Under On-time first, weighted lateness is the top-ranked measure, so the optimizer will not accept any avoidable lateness to gain on a lower measure like overall span. In practice that makes on-time delivery behave almost like a hard rule when a plan exists that meets the dates. The softness only shows itself when no such plan is possible, which is exactly when you want a best-effort answer instead of a refusal."
+---
+
+**The optimizer treats every due date as a strongly weighted target to hit, not a hard wall.** It works aggressively to finish every job on time, but if no feasible plan can meet every date, it still returns the best achievable plan with the least lateness rather than refusing to answer. That soft-target design is what keeps EDGEBIC always able to hand you a usable schedule, even on an overbooked week.
+
+EDGEBIC by User Solutions optimizes toward your due dates without ever letting them make the problem unsolvable. This post explains what a soft target means, why hard deadlines would be the wrong choice, how lateness is measured and weighted, and why the design is an honesty feature rather than a loophole. For the broader optimizer picture, see the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide).
+
+## Soft target versus hard wall
+
+There are two ways a scheduler could handle a due date. A hard wall says the job must finish by its date, and any plan that violates it is illegal and thrown out. A soft target says the job should finish by its date, measures how far past it lands, and pushes hard to shrink that miss to zero.
+
+The optimizer uses the soft target. Each job's lateness is scored as a measure to minimize, and under the default On-time first goal that measure sits at the very top of the ranking. So the optimizer defends dates first, ahead of overall span and everything else. The date is not ignored. It is protected as strongly as any measure can be while still leaving the problem solvable.
+
+## Why a hard deadline would be the wrong choice
+
+A hard deadline sounds safer until you meet an overloaded week. If three jobs genuinely cannot all ship on time because the plant does not have the hours, a hard-deadline model has no legal plan to return. It would reject every arrangement and answer with failure, which tells you nothing you did not already know.
+
+The base scheduler never does that. It always produces a plan, late jobs and all, using a forward pass that places work as early as capacity allows, described in [forward versus backward scheduling](/blog/forward-vs-backward-scheduling). The optimizer sits beside that scheduler and must be able to match any plan it produces. If the optimizer used hard deadlines, it could reject a perfectly legal schedule the base engine handed it, which would be both wrong and useless. Soft targets keep the optimizer and the scheduler speaking the same language: both can always answer, and both answer with the best plan the constraints allow.
+
+## How lateness is measured and weighted
+
+The measure behind the soft target is tardiness: for each job, the hours it finishes past its due date, counted as zero when the job is on time or early. A job due Wednesday at 16:00 that finishes Thursday at 08:00 carries the working hours between the two as its tardiness.
+
+Those per-job hours are then weighted by job priority, so a late high-priority job counts for more than a late low-priority one. A Priority 1 job carries full weight; lower priorities carry proportionally less. The optimizer minimizes this weighted lateness as its primary on-time measure, and the comparison screen reports it directly as weighted lateness in hours. The distinction between raw and weighted lateness, and how the priority weighting is computed, is covered in [weighted versus total tardiness in optimization](/blog/weighted-versus-total-tardiness-in-optimization).
+
+## Soft in theory, near-hard in practice
+
+The word "soft" can suggest the optimizer treats dates casually. It does not, and the reason is where lateness sits in the goal. Under On-time first, weighted lateness is ranked above every other measure, so the optimizer will not accept any avoidable lateness to gain on a lower measure such as a shorter overall plan. Whenever a plan exists that meets all the dates, the optimizer finds it and holds it.
+
+The softness only reveals itself when no such plan exists. On a feasible week, on-time delivery behaves almost exactly like a hard rule. On an infeasible week, the same design that would have made a hard model fail instead produces the least-bad plan, spreading the unavoidable lateness onto the lowest-priority jobs and keeping the total as small as the constraints permit. You get a workable schedule and an honest picture of what the week can actually achieve.
+
+## The honesty payoff
+
+This design fits the way EDGEBIC handles the optimizer throughout: it never pretends. A plan that leaves a job late is presented as exactly that, with the lateness quantified on the comparison screen, so you can decide whether to expedite, add a shift, or accept the slip. That is more useful than a tool that either hides the problem or throws an error.
+
+It also keeps the never-worse guarantee intact. Because the optimizer always returns a real plan, its result can always be compared against your current one, and it is only offered when it strictly improves on your goal, as explained in [how the never-worse clamp is enforced](/blog/the-never-worse-guarantee-in-schedule-optimization). A model that could fail to produce a plan would have nothing to clamp against.
+
+## When soft targets matter most
+
+The soft-target design earns its keep on exactly the weeks planners dread: a bottleneck resource is oversubscribed, several jobs share it, and the arithmetic simply does not fit. Those are the weeks a hard-deadline tool goes silent and a planner is left guessing which orders to sacrifice. The optimizer instead lays out the least-costly set of slips, ranked by priority, so the sacrifice is deliberate rather than accidental. Where a bottleneck makes job ordering decisive, optimization pays off the most, a theme explored in [where schedule optimization pays off most](/blog/edgebic-optimizer-guide) and in [identifying your production bottleneck](/blog/production-bottleneck-identification).
+
+To see how lateness ranks against other measures, read [how the optimizer ranks goals in strict order](/blog/how-the-optimizer-ranks-goals-in-strict-order) and [the On-time first preset explained](/blog/the-ontimefirst-optimizer-preset-explained). To try it on your own orders, visit [EDGEBIC](/edgebic).
+
+## The bottom line
+
+The optimizer treats due dates as strongly weighted targets, not hard walls. It measures each job's lateness in hours past due, weights that by priority, and under the default goal protects it above everything else, so on a feasible week on-time delivery behaves almost like a hard rule. When a week cannot fit, the same design returns the least-late plan instead of a refusal. Soft targets are why the optimizer is always able to give you a real, honest answer.

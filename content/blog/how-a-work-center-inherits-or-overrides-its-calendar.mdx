@@ -1,0 +1,92 @@
+---
+title: "How a Work Center Inherits or Overrides Its Calendar"
+description: "How EDGEBIC lets a work center use the plant's global shifts and holidays or define its own, and why that inherit-or-override choice decides when the capacity search finds open time."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - work center calendar
+  - global shifts
+  - work center shift override
+  - holiday calendar
+  - shift inheritance
+  - finite capacity scheduling
+targetPhrase: "work center calendar inheritance"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "How does a work center get its working hours in scheduling?"
+    answer: "A work center in EDGEBIC either inherits the plant's global shift calendar or defines its own. When it uses global shifts, it opens on the same shifts as the rest of the plant. When it overrides, it carries its own shifts, so a machine that runs a Saturday shift the rest of the plant does not, or a different daily pattern, opens on its own schedule. The same inherit-or-override choice applies separately to holidays."
+  - question: "Why would a work center override the plant calendar?"
+    answer: "Because not every resource keeps plant hours. A bottleneck machine might run an extra shift or a weekend the rest of the plant skips, and a maintenance-critical resource might observe a plant holiday its crew still works through. Overriding lets each resource's real availability drive the schedule, so the capacity search finds open time only when that specific machine is genuinely open, rather than assuming every resource follows one calendar."
+  - question: "Do a work center's shifts and holidays inherit independently?"
+    answer: "Yes. A work center can inherit global shifts while defining its own holidays, or keep global holidays while running its own shift pattern, in any combination. The two are separate choices because they answer different questions, when the resource normally runs and which specific days it is closed. Keeping them independent lets a machine follow the plant's daily rhythm but observe a different holiday list, or the reverse."
+qaQuestions:
+  - question: "Our heat-treat furnace runs Saturdays but the rest of the plant is Monday to Friday. How do I get the schedule to use Saturdays only for the furnace?"
+    answer: "Override the furnace's shift calendar so it carries a Saturday shift, while leaving the other work centers on the global Monday-to-Friday shifts. Because the capacity search only places work on shifts a resource actually has, the furnace will then be found open on Saturdays and the other machines will not. Nothing else in the routing changes: a job flowing into the furnace can use a Saturday slot there, then wait for Monday if the next step is on a machine that keeps plant hours. Modeling the furnace's true availability is what lets the engine exploit that extra day for the one resource that has it, rather than either ignoring the Saturday or wrongly assuming everyone works it."
+  - question: "The plant closes for a holiday, but our packaging line has a crew that works it to catch up. How do I model that?"
+    answer: "Give the packaging line its own holiday list that omits that date, so it does not inherit the global holiday for that day. The rest of the plant, inheriting the global holidays, stays closed, while the packaging line remains open because its own calendar says so. The capacity search then finds the line available on the holiday and every other resource closed, which is exactly the real situation. This is the inherit-or-override choice working on holidays specifically: the global list is the default, and any resource that keeps different days simply carries its own, without you having to edit every other work center."
+---
+
+**A work center in EDGEBIC by User Solutions either inherits the plant's global calendar or defines its own. It can use the global shifts that the whole plant runs, or carry its own shift pattern; and separately, it can observe the global holiday list or keep its own. That inherit-or-override choice decides when the capacity search will find the resource open, because the engine only ever places work on shifts a machine actually has, on days it is not closed.** It is the mechanism that lets one plant hold a shared calendar while individual resources that keep different hours still schedule against their own reality.
+
+Every finite capacity plan needs to know when each resource is open. The simple answer, one calendar for the whole plant, is right for most machines and wrong for a few, and the inherit-or-override model is how both are true at once.
+
+## The default is the plant calendar
+
+Most work centers keep plant hours. They run the same shifts as everyone else and observe the same holidays. For them, inheriting the global calendar is exactly right: define the plant's shifts and holidays once, and every inheriting work center picks them up. When the plant adds a shift or declares a holiday, those resources follow automatically, with no per-machine editing.
+
+This shared default is what keeps a plant's calendar maintainable. A shop with dozens of machines does not want to set the same Monday-to-Friday day shift on every one of them, or add next year's holidays machine by machine. The global calendar is entered once and inherited broadly.
+
+## Overriding when a resource keeps different hours
+
+Some resources do not keep plant hours, and forcing them onto the global calendar would make the schedule wrong in one of two directions: idle capacity the machine actually has, or promised capacity it does not.
+
+A bottleneck furnace might run a Saturday shift or a third shift the rest of the plant skips, to squeeze out more of the constraint's time. If it inherited the plant's Monday-to-Friday calendar, the engine would never find it open on Saturday, and that real capacity would be invisible. Overriding the furnace's shifts to include Saturday lets the capacity search find and use that day for the furnace, and only the furnace.
+
+The reverse happens with holidays. A packaging line might have a crew that works through a plant holiday to catch up, while every other resource is closed. If the line inherited the global holidays, the engine would treat it as closed that day and miss the catch-up capacity. Giving the line its own holiday list that omits that date keeps it open when the rest of the plant is not.
+
+In both cases the override exists so that each resource's true availability, not a plant-wide assumption, drives where work can land.
+
+## Shifts and holidays inherit independently
+
+The choice to inherit or override is made separately for shifts and for holidays, because they answer different questions. Shifts say when the resource normally runs. Holidays say which specific days it is closed regardless of the shift pattern.
+
+A machine can inherit global shifts, keeping the plant's daily rhythm, while carrying its own holiday list, observing different closures. Or it can run its own shift pattern while inheriting the global holidays. Any combination is valid. Keeping the two independent means a resource that merely observes a different holiday does not have to redefine its whole shift schedule, and a resource that runs a special shift does not have to restate the plant's holidays.
+
+## How this reaches the capacity search
+
+None of this changes how the engine schedules; it changes what the engine sees as open. When the capacity search walks the calendar forward, for each day it asks whether this work center is open, which shifts it runs, and how much capacity those shifts offer, exactly as [why a scheduler searches forward in time for capacity](/blog/why-a-scheduler-searches-forward-in-time-for-capacity) describes. The answer comes from that work center's resolved calendar: its own shifts if it overrides, the global shifts if it inherits, minus its own or the global holidays.
+
+So the same forward search, unchanged, finds the furnace open on Saturday and the mill closed, because their calendars differ. The removal of holiday and closed days from available capacity is the same mechanism covered in [how a schedule accounts for holidays and downtime](/blog/how-a-schedule-accounts-for-holidays-and-downtime); the inherit-or-override model simply decides which holidays and shifts apply to which resource.
+
+## A worked example: two resources, two calendars
+
+A plant runs a global Monday-to-Friday day shift, 08:00 to 16:00, and observes a holiday on a Friday.
+
+**Mill-1** inherits everything. It is open Monday to Thursday that week, closed Friday for the holiday, and closed the weekend. A job on Mill-1 that is not done by Thursday evening resumes the following Monday.
+
+**Furnace-1** overrides its shifts to add a Saturday day shift and overrides its holidays to omit that Friday, because its crew works both. It is open Monday through Thursday, open Friday despite the plant holiday, and open Saturday. A job on the furnace can keep running Friday and Saturday while the rest of the plant is dark.
+
+The capacity search finds each resource open exactly on its own days. A routing that flows from the furnace to Mill-1 can exploit the furnace's Friday and Saturday, then wait for Mill-1 to reopen Monday, and the plan reflects both realities without any special handling in the routing.
+
+## Getting the calendars right
+
+Inherit the global calendar for every resource that keeps plant hours, which is most of them, so the plant's shifts and holidays are maintained in one place. Override only the resources that genuinely differ, and override shifts and holidays independently so you only restate what actually changes. The payoff is a schedule where each machine's availability is honest, so the forward search finds open time exactly where it really exists.
+
+Calendar resolution is one of the inputs that make the capacity search trustworthy, and it plugs into the wider pipeline in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide). It serves the same goal as everything in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling): a plan that models the floor as it really runs. To set your own resources' calendars and watch the search respect each one, explore [the EDGEBIC engine](/edgebic) or [bring your data to a demo](/contact-us).
+
+<Accordion title="How does a work center get its working hours in scheduling?">
+A work center in EDGEBIC either inherits the plant's global shift calendar or defines its own. When it uses global shifts, it opens on the same shifts as the rest of the plant. When it overrides, it carries its own shifts, so a machine that runs a Saturday shift the rest of the plant does not, or a different daily pattern, opens on its own schedule. The same inherit-or-override choice applies separately to holidays.
+</Accordion>
+
+<Accordion title="Why would a work center override the plant calendar?">
+Because not every resource keeps plant hours. A bottleneck machine might run an extra shift or a weekend the rest of the plant skips, and a maintenance-critical resource might observe a plant holiday its crew still works through. Overriding lets each resource's real availability drive the schedule, so the capacity search finds open time only when that specific machine is genuinely open, rather than assuming every resource follows one calendar.
+</Accordion>
+
+<Accordion title="Do a work center's shifts and holidays inherit independently?">
+Yes. A work center can inherit global shifts while defining its own holidays, or keep global holidays while running its own shift pattern, in any combination. The two are separate choices because they answer different questions, when the resource normally runs and which specific days it is closed. Keeping them independent lets a machine follow the plant's daily rhythm but observe a different holiday list, or the reverse.
+</Accordion>

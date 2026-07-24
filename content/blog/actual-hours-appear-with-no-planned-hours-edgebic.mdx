@@ -1,0 +1,94 @@
+---
+title: "Actual Hours Appear With No Planned Hours: Causes and Fixes"
+description: "A day showing logged actual hours with zero planned hours is usually an orphaned breakdown row from a step that was completed then dropped from the forward plan. How a clean run reconciles it."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - actual hours no planned hours
+  - orphaned daily breakdown row
+  - stray daily hour breakdown
+  - actual with zero planned
+  - reschedule breakdown anomaly
+  - hours reconcile after run
+targetPhrase: "actual hours appear with no planned hours"
+wordCount: 1170
+readingTime: 6
+faqQuestions:
+  - question: "Why does a day show actual hours but zero planned hours?"
+    answer: "The usual cause is an orphaned daily breakdown row from a step that had actuals logged and was then dropped from the forward plan on a reschedule, so the logged hours survive without a matching planned figure. The daily breakdown carries both planned and actual hours per day; when a step's forward plan is removed but its logged hours remain, a row can persist with actual hours and no plan beside them. The anomaly report flags this stray row, and a clean scheduling re-run reconciles the breakdown so plan and actual line up again."
+  - question: "Do orphaned actual-hours rows corrupt my totals?"
+    answer: "They inflate the actual side of a step's totals without a matching plan, which makes variance and completion figures read oddly, but it is recoverable, not permanent corruption. The stray row counts its logged hours even though no planned hours sit beside them, so the step can appear to have done work the plan never accounted for. Re-running scheduling rebuilds the daily breakdown for non-completed schedules, which removes the orphan and restores a coherent plan-versus-actual picture."
+  - question: "How do I clear a stray actual-hours row?"
+    answer: "Re-run scheduling for the affected job. The persist step deduplicates and rebuilds the daily hour breakdown, so a row carrying actual hours with no plan is reconciled against the current schedule. Verify with the anomaly report scoped to the job: the stray-breakdown flag clears after a clean run. If the hours belong to genuinely completed work, the merge keeps them attached to the completed step rather than leaving them orphaned on a dropped one."
+qaQuestions:
+  - question: "A step shows four actual hours on a day where the plan says zero. Nobody expected work that day. Is the log wrong?"
+    answer: "The log is probably not wrong; the row is orphaned. When a step that had actuals is dropped from the forward plan on a reschedule, its logged hours can survive as a daily breakdown row with actual hours and no planned hours beside them, which is exactly the four-hours-on-a-zero-plan-day shape you see. The anomaly report flags it as a stray breakdown. Re-run scheduling for the job so the breakdown is rebuilt and the logged hours are reconciled against the current plan. If those four hours were real completed work, they stay attached to the completed step after the run rather than floating on an empty day."
+  - question: "After a reschedule the job's actual total is higher than the sum of its steps' planned work. Where did the extra come from?"
+    answer: "From one or more stray breakdown rows carrying actual hours with no plan. A reschedule that drops a step's forward plan but keeps its logged hours can leave those hours in the daily breakdown without a matching planned figure, so the actual total climbs above what the current plan accounts for. Re-run scheduling: the persist step rebuilds the daily breakdown for non-completed schedules and reconciles the orphaned hours, and completed work stays attached to its completed step. Confirm with the anomaly report that the stray-breakdown flag has cleared."
+---
+
+**When a day shows logged actual hours with zero planned hours beside them, it is usually an orphaned daily breakdown row from a step that had actuals and was then dropped from the forward plan, and a clean scheduling re-run reconciles the breakdown so plan and actual line up again.** [EDGEBIC by User Solutions](/edgebic) carries planned and actual hours together in the daily breakdown, so a row with actual hours and no plan is a stray the anomaly report is built to catch.
+
+This post covers the orphaned-hours symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). It is related to [a reschedule created a duplicate schedule row](/blog/a-reschedule-created-a-duplicate-schedule-row-edgebic), which covers duplicate detail inflating a step, and to [actual dates look wrong](/blog/actual-dates-look-wrong-edgebic), which traces suspect actuals to their source. To confirm the flag before and after, [run the scheduler anomalies report](/blog/how-to-run-the-scheduler-anomalies-report-in-edgebic).
+
+## What You Are Seeing
+
+A step's daily breakdown shows actual hours on a day where the planned hours are zero. No work was expected on that day in the current plan, yet the logged hours sit there, and the step's actual total climbs above what the plan accounts for. The anomaly report flags the row as a stray breakdown.
+
+## Why It Happens
+
+### Cause 1: A Step Was Dropped From the Forward Plan After Logging (the Usual Answer)
+
+When a reschedule removes a step's forward plan but the step had actuals logged, those hours can persist in the daily breakdown without a matching planned figure. The plan side went to zero; the actual side did not. The result is a row with actual hours and no plan beside them.
+
+**How to tell:** the day carries logged hours, the plan for that step-day is zero, and a reschedule happened after the hours were logged.
+
+### Cause 2: The Breakdown Was Not Rebuilt on the Last Run
+
+The persist step rebuilds the daily breakdown for non-completed schedules by deduplicating and recreating rows. If that rebuild was missed, an earlier cycle's row survives and can carry actual hours with no current plan.
+
+**How to tell:** a clean re-run removes the row, confirming the detail was simply out of date.
+
+### Cause 3: The Hours Belong to Completed Work
+
+If the logged hours are genuinely completed work, they should stay attached to the completed step, not float on a dropped one. An orphan on an empty day is the wrong home for real completed hours.
+
+**How to tell:** the step or a sibling was completed, and the hours belong to that completion.
+
+## How to Fix It
+
+- **Re-run scheduling for the job.** The persist step rebuilds the daily breakdown and reconciles the orphaned hours against the current plan.
+- **Verify with the anomaly report** scoped to the job: the stray-breakdown flag clears after a clean run.
+- **Confirm completed hours stay attached to their completed step,** which the merge preserves, rather than to a dropped one.
+- **Do not hand-delete the row,** since a fresh run reconciles the breakdown and hand-edits can lose real logged hours.
+
+## How to Diagnose It, in Order
+
+1. **Confirm the plan for that step-day is zero** while actual hours are present.
+2. **Ask whether a reschedule ran after the hours were logged,** the common trigger.
+3. **Check whether the hours belong to completed work,** which should stay attached to the completed step.
+4. **Re-run scheduling** to rebuild the daily breakdown.
+5. **Verify the stray-breakdown flag clears** and the actual total reconciles.
+
+## How to Prevent It
+
+- **Log actuals before rescheduling,** so the historical hours are clean when the plan is rebuilt.
+- **Re-run scheduling to reconcile a stray row,** never hand-edit, since the merge is what keeps plan and actual aligned.
+- **Watch the actual total against the plan,** since an actual sum above the planned work points at an orphaned row.
+- **Verify with the anomaly report scoped to the job,** which flags the stray breakdown before and confirms it is gone after. For duplicate detail inflating a step under a single header, see [a reschedule created a duplicate schedule row](/blog/a-reschedule-created-a-duplicate-schedule-row-edgebic).
+
+<Accordion title="Why does a day show actual hours but zero planned hours?">
+The usual cause is an orphaned daily breakdown row from a step that had actuals logged and was then dropped from the forward plan on a reschedule, so the logged hours survive without a matching planned figure. The daily breakdown carries both planned and actual hours per day; when a step's forward plan is removed but its logged hours remain, a row can persist with actual hours and no plan beside them. The anomaly report flags this stray row, and a clean scheduling re-run reconciles the breakdown so plan and actual line up again.
+</Accordion>
+
+<Accordion title="Do orphaned actual-hours rows corrupt my totals?">
+They inflate the actual side of a step's totals without a matching plan, which makes variance and completion figures read oddly, but it is recoverable, not permanent corruption. The stray row counts its logged hours even though no planned hours sit beside them, so the step can appear to have done work the plan never accounted for. Re-running scheduling rebuilds the daily breakdown for non-completed schedules, which removes the orphan and restores a coherent plan-versus-actual picture.
+</Accordion>
+
+<Accordion title="How do I clear a stray actual-hours row?">
+Re-run scheduling for the affected job. The persist step deduplicates and rebuilds the daily hour breakdown, so a row carrying actual hours with no plan is reconciled against the current schedule. Verify with the anomaly report scoped to the job: the stray-breakdown flag clears after a clean run. If the hours belong to genuinely completed work, the merge keeps them attached to the completed step rather than leaving them orphaned on a dropped one.
+</Accordion>

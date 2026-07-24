@@ -1,0 +1,94 @@
+---
+title: "The CP-SAT Optimizer Fell Back to Multi-Run: Causes and Fixes"
+description: "When you select the solver-based optimizer but the run behaves like multi-run, the CP-SAT engine was unavailable in that host and the plan fell back safely. How to confirm and fix it."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - cp-sat fell back to multi-run
+  - optimizer engine selection
+  - solver optimizer unavailable
+  - optimizer engine multi-run default
+  - optimality gap badge missing
+  - optimization troubleshooting
+targetPhrase: "cp-sat optimizer fell back to multi-run"
+wordCount: 1180
+readingTime: 6
+faqQuestions:
+  - question: "Why did the schedule use multi-run when I selected the solver-based optimizer?"
+    answer: "The solver-based engine was not available in the host that ran the optimization, so the plan fell back to the multi-run engine rather than failing. Engine selection routes to the chosen optimizer if it is present, and defaults to multi-run if it is not, so selecting the solver can never break scheduling. The multi-run result is still guaranteed never worse than the baseline; it simply reports best-of-N wording instead of a proven optimality gap. Run optimization from the host where the solver engine is present to get the solver behavior."
+  - question: "How can I tell which optimizer engine actually ran?"
+    answer: "Read the result wording. The multi-run engine describes its outcome as the best of a number of complete schedules it tried, with no optimality gap. The solver-based engine reports a proven optimality gap, a percentage that says how close the result is to the mathematical best. If you selected the solver but see best-of-N wording and no gap, the run used multi-run. The two produce a valid plan either way; only the certificate differs."
+  - question: "Is a fallback to multi-run a problem?"
+    answer: "Not for correctness. The fallback exists precisely so that selecting an engine that is not present in a given host cannot leave you without a schedule. The multi-run engine is the default and is guaranteed never worse than the baseline, so the plan is safe. The only difference is the certificate: multi-run reports best-of-N, while the solver reports a proven optimality gap. If you specifically need the gap, run from the host where the solver engine is available."
+qaQuestions:
+  - question: "I set the optimizer engine to the solver in Options, ran it, and the result said best of twelve schedules tried, no gap percentage. Did my setting not save?"
+    answer: "The setting likely saved, but the run happened in a host where the solver engine was not present, so it fell back to multi-run. Best-of-N wording with no optimality gap is the multi-run signature; the solver reports a proven gap instead. The fallback is deliberate, so a selection the current host cannot honor still returns a valid, never-worse plan rather than an error. Confirm you are running optimization from the desktop application where the solver engine ships, then re-run: you should see the gap percentage that marks a solver result."
+  - question: "Does falling back to multi-run mean my schedule is worse than the solver would have produced?"
+    answer: "Not necessarily worse, and never worse than your starting point. The multi-run engine evaluates many complete schedules and returns the best one, clamped so it can never come back worse than the baseline. The solver may reach a result it can prove is within a small gap of optimal, which the multi-run engine cannot certify, but both improve on or match where you started. If the certified gap matters for your decision, run where the solver is available; if you just need a better, safe plan, multi-run already delivered one."
+---
+
+**When you select the solver-based optimizer but the run behaves like multi-run, the solver engine was not available in the host that executed the optimization, so the plan fell back to the multi-run engine on purpose rather than failing.** [EDGEBIC by User Solutions](/edgebic) routes optimization to the engine you choose when it is present and defaults to multi-run when it is not, so selecting the solver can never leave you without a schedule.
+
+This post covers the wrong-engine symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). It differs from [why the optimizer returned the same schedule](/blog/why-the-optimizer-returned-the-same-schedule-edgebic), which is about a run that produced no change at all. For what the solver engine actually does when it is present, see [how the CP-SAT solver models your schedule](/blog/how-the-cp-sat-solver-models-your-schedule), and for the scheduling fundamentals underneath both engines, [what production scheduling is](/blog/what-is-production-scheduling).
+
+## What You Are Seeing
+
+You set the optimizer engine to the solver in the Options screen, ran optimization, and the result reads like the multi-run engine: it describes the best of a number of complete schedules it tried, with no optimality gap percentage. The plan improved, but the certificate is not the solver's.
+
+## Why It Happens
+
+### Cause 1: The Solver Engine Is Not Present in This Host
+
+Engine selection checks whether the chosen optimizer is registered in the host that runs the optimization. If the solver engine is not present, the run falls back to multi-run rather than erroring. The setting is honored where the engine exists and safely ignored where it does not.
+
+**How to tell:** the result carries best-of-N wording and no gap, which is the multi-run signature.
+
+### Cause 2: The Setting Did Not Save
+
+Less common, but check it. If the engine selection in Options did not commit, the run used the default engine, which is multi-run. The symptom looks identical to the fallback.
+
+**How to tell:** re-open Options and the engine selection is not the solver you expected.
+
+### Cause 3: You Are Reading the Wrong Signal
+
+The two engines both produce a valid, improved plan. If you assumed a fallback because the numbers changed less than hoped, confirm by the certificate wording, not by the size of the improvement.
+
+**How to tell:** the result actually reports a proven optimality gap, in which case the solver did run.
+
+## How to Fix It
+
+- **Run optimization from the host where the solver engine ships.** The desktop application carries the solver; run there to get the solver behavior and its optimality gap.
+- **Re-select and re-save the engine in Options,** then confirm the selection stuck before running.
+- **Read the certificate to confirm which engine ran.** A proven optimality gap means the solver; best-of-N means multi-run.
+- **Accept the fallback when it is expected.** In a host without the solver, multi-run is the correct, safe result, not a failure to fix.
+
+## How to Diagnose It, in Order
+
+1. **Read the result wording.** Best-of-N with no gap is multi-run; a proven gap percentage is the solver.
+2. **Confirm the engine selection saved** in Options.
+3. **Confirm you are running in the host where the solver is present,** since selection cannot summon an engine that is not there.
+4. **Re-run** and check the certificate again.
+5. **If multi-run is expected in this host,** stop: the never-worse plan it produced is correct and safe.
+
+## How to Prevent It
+
+- **Know which host carries the solver engine,** and run optimization there when you need the proven optimality gap.
+- **Verify the engine selection saved** before a run, so the default does not quietly take over.
+- **Judge the run by its certificate, not its size.** The engine that ran is stated in the result wording, not inferred from how much the plan moved.
+- **Rely on the fallback as a safety property.** A selection a host cannot honor returns a valid, never-worse plan instead of an error, which is why optimization is safe to leave enabled. For the guarantee behind both engines, see [the business case for risk-free optimization](/blog/the-business-case-for-risk-free-optimization).
+
+<Accordion title="Why did the schedule use multi-run when I selected the solver-based optimizer?">
+The solver-based engine was not available in the host that ran the optimization, so the plan fell back to the multi-run engine rather than failing. Engine selection routes to the chosen optimizer if it is present, and defaults to multi-run if it is not, so selecting the solver can never break scheduling. The multi-run result is still guaranteed never worse than the baseline; it simply reports best-of-N wording instead of a proven optimality gap. Run optimization from the host where the solver engine is present to get the solver behavior.
+</Accordion>
+
+<Accordion title="How can I tell which optimizer engine actually ran?">
+Read the result wording. The multi-run engine describes its outcome as the best of a number of complete schedules it tried, with no optimality gap. The solver-based engine reports a proven optimality gap, a percentage that says how close the result is to the mathematical best. If you selected the solver but see best-of-N wording and no gap, the run used multi-run. The two produce a valid plan either way; only the certificate differs.
+</Accordion>
+
+<Accordion title="Is a fallback to multi-run a problem?">
+Not for correctness. The fallback exists precisely so that selecting an engine that is not present in a given host cannot leave you without a schedule. The multi-run engine is the default and is guaranteed never worse than the baseline, so the plan is safe. The only difference is the certificate: multi-run reports best-of-N, while the solver reports a proven optimality gap. If you specifically need the gap, run from the host where the solver engine is available.
+</Accordion>

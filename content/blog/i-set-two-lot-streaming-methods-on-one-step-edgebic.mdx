@@ -1,0 +1,94 @@
+---
+title: "I Set Two Lot-Streaming Methods on One Step: Which Wins?"
+description: "When a step has both a transfer batch and a flow-step lag set, the overlap uses the piece-count batch and the flow step is ignored. Why the engine picks one and how to make intent clear."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - two lot streaming methods one step
+  - transfer batch and flow step
+  - piece-count versus flow step
+  - lot streaming overlap ambiguity
+  - flow step ignored
+  - overlapping operations
+targetPhrase: "two lot-streaming methods on one step"
+wordCount: 1160
+readingTime: 6
+faqQuestions:
+  - question: "If a step has both a transfer batch and a flow step, which one drives the overlap?"
+    answer: "The piece-count transfer batch wins. When a step carries both a transfer batch and a flow-step lag, the engine uses the transfer batch to size the overlap and ignores the flow step, provided the work center is a discrete, non-continuous process. The two are competing ways to express the same overlap, so the engine picks the piece-count method rather than combining them. If you meant the overlap to follow the flow step instead, clear the transfer batch so the flow step is the only method in play."
+  - question: "Why does the anomaly report flag a step that has both set?"
+    answer: "Because two overlap methods on one step is ambiguous intent, and the report surfaces it so you can confirm which you meant. The engine resolves the ambiguity by preferring the transfer batch, but that is a default, not a reading of your intent. Flagging the pair lets you confirm the step overlaps the way you wanted rather than the way the default chose. Clear whichever method you did not intend so the step carries a single, unambiguous overlap rule."
+  - question: "How do I choose between a transfer batch and a flow step?"
+    answer: "Use a transfer batch when overlap should follow piece counts, so the downstream step starts once a set number of pieces is ready. Use a flow step when overlap should follow elapsed time from the upstream start, independent of piece count. They express overlap differently, and a step should carry only one. Decide which model matches the operation, set that one, and leave the other at zero so there is no ambiguity for the engine to resolve on your behalf."
+qaQuestions:
+  - question: "I set a flow step expecting the next operation to start an hour in, but it started when a batch of pieces was ready instead. What overrode my flow step?"
+    answer: "The transfer batch on the same step overrode it. When both a transfer batch and a flow step are set, the engine uses the piece-count transfer batch and ignores the flow step, so the downstream operation started when the batch of pieces was ready rather than at the elapsed-time point your flow step described. The two are competing overlap methods and the engine prefers the transfer batch. Clear the transfer batch on that step, leaving only the flow step, and the overlap will follow your one-hour lag instead. Re-run and confirm on the Gantt."
+  - question: "The anomaly report flagged a step for having both methods, but the schedule looked fine. Do I need to act?"
+    answer: "The schedule looked fine because the engine resolved the ambiguity by preferring the transfer batch, but you should still act. The flag means the step carries two overlap methods and only one is being used, so the flow step you set is dead weight and a future reader cannot tell your intent. Decide which method you meant, clear the other, and the step becomes unambiguous. Leaving both set works today but invites confusion the next time someone edits the step or reviews the routing."
+---
+
+**When a step carries both a transfer batch and a flow-step lag, the engine sizes the overlap from the piece-count transfer batch and ignores the flow step, because the two are competing ways to express the same overlap and only one can drive the step.** [EDGEBIC by User Solutions](/edgebic) resolves the ambiguity by preferring the transfer batch on a discrete work center, and the anomaly report flags the pair so you can confirm which method you actually meant.
+
+This post covers the two-methods symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). It sits alongside [my transfer batch size was ignored](/blog/my-transfer-batch-size-was-ignored-edgebic) and [queue time and flow time are fighting each other](/blog/queue-time-and-flow-time-are-fighting-each-other-edgebic), which cover related overlap and buffer interactions. For the payoff of overlap done cleanly, see [how overlapping operations shorten delivery](/blog/how-overlapping-operations-shorten-delivery).
+
+## What You Are Seeing
+
+You set a flow step on an operation expecting the downstream step to start after a certain elapsed time, but the downstream step instead started when a batch of pieces was ready. Both a transfer batch and a flow step are set on the same step, and the overlap follows the batch, not the lag you configured.
+
+## Why It Happens
+
+### Cause 1: The Transfer Batch Wins by Default (the Rule)
+
+When both methods are set, the engine uses the piece-count transfer batch to size the overlap and ignores the flow step, as long as the work center is a discrete, non-continuous process. The two express the same overlap differently, so the engine chooses one, and the transfer batch is the one it prefers.
+
+**How to tell:** the downstream step starts at a piece-count point, and the step has both a transfer batch and a flow step configured.
+
+### Cause 2: The Flow Step Is Now Dead Weight
+
+The flow step you set is not combined with the batch; it is simply unused. It carries no effect while the transfer batch is present, so it neither adds to nor subtracts from the overlap, but it does obscure your intent for anyone reading the step later.
+
+**How to tell:** clearing the flow step changes nothing, because it was already inactive.
+
+### Cause 3: The Ambiguity Was Never Resolved on Purpose
+
+The engine's preference is a default, not a reading of what you wanted. If you meant the flow step to drive the overlap, the default silently chose against you, which is exactly why the anomaly report flags the pair.
+
+**How to tell:** the anomaly report lists the step for having both methods set.
+
+## How to Fix It
+
+- **Decide which method you meant.** Piece counts point to the transfer batch; elapsed time from the upstream start points to the flow step.
+- **Clear the method you did not intend.** Leaving only one makes the step unambiguous for the engine and for the next reader.
+- **If you meant the flow step,** set the transfer batch to zero so the flow step becomes the only method in play.
+- **Re-run scheduling** and confirm the overlap follows the method you kept.
+
+## How to Diagnose It, in Order
+
+1. **Check whether the step has both a transfer batch and a flow step set.** Both present is the whole cause.
+2. **Confirm the overlap follows piece counts,** which is the transfer batch driving it.
+3. **Decide your intended method** and clear the other.
+4. **Re-run and read the Gantt** to confirm the overlap matches your intent.
+5. **Clear the anomaly flag** by leaving a single method on the step.
+
+## How to Prevent It
+
+- **Set one overlap method per step,** never both, so there is no ambiguity to resolve.
+- **Match the method to the operation:** transfer batch for piece-count overlap, flow step for elapsed-time overlap.
+- **Treat the anomaly flag as a prompt to confirm intent,** not a warning to ignore, since the step works but reads ambiguously.
+- **Leave the unused method at zero,** so a future editor sees exactly which model the step uses. For the piece-count method on its own, see [my transfer batch size was ignored](/blog/my-transfer-batch-size-was-ignored-edgebic).
+
+<Accordion title="If a step has both a transfer batch and a flow step, which one drives the overlap?">
+The piece-count transfer batch wins. When a step carries both a transfer batch and a flow-step lag, the engine uses the transfer batch to size the overlap and ignores the flow step, provided the work center is a discrete, non-continuous process. The two are competing ways to express the same overlap, so the engine picks the piece-count method rather than combining them. If you meant the overlap to follow the flow step instead, clear the transfer batch so the flow step is the only method in play.
+</Accordion>
+
+<Accordion title="Why does the anomaly report flag a step that has both set?">
+Because two overlap methods on one step is ambiguous intent, and the report surfaces it so you can confirm which you meant. The engine resolves the ambiguity by preferring the transfer batch, but that is a default, not a reading of your intent. Flagging the pair lets you confirm the step overlaps the way you wanted rather than the way the default chose. Clear whichever method you did not intend so the step carries a single, unambiguous overlap rule.
+</Accordion>
+
+<Accordion title="How do I choose between a transfer batch and a flow step?">
+Use a transfer batch when overlap should follow piece counts, so the downstream step starts once a set number of pieces is ready. Use a flow step when overlap should follow elapsed time from the upstream start, independent of piece count. They express overlap differently, and a step should carry only one. Decide which model matches the operation, set that one, and leave the other at zero so there is no ambiguity for the engine to resolve on your behalf.
+</Accordion>

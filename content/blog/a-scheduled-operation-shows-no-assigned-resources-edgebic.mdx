@@ -1,0 +1,94 @@
+---
+title: "A Scheduled Operation Shows No Assigned Resources"
+description: "When an operation has a bar on the Gantt but no resource or instance underneath it, the resource detail was not built on the last run. Why it happens and how a clean re-run restores it."
+published: 2026-08-04T12:00:00.000Z
+modified: 2026-08-04T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - operation no assigned resources
+  - schedule missing resource rows
+  - no instance on operation
+  - resource detail not built
+  - operation not on resource load
+  - schedule resource anomaly
+targetPhrase: "scheduled operation shows no assigned resources"
+wordCount: 1160
+readingTime: 6
+faqQuestions:
+  - question: "Why does an operation have a Gantt bar but no assigned resources?"
+    answer: "The resource detail underneath the operation was not built or was dropped on the last scheduling cycle, so the operation exists as a header with no resource or machine-instance rows beneath it. A work-center operation should always carry resource detail that names the machine and instance doing the work; when that detail is missing, the anomaly report flags the operation. The bar shows because the schedule header is intact, but the operation will not appear correctly on resource-load reports until the detail is rebuilt by a clean re-run."
+  - question: "What does a missing-resource operation break?"
+    answer: "It drops the operation out of resource load. The resource rows are what credit hours to a machine and instance, so an operation with no resource detail contributes nothing to any machine's load, even though its bar sits on the Gantt. Utilization for the machine that should be doing the work is understated by exactly those hours. The schedule is not lost; the detail beneath it is missing and a fresh run rebuilds it."
+  - question: "How do I restore resource detail to an operation that lost it?"
+    answer: "Re-run scheduling for the affected job. The persist step rebuilds the resource detail for non-completed schedules, recreating the machine and instance rows the operation needs, so a clean run restores what was missing. Verify with the anomaly report scoped to the job: the missing-resource flag clears after the run. Do not try to hand-add resource rows, because the run rebuilds them and hand-edits fight that process."
+qaQuestions:
+  - question: "An operation shows on the Gantt with the right work center and hours, but resource load never counts it. Where are its hours going?"
+    answer: "Nowhere, because the operation has no resource detail to credit them. Resource rows are what attribute an operation's hours to a specific machine and instance; without them, the operation contributes to no machine's load even though the header and its hours appear on the Gantt. That is why resource load never counts it. Re-run scheduling for the job so the persist step rebuilds the resource detail, then re-check the report: the machine's load picks up the operation's hours once the rows exist again. The anomaly report will confirm the missing-resource flag has cleared."
+  - question: "This appeared after a reschedule on a job with parallel or alternate routing. Is that the cause?"
+    answer: "Likely yes. Complex routings with parallel branches or alternate work centers put more work on the persist step to rebuild each operation's resource detail, and a missed rebuild leaves an operation with a header but no rows. The reschedule is the trigger and the missing detail is the mechanism. A clean scheduling re-run rebuilds the resource detail for the affected operations, and the anomaly report confirms every operation now carries the machine and instance rows it needs."
+---
+
+**When an operation shows a bar on the Gantt but has no resource or machine-instance rows underneath it, the resource detail was not built on the last scheduling cycle, and a clean re-run rebuilds it.** [EDGEBIC by User Solutions](/edgebic) expects every work-center operation to carry resource detail that names the machine and instance doing the work, so an operation missing that detail is flagged by the anomaly report and left out of resource load until it is rebuilt.
+
+This post covers the missing-resource symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). It is the counterpart to [a resource is logged against the wrong work center](/blog/a-resource-is-logged-against-the-wrong-work-center-edgebic), where the detail exists but names the wrong machine, and it relates to [hours do not add up on a job](/blog/hours-do-not-add-up-on-a-job-edgebic). To confirm the flag before and after, [run the scheduler anomalies report](/blog/how-to-run-the-scheduler-anomalies-report-in-edgebic).
+
+## What You Are Seeing
+
+An operation sits on the Gantt with the correct work center and hours, but it has no resource or instance rows beneath it, so it never appears on resource-load or utilization reports. The header looks complete; the detail that should credit a machine is simply absent, and the anomaly report flags the operation.
+
+## Why It Happens
+
+### Cause 1: The Resource Detail Was Not Rebuilt (the Usual Answer)
+
+The persist step rebuilds resource detail for non-completed schedules, recreating the machine and instance rows. If that rebuild was missed on the last cycle, the operation keeps its header but loses its detail, leaving nothing to credit a machine.
+
+**How to tell:** the operation header is correct, but no resource or instance rows sit under it.
+
+### Cause 2: A Complex Routing Increased the Rebuild Work
+
+Parallel branches and alternate work centers put more work on the persist step, since each operation's detail must be rebuilt against its resolved machine. A missed rebuild on such a routing leaves an operation with a header and no rows.
+
+**How to tell:** the symptom appeared on a job with parallel or alternate routing after a reschedule.
+
+### Cause 3: It Is a Material Step, Not a Work-Center Step
+
+A material step is assigned instantly and does not carry machine resource detail, so no rows under it is expected. That is not the same as a work-center operation missing its detail.
+
+**How to tell:** the step is a material step, in which case the absence of machine resources is correct.
+
+## How to Fix It
+
+- **Re-run scheduling for the job.** The persist step rebuilds the resource detail and recreates the machine and instance rows the operation needs.
+- **Verify with the anomaly report** scoped to the job: the missing-resource flag clears after a clean run.
+- **Re-check resource load,** since the rebuilt detail lets the machine pick up the operation's hours.
+- **Confirm the step is not a material step,** where no machine resource detail is the correct state.
+
+## How to Diagnose It, in Order
+
+1. **Confirm the operation is a work-center step,** not a material step, since material steps carry no machine detail by design.
+2. **Check for resource and instance rows** under the operation; their absence is the whole symptom.
+3. **Ask whether a reschedule ran,** especially on a parallel or alternate routing.
+4. **Re-run scheduling** to rebuild the detail.
+5. **Verify the anomaly flag clears** and resource load picks up the operation's hours.
+
+## How to Prevent It
+
+- **Re-run scheduling after a reschedule on complex routings,** where the rebuild work is greatest, and confirm every operation carries resource detail.
+- **Read a resource-load gap against the Gantt,** since a header with no detail is invisible to load reports but visible on the timeline.
+- **Verify with the anomaly report scoped to the job,** which flags a work-center operation missing its resources before and confirms it is fixed after.
+- **Never hand-add resource rows,** since a fresh run rebuilds them and the merge keeps them consistent. For detail that exists but names the wrong machine, see [a resource is logged against the wrong work center](/blog/a-resource-is-logged-against-the-wrong-work-center-edgebic).
+
+<Accordion title="Why does an operation have a Gantt bar but no assigned resources?">
+The resource detail underneath the operation was not built or was dropped on the last scheduling cycle, so the operation exists as a header with no resource or machine-instance rows beneath it. A work-center operation should always carry resource detail that names the machine and instance doing the work; when that detail is missing, the anomaly report flags the operation. The bar shows because the schedule header is intact, but the operation will not appear correctly on resource-load reports until the detail is rebuilt by a clean re-run.
+</Accordion>
+
+<Accordion title="What does a missing-resource operation break?">
+It drops the operation out of resource load. The resource rows are what credit hours to a machine and instance, so an operation with no resource detail contributes nothing to any machine's load, even though its bar sits on the Gantt. Utilization for the machine that should be doing the work is understated by exactly those hours. The schedule is not lost; the detail beneath it is missing and a fresh run rebuilds it.
+</Accordion>
+
+<Accordion title="How do I restore resource detail to an operation that lost it?">
+Re-run scheduling for the affected job. The persist step rebuilds the resource detail for non-completed schedules, recreating the machine and instance rows the operation needs, so a clean run restores what was missing. Verify with the anomaly report scoped to the job: the missing-resource flag clears after the run. Do not try to hand-add resource rows, because the run rebuilds them and hand-edits fight that process.
+</Accordion>
