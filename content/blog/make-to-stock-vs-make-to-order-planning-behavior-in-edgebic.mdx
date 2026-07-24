@@ -1,0 +1,101 @@
+---
+title: "Make-to-Stock vs Make-to-Order Planning Behavior in EDGEBIC"
+description: "How a product's make-to-stock or make-to-order build method changes four planning behaviors: forecast consumption, receipts, stock netting, and replenishment suggestions."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - make to stock vs make to order
+  - build method planning
+  - MTS MTO manufacturing
+  - forecast consumption
+  - build to inventory
+  - replenishment trigger
+targetPhrase: "make to stock vs make to order"
+wordCount: 1450
+readingTime: 7
+faqQuestions:
+  - question: "What is the difference between make-to-stock and make-to-order in EDGEBIC?"
+    answer: "Make-to-stock builds a product ahead of a specific customer order into finished-goods stock, and a completed build posts a receipt to the inventory ledger. Make-to-order builds a product only when a firm order exists, ships the output straight to the customer, and posts no receipt. The build method is a product setting that changes four downstream behaviors: forecast consumption, receipts, stock netting, and whether replenishment suggestions ever fire."
+  - question: "Do forecasts affect a make-to-order product?"
+    answer: "No. For a make-to-order product the gross requirements in every planning bucket equal firm demand alone, and forecast rows are ignored by the projection math. You can still enter forecast rows against the product, but they contribute nothing to the projected balance and never trigger a suggestion. If a product is make-to-order and you see forecast quantities affecting nothing, that is expected behavior, not a bug."
+  - question: "Can one order break the product's build method?"
+    answer: "Yes. A per-order build-to-inventory override lets a single manufacturing order build to stock or ship direct regardless of the product default. Leaving the override blank inherits the product's build method. This is how you handle the occasional exception, a make-to-stock item you want to ship straight to a customer this once, without changing the product master and disturbing every future plan for that item."
+qaQuestions:
+  - question: "We make a bracket to stock and also take custom orders for it. How does EDGEBIC keep the forecast from double-counting the custom orders?"
+    answer: "As long as the product is make-to-stock, the forecast-consumption rule reconciles forecast against firm orders in each bucket. Under the default greater-of rule, a bucket with 120 forecast and 60 firm orders produces gross requirements of 120, not 180, because the firm orders are treated as arriving inside the forecast. The custom orders consume forecast rather than stacking on top of it. If your custom orders routinely exceed the forecast, switch that product to the minus-consumed rule so the surplus firm demand adds correctly."
+  - question: "A make-to-order job for 80 units ran and I expected on-hand to change. It did not. Why?"
+    answer: "A make-to-order build posts no receipt into stock. Its output goes straight to the customer, so on-hand is unchanged by definition. If that 80-unit demand had an on-hand balance to draw from, EDGEBIC would instead satisfy it from stock and post a single issue, lowering on-hand by 80. What never happens for make-to-order is a positive receipt on completion. Only a make-to-stock build, or the per-order build-to-inventory override set to yes, posts stock in."
+---
+
+**Make-to-stock and make-to-order** are the two build methods a product can carry in EDGEBIC by User Solutions, and the choice changes four distinct planning behaviors: whether forecasts count, whether a completed build posts stock, how existing stock is netted against demand, and whether replenishment suggestions ever fire. The build method is one field on the product, but it is load-bearing. Set it wrong and the inventory calendar will either ignore demand it should plan for or plan builds for a product that was never meant to be stocked.
+
+This post walks the two methods side by side, in planner language, with the documented worked numbers, so you can pick the right method per product and read the calendar with confidence. For the wider context of how this planning layer connects to capacity, see the [inventory and planning pillar](/blog/edgebic-planning-guide). For the underlying scheduling ideas, see [what is production scheduling](/blog/what-is-production-scheduling).
+
+## The Two Methods in One Sentence Each
+
+Make-to-stock (MTS) means the product is built ahead of a specific customer order, placed into finished-goods stock, and consumed by the next demand that arrives. Make-to-order (MTO) means the product is built only when a firm order exists, and the output flows direct to that customer.
+
+That single difference cascades into four behaviors that a planner sees every day.
+
+## Behavior 1: Whether Forecasts Count
+
+For a make-to-order product, gross requirements in each planning bucket equal firm demand alone. Forecast rows are ignored by the projection math because a custom job is triggered by a real order, not by a prediction.
+
+For a make-to-stock product, forecast and firm demand combine into gross requirements through a consumption rule. The default, greater-of, takes the larger of the two in each bucket. The alternative, minus-consumed, lets firm orders eat into the forecast first and adds any surplus on top. Either way, forecast is a live input for make-to-stock and dead weight for make-to-order.
+
+| Product type | Gross requirements formula | Forecast used? |
+|---|---|---|
+| Make-to-order | firm demand only | No |
+| Make-to-stock (greater-of) | max(forecast, firm) | Yes |
+| Make-to-stock (minus-consumed) | max(0, forecast − firm) + firm | Yes |
+
+The two consumption rules and when to pick each are covered in [the three forecast types](/blog/sales-production-and-consumption-forecast-types-in-edgebic).
+
+## Behavior 2: Whether a Completed Build Posts Stock
+
+When a make-to-stock order is marked complete, EDGEBIC posts a receipt to the inventory ledger, tagged with the canonical comment "Build to Inventory," in the same save as the status change. On-hand rises by the built quantity.
+
+When a make-to-order order completes, no receipt posts. The units went to the customer. On-hand is unchanged.
+
+This is the single most common source of "why did my on-hand not move" questions, and the answer is always the build method. A receipt is a make-to-stock event.
+
+## Behavior 3: How Stock Is Netted Against Demand
+
+Make-to-stock producers do not consume stock. Their job is to add supply, so the netting engine never satisfies them from existing inventory.
+
+A demand for a product that already has on-hand stock is a different story. If the product is stocked and the order is not itself a make-to-stock producer, the engine satisfies part or all of the demand from stock and posts a single issue at the scheduling stage. When the entire demand is met from stock, the order does no shop-floor work at all. This netting decision, and the exact gates behind it, are covered in [when to net demand against stock vs build fresh](/blog/when-to-net-demand-against-stock-vs-build-fresh-in-edgebic).
+
+## Behavior 4: Whether Replenishment Suggestions Fire
+
+Replenishment suggestions only fire for make-to-stock products that carry a reorder method. A make-to-order product never receives a suggestion, because you do not build custom items ahead of demand. The suggestion engine returns zero the moment it sees a make-to-order policy, no matter how low the projected balance drops.
+
+## A Worked Cycle: One Product, Both Roles
+
+Consider Widget A, set to make-to-stock, unit cost $12.50, starting on-hand 0.
+
+**Build MO-101 for 200 units.** EDGEBIC treats it as a producer, builds it through finite capacity, and on completion posts a receipt of +200. On-hand is now 200.
+
+**Customer order MO-102 for 80 units.** This demand arrives against a product that now has 200 on-hand. The engine satisfies it from stock and posts an issue of −80. On-hand is 120. MO-102 does no work-center operations because it was fully met from stock.
+
+The final ledger reads cleanly:
+
+| Entry | Quantity | Type | Comment | Balance |
+|---|---|---|---|---|
+| 1 | +200 | Receipt | Build to Inventory | 200 |
+| 2 | −80 | Issue | Schedule Transaction | 120 |
+
+Now imagine Widget A had been make-to-order instead. MO-101 would still build 200 units, but they would ship to whoever ordered them, no receipt would post, and on-hand would stay at 0. The 80-unit demand would find no stock and build fresh. Same product, entirely different inventory footprint, driven by one field.
+
+## The Hybrid Method and the Per-Order Override
+
+EDGEBIC also carries a hybrid build method that defaults a product to make-to-stock while letting individual orders opt out to make-to-order. And any single order can override the product default through a build-to-inventory flag: set it to yes to build to stock, no to ship direct, or leave it blank to inherit the product's method. This is how you handle exceptions without disturbing the product master. The mechanics are covered in [the per-order build-to-inventory override](/blog/the-per-order-build-to-inventory-override-in-edgebic).
+
+## Choosing the Right Method
+
+Use make-to-stock for standard catalog items, spares, and anything with steady, forecastable demand where holding stock shortens lead time. Use make-to-order for custom, engineered, or high-value items you never want sitting in inventory. If a product is stocked but you forgot to mark it make-to-stock, netting and replenishment quietly skip it, so the two settings, build method and stocked, must agree.
+
+The build method is not a scheduling detail. It is the switch that decides whether a product participates in forecast-driven planning at all, and getting it right per item is the foundation the rest of the inventory calendar stands on.

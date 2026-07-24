@@ -1,0 +1,103 @@
+---
+title: "Mapping Routings vs Operations From Your ERP Into EDGEBIC"
+description: "How to map an ERP's routing and operation exports into EDGEBIC: sequence numbers, run and setup times, the two-pass import, and wiring steps into one connected flow."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - mapping ERP routings to EDGEBIC
+  - routing vs operation export
+  - two-pass routing import
+  - operation sequence mapping
+  - ERP routing data scheduling
+  - production routing import
+targetPhrase: "mapping ERP routings to EDGEBIC"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "What is the difference between a routing and an operation in an export?"
+    answer: "An operation is one step, a single row: this work center, this sequence number, this run time. A routing is the ordered set of operations for a product. Most ERPs export operations as rows, and EDGEBIC assembles them into a routing during import by grouping rows by product and sorting them by sequence number. You map the operation columns; EDGEBIC builds the routing."
+  - question: "Which columns does a routing import actually need?"
+    answer: "The essentials are end product, work center, sequence number, and run time per unit. Setup time and queue time are strongly recommended because they change the schedule. Anything else in the file is optional. Run and setup times often arrive in minutes or per-lot and are converted to per-piece hours with a factor set on the column in the mask."
+  - question: "Why does the routing import run in two passes?"
+    answer: "Because operations reference each other, step 10 feeds step 20 feeds step 30, and step 20 does not exist yet when step 10 is read. Pass one validates and buffers every row and auto-creates any missing product or work center. Pass two groups the rows by product, sorts by sequence, writes them, and wires the chain so the routing renders as one connected flow."
+qaQuestions:
+  - question: "Our ERP exports operations as a flat list with a product code and a step number on every row. Is that enough for EDGEBIC to build a real routing, or do we need something more structured?"
+    answer: "A flat list with a product code, a step number, a work center, and a run time per row is exactly what EDGEBIC expects, and it is enough to build a real connected routing. The structure you might think is missing, the links from step 10 to step 20 to step 30, is not something you export; EDGEBIC infers it during the second import pass by grouping every row that shares a product code and sorting those rows by step number, then wiring consecutive steps and connecting the final step to the finished product. So you do not need a nested or hierarchical export, and you do not need explicit next-step references in the file. The one thing that matters is that the step numbers within a product are correct and ordered, because they are what the import sorts on. If the numbers are right, the flat list becomes a routing that renders as one flow in the designer."
+  - question: "Run times in our export are per lot of 100 and setup is in minutes. Do we have to fix the file before importing?"
+    answer: "No, you fix it in the mask, which is better because the fix is remembered and applied on every future run. Each numeric column can carry its own conversion factor that is multiplied before the value is stored. A run time quoted per lot of 100 pieces becomes per piece with a factor of 0.01, and setup quoted in minutes becomes hours with 0.016667, and the two columns in the same file carry different factors independently. You never touch the exported file, so there is no pre-processing step to forget or get wrong, and if the export format changes you adjust the factor once in the mask rather than rebuilding a spreadsheet macro. Getting these conversions right is the single most important part of mapping routings, because a units mistake scales every run time on the schedule."
+---
+
+**Mapping ERP routings into EDGEBIC means treating each exported operation as one row with a product, a work center, a sequence number, and run and setup times, then letting the two-pass routing import group those rows by product, sort them by sequence, and wire them into one connected flow.** You map the operation columns once in a reusable mask; EDGEBIC assembles the routing. The links between steps are inferred, not exported.
+
+EDGEBIC by User Solutions reads routing data through the same file masks it uses for every ERP, so this mapping guidance applies whether your operations come from SAP, a job-shop system, or a spreadsheet. Routings are the hardest manufacturing data to move between systems, so it is worth understanding exactly what the import expects. The wider architecture is in [the EDGEBIC ERP integration overview](/edgebic-erp-integration).
+
+## Operation is a row; routing is the assembled set
+
+The vocabulary trips people up, so start here. An **operation** is a single step: one work center, one sequence number, one run time. A **routing** is the ordered collection of operations that makes a product. Almost every ERP exports operations as rows, one per step, and EDGEBIC builds the routing from them at import time. You do not export the routing as a structure; you export its operations as a list, and the import assembles them.
+
+That means the shape you need is the shape most ERPs already produce: a flat table where each row carries a product code, a step number, a work center, and a run time.
+
+## The columns that matter
+
+Map these from your export:
+
+- **End product.** Which product this operation belongs to. This is the grouping key that gathers a product's operations into one routing.
+- **Work center.** Where the operation runs. Matched by name, case-insensitively, and auto-created if the export names a center that does not exist yet.
+- **Sequence number.** The order of steps within the product. This is what the import sorts on to wire the chain, so it must be correct and ordered.
+- **Run time per unit.** Hours per piece, after any conversion. This drives how long the operation takes for a given quantity.
+- **Setup time** and **queue time.** Strongly recommended because both change the schedule. Setup is per-changeover, not per-piece, and queue time is buffer between operations.
+
+Everything else in the file is optional. You do not export explicit next-step links, because EDGEBIC derives them from the sequence numbers.
+
+## The unit-conversion trap
+
+Run and setup times rarely arrive in per-piece hours. They come in minutes, in seconds, or quoted per lot. Fix this in the mask, never in the file, by setting a conversion factor on the column:
+
+| Source unit | Factor to per-piece hours |
+|---|---|
+| Minutes per piece | 0.016667 |
+| Seconds per piece | 0.000278 |
+| Per lot of 100 pieces | 0.01 |
+
+Different columns in the same file carry different factors independently, so a file with run time per lot and setup in minutes converts both correctly in one mask. This is the single most important part of mapping routings: a units mistake scales every run time on the schedule, so get the factors right and verify one product's numbers against a known job before trusting the whole file.
+
+## Why the import takes two passes
+
+Operations reference each other in sequence, and a row-by-row import cannot wire step 20 to step 10 when step 20 has not been read yet. EDGEBIC's routing import solves this in two passes:
+
+1. **Pass one** reads and validates every row, auto-creates any product or work center the file names that is missing, and buffers the steps without wiring anything.
+2. **Pass two** groups the buffered rows by end product, sorts each group by sequence number, writes the steps, and wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished product.
+
+The result renders as one connected flow in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour), which is the fastest way to confirm the mapping worked: if a step is missing or out of order, it shows immediately.
+
+## Conventions that keep re-imports clean
+
+Two habits make routing imports safe to repeat:
+
+- **Number sequences in gaps of 10.** A later insert becomes 25 and nothing renumbers, so an edit does not ripple through the file.
+- **Keep all of one product's operations in one file.** A routing import wipes and recreates that product's steps once per run, which is what makes re-imports idempotent. Splitting one product across two files means the second file's wipe deletes the first file's steps.
+
+Re-importing is safe for running jobs, because every scheduled job carries a frozen routing snapshot, so a routing change applies to future work and leaves work in progress untouched.
+
+## When the export has no routing at all
+
+Some systems, especially lighter inventory-first platforms, do not carry routing data. That is a different problem with its own approach: you build the routings once inside EDGEBIC and let the ERP feed only items and orders. See [scheduling when your ERP has no routing data](/blog/scheduling-when-your-erp-has-no-routing-data) for that path, and [which ERP fields EDGEBIC needs to schedule](/blog/which-erp-fields-edgebic-needs-to-schedule) for the full field list across all files.
+
+## Map one product, then the rest is repetition
+
+Build the routing mask against one representative product, confirm it in the designer, and check its run times against a job you know. Once one product maps correctly, the same mask handles the whole file, and every later export is two clicks. [Bring a routing export to a demo](/contact-us) and map it live, or start from a per-ERP guide like [SAP](/blog/edgebic-sap-integration-guide) that walks the same steps in that system's terms. The [EDGEBIC product overview](/edgebic) shows what the engine does with the assembled routing.
+
+<Accordion title="What is the difference between a routing and an operation in an export?">
+An operation is one step, a single row: this work center, this sequence number, this run time. A routing is the ordered set of operations for a product. Most ERPs export operations as rows, and EDGEBIC assembles them into a routing during import by grouping rows by product and sorting them by sequence number. You map the operation columns; EDGEBIC builds the routing.
+</Accordion>
+
+<Accordion title="Which columns does a routing import actually need?">
+The essentials are end product, work center, sequence number, and run time per unit. Setup time and queue time are strongly recommended because they change the schedule. Anything else in the file is optional. Run and setup times often arrive in minutes or per-lot and are converted to per-piece hours with a factor set on the column in the mask.
+</Accordion>
+
+<Accordion title="Why does the routing import run in two passes?">
+Because operations reference each other, step 10 feeds step 20 feeds step 30, and step 20 does not exist yet when step 10 is read. Pass one validates and buffers every row and auto-creates any missing product or work center. Pass two groups the rows by product, sorts by sequence, writes them, and wires the chain so the routing renders as one connected flow.
+</Accordion>

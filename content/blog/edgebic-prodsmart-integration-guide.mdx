@@ -1,0 +1,101 @@
+---
+title: "EDGEBIC + Prodsmart: The Complete Scheduling Integration Guide"
+description: "Prodsmart production scheduling integration with EDGEBIC: export items, work centers, operations and orders to CSV, map columns once, and schedule at finite capacity."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - Prodsmart production scheduling integration
+  - Prodsmart finite capacity scheduling
+  - Prodsmart scheduling add-on
+  - EDGEBIC Prodsmart integration
+  - MES scheduling integration
+  - Prodsmart CSV export scheduling
+targetPhrase: "Prodsmart production scheduling integration"
+wordCount: 1580
+readingTime: 8
+faqQuestions:
+  - question: "Does EDGEBIC connect to Prodsmart with a native connector?"
+    answer: "No. EDGEBIC reads the CSV or Excel exports Prodsmart already produces through reusable import masks. There is no API to build, nothing installed inside Prodsmart, and no certified connector to version-match. You map an export's columns onto EDGEBIC fields once, and each later run is two clicks with a per-run log recording every row."
+  - question: "Prodsmart already collects real production data from the floor. Can EDGEBIC use it?"
+    answer: "Yes, and that is a strength of pairing them. Prodsmart's logged hours export through the optional actuals mask, so the schedule reschedules the remaining work from where jobs really stand rather than from the original plan. Completed operations stay frozen and only the unfinished work is re-sequenced, so floor reality feeds the plan without overwriting history."
+  - question: "What does EDGEBIC need exported from Prodsmart?"
+    answer: "Four exports carry a schedule: items, work centers with machine counts and setup detail, operations with sequence and run and setup times, and open orders with quantities and dates. A fifth optional export carries the logged hours Prodsmart collects. Each goes through its own import mask, so you never reshape a file by hand."
+qaQuestions:
+  - question: "Prodsmart is an MES that already shows what is happening on the floor. Why do we also need a finite capacity scheduler?"
+    answer: "An MES answers what is happening and what happened; a finite capacity scheduler answers what should happen next across every open order at once. Prodsmart tells you a machine is running a job and how many pieces are done; EDGEBIC decides, given all the open orders and your real machine counts, shift hours, and setups, which order across the shop meets the most due dates without overloading a resource. The two are complementary: Prodsmart's collected actuals flow into EDGEBIC through the actuals mask so the next schedule reflects reality, and EDGEBIC's dated plan gives the floor a sequence to execute against. You are not replacing the MES, you are adding the forward-looking sequencing decision it does not make."
+  - question: "We log a lot of data through Prodsmart. Does feeding actuals back into EDGEBIC mean maintaining yet another integration?"
+    answer: "It is one more saved mask, not a new integration to maintain. The actuals export goes through the same import-mask mechanism as everything else: you map the columns once, and each later run is export, pick the mask, run it. Because the schedule reschedules only the unfinished work and keeps completed operations frozen, feeding actuals back is safe to do as often as you refresh the plan, and a partial file is fine since a blank cell keeps the existing value on an update run. There is no live link to break and no credential to rotate; if Prodsmart renames a column, you re-map one row in the mask. The maintenance cost stays close to zero even though the data volume is high."
+---
+
+**Integrating Prodsmart with EDGEBIC means exporting the items, work centers, operations, and open orders Prodsmart already holds to CSV or Excel, mapping those columns once with a reusable import mask, and letting EDGEBIC schedule the work against finite capacity: real shift hours, real machine counts, and sequence-dependent setups.** Executable dates then go back as Excel, and Prodsmart's collected floor hours can flow the other way to keep the plan honest. There is no API project, nothing installed inside Prodsmart, and no certified connector to version-match.
+
+EDGEBIC by User Solutions is the newest generation of a scheduling line that has integrated with production systems this way since 1991. Across 35+ years the same file-based approach has fed schedules for the US Navy, GE, BAE Systems, and Cummins. This guide covers the Prodsmart case, where the MES already collects the actuals that make a schedule track reality.
+
+## Why an MES still needs a finite capacity scheduler
+
+Prodsmart is strong at floor visibility: operations, real-time production data, quality, and the collected hours that show what actually happened. What it does not do is answer the forward sequencing question a planner asks each morning, which is a finite capacity question:
+
+- Which of these open orders actually fit on the two machining cells this week?
+- If this rush order jumps the queue, which promise dates move and by how much?
+- Is the bottleneck cell loaded to 80 percent or 160 percent next Thursday?
+
+Those require modeling shifts, machine instances, changeover sequences, and operator availability across every open order at once, then deciding a sequence. That is a different problem from collecting what is happening now, which is why a finite capacity layer beside the MES is the standard pattern. The general case is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+## The integration in one table
+
+The [EDGEBIC ERP integration architecture](/edgebic-erp-integration) is identical for every system, Prodsmart included:
+
+| Direction | Data | How it moves |
+|---|---|---|
+| Prodsmart to EDGEBIC | Items | CSV or Excel export to Product import mask |
+| Prodsmart to EDGEBIC | Work centers | Export to Workcenter import mask |
+| Prodsmart to EDGEBIC | Operations / routings | Export to routing import mask, two-pass |
+| Prodsmart to EDGEBIC | Open orders | Export to order import mask |
+| Prodsmart to EDGEBIC | Logged hours (optional) | Export to actuals import mask |
+| EDGEBIC to Prodsmart | Executable start and end dates, dispatch lists | Excel export from Job View and reports |
+
+An **import mask** is a saved recipe that remembers the data type, the file format, whether the first row is headings, whether text values are quoted, and how each column maps onto an EDGEBIC field. You build it once by dragging column headings onto target fields, and every run after that is two clicks. Each row returns Created, Updated, Reused, or Failed, with a per-run log recording every one.
+
+## Step 1: the four core exports
+
+Any Prodsmart list or report that saves to CSV is a valid source.
+
+1. **Items.** Identifier, description, unit of measure, and any cost or lead-time columns worth keeping visible. The identifier is the natural key, matched case-insensitively.
+2. **Work centers.** Identifier, machine count, default setup hours, efficiency, and an hourly rate. A bottleneck flag rides along.
+3. **Operations.** One row per operation: end item, work center, sequence number, hours per unit, setup time, queue time.
+4. **Open orders.** Item, quantity, order reference, and dates.
+
+## Step 2: map the columns once
+
+Name each mask after the routine, so `Weekly Prodsmart Orders` outlives `orders-week29.csv`. Mandatory fields are flagged and the run refuses to start until they are mapped. **Unit conversion** applies a factor to a numeric column before storage, so minutes become hours with `0.016667`. **Blank-cell preservation** keeps an existing value when a cell is blank on an update run, with a zero counting as a value rather than a blank.
+
+## Step 3: the operation import, and why it takes two passes
+
+Operations reference each other, so a row-by-row import cannot wire the links because step 20 does not exist when step 10 is written. EDGEBIC's routing import runs in two passes: pass one validates and buffers every row and auto-creates any missing work center or item, and pass two groups the rows by end item, sorts by sequence, writes them, and wires the chain so the routing renders as one connected flow in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour). Number sequences in gaps of 10, and keep all of one item's operations in one file so re-imports stay idempotent.
+
+## Step 4: orders in, then run the scheduler
+
+The order import maps item, quantity, reference, and dates. Imports never schedule anything: imported orders sit as unscheduled demand until you run the scheduler, which states how many jobs are new and how many are being rescheduled before it plans. Once the data is in, the full engine applies: finite capacity across multiple shifts and machine instances, [work center groups](/blog/edgebic-work-center-groups-explained), a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained), lot streaming, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine.
+
+## Step 5: feed actuals back, and send dates out
+
+Because Prodsmart collects real hours, the optional actuals export is worth wiring in early. Imported through the actuals mask, logged hours let EDGEBIC reschedule the remaining work from where jobs truly stand, freezing completed operations and re-sequencing only what is left. The forward return trip is Excel: the Job View grid exports the schedule as a workbook with colored cells and a legend, the work center schedule exports the same way, and every report exports to Excel or PDF using your saved layout. Revised dates go back into Prodsmart through your normal order maintenance path.
+
+## Test it with your own export
+
+Export this week's open orders, an operations file, and a day of logged hours, then [bring them to a demo](/contact-us). Mapping them live takes minutes. If you are comparing systems, the [Katana](/blog/edgebic-katana-integration-guide) and [Odoo](/blog/edgebic-odoo-integration-guide) versions follow the same method, which is the point of a universal import layer.
+
+<Accordion title="Does EDGEBIC connect to Prodsmart with a native connector?">
+No. EDGEBIC reads the CSV or Excel exports Prodsmart already produces through reusable import masks. There is no API to build, nothing installed inside Prodsmart, and no certified connector to version-match. You map an export's columns onto EDGEBIC fields once, and each later run is two clicks with a per-run log recording every row.
+</Accordion>
+
+<Accordion title="Prodsmart already collects real production data from the floor. Can EDGEBIC use it?">
+Yes, and that is a strength of pairing them. Prodsmart's logged hours export through the optional actuals mask, so the schedule reschedules the remaining work from where jobs really stand rather than from the original plan. Completed operations stay frozen and only the unfinished work is re-sequenced, so floor reality feeds the plan without overwriting history.
+</Accordion>
+
+<Accordion title="What does EDGEBIC need exported from Prodsmart?">
+Four exports carry a schedule: items, work centers with machine counts and setup detail, operations with sequence and run and setup times, and open orders with quantities and dates. A fifth optional export carries the logged hours Prodsmart collects. Each goes through its own import mask, so you never reshape a file by hand.
+</Accordion>

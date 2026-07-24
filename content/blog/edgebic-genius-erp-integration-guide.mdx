@@ -1,0 +1,107 @@
+---
+title: "EDGEBIC + Genius ERP: The Complete Scheduling Integration Guide"
+description: "Genius ERP production scheduling integration with EDGEBIC: export items, work centers, routings and jobs to CSV, map columns once, and schedule at finite capacity."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - Genius ERP production scheduling integration
+  - Genius ERP finite capacity scheduling
+  - Genius ERP scheduling add-on
+  - EDGEBIC Genius ERP integration
+  - custom manufacturing scheduling
+  - Genius ERP CSV export scheduling
+targetPhrase: "Genius ERP production scheduling integration"
+wordCount: 1650
+readingTime: 8
+faqQuestions:
+  - question: "Does EDGEBIC integrate with Genius ERP through a built-in connector?"
+    answer: "No. EDGEBIC reads the CSV or Excel exports Genius ERP already produces through reusable import masks. There is nothing installed inside Genius, no API to maintain, and no certified connector to version-match. You map an export's columns onto EDGEBIC fields once, and each later run is two clicks with a per-run log recording every row."
+  - question: "Genius ERP is built for custom, engineer-to-order work. Can EDGEBIC schedule one-off routings?"
+    answer: "Yes. Because the routing arrives as a file rather than through a fixed template, a job with a unique routing imports exactly like a repeat part: one row per operation with its sequence, run time, and setup. The engine schedules a one-off routing at finite capacity the same way it schedules a standard one, so custom and repeat work sit on the same plan."
+  - question: "How does EDGEBIC handle long-lead custom jobs whose engineering is not finished?"
+    answer: "Import the operations you know and schedule against them. When engineering later adds or revises steps, re-export and re-import that job's routing; the two-pass import rewrites that job's operation chain cleanly. Jobs already in progress keep the frozen routing snapshot they were planned with, so revising a future job never disturbs live work."
+qaQuestions:
+  - question: "Most of our jobs are engineer-to-order with routings that are still evolving when the job hits the floor. Is a file-based schedule going to be constantly out of date?"
+    answer: "It is as current as your last export, and for evolving work that is a feature rather than a limitation. The weekly rhythm is export the current routings and open jobs, import through the saved masks, and run the scheduler, which takes a few minutes once the masks exist. When a routing changes mid-job, you re-export that one job and re-import it; the engine rewrites that job's operation chain and reschedules the remaining steps while leaving completed operations frozen. Because nothing is hard-wired into Genius, there is no connector to break when an engineer adds a step, and no version-matching to worry about when either product updates. The schedule tracks reality at whatever cadence you choose to refresh it, and for a shop where routings genuinely move, a fast repeatable refresh beats a fragile live link."
+  - question: "We run big machining centers and a paint line that becomes the bottleneck on long jobs. Will EDGEBIC actually respect that constraint?"
+    answer: "Yes, and this is where a finite capacity engine earns its place next to Genius. Flag the paint line as a bottleneck on the work center export and the scheduler anchors the plan around it, scheduling upstream operations to feed it and downstream operations to follow, rather than treating it as unlimited. It also models sequence-dependent setup, so if the paint line loses hours to color changes, grouping compatible jobs recovers real capacity you would otherwise lose. Where two machining centers are genuinely interchangeable, a work center group lets the engine pick the least loaded one on each run. The plan reflects the queue your constraint actually creates, which is exactly the question a spreadsheet cannot answer for a shop with a hard bottleneck."
+---
+
+**Integrating Genius ERP with EDGEBIC means exporting the items, work centers, routings, and open jobs Genius already holds to CSV or Excel, mapping those columns once with a reusable import mask, and letting EDGEBIC schedule the work against finite capacity: real shift hours, real machine counts, and sequence-dependent setups.** Executable dates then go back as Excel. There is no API project, nothing installed inside Genius, and no certified connector to version-match when either side updates.
+
+EDGEBIC by User Solutions is the newest generation of a scheduling line that has integrated with ERPs this way since 1991. Across 35+ years the same file-based approach has fed schedules for the US Navy, GE, BAE Systems, and Cummins. This guide covers the Genius ERP case, which matters because Genius serves custom and engineer-to-order manufacturers whose routings are exactly the kind of data that trips up rigid connectors.
+
+## Why a custom-manufacturing ERP still needs a finite capacity scheduler
+
+Genius ERP is strong at the make-to-order business record: quotes, engineering, purchasing, inventory, and the jobs that flow from them. What most Genius shops report is that the daily sequencing decision still happens in a spreadsheet, because the morning questions are finite capacity questions:
+
+- Which of these open jobs actually fit on the two large machining centers this month?
+- If this rush job jumps the queue, which promise dates move and by how much?
+- Is the paint line loaded to 80 percent or 160 percent in week 6?
+
+Those require modeling shifts, machine instances, changeover sequences, and operator availability against every open job at once. It is a different computational problem from recording transactions, which is why a dedicated finite capacity layer beside the ERP is the standard pattern. The general case is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+## The integration in one table
+
+The [EDGEBIC ERP integration architecture](/edgebic-erp-integration) is identical for every ERP, Genius included:
+
+| Direction | Data | How it moves |
+|---|---|---|
+| Genius to EDGEBIC | Items | CSV or Excel export to Product import mask |
+| Genius to EDGEBIC | Work centers | Export to Workcenter import mask |
+| Genius to EDGEBIC | Routings / operations | Export to routing import mask, two-pass |
+| Genius to EDGEBIC | Open jobs | Export to order import mask |
+| Genius to EDGEBIC | Labor hours (optional) | Export to actuals import mask |
+| EDGEBIC to Genius | Executable start and end dates, dispatch lists | Excel export from Job View and reports |
+
+An **import mask** is a saved recipe: it remembers the data type, the file format, whether the first row is headings, whether text values are quoted, and how each column maps onto an EDGEBIC field. You build it once by dragging column headings onto target fields, and every run after that is two clicks. Each row returns exactly one outcome, Created, Updated, Reused, or Failed, and a per-run log records every one.
+
+## Step 1: the four exports
+
+Any Genius list or report that saves to CSV is a valid source.
+
+1. **Items.** Identifier, description, and unit of measure, plus any cost or lead-time columns worth having visible. The identifier is the natural key, matched case-insensitively.
+2. **Work centers.** Identifier, how many identical machines the center really holds, default setup hours, efficiency, and an hourly rate. A bottleneck flag rides in the same file.
+3. **Routings.** One row per operation: end item, work center, sequence number, hours per unit, setup time, queue time.
+4. **Open jobs.** Item, quantity, job reference, and due dates.
+
+## Step 2: map the columns once
+
+Name each mask after the routine rather than the file, so `Weekly Genius Jobs` outlives `jobs-week29.csv`. Mandatory fields are flagged and the run refuses to start until they are mapped.
+
+Two features carry most of the weight. **Unit conversion** applies a factor to any numeric column before storage, so minutes become hours with `0.016667` and a per-100-piece time becomes per piece with `0.01`. **Blank-cell preservation** keeps an existing value when a cell is blank on an update run, so a partial refresh is safe, with the caveat that a zero is a value, not a blank.
+
+## Step 3: the routing import, and why it takes two passes
+
+Routings are the hardest data to move, because operations reference each other: step 10 feeds step 20 feeds step 30. A row-by-row import cannot wire those links because step 20 does not exist when step 10 is written.
+
+EDGEBIC's routing import runs in two passes. Pass one validates every row, auto-creates any missing work center or item, and buffers the steps. Pass two groups the rows by end item, sorts them by sequence, writes them, and wires the chain so the routing renders as one connected flow in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour). For custom work this is where a one-off routing becomes a real scheduled flow with no template required. Number sequences in gaps of 10, and keep all of one item's steps in one file so re-imports stay idempotent.
+
+## Step 4: jobs in, then run the scheduler
+
+The job import maps item, quantity, reference, and due date. Imports never schedule anything: imported jobs sit as unscheduled demand until you run the scheduler, which states how many jobs are new and how many are being rescheduled before it plans. Data movement and planning stay separate on purpose.
+
+Once the data is in, the full engine applies: finite capacity across multiple shifts and machine instances, [work center groups](/blog/edgebic-work-center-groups-explained) that re-shop the machine pool on every reschedule, a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained), lot streaming, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine.
+
+## Step 5: sending dates back
+
+The return trip is Excel. The Job View grid exports the schedule as a workbook with colored cells and a legend, the work center schedule exports the same way, and every report exports to Excel or PDF using your saved column layout. Revised dates go back into Genius through your normal job maintenance path. There is no automated write-back, which keeps your ERP data under your team's control.
+
+## Test it with your own export
+
+Export a routing file and this month's open jobs, then [bring them to a demo](/contact-us). Mapping them live takes minutes. If you are comparing systems, the [Epicor](/blog/edgebic-epicor-integration-guide) and [Global Shop Solutions](/blog/edgebic-global-shop-integration-guide) versions follow the same method, which is the point of a universal import layer.
+
+<Accordion title="Does EDGEBIC integrate with Genius ERP through a built-in connector?">
+No. EDGEBIC reads the CSV or Excel exports Genius ERP already produces through reusable import masks. There is nothing installed inside Genius, no API to maintain, and no certified connector to version-match. You map an export's columns onto EDGEBIC fields once, and each later run is two clicks with a per-run log recording every row.
+</Accordion>
+
+<Accordion title="Genius ERP is built for custom, engineer-to-order work. Can EDGEBIC schedule one-off routings?">
+Yes. Because the routing arrives as a file rather than through a fixed template, a job with a unique routing imports exactly like a repeat part: one row per operation with its sequence, run time, and setup. The engine schedules a one-off routing at finite capacity the same way it schedules a standard one, so custom and repeat work sit on the same plan.
+</Accordion>
+
+<Accordion title="How does EDGEBIC handle long-lead custom jobs whose engineering is not finished?">
+Import the operations you know and schedule against them. When engineering later adds or revises steps, re-export and re-import that job's routing; the two-pass import rewrites that job's operation chain cleanly. Jobs already in progress keep the frozen routing snapshot they were planned with, so revising a future job never disturbs live work.
+</Accordion>

@@ -1,0 +1,100 @@
+---
+title: "CSV vs Database View: ERP Export Tradeoffs for EDGEBIC"
+description: "When to feed EDGEBIC a CSV or Excel file versus a read-only database view: inspectability, automation, permissions, and how the import mask handles both the same way."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - CSV vs database view export
+  - ERP export methods scheduling
+  - database view import mask
+  - file vs database integration
+  - read-only view scheduling
+  - EDGEBIC data source options
+targetPhrase: "CSV vs database view export"
+wordCount: 1520
+readingTime: 8
+faqQuestions:
+  - question: "Can EDGEBIC read from a database view instead of a file?"
+    answer: "Yes. An import mask accepts a database source as well as a CSV or Excel file, and the column mapping works the same way either path. A shop with a queryable ERP database can point a mask at a read-only view; a shop that prefers files exports CSV. The choice is per mask, not global, so you can mix both."
+  - question: "Which is better, a file or a database view?"
+    answer: "Neither is better in general; they trade different things. A file is inspectable before import and requires no database access, which suits most shops. A database view removes the export step and is easy to automate, which suits teams that can expose a read-only view. Most shops start with files because they can see exactly what will be imported."
+  - question: "Does a database view give EDGEBIC write access to my ERP?"
+    answer: "No. A view is read-only by design, and EDGEBIC only reads through the import mask; it never writes back to the ERP through any path. The return trip, sending the finished schedule back, is always a separate Excel export you apply through your normal order maintenance process, so the ERP stays under your team's control regardless of how data comes in."
+qaQuestions:
+  - question: "Our IT team can expose read-only views of the ERP database. Is it worth switching from CSV exports to views, and what do we give up?"
+    answer: "It is worth it if two conditions hold: your ERP database is queryable, and your IT team is comfortable maintaining a small set of read-only views. What you gain is the elimination of the export step, because the mask reads the view directly on each run, which makes the refresh easier to schedule and removes the risk of someone exporting the wrong report or a stale file. What you give up is inspectability. A CSV sitting in a folder can be opened and eyeballed before you import it, so a bad export is caught by looking; a view is queried at run time, so you trust the query instead of the file. You also take on a small maintenance dependency, since a view has to be kept in step with the ERP schema, whereas a saved report tends to survive upgrades. For a team with database access and a preference for automation, views are cleaner; for a team that values seeing exactly what will land before it lands, files win. Because the choice is per mask, a common middle path is a view for the stable master data and a file for the demand you want to eyeball each week."
+  - question: "If we mix CSV files and database views across our masks, does that complicate the schedule or the mapping?"
+    answer: "It does not, because the source is only how the rows arrive, not what happens to them. Once a mask reads its rows, whether from a file or a view, the rest of the pipeline is identical: the same column mapping, the same Created, Updated, Reused, and Failed outcomes, the same per-run log, and the same finite capacity engine downstream. So you can run a database view for items and work centers, which change slowly and benefit from automation, and a CSV for open orders, which you like to inspect before each run, and EDGEBIC treats both the same. The mapping is per mask and remembered, so mixing sources does not add mapping work either. The one practical note is to keep each mask's source consistent run to run, since switching a mask between a file and a view means re-checking that the columns line up, but that is a one-time check per mask, not an ongoing cost."
+---
+
+**Choosing between a CSV or Excel file and a read-only database view for feeding EDGEBIC is a tradeoff between inspectability and automation, not a difference the scheduler cares about: the import mask maps columns and produces the same outcomes either way.** A file is inspectable before import and needs no database access; a view removes the export step and automates cleanly. The choice is per mask, so most shops mix both.
+
+EDGEBIC by User Solutions accepts both source types through the same import-mask mechanism, so the decision is about how your shop prefers to move data, not about what the engine can read. This post lays out the tradeoffs so you can pick per data type. The wider integration model is in [the EDGEBIC ERP integration overview](/edgebic-erp-integration).
+
+## Both paths end at the same mask
+
+Whether rows arrive from a file or a database view, everything after they land is identical:
+
+- The **column mapping** is the same; you drag headings or view columns onto EDGEBIC fields once.
+- The **outcomes** are the same; every row returns Created, Updated, Reused, or Failed.
+- The **per-run log** is the same; each row is recorded individually.
+- The **engine** downstream is the same finite capacity scheduler.
+
+The source is only how the rows arrive, not what happens to them. That is why mixing sources across masks adds no complexity to the schedule.
+
+## What a CSV or Excel file gives you
+
+A file is the default for most shops, and for good reasons:
+
+- **Inspectable before import.** A CSV sitting in a folder can be opened and checked, so a bad export is caught by looking rather than discovered mid-import.
+- **No database access required.** The export is a standard report or list, which any planner can produce without IT exposing the database. Cloud ERPs, which do not offer direct database access anyway, only support this path.
+- **Survives upgrades.** A saved report tends to keep working across ERP versions; the only thing that can break is a column heading, which is re-mapped in one row of the mask.
+
+The cost is the export step itself, one manual action per file, and the discipline of exporting the right report each time.
+
+## What a read-only database view gives you
+
+For teams with a queryable ERP database, a view is an option worth knowing:
+
+- **No export step.** The mask reads the view directly at run time, so there is no file to produce and no chance of importing a stale or wrong file.
+- **Easy to automate.** Removing the export makes the refresh simpler to schedule.
+- **Read-only by design.** A view cannot write, and EDGEBIC never writes back to the ERP through any path, so this adds no permission risk.
+
+The cost is inspectability, since you trust the query rather than eyeballing a file, plus a small maintenance dependency, because a view has to be kept in step with the ERP schema.
+
+## Picking per data type
+
+Because the choice is per mask, the best answer is often both. A useful split:
+
+| Data | Good fit | Why |
+|---|---|---|
+| Items | Database view | Changes slowly, benefits from automation |
+| Work centers | Database view or file | Small, stable, either works |
+| Routings | File | Worth inspecting; the two-pass import is the same either way |
+| Open orders | File | You often want to eyeball this week's demand before importing |
+| Actuals | Database view | High volume, benefits from a hands-off pull |
+
+A common middle path is a view for the stable master data and a file for the demand you want to see before each run. Keep each mask's source consistent run to run, since switching a mask between a file and a view means a one-time re-check that the columns line up.
+
+## What both paths share about safety
+
+Neither path lets EDGEBIC write to the ERP. Reads come in through the mask; the finished schedule goes back as a separate Excel export you apply through your normal order maintenance process, covered in [exporting the EDGEBIC schedule back to your ERP](/blog/exporting-the-edgebic-schedule-back-to-your-erp). Both paths also isolate failures at the row level, so one bad row is marked Failed with its reason and the run continues. That safety model is independent of the source.
+
+## Start with files, add views if they help
+
+Most shops begin with CSV because seeing exactly what will import builds confidence, then move stable master data to views once the routine is trusted. Either way the mapping is a one-time cost. To see both in action, [bring an export and, if you have one, a view to a demo](/contact-us) and map them live. The [weekly sync routine](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine) and the [nightly export and import routine](/blog/scheduling-a-nightly-erp-export-import-routine) both work with either source, and the [EDGEBIC product overview](/edgebic) shows the engine they feed.
+
+<Accordion title="Can EDGEBIC read from a database view instead of a file?">
+Yes. An import mask accepts a database source as well as a CSV or Excel file, and the column mapping works the same way either path. A shop with a queryable ERP database can point a mask at a read-only view; a shop that prefers files exports CSV. The choice is per mask, not global, so you can mix both.
+</Accordion>
+
+<Accordion title="Which is better, a file or a database view?">
+Neither is better in general; they trade different things. A file is inspectable before import and requires no database access, which suits most shops. A database view removes the export step and is easy to automate, which suits teams that can expose a read-only view. Most shops start with files because they can see exactly what will be imported.
+</Accordion>
+
+<Accordion title="Does a database view give EDGEBIC write access to my ERP?">
+No. A view is read-only by design, and EDGEBIC only reads through the import mask; it never writes back to the ERP through any path. The return trip, sending the finished schedule back, is always a separate Excel export you apply through your normal order maintenance process, so the ERP stays under your team's control regardless of how data comes in.
+</Accordion>

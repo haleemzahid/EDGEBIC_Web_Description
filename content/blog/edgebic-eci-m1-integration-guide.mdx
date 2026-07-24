@@ -1,0 +1,113 @@
+---
+title: "EDGEBIC + ECI M1: The Complete Scheduling Integration Guide"
+description: "ECI M1 production scheduling integration with EDGEBIC: export items, work centers, routings and jobs to CSV, map columns once, and schedule at finite capacity."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - ECI M1 production scheduling integration
+  - M1 ERP finite capacity scheduling
+  - ECI M1 scheduling add-on
+  - EDGEBIC M1 integration
+  - M1 CSV export scheduling
+  - M1 job scheduling
+targetPhrase: "ECI M1 production scheduling integration"
+wordCount: 1620
+readingTime: 8
+faqQuestions:
+  - question: "Does EDGEBIC connect to ECI M1 through an API or connector?"
+    answer: "No. EDGEBIC reads the CSV or Excel exports M1 already produces through reusable import masks. There is no API project, no add-in installed in M1, and no certified connector to version-match when either product updates. You map an export's columns onto EDGEBIC fields once, and every later run is two clicks with a per-run log recording each row as Created, Updated, Reused, or Failed."
+  - question: "What M1 data does EDGEBIC need to build a schedule?"
+    answer: "Four exports carry a complete model: parts or items, work centers with machine counts and setup detail, routings with operation sequence and run and setup times, and open jobs with quantities and due dates. A fifth optional export carries logged labor hours from the floor. Each export goes through its own mask, so you never hand-edit a file to make it fit."
+  - question: "Will re-importing routings break jobs already scheduled?"
+    answer: "No. Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing re-import applies to future jobs and leaves work in progress untouched. That makes the weekly refresh safe to run without pausing the floor."
+qaQuestions:
+  - question: "We moved to M1 from an older JobBOSS install and the scheduling still lives in a spreadsheet. Does switching ERPs change how EDGEBIC would connect?"
+    answer: "Not at all, and that is the point of a file-based layer. M1 and JobBOSS label their fields differently and organize their screens differently, but both export CSV, and the import mask is where that difference is absorbed. You drag whatever the export heading says onto EDGEBIC's target field once, save the mask, and the mapping is done. The engine that schedules the result is identical regardless of which ERP the file came from, so the knowledge you would build setting up M1 transfers directly if you ever change systems again. What actually determines schedule quality is the manufacturing reality you configure inside EDGEBIC, machine counts, shift calendars, setups, and bottleneck flags, and those are the same decisions whatever the ERP."
+  - question: "Our M1 routings have operations that all point at the same handful of work centers. Will EDGEBIC schedule those realistically or just stack everything on one resource?"
+    answer: "It schedules them at finite capacity, which is exactly the case a spreadsheet handles badly. When ten jobs all route through the same two CNC cells, EDGEBIC models each cell's real machine count and shift hours and sequences the competing operations against that capacity rather than assuming infinite room. If those cells are your constraint, flag them as bottlenecks on the work center export and the engine anchors the schedule around them. Where several centers are genuinely interchangeable, a work center group lets the engine pick the least loaded member on each run. The result is a plan that reflects the queue those shared centers actually create, not an optimistic sum of hours."
+---
+
+**Integrating ECI M1 with EDGEBIC means exporting the parts, work centers, routings, and open jobs M1 already holds to CSV or Excel, mapping those columns once with a reusable import mask, and letting EDGEBIC schedule the work against finite capacity: real shift hours, real machine counts, and sequence-dependent setups.** Executable dates then go back as Excel. There is no API project, no add-in maintained inside M1, and no certified connector to version-match when either side updates.
+
+EDGEBIC by User Solutions is the newest generation of a scheduling line that has integrated with ERPs this way since 1991. Across 35+ years the same file-based approach has fed schedules for the US Navy, GE, BAE Systems, and Cummins. This guide covers the M1 case: what to export, how the masks work, what the engine does with the result, and what a realistic first week looks like.
+
+## Why M1 shops still schedule outside the ERP
+
+M1 runs the business record well: parts, jobs, purchasing, inventory, and the shop paperwork that hangs off them. What most M1 manufacturers report is that the daily sequencing decision still happens in a spreadsheet, because the questions a planner asks each morning are finite capacity questions:
+
+- Which of these 50 open jobs actually fit on the two machining cells this week?
+- If this rush job jumps the queue, which promise dates move and by how much?
+- Is the finishing line loaded to 80 percent or 160 percent next Thursday?
+
+Those require modeling shifts, machine instances, changeover sequences, and operator availability against every open job at once. It is a different computational problem from recording transactions, which is why a dedicated finite capacity layer beside the ERP is the standard pattern. The general case is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling), and the reason the same layer serves every ERP is in [why EDGEBIC connects to every ERP the same way](/blog/why-edgebic-connects-to-every-erp-the-same-way).
+
+## The integration in one table
+
+The [EDGEBIC ERP integration architecture](/edgebic-erp-integration) is identical for every ERP, M1 included:
+
+| Direction | Data | How it moves |
+|---|---|---|
+| M1 to EDGEBIC | Parts / items | CSV or Excel export to Product import mask |
+| M1 to EDGEBIC | Work centers | Export to Workcenter import mask |
+| M1 to EDGEBIC | Routings / operations | Export to routing import mask, two-pass |
+| M1 to EDGEBIC | Open jobs | Export to order import mask |
+| M1 to EDGEBIC | Labor hours (optional) | Export to actuals import mask |
+| EDGEBIC to M1 | Executable start and end dates, dispatch lists | Excel export from Job View and reports |
+
+An **import mask** is a saved recipe. It remembers which kind of data you are importing, what format it arrives in, whether the first row is headings, whether text values are quoted, and how each column of your file maps onto an EDGEBIC field. You build it once by dragging your file's column headings onto EDGEBIC's target fields. Every run after that is two clicks, and every row produces exactly one outcome: Created, Updated, Reused, or Failed, with a per-run log recording each one.
+
+## Step 1: the four exports
+
+Any M1 list or report that saves to CSV is a valid source. You are not writing scripts and not asking for direct database access.
+
+1. **Parts.** The part identifier, description, and unit of measure, plus any cost or lead-time columns worth having visible. The identifier is the natural key, matched case-insensitively.
+2. **Work centers.** Identifier, how many identical machines the center really holds, default setup hours, efficiency, and an hourly rate for cost rollups. A bottleneck flag rides in the same file.
+3. **Routings.** One row per operation: end part, work center, sequence number, hours per unit, setup time, queue time.
+4. **Open jobs.** Part, quantity, job reference, and due dates.
+
+## Step 2: map the columns once
+
+Build one mask per file and name it after the routine rather than the file, so `Weekly M1 Jobs` outlives `jobs-week29.csv`. Mandatory fields are flagged, and the run refuses to start until they are mapped, so a half-built mask fails before it reads a single row.
+
+Two mask features carry most of the weight:
+
+**Unit conversion.** Set a conversion factor on any numeric column and the multiplication happens before the value is stored. Minutes to hours is `0.016667`, seconds to hours `0.000278`, and a standard time quoted per lot of 100 pieces becomes per piece with `0.01`. Different columns in the same file can carry different factors.
+
+**Blank-cell preservation.** On an update run, a blank cell keeps the existing value rather than wiping it, so a partial refresh file is safe. A zero, however, is a value, not a blank, so leave a column out of the export rather than filling it with zeros you do not mean.
+
+## Step 3: the routing import, and why it takes two passes
+
+Routings are the hardest data to move between systems, because operations reference each other: step 10 feeds step 20 feeds step 30. A row-by-row import cannot wire those links, because step 20 does not exist yet when step 10 is written.
+
+EDGEBIC's routing import runs in two passes. Pass one reads and validates every row, auto-creates any work center or part the file names that does not exist yet, and buffers the steps. Pass two groups the buffered rows by end part, sorts them by sequence number, writes them, and wires the chain so the routing renders as one connected flow in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour).
+
+Two conventions pay off immediately: number sequences in gaps of 10 so a later insert becomes 25 and nothing renumbers, and keep all of one part's steps in one file, because a routing import wipes and recreates that part's steps once per run, which is what makes re-imports idempotent.
+
+## Step 4: jobs in, then run the scheduler
+
+The job import maps part, quantity, reference, and due date. Imports never schedule anything: imported jobs sit as unscheduled demand until you run the scheduler, which states how many jobs are new and how many are being rescheduled before it plans anything. Data movement and planning stay separate on purpose, so an import can never silently rearrange the floor.
+
+Once the data is in, the full engine applies: finite capacity across multiple shifts and machine instances, [work center groups](/blog/edgebic-work-center-groups-explained) that re-shop the machine pool on every reschedule, a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained), lot streaming with transfer batches, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine.
+
+## Step 5: sending dates back
+
+The return trip is Excel. The Job View grid exports the job schedule as a workbook with colored cells and a legend sheet, the work center schedule exports the same way, and every report dialog exports to Excel or PDF using the column layout you saved. Revised dates then go back into M1 through the job maintenance path your team already uses. There is no automated write-back, which keeps your ERP data under your control.
+
+## Test it with your own export
+
+Export this week's open jobs and a routing file, then [bring them to a demo](/contact-us). Mapping them live takes minutes, and you leave having watched your own shop scheduled against its own capacity. If you are evaluating more than one system, the [JobBOSS](/blog/edgebic-jobboss-integration-guide) and [Epicor](/blog/edgebic-epicor-integration-guide) versions of this guide follow the same method, which is the point of a universal import layer.
+
+<Accordion title="Does EDGEBIC connect to ECI M1 through an API or connector?">
+No. EDGEBIC reads the CSV or Excel exports M1 already produces through reusable import masks. There is no API project, no add-in installed in M1, and no certified connector to version-match when either product updates. You map an export's columns onto EDGEBIC fields once, and every later run is two clicks with a per-run log recording each row as Created, Updated, Reused, or Failed.
+</Accordion>
+
+<Accordion title="What M1 data does EDGEBIC need to build a schedule?">
+Four exports carry a complete model: parts or items, work centers with machine counts and setup detail, routings with operation sequence and run and setup times, and open jobs with quantities and due dates. A fifth optional export carries logged labor hours from the floor. Each export goes through its own mask, so you never hand-edit a file to make it fit.
+</Accordion>
+
+<Accordion title="Will re-importing routings break jobs already scheduled?">
+No. Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing re-import applies to future jobs and leaves work in progress untouched. That makes the weekly refresh safe to run without pausing the floor.
+</Accordion>

@@ -1,0 +1,101 @@
+---
+title: "EDGEBIC + Statii: The Complete Scheduling Integration Guide"
+description: "Statii production scheduling integration with EDGEBIC: export parts, work centers, operations and jobs to CSV, map columns once, and schedule at finite capacity."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - Statii production scheduling integration
+  - Statii finite capacity scheduling
+  - Statii scheduling add-on
+  - EDGEBIC Statii integration
+  - small manufacturer scheduling software
+  - Statii CSV export scheduling
+targetPhrase: "Statii production scheduling integration"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "Does EDGEBIC connect to Statii through an API?"
+    answer: "No. EDGEBIC reads the CSV or Excel exports Statii already produces through reusable import masks. There is no API to build, nothing installed inside Statii, and no certified connector to version-match. You map an export's columns onto EDGEBIC fields once, and each later run is two clicks with a per-run log recording every row."
+  - question: "We are a small shop with one planner. Is EDGEBIC too heavy for us alongside Statii?"
+    answer: "The recurring effort is small: export, pick the saved mask, run the import, run the scheduler, read the counts, usually a few minutes on the day you plan. The heavier finite capacity engine only runs when you ask it to, and it answers the question a small shop struggles with most, which order across shared machines meets the most due dates. Statii keeps the business record; EDGEBIC keeps the sequence."
+  - question: "What does EDGEBIC need exported from Statii?"
+    answer: "Four exports: parts, work centers with machine counts and setup detail, operations with sequence and run and setup times, and open jobs with quantities and due dates. A fifth optional export carries logged hours. Each goes through its own import mask, so a locale date format or quoted text is handled in the mask rather than by editing the file."
+qaQuestions:
+  - question: "Our exports come out in UK date format and some text fields have commas inside quotes. Will those trip up the import?"
+    answer: "Both are handled at the mask level rather than by editing files. The mask has a setting for text enclosed in quotes, so a value with an embedded comma parses as one field instead of splitting into phantom columns. Dates are parsed against a standard format first and your machine's regional format second, so a day-month-year export lands correctly without a pre-processing step. If a specific row still fails, it fails alone: the default behavior marks that row Failed with the exact reason in the log and continues through the remaining rows, so one awkward date never blocks a good file. You configure the format once when you build the mask, and every later run inherits it."
+  - question: "We make a mix of repeat parts and one-offs on the same few machines. Can EDGEBIC schedule both without us maintaining two systems?"
+    answer: "Yes, they share one plan. A repeat part already has its operations in EDGEBIC from an earlier import, so it reschedules with the new jobs automatically; a one-off arrives as a routing file with its own operations and is scheduled on its own terms, no template required. Both sit in the same open queue and are sequenced against the same real capacity, so a one-off competing with a repeat part for the same machine is sequenced honestly rather than guessed at. Because master data that already matches comes back Reused on import, adding a one-off does not disturb your repeat-part records. One weekly rhythm covers the whole mix."
+---
+
+**Integrating Statii with EDGEBIC means exporting the parts, work centers, operations, and open jobs Statii already holds to CSV or Excel, mapping those columns once with a reusable import mask, and letting EDGEBIC schedule the work against finite capacity: real shift hours, real machine counts, and sequence-dependent setups.** Executable dates then go back as Excel. There is no API project, nothing installed inside Statii, and no certified connector to version-match when either side updates.
+
+EDGEBIC by User Solutions is the newest generation of a scheduling line that has integrated with ERPs this way since 1991. Across 35+ years the same file-based approach has fed schedules for the US Navy, GE, BAE Systems, and Cummins. This guide covers the Statii case, aimed at the small and mid-size manufacturers Statii serves.
+
+## Why a small-shop system still needs finite capacity scheduling
+
+Statii runs the small-shop business record well: quotes, jobs, purchasing, and the operation tracking that follows work through the floor. What most Statii shops report is that the daily sequencing decision still happens in a spreadsheet, because the morning questions are finite capacity questions:
+
+- Which of these open jobs actually fit on the two machines this week?
+- If this rush job jumps the queue, which promise dates move and by how much?
+- Is that one bottleneck machine loaded to 80 percent or 160 percent next Thursday?
+
+Those require modeling shifts, machine instances, changeover sequences, and operator availability against every open job at once. It is a different computational problem from recording transactions, which is why a dedicated finite capacity layer beside the system is the standard pattern, and it is exactly the decision a small shop has the least spare time to get right by hand. The general case is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+## The integration in one table
+
+The [EDGEBIC ERP integration architecture](/edgebic-erp-integration) is identical for every system, Statii included:
+
+| Direction | Data | How it moves |
+|---|---|---|
+| Statii to EDGEBIC | Parts | CSV or Excel export to Product import mask |
+| Statii to EDGEBIC | Work centers | Export to Workcenter import mask |
+| Statii to EDGEBIC | Operations / routings | Export to routing import mask, two-pass |
+| Statii to EDGEBIC | Open jobs | Export to order import mask |
+| Statii to EDGEBIC | Labor hours (optional) | Export to actuals import mask |
+| EDGEBIC to Statii | Executable start and end dates, dispatch lists | Excel export from Job View and reports |
+
+An **import mask** is a saved recipe that remembers the data type, the file format, whether the first row is headings, whether text values are quoted, and how each column maps onto an EDGEBIC field. You build it once by dragging column headings onto target fields, and every run after that is two clicks. Each row returns Created, Updated, Reused, or Failed, with a per-run log recording every one.
+
+## Step 1: the four exports
+
+Any Statii list or report that saves to CSV is a valid source.
+
+1. **Parts.** Identifier, description, unit of measure, and any cost or lead-time columns worth keeping visible. The identifier is the natural key, matched case-insensitively.
+2. **Work centers.** Identifier, machine count, default setup hours, efficiency, and an hourly rate. A bottleneck flag rides along.
+3. **Operations.** One row per operation: end part, work center, sequence number, hours per unit, setup time, queue time.
+4. **Open jobs.** Part, quantity, job reference, and due dates.
+
+## Step 2: map the columns once
+
+Name each mask after the routine, so `Weekly Statii Jobs` outlives `jobs-week29.csv`. Mandatory fields are flagged and the run refuses to start until they are mapped. **Unit conversion** applies a factor to a numeric column before storage, so minutes become hours with `0.016667`. **Blank-cell preservation** keeps an existing value when a cell is blank on an update run, with a zero counting as a value rather than a blank.
+
+## Step 3: the operation import, and why it takes two passes
+
+Operations reference each other, step 10 feeds step 20 feeds step 30, so a row-by-row import cannot wire the links because step 20 does not exist when step 10 is written. EDGEBIC's routing import runs in two passes: pass one validates and buffers every row and auto-creates any missing work center or part, and pass two groups the rows by end part, sorts by sequence, writes them, and wires the chain so the routing renders as one connected flow in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour). Number sequences in gaps of 10, and keep all of one part's operations in one file so re-imports stay idempotent.
+
+## Step 4: jobs in, then run the scheduler
+
+The job import maps part, quantity, reference, and due date. Imports never schedule anything: imported jobs sit as unscheduled demand until you run the scheduler, which states how many jobs are new and how many are being rescheduled before it plans. Once the data is in, the full engine applies: finite capacity across multiple shifts and machine instances, [work center groups](/blog/edgebic-work-center-groups-explained), a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained), lot streaming, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine.
+
+## Step 5: sending dates back
+
+The return trip is Excel. The Job View grid exports the schedule as a workbook with colored cells and a legend, the work center schedule exports the same way, and every report exports to Excel or PDF using your saved layout. Revised dates go back into Statii through your normal job maintenance path. There is no automated write-back, which keeps your data under your control.
+
+## Test it with your own export
+
+Export this week's open jobs and an operations file, then [bring them to a demo](/contact-us). Mapping them live takes minutes. If you are comparing systems, the [MRPeasy](/blog/edgebic-mrpeasy-integration-guide) and [Katana](/blog/edgebic-katana-integration-guide) versions follow the same method, which is the point of a universal import layer.
+
+<Accordion title="Does EDGEBIC connect to Statii through an API?">
+No. EDGEBIC reads the CSV or Excel exports Statii already produces through reusable import masks. There is no API to build, nothing installed inside Statii, and no certified connector to version-match. You map an export's columns onto EDGEBIC fields once, and each later run is two clicks with a per-run log recording every row.
+</Accordion>
+
+<Accordion title="We are a small shop with one planner. Is EDGEBIC too heavy for us alongside Statii?">
+The recurring effort is small: export, pick the saved mask, run the import, run the scheduler, read the counts, usually a few minutes on the day you plan. The heavier finite capacity engine only runs when you ask it to, and it answers the question a small shop struggles with most, which order across shared machines meets the most due dates. Statii keeps the business record; EDGEBIC keeps the sequence.
+</Accordion>
+
+<Accordion title="What does EDGEBIC need exported from Statii?">
+Four exports: parts, work centers with machine counts and setup detail, operations with sequence and run and setup times, and open jobs with quantities and due dates. A fifth optional export carries logged hours. Each goes through its own import mask, so a locale date format or quoted text is handled in the mask rather than by editing the file.
+</Accordion>

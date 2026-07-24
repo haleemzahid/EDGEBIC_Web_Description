@@ -1,0 +1,109 @@
+---
+title: "Scheduling a Nightly ERP Export and Import Routine for EDGEBIC"
+description: "How to run a repeatable nightly or weekly ERP export and EDGEBIC import routine: mask order, safe re-imports, verifying counts, and keeping the schedule current."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - nightly ERP export import routine
+  - scheduled ERP data refresh
+  - EDGEBIC import routine
+  - repeatable ERP integration
+  - production scheduling data refresh
+  - ERP export scheduling
+targetPhrase: "nightly ERP export import routine"
+wordCount: 1550
+readingTime: 8
+faqQuestions:
+  - question: "Can EDGEBIC pull from my ERP automatically overnight?"
+    answer: "EDGEBIC does not reach into the ERP; the ERP produces the export. Many ERPs can save a report or list to a file on a schedule, and once those files land, importing them is two clicks per mask. The pattern is ERP-produces-files-on-a-schedule, then a planner runs the saved masks and the scheduler in the morning. There is no API pull, which is exactly why the routine keeps working across ERP updates."
+  - question: "What order should the imports run in?"
+    answer: "Foundation data first, demand last: items, then work centers, then routings, then open orders, then optional actuals. Routings can auto-create a missing item or work center, so strict ordering is not mandatory, but importing in that order keeps the logs clean and makes a bad file obvious. Run the scheduler only after all imports finish, because imports never schedule anything on their own."
+  - question: "Is it safe to re-import the same data every night?"
+    answer: "Yes. Master data that already matches comes back Reused and untouched, and a routing re-import wipes and recreates only that product's steps, which makes it idempotent. Jobs already scheduled carry a frozen routing snapshot, so a nightly refresh never disturbs work in progress. The routine is designed to be run repeatedly without accumulating duplicates."
+qaQuestions:
+  - question: "We want the schedule fresh every morning without a person babysitting exports at midnight. What can actually be automated and what cannot?"
+    answer: "Split the routine into two halves. The export half is often automatable inside the ERP itself: many systems can run a saved report or list to a file on a nightly timer, dropping current items, routings, and open orders into a folder while nobody is watching. The import and schedule half is deliberately kept as a person's decision, because importing changes data and scheduling changes the plan, and you want a human to see the counts before the floor gets a new sequence. In practice that means the files are waiting when the planner arrives, and the morning work is run the saved masks, read Created and Reused and Failed, then run the scheduler and look at what moved, a few minutes total. You get overnight-fresh data without letting an unattended process silently rearrange the shop, which is the balance most manufacturers actually want."
+  - question: "If one export file is malformed one night, does the whole routine fall over?"
+    answer: "No, and this is where file-based integration is more robust than a live link. Each mask is independent, so a bad routing file does not stop the item or work center imports that already ran. Within a file, the default behavior isolates failures at the row level: a single bad date is marked Failed with the exact reason in the log and the run continues through the remaining rows, so one malformed line never blocks hundreds of good ones. Because you read the counts before running the scheduler, a file that came out wrong shows up as an unexpected Failed count or a low Created count, and you re-export that one file rather than unwinding a half-applied sync. The blast radius of a bad night is one file and one re-run, not the whole schedule."
+---
+
+**A nightly or weekly ERP export and import routine keeps the EDGEBIC schedule current by having the ERP produce fresh files on a timer, then importing them through saved masks in a fixed order and running the scheduler once, with the per-run counts read before anything reaches the floor.** The routine is repeatable by design: master data that already matches comes back untouched, routings re-import idempotently, and work in progress is never disturbed.
+
+EDGEBIC by User Solutions integrates with every ERP through the same file-based masks, so the routine below is identical whether the files come from SAP, QuickBooks, or a job-shop system. This post is the operational how-to for making that refresh a reliable habit rather than an occasional scramble. The architecture behind it is in [why EDGEBIC connects to every ERP the same way](/blog/why-edgebic-connects-to-every-erp-the-same-way).
+
+## The two halves of the routine
+
+Separate the routine into a part the ERP can automate and a part a person should own.
+
+- **Export (automatable).** Most ERPs can save a report or list to a file on a schedule. Point those saved exports at a known folder and let them run overnight so current items, routings, and open orders are waiting each morning.
+- **Import and schedule (person-owned).** Importing changes data and scheduling changes the plan. You want a human to read the counts and decide before the floor receives a new sequence. This half is a few minutes of clicks, not an all-day task.
+
+Keeping the second half manual is a deliberate control, not a limitation. An unattended process that both imports and reschedules could silently rearrange the shop overnight; the split prevents that.
+
+## The import order
+
+Run the masks in dependency order so the logs stay clean and a bad file is obvious:
+
+1. **Items** first, so downstream data has products to attach to.
+2. **Work centers** next, so routings have resources to reference.
+3. **Routings** next. The two-pass routing import auto-creates any item or work center it names that is missing, so strict ordering is not mandatory, but running items and work centers first keeps the routing log free of incidental creations.
+4. **Open orders** last among the core files, because they are the demand the scheduler consumes.
+5. **Actuals** optionally, if you feed logged hours back so the reschedule starts from where jobs really stand.
+
+Then, and only then, run the scheduler. Imports never schedule anything; imported orders sit as unscheduled demand until you run the engine, which states how many jobs are new and how many are being rescheduled before it plans.
+
+## Why re-running is safe
+
+The routine is built to be run repeatedly:
+
+- **Reused means untouched.** Master data that already matches an existing record comes back Reused, not rewritten, so re-importing an unchanged item list is a no-op that clears in seconds.
+- **Routings re-import idempotently.** A routing import wipes and recreates only that product's steps once per run, so importing the same routing file twice leaves the same result, not doubled steps. Keep all of one product's steps in one file so the wipe-and-recreate stays whole.
+- **Work in progress is frozen.** Every scheduled job carries a snapshot of the routing it was planned with, so a routing change applies to future jobs and leaves running work untouched.
+- **Blank cells preserve values.** On an update run, a blank cell keeps the existing value, so a partial refresh file is safe. A zero, though, is a value, so leave a column out rather than filling it with zeros you do not mean.
+
+## Reading the counts
+
+Every run ends with a result dialog and a per-run log. Read the counts before you trust the schedule:
+
+- **A high Reused count is normal and good.** It means most master data already matched.
+- **An unexpected Failed count is your signal.** Open the log; each Failed row records the exact reason. A common cause is a date format or a quoted-text setting that needs adjusting in the mask, not in the file.
+- **A surprisingly low Created count** on a file you expected to add rows often means an export came out short. Re-export that one file rather than proceeding.
+
+Because failures isolate at the row level, one bad date never blocks the rest of a file, and one bad file never blocks the other masks.
+
+## A weekly rhythm that scales to nightly
+
+Most shops start weekly and tighten from there. A weekly run looks like this:
+
+| Step | Action |
+|---|---|
+| 1 | Confirm the overnight export files are present |
+| 2 | Run item, work center, routing, order masks in order |
+| 3 | Read the counts; open the log on any unexpected Failed |
+| 4 | Run the scheduler; note new versus rescheduled jobs |
+| 5 | Export the dated plan back as Excel for the floor |
+
+Moving to nightly changes only the cadence, not the steps. The saved masks and the import order are unchanged; you simply run them more often. For the full weekly walkthrough see [keeping ERP and EDGEBIC in sync](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine), and for the exact fields each file should carry see [which ERP fields EDGEBIC needs to schedule](/blog/which-erp-fields-edgebic-needs-to-schedule).
+
+## Sending the plan back
+
+The routine closes by exporting the finished schedule. The Job View grid and every report export to Excel or PDF using your saved column layout, and revised dates go back into the ERP through your normal order maintenance path. The mechanics of that return trip are covered in [exporting the EDGEBIC schedule back to your ERP](/blog/exporting-the-edgebic-schedule-back-to-your-erp). The [EDGEBIC product overview](/edgebic) maps the engine that produces the plan, and the [ERP integration architecture](/edgebic-erp-integration) shows where this routine fits.
+
+## Make it a habit, not a project
+
+The whole point of a saved routine is that it stops being a decision. Once the masks exist and the import order is fixed, the refresh is muscle memory: files land, masks run, counts read, scheduler runs, plan exported. [Bring a week of your own exports to a demo](/contact-us) and build the routine live, so you leave with the masks already saved.
+
+<Accordion title="Can EDGEBIC pull from my ERP automatically overnight?">
+EDGEBIC does not reach into the ERP; the ERP produces the export. Many ERPs can save a report or list to a file on a schedule, and once those files land, importing them is two clicks per mask. The pattern is ERP-produces-files-on-a-schedule, then a planner runs the saved masks and the scheduler in the morning. There is no API pull, which is exactly why the routine keeps working across ERP updates.
+</Accordion>
+
+<Accordion title="What order should the imports run in?">
+Foundation data first, demand last: items, then work centers, then routings, then open orders, then optional actuals. Routings can auto-create a missing item or work center, so strict ordering is not mandatory, but importing in that order keeps the logs clean and makes a bad file obvious. Run the scheduler only after all imports finish, because imports never schedule anything on their own.
+</Accordion>
+
+<Accordion title="Is it safe to re-import the same data every night?">
+Yes. Master data that already matches comes back Reused and untouched, and a routing re-import wipes and recreates only that product's steps, which makes it idempotent. Jobs already scheduled carry a frozen routing snapshot, so a nightly refresh never disturbs work in progress. The routine is designed to be run repeatedly without accumulating duplicates.
+</Accordion>

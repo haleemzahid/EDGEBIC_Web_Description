@@ -1,0 +1,135 @@
+---
+title: "Running the Optimizer End to End in EDGEBIC: Baseline, Optimize, Compare, Accept"
+description: "Follow a three-job schedule through the EDGEBIC optimizer: read the greedy baseline, pick a goal, run, compare KPI deltas and moves, and Accept, with honest badges explained."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - schedule optimizer walkthrough
+  - baseline optimize compare accept
+  - never worse than baseline
+  - optimality gap
+  - optimizer goal presets
+  - multi-run vs cp-sat
+targetPhrase: "schedule optimizer walkthrough"
+wordCount: 1780
+readingTime: 9
+qaQuestions:
+  - question: "The optimizer says it found a better plan, but I do not trust it to touch a schedule my floor is already running. What actually happens when I click Run?"
+    answer: "Nothing is persisted. The optimizer computes a full alternative plan in memory, holds it under a token, and shows you a comparison: the verdict, a KPI delta grid, and a changes-only move list. The database is byte-identical until you click Accept. On Accept it persists through the same pipeline as a normal schedule run, preserves completed work untouched, and writes an audit row. Click Discard and the plan is dropped with nothing changed. You are the commit button, not the optimizer."
+  - question: "Does the optimizer guarantee the best possible schedule?"
+    answer: "It guarantees never worse than your current baseline, which is different from always optimal. The default multi-run engine evaluates dozens of complete schedules and returns the best it found, clamped so it can only help. Switch to the mathematical CP-SAT engine and you also get a proven optimality gap: a badge reading proven within X percent of optimal, or proven optimal at a zero gap. In this walkthrough's three-job case CP-SAT proves the plan optimal; on larger problems it reports how close it got."
+faqQuestions:
+  - question: "What does the EDGEBIC optimizer do that plain scheduling does not?"
+    answer: "The greedy scheduler commits each job's whole routing before it looks at the next job, which can leave a downstream machine idle while a long first operation blocks its feeder. The optimizer proposes a complete alternative plan by trying different global job orderings, scores each against your chosen goal, and shows the best one side by side with the baseline. It never persists on its own and is clamped so the result can never be worse than the plan you already had."
+  - question: "What goals can I optimize a schedule for in EDGEBIC?"
+    answer: "Four presets ship. On-time first, the default, protects due dates above everything else, then stability, then makespan. Fastest overall finish minimizes makespan. Least setup time minimizes changeover hours and appears once a sequence-dependent setup matrix exists. Fewest changes minimizes disruption to a committed plan. Each preset is an ordered list of KPI tiers compared in priority order, so the top goal is never sacrificed for a lower one."
+  - question: "What is the difference between the multi-run and CP-SAT optimizer engines?"
+    answer: "Multi-run, the default, runs the real scheduling engine many times with different job orderings and returns the best complete schedule it evaluated, guaranteed never worse than the baseline. CP-SAT is a mathematical solver that models the whole problem and returns a plan plus a proven optimality gap, so its badge can read proven optimal. Both honor every capacity constraint and both are clamped never-worse, so switching engines in Options is always safe."
+---
+
+**Running the optimizer in [EDGEBIC by User Solutions](/edgebic) is a four-step loop: the engine computes your current greedy baseline, proposes a complete alternative plan for the goal you pick, shows the two side by side, and changes nothing until you click Accept.** This walkthrough takes a three-job schedule through that loop with real numbers, and it is careful about what the optimizer does and does not promise. It is one of the [worked examples](/blog/edgebic-worked-examples) we publish so you can judge the feature by its arithmetic.
+
+For the concepts behind it, [the optimizer guide](/blog/edgebic-optimizer-guide) and [optimizer goals and presets explained](/blog/edgebic-optimizer-goals-and-presets-explained) are the companions to this journey.
+
+## The Cast: Three Jobs, Two Machines, One Tardy Baseline
+
+Cedar Machine has two work centers, WC-CUT and WC-MILL, one instance each, sharing a day shift Monday to Friday, 08:00 to 16:00. Three jobs release Monday 08:00, all medium priority:
+
+| Job | Routing | Due |
+|---|---|---|
+| A | Cut 6 h, then Mill 2 h | Tue 12:00 |
+| B | Cut 2 h, then Mill 6 h | Tue 12:00 |
+| C | Cut 3 h, then Mill 3 h | Tue 16:00 |
+
+## Step 1: Read the Baseline
+
+Every optimizer run starts by computing the plan the untouched engine would produce, and this is also the floor the result is measured against. The default sort yields A, B, C (A and B tie on due date, A wins by position), and the engine commits each job's whole routing before moving on:
+
+```
+          Mon 08:00 ---------- 16:00   Tue 08:00 ---------- 16:00   Wed
+WC-CUT    [A-cut 6h       ][B-cut 2h]   [C-cut 3h]
+WC-MILL   ~~~ idle 6h ~~~~[A-mill]      [B-mill 6h      ][C-mill 2h] [C 1h]
+```
+
+The result: A finishes Monday 16:00 on time, B finishes Tuesday 14:00 (two hours late), C finishes Wednesday 09:00 (late). The failure is visible in the diagram: WC-MILL idles all Monday morning while A's long cut blocks the saw. B's two-hour cut would have fed the mill by 10:00, but greedy committed A's entire routing before it ever looked at B. No static sort fixes this in general; it is the hard core of the problem the optimizer exists for.
+
+## Step 2: Pick a Goal and Run
+
+Open the Schedule Jobs window and select the Optimizer tab. (You can also click Optimize Schedule on the Drive Schedule toolbar, which jumps straight here.) You see a goal picker, a time budget, and a Run button.
+
+Pick the goal. Four presets ship, each an ordered list of KPI tiers:
+
+| Goal | Priority order |
+|---|---|
+| On-time first (default) | weighted tardiness, then late count, then stability, then makespan |
+| Fastest overall finish | makespan first |
+| Least setup time | total setup first (appears once a setup matrix exists) |
+| Fewest changes | stability first |
+
+Leave it on On-time first, since three jobs are running late. Set the time budget to 30 seconds and click Run.
+
+## Step 3: Compare
+
+The optimizer tries different global orderings, scores each complete schedule against the goal, and returns the best. With only three jobs the multi-run engine evaluates all permutations. The winning order is B, A, C: put the shortest cut that feeds the longest mill job first.
+
+```
+          Mon 08:00 ---------- 16:00   Tue 08:00 ---------- 16:00
+WC-CUT    [B 2h][A-cut 6h        ]     [C-cut 3h]
+WC-MILL   ~2h~[B-mill 6h          ]     [A-mill 2h][C-mill 3h]
+```
+
+Now B finishes Monday 16:00, A finishes Tuesday 10:00, C finishes Tuesday 14:00. All three on time.
+
+The comparator shows this in three panels. First the KPI delta grid:
+
+| KPI | Baseline | Optimized | Delta |
+|---|---|---|---|
+| Total tardiness | 3 h | 0 h | minus 100% |
+| On-time jobs | 1 of 3 | 3 of 3 | plus 2 |
+| Makespan | 17 working h (ends Wed 09:00) | 14 working h (Tue 14:00) | minus 18% |
+
+Second, a changes-only move list: one row per operation that actually moved, with its old and new start and a plain-language reason like "starts 4.0h earlier." Operations that did not move are never listed, so the diff is easy to scan. Third, a safety strip stating the three fixed guarantees: completed work is untouched, the result is clamped never worse than the baseline, and nothing persists until you Accept.
+
+The verdict badge is where honesty matters. On the default multi-run engine it reads "Best of N schedules tried in Xs." It does not say proven, and it does not say optimal, because multi-run is a heuristic search: it found the best of everything it tried, guaranteed never worse than before, but it cannot prove no better plan exists.
+
+## Step 4: The Proven-Gap Upgrade (Optional)
+
+If you want a mathematical guarantee, switch engines in Options, then Schedule, then Optimizer Engine, from the default multi-run search to the CP-SAT mathematical solver. Both honor every capacity constraint and both are clamped never worse, so the switch is always safe; if the solver is not installed in your host, EDGEBIC silently falls back to multi-run.
+
+Re-run this same three-job problem on CP-SAT and the badge upgrades to "Proven optimal." The solver models the whole problem and returns the same B, A, C plan plus a proof that no better one exists, a zero optimality gap. On a larger schedule where the solver cannot close the gap in the time budget, the badge instead reads "proven within X percent of optimal," telling you exactly how much room might remain. The Explain dialog also lists any jobs the solver left alone and why, for example a job that uses a feature the model reproduces from the baseline rather than re-optimizing. The trade-offs between the two engines are laid out in [choosing the optimizer engine](/blog/choosing-the-optimizer-engine-multi-run-or-cp-sat).
+
+## Step 5: Accept
+
+Click Accept. Two things happen. First, EDGEBIC re-checks a fingerprint it took before the solve; if a colleague rescheduled or actuals landed in the meantime, it stops with a stale-proposal warning and offers to re-solve rather than silently overwrite newer work. Second, on a clean check it persists the plan through the exact same pipeline a normal schedule run uses, preserving completed operations byte-identical, and writes one audit row recording the goal, the seed, the solve stats, and both KPI sets. Months later you can query that row and read the same story the Explain dialog showed.
+
+Click Discard instead and the in-memory plan is dropped. The database is untouched. You were always the commit button.
+
+## What This Walkthrough Proves
+
+1. **The baseline is real and it is the floor.** Every run computes the greedy plan first and measures the candidate against it.
+2. **The optimizer is a sidecar.** It proposes; it never injects itself into the engine, and it persists nothing on its own.
+3. **Never worse is enforced, not hoped.** A post-solve check compares the candidate's KPIs directly against the baseline and returns the baseline on anything short of a strict win.
+4. **The badge tells the truth about the guarantee.** Multi-run says best of N tried; CP-SAT adds a proven optimality gap. Neither claims always optimal.
+5. **Accept is the only write path.** Discard leaves the database byte-identical, and Accept preserves completed work and writes an audit trail.
+
+## Where the Optimizer Fits
+
+The optimizer earns its keep on schedules where a smarter job order frees real capacity, exactly the tardy-baseline case above. It composes with the rest of the plant: it honors [work center groups](/blog/setting-up-a-work-center-group-and-load-balancing-edgebic) and reproduces jobs it does not yet model natively from the baseline, so it can never emit a plan that breaks a constraint. When you want to weigh two hand-built alternatives instead of an engine search, [comparing two what-if scenarios](/blog/comparing-two-what-if-scenarios-for-a-capacity-decision-edgebic) is the manual sibling. For reproducibility on support cases, [determinism and reproducibility in schedule optimization](/blog/determinism-and-reproducibility-in-schedule-optimization) explains the seed contract.
+
+User Solutions has been sharpening manufacturing schedules since 1991, work that took GE Railcar from 30 percent to 90 percent on-time. [Contact us for a demo](/contact-us) and bring one week of jobs: we will run the optimizer against your real numbers.
+
+<Accordion title="What does the EDGEBIC optimizer do that plain scheduling does not?">
+The greedy scheduler commits each job's whole routing before it looks at the next job, which can leave a downstream machine idle while a long first operation blocks its feeder. The optimizer proposes a complete alternative plan by trying different global job orderings, scores each against your chosen goal, and shows the best one side by side with the baseline. It never persists on its own and is clamped so the result can never be worse than the plan you already had.
+</Accordion>
+
+<Accordion title="What goals can I optimize a schedule for in EDGEBIC?">
+Four presets ship. On-time first, the default, protects due dates above everything else, then stability, then makespan. Fastest overall finish minimizes makespan. Least setup time minimizes changeover hours and appears once a sequence-dependent setup matrix exists. Fewest changes minimizes disruption to a committed plan. Each preset is an ordered list of KPI tiers compared in priority order, so the top goal is never sacrificed for a lower one.
+</Accordion>
+
+<Accordion title="What is the difference between the multi-run and CP-SAT optimizer engines?">
+Multi-run, the default, runs the real scheduling engine many times with different job orderings and returns the best complete schedule it evaluated, guaranteed never worse than the baseline. CP-SAT is a mathematical solver that models the whole problem and returns a plan plus a proven optimality gap, so its badge can read proven optimal. Both honor every capacity constraint and both are clamped never-worse, so switching engines in Options is always safe.
+</Accordion>

@@ -1,0 +1,105 @@
+---
+title: "EDGEBIC + Realtrac: The Complete Scheduling Integration Guide"
+description: "Realtrac production scheduling integration with EDGEBIC: export parts, work centers, routings and jobs to CSV, map columns once, and schedule at finite capacity."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - Realtrac production scheduling integration
+  - Realtrac finite capacity scheduling
+  - Realtrac scheduling add-on
+  - EDGEBIC Realtrac integration
+  - job shop scheduling software
+  - Realtrac CSV export scheduling
+targetPhrase: "Realtrac production scheduling integration"
+wordCount: 1600
+readingTime: 8
+faqQuestions:
+  - question: "Does EDGEBIC connect to Realtrac with a native connector?"
+    answer: "No. EDGEBIC reads the CSV or Excel exports Realtrac already produces through reusable import masks. Nothing is installed in Realtrac, there is no API to maintain, and there is no certified connector to version-match. You map an export's columns onto EDGEBIC fields once, and each later run is two clicks with a per-run log recording every row."
+  - question: "Realtrac already tracks routings and job status. Why add a separate scheduler?"
+    answer: "Realtrac is strong at recording what each job requires and where it stands. Finite capacity sequencing is a different question: given every open job at once, which order across your machines meets the most due dates without overloading a resource. EDGEBIC answers that by modeling real machine counts, shift hours, and setups, then returns dated jobs you can feed back into Realtrac."
+  - question: "What does EDGEBIC need exported from Realtrac?"
+    answer: "Four exports: parts, work centers with machine counts and setup detail, routings with operation sequence and run and setup times, and open jobs with quantities and due dates. A fifth optional export carries logged hours from the floor. Each goes through its own import mask, so you never reshape a file by hand."
+qaQuestions:
+  - question: "We are a job shop and every week is a different mix of parts on the same machines. Does a file-based integration keep up with that churn?"
+    answer: "It is built for exactly that churn. The parts and routings you have run before are already in EDGEBIC, so a weekly refresh mostly imports the new jobs and any new or revised routings, then reschedules the whole open queue against your real capacity. Master data that already matches comes back Reused and untouched rather than rewritten, so the import stays fast even as the job mix rotates. The recurring work is export, pick the saved mask, run the import, run the scheduler, read the counts, usually a few minutes. What takes real attention is the useful part: seeing which two machines are over next week and deciding what moves. A shop with high part variety benefits most from this because the sequencing decision is hardest precisely when the mix keeps changing."
+  - question: "Our lead machinist basically holds the schedule in his head and reshuffles by hand when a hot job lands. How is EDGEBIC different from that?"
+    answer: "It makes the same expertise repeatable and visible. When a hot job lands, you import it and rerun the scheduler, which sequences it into the open queue at finite capacity and shows precisely which existing promise dates move and by how much, rather than one person mentally re-sorting and hoping nothing was missed. The engine respects the constraints your machinist knows by instinct, machine counts, setup sequences, and bottleneck resources, but it evaluates every open job at once instead of the handful anyone can hold in mind. It does not replace his judgment; it gives him a plan to react to and a way to test a reshuffle before committing it, and it keeps working the same way when he is on vacation."
+---
+
+**Integrating Realtrac with EDGEBIC means exporting the parts, work centers, routings, and open jobs Realtrac already holds to CSV or Excel, mapping those columns once with a reusable import mask, and letting EDGEBIC schedule the work against finite capacity: real shift hours, real machine counts, and sequence-dependent setups.** Executable dates then go back as Excel. There is no API project, nothing installed in Realtrac, and no certified connector to version-match when either side updates.
+
+EDGEBIC by User Solutions is the newest generation of a scheduling line that has integrated with ERPs this way since 1991. Across 35+ years the same file-based approach has fed schedules for the US Navy, GE, BAE Systems, and Cummins. This guide covers the Realtrac case, the job-shop scenario the method was built for.
+
+## Why a shop tracking system still needs finite capacity scheduling
+
+Realtrac is strong at the shop record: parts, routings, job status, data collection, and the paperwork that follows a job through the floor. What most Realtrac shops report is that the daily sequencing decision still happens in a spreadsheet or a lead machinist's head, because the morning questions are finite capacity questions:
+
+- Which of these open jobs actually fit on the two turning cells this week?
+- If this rush job jumps the queue, which promise dates move and by how much?
+- Is the grinder loaded to 80 percent or 160 percent next Thursday?
+
+Those require modeling shifts, machine instances, changeover sequences, and operator availability against every open job at once. That is a different computational problem from tracking transactions, which is why a dedicated finite capacity layer beside the shop system is the standard pattern. The general case is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+## The integration in one table
+
+The [EDGEBIC ERP integration architecture](/edgebic-erp-integration) is identical for every system, Realtrac included:
+
+| Direction | Data | How it moves |
+|---|---|---|
+| Realtrac to EDGEBIC | Parts | CSV or Excel export to Product import mask |
+| Realtrac to EDGEBIC | Work centers | Export to Workcenter import mask |
+| Realtrac to EDGEBIC | Routings / operations | Export to routing import mask, two-pass |
+| Realtrac to EDGEBIC | Open jobs | Export to order import mask |
+| Realtrac to EDGEBIC | Labor hours (optional) | Export to actuals import mask |
+| EDGEBIC to Realtrac | Executable start and end dates, dispatch lists | Excel export from Job View and reports |
+
+An **import mask** is a saved recipe that remembers the data type, the file format, whether the first row is headings, whether text values are quoted, and how each column maps onto an EDGEBIC field. You build it once by dragging column headings onto target fields, and every run after that is two clicks. Each row returns Created, Updated, Reused, or Failed, with a per-run log recording every one.
+
+## Step 1: the four exports
+
+Any Realtrac list or report that saves to CSV is a valid source.
+
+1. **Parts.** Identifier, description, unit of measure, and any cost or lead-time columns worth keeping visible. The identifier is the natural key, matched case-insensitively.
+2. **Work centers.** Identifier, how many identical machines the center really holds, default setup hours, efficiency, and an hourly rate. A bottleneck flag rides along.
+3. **Routings.** One row per operation: end part, work center, sequence number, hours per unit, setup time, queue time.
+4. **Open jobs.** Part, quantity, job reference, and due dates.
+
+## Step 2: map the columns once
+
+Name each mask after the routine, so `Weekly Realtrac Jobs` outlives `jobs-week29.csv`. Mandatory fields are flagged and the run refuses to start until they are mapped. **Unit conversion** applies a factor to a numeric column before storage, so minutes become hours with `0.016667`. **Blank-cell preservation** keeps an existing value when a cell is blank on an update run, so a partial refresh is safe, though a zero counts as a value rather than a blank.
+
+## Step 3: the routing import, and why it takes two passes
+
+Routings reference each other, step 10 feeds step 20 feeds step 30, so a row-by-row import cannot wire the links because step 20 does not exist when step 10 is written.
+
+EDGEBIC's routing import runs in two passes. Pass one validates every row, auto-creates any missing work center or part, and buffers the steps. Pass two groups the rows by end part, sorts by sequence, writes them, and wires the chain so the routing renders as one connected flow in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour). Number sequences in gaps of 10, and keep all of one part's steps in one file so re-imports stay idempotent.
+
+## Step 4: jobs in, then run the scheduler
+
+The job import maps part, quantity, reference, and due date. Imports never schedule anything: imported jobs sit as unscheduled demand until you run the scheduler, which states how many jobs are new and how many are being rescheduled before it plans. Data movement and planning stay separate on purpose.
+
+Once the data is in, the full engine applies: finite capacity across multiple shifts and machine instances, [work center groups](/blog/edgebic-work-center-groups-explained) that re-shop the machine pool on every reschedule, a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained), lot streaming, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine.
+
+## Step 5: sending dates back
+
+The return trip is Excel. The Job View grid exports the schedule as a workbook with colored cells and a legend, the work center schedule exports the same way, and every report exports to Excel or PDF using your saved layout. Revised dates go back into Realtrac through your normal job maintenance path. There is no automated write-back, which keeps your data under your control.
+
+## Test it with your own export
+
+Export this week's open jobs and a routing file, then [bring them to a demo](/contact-us). Mapping them live takes minutes. If you are comparing systems, the [JobBOSS](/blog/edgebic-jobboss-integration-guide) and [E2 / Shoptech](/blog/edgebic-e2-shoptech-integration-guide) versions follow the same method, which is the point of a universal import layer.
+
+<Accordion title="Does EDGEBIC connect to Realtrac with a native connector?">
+No. EDGEBIC reads the CSV or Excel exports Realtrac already produces through reusable import masks. Nothing is installed in Realtrac, there is no API to maintain, and there is no certified connector to version-match. You map an export's columns onto EDGEBIC fields once, and each later run is two clicks with a per-run log recording every row.
+</Accordion>
+
+<Accordion title="Realtrac already tracks routings and job status. Why add a separate scheduler?">
+Realtrac is strong at recording what each job requires and where it stands. Finite capacity sequencing is a different question: given every open job at once, which order across your machines meets the most due dates without overloading a resource. EDGEBIC answers that by modeling real machine counts, shift hours, and setups, then returns dated jobs you can feed back into Realtrac.
+</Accordion>
+
+<Accordion title="What does EDGEBIC need exported from Realtrac?">
+Four exports: parts, work centers with machine counts and setup detail, routings with operation sequence and run and setup times, and open jobs with quantities and due dates. A fifth optional export carries logged hours from the floor. Each goes through its own import mask, so you never reshape a file by hand.
+</Accordion>

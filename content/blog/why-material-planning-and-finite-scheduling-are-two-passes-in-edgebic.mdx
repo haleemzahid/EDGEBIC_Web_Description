@@ -1,0 +1,84 @@
+---
+title: "Why Material Planning and Finite Scheduling Are Two Passes in EDGEBIC"
+description: "Material planning nets demand at infinite capacity to set a need date; finite scheduling re-times it against real machines. Here is why EDGEBIC keeps the two passes distinct."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - material planning vs scheduling
+  - infinite to finite handoff
+  - finite capacity scheduling
+  - need date vs finish date
+  - planned order
+  - APS pass
+targetPhrase: "material planning vs finite scheduling"
+wordCount: 1440
+readingTime: 7
+faqQuestions:
+  - question: "Why does EDGEBIC separate material planning from finite scheduling?"
+    answer: "Because they answer different questions. Material planning nets demand against stock and incoming supply to say how many units are needed and by when, assuming capacity is unlimited. Finite scheduling then places that quantity on real machines and shifts, respecting capacity, and returns a real finish date. Keeping the passes distinct means the planning number is never quietly wrong: the second pass tests the first against reality and surfaces any slip before you commit."
+  - question: "What is the infinite-to-finite handoff?"
+    answer: "It is the point where a planning quantity with a need date becomes a scheduled build on actual capacity. Material planning produces a quantity and a need date at infinite capacity, saying build 100 by week 10. Finite scheduling takes that and allocates it across shifts and machines, saying the real finish is week 10 Wednesday on the assembly work center, or week 11 if capacity is tight. The handoff is where an idealized plan becomes an executable schedule."
+  - question: "Does EDGEBIC run a full multi-level material planning pass today?"
+    answer: "Not today. EDGEBIC nets one product at a time in the inventory calendar and hands firmed builds to the finite scheduler, which is shipped and mature. A plant-wide multi-level run that explodes a bill of materials, nets every component, and cascades requirements down the tree is on the MRP roadmap. The two-pass model is real and shipped for single-item planning plus finite scheduling; the multi-level explosion feeding the first pass is future work."
+qaQuestions:
+  - question: "Material planning says we need 100 tables by week 10. Why might the schedule show week 11?"
+    answer: "Because material planning assumes infinite capacity and the finite scheduler does not. The planning pass computed the quantity and the need date without asking whether the assembly work center is free. When the finite scheduler places the 100-unit build, it checks real capacity, and if the assembly line already has jobs in week 10, it slides the finish to week 11 and shows the slip. That is the two-pass model working as intended: the planning number set the target, and the scheduling pass told you the truth about hitting it."
+  - question: "If the planning pass ignores capacity, why bother with it at all?"
+    answer: "Because it answers the question the scheduler cannot: how much do we actually need, once stock and incoming supply are netted out. Planning strips gross demand down to a real net quantity and a need date. Scheduling then times that net quantity on real machines. Run only the scheduler and you might build more than you need, because nothing netted the demand against stock. Run only planning and you get a quantity with a date the floor may not be able to hit. You need both, in order."
+---
+
+**Material planning and finite scheduling are two separate passes because they answer two different questions.** The first pass nets demand against stock and incoming supply to decide how many units are needed and by when, assuming capacity is unlimited. The second pass places that quantity on real machines and shifts, respects capacity, and returns a real finish date. EDGEBIC by User Solutions keeps the passes distinct on purpose, so the planning number is always tested against reality before anyone commits to it. This post explains the two passes, the handoff between them, and which parts are shipped today versus on the roadmap.
+
+For the wider planning picture, see the [inventory and planning pillar](/blog/edgebic-planning-guide). For the capacity concept underneath the second pass, see [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+## Two Questions, Two Passes
+
+Planning and scheduling get conflated constantly, but they are not the same job:
+
+- **Material planning** asks: given this demand, how much do I actually need to build, and by when? It nets gross demand against on-hand and scheduled receipts, adds a safety buffer, and produces a net quantity with a need date. It does this at infinite capacity, because at this stage you are sizing demand, not fighting for machine time.
+- **Finite scheduling** asks: given this quantity and this need date, can the plant actually produce it, on which machines, across which shifts, and when does it really finish? This pass respects capacity, instances, and sequence, and returns a concrete schedule.
+
+The first pass is about quantity and timing in the abstract. The second is about reality. Collapsing them into one would either ignore capacity or skip the netting, and both mistakes are expensive.
+
+## The Handoff: Infinite to Finite
+
+The seam between the passes is where a planned quantity becomes a scheduled build. Material planning says "need 100 by week 10." Finite scheduling takes that as an input, allocates the build across the work center, and returns something concrete:
+
+```
+Assembly work center, Instance 1
+  Day shift, Monday to Wednesday of week 9
+  Start: week 9 Monday
+  Finish: week 9 Wednesday
+```
+
+The real finish lands inside the week 10 window, so the commit holds. But if the assembly line had been full, the scheduler would have slid the finish to week 10 or 11 and surfaced the miss before the order was confirmed, not after. That is the value of the handoff: the planning target is honest about quantity, and the scheduling pass is honest about whether the date is achievable.
+
+## A Worked Two-Pass Example
+
+Take a customer order for 100 tables due week 10, with 0 tables on hand.
+
+**Pass one, material planning at infinite capacity:**
+
+| Item | Gross req | On-hand | Net req | Need date |
+|---|---|---|---|---|
+| Table | 100 | 0 | 100 | Week 10 |
+
+The net requirement is 100, needed by week 10. No capacity has been considered. The netting arithmetic behind this figure is covered in [netting gross requirements to net requirements](/blog/netting-gross-requirements-to-net-requirements-in-edgebic).
+
+**Pass two, finite scheduling:** You firm the 100-unit build and the scheduler allocates it. It checks the assembly work center's shifts and instances, finds room, and returns a start and finish. If capacity were tight, the finish would slide and the slip would show. The planning pass set the target; the scheduling pass tested it.
+
+## What Is Shipped and What Is Roadmap
+
+The two-pass model is real and shipped for single-item planning plus finite scheduling. You plan a stocked product in the inventory calendar, firm the build, and the finite scheduler, a mature capability, places it on real capacity.
+
+What is on the MRP roadmap is the multi-level explosion that would feed a richer first pass: a plant-wide run that takes a top-level demand, explodes the bill of materials, nets every component and purchased part, and cascades need dates down the tree. There is no shipped regenerative multi-level run. Today the first pass nets one product at a time, which is exactly right for a single stocked item, and hands its firmed builds to the second pass. For the honest inventory of shipped versus planned, see [what EDGEBIC does today vs the MRP roadmap](/blog/what-edgebic-does-today-vs-the-mrp-roadmap) and, for the sales-driven front of the chain, [from sales order to MPS to schedule](/blog/from-sales-order-to-mps-to-schedule-in-edgebic).
+
+## Why the Order of Passes Matters
+
+The passes only work in one order: plan, then schedule. Run the scheduler alone and you might build more than you need, because nothing netted the demand against stock, so an order you could have filled from inventory gets a job on the floor. Run planning alone and you get a quantity with a need date the floor may not be able to hit, which is the classic infinite-capacity promise that falls apart in week 10.
+
+Planning strips demand down to what is genuinely needed. Scheduling times that need against real machines. EDGEBIC keeps them separate so each does its job cleanly, and so the number a planner commits to has survived both the netting and the capacity check. That is what separates an advanced planning suite from a spreadsheet that assumes every machine is always free.

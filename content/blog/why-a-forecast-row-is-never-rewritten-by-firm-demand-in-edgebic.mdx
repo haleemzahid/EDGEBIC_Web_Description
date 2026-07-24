@@ -1,0 +1,74 @@
+---
+title: "Why a Forecast Row Is Never Rewritten by Firm Demand in EDGEBIC"
+description: "In EDGEBIC a forecast row never changes when firm orders consume it. Consumption is recomputed fresh each projection, so the same forecast yields different requirements over time."
+published: 2026-08-05T12:00:00.000Z
+modified: 2026-08-05T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - forecast consumption
+  - forecast never mutated
+  - stateless projection
+  - gross requirements
+  - firm demand
+  - planning recompute
+targetPhrase: "forecast consumption"
+wordCount: 1420
+readingTime: 7
+faqQuestions:
+  - question: "Does firm demand change my forecast numbers in EDGEBIC?"
+    answer: "No. A forecast row you enter is never rewritten when firm orders arrive to consume it. Consumption is computed fresh every time the projection runs, and the result lives only in the gross-requirements figure, never back on the forecast row. The number you typed stays exactly as you typed it. This means the same forecast produces different gross requirements as firm orders come and go, because the math re-runs each time rather than baking a result into storage."
+  - question: "Why does the projection recompute instead of storing the consumed amount?"
+    answer: "Because a stored consumption figure would go stale the moment demand changed. If EDGEBIC wrote the consumed quantity back onto the forecast, every new or canceled order would require rewriting history, and any missed rewrite would leave the plan wrong. Recomputing fresh each projection keeps the forecast row a clean statement of intent and lets the consumption reflect the current firm demand exactly, with no drift and nothing to reconcile."
+  - question: "Can I edit a forecast freely without corrupting past planning?"
+    answer: "Yes. Because consumption is never baked into the forecast row, editing a forecast quantity or deleting a row changes only future projections, computed from the current numbers. There is no consumed value hiding on the row to unwind. You can revise a forecast as your read of demand improves, and the next projection simply reflects the new figure against the current firm orders. The forecast is an input you own, not a running total the system mutates."
+qaQuestions:
+  - question: "I entered a 100-unit forecast, then customers placed 130 units of firm orders. Did the extra 30 overwrite my forecast?"
+    answer: "No. Your forecast row still reads 100. Under the greater-of consumption rule, the gross requirement for that bucket is the larger of forecast and firm, which is 130, and that figure appears in the projection, not on your forecast row. If firm orders later drop to 40, the same untouched 100 forecast wins and gross requirements revert to 100. The forecast is a fixed input; the gross requirement is a fresh calculation each run."
+  - question: "We revised a weekly forecast down from 150 to 80 after the projection had already been run several times. Does the old 150 linger anywhere in the plan?"
+    answer: "No. The projection holds no memory of the old 150 or of any consumption computed against it. Once you upsert the row to 80, the next projection recomputes gross requirements from 80 against current firm demand, and nothing carries forward from the earlier runs. This is why you can correct a forecast at any time with confidence: the plan is stateless with respect to forecasts, so the latest number is the only one that counts on the next refresh."
+---
+
+**A forecast row in EDGEBIC is never rewritten when firm demand consumes it.** The number you type is a fixed input. Consumption, the reconciliation of forecast against firm orders that prevents double-counting, is computed fresh every time the projection runs, and its result lives only in the gross-requirements figure, never back on the forecast row. EDGEBIC by User Solutions treats the forecast as a clean statement of intent and recomputes everything downstream on each refresh. This post explains why that design matters to a planner and what it lets you do that a system storing consumed quantities would not.
+
+For the wider planning picture, see the [inventory and planning pillar](/blog/edgebic-planning-guide). For the two rules that govern the consumption math itself, see [greater-of versus minus-consumed consumption](/blog/greaterof-vs-minusconsumed-forecast-consumption-rules-edgebic).
+
+## The Invariant, Stated Plainly
+
+Enter a forecast of 100 units for a week. Customers then place 60 units of firm orders in that week. The forecast row still reads 100. It will always read 100 until you change it by hand. What changed is the gross requirement, the total demand the bucket must absorb, which the projection calculates fresh from both numbers.
+
+Nothing subtracts the 60 from your 100 and stores 40 on the row. Consumption happens entirely at projection time and is thrown away when the projection finishes. Run it again tomorrow and it recomputes from scratch against whatever firm orders exist then.
+
+## Why the Same Forecast Gives Different Answers
+
+Because consumption is recomputed rather than stored, the same forecast row produces different gross requirements as firm demand evolves. Under the default greater-of rule, gross requirements are the larger of forecast and firm in each bucket:
+
+| Firm orders that week | Forecast row | Gross requirement (greater-of) |
+|---|---|---|
+| 60 | 100 | 100 |
+| 130 | 100 | 130 |
+| 40 | 100 | 100 |
+
+The forecast never moves. The gross requirement tracks the current firm demand against it. When firm orders exceed the forecast, they win; when they fall short, the forecast holds the line. This is the whole point of forecast consumption: it stops you planning the same demand twice while always respecting the larger real signal.
+
+## What a Stored-Consumption Design Would Cost You
+
+Imagine the alternative, where EDGEBIC wrote the consumed quantity back onto the forecast row. Every new order would have to rewrite that row. Every canceled order would have to rewrite it back. A missed rewrite anywhere would leave the plan quietly wrong, and reconciling the stored consumption against the actual orders would become a recurring chore.
+
+Recomputing fresh sidesteps all of it. There is no consumed value to keep in sync, no history to unwind when an order changes, and no drift between what the row says and what the orders actually are. The forecast is an input; the plan is a function of the current inputs. That is what stateless means here, and it is why the design holds up as demand churns.
+
+## What This Lets You Do
+
+The practical payoff is freedom to edit. Because no consumption is baked into a forecast row, you can revise a forecast the moment your read of demand improves, and the next projection simply reflects the new number.
+
+Revise a weekly forecast down from 150 to 80 after the projection has run a dozen times, and the old 150 lingers nowhere. The next projection recomputes gross requirements from 80 against current firm demand, and every earlier run is irrelevant. Correcting a forecast never means unwinding a stored total, so you can keep your forecast honest without fear of corrupting past planning.
+
+The same freedom applies to the three forecast types, Sales, Production, and Consumption, which are additive within a bucket and each independently editable. How those types combine is covered in [the three forecast types](/blog/sales-production-and-consumption-forecast-types-in-edgebic).
+
+## The Same Discipline Runs Through the Ledger
+
+This recompute-fresh philosophy is not unique to forecasts. The authoritative on-hand for a product is the sum of an append-only ledger, recomputed rather than stored as a mutable total, and the fast on-hand number you usually read is a cache over that sum. The pattern is the same: keep the source of truth clean and immutable, and derive everything else on demand. That parallel is drawn out in [why on-hand is a cache](/blog/why-on-hand-is-a-cache-not-the-source-of-truth-in-edgebic).
+
+The lesson for a planner is simple. Your forecast is yours to set and revise. EDGEBIC will never quietly rewrite it, never hide a consumed remainder on it, and never make you reconcile it against orders. You enter intent; the system computes the plan. Every refresh starts from your latest numbers and nothing else.
