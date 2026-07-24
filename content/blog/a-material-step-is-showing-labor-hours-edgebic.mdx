@@ -1,0 +1,85 @@
+---
+title: "A Material Step Is Showing Labor Hours"
+description: "A material-only routing step is meant to be instant, with no machine and no hours. When one shows labor hours or tracked time, here is why it happens and how to clear it."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - material step labor hours
+  - material step carries hours
+  - instant material step
+  - material step no work center
+  - schedule hours on material
+  - consistency drift material
+targetPhrase: "material step labor hours"
+wordCount: 1250
+readingTime: 6
+faqQuestions:
+  - question: "Why does a material step have labor hours in EDGEBIC?"
+    answer: "A material step is meant to be instant: it represents consuming a component, not running a machine, so it should have no work center and no hours. When one shows labor hours or tracked time, a code path stamped hours onto a schedule that should have stayed material-shaped. The anomaly report's consistency check flags this specifically, because a material step with hours breaks the assumption that material consumption takes no capacity."
+  - question: "What does a correct material step look like?"
+    answer: "A correct material step carries no work center, no routing sequence link into the capacity model, and no tracked hours. It is a marker that a component is consumed at that point in the routing, and it schedules instantly with zero duration. Any labor hours, machine allocations, or non-trivial tracked-hours value on that step is the defect the anomaly check reports."
+  - question: "How do I clear labor hours from a material step?"
+    answer: "Re-run scheduling for the affected job. The engine emits material steps through a separate path that never creates machine allocations, so a fresh run regenerates the step in its correct instant shape. If the finding survives a clean reschedule, it points at a write path that stamped hours onto a material schedule, which is worth a support ticket with the anomaly detail attached."
+  - question: "Does a zero or empty tracked-hours value trigger the check?"
+    answer: "No. The consistency check treats an empty or zero tracked-hours value as harmless and does not flag it. It fires only on a genuinely non-trivial value: actual labor hours or machine allocations attached to a step that should have none. So a material step showing an empty tracked field is correct, not a finding."
+qaQuestions:
+  - question: "One of our routings has a step that just issues raw stock, and it is showing two hours of labor on the Gantt. The step has no machine assigned. What happened?"
+    answer: "That step is a material step and should be instant, so the two hours are the defect the consistency check reports. A material step has no machine and represents consuming a component, not running one, so it should carry no hours at all. Re-run scheduling for the job: the engine regenerates material steps through a path that creates no allocations, and the two hours should drop to zero. If they persist after a clean run, run the anomaly report, confirm the material-step finding, and raise it with the detail line, because a surviving value means a write path stamped hours where none belong."
+  - question: "The anomaly report flags a material step carrying hours, but the tracked field just shows empty braces. Is this a real problem?"
+    answer: "If the tracked field is empty, it should not be firing the material-step finding, because the check treats an empty or zero value as harmless. Look more closely at the row: the finding fires on either non-trivial tracked hours or actual machine allocations, so the trigger may be an allocation attached to the step rather than the tracked field you are reading. Check whether the step has resource allocations, then re-run scheduling to regenerate it in its correct instant shape."
+---
+
+**A material step is meant to be instant: it represents consuming a component, not running a machine, so it should carry no work center and no hours. When one shows labor hours or tracked time, a code path stamped hours onto a schedule that should have stayed material-shaped.** [EDGEBIC by User Solutions](/edgebic) flags this with a specific consistency check, and the fix is nearly always a fresh scheduling run.
+
+This post is part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). It explains what a correct material step looks like, why hours on one are a defect, and how to clear it.
+
+## What a Material Step Represents
+
+Not every routing step runs on a machine. A material step marks a point where a component is consumed into the job. It draws stock from the [inventory ledger](/blog/what-is-an-inventory-ledger) rather than occupying capacity, which is why it is modeled as instant: consuming a part takes no shift hours. In the scheduling model, a material step has no machine, no capacity allocation, and no tracked hours. It schedules with zero duration.
+
+That is the contract the anomaly check enforces. A material step with labor hours, machine allocations, or a non-trivial tracked-hours value has broken it.
+
+## Correct Versus Broken
+
+| Attribute | Correct material step | Broken material step |
+|---|---|---|
+| Work center | None | A machine assigned |
+| Capacity allocation | None | Hours booked on an instance |
+| Tracked hours | Empty or zero | A non-trivial value |
+| Duration | Instant | A window with real length |
+
+An empty or zero tracked-hours value is harmless and does not trigger the check. The finding fires only on a genuinely non-trivial value or real machine allocations attached to the step. So a material step showing an empty tracked field is correct, not a defect, and worth confirming before you treat it as a problem.
+
+## Why Hours on a Material Step Matter
+
+A material step that carries hours is not just cosmetic. It implies capacity was consumed where none should have been, which inflates the machine's apparent load and can distort the job's promised finish. Because [scheduling and inventory stay in step](/blog/how-a-scheduler-nets-demand-against-inventory) through these material markers, a material step that behaves like a machine step muddies both the capacity picture and the consumption picture. That is why the check treats it as a consistency problem worth surfacing rather than ignoring.
+
+## The Fix
+
+1. **Run the anomaly report for the job** and confirm the material-step finding. Its detail names the step and shows the hours or tracked value that should not be there.
+2. **Re-run scheduling for the job.** The engine emits material steps through a separate path that never creates machine allocations, so a fresh run regenerates the step in its correct instant shape.
+3. **Re-run the anomaly report.** A clean result confirms the material step is back to zero duration and no hours.
+
+If the finding survives a clean reschedule, that points at a write path stamping hours onto a material schedule, which is worth a support ticket with the anomaly detail attached. A surviving value is not something to patch by hand, because the next scheduling run would only reintroduce it if the underlying path is wrong.
+
+This sits alongside the broader family of consistency findings, where two stores that should agree disagree. For the neighboring inventory case, see [my on-hand quantity does not match the ledger](/blog/my-on-hand-quantity-does-not-match-the-inventory-ledger-edgebic). The [troubleshooting guide](/blog/edgebic-troubleshooting-guide) links the full consistency set.
+
+<Accordion title="Why does a material step have labor hours in EDGEBIC?">
+A material step is meant to be instant: it represents consuming a component, not running a machine, so it should have no work center and no hours. When one shows labor hours or tracked time, a code path stamped hours onto a schedule that should have stayed material-shaped. The anomaly report's consistency check flags this specifically, because a material step with hours breaks the assumption that material consumption takes no capacity.
+</Accordion>
+
+<Accordion title="What does a correct material step look like?">
+A correct material step carries no work center, no routing sequence link into the capacity model, and no tracked hours. It is a marker that a component is consumed at that point in the routing, and it schedules instantly with zero duration. Any labor hours, machine allocations, or non-trivial tracked-hours value on that step is the defect the anomaly check reports.
+</Accordion>
+
+<Accordion title="How do I clear labor hours from a material step?">
+Re-run scheduling for the affected job. The engine emits material steps through a separate path that never creates machine allocations, so a fresh run regenerates the step in its correct instant shape. If the finding survives a clean reschedule, it points at a write path that stamped hours onto a material schedule, which is worth a support ticket with the anomaly detail attached.
+</Accordion>
+
+<Accordion title="Does a zero or empty tracked-hours value trigger the check?">
+No. The consistency check treats an empty or zero tracked-hours value as harmless and does not flag it. It fires only on a genuinely non-trivial value: actual labor hours or machine allocations attached to a step that should have none. So a material step showing an empty tracked field is correct, not a finding.
+</Accordion>

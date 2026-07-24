@@ -1,0 +1,91 @@
+---
+title: "Slack-Based Job Sequencing"
+description: "Slack-based job sequencing runs the job with the least slack first, where slack is time until due date minus work remaining. See the minimum-slack rule with worked numbers."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - slack based sequencing
+  - minimum slack rule
+  - slack time scheduling
+  - job sequencing rules
+  - least slack first
+  - slack per operation
+targetPhrase: "slack-based job sequencing"
+wordCount: 1520
+readingTime: 8
+faqQuestions:
+  - question: "What is slack-based job sequencing?"
+    answer: "Slack-based job sequencing orders jobs by their slack, which is the time remaining until the due date minus the work still left to do, both in the same units. The minimum-slack rule runs the job with the smallest slack first, because that job has the least cushion before it turns late. Negative slack means the job is already impossible to finish on time without help, so it demands attention immediately. Slack is a difference, measured in days or hours, unlike critical ratio which is a division."
+  - question: "How do you calculate slack for a job?"
+    answer: "Slack equals working time remaining until the due date minus working time of processing still required. If a job is due in 6 working days and needs 4 working days of run time, its slack is 2 working days. If it is due in 3 days and needs 4, its slack is negative 1 day, meaning it cannot make the date on the current plan. You compute slack from fields you already keep: the order due date and the sum of remaining routing hours."
+  - question: "What is the difference between slack and critical ratio?"
+    answer: "Slack is a subtraction and critical ratio is a division of the same two numbers. Slack tells you how many days of cushion a job has in absolute terms, so 2 days of slack is 2 days whether the job is small or large. Critical ratio tells you the cushion as a proportion of the work, so it scales with job size. Slack is easier to read when you care about the raw margin; critical ratio is better when you want to compare jobs of very different sizes."
+qaQuestions:
+  - question: "One of my jobs shows negative slack. What does that actually mean?"
+    answer: "It means the due date is closer than the remaining work, so on the current finite plan the job will finish late. Negative slack is an early warning, not a failure that already happened. You still have levers: add a shift or overtime on the constraining work center, route a step to an alternate machine, split the job so part ships on time, or renegotiate the date. Slack-based sequencing surfaces the shortfall while there is still time to act, which is the whole point."
+  - question: "Should I sequence my whole shop by minimum slack every day?"
+    answer: "Slack is a strong lens for spotting the most endangered jobs, but running the entire shop strictly by minimum slack can churn the plan and scatter setups. A more stable approach is to keep the deterministic priority sort as your base, use slack to decide which jobs deserve a priority bump, and let the multi-run optimizer test alternative orderings and propose one that is guaranteed never worse than your baseline. That way slack informs the plan without whipsawing it."
+---
+
+**Slack-based job sequencing orders jobs by their slack, the time remaining until the due date minus the work still left to finish, and runs the job with the least slack first.** Slack is a cushion measured in days or hours: a job due in 6 working days that needs 4 days of work has 2 days of slack. The minimum-slack rule says the smallest cushion is the most urgent, and a negative cushion is an alarm because the job cannot make its date on the current plan without intervention. EDGEBIC by User Solutions gives you the two inputs slack needs (the due date and the remaining routing hours) and lets its optimizer test a slack-aware ordering against your standard plan.
+
+## Slack is a subtraction, not a ratio
+
+The formula is one line:
+
+```
+Slack = working time until due date  -  working time of work remaining
+```
+
+Both terms are measured the same way, usually in working days that respect your shift calendar and holidays. Positive slack is margin. Zero slack means the job is running with no cushion at all. Negative slack means the deadline is already inside the workload, so something has to change or the job ships late.
+
+This makes slack the close cousin of [critical ratio](/blog/critical-ratio-scheduling-explained), which divides those same two numbers instead of subtracting them. The difference is not academic. Slack reports the raw cushion, so 2 days of slack reads as 2 days no matter how large the job is. Critical ratio reports the cushion as a fraction of the work, so it scales with job size. Planners reach for slack when they want the plain "how many days of margin does this have," and reach for critical ratio when comparing a two-hour job against a two-week job on the same axis.
+
+## The minimum-slack rule in a finite plan
+
+Sequencing only matters because capacity is finite. When a machine can run one job at a time, the order you feed it decides who is late. The minimum-slack rule spends contested machine time on the job with the least room to absorb a delay, and lets jobs with a comfortable cushion wait their turn. That is the same instinct behind [finite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling): honor the constraint, then decide the sequence that best protects your promises.
+
+A refinement worth knowing is slack per remaining operation. Divide a job's total slack by the number of operations still to run, and you get a per-step cushion that accounts for how many more chances there are for something to go wrong. A job with 4 days of slack and one step left is safer than a job with 4 days of slack and eight steps left, because the eight-step job has eight more places to lose time. The per-operation view sharpens the ranking on multi-step routings.
+
+## A worked example
+
+Four jobs want the same grinder on Monday. Working days are counted from Monday morning.
+
+| Job | Due (working days out) | Work remaining (days) | Slack (days) |
+|---|---|---|---|
+| MO-410 | 5 | 3.0 | +2.0 |
+| MO-411 | 4 | 4.5 | -0.5 |
+| MO-412 | 8 | 5.0 | +3.0 |
+| MO-413 | 3 | 3.0 | 0.0 |
+
+Minimum-slack sequence runs **MO-411 first** (slack -0.5, already short), then **MO-413** (0.0, no cushion), then **MO-410** (+2.0), then **MO-412** (+3.0). The rule immediately flags MO-411: its 4.5 days of work will not fit into 4 days, so on the current plan it is late by half a day. That is a signal to act now, not a surprise on Thursday.
+
+Compare this to a plain [earliest due date sort](/blog/priority-rules-job-shop), which would run MO-413 (due day 3) before MO-411 (due day 4) and hide the fact that MO-411 is the one actually in trouble. Slack corrects the order by looking at the workload, not just the date.
+
+## How EDGEBIC uses slack
+
+The standard engine sorts deterministically by priority, then start date, then due date, which keeps runs reproducible; the detail is in [how a scheduler decides which job runs first](/blog/how-a-scheduler-decides-which-job-runs-first). Slack is not the default sort key, and there is good reason for that: sequencing the whole shop strictly by minimum slack can churn the plan day to day and split apart similar setups.
+
+Instead, use slack two ways. First, as a diagnostic. Compute slack from the due date and the remaining routing hours to find the endangered jobs, then raise the priority integer or pull in the start date on those specific orders so the deterministic sort moves them up. Second, through the optimizer. The multi-run search evaluates several complete orderings, scores each finished schedule, and proposes the best one, guaranteed never worse than the baseline and applied only when you accept it. A slack-aware sequence is exactly the kind of candidate the optimizer can weigh against your current plan; the [optimizer guide](/blog/edgebic-optimizer-guide) walks through how proposals are scored and clamped.
+
+## Negative slack is a to-do list, not a verdict
+
+The most useful thing slack does is turn a vague worry into a countable shortfall. When a job shows negative slack, you know exactly how much you are short and can pick a remedy: add overtime or a shift on the constraining work center, route a step to an [alternate machine](/blog/how-a-scheduler-chooses-between-alternate-machines), split the job so part ships on time, or move the date with the customer. Each of those buys back slack, and you can see the number climb back toward zero after you make the change and re-run the plan.
+
+That feedback loop is why slack earns its place in a planner's toolkit even when it is not the primary sort. It converts the abstract question "are we going to be late" into a specific one with a number attached, early enough to do something about it. Try computing slack against your live orders in [EDGEBIC](/edgebic), and see where sequencing sits in the full pipeline in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+<Accordion title="What is slack-based job sequencing?">
+Slack-based job sequencing orders jobs by their slack, which is the time remaining until the due date minus the work still left to do, both in the same units. The minimum-slack rule runs the job with the smallest slack first, because that job has the least cushion before it turns late. Negative slack means the job is already impossible to finish on time without help, so it demands attention immediately. Slack is a difference, measured in days or hours, unlike critical ratio which is a division.
+</Accordion>
+
+<Accordion title="How do you calculate slack for a job?">
+Slack equals working time remaining until the due date minus working time of processing still required. If a job is due in 6 working days and needs 4 working days of run time, its slack is 2 working days. If it is due in 3 days and needs 4, its slack is negative 1 day, meaning it cannot make the date on the current plan. You compute slack from fields you already keep: the order due date and the sum of remaining routing hours.
+</Accordion>
+
+<Accordion title="What is the difference between slack and critical ratio?">
+Slack is a subtraction and critical ratio is a division of the same two numbers. Slack tells you how many days of cushion a job has in absolute terms, so 2 days of slack is 2 days whether the job is small or large. Critical ratio tells you the cushion as a proportion of the work, so it scales with job size. Slack is easier to read when you care about the raw margin; critical ratio is better when you want to compare jobs of very different sizes.
+</Accordion>

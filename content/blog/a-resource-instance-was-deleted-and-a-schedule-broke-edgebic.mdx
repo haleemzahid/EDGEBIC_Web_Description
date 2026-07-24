@@ -1,0 +1,85 @@
+---
+title: "A Deleted Machine Instance Left a Schedule Broken"
+description: "When a schedule row points at a machine instance that no longer exists, the Gantt and capacity reports cannot resolve it. Here is why it happens and the two ways to clear it."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - deleted machine instance schedule
+  - orphan instance booking
+  - schedule references missing instance
+  - resource instance deleted
+  - gantt cannot resolve instance
+  - reschedule to pick valid instance
+targetPhrase: "deleted machine instance schedule"
+wordCount: 1270
+readingTime: 6
+faqQuestions:
+  - question: "What happens when I delete a machine instance that has schedules on it?"
+    answer: "The schedule rows keep pointing at the deleted instance, so the Gantt and capacity reports cannot resolve its name or its allocations. The anomaly report flags this as an orphan instance booking and treats it as Critical, because downstream views rely on the instance record to draw bars and total capacity. Deleting an instance does not move the work off it, so the booking is left dangling until you restore the instance or re-run scheduling."
+  - question: "How do I fix an orphan instance booking?"
+    answer: "Two ways. Restore the deleted instance if it was removed by mistake, which reconnects the existing schedule rows to a real record. Or re-run scheduling for the affected jobs, which lets the engine allocate them to a live instance and abandon the dead reference. Restoring is quickest if the instance should still exist; rescheduling is right if the instance is genuinely gone and the work should move to another."
+  - question: "Why is an orphan instance booking treated as Critical?"
+    answer: "Because the Gantt and the capacity reports look up instance names and allocations by the instance record. When the record is gone, those views cannot render the machine's timeline or total its load correctly, so the schedule is not just untidy but unusable in the places planners rely on. Critical findings are the ones the health target holds at zero, and this is one of them."
+  - question: "Does deleting an instance move its jobs to another machine?"
+    answer: "No. Deleting an instance removes the record but leaves any schedule rows that referenced it pointing at nothing. The work is not reassigned automatically. If you need to retire an instance, re-run scheduling for its jobs first so the engine moves them to a live instance, or restore the instance so its bookings resolve again. Deleting first and rescheduling later leaves a window where the bookings are orphaned."
+qaQuestions:
+  - question: "We retired an old machine unit and deleted its instance. Now the Gantt shows blank bars and the capacity report for that work center looks wrong. How do I recover?"
+    answer: "The blank bars and wrong totals are the orphan instance bookings: schedule rows still pointing at the deleted unit. Run the anomaly report and look for the orphan instance finding, which names the work center and the missing instance number. The clean fix is to re-run scheduling for the jobs that were on that unit, which moves them to a live instance and drops the dead reference. If you would rather keep the existing bookings intact, restore the deleted instance instead. Either resolves the blank bars once the report shows the finding cleared."
+  - question: "The anomaly report says an instance number is not in the machine's instance list, but the number looks familiar. Could it belong to a different machine?"
+    answer: "It can, and that is exactly why the check pairs the work center with the instance number rather than checking the number alone. An instance number that exists on a different machine still counts as an orphan on the machine whose schedule references it, because the two are keyed together. Restore or recreate the instance on the correct machine, or re-run scheduling so the engine picks a valid instance that actually belongs to that work center."
+---
+
+**When a schedule row points at a machine instance that no longer exists, the Gantt and capacity reports cannot resolve its name or its allocations, and the anomaly report flags it as a Critical orphan instance booking.** Deleting an instance does not move the work off it, so the booking is left dangling. [EDGEBIC by User Solutions](/edgebic) names the exact machine and missing instance, and the fix is either to restore the instance or to reschedule.
+
+This post is part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). It explains why the deletion breaks the schedule, why the finding is Critical, and the two clean ways to recover.
+
+## Why the Deletion Breaks Things
+
+A machine can have several instances, one per physical unit. Every schedule row that runs on that machine records which instance it used, and the Gantt and capacity reports look up the instance record to draw the timeline and total the load.
+
+When you delete an instance, its schedule rows do not go with it. They keep pointing at a record that is no longer there. The Gantt tries to resolve the instance name and finds nothing, so bars render blank. The capacity report tries to total the instance's allocations and cannot, so the machine's load reads wrong. The work was never reassigned; it is simply pointing at a gap.
+
+## Why It Is Critical
+
+The anomaly report's orphan instance check fires when a schedule row references an instance that is not in the machine's current instance list. It treats this as Critical, and for a reason: the affected views are the ones planners depend on most. A Gantt that cannot draw a machine's bars and a capacity report that cannot total its load are not merely untidy, they are unusable in exactly the places you would go to understand the schedule. The production health target holds Critical findings at zero, and this is one of them. To confirm the finding, [what is a scheduling anomaly](/blog/what-is-a-scheduling-anomaly) covers how these checks classify severity.
+
+## The Check Pairs Machine and Instance
+
+One detail saves confusion. The check keys the finding by the machine together with the instance number, not by the number alone. An instance number that still exists on a different machine will still count as an orphan on the machine whose schedule references it. So a familiar-looking number in the finding does not mean the reference is fine; it means the instance the schedule expected is not on that machine anymore.
+
+## The Two Fixes
+
+| Fix | When to use it | What it does |
+|---|---|---|
+| Restore the instance | The instance was deleted by mistake and should still exist | Reconnects the existing schedule rows to a real record |
+| Re-run scheduling | The instance is genuinely retired and the work should move | Lets the engine allocate the jobs to a live instance and drop the dead reference |
+
+**To restore:** recreate the instance on the correct machine. The existing bookings resolve again immediately, and the Gantt and capacity reports render correctly on the next read.
+
+**To reschedule:** re-run scheduling for the jobs that were on the deleted instance. The engine allocates them to a live instance and abandons the orphaned reference. This is the right path when the physical unit is gone for good.
+
+## Retire Instances in the Right Order
+
+The deeper lesson is about sequence. Deleting an instance and rescheduling later leaves a window where its bookings are orphaned and the reports are wrong. Reverse it: re-run scheduling for the instance's jobs first, so the engine moves them to a live instance, then delete the retired instance once nothing references it. Setting up and retiring machine units cleanly is covered in the [work center setup guide](/blog/how-to-set-up-work-centers-in-edgebic).
+
+This sits next to the [double-booking symptom](/blog/the-same-machine-is-double-booked-across-two-jobs-edgebic), which is the opposite failure: two jobs on one instance rather than a job on no instance. Both come back to the instance being the unit the engine allocates against. The [troubleshooting guide](/blog/edgebic-troubleshooting-guide) links the neighboring instance checks.
+
+<Accordion title="What happens when I delete a machine instance that has schedules on it?">
+The schedule rows keep pointing at the deleted instance, so the Gantt and capacity reports cannot resolve its name or its allocations. The anomaly report flags this as an orphan instance booking and treats it as Critical, because downstream views rely on the instance record to draw bars and total capacity. Deleting an instance does not move the work off it, so the booking is left dangling until you restore the instance or re-run scheduling.
+</Accordion>
+
+<Accordion title="How do I fix an orphan instance booking?">
+Two ways. Restore the deleted instance if it was removed by mistake, which reconnects the existing schedule rows to a real record. Or re-run scheduling for the affected jobs, which lets the engine allocate them to a live instance and abandon the dead reference. Restoring is quickest if the instance should still exist; rescheduling is right if the instance is genuinely gone and the work should move to another.
+</Accordion>
+
+<Accordion title="Why is an orphan instance booking treated as Critical?">
+Because the Gantt and the capacity reports look up instance names and allocations by the instance record. When the record is gone, those views cannot render the machine's timeline or total its load correctly, so the schedule is not just untidy but unusable in the places planners rely on. Critical findings are the ones the health target holds at zero, and this is one of them.
+</Accordion>
+
+<Accordion title="Does deleting an instance move its jobs to another machine?">
+No. Deleting an instance removes the record but leaves any schedule rows that referenced it pointing at nothing. The work is not reassigned automatically. If you need to retire an instance, re-run scheduling for its jobs first so the engine moves them to a live instance, or restore the instance so its bookings resolve again. Deleting first and rescheduling later leaves a window where the bookings are orphaned.
+</Accordion>

@@ -1,0 +1,146 @@
+---
+title: "EDGEBIC + Odoo: The Complete Scheduling Integration Guide"
+description: "Odoo production scheduling integration with EDGEBIC step by step: export products, work centers, operations and manufacturing orders, map columns once, schedule at finite capacity."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - Odoo production scheduling integration
+  - Odoo finite capacity scheduling
+  - Odoo MRP scheduling add-on
+  - EDGEBIC Odoo integration
+  - Odoo work order scheduling
+  - import mask ERP integration
+  - Odoo shop floor scheduling
+targetPhrase: "Odoo production scheduling integration"
+wordCount: 2060
+readingTime: 10
+faqQuestions:
+  - question: "Does EDGEBIC have a certified Odoo connector or app?"
+    answer: "No, and that is a deliberate design choice. EDGEBIC integrates with Odoo through reusable Excel, CSV, and database import masks rather than a certified app or connector. You map the columns of an Odoo export once, and every later run is two clicks. Nothing is installed inside Odoo, no module is added, and no interface object joins your ERP's upgrade path."
+  - question: "What Odoo data does EDGEBIC need to build a finite capacity schedule?"
+    answer: "Four exports carry a complete scheduling model: products, work centers, operations or routings with run and setup times, and open manufacturing orders with quantities and dates. A fifth optional export carries work order time logs from the floor. Odoo's manufacturing module holds all four natively, so each one exports and maps cleanly, and every row returns as Created, Updated, Reused, or Failed."
+  - question: "Odoo already plans work orders. Why add EDGEBIC?"
+    answer: "Odoo plans work orders against a calendar and a rough capacity, but it does not sequence every open order against real machine counts, changeover sequences, and operator skills at once. EDGEBIC does exactly that, taking the products, work centers, operations, and orders Odoo already holds and building a finite capacity schedule with a proven optimality gap. Odoo stays the system of record; EDGEBIC adds the constraint modeling."
+  - question: "How do finite capacity dates get back into Odoo?"
+    answer: "Through Excel and whatever date field your manufacturing order process already uses. The Job View grid exports the job schedule as a workbook with colored cells and a legend sheet, and every report exports to Excel or PDF with the column layout you saved. There is no automated write-back, which is deliberate: changes to Odoo records stay inside your existing process."
+qaQuestions:
+  - question: "Our Odoo operations quote a duration per work order, not hours per unit. How does that map to EDGEBIC?"
+    answer: "It maps, but you decide how to express the time so the engine can scale it with quantity. EDGEBIC's routing field is hours required per unit, because that is what lets it re-time an operation when an order is for 50 pieces instead of 500. If your Odoo export gives a total operation duration for a reference quantity, put a conversion factor on that mask column so it divides down to per-unit: a 250-minute operation for a batch of 100 becomes 0.041667 hours per piece with a factor that combines the minutes-to-hours and per-100 conversions. If some operations are genuinely fixed regardless of quantity, model that portion as setup time, which the engine adds once per run rather than per piece. The factors are saved with the mask, so every future export converts identically."
+  - question: "We run one Odoo database across two plants using two manufacturing operation types. Should EDGEBIC be one database or two?"
+    answer: "Split by scheduling decision, not by Odoo structure. If the two plants share machines, share operators, or hand work to each other, keep them in one EDGEBIC database and use departments to group each plant's work centers, because the engine can only balance load across resources it can see. If each plant plans independently and never borrows capacity, two databases keep each planner's screen focused and each import file small. Odoo's own multi-company or multi-warehouse split does not have to dictate the EDGEBIC split, because the interface is a file: you can filter the export by plant either way and the masks read whatever rows they are given."
+---
+
+**Integrating Odoo with EDGEBIC means exporting the products, work centers, operations, and open manufacturing orders Odoo already holds to Excel or CSV, mapping those columns once with a reusable import mask, and letting EDGEBIC schedule the work against finite capacity: real shift hours, real machine counts, and sequence-dependent setups.** Because Odoo's manufacturing module carries all four data types natively, every export has a clean source. Executable dates then export back for your team and your customers. There is no module installed inside Odoo and no certified connector to maintain through an upgrade.
+
+EDGEBIC by User Solutions is the newest generation of a scheduling line that has integrated with business systems this way since 1991. Across 35+ years the same file-based approach has fed schedules for the US Navy, GE, BAE Systems, and Cummins, including Cummins scheduling across 33 locations from AS400-era data. This guide covers the Odoo case specifically: what to export, how the masks work, what the engine does with the result, and what a realistic first two weeks looks like.
+
+## Where Odoo stops and detailed scheduling starts
+
+Odoo is a capable ERP: products, bills of material, work centers, operations, manufacturing orders, purchasing, and accounting all live there and should stay there. Odoo even plans work orders against a work center calendar. The gap most Odoo plants report is in the questions a planner answers every morning that capacity planning alone cannot:
+
+- Which of these open manufacturing orders actually fits on the constraint work center this week?
+- If the expedite jumps the queue, which confirmed dates slip and by how much?
+- Is the CNC cell loaded to 85 percent or 145 percent next Tuesday, once changeover sequence is counted?
+
+Those are finite capacity questions. Answering them means sequencing every open order against real machine instances, changeover matrices, and operator skills at the same time, which is a different computation from Odoo's work order planning. That is why a dedicated scheduling layer beside the ERP is the standard pattern. The general argument is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling), and the wider product comparison is on the [RMDB versus Odoo page](/compare-products/rmdb-vs-odoo).
+
+## The integration in one table
+
+The [EDGEBIC ERP integration architecture](/edgebic-erp-integration) is identical for every ERP, Odoo included:
+
+| Direction | Data | How it moves |
+|---|---|---|
+| Odoo to EDGEBIC | Products | Excel or CSV export to Product import mask |
+| Odoo to EDGEBIC | Work centers | Export to Workcenter import mask |
+| Odoo to EDGEBIC | Operations / routings | Export to BOR (bill of routing) import mask, two-pass |
+| Odoo to EDGEBIC | Open manufacturing orders | Export to SalesOrder import mask |
+| Odoo to EDGEBIC | Work order time logs (optional) | Export to Actuals import mask |
+| EDGEBIC to Odoo | Executable start and end dates, dispatch lists | Excel export from Job View and reports |
+
+An **import mask** is a saved recipe. It remembers which kind of data you are importing, what format it arrives in (an Excel workbook, or comma, semicolon, tab, or space delimited text), whether the first row carries headings, and how each column of your file maps onto an EDGEBIC field. You build it once by dragging your file's column headings onto EDGEBIC's target fields. Every run after that is two clicks: pick the mask, press Do It.
+
+Every row in your file produces exactly one outcome: **Created**, **Updated**, **Reused** (found and deliberately left alone), or **Failed** (rejected, with the reason recorded). A result dialog shows the counts and a per-run log file records every row. Nothing half-imports silently.
+
+## Step 1: the four exports
+
+Odoo's manufacturing module carries everything a schedule needs. Four exports carry a complete model, and Odoo's built-in list export to XLSX handles all of them.
+
+1. **Products.** The product identifier, description, unit of measure, and any cost or lead-time columns you want visible. The identifier is the natural key and matching is case-insensitive, so `PUMP-A` in the file finds `Pump-A` in the database.
+2. **Work centers.** The work center identifier, how many identical machines it holds, default setup hours, efficiency, and an hourly rate if you want cost rollups.
+3. **Operations.** One row per operation: end product, work center, sequence number, hours per unit, setup time, queue time.
+4. **Open manufacturing orders.** Product, quantity, order reference, and dates.
+
+Any list view in Odoo that exports to XLSX or CSV is a valid source. You are not writing a custom module, not touching the database directly, and not asking for a new interface. The file is the interface, which is exactly why nothing here enters your ERP's upgrade path.
+
+## Step 2: map the columns once
+
+Build one mask per file. Name it after the routine rather than the file: `Weekly Odoo Manufacturing Orders` outlives `mo-week32.xlsx`. Mandatory fields are flagged in the mask editor, and the run refuses to start until they are mapped, so a half-built mask fails before it reads a single row.
+
+Two mask features carry most of the weight in an Odoo integration:
+
+**Unit conversion.** ERPs and schedulers disagree about units constantly. Set a conversion factor on any numeric column and the multiplication happens before the value is stored. Minutes to hours is `0.016667`. Seconds to hours is `0.000278`. A duration quoted per batch of 100 pieces becomes per piece with `0.01`. Different columns in one file can carry different factors, so an operations export mixing per-batch run times with per-changeover setup minutes lands correctly in one run.
+
+**Blank-cell preservation.** On an update run, a blank cell keeps the existing value instead of wiping it. A file carrying only product identifier and price refreshes prices and touches nothing else. Note the matching rule: a zero is a value, not a blank, so leave a column out rather than filling it with zeros you do not mean.
+
+## Step 3: the operations import, and why it takes two passes
+
+Operations are the hardest data to move between systems because they reference each other: step 10 feeds step 20 feeds step 30. A naive row-by-row import cannot wire those links, because step 20 does not exist yet when step 10 is written.
+
+EDGEBIC's routing import therefore runs in **two passes**. Pass one reads and validates every row, auto-creates any work center or product the file names that does not exist yet, and buffers the steps. Pass two groups the buffered rows by end product, sorts them by sequence number, writes them, and then wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished product so the routing renders as one connected flow in the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour).
+
+Three conventions save time later:
+
+- **Number sequences in gaps of 10.** When engineering inserts a deburr step next quarter it becomes 25 and nothing renumbers.
+- **Keep all of one product's steps in one file.** A routing import wipes and recreates that product's steps once per run, which is what makes re-imports idempotent. Splitting one product across two runs means the second run's wipe deletes the first run's steps.
+- **Re-importing is safe for running orders.** Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing change applies to future jobs and leaves work in progress untouched.
+
+## Step 4: orders in, then run the scheduler
+
+The order import maps product, quantity, reference, and dates. When your export carries an order reference, rows sharing that reference group under one sales order and their jobs auto-number as `{Ref}-{line}`, which keeps a multi-line order together instead of scattering it.
+
+One rule matters more than any other: **imports never schedule anything.** After the run, imported orders sit as unscheduled demand. You then run the scheduler, which states its scope before it plans (how many jobs are new and how many existing jobs are being rescheduled), and the new work slots around everything already committed on the floor. Data movement and planning stay separate on purpose, so an import can never silently rearrange a plant. The modes are covered in [EDGEBIC scheduling modes explained](/blog/edgebic-scheduling-modes-explained).
+
+Once the data is in, the whole engine applies to your Odoo work: finite capacity across multiple shifts and machine instances, [work center groups that re-shop the machine pool on every reschedule](/blog/edgebic-work-center-groups-explained), a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained), lot streaming with transfer batches, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine.
+
+## Step 5: sending executable dates back
+
+The return trip is Excel. The Job View grid exports the job schedule as a workbook with colored cells and a legend sheet. The work center schedule exports the same way, and every report dialog exports to Excel or PDF using the column layout you saved, which turns a dispatch list into a saved report rather than a document someone rebuilds each morning.
+
+From there, revised dates go back into Odoo through whatever date field your manufacturing order process already uses. There is no automated write-back, which is deliberate: your ERP data stays under your team's control and inside your existing process. The category framing is on the [ERP scheduling add-on page](/erp-scheduling-add-on).
+
+## A realistic first two weeks
+
+The method behind this guide has a documented benchmark in the User Solutions lineage: at Plastilite Corporation the ERP vendor itself recommended User Solutions scheduling, and the team went from first export to a complete optimized schedule with ERP integration in 5 days. An Odoo estate with clean operations data often moves at that pace, because all four exports come out of the manufacturing module natively.
+
+| Days | Work |
+|---|---|
+| 1 to 2 | Export products and work centers; build and run those two masks; verify counts against Odoo |
+| 3 to 4 | Export operations; build the routing mask with unit conversions; import and review the routing designer |
+| 5 | Export open manufacturing orders; import; run the first full finite capacity schedule |
+| 6 to 8 | Compare EDGEBIC dates to current promises; correct instance counts, shifts, and setups where reality disagrees |
+| 9 to 10 | Lock the weekly rhythm: saved masks, import order, scheduler run, exports back |
+
+If you are starting from an empty database, the [green-field setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough) covers the sequence in detail, and the [Odoo to EDGEBIC data mapping reference](/blog/odoo-to-edgebic-data-mapping-reference) is the field-level lookup you keep open while building masks.
+
+## Prove it with your own export
+
+The fastest evaluation is not a feature list, it is your own file. Export this week's open manufacturing orders and an operations file, then [bring them to a demo](/contact-us). Mapping them live takes minutes, and you leave having watched your own plant scheduled against its own capacity. Shops weighing several systems can also read the [QuickBooks](/blog/edgebic-quickbooks-integration-guide) and [Syteline / CloudSuite Industrial](/blog/edgebic-syteline-integration-guide) versions of this guide: the method is identical, which is the point.
+
+<Accordion title="Does EDGEBIC have a certified Odoo connector or app?">
+No, and that is a deliberate design choice. EDGEBIC integrates with Odoo through reusable Excel, CSV, and database import masks rather than a certified app or connector. You map the columns of an Odoo export once, and every later run is two clicks. Nothing is installed inside Odoo, no module is added, and no interface object joins your ERP's upgrade path.
+</Accordion>
+
+<Accordion title="What Odoo data does EDGEBIC need to build a finite capacity schedule?">
+Four exports carry a complete scheduling model: products, work centers, operations or routings with run and setup times, and open manufacturing orders with quantities and dates. A fifth optional export carries work order time logs from the floor. Odoo's manufacturing module holds all four natively, so each one exports and maps cleanly, and every row returns as Created, Updated, Reused, or Failed.
+</Accordion>
+
+<Accordion title="Odoo already plans work orders. Why add EDGEBIC?">
+Odoo plans work orders against a calendar and a rough capacity, but it does not sequence every open order against real machine counts, changeover sequences, and operator skills at once. EDGEBIC does exactly that, taking the products, work centers, operations, and orders Odoo already holds and building a finite capacity schedule with a proven optimality gap. Odoo stays the system of record; EDGEBIC adds the constraint modeling.
+</Accordion>
+
+<Accordion title="How do finite capacity dates get back into Odoo?">
+Through Excel and whatever date field your manufacturing order process already uses. The Job View grid exports the job schedule as a workbook with colored cells and a legend sheet, and every report exports to Excel or PDF with the column layout you saved. There is no automated write-back, which is deliberate: changes to Odoo records stay inside your existing process.
+</Accordion>

@@ -1,0 +1,139 @@
+---
+title: "EDGEBIC + QuickBooks: The Complete Scheduling Integration Guide"
+description: "QuickBooks production scheduling integration with EDGEBIC step by step: export items and open orders, build routings once, schedule at finite capacity, send dates back."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - QuickBooks production scheduling integration
+  - QuickBooks finite capacity scheduling
+  - QuickBooks manufacturing scheduling
+  - EDGEBIC QuickBooks integration
+  - QuickBooks routing scheduling
+  - import mask ERP integration
+  - QuickBooks shop floor scheduling
+targetPhrase: "QuickBooks production scheduling integration"
+wordCount: 2040
+readingTime: 10
+faqQuestions:
+  - question: "Does EDGEBIC have a certified QuickBooks connector?"
+    answer: "No, and that is a deliberate design choice. EDGEBIC integrates with QuickBooks through reusable Excel, CSV, and database import masks rather than a certified connector. You map the columns of a QuickBooks export once, and every later run is two clicks. Nothing is installed inside QuickBooks, no add-in enters your company file, and no interface object joins your ERP's upgrade path."
+  - question: "QuickBooks does not hold routings or work centers. Can EDGEBIC still schedule my jobs?"
+    answer: "Yes, and this is the normal case. QuickBooks stays the book of record for items, customers, and orders, and it exports those cleanly. The routing model that QuickBooks does not carry (work centers, operation sequence, run and setup times) is built once inside EDGEBIC in the graphical routing designer, or imported from a spreadsheet you write. Every future order for that item then reuses the routing automatically."
+  - question: "Will adding EDGEBIC change how QuickBooks is used?"
+    answer: "No. QuickBooks stays the system of record for items, invoicing, purchasing, and financials. EDGEBIC reads exports, builds a finite capacity schedule against real shifts and machine counts, and hands dates and dispatch lists back as Excel files. Order entry, assembly builds, and accounting keep running exactly as they do today, so no QuickBooks process has to be redesigned."
+  - question: "How do finite capacity dates get back into QuickBooks?"
+    answer: "Through Excel and whatever date field your order process already uses. The Job View grid exports the job schedule as a workbook with colored cells and a legend sheet, and every report exports to Excel or PDF with the column layout you saved. There is no automated write-back, which is deliberate: changes to QuickBooks records stay inside your team's existing process."
+qaQuestions:
+  - question: "We run QuickBooks Enterprise with assemblies but no operation-level routing at all. How much setup does EDGEBIC need before the first schedule?"
+    answer: "Plan on building the routing model once, because that is the part QuickBooks does not hold. Your item list and open sales orders export straight from QuickBooks and map in minutes. The work centers and the operation sequence with run and setup times per unit are new data, but you write them one time: either in the graphical routing designer inside EDGEBIC or in a routing spreadsheet with one row per operation that imports through the BOR mask. Number the sequence in gaps of 10 so inserting a step later does not renumber the chain. Once a routing exists for an item, every future QuickBooks order for that item reuses it, so the one-time build pays off on every reschedule after that."
+  - question: "Our QuickBooks item names sometimes carry a size suffix and sometimes do not. Will that create duplicate products in EDGEBIC?"
+    answer: "It can, and it is the one mismatch that case-insensitive matching does not rescue. Natural-key lookups ignore case, so PUMP-A and pump-a resolve to the same product, but PUMP-A and PUMP-A-2IN are genuinely different strings and become two records. The fix is on the export side: decide on one canonical identifier per item and make every QuickBooks export render it the same way. Run a quick distinct-values check across your item file and your routing file before the first import, because a mismatch caught then costs minutes, while the same mismatch caught after routings load means a routing chain pointing at a product with no demand."
+---
+
+**Integrating QuickBooks with EDGEBIC means exporting the items, customers, and open orders QuickBooks already holds to Excel or CSV, mapping those columns once with a reusable import mask, and letting EDGEBIC schedule the work against finite capacity: real shift hours, real machine counts, and sequence-dependent setups.** Because QuickBooks is an accounting system rather than a manufacturing one, the routing model (work centers, operation sequence, run and setup times) is built once inside EDGEBIC and reused on every order after that. Executable dates then export back for your team and your customers. There is no add-in inside the company file and no certified connector to maintain through an upgrade.
+
+EDGEBIC by User Solutions is the newest generation of a scheduling line that has integrated with business systems this way since 1991. Across 35+ years the same file-based approach has fed schedules for the US Navy, GE, BAE Systems, and Cummins, including Cummins scheduling across 33 locations from AS400-era data. This guide covers the QuickBooks case specifically: what to export, where the routing model comes from, what the engine does with the result, and what a realistic first two weeks looks like.
+
+## Where QuickBooks stops and detailed scheduling starts
+
+QuickBooks is very good at being the book of record. Items, invoicing, purchase orders, customer balances, and financial reporting all belong there and should stay there. QuickBooks Enterprise even carries inventory assemblies with a bill of materials. What it does not carry is the manufacturing layer a planner needs every morning:
+
+- Which of these open orders actually fits on the constraint machine this week?
+- If the rush job jumps the queue, which promised dates slip and by how much?
+- Is the CNC cell loaded to 80 percent or 140 percent next Tuesday?
+
+Those are finite capacity questions, and answering them means modeling shifts, machine instances, changeover sequences, and operator skills against every open order at once. QuickBooks has no work-center or operation concept to answer them with, which is exactly why a dedicated scheduling layer beside it is the standard pattern. The general argument is in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling), and the wider comparison of the two products is on the [RMDB versus QuickBooks page](/compare-products/rmdb-vs-quickbooks).
+
+## The integration in one table
+
+The [EDGEBIC ERP integration architecture](/edgebic-erp-integration) is identical for every system, QuickBooks included:
+
+| Direction | Data | How it moves |
+|---|---|---|
+| QuickBooks to EDGEBIC | Items | Excel or CSV export to Product import mask |
+| EDGEBIC (built once) | Work centers | Entered in EDGEBIC or via Workcenter import mask |
+| EDGEBIC (built once) | Routings / operations | Graphical designer, or BOR (bill of routing) import mask, two-pass |
+| QuickBooks to EDGEBIC | Open sales or work orders | Export to SalesOrder import mask |
+| Floor to EDGEBIC | Confirmed hours (optional) | Export to Actuals import mask |
+| EDGEBIC to QuickBooks | Executable start and end dates, dispatch lists | Excel export from Job View and reports |
+
+An **import mask** is a saved recipe. It remembers which kind of data you are importing, what format it arrives in (an Excel workbook, or comma, semicolon, tab, or space delimited text), whether the first row carries headings, and how each column of your file maps onto an EDGEBIC field. You build it once by dragging your file's column headings onto EDGEBIC's target fields. Every run after that is two clicks: pick the mask, press Do It.
+
+Every row in your file produces exactly one outcome: **Created**, **Updated**, **Reused** (found and deliberately left alone), or **Failed** (rejected, with the reason recorded). A result dialog shows the counts and a per-run log file records every row. Nothing half-imports silently.
+
+## Step 1: export items and open orders from QuickBooks
+
+Two exports carry everything QuickBooks can contribute to a schedule.
+
+1. **Items.** The item name or number, description, unit of measure, and any cost or price columns you want visible. The identifier is the natural key and matching is case-insensitive, so `PUMP-A` in the file finds `Pump-A` in the database.
+2. **Open sales or work orders.** Item, quantity, order reference, and dates. In QuickBooks Enterprise these come from the open sales order report or the assembly build list, whichever your process uses.
+
+Any report or list in QuickBooks that saves to Excel or CSV is a valid source. You are not writing an add-in, not touching the company file directly, and not asking anyone for a new interface. The file is the interface, which is why nothing here enters your accounting system.
+
+## Step 2: build the routing model once
+
+This is the step that is different for QuickBooks, because the routing data does not exist in the ERP. You supply it one time, and you have two clean options:
+
+- **Draw it.** In the [graphical routing designer](/blog/edgebic-graphical-bor-designer-tour) you place each operation on a work center, set hours per unit and setup time, and connect the steps in order. Best for a handful of products or when engineering wants to see the flow.
+- **Import it from a spreadsheet.** Write one row per operation (end product, work center, sequence number, hours per unit, setup time) and load it through the BOR mask. Best for dozens or hundreds of routings you can lay out in Excel.
+
+Either way, number sequences in gaps of 10 so inserting a deburr step next quarter becomes 25 and nothing renumbers. Work centers are entered the same two ways: typed in directly, or loaded from a small spreadsheet that carries the field that matters most, `Number_Of_Instances`, the count of identical machines each center holds.
+
+## Step 3: why the routing import takes two passes
+
+Routings are the hardest data to build because operations reference each other: step 10 feeds step 20 feeds step 30. A naive row-by-row import cannot wire those links, because step 20 does not exist yet when step 10 is written.
+
+EDGEBIC's routing import therefore runs in **two passes**. Pass one reads and validates every row, auto-creates any work center or product the file names that does not exist yet, and buffers the steps. Pass two groups the buffered rows by end product, sorts them by sequence number, writes them, and then wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished product so the routing renders as one connected flow.
+
+Two conventions save time later. Keep all of one product's steps in one file, because a routing import wipes and recreates that product's steps once per run, which is what makes re-imports idempotent. And re-importing is safe for running orders, because every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing change applies to future jobs and leaves work in progress untouched.
+
+## Step 4: orders in, then run the scheduler
+
+The order import maps item, quantity, reference, and dates. When your export carries an order reference, rows sharing that reference group under one sales order and their jobs auto-number as `{Ref}-{line}`, which keeps a multi-line order together instead of scattering it.
+
+One rule matters more than any other: **imports never schedule anything.** After the run, imported orders sit as unscheduled demand. You then run the scheduler, which states its scope before it plans (how many jobs are new and how many existing jobs are being rescheduled), and the new work slots around everything already committed on the floor. Data movement and planning stay separate on purpose, so an import can never silently rearrange a plant. The modes are covered in [EDGEBIC scheduling modes explained](/blog/edgebic-scheduling-modes-explained).
+
+Once the data is in, the whole engine applies to your QuickBooks work: finite capacity across multiple shifts and machine instances, [work center groups that re-shop the machine pool on every reschedule](/blog/edgebic-work-center-groups-explained), a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained), lot streaming with transfer batches, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine.
+
+## Step 5: sending executable dates back
+
+The return trip is Excel. The Job View grid exports the job schedule as a workbook with colored cells and a legend sheet. The work center schedule exports the same way, and every report dialog exports to Excel or PDF using the column layout you saved, which turns a dispatch list into a saved report rather than a document someone rebuilds each morning.
+
+From there, revised dates go back into QuickBooks through whatever date field your order process already uses. There is no automated write-back, which is deliberate: your accounting data stays under your team's control and inside your existing process. The category framing for this split is on the [ERP scheduling add-on page](/erp-scheduling-add-on).
+
+## A realistic first two weeks
+
+The method behind this guide has a documented benchmark in the User Solutions lineage: at Plastilite Corporation the ERP vendor itself recommended User Solutions scheduling, and the team went from first export to a complete optimized schedule with ERP integration in 5 days. QuickBooks shops usually spend the extra runway on the routing build rather than on the exports, because the item and order files are trivial to map.
+
+| Days | Work |
+|---|---|
+| 1 to 2 | Export items and open orders; build and run those two masks; verify counts against QuickBooks |
+| 3 to 5 | Build work centers and routings (drawn or imported); review the routing designer |
+| 6 | Run the first full finite capacity schedule |
+| 7 to 9 | Compare EDGEBIC dates to your current promises; correct instance counts, shifts, and setups where reality disagrees |
+| 10 | Lock the weekly rhythm: saved masks, import order, scheduler run, exports back |
+
+If you are starting from an empty database, the [green-field setup walkthrough](/blog/edgebic-greenfield-setup-walkthrough) covers the sequence in detail, and the [QuickBooks to EDGEBIC data mapping reference](/blog/quickbooks-to-edgebic-data-mapping-reference) is the field-level lookup you keep open while building masks.
+
+## Prove it with your own export
+
+The fastest evaluation is not a feature list, it is your own file. Export this week's open orders and your item list, then [bring them to a demo](/contact-us). Mapping them live takes minutes, and once one routing exists you leave having watched your own plant scheduled against its own capacity. Shops weighing several systems can also read the [Fishbowl](/blog/edgebic-fishbowl-integration-guide) and [Odoo](/blog/edgebic-odoo-integration-guide) versions of this guide: the method is identical, which is the point.
+
+<Accordion title="Does EDGEBIC have a certified QuickBooks connector?">
+No, and that is a deliberate design choice. EDGEBIC integrates with QuickBooks through reusable Excel, CSV, and database import masks rather than a certified connector. You map the columns of a QuickBooks export once, and every later run is two clicks. Nothing is installed inside QuickBooks, no add-in enters your company file, and no interface object joins your ERP's upgrade path.
+</Accordion>
+
+<Accordion title="QuickBooks does not hold routings or work centers. Can EDGEBIC still schedule my jobs?">
+Yes, and this is the normal case. QuickBooks stays the book of record for items, customers, and orders, and it exports those cleanly. The routing model that QuickBooks does not carry (work centers, operation sequence, run and setup times) is built once inside EDGEBIC in the graphical routing designer, or imported from a spreadsheet you write. Every future order for that item then reuses the routing automatically.
+</Accordion>
+
+<Accordion title="Will adding EDGEBIC change how QuickBooks is used?">
+No. QuickBooks stays the system of record for items, invoicing, purchasing, and financials. EDGEBIC reads exports, builds a finite capacity schedule against real shifts and machine counts, and hands dates and dispatch lists back as Excel files. Order entry, assembly builds, and accounting keep running exactly as they do today, so no QuickBooks process has to be redesigned.
+</Accordion>
+
+<Accordion title="How do finite capacity dates get back into QuickBooks?">
+Through Excel and whatever date field your order process already uses. The Job View grid exports the job schedule as a workbook with colored cells and a legend sheet, and every report exports to Excel or PDF with the column layout you saved. There is no automated write-back, which is deliberate: changes to QuickBooks records stay inside your team's existing process.
+</Accordion>

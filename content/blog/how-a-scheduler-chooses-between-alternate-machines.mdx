@@ -1,0 +1,95 @@
+---
+title: "How a Scheduler Chooses Between Alternate Machines"
+description: "When a step can run on more than one machine, the scheduler picks by strategy: earliest completion, primary first, or earliest start, adjusted by each machine's speed factor. See the logic with numbers."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - alternate machine selection
+  - alternate work center
+  - speed factor scheduling
+  - earliest completion strategy
+  - machine selection logic
+  - finite capacity scheduling
+targetPhrase: "choosing between alternate machines"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "How does a scheduler choose between two alternate machines?"
+    answer: "When a routing step lists more than one machine that can run it, the scheduler evaluates each candidate and picks one by a selection strategy. The default strategy is earliest completion: it computes when each machine would actually finish the step, accounting for that machine's current load and its speed factor, and chooses the one that finishes soonest. Other strategies favor the primary machine first, or the machine that can start soonest. Each candidate's run time is adjusted by its own speed factor before the comparison."
+  - question: "What is a speed factor on an alternate work center?"
+    answer: "A speed factor is a multiplier that adjusts a step's run time for a particular alternate machine. A factor of 1.0 means the alternate runs the step in the same time as the primary. A factor of 1.2 means it takes 20 percent longer, and 0.8 means it runs 20 percent faster. The scheduler multiplies the base run hours by the factor to get that machine's real run time, so a slower alternate is correctly penalized when the engine compares completion times."
+  - question: "Does the scheduler always pick the fastest alternate machine?"
+    answer: "Not necessarily, because fastest run time is not the same as earliest completion. A faster machine that is fully booked for three days will finish later than a slightly slower machine that is free now. The default earliest-completion strategy weighs both the speed factor and the current load, so it often picks an available slower machine over a busy faster one. If you want the primary machine preferred whenever it has capacity, the primary-first strategy does that instead."
+qaQuestions:
+  - question: "My faster machine is idle but the scheduler put the job on the slower one. Why?"
+    answer: "Check the selection strategy and the two machines' load at the moment the step needed to start. Under earliest completion, the engine picks the machine that finishes soonest given current bookings, so if the faster machine was booked when the step became eligible and the slower one was free, the slower one wins because it completes earlier overall. If you would rather always prefer a specific machine when it has room, switch that step's group or alternate to a primary-first strategy so the preferred machine gets first refusal."
+  - question: "I set an alternate with a 0.8 speed factor but it barely gets used. Is the factor working?"
+    answer: "The factor is applied to run time, but selection also weighs load and setup, so a fast alternate that is heavily loaded or carries a big changeover may still lose on completion time. Confirm the base hours and the factor are set as you intend, then check the alternate's load on the days the step runs. A 0.8 factor makes the machine faster per part, but it cannot overcome a full queue. If you want it used more, free its capacity or prefer it explicitly with a primary-first strategy."
+---
+
+**When a routing step can run on more than one machine, the scheduler evaluates each candidate and picks one by a selection strategy, adjusting each machine's run time by its own speed factor before it compares them.** The default strategy is earliest completion: the engine computes when each machine would actually finish the step, given that machine's current load and speed, and chooses the one that finishes soonest. Other strategies prefer the primary machine first, or the machine that can start soonest. The key insight is that fastest is not the same as soonest, because a fast machine that is fully booked finishes later than a free slower one. EDGEBIC by User Solutions makes this choice explicit and configurable per step.
+
+## The three things the scheduler weighs
+
+Choosing between [alternate work centers](/blog/what-is-a-true-alternate-work-center) is not a coin flip. The engine weighs three factors for each candidate machine.
+
+**Speed factor.** Each alternate carries a multiplier on the step's run time. A factor of 1.0 matches the primary; 1.2 means 20 percent slower; 0.8 means 20 percent faster. The engine multiplies the base run hours by this factor, so a slower machine is correctly penalized in the comparison. How to set this is covered in [how to set a true alternate with a speed factor](/blog/how-to-set-a-true-alternate-with-a-speed-factor-in-edgebic).
+
+**Current load.** A machine that is already booked cannot start the step until its queue clears. The engine knows each candidate's real availability, so a faster machine buried under three days of work is not treated as if it were free.
+
+**Setup.** A changeover the candidate machine needs adds to its total time. Setup is applied to whichever machine actually runs the step, so a machine that needs a long setup for this job is less attractive than one already configured for it.
+
+The strategy then decides how these combine into a single choice.
+
+## The selection strategies
+
+The engine offers a small set of strategies, and you pick the one that matches how you want the step routed.
+
+**Earliest completion** is the default and usually the right one. For each candidate, the engine works out when the step would finish, folding in the speed factor, the current load, and any setup, then picks the machine that completes soonest. This is the strategy that correctly prefers a free slower machine over a busy fast one, because it optimizes for when the work is actually done, not for raw machine speed.
+
+**Primary first** prefers the designated primary machine whenever it has capacity, and only spills to an alternate when the primary cannot take the step. Use this when you have a preferred machine for quality or cost reasons and want alternates treated strictly as overflow.
+
+**Earliest start** picks the machine that can begin the step soonest, which favors getting the job moving over finishing it soonest. It is useful when starting early unblocks downstream work, though note it evaluates start time at day granularity, so a machine that can start today beats one that can only start tomorrow even if the second would finish sooner.
+
+## A worked example
+
+A step needs 10 base hours. Two machines can run it:
+
+| Machine | Speed factor | Adjusted run time | Free from |
+|---|---|---|---|
+| Mill-1 (primary) | 1.0 | 10.0 h | booked until day 3 |
+| Mill-2 (alternate) | 1.2 | 12.0 h | free now (day 0) |
+
+Mill-2 is slower per part, but it is available now. Under **earliest completion**, the engine compares finish times. Mill-1 cannot start until day 3, then runs 10 hours, finishing partway through day 4. Mill-2 starts on day 0 and runs 12 hours, finishing partway through day 2. Mill-2 finishes almost two days earlier despite being the slower machine, so earliest completion picks Mill-2.
+
+Under **primary first**, the engine would wait for Mill-1 because it has capacity within the search window, accepting the later finish to keep the job on the preferred machine. Under **earliest start**, Mill-2 wins outright because it can begin immediately.
+
+Same two machines, three different answers, each correct for its strategy. This is why "fastest machine" is the wrong mental model: the engine optimizes the goal you chose, and for most shops that goal is finishing soonest, which weighs availability as heavily as speed.
+
+## Why this beats a manual choice
+
+Picking the machine by hand means holding all three factors in your head for every contested step, every run, as loads shift. That is exactly the kind of bookkeeping a finite engine does better than a person. Because the engine tracks every machine's real availability, it can spot that the slower alternate finishes sooner today and route accordingly, then reverse that decision tomorrow when the loads change. That is the same reason [the same routing schedules differently each day](/blog/why-the-same-routing-schedules-differently-each-day): the best alternate depends on the state of the whole plan, not on a fixed preference.
+
+There is also a related but distinct choice: whether to model your interchangeable machines as separate alternates on each step or as a shared pool the engine picks from automatically. That decision is covered in [when to use a machine pool vs an alternate work center](/blog/when-to-use-a-machine-pool-vs-an-alternate-work-center). A pool applies the same selection logic across a set of members, with each member carrying its own speed factor, so the machine-choice mechanics described here apply either way.
+
+## Getting the choice you want
+
+If the engine keeps picking a machine you did not expect, walk the three factors in order. First, confirm the speed factors are set correctly, since a wrong factor silently biases every comparison. Second, check each candidate's load on the days the step runs, because availability often decides the winner more than speed does. Third, check the strategy: if you want a specific machine preferred whenever it has room, primary first gives it first refusal, while earliest completion will keep routing to whichever machine finishes soonest.
+
+Used well, alternate-machine selection is one of the strongest levers for absorbing load. When a preferred machine is swamped, the engine quietly reroutes to a free alternate and keeps the plan on track, then routes back when capacity returns. See which alternates your steps are using, and why, in [EDGEBIC](/edgebic), and read the full placement logic in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+<Accordion title="How does a scheduler choose between two alternate machines?">
+When a routing step lists more than one machine that can run it, the scheduler evaluates each candidate and picks one by a selection strategy. The default strategy is earliest completion: it computes when each machine would actually finish the step, accounting for that machine's current load and its speed factor, and chooses the one that finishes soonest. Other strategies favor the primary machine first, or the machine that can start soonest. Each candidate's run time is adjusted by its own speed factor before the comparison.
+</Accordion>
+
+<Accordion title="What is a speed factor on an alternate work center?">
+A speed factor is a multiplier that adjusts a step's run time for a particular alternate machine. A factor of 1.0 means the alternate runs the step in the same time as the primary. A factor of 1.2 means it takes 20 percent longer, and 0.8 means it runs 20 percent faster. The scheduler multiplies the base run hours by the factor to get that machine's real run time, so a slower alternate is correctly penalized when the engine compares completion times.
+</Accordion>
+
+<Accordion title="Does the scheduler always pick the fastest alternate machine?">
+Not necessarily, because fastest run time is not the same as earliest completion. A faster machine that is fully booked for three days will finish later than a slightly slower machine that is free now. The default earliest-completion strategy weighs both the speed factor and the current load, so it often picks an available slower machine over a busy faster one. If you want the primary machine preferred whenever it has capacity, the primary-first strategy does that instead.
+</Accordion>

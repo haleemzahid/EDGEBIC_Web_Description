@@ -1,0 +1,92 @@
+---
+title: "A Setup Family Change Did Not Take Effect"
+description: "You reassigned a product's setup family or edited a family changeover cell, but the schedule still charges the old setup time. Here are the four documented causes and how to fix each."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - setup family change no effect
+  - setup matrix not applied
+  - setup source bor default
+  - family changeover ignored
+  - setup family missing inactive
+  - sequence dependent setup not working
+targetPhrase: "setup family change no effect"
+wordCount: 1340
+readingTime: 7
+faqQuestions:
+  - question: "Why did my setup family change not change the schedule?"
+    answer: "Four documented causes: the product points at a family that is missing or inactive, the matrix cell references a deleted product or work center, no matrix cell matches the actual changeover so the engine used the routing default, or scheduling was not re-run after the change. The setup-source column on each schedule row tells you which path the engine took, so you can see immediately whether the family matrix was consulted at all."
+  - question: "How do I tell whether the setup matrix was used for a step?"
+    answer: "Add the setup-source and setup-reason columns to the Job View grid. Setup-source shows which resolver level applied: a matrix product cell, a matrix family cell, the routing default, or the work center default. Setup-reason spells out the changeover in words, such as a family changeover of a named number of minutes. If setup-source reads as the routing default when you expected a family match, the family lookup found nothing."
+  - question: "Why does the engine fall back to the routing default setup?"
+    answer: "The resolver falls back when no matrix cell matches the specific from-product-to-product or from-family-to-family changeover for that work center. It also falls back when the product's family reference no longer resolves to an active family, so the family-level lookup finds nothing to match. In both cases the engine uses the routing step's own setup time, which is the correct safe default when the matrix cannot answer."
+  - question: "Do I have to re-run scheduling after editing a setup family?"
+    answer: "Yes. Setup times are resolved and stamped onto schedule rows at scheduling time. Editing a family assignment or a matrix cell changes the master data but does not retroactively rewrite schedules that already exist. Re-run scheduling for the affected jobs, then check the setup-source column to confirm the new family cell was applied."
+qaQuestions:
+  - question: "I moved three products into a new Dark Colors family and added a Light to Dark cell of 45 minutes, but the jobs still show 30 minutes of setup. Where do I look?"
+    answer: "Check the setup-source column on those schedule rows first. If it reads as the routing default, the family cell was not matched. The two likely reasons: you have not re-run scheduling since the change, so the rows still carry the old resolved value, or the products' family reference is not resolving to an active family. Re-run scheduling and re-check. If it still shows the routing default afterward, run the full anomaly scan and look for the product-assigned-to-missing-family check and the stale-cell check, which name the exact broken reference."
+  - question: "The anomaly report flags a matrix cell that references a work center I deleted last month. Is that why my changeover time is wrong?"
+    answer: "It can be, indirectly. A cell that references a deleted work center, product, or family can never be reached by the engine, so the changeover it was meant to charge silently falls through to the routing default. The schedule is not wrong in the sense of being invalid, but it is not charging the setup you intended. Delete the stale cell or repoint it at the current active work center, then re-run scheduling so the correct cell is consulted."
+---
+
+**A setup family change fails to take effect for one of four documented reasons: the product points at a missing or inactive family, a matrix cell references a deleted entity, no cell matches the actual changeover so the engine used the routing default, or scheduling was never re-run.** The setup-source column on each schedule row tells you which path the engine took, so you can diagnose this in seconds rather than guessing. [EDGEBIC by User Solutions](/edgebic) records the reason for every changeover charge.
+
+This post belongs to the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). It covers the resolver's fallback chain, the anomaly checks that catch broken references, and the fix for each cause.
+
+## First, Read the Setup Source
+
+Before changing anything, find out what the engine actually did. Each schedule row carries a [setup source](/blog/what-is-a-setup-source-in-scheduling): a short code that names which level of the resolver supplied the setup time. Add the setup-source and setup-reason columns to the Job View grid, and the answer is on the row.
+
+| Setup source reads | Meaning |
+|---|---|
+| A matrix product cell | A product-to-product cell matched and was applied |
+| A matrix family cell | A family-to-family cell matched and was applied |
+| The routing default | No matrix cell matched, so the step's own setup time was used |
+| The work center default | The routing carried no setup, so the machine default applied |
+
+If you expected a family cell and the row reads as the routing default, the family lookup found nothing. That single observation splits the problem into its real causes.
+
+## The Resolution Chain
+
+EDGEBIC resolves setup time through a fixed order, most specific first. A product-level matrix cell beats a family-level cell, a family cell beats the routing default, and the routing default beats the machine default. [How EDGEBIC resolves setup time through the five-level chain](/blog/how-edgebic-resolves-setup-time-the-five-level-chain) walks the full order. The point for this symptom: the engine drops to the routing default whenever the more specific levels cannot answer, and it does so silently. That is the safe behavior, but it is also why a broken family reference produces no error, just an unexpected time.
+
+## The Four Causes and Their Fixes
+
+**1. Scheduling was not re-run.** Setup times are stamped onto schedule rows at scheduling time. Editing a family assignment or a matrix cell changes master data only. Re-run scheduling for the affected jobs, then re-read the setup-source column. This is the most common cause and the cheapest to rule out, so check it first.
+
+**2. The product's family reference is missing or inactive.** If a product points at a [setup family](/blog/what-is-a-setup-family-sequence-dependent-changeover) that was deleted or deactivated, the family-level lookup finds nothing and the engine falls to the routing default. The anomaly report's product-assigned-to-missing-family check names the exact product and family. Fix: reassign the product to an active family, or clear the family field, then re-run scheduling.
+
+**3. A matrix cell references a deleted entity.** A cell that points at a deleted work center, product, or family can never be reached, so its changeover silently falls through. The anomaly report's stale-cell check lists exactly which reference is broken. Fix: delete the stale cell or repoint it at the current active entity, then re-run scheduling.
+
+**4. No cell matches the actual changeover.** If you added a Light-to-Dark cell but the previous job on the machine was in a third family, no cell matches and the routing default applies correctly. This is not a bug: it means the matrix has a gap for that specific transition. Fix: add the cell for the changeover you actually observed, using the previous job's real product or family.
+
+## Confirm the Fix
+
+After any of these repairs:
+
+1. Re-run scheduling for the affected jobs.
+2. Re-read the setup-source column. It should now show a family or product matrix cell.
+3. Read the setup-reason column to confirm the number matches the cell you configured.
+4. For a configuration audit, run the full anomaly scan and confirm the setup-matrix checks are clean.
+
+If the setup-source still reads as the routing default after all four causes are ruled out, the matrix data may not be loaded for that run at all. That is the deeper case behind [the setup matrix is not being applied](/blog/the-setup-matrix-is-not-being-applied-edgebic), a sibling worth reading. For the mirror symptom of a wrong-looking time, see [setup time looks wrong on a job](/blog/setup-time-looks-wrong-on-a-job-edgebic). The [troubleshooting guide](/blog/edgebic-troubleshooting-guide) collects the full setup-matrix set.
+
+<Accordion title="Why did my setup family change not change the schedule?">
+Four documented causes: the product points at a family that is missing or inactive, the matrix cell references a deleted product or work center, no matrix cell matches the actual changeover so the engine used the routing default, or scheduling was not re-run after the change. The setup-source column on each schedule row tells you which path the engine took, so you can see immediately whether the family matrix was consulted at all.
+</Accordion>
+
+<Accordion title="How do I tell whether the setup matrix was used for a step?">
+Add the setup-source and setup-reason columns to the Job View grid. Setup-source shows which resolver level applied: a matrix product cell, a matrix family cell, the routing default, or the work center default. Setup-reason spells out the changeover in words, such as a family changeover of a named number of minutes. If setup-source reads as the routing default when you expected a family match, the family lookup found nothing.
+</Accordion>
+
+<Accordion title="Why does the engine fall back to the routing default setup?">
+The resolver falls back when no matrix cell matches the specific from-product-to-product or from-family-to-family changeover for that work center. It also falls back when the product's family reference no longer resolves to an active family, so the family-level lookup finds nothing to match. In both cases the engine uses the routing step's own setup time, which is the correct safe default when the matrix cannot answer.
+</Accordion>
+
+<Accordion title="Do I have to re-run scheduling after editing a setup family?">
+Yes. Setup times are resolved and stamped onto schedule rows at scheduling time. Editing a family assignment or a matrix cell changes the master data but does not retroactively rewrite schedules that already exist. Re-run scheduling for the affected jobs, then check the setup-source column to confirm the new family cell was applied.
+</Accordion>

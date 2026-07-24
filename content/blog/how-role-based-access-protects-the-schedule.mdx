@@ -1,0 +1,76 @@
+---
+title: "How Role-Based Access Protects the Schedule"
+description: "How role-based access protects the schedule: the permission-role-user model, why access is additive, and how hidden controls and an audit trail keep the plan trustworthy."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Admin & Deployment
+author: user-solutions
+cluster: edgebic-admin
+pillarSlug: edgebic-admin-guide
+keywords:
+  - role-based access scheduling
+  - permission role user model
+  - protect production schedule
+  - least privilege scheduling
+  - security audit trail
+  - schedule integrity
+targetPhrase: "role-based access scheduling"
+wordCount: 1600
+readingTime: 8
+faqQuestions:
+  - question: "How does role-based access protect a production schedule?"
+    answer: "It limits who can change what and records who changed it. A permission is one atomic right, a role bundles permissions, and a user holds roles, so a person only sees and clicks what their roles allow. A supervisor who should not regenerate the schedule simply does not see that control. Every security-relevant action is written to an append-only audit trail, so changes map to people. Together, limited access plus an accountable record keep the plan from drifting through untracked edits."
+  - question: "Why is access additive in a role-based model?"
+    answer: "Because a user's capabilities are the union of their roles' permissions, so adding a second role only ever grants more, never less. This makes access predictable: you cannot accidentally remove a right by assigning another role. To give someone less, you assign a narrower role rather than layering a deny on top. Additive access means an administrator reasons about what a role includes, not about how overlapping grants and denies cancel out."
+  - question: "Can you give one planner fewer rights than another with the same job?"
+    answer: "Yes, by creating a narrower role and assigning that, because permissions come only through roles. There is no per-user override that grants or denies a single right on top of a role. If one planner should not delete records, you build a role like Planner without delete and assign it to that person. This keeps the model clean: access is always explained by the roles a user holds, never by a hidden per-user exception."
+qaQuestions:
+  - question: "Our shop floor leads need to see the schedule and log actuals but must never regenerate it. How do we set that up?"
+    answer: "Build a role that grants viewing the schedule and logging actuals but omits the permission to run the scheduler, then assign that role to the leads. Because a person can only see and click what their roles allow, the regenerate control is simply not present for them, so there is no way to trigger it by accident. Their actuals still flow in and the plan updates when a planner reschedules, but the authority to rebuild the schedule stays with the planners. If a lead later needs more, add the specific permission to their role rather than handing them a broad one."
+  - question: "Someone changed a due date and no one knows who. Does role-based access help after the fact?"
+    answer: "It helps two ways. Going forward, tightening the role so only the right people hold the permission to change due dates limits who could do it at all. And the security audit trail already records security-relevant actions in an append-only record inside the database, tied to individual accounts, which is exactly why shared logins are a mistake: one account per person is what makes the record point at someone. There is no in-app screen to browse the trail yet, so your administrator or support queries the database record when a question like this arrives."
+---
+
+**Role-based access protects the schedule by limiting who can change what and recording who changed it: a permission is one atomic right, a role bundles permissions, a user holds roles, and every security-relevant action is written to an append-only audit trail.** In [EDGEBIC by User Solutions](/edgebic) a planner sees and clicks only what their roles allow, so the controls that could disturb a trusted plan are simply absent for people who should not use them, and the actions that are allowed map to named accounts. This post explains how that model keeps a schedule dependable.
+
+Access control is one part of the administrator's job. For the full reference, read the [EDGEBIC admin guide](/blog/edgebic-admin-guide), and for the concept on its own, see [EDGEBIC users and roles explained](/blog/edgebic-users-and-roles-explained). This post is about the why: how the model protects schedule integrity. It names controls that live in Settings, never any internal path.
+
+## The Model: Permission, Role, User
+
+The access model has three deliberately simple pieces. A permission is one atomic right, such as viewing work centers, generating schedules, or deleting customers. A role is a named bundle of permissions, such as Planner or Shop Floor Supervisor. A user holds one or more roles. What a signed-in person can do is the union of their roles' permissions.
+
+That union is the first protection. Because capabilities add up across roles and never subtract, access is predictable: assigning a second role can only grant more, so an administrator reasons about what a role includes rather than about how overlapping grants and denies might cancel. To give someone less, you assign a narrower role, not a per-user deny, because permissions come only through roles. There is no per-user override screen layering exceptions on top. Access is always explained by the roles a person holds, which keeps the model auditable in the plainest sense: you can read a user's roles and know exactly what they can do.
+
+Two records are protected so the model cannot be locked out of itself. The founding administrator account and the built-in Administrator role cannot be deleted, and the Administrator role always holds every permission, including new ones added by product updates. That guarantees someone can always administer the system.
+
+## Hidden Controls, Not Just Disabled Ones
+
+The protection is not a warning that fires after a bad click. Screens and buttons a user lacks permission for are hidden or refused, including the entire Settings area and the security screens themselves. A control that is not present cannot be triggered by accident, by muscle memory, or by curiosity.
+
+This is what keeps a trusted schedule from drifting through untracked edits. Give shop floor leads a role that views the schedule and logs actuals but omits the permission to run the scheduler, and the regenerate control is simply not there for them. Their actuals still flow in, the plan still updates when a planner reschedules, but the authority to rebuild the schedule stays where it belongs. The same logic protects master data: a role without delete rights cannot remove a work center or a customer that a live plan depends on.
+
+Least privilege is the guiding habit. Build roles that start narrow and add a specific permission when someone genuinely hits a wall, which is far easier than granting broadly and clawing rights back. A schedule is protected not by trusting everyone to be careful, but by ensuring the controls that matter are only in the hands that should hold them. Set this up in [how to set up users and roles](/blog/how-to-set-up-users-and-roles-in-edgebic).
+
+## Accountability: The Audit Trail
+
+Limiting access is half the protection; recording action is the other half. Every security-relevant event (sign-ins, failed attempts, lockouts, user and role changes, permission denials) is written permanently to an append-only audit trail inside the database. Append-only means entries are added, never edited or removed, so the record of who did what stands.
+
+That record is why one account per person matters, and why shared logins undermine the whole model. The audit trail only means something when an action maps to an individual: a due-date change tied to a named account is accountability, while the same change under a shared "planner" login is a dead end. Deactivating a departed user rather than deleting the account preserves that history, so the trail stays complete even as people come and go.
+
+One honest limit belongs here. There is no in-app screen to browse the audit trail yet. It exists as a record inside the database that an administrator or support queries when a compliance or forensic question arrives. So the trail is a durable record you can rely on after the fact, not a live dashboard you watch. Planning for that means keeping accounts one-per-person and knowing the record is there when you need it.
+
+## Two Behaviors That Come On From Day One
+
+Two protections are active from first launch, before any role is built. Account lockout stops five consecutive wrong passwords from continuing: the account locks for fifteen minutes, and the error message never reveals whether the username exists, so a guesser learns nothing. An administrator can clear a lock immediately with the Unlock control. And the password policy requires, by default, at least eight characters with an uppercase letter, a lowercase letter, and a digit.
+
+Neither is about the schedule directly, but both protect the accounts that the schedule's access model rests on. A compromised account is a bypass of every role you built, so the sign-in itself is part of the protection.
+
+## A Worked Example: Locking Down Reschedule Authority
+
+Consider a plant where too many people could regenerate the schedule, and the plan kept shifting under the planners. The fix is entirely in the role model.
+
+Build a Planner role that includes running the scheduler, editing jobs, and accepting optimizer proposals. Build a Supervisor role that includes viewing the schedule, logging actuals, and running reports, but omits the permission to run the scheduler and omits delete rights on master data. Assign planners the Planner role and floor leads the Supervisor role. Immediately, the regenerate control disappears for the leads: it is hidden, not merely discouraged. Actuals still flow from the floor, and the plan updates only when a planner reschedules.
+
+Now suppose a lead genuinely needs to change a due date during a shift. Rather than handing them the Planner role, add just the due-date permission to the Supervisor role, or create a narrower role for the one person. Access grows by the specific right, not by a broad grant, and the audit trail records the due-date changes against that person's account from then on. The schedule is protected by exactly who can touch it, and every touch is accountable.
+
+Role-based access is, in the end, two guarantees working together: the controls that can disturb a trusted plan are only in the right hands, and every action that is allowed maps to a person. For the wider deployment this sits inside, read [planning a multi-user rollout](/blog/planning-a-multi-user-edgebic-rollout), and for the full administrator reference, the [EDGEBIC admin guide](/blog/edgebic-admin-guide).

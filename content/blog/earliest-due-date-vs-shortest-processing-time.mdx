@@ -1,0 +1,91 @@
+---
+title: "Earliest Due Date vs Shortest Processing Time"
+description: "Earliest due date protects deadlines, shortest processing time maximizes throughput. Compare the two dispatch rules with worked numbers and see when each one wins."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - earliest due date vs shortest processing time
+  - EDD vs SPT
+  - dispatch rules comparison
+  - shortest processing time rule
+  - earliest due date rule
+  - job sequencing rules
+targetPhrase: "earliest due date vs shortest processing time"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "What is the difference between earliest due date and shortest processing time?"
+    answer: "Earliest due date (EDD) sequences jobs by their promised delivery date, running the job due soonest first, which minimizes how late the worst job gets. Shortest processing time (SPT) sequences jobs by how long each one takes to run, running the quickest job first, which minimizes average time in the system and clears the most jobs fastest. EDD protects deadlines; SPT protects flow and throughput. They frequently disagree, because the job due soonest is often not the job that runs quickest."
+  - question: "When should you use shortest processing time?"
+    answer: "Use shortest processing time when the goal is throughput and short average lead time rather than hitting specific dates, for example clearing a backlog, keeping a downstream machine fed, or reducing work-in-process on a bottleneck. SPT provably minimizes the average time jobs spend in the system on a single machine. Its weakness is that big jobs can wait a long time behind a stream of small ones, so a large order with a firm date can turn late while quick jobs keep jumping ahead."
+  - question: "Does shortest processing time cause long jobs to be starved?"
+    answer: "Yes, that is the known failure mode of pure shortest processing time. Because the rule always favors the quickest available job, a large job can sit at the back of the queue indefinitely while small jobs keep arriving and running first. This is called starvation. The usual fix is to blend SPT with a due-date guardrail, so any job that crosses a lateness threshold gets pulled forward regardless of its size, which is exactly the kind of trade-off an optimizer can weigh."
+qaQuestions:
+  - question: "My throughput looks great but two big customer orders keep shipping late. What is happening?"
+    answer: "That is the classic signature of shortest-processing-time sequencing. Running quick jobs first maximizes the count of jobs finished and average flow time looks excellent, but a couple of large orders get repeatedly bumped by the stream of small ones and slide past their dates. If those dates matter more than raw throughput, shift toward earliest due date for the endangered orders, or let the optimizer test a mixed ordering and propose one that protects the dates while keeping most of the throughput gain."
+  - question: "Can I get the throughput of SPT and the on-time performance of EDD at the same time?"
+    answer: "Partly, and that is exactly why the multi-run optimizer exists. It runs the engine under several complete orderings including earliest due date and shortest processing time, scores each finished schedule against your objective, and proposes the best one, guaranteed never worse than your baseline. You often land on a blended sequence that keeps most of SPT's flow benefit while pulling the few date-critical jobs forward the way EDD would. You accept the proposal or discard it; nothing changes without you."
+---
+
+**Earliest due date sequences jobs by their promised date and runs the one due soonest first, while shortest processing time sequences by run length and runs the quickest job first.** EDD minimizes how late the worst job gets, so it protects deadlines. SPT minimizes average time in the system, so it protects throughput and flow. The two rules frequently disagree, because the job due soonest is rarely the job that runs fastest, and choosing between them is really a choice about which cost you fear more: a missed date or a clogged shop. EDGEBIC by User Solutions lets its optimizer evaluate both orderings against your own plan so you can see the trade-off in real numbers rather than argue it in the abstract.
+
+## What each rule optimizes
+
+These are the two most studied [dispatch rules](/blog/priority-rules-job-shop) in scheduling, and each has a clean mathematical property on a single machine.
+
+**Earliest due date (EDD)** sorts by the due date, ascending. Run the job due soonest, then the next, and so on. On a single machine, EDD minimizes maximum lateness: it makes the worst-late job as un-late as possible. If your pain is the one order that blows its date by a week, EDD is the rule that shrinks that worst case.
+
+**Shortest processing time (SPT)** sorts by run length, ascending. Run the quickest job, then the next quickest. On a single machine, SPT minimizes average flow time, the mean time jobs spend from release to completion. Clear the little jobs and the average waiting time across all jobs drops, because a long job at the front makes everyone behind it wait.
+
+The tension is built in. EDD ignores how long jobs take; SPT ignores when they are due. Neither is wrong. They answer different questions.
+
+## A worked example
+
+Four jobs sit in front of one machine on Monday morning. Here are their run times and due dates.
+
+| Job | Run time (days) | Due (working days out) |
+|---|---|---|
+| MO-501 | 1 | 6 |
+| MO-502 | 4 | 3 |
+| MO-503 | 1 | 7 |
+| MO-504 | 2 | 8 |
+
+**SPT order** (shortest first): MO-501, MO-503, MO-504, MO-502. Completion days: 1, 2, 4, 8. Average flow time is (1 + 2 + 4 + 8) / 4 = 3.75 days. But MO-502 was due day 3 and finishes day 8, so it is 5 days late.
+
+**EDD order** (soonest due first): MO-502, MO-501, MO-503, MO-504. Completion days: 4, 5, 6, 8. MO-502 is due day 3 and finishes day 4, just 1 day late, and that is the worst lateness in the set. Average flow time rises to (4 + 5 + 6 + 8) / 4 = 5.75 days.
+
+Read the trade in the numbers. SPT gave a far better average flow time (3.75 vs 5.75 days) but let the one date-critical job blow out by 5 days. EDD gave a worse average but held the worst lateness to 1 day. Same four jobs, same machine, opposite outcomes, and the right choice depends entirely on which cost hurts your business more.
+
+## The failure modes to watch
+
+Each rule has a signature way of going wrong.
+
+SPT starves big jobs. Because it always favors the quickest job available, a large order can sit at the back while a steady stream of small jobs keeps jumping ahead. Your throughput dashboard looks excellent and your biggest customer is furious. The standard remedy is a guardrail: once any job crosses a lateness threshold, pull it forward regardless of size.
+
+EDD ignores workload. Because it looks only at the date, EDD can put a nearly-finished job with a close date ahead of a barely-started job with a slightly later date that is actually in more danger. That is the gap [critical ratio](/blog/critical-ratio-scheduling-explained) and [slack-based sequencing](/blog/slack-based-job-sequencing) were designed to close, since both weigh the remaining work against the remaining time instead of looking at the date alone.
+
+## How EDGEBIC handles the choice
+
+The standard engine does not force you to pick one rule and live with it. It sorts deterministically by priority, then start date, then due date, which gives you a stable, reproducible baseline where the due date is already a tie-breaker; that base is described in [how a scheduler decides which job runs first](/blog/how-a-scheduler-decides-which-job-runs-first).
+
+The real answer to EDD-versus-SPT is the optimizer. The multi-run search re-runs the unmodified engine under several complete global orderings, including an earliest-due-date ordering, shortest and longest processing time, critical ratio, and seeded shuffles. It scores each finished schedule against your objective and proposes the single best one, guaranteed never worse than the baseline, applied only when you accept it. In practice that often surfaces a blended sequence: most of SPT's flow benefit, with the few date-critical jobs pulled forward the way EDD would insist. You are not stuck choosing the rule up front; you let the optimizer show you the schedule each rule actually produces on your data. The [optimizer guide](/blog/edgebic-optimizer-guide) covers the scoring and the never-worse clamp.
+
+## Which one should you reach for
+
+Default to earliest due date when dates are the promise you live and die by, when a single blown deadline costs a customer, and when jobs are roughly similar in size. Default to shortest processing time when the goal is flow, when you are clearing a backlog or feeding a downstream constraint, and when average lead time matters more than any single date. When you cannot decide, that indecision is itself the signal to let the optimizer test both and quantify the gap, the same way the worked example above turned a philosophical argument into a 5-day lateness number and a 2-day flow-time difference. See both orderings run against your live orders in [EDGEBIC](/edgebic), and read where sequencing fits the whole engine in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+<Accordion title="What is the difference between earliest due date and shortest processing time?">
+Earliest due date (EDD) sequences jobs by their promised delivery date, running the job due soonest first, which minimizes how late the worst job gets. Shortest processing time (SPT) sequences jobs by how long each one takes to run, running the quickest job first, which minimizes average time in the system and clears the most jobs fastest. EDD protects deadlines; SPT protects flow and throughput. They frequently disagree, because the job due soonest is often not the job that runs quickest.
+</Accordion>
+
+<Accordion title="When should you use shortest processing time?">
+Use shortest processing time when the goal is throughput and short average lead time rather than hitting specific dates, for example clearing a backlog, keeping a downstream machine fed, or reducing work-in-process on a bottleneck. SPT provably minimizes the average time jobs spend in the system on a single machine. Its weakness is that big jobs can wait a long time behind a stream of small ones, so a large order with a firm date can turn late while quick jobs keep jumping ahead.
+</Accordion>
+
+<Accordion title="Does shortest processing time cause long jobs to be starved?">
+Yes, that is the known failure mode of pure shortest processing time. Because the rule always favors the quickest available job, a large job can sit at the back of the queue indefinitely while small jobs keep arriving and running first. This is called starvation. The usual fix is to blend SPT with a due-date guardrail, so any job that crosses a lateness threshold gets pulled forward regardless of its size, which is exactly the kind of trade-off an optimizer can weigh.
+</Accordion>

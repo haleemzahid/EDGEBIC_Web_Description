@@ -41,22 +41,22 @@
 | Cluster | Slug | Target | Written | Published | Indexed |
 |---|---|---|---|---|---|
 | 17 | edgebic-platform | 180 | 161 | 0 | 0 |
-| 18 | edgebic-scheduling-concepts | 200 | 49 | 0 | 0 |
+| 18 | edgebic-scheduling-concepts | 200 | 61 | 0 | 0 |
 | 19 | edgebic-how-to | 500 | 229 | 0 | 0 |
-| 20 | edgebic-walkthroughs | 50 | 11 | 0 | 0 |
-| 21 | edgebic-erp-integration | 150 | 54 | 0 | 0 |
+| 20 | edgebic-walkthroughs | 50 | 23 | 0 | 0 |
+| 21 | edgebic-erp-integration | 150 | 66 | 0 | 0 |
 | 22 | edgebic-industry | 110 | 67 | 0 | 0 |
-| 23 | edgebic-glossary | 350 | 137 | 0 | 0 |
-| 24 | edgebic-troubleshooting | 120 | 57 | 0 | 0 |
-| 25 | edgebic-outcomes | 100 | 37 | 0 | 0 |
+| 23 | edgebic-glossary | 350 | 149 | 0 | 0 |
+| 24 | edgebic-troubleshooting | 120 | 69 | 0 | 0 |
+| 25 | edgebic-outcomes | 100 | 49 | 0 | 0 |
 | 26 | edgebic-optimization | 60 | 13 | 0 | 0 |
 | 27 | edgebic-visual-scheduling | 40 | 21 | 0 | 0 |
 | 28 | edgebic-shop-floor | 60 | 13 | 0 | 0 |
 | 29 | edgebic-quoting | 40 | 7 | 0 | 0 |
-| 30 | edgebic-planning | 80 | 25 | 0 | 0 |
+| 30 | edgebic-planning | 80 | 31 | 0 | 0 |
 | 31 | edgebic-migration | 40 | 6 | 0 | 0 |
-| 32 | edgebic-admin | 40 | 9 | 0 | 0 |
-| | **TOTAL** | **2,120** | **888** | **0** | **0** |
+| 32 | edgebic-admin | 40 | 15 | 0 | 0 |
+| | **TOTAL** | **2,120** | **972** | **0** | **0** |
 
 **"Written" count is derivable from disk** (don't trust memory, count files):
 PowerShell: `Select-String -Path content/blog/*.mdx -Pattern "cluster: 'edgebic-" | Group-Object { ($_.Line -split "'")[1] } | Sort-Object Name | Format-Table Name, Count`

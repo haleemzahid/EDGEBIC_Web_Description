@@ -1,0 +1,88 @@
+---
+title: "I Set Move Hours or Teardown Hours and Nothing Changed"
+description: "Move hours and teardown hours are fields the scheduler does not read, so setting them has no effect on the plan. Here is which field to use instead for buffer time or overlap."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - move hours no effect
+  - teardown hours ignored
+  - dead field routing step
+  - buffer time between operations
+  - queue time vs move hours
+  - routing field does nothing
+targetPhrase: "move hours no effect"
+qaQuestions:
+  - question: "I set six hours of move time on a routing step to model the forklift transfer between departments, and the schedule did not change at all. Which field should carry that instead?"
+    answer: "Move hours is a field the scheduler does not read, so the six hours had no effect, and the anomaly report's dead-field warning is flagging exactly that. For a transfer delay between two operations, use queue time, which the engine reads as buffer hours between the upstream step's end and the downstream step's start. Enter the six hours as queue time on the downstream step, clear the move-hours value to zero, and re-run scheduling. The transfer will now show as real buffer on the plan."
+  - question: "The anomaly report shows a dead-field warning on several steps with teardown hours set. Do I have to clear them?"
+    answer: "You do not have to, because they have zero effect on the schedule and the warning is advisory, not Critical. But clearing them keeps the configuration honest so no one later assumes teardown hours are shaping the plan when they are not. Decide what each value was meant to model: if it was buffer, move it to queue time; if it was overlap, use a flow-step or transfer batch size. Then set the teardown value to zero so the dead-field warning clears."
+wordCount: 1230
+readingTime: 6
+faqQuestions:
+  - question: "Why did setting move hours or teardown hours not change my schedule?"
+    answer: "Because move hours and teardown hours are fields the scheduler does not read. They are dead fields: the engine never consults them in any scheduling path, so any value you enter has no effect on the plan. The anomaly report flags populated dead fields with an advisory warning, so if you set one expecting a change, the warning confirms the value is doing nothing."
+  - question: "Which field should I use for buffer time between operations?"
+    answer: "Use queue time. Queue time is buffer hours between one step's end and the next step's start, and the engine reads it to place the downstream operation later. If you wanted move hours to model a transfer delay or a staging period, queue time is the field that actually carries that intent into the schedule. Enter it on the downstream step and re-run scheduling."
+  - question: "Which field should I use to overlap two operations?"
+    answer: "Use a flow-step overlap or a transfer batch size. A flow-step overlap sets a start-to-start lag in hours so the downstream step begins before the upstream one finishes. A transfer batch size lets the downstream step start once a given number of pieces is ready. Both are lot-streaming tools that create real overlap, which is what someone reaching for move or teardown hours often actually wants."
+  - question: "Should I clear move hours and teardown hours if they are set?"
+    answer: "It is good practice. They have no effect on the schedule, so leaving them set does no direct harm, but it can mislead the next planner into thinking they shape the plan. Set them to zero so the configuration reflects reality, and move whatever intent they carried into queue time for buffer or a flow-step or transfer batch size for overlap. The dead-field warning clears once they are zero."
+---
+
+**Move hours and teardown hours are fields the scheduler does not read, so setting them has no effect on the plan.** The engine never consults them in any scheduling path. [EDGEBIC by User Solutions](/edgebic) flags a populated dead field with an advisory warning, and the fix is to move the intent into a field the engine actually reads: queue time for buffer, or a flow-step or transfer batch size for overlap.
+
+This post is part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). It explains what a dead field is, why the warning exists, and which field carries the effect you were reaching for.
+
+## What a Dead Field Is
+
+Some routing-step fields are read by the scheduling engine and shape the plan. Others exist in the data model but are never consulted by any scheduling path. Move hours and teardown hours are the latter: dead fields. Whatever value you enter, the engine ignores it, so the schedule looks identical whether the field is blank or filled.
+
+The anomaly report carries a dead-field check that flags these when they are populated. It is an advisory Warning, not a Critical, because the schedule is not wrong: it is just that the value you set is doing nothing. The warning is there so you do not spend an afternoon tuning a number that cannot move the plan.
+
+## Which Field Actually Carries Your Intent
+
+People reach for move hours and teardown hours to model one of two real things: a delay between operations, or an overlap between them. Each has a field the engine does read.
+
+| What you want | Field the engine reads | What it does |
+|---|---|---|
+| Buffer or delay between two steps | Queue time | Adds buffer hours between the upstream end and the downstream start |
+| A calendar or working-day transfer to another site | Transit days | Adds transit time in calendar or working days |
+| Overlap, downstream starts before upstream ends | Flow-step overlap or transfer batch size | Streams the job so the next step begins early |
+
+**For a delay, use queue time.** [Queue time](/blog/what-is-queue-time-in-manufacturing-scheduling) is buffer hours between one step's end and the next step's start. If move hours was meant to model a forklift transfer, a staging period, or a cooling wait, queue time is where that belongs. The [queue and transit times overview](/blog/edgebic-queue-and-transit-times-explained) covers the full set, and [how to add queue time before an operation](/blog/how-to-add-queue-time-before-an-operation-in-edgebic) walks the entry.
+
+**For an overlap, use a flow-step or transfer batch size.** If the intent was to let the next step start early, those are the lot-streaming tools that actually create overlap.
+
+## The Fix
+
+1. **Read the dead-field warning** in the anomaly report. It names the step and which dead field is populated.
+2. **Decide what the value was meant to model:** a delay, a transfer, or an overlap.
+3. **Move the value into the right field:** queue time for a delay, transit days for a site transfer, a flow-step or transfer batch size for an overlap.
+4. **Set the dead field to zero** so the configuration reflects reality.
+5. **Re-run scheduling.** The effect you wanted now shows on the plan, and the dead-field warning clears.
+
+## Why Cleaning Up Matters
+
+Leaving a dead field populated does no direct harm to the schedule, so it is tempting to ignore the warning. The cost is quieter: the next planner who opens the routing sees move hours set and assumes it is shaping the plan. When the schedule does not match that assumption, they lose time chasing a field that never mattered. Clearing dead fields keeps the routing honest, so every value on it is one the engine reads.
+
+This sits next to two related buffer symptoms. When queue time and a flow-step collide on the same step, see [queue time and flow time are fighting each other](/blog/queue-time-and-flow-time-are-fighting-each-other-edgebic). When transit uses the wrong day type, see [my transit days used calendar days instead of working days](/blog/my-transit-days-used-calendar-days-instead-of-working-days-edgebic). All three come back to using the field the engine actually reads. The [troubleshooting guide](/blog/edgebic-troubleshooting-guide) links the full buffer set.
+
+<Accordion title="Why did setting move hours or teardown hours not change my schedule?">
+Because move hours and teardown hours are fields the scheduler does not read. They are dead fields: the engine never consults them in any scheduling path, so any value you enter has no effect on the plan. The anomaly report flags populated dead fields with an advisory warning, so if you set one expecting a change, the warning confirms the value is doing nothing.
+</Accordion>
+
+<Accordion title="Which field should I use for buffer time between operations?">
+Use queue time. Queue time is buffer hours between one step's end and the next step's start, and the engine reads it to place the downstream operation later. If you wanted move hours to model a transfer delay or a staging period, queue time is the field that actually carries that intent into the schedule. Enter it on the downstream step and re-run scheduling.
+</Accordion>
+
+<Accordion title="Which field should I use to overlap two operations?">
+Use a flow-step overlap or a transfer batch size. A flow-step overlap sets a start-to-start lag in hours so the downstream step begins before the upstream one finishes. A transfer batch size lets the downstream step start once a given number of pieces is ready. Both are lot-streaming tools that create real overlap, which is what someone reaching for move or teardown hours often actually wants.
+</Accordion>
+
+<Accordion title="Should I clear move hours and teardown hours if they are set?">
+It is good practice. They have no effect on the schedule, so leaving them set does no direct harm, but it can mislead the next planner into thinking they shape the plan. Set them to zero so the configuration reflects reality, and move whatever intent they carried into queue time for buffer or a flow-step or transfer batch size for overlap. The dead-field warning clears once they are zero.
+</Accordion>

@@ -1,0 +1,178 @@
+---
+title: "Syteline to EDGEBIC: The Data Mapping Reference"
+description: "Syteline data export scheduling field by field: map items, resources, routings and job orders into EDGEBIC masks, with conversions and upsert rules."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - Syteline data export scheduling
+  - CloudSuite Industrial field mapping
+  - Syteline routing export
+  - import mask field reference
+  - Syteline resource export
+  - ERP data mapping scheduling
+targetPhrase: "Syteline data export scheduling"
+wordCount: 1930
+readingTime: 10
+faqQuestions:
+  - question: "Which columns must a Syteline export contain before EDGEBIC will import it?"
+    answer: "Each entity type has a short mandatory list and everything else is optional. Products need a product id. Resources need a work center id. Routings need end item, step name, an operation flag, and hours required. Job orders need item, quantity, and a job date. Labor transactions need job number, work center id, and the actual date. If a mandatory field is unmapped in the mask, the run aborts before reading a single row."
+  - question: "How do I map Syteline routing times that mix hours and minutes?"
+    answer: "Use a conversion factor per column. Leave a column already in hours per piece unchanged, and put a factor of 0.016667 on a setup column quoted in minutes so it divides down to hours during import. A per-100-piece time uses 0.01. The multiplication happens before the value is stored, so the file needs no pre-processing, and the factors are saved with the mask, which makes the conversion permanent and auditable through the per-run log."
+  - question: "In what order should Syteline files be imported?"
+    answer: "Dependency order: items first, then resources, then routings, then open job orders, then labor transactions. Routings reference both items and resources, and job orders reference items, so loading upstream data first stops the auto-create behavior from inventing thin placeholder records. Auto-create is on by default and will fill gaps, but a record created that way carries only the name it was given."
+  - question: "How does EDGEBIC handle a multi-site Syteline export?"
+    answer: "By scheduling scope rather than by Syteline structure. If sites share machines or transfer work between them, import them into one database and use departments to group each site's resources, because the engine can only balance load across resources it can see. If each site plans independently, a database per site keeps files small and each planner's view focused. You filter the Syteline export by site either way."
+qaQuestions:
+  - question: "Syteline distinguishes current routings from estimate routings. Which should we export for scheduling?"
+    answer: "Export the current routing, because that is the operation sequence and the times the shop actually runs to, and scheduling has to reflect reality rather than a quoting estimate. Estimate routings are useful for what-if promise dates on new work you have not released, and you can bring those in later against a separate set of products if you want the quote simulation to reason about them, but the day-to-day schedule that feeds dispatch lists should be built from current routings. If the two disagree materially, that gap is worth investigating on the Syteline side before it feeds either the ERP's costing or the EDGEBIC schedule, because a routing that is wrong in one place is usually wrong in both."
+  - question: "Our resources in Syteline are modeled as capacity, not as a count of machines. What do we put in the instance column?"
+    answer: "Put the real count of identical machines in Number_Of_Instances and let the shift calendar carry the hours, because that is the representation the engine reasons about best. If your Syteline export gives an available-hours capacity figure that already embeds several machines, do not carry that same number into the capacity field while also setting instances, or you count the capacity twice and the plan comes out too short. Pick one representation. The safest pattern is instances plus the shift calendar for every multi-machine resource, and reserve the rated-capacity field for the rare center measured in output rather than machine time. Getting this one column right is the single biggest driver of an accurate first schedule."
+---
+
+**Mapping Syteline data into EDGEBIC is a column-mapping exercise rather than a development project: you export items, resources, current routings, open job orders, and optionally labor transactions to Excel or CSV, then drag each source column heading onto the matching EDGEBIC field once and save it as a reusable import mask.** This reference lists what maps to what, which columns are mandatory, how unit conversion and blank cells behave, and what every row outcome means when a run finishes.
+
+EDGEBIC by User Solutions integrates with Syteline (Infor CloudSuite Industrial) through those masks rather than a certified connector, so nothing is installed inside the ERP and nothing enters its upgrade path. If you have not read the end-to-end version, start with the [complete Syteline integration guide](/blog/edgebic-syteline-integration-guide). This post is the lookup table you keep open while building masks.
+
+## The load order
+
+Import in dependency order. Later files reference records that earlier files created.
+
+| # | Syteline export | EDGEBIC entity type | Depends on |
+|---|---|---|---|
+| 1 | Items | Product | Nothing |
+| 2 | Resources / work centers | Workcenter | Nothing |
+| 3 | Current routings | BOR (bill of routing) | Items and resources |
+| 4 | Open job orders | SalesOrder | Items |
+| 5 | Labor transactions (optional) | Actuals | Scheduled jobs |
+
+Two entity types have no Syteline origin and are built from a spreadsheet you write yourself: **Shift** (one row per shift with a start and end pair per weekday, a blank pair meaning the day is off) and **PlantHoliday** (closures by name and date). These define the calendar every date is computed against, so they deserve ten careful minutes.
+
+Auto-create is on by default, so a routing file naming a resource that has not been imported yet creates it on the fly. That is a useful safety net and a poor strategy: an auto-created work center has a name and nothing else, meaning one machine, no shift assignment, and no efficiency. Load the resource file properly first.
+
+## Items to Product
+
+| EDGEBIC target field | Mandatory | Source column |
+|---|---|---|
+| `Product_Id` | Yes | The Syteline item number. Natural key, matched case-insensitively |
+| `Product_Name`, `Description` | | Descriptive text |
+| `UOM` | | Unit of measure |
+| `Unit_Price`, `Lead_Time`, `Category` | | Optional planning and quoting attributes |
+| `Size`, `Weight`, `Country_Of_Origin` | | Optional descriptive columns |
+
+Only the identifier is required. Everything else can arrive later through a second, narrower refresh file, because blank cells preserve existing values on an update run. Watch identifier formatting across exports: matching ignores case but not leading zeros, so make every export render the item number the same way.
+
+## Resources to Workcenter
+
+This is the file where scheduling accuracy is won or lost, because it carries capacity.
+
+| EDGEBIC target field | Mandatory | What it drives |
+|---|---|---|
+| `Workcenter Id` | Yes | Natural key. Routing steps match on it |
+| `Workcenter Name` | | Label on the Gantt and in reports |
+| `Number_Of_Instances` | | How many identical machines the resource holds. Blank defaults to 1 |
+| `Capacity`, `Efficiency` | | Rated capacity and the efficiency applied to it |
+| `Setup_Time_Hours` | | Default setup, overridden per routing step where present |
+| `Hourly_Rate` | | Cost rollups |
+| `Is_Bottleneck` | | Marks the constraint so the engine can anchor around it |
+| `One_Per_Day_Flag` | | One job per machine per day, for long-changeover centers |
+| `Use_Global_Shifts`, `Shift_Names` | | Calendar assignment |
+| `Pieces_Per_Hour` | | Rate-based capacity where the center is measured in output |
+| `Min_Batch_Size`, `Max_Batch_Size` | | Batching limits |
+| `Is_Active`, `Color`, `Type` | | Housekeeping and Gantt color |
+
+`Number_Of_Instances` is the highest-value column on the page. Syteline often models a resource as a capacity figure rather than a count of machines, so this is a column you set deliberately. A resource of four identical machines imported with one instance produces a plan roughly four times too long, and it fails quietly: nothing errors, the dates are simply wrong. The arithmetic is in [how EDGEBIC calculates work center capacity](/blog/how-edgebic-calculates-work-center-capacity).
+
+If your export expresses capacity as an available-hours figure that already embeds a machine count, do not carry that number into `Capacity` unchanged while also setting instances, or you will count the same capacity twice. Instances plus the shift calendar is the representation the engine reasons about best.
+
+## Resource groups map to work center groups
+
+Syteline groups resources; EDGEBIC models an interchangeable pool as a **work center group**. A routing step bound to a group re-evaluates every member on each reschedule, picks by strategy (earliest completion, primary first, or earliest start), and applies a per-member efficiency factor so a slower machine is chosen only when it still finishes first. Operations already started keep the machine they started on, because recorded work is never moved. The membership does not fit in an export column: import the members as ordinary work centers, then create the group inside EDGEBIC and add them. See [how to create work center groups](/blog/how-to-create-work-center-groups-in-edgebic).
+
+## Current routings to BOR
+
+| EDGEBIC target field | Mandatory | What to put in it |
+|---|---|---|
+| `End_Prod` | Yes | Item identifier this routing builds |
+| `Sub_Prod` | Yes | Resource id (operation row) or component item (material row) |
+| `Op_Flag` | Yes | True for an operation, false for a material or component |
+| `No_Req` | Yes | Hours required per unit |
+| `Seq_No` | | Operation sequence, in gaps of 10 |
+| `Next_Seq` | | Leave blank; chaining happens automatically |
+| `Setup_Time` | | Setup hours at this step |
+| `Queue_Time` | | Buffer hours before the step may start |
+| `Flow_Step`, `Transit_Days` | | Overlap between steps, and transport time |
+| `Parallel_Op` | | Parent step's resource name for parallel or alternate steps |
+| `Alt_Type` | | `Parallel-Independent`, `Parallel-Dependent`, or `Alternative` |
+| `Res_Mult` | | Applicable machine instances for this step |
+| `Fam_Dept` | | Department for auto-created work centers |
+
+`Op_Flag` is the field people get wrong first. True means "this row is an operation running on a resource". False means "this row is a component consumed at this point in the routing". Mixing them produces a routing full of resources that are actually parts, and it is visible immediately in the graphical designer.
+
+### Why the import takes two passes
+
+A routing cannot be written row by row, because step 10 must point at step 20 and step 20 does not exist yet. So the import runs in two passes. Pass one validates each row, resolves or creates the items and resources it names, and buffers the row. Pass two groups the buffer by end item, sorts by sequence number, writes the steps, and wires the chain: 10 to 20, 20 to 30, and the terminal step to the finished item. Check that visually after the first import: a routing missing its final link draws as a chain floating free of the item it builds.
+
+All of one item's steps must travel in one file, because a run wipes and recreates that item's steps on first reference. And re-importing is safe for running orders, because every scheduled job carries a frozen snapshot of the routing it was planned with.
+
+Outside processing maps cleanly as an operation row on a resource that represents the vendor, with the turnaround expressed as transit days, so the outside time stays visible on the Gantt rather than buried inside one long step.
+
+## Job orders to SalesOrder
+
+| EDGEBIC target field | Mandatory | Source |
+|---|---|---|
+| `Product_Id(BOR)` | Yes | Item being built |
+| `Qty` | Yes | Order quantity |
+| `Job_Date` | Yes | Release or start date |
+| `Sales_Order(Ref#)` | | Order reference: shared references group into one sales order, jobs auto-number `{Ref}-{line}` |
+| `Job_Number` | | Your Syteline job number carried across |
+| `Due_Date`, `Order_Date`, `Priority` | | Promise, entry, and ranking |
+| `Customer_Name` | | Auto-created when missing |
+| `Unit_Price`, `User_Notes` | | Optional |
+
+Two mask options control the date logic when the export carries only one date: one treats the job date as the due date, the other derives the job date backward from the due date. Choose the one matching how your export is built, once, on the mask. The mechanism is the same as [forward versus backward scheduling](/blog/forward-vs-backward-scheduling).
+
+## Labor transactions to Actuals
+
+Job number, work center id, and actual date are mandatory. Hours and pieces are both optional, and either can be derived from the other using the operation's rate. A `Complete` column marks the operation finished, and an explicit start column overrides the default of using the earliest imported date. The import always overwrites the days a file carries, so re-running a corrected extract fixes the numbers rather than doubling them. Actuals import last, because each row has to find an operation on a job that is already scheduled.
+
+## Conversions, blanks, and zeros
+
+| Situation | Behavior |
+|---|---|
+| Minutes in the export | Conversion factor `0.016667` on that mask column |
+| Seconds in the export | Conversion factor `0.000278` |
+| Hours quoted per 100 pieces | Conversion factor `0.01` |
+| Blank cell on an update | Existing value preserved |
+| Zero in a cell on an update | Zero is written: it is a value, not a blank |
+| Unmapped column | Ignored entirely |
+| Mandatory field unmapped | Run aborts before reading any row |
+| One bad row | Fails alone and the run continues, unless you choose strict mode |
+
+## Reading the outcomes
+
+Every row resolves to **Created**, **Updated**, **Reused**, or **Failed**. Reused is the default for a record that already exists, so a weekly item file of 9,000 rows reporting Created 15, Reused 8,985 is the desired result rather than a failure. When counts look wrong, the per-run log file carries one line per row with the exact reason for every failure.
+
+## What import cannot bring, and why it matters
+
+The settings that most differentiate a schedule have no column in a Syteline export: the sequence-dependent setup matrix, operator skills and certifications, work center group strategies, bottleneck anchoring, and lot streaming transfer batches. Those are configured once in EDGEBIC and then apply to every imported order afterwards. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) explains why one mask design serves every ERP, including the rest of the [Infor family](/blog/infor-to-edgebic-data-mapping-reference).
+
+For the questions that come up before a project starts, see the [Syteline integration FAQ](/blog/edgebic-syteline-integration-faq). The [Odoo](/blog/odoo-to-edgebic-data-mapping-reference) and [QuickBooks](/blog/quickbooks-to-edgebic-data-mapping-reference) references show how the method changes across the ERP spectrum, and the [ERP scheduling add-on page](/erp-scheduling-add-on) frames the category.
+
+<Accordion title="Which columns must a Syteline export contain before EDGEBIC will import it?">
+Each entity type has a short mandatory list and everything else is optional. Products need a product id. Resources need a work center id. Routings need end item, step name, an operation flag, and hours required. Job orders need item, quantity, and a job date. Labor transactions need job number, work center id, and the actual date. If a mandatory field is unmapped in the mask, the run aborts before reading a single row.
+</Accordion>
+
+<Accordion title="How do I map Syteline routing times that mix hours and minutes?">
+Use a conversion factor per column. Leave a column already in hours per piece unchanged, and put a factor of 0.016667 on a setup column quoted in minutes so it divides down to hours during import. A per-100-piece time uses 0.01. The multiplication happens before the value is stored, so the file needs no pre-processing, and the factors are saved with the mask, which makes the conversion permanent and auditable through the per-run log.
+</Accordion>
+
+<Accordion title="In what order should Syteline files be imported?">
+Dependency order: items first, then resources, then routings, then open job orders, then labor transactions. Routings reference both items and resources, and job orders reference items, so loading upstream data first stops the auto-create behavior from inventing thin placeholder records. Auto-create is on by default and will fill gaps, but a record created that way carries only the name it was given.
+</Accordion>
+
+<Accordion title="How does EDGEBIC handle a multi-site Syteline export?">
+By scheduling scope rather than by Syteline structure. If sites share machines or transfer work between them, import them into one database and use departments to group each site's resources, because the engine can only balance load across resources it can see. If each site plans independently, a database per site keeps files small and each planner's view focused. You filter the Syteline export by site either way.
+</Accordion>

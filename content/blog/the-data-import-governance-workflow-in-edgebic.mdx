@@ -1,0 +1,85 @@
+---
+title: "The Data-Import Governance Workflow in EDGEBIC"
+description: "The data-import governance workflow in EDGEBIC: who owns the masks, how dry runs and result outcomes keep loads safe, and the review discipline that protects the schedule."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Admin & Deployment
+author: user-solutions
+cluster: edgebic-admin
+pillarSlug: edgebic-admin-guide
+keywords:
+  - data import governance
+  - import mask workflow
+  - import result outcomes
+  - safe data migration
+  - import dry run
+  - scheduling data quality
+targetPhrase: "data import governance"
+wordCount: 1650
+readingTime: 8
+faqQuestions:
+  - question: "What is data-import governance in a scheduling system?"
+    answer: "Data-import governance is the discipline of controlling how outside data enters the system so the schedule stays trustworthy. It covers who owns each import mask, how a load is dry-run before it goes wide, how every row's outcome is checked, and when updates are turned on. In EDGEBIC every import row lands as exactly one outcome, created, updated, reused, or failed with a reason, and a per-run log records every row, which is the raw material governance reads."
+  - question: "How does a dry run make an import safe?"
+    answer: "A dry run tests a mask on a small slice of the file, ten rows or so, before the full load, so a mapping mistake shows up on ten rows instead of ten thousand. You read the result counts and the per-run log, confirm rows landed as created or updated as expected, and only then run the whole file. Because a bad row does not stop the run by default, a dry run is how you catch a systematic mapping error before it quietly writes wrong values across the catalog."
+  - question: "Who should own import masks in a plant?"
+    answer: "A named data owner should own each recurring mask, because a mask encodes decisions: the entity type, the file format, the column mapping, any unit conversion factor, and whether updates are on. Those decisions should not be reinvented per run by whoever happens to have the file. One owner keeps the mapping stable, documents the source, and reviews the result counts each run, which is what turns a repeatable import into a governed one rather than a weekly improvisation."
+qaQuestions:
+  - question: "Our ERP export changed a column and last week's price import overwrote good data with blanks. How do we prevent that?"
+    answer: "Two safeguards catch this. First, blank cells preserve existing values rather than wiping them, so an empty column does not blank the field, but a column that shifted position can still map wrong values onto the wrong field, which is why a dry run on ten rows before the full load is the rule: a shifted column shows up immediately in the result counts. Second, keep updates off except on runs whose explicit purpose is changing values, like a price refresh, so an ordinary load comes back as reused and untouched. Assign the mask a named owner who re-checks the mapping whenever the source file format changes, and take an export backup before any update-on run."
+  - question: "We re-imported a routing and the product's steps came out wrong. What is the governance rule for BOR imports?"
+    answer: "The rule is one product's routing lives in one file, because a routing re-import wipes and recreates that product's steps each run. If a product's steps are split across two files, the second file's load replaces what the first built, so the routing comes out incomplete. Keep each product's complete routing in a single source file, dry-run it, and read the result before trusting it. Scheduled jobs are unaffected because each carries its own frozen routing snapshot, so fixing the master routing and re-importing does not disturb work already on the schedule; you rerun the scheduler afterward for new jobs."
+---
+
+**Data-import governance in EDGEBIC is the discipline of controlling how outside data enters the system: named ownership of each mask, a dry run before every wide load, a read of every row's outcome, and deliberate control over when updates are on.** In [EDGEBIC by User Solutions](/edgebic) every import row lands as exactly one outcome (created, updated, reused, or failed with a recorded reason) and a per-run log records every row, so governance has real material to work from rather than trust. This post lays out the workflow that keeps imports safe.
+
+Import masks are how a factory's data reaches the schedule, and the mechanics live in the [EDGEBIC admin guide](/blog/edgebic-admin-guide). This post is the governance layer on top: the ownership, review, and dry-run discipline that keeps the loads trustworthy. It names controls that live in the import screens and Settings, never any internal path, and the honest ERP story here is recurring exports mapped once, as the [ERP integration hub](/edgebic-erp-integration) describes.
+
+## Why Imports Need Governance
+
+A schedule is only as good as its data, and imports are the main door that data comes through. Eight entity types feed the deployment path: products, work centers, customers, sales orders, BOR routings, actuals, plant holidays, and shifts. A mistake in any of them (a mismapped column, a unit that did not convert, a routing loaded from the wrong file) does not announce itself. It quietly writes wrong values that the scheduler then plans around, and the first symptom is often a plan that looks subtly wrong for reasons no one can trace.
+
+Governance exists to make that door safe without making it slow. The system already gives you the raw material: an import mask is a saved recipe (the entity type, the file format, whether the first row is headings, and how each column maps to a field), so a load is repeatable rather than reinvented, and every run produces a result you can read. Governance is the human discipline wrapped around those mechanics: who owns the recipe, who checks the result, and when a load is allowed to change existing values.
+
+## Ownership: One Mask, One Owner
+
+The first governance rule is that each recurring mask has a named owner. A mask encodes decisions, and decisions without an owner drift. The column mapping, any per-column conversion factor, the choice of whether updates are on, and the source file it expects should be stable across runs, not improvised by whoever has the spreadsheet this week.
+
+A named owner keeps the mapping stable, documents which system the source file comes from, and re-checks the mapping whenever the source format changes. That last point is where most import trouble starts: an ERP export adds or moves a column, the mask maps the new layout onto the old fields, and values land in the wrong place. An owner who knows the source is the person who notices. Ownership turns a repeatable import into a governed one.
+
+The same discipline covers who is allowed to run imports at all. Because access is role-based, the permission to import data can be held by the data owners rather than everyone, which is one more way [role-based access protects the schedule](/blog/how-role-based-access-protects-the-schedule) from unreviewed loads.
+
+## Dry Run Before You Go Wide
+
+The second rule is a dry run on a small slice before every full load, especially for a new or changed mask. Load ten rows, read the result, and only then run the whole file. The reason is a default that is otherwise a convenience: a bad row does not stop the run, so one typo never blocks the other rows. That is exactly what you want for one stray row and exactly what you do not want for a systematic mapping error, which would write wrong values across the whole file without halting.
+
+A dry run turns a systematic error into a ten-row problem. If a column shifted, the result counts and the per-run log show it immediately: rows created that should have been reused, values that look wrong, or failures with a recorded reason. Fix the mapping, dry-run again, and the full load is safe. Skipping the dry run is how a mapping mistake becomes a catalog-wide cleanup.
+
+Matching is by natural business key, case-insensitively, so a file row for WIDGET-A finds the existing Widget-A. That is a help, but it is also why a dry run matters: the system will confidently match and update the wrong records if the key column is mapped wrong.
+
+## Read Every Outcome
+
+The third rule is to read the result of every run, not just successful-looking ones. Every row becomes exactly one of four outcomes:
+
+| Outcome | Meaning | What to check |
+|---|---|---|
+| Created | A new record was added | Count matches the new rows you expected |
+| Updated | An existing record's values changed | Only appears when updates are on, and only where you intended change |
+| Reused | Found and deliberately left alone | The safe default when updates are off |
+| Failed | Rejected, with the reason recorded | Open the per-run log and read the reason |
+
+The result dialog shows the counts; the per-run log file records every row and opens directly from the dialog. Governance is reading those counts against expectation. A price refresh that should update 200 rows but shows 200 created means the key mapping is wrong and you just duplicated the catalog. A load that shows unexpected failures needs the log read before anyone trusts the data. The outcomes are the audit of the import, and reading them is the check.
+
+## Control When Updates Are On
+
+The fourth rule governs the most dangerous setting: whether updates are on. With updates off (the default), existing records come back reused and untouched, which is the safe mode for an ordinary load. Turn updates on only for runs whose explicit purpose is changing values, like a weekly price refresh, and turn them off again after.
+
+Two facts make this safer than it sounds. Blank cells preserve existing values rather than wiping them, so an empty column does not blank a field. And a routing re-import is a special case worth its own rule: a BOR import wipes and recreates a product's routing steps each run, so a product's complete routing must live in one file, never split across two. Scheduled jobs are unaffected because each carries its own frozen routing snapshot, so fixing a master routing does not disturb work already on the schedule.
+
+One more governance habit ties it together: take an export backup before any update-on run or mass routing re-import. It costs one click on the DataSource tab, and it is the undo that imports do not otherwise have. Pair it with the wider [database health routine](/blog/keeping-the-edgebic-database-healthy-over-time).
+
+## A Worked Governance Cycle
+
+Put the four rules into a weekly cycle for an ERP-sourced price and inventory refresh. The mask has a named owner in the purchasing team. Monday, the owner receives the export and, because the ERP layout occasionally changes, dry-runs the mask on ten rows. The result shows 10 updated, values sensible, so the mapping still holds. Before the full run, the owner takes an export backup, because this is an update-on load. The full file runs: 240 updated, 3 failed. The owner opens the per-run log, sees the three failures are discontinued parts no longer in the catalog, confirms that is expected, and the load is done. Updates go back off for the next ordinary load, and the scheduler is run separately, since imports change data but never recalculate the schedule.
+
+Nothing here is heavy. It is one owner, a ten-row dry run, one backup, and a read of the result. That is what governed data import looks like: fast, repeatable, and safe by discipline rather than by luck. For the full mechanics behind every step, read the [EDGEBIC admin guide](/blog/edgebic-admin-guide), and for what a governed import protects, the trustworthy [production schedule](/blog/what-is-production-scheduling) downstream.

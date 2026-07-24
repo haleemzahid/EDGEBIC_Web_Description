@@ -1,0 +1,92 @@
+---
+title: "The Anomaly Report Flags a Job I Think Is Fine"
+description: "Not every anomaly row is a defect. Warning-level checks flag normal schedule texture, some findings are advisory, and stale data can flag a job already fixed. Here is how to tell a false alarm from a real one."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - anomaly report false positive
+  - warning vs critical anomaly
+  - expected anomaly rows
+  - anomaly report stale data
+  - dependent parallel over utilization
+  - scheduling anomaly severity
+targetPhrase: "anomaly report false positive"
+wordCount: 1300
+readingTime: 7
+faqQuestions:
+  - question: "Why does the anomaly report flag a job that looks correct?"
+    answer: "Because not every finding is a defect. Warning-level checks flag normal schedule texture such as small idle gaps or a routing hours drift you introduced on purpose. Some findings are advisory, meaning the schedule is deterministic and valid but the configuration is ambiguous. And a report run against stale data can flag a job you already fixed. The severity label and the check identity tell you which kind you are looking at."
+  - question: "What is the difference between a Critical and a Warning anomaly?"
+    answer: "Critical findings are structural problems that make a schedule invalid: over-booking beyond physical capacity, an instance running two jobs at once, an inverted schedule window, a reference to a deleted machine. Warning findings are quality signals that may be perfectly acceptable in production, such as an idle gap between jobs or a hours drift after a routing change. The production health target is zero Critical rows, not zero rows of any kind."
+  - question: "Which anomaly rows are expected in a normal production schedule?"
+    answer: "Idle gaps between jobs are normal when buffers, shift boundaries, or other jobs explain them. A routing hours drift is expected when you changed the hours after scheduling or ran on an alternative machine with a speed factor. A dead-field warning is expected when an old value sits in a field the scheduler does not read. Advisory findings about ambiguous overlap or transit configuration mean the schedule is valid, just worth confirming your intent."
+  - question: "Could the report be flagging a job I already fixed?"
+    answer: "Yes. The anomaly report reads the current stored state. If you changed master data and re-ran scheduling, but opened a report from before that run, it shows the old anomalies. Always run the report after the last scheduling generation. If a finding persists on a fresh report run against the latest schedule, it is real; if it disappears, it was stale."
+qaQuestions:
+  - question: "The report shows a routing-hours-drift warning on a job, but I deliberately updated the routing to add 20 minutes per piece last week. Is this a real problem?"
+    answer: "No, this is the expected behavior of that check. The hours-drift finding fires when a schedule's booked hours differ meaningfully from what the routing currently says, and a routing you changed after scheduling produces exactly that difference until you re-run scheduling. It is a Warning, not a Critical, precisely because the drift is often intentional. Re-run scheduling for the job so the plan reflects the new routing, and the warning clears. If it persists after a fresh run, then the drift is unexplained and worth a closer look."
+  - question: "A dependent parallel machine shows an over-utilization warning. It mirrors its parent exactly, which is what we set up. Bug or not?"
+    answer: "For the shift-design over-utilization warnings, dependent parallel mirrors are excluded by design, because a synchronized mirror legitimately emits hours that exceed a single machine's shift window. If a physical over-utilization Critical fires on the mirror, that is different: it means the mirror's factor times the parent hours exceeds the physical day for the instance count, which is a real constraint the factor or instance count needs to fix. Read the severity: an excluded-category Warning on a mirror is expected, a physical Critical is not."
+---
+
+**Not every anomaly row is a defect. Warning-level checks flag normal schedule texture, some findings are advisory rather than errors, and a report run against stale data can flag a job you already fixed.** The severity label and the check identity tell you which kind you are looking at, so [EDGEBIC by User Solutions](/edgebic) lets you separate the false alarms from the real problems in seconds.
+
+This post is part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). It explains the severity split, which findings are expected in a healthy plant, and how to confirm a flagged job really is fine.
+
+## Severity Is the First Signal
+
+Every finding in the [scheduling anomaly report](/blog/what-is-a-scheduling-anomaly-check) carries a severity. That single label is the fastest way to decide whether a row deserves your attention.
+
+| Severity | What it means | Production target |
+|---|---|---|
+| Critical | A structural problem that makes the schedule invalid | Zero rows |
+| Warning | A quality signal that may be perfectly acceptable | Reviewed, not necessarily zero |
+
+Critical findings are the ones that break a schedule: over-booking a machine past its physical day, running one instance on two jobs at once, an inverted or zero-length window, a reference to a deleted machine. Those are never fine. Warnings are different. Many of them describe normal schedule texture, and the health target for a production plant is zero Critical rows, not zero rows of any kind.
+
+## The Findings That Are Usually Fine
+
+Three families of warning are expected in a healthy schedule.
+
+**Idle gaps between jobs.** A gap over a small threshold between two jobs on a machine is reported, but most gaps are explained by buffers, shift boundaries, or another job. The [idle-gaps sibling](/blog/schedule-has-idle-gaps-edgebic) covers when a gap is genuine waste and when it is protection.
+
+**Routing hours drift.** When a schedule's booked hours differ from what the routing currently says, the drift finding fires. That difference is expected when you changed the routing after scheduling, or when the job ran on an alternative machine with a speed factor. It is a Warning precisely because it is often intentional. Re-run scheduling and it clears if the drift was just a stale routing.
+
+**Dead-field and advisory notices.** A value sitting in a field the scheduler does not read produces a dead-field warning: harmless, but worth cleaning up. Advisory findings about ambiguous overlap or transit configuration mean the schedule is valid and deterministic; they are asking you to confirm your intent, not reporting a defect. [What the EDGEBIC anomaly checks actually look for](/blog/what-the-edgebic-anomaly-checks-actually-look-for) covers the full catalog.
+
+## The Dependent-Parallel Exception
+
+One specific case trips people up. A dependent parallel machine mirrors its parent exactly, so it legitimately emits hours that exceed a single machine's shift window. The shift-design over-utilization warnings exclude these mirrors by design, so an excluded-category warning on a mirror is expected.
+
+The exception to the exception: if a physical over-utilization Critical fires on a mirror, that is real. It means the mirror's factor times the parent's hours exceeds the physical day for the instance count. That is a constraint the factor or the instance count needs to resolve, not a false positive. Read the severity to tell them apart.
+
+## Confirm With a Fresh Report
+
+The report reads the current stored state. If you changed master data and re-ran scheduling but opened a report from before that run, it shows the old anomalies. The routine that removes this doubt:
+
+1. Re-run scheduling for the job in question.
+2. Open the anomaly report immediately after, filtered to that job. See [how to run and read the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic).
+3. Read the severity and the check identity on any surviving row.
+4. If a Critical survives, it is real. If only Warnings survive, judge each against the expected list above.
+
+A finding that disappears on a fresh run was stale. One that persists is worth the attention its severity implies. When several checks fire on one job, work the Critical rows first: fixing the root often clears the dependent Warnings automatically, which is the pattern behind [why a job jumps after a reschedule](/blog/why-did-my-job-jump-after-a-reschedule-edgebic). The [troubleshooting guide](/blog/edgebic-troubleshooting-guide) links the specific checks.
+
+<Accordion title="Why does the anomaly report flag a job that looks correct?">
+Because not every finding is a defect. Warning-level checks flag normal schedule texture such as small idle gaps or a routing hours drift you introduced on purpose. Some findings are advisory, meaning the schedule is deterministic and valid but the configuration is ambiguous. And a report run against stale data can flag a job you already fixed. The severity label and the check identity tell you which kind you are looking at.
+</Accordion>
+
+<Accordion title="What is the difference between a Critical and a Warning anomaly?">
+Critical findings are structural problems that make a schedule invalid: over-booking beyond physical capacity, an instance running two jobs at once, an inverted schedule window, a reference to a deleted machine. Warning findings are quality signals that may be perfectly acceptable in production, such as an idle gap between jobs or a hours drift after a routing change. The production health target is zero Critical rows, not zero rows of any kind.
+</Accordion>
+
+<Accordion title="Which anomaly rows are expected in a normal production schedule?">
+Idle gaps between jobs are normal when buffers, shift boundaries, or other jobs explain them. A routing hours drift is expected when you changed the hours after scheduling or ran on an alternative machine with a speed factor. A dead-field warning is expected when an old value sits in a field the scheduler does not read. Advisory findings about ambiguous overlap or transit configuration mean the schedule is valid, just worth confirming your intent.
+</Accordion>
+
+<Accordion title="Could the report be flagging a job I already fixed?">
+Yes. The anomaly report reads the current stored state. If you changed master data and re-ran scheduling, but opened a report from before that run, it shows the old anomalies. Always run the report after the last scheduling generation. If a finding persists on a fresh report run against the latest schedule, it is real; if it disappears, it was stale.
+</Accordion>

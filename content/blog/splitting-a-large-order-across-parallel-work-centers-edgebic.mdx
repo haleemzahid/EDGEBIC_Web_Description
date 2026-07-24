@@ -1,0 +1,116 @@
+---
+title: "Splitting a Large Order Across Parallel Work Centers in EDGEBIC"
+description: "A parallel scheduling walkthrough: run one big job on two machines at once, split the hours with load balancing, and finish in roughly half the time."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - parallel work centers
+  - independent parallel scheduling
+  - split job across machines
+  - load balancing
+  - reduce lead time
+  - finite capacity parallel
+targetPhrase: "independent parallel scheduling"
+wordCount: 2050
+readingTime: 10
+faqQuestions:
+  - question: "How do you run one job on two machines at the same time?"
+    answer: "You configure the routing step as independent parallel and add the second machine as a parallel alternative. The engine then finds a window where both machines have capacity at once, splits the step's hours across them using load balancing, and emits one schedule line per machine. The two lines overlap in time, so a step that would take a full day on one machine finishes in roughly half a day across two. The step's end date is driven by whichever machine finishes last."
+  - question: "Does independent parallel split the hours evenly or by available capacity?"
+    answer: "By default it load-balances, giving more hours to whichever machine has more free capacity in the shared window, which minimizes completion time. You can force an even split instead by turning load balancing off. The setting lives on the step's parallel-processing configuration, and you also set how many machines may run at once, so parallelism only takes effect when you allow more than one. Load balancing is the usual choice because it packs the split against real capacity rather than a fixed ratio."
+  - question: "What happens if the second machine has no free time when the job needs to run?"
+    answer: "The engine requires both machines to have capacity in the same window, so if the second is fully booked it searches forward, up to a limited horizon, for a day when both are free at once. If it finds none, it reports that no simultaneous capacity was available for the parallel group. That is your signal to free capacity on the second machine, relax the parallel requirement, or use a true alternative instead, which runs the job on either machine rather than both at once."
+qaQuestions:
+  - question: "I have a 60-hour milling job and a customer date I cannot hit on one mill. Can I throw two mills at it?"
+    answer: "Yes, if both mills share a shift and you set the step to independent parallel. Add the second mill as a parallel alternative with a factor of 1.0 if it runs at the same speed, leave load balancing on, and reschedule. The engine finds a window where both mills are free, splits the roughly 60 hours across them, and finishes in about half the wall-clock time, close to 30 hours of elapsed milling instead of 60. You verify it in the Job View: the milling step shows two schedule lines, one per mill, each carrying about half the hours, overlapping in time."
+  - question: "After I set up parallel milling, the job only scheduled on one machine. What went wrong?"
+    answer: "Almost always the two machines had no common shift on the target day, so the engine could not find a window where both were free at once and fell back to one machine, or the second machine was fully booked. Check that both mills share at least one working day and shift, and that the parallel configuration allows more than one machine to run simultaneously. If they share a shift and the second is simply loaded, the engine searches forward for a day when both are open; widen the window or free capacity on the second mill and reschedule."
+---
+
+**To finish a large order faster in EDGEBIC by User Solutions, you set the routing step to independent parallel and add a second machine, and the engine finds a window where both are free, splits the hours across them with load balancing, and completes the step in roughly half the wall-clock time.** This walkthrough runs one big milling job across two mills and verifies the split. It is part of our [worked examples series](/blog/edgebic-worked-examples), and it is the opposite case to the [synchronized multi-spindle walkthrough](/blog/synchronized-multi-spindle-scheduling-example-edgebic): there the machines are locked together, here they work the same job independently to go faster. The numbers are illustrative; the parallel behavior is documented.
+
+## The Setup: One Big Job, Two Identical Mills
+
+Cascade Components has a 60-hour milling operation on a job due in three days. On one mill, at 8 working hours a day, that step alone is roughly a week and a half, and the date is impossible. The shop has two identical mills, MILL-1 and MILL-2, both on the same day shift. The plan is to run the milling step on both at once. This is independent parallel: two machines, the same job, working side by side to halve the elapsed time.
+
+Independent parallel differs from a true alternative. A true alternative runs the job on one machine or the other, whichever is free; independent parallel runs it on both simultaneously and splits the work. For a lead-time crunch on a big job, splitting is what you want.
+
+## Step 1: Configure the Step as Independent Parallel
+
+Dana, the planner, opens the product's bill of routing and selects the milling step. She sets the step's **Work Center Type** to independent parallel. Then, in the step's **Alternative Work Centers** sub-grid, she clicks Add and chooses MILL-2. She sets:
+
+- **Factor** to 1.0, because MILL-2 runs at the same rate as MILL-1. (A slower machine would take a factor above 1.0 so its hours are costed honestly.)
+- **Type** to Independent and **Category** to Parallel, meaning "run alongside the primary," not "replace it."
+- **Active** on, **finite capacity** on (so MILL-2's real capacity is respected), and **Priority** 1.
+
+She saves the routing.
+
+## Step 2: Set the Split Behavior
+
+Whether the hours split evenly or by available capacity is controlled on the step's parallel-processing configuration. Dana leaves **load balancing** on, the default, which gives more hours to whichever mill has more free capacity in the shared window and so minimizes completion time. She also sets the maximum simultaneous machines to two, because parallelism only takes effect when more than one machine is allowed to run at once. (Left at one, the split would never happen.)
+
+If she wanted a strict 50/50 regardless of load, she would turn load balancing off, and the engine would allocate to the first machine up to its share before the second. For a straight speed-up on twin machines, load balancing is the right choice.
+
+## Step 3: Reschedule and Split the Hours
+
+Dana reschedules the job. When the engine reaches the milling step, it does not just pick a machine; it looks for a shift window where both MILL-1 and MILL-2 have capacity at the same time. Finding one, it splits the roughly 60 hours across the two mills using load balancing and emits two schedule lines for the step, one per machine, with the same logical start.
+
+The two lines overlap in time. Instead of 60 hours of elapsed milling on one machine, the job runs about 30 hours of elapsed time across two, and the step's end date is set by whichever mill finishes last. The job now fits the three-day window.
+
+## Where the Hours Land
+
+| | One mill (before) | Two mills, parallel (after) |
+|---|---|---|
+| Milling hours total | 60 h | 60 h (unchanged) |
+| Elapsed milling time | ~7.5 working days | ~3.75 working days |
+| MILL-1 share | 60 h | ~30 h |
+| MILL-2 share | 0 h | ~30 h |
+| Schedule lines for the step | 1 | 2 (one per machine) |
+
+The total work is the same; the elapsed time roughly halves because two machines share it. That is the entire value of independent parallel for a lead-time crunch.
+
+## Step 4: Verify the Split Actually Happened
+
+Dana confirms it two ways. In the **Job View**, she filters to the job and expands the milling step: two schedule lines, one naming MILL-1 and one naming MILL-2, each with about half the step's hours, overlapping in time. That is the proof that the engine split the work rather than running it twice on one machine.
+
+She also glances at the **Work Center Utilization** report, where both mills now carry milling hours from this job. If only one schedule line had appeared, the usual cause is that the two mills had no common shift on the target day, so the engine could not find a simultaneous window, or MILL-2 was fully booked. The fix is to ensure both share a working shift and that the second has room, then reschedule.
+
+## What This Run Proves
+
+1. **Independent parallel splits one job across two machines.** Both run the same operation at once, and the elapsed time roughly halves.
+2. **Load balancing packs the split against real capacity.** The busier-with-headroom machine takes more hours; even split is available by turning it off.
+3. **Both machines need a common shift and real capacity.** The engine requires a simultaneous free window, or it searches forward for one.
+4. **The step ends when the slower machine finishes.** Completion is driven by the last-finishing line, not the average.
+5. **Two schedule lines are the proof.** One line per machine in the Job View confirms a genuine split.
+
+## Variations Worth Trying
+
+**Add a third mill.** Install a third parallel machine on the same step and raise the maximum simultaneous machines to three. The 60 hours split three ways, and the elapsed time drops toward a third, capacity permitting.
+
+**Handle a slower second machine.** If MILL-2 is older and slower, set its factor above 1.0 so its share is costed and timed honestly. The split then reflects the real speed difference instead of assuming twins.
+
+**Choose overflow instead of split.** If you would rather keep MILL-1 as the primary and only spill to MILL-2 when MILL-1 is full, use a true alternative instead of parallel. That fallback behavior has its own [backup-machine walkthrough](/blog/routing-a-job-to-a-backup-machine-when-the-primary-is-full-edgebic).
+
+## The Bigger Point: Parallelism Is a Routing Decision, Not a Manual Split
+
+Splitting a big job across machines by hand means computing each machine's share, checking both calendars for a common window, and keeping the two halves in sync, which is exactly the kind of arithmetic a [finite capacity engine](/blog/finite-vs-infinite-capacity-scheduling) exists to do. You make the decision once in the routing (this step may run parallel on these machines), and the engine finds the window, splits the hours, and proves the split on the Gantt every time the job runs.
+
+User Solutions has built that discipline into scheduling tools since 1991, for operations that fight lead time daily: the US Navy, GE, BAE Systems, and Cummins among them. GE Railcar's climb from 30% to 90% on-time delivery came from squeezing exactly this kind of elapsed time out of the plan. [EDGEBIC](/edgebic) carries that lineage forward.
+
+Bring your worst lead-time crunch and your twin machines. [Contact us](/contact-us) and we will model the parallel split against your routing data, or read the [work-center rebalancing walkthrough](/blog/onboarding-a-new-work-center-and-rebalancing-edgebic) to see the same parallel mechanism used to relieve a bottleneck.
+
+<Accordion title="How do you run one job on two machines at the same time?">
+You configure the routing step as independent parallel and add the second machine as a parallel alternative. The engine then finds a window where both machines have capacity at once, splits the step's hours across them using load balancing, and emits one schedule line per machine. The two lines overlap in time, so a step that would take a full day on one machine finishes in roughly half a day across two. The step's end date is driven by whichever machine finishes last.
+</Accordion>
+
+<Accordion title="Does independent parallel split the hours evenly or by available capacity?">
+By default it load-balances, giving more hours to whichever machine has more free capacity in the shared window, which minimizes completion time. You can force an even split instead by turning load balancing off. The setting lives on the step's parallel-processing configuration, and you also set how many machines may run at once, so parallelism only takes effect when you allow more than one. Load balancing is the usual choice because it packs the split against real capacity rather than a fixed ratio.
+</Accordion>
+
+<Accordion title="What happens if the second machine has no free time when the job needs to run?">
+The engine requires both machines to have capacity in the same window, so if the second is fully booked it searches forward, up to a limited horizon, for a day when both are free at once. If it finds none, it reports that no simultaneous capacity was available for the parallel group. That is your signal to free capacity on the second machine, relax the parallel requirement, or use a true alternative instead, which runs the job on either machine rather than both at once.
+</Accordion>

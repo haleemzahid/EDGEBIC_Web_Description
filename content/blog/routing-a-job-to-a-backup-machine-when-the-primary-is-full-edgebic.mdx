@@ -1,0 +1,115 @@
+---
+title: "Routing a Job to a Backup Machine When the Primary Is Full in EDGEBIC"
+description: "A true-alternative walkthrough: set a fallback work center, watch the engine route overflow to it automatically, and keep a started job on its original machine."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - true alternative work center
+  - fallback routing
+  - backup machine scheduling
+  - automatic rerouting
+  - alternative work center resolver
+  - overflow capacity
+targetPhrase: "true alternative work center"
+wordCount: 2000
+readingTime: 10
+faqQuestions:
+  - question: "How do you set a backup machine that catches overflow automatically?"
+    answer: "You add the backup as a true-alternative work center on the routing step, distinct from a parallel one. When the primary machine cannot start the job soon enough, the engine's resolver evaluates the alternatives and routes the step to whichever candidate finishes earliest, then names that machine on the schedule. Unlike a parallel work center, which runs the job on both machines at once, a true alternative runs it on one machine or the other, so it is overflow capacity, not a split."
+  - question: "Does the engine always prefer the primary machine over the backup?"
+    answer: "It prefers whichever finishes earliest, using priority only to break ties. If the primary can start soonest, the job stays on it; if the primary is booked out and the backup is free earlier, the resolver routes the job to the backup. You set priorities on the alternatives so that when two candidates would finish at the same time, your preferred machine wins. The resolver's main sort key is projected completion, so a genuinely faster machine is chosen regardless of priority."
+  - question: "Will a backup machine steal a job that already started on the primary?"
+    answer: "No. A job with logged actuals in progress on the primary is locked to that machine, and the resolver will never reroute it to a backup even if the backup would finish sooner. This protection is automatic: any work center carrying an in-progress job for that order is excluded from rerouting. It keeps the engine from splitting a running operation across machines and losing the setup already done. Only not-yet-started steps are eligible for the backup."
+qaQuestions:
+  - question: "My primary mill is always the bottleneck, but I have an older mill I could use for overflow. How do I make the scheduler use it only when the primary is full?"
+    answer: "Add the older mill as a true alternative on the milling step, not a parallel one, and give the primary the top priority. The resolver routes each milling job to whichever machine finishes earliest: while the primary has room, jobs stay on it; once it is booked out, overflow jobs go to the older mill automatically. If the older mill is slower or sets up differently, enter its own setup and runtime on the alternative so its projected completion is honest, and the engine only chooses it when it genuinely finishes a job sooner than waiting for the primary."
+  - question: "I set a backup machine but a job that already started on the primary got left there even though the backup was free. Why did it not move?"
+    answer: "That is the in-progress lock working as designed. Once a job has a logged actual start on the primary, that machine is locked for the job and the resolver will not reroute the remaining hours to a backup, even if the backup would finish sooner. This prevents splitting a running operation and throwing away the setup already done. If you genuinely need to move a started job, for example the primary broke down, you clear the actual start on that step, make the backup the active machine, and reschedule."
+---
+
+**To give a job a backup machine in EDGEBIC by User Solutions, you add a true-alternative work center to the routing step, and the engine's resolver routes the step to whichever machine finishes earliest, sending overflow to the backup automatically while keeping any already-started job on its original machine.** This walkthrough sets a fallback mill and watches overflow route to it. It is part of our [worked examples series](/blog/edgebic-worked-examples), and it is the counterpart to the [parallel-split walkthrough](/blog/splitting-a-large-order-across-parallel-work-centers-edgebic): parallel runs a job on both machines at once, a true alternative runs it on one or the other. The numbers are illustrative; the resolver behavior is documented.
+
+## The Setup: A Preferred Mill and an Older Backup
+
+Timberline Machining runs most milling on a fast, newer mill, MILL-1. There is an older mill, MILL-2, that can do the same work but is slower and preferred only when MILL-1 is full. On a heavy week several milling jobs pile up, and some cannot wait for MILL-1's queue. The plan is to let the engine spill overflow to MILL-2 on its own, without the planner hand-moving jobs.
+
+A true alternative is the right tool. It is capacity-aware fallback: the job runs on the primary or the backup, whichever gets it done soonest, not on both at once.
+
+## Step 1: Add MILL-2 as a True Alternative
+
+Dana opens the milling step's bill of routing. In the **Alternative Work Centers** list she clicks Add and selects MILL-2. She sets:
+
+- **Category** to True Alternative (not Parallel), so this is a fallback, not a split.
+- **Priority** 1, marking MILL-1 as preferred when completion times tie.
+- **Active** on and **finite capacity** on, so MILL-2's real load is respected.
+
+Because MILL-2 is slower and sets up differently, she also enters its own **setup time** and **runtime per unit** on the alternative, so the engine's estimate of when MILL-2 would finish is honest rather than borrowed from MILL-1. She saves.
+
+## Step 2: Reschedule and Let the Resolver Choose
+
+Dana reschedules. Before the main scheduling pass, the engine's alternative resolver looks at every milling job that has a true alternative. For each, it computes the earliest completion on each candidate machine and commits the job to whichever finishes soonest, naming that machine on the schedule.
+
+The result for the heavy week:
+
+- Jobs early in the queue go to MILL-1, which is faster and still has room.
+- Once MILL-1 is booked out, the next jobs would have to wait behind its queue. For those, MILL-2, though slower, finishes them sooner than waiting, so the resolver routes them to MILL-2.
+- Priority breaks ties: when a job could finish at the same time on either mill, MILL-1 wins because it is priority 1.
+
+Overflow spilled to the backup automatically, and no one dragged a bar.
+
+## Where the Jobs Land
+
+| Job | Routed to | Why |
+|---|---|---|
+| M-1 | MILL-1 | Primary free, finishes soonest |
+| M-2 | MILL-1 | Primary still has room |
+| M-3 | MILL-2 | Primary booked out; backup finishes sooner than waiting |
+| M-4 | MILL-2 | Same: overflow to the backup |
+
+MILL-1 stays the workhorse; MILL-2 catches only what MILL-1 cannot get to in time. Because MILL-2's own setup and runtime feed the estimate, the engine picks it only when it genuinely beats waiting for MILL-1, so the older mill is never used just to look busy.
+
+## Step 3: Confirm the Routing and the In-Progress Lock
+
+Dana verifies two things. First, which machine each job actually landed on: the schedule's work center column shows MILL-1 or MILL-2 per job, and the decision trail records why the resolver chose each. Second, the protection for started work.
+
+A job already running on MILL-1, with a logged actual start, is locked to MILL-1. The resolver excludes any machine carrying an in-progress job for that order, so it will never move the remaining hours of a started job to MILL-2, even if MILL-2 would finish sooner. This keeps the engine from splitting a running operation and throwing away the setup already done. Only not-yet-started steps are eligible for the backup.
+
+## What This Run Proves
+
+1. **A true alternative is overflow, not a split.** The job runs on one machine or the other, whichever finishes earliest.
+2. **The resolver sorts by completion, priority breaks ties.** A genuinely faster route wins; priority only decides equal outcomes.
+3. **Backup estimates are honest.** MILL-2's own setup and runtime feed its projected completion, so it is chosen only when it truly beats waiting.
+4. **Started jobs are locked.** In-progress work stays on its machine; the backup never steals a running operation.
+5. **Overflow routes automatically.** No hand-moving jobs; the engine spills to the backup when the primary is full.
+
+## Variations Worth Trying
+
+**Prioritize among several backups.** Add a third machine as a second true alternative and set priorities 1, 2, 3 across them. When several would finish at the same time, the engine tries them in priority order; when one is clearly faster, it wins regardless. This lets you express "prefer B, then C, then D" cleanly.
+
+**Reroute a broken-down job on purpose.** If the primary fails mid-job, the in-progress lock keeps the started step where it is by default. To move it deliberately, clear the actual start on that step, make the backup the active machine, and reschedule. This is the intentional escape hatch from the automatic lock.
+
+**Combine with a rush order.** Give a hot order a top priority and a true-alternative mill, and the engine can route the rush to the backup if that finishes it sooner, shrinking the ripple on the primary. That interaction shows up in the [rush-order walkthrough](/blog/adding-a-rush-order-to-a-full-schedule-edgebic).
+
+## The Bigger Point: Fallback Routing Belongs in the Model, Not in Your Head
+
+Every planner knows which jobs to shove to the old mill when the good one is jammed, but holding that rule in your head and applying it by hand does not scale past a busy week. A true alternative encodes the rule in the routing so the [finite capacity engine](/blog/finite-vs-infinite-capacity-scheduling) applies it every run: prefer the primary, spill to the backup when the primary is full, and never disturb a started job. That is how a plant with mixed-age equipment keeps its fast machines loaded and its old machines earning without a planner refereeing every job. Managing overflow around a constraint is one of the core [bottleneck](/blog/production-bottleneck-identification) skills.
+
+User Solutions has built that discipline into scheduling tools since 1991, for operations with deep and uneven machine fleets: the US Navy, GE, BAE Systems, and Cummins among them. [EDGEBIC](/edgebic) carries that lineage into a modern resolver.
+
+Bring your preferred machine and its backups. [Contact us](/contact-us) and we will model the fallback rules against your routing data, or read the [onboarding-a-new-work-center walkthrough](/blog/onboarding-a-new-work-center-and-rebalancing-edgebic) to see when overflow beats a straight parallel split.
+
+<Accordion title="How do you set a backup machine that catches overflow automatically?">
+You add the backup as a true-alternative work center on the routing step, distinct from a parallel one. When the primary machine cannot start the job soon enough, the engine's resolver evaluates the alternatives and routes the step to whichever candidate finishes earliest, then names that machine on the schedule. Unlike a parallel work center, which runs the job on both machines at once, a true alternative runs it on one machine or the other, so it is overflow capacity, not a split.
+</Accordion>
+
+<Accordion title="Does the engine always prefer the primary machine over the backup?">
+It prefers whichever finishes earliest, using priority only to break ties. If the primary can start soonest, the job stays on it; if the primary is booked out and the backup is free earlier, the resolver routes the job to the backup. You set priorities on the alternatives so that when two candidates would finish at the same time, your preferred machine wins. The resolver's main sort key is projected completion, so a genuinely faster machine is chosen regardless of priority.
+</Accordion>
+
+<Accordion title="Will a backup machine steal a job that already started on the primary?">
+No. A job with logged actuals in progress on the primary is locked to that machine, and the resolver will never reroute it to a backup even if the backup would finish sooner. This protection is automatic: any work center carrying an in-progress job for that order is excluded from rerouting. It keeps the engine from splitting a running operation across machines and losing the setup already done. Only not-yet-started steps are eligible for the backup.
+</Accordion>

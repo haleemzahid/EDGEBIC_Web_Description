@@ -1,0 +1,80 @@
+---
+title: "What an Admin Checks Before EDGEBIC Go-Live"
+description: "What an admin checks before EDGEBIC go-live: the database, data quality, roles, backups, and a proven scheduling loop, so the first live day runs on data the team trusts."
+published: 2026-08-02T12:00:00.000Z
+modified: 2026-08-02T12:00:00.000Z
+category: Admin & Deployment
+author: user-solutions
+cluster: edgebic-admin
+pillarSlug: edgebic-admin-guide
+keywords:
+  - go-live checklist scheduling
+  - scheduling software go-live
+  - pre go-live check
+  - data quality check
+  - deployment readiness
+  - scheduling deployment
+targetPhrase: "go-live checklist scheduling"
+wordCount: 1600
+readingTime: 8
+faqQuestions:
+  - question: "What should an admin check before EDGEBIC goes live?"
+    answer: "Check five things: the database is the right one for the number of users, master data is loaded and dry-run clean, roles exist with least-privilege access and users are assigned, a backup is taken and a backup schedule is set, and the full scheduling loop has been proven on real data. Each is a gate: if any is not ready, the go-live is not ready. Proving the loop on real data before go-live is what turns the first live day from a test into a routine."
+  - question: "How do you know your master data is ready for go-live?"
+    answer: "Dry-run each import mask on a small slice, read the result counts, and confirm rows land as expected before the full load. Then run the scheduler and check that the plan looks right: work centers, shifts, holidays, products, and routings all producing a sensible schedule. Data that produces a believable plan on a small proof is data ready for go-live. Data that has never been run through the scheduler is unproven, no matter how carefully it was entered."
+  - question: "Should go-live happen on the local database or the shared server?"
+    answer: "On whichever matches the number of users, decided before go-live, not after. A single planner goes live on the local single-file database. A team goes live on the shared SQL Server database, which means the switch and the data migration happen before go-live, not on the day. Going live on the wrong database means migrating under pressure with users waiting, so settle the database question, migrate, and prove the loop again on the shared server first."
+qaQuestions:
+  - question: "We go live Monday with four planners. What is the one thing most likely to bite us?"
+    answer: "The data migration to the shared server, because switching the provider does not move data automatically: the old database keeps everything and the new one starts empty. If you plan to go live on SQL Server Monday but only switch Sunday night, you are migrating master data under pressure with four people waiting. Do the switch and the re-import earlier in the week, then prove the scheduling loop on the shared server before Monday. Take an export backup before the switch, confirm the plan looks right on the shared database, and Monday is a normal day rather than a migration."
+  - question: "Our data is loaded but we have not run the scheduler yet. Are we ready to go live?"
+    answer: "Not yet, because loaded data is unproven data until the scheduler has run against it. Import a representative set of orders, run the scheduler, log an actual, and reschedule, all before go-live. That loop is what surfaces the data problems that only appear when the engine plans: a routing that does not chain, a work center with no shifts, a job that will not schedule. Fix what the loop reveals while the dataset is small and no one is depending on it, then go live on data that has already produced a believable plan."
+---
+
+**Before EDGEBIC goes live, an admin checks five gates: the database matches the number of users, master data is loaded and dry-run clean, roles exist and users are assigned with least privilege, a backup is taken and a schedule is set, and the full scheduling loop has been proven on real data.** In [EDGEBIC by User Solutions](/edgebic) each gate is pass-or-fail, and the last one (proving the loop before go-live) is what turns the first live day from a test into a routine. This post is the go-live checklist an administrator runs.
+
+Go-live is the end of the rollout the [EDGEBIC admin guide](/blog/edgebic-admin-guide) describes in full. This post is the readiness check just before the switch is flipped: what to confirm, in what order, so the first live day runs on data the team trusts. It names controls that live in Settings and the data utilities, never any internal path.
+
+## Gate 1: The Right Database, Already Chosen
+
+The database question has to be settled before go-live, not on the day. A single planner goes live on the default local single-file database, which needs no server and is ready in minutes. A team goes live on the shared SQL Server database that every installation points at.
+
+The trap is going live on the wrong one. Switching the provider does not move data: the old database keeps everything and the new one starts empty. So if a team plans to go live on the shared server, the switch and the data migration must happen before go-live, with time to prove the plan again on the shared database. Doing the switch the night before means migrating master data under pressure while users wait. Settle the database, migrate early, and re-prove the loop on the target database. Decide the database itself in [choosing a database for EDGEBIC](/blog/choosing-a-database-for-edgebic-the-it-decision).
+
+## Gate 2: Master Data Loaded and Dry-Run Clean
+
+Master data is the foundation the schedule stands on, and go-live readiness means it is loaded and verified, not just entered. The verification is the dry run: test each import mask on a small slice, read the result counts, and confirm rows land as created or updated as expected before the full load. A mask that dry-runs clean is a mask you can trust on the whole file.
+
+Load the data in a sensible order: shifts and holidays first, then work centers, products, customers, and routings, because later loads reference earlier ones. Watch the four outcomes each run produces (created, updated, reused, or failed with a reason) and read the per-run log on any failures. The [import governance workflow](/blog/the-data-import-governance-workflow-in-edgebic) covers this discipline in full; at go-live, the check is simply that every entity type loaded clean and the logs hold no surprises.
+
+Pay special attention to routings. A BOR import wipes and recreates a product's steps each run, so each product's complete routing must live in one file. A routing that came in split across files will be incomplete, and go-live is the wrong time to discover it.
+
+## Gate 3: Roles Built, Users Assigned, Least Privilege
+
+Access has to be ready before the first sign-in, and the order is roles first, users second. Build a Planner role and a Supervisor role with least-privilege defaults, granting only the permissions each genuinely needs, then assign each person a role. Because a user's access is the union of their roles, starting narrow and adding later is far easier than granting broadly and clawing back.
+
+The go-live checks here are concrete. Every user who needs to sign in Monday has an account with a role. New users have the must-change-password flag set so they set their own on first sign-in. Nobody is sharing a login, because the audit trail only maps actions to people when accounts are one-per-person. And the controls that could disturb the plan are held only by the right roles, which is how [role-based access protects the schedule](/blog/how-role-based-access-protects-the-schedule) from day one. Confirm the founding administrator account is in place, since it and the built-in Administrator role cannot be deleted and always hold full access.
+
+## Gate 4: Backed Up, With a Schedule Set
+
+Go-live readiness includes a backup taken and a backup rhythm established, because the first live weeks are when data is both most valuable and most likely to be re-cleared or re-imported. Take an export backup now: for the local database, one click on the DataSource tab makes a timestamped copy; for SQL Server, confirm the database is in IT's rotation.
+
+Then set the rhythm, not just the one backup. Nightly rotation or a scheduled file copy, plus the standing rule to export before any data clear, mass routing re-import, or provider switch. A go-live that ships without a backup schedule is a go-live one bad afternoon from a real loss. The wider [database health routine](/blog/keeping-the-edgebic-database-healthy-over-time) is what this backup gate grows into.
+
+## Gate 5: The Scheduling Loop, Proven on Real Data
+
+The final gate is the one most often skipped and the most important: the full scheduling loop has been run on real data before go-live. Loaded data is unproven until the scheduler has planned against it. Import a representative set of orders, run the scheduler, log an actual, and reschedule. That loop is what surfaces the problems that only appear when the engine plans: a routing that does not chain, a work center with no shifts, a job that will not schedule, a plan that looks wrong for a traceable reason.
+
+Fix what the loop reveals while the dataset is small and no one depends on it. A schedule that looks believable on a real proof is data ready for the first live day. Confirm too that site scheduling policy (the default direction and how a backward job that does not fit is handled) is set deliberately and communicated, since it shapes every run. Imports change data but never recalculate the schedule, so the scheduler run is always a separate, deliberate step, which is exactly the habit you want going into go-live.
+
+## The Go-Live Checklist at a Glance
+
+| Gate | Ready when |
+|---|---|
+| Database | The right engine chosen and migrated to before go-live day |
+| Master data | Every mask dry-run clean, full loads read, routings whole |
+| Access | Roles built least-privilege, users assigned, one account per person |
+| Backups | An export taken and a backup schedule set |
+| The loop | Scheduler run on real orders, an actual logged, a reschedule proven |
+
+Run these five gates and go-live is a routine rather than a leap. Each is pass-or-fail: if any is not ready, the go-live is not, and moving the date is cheaper than a first live day spent firefighting. Fast, dependable deployment is a User Solutions tradition (the documented Plastilite integration with a Fourth Shift ERP took five days), and it comes from proving the small things before the big day, not from luck. For the full journey behind this checklist, read the [EDGEBIC admin guide](/blog/edgebic-admin-guide), and for the rollout that leads up to it, [planning a multi-user rollout](/blog/planning-a-multi-user-edgebic-rollout).
