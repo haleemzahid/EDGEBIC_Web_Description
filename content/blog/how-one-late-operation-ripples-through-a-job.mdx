@@ -1,0 +1,98 @@
+---
+title: "How One Late Operation Ripples Through a Job"
+description: "When one operation runs late, a finite capacity scheduler cascades the delay forward only: downstream steps shift, upstream and completed steps stay, and joins wait for the latest input."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - late operation cascade
+  - delay ripple manufacturing
+  - downstream schedule shift
+  - routing dependency cascade
+  - one step late reschedule
+  - operation dependency scheduling
+targetPhrase: "late operation cascade"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "What happens to the rest of a job when one operation runs late?"
+    answer: "When one operation runs late, a finite capacity scheduler cascades the delay forward only. Every step that depends on the late operation shifts to a later start, because it cannot begin until its input is ready. Steps upstream of the late one, and any completed work, do not move at all, since the delay is behind them. The engine recomputes only the downstream chain, so the ripple flows in one direction: forward, from the late step to the finish."
+  - question: "Does a late step always push the finish date out?"
+    answer: "A late step pushes the finish date only if it sits on the path that determines completion and the downstream steps have no slack to absorb it. If a downstream operation was going to wait for a busy machine anyway, a small upstream slip may vanish into that existing wait. But if the late step feeds directly into the finishing operations with no buffer, the whole tail shifts and the finish moves out by roughly the delay. The cascade shows you which case you are in."
+  - question: "Why does a step that depends on two others wait for the later one?"
+    answer: "A step that joins two upstream paths needs both inputs on hand before it can start, so it waits for whichever finishes later. The engine records each upstream step's end time and takes the maximum when placing the joining step. If one of the two feeders runs late, the join moves with it; if the other was already later, the late feeder may not matter. This max-of-inputs rule is why a delay on one branch sometimes ripples and sometimes does not."
+qaQuestions:
+  - question: "Our second operation ran three hours long. The finish moved a full day. Why more than three hours?"
+    answer: "Because the downstream step could not simply start three hours later on the same machine; it had to find the next open slot on a work center that was already booked. A three-hour slip pushed the next operation past the end of a shift or into a day the machine was full, so the forward search landed it on the following available slot, which was the next morning. Small slips often amplify at a busy resource, because the delay lands the step in a fuller part of the calendar. The cascade shows exactly where that happened."
+  - question: "One branch of our assembly ran late but the finish date did not move at all. Is that right?"
+    answer: "Yes, and it means that branch was not the binding one. The assembly step waits for the later of its two feeder branches, so if the branch that ran late still finished before the other branch, the join was already waiting on the other branch and the late one had slack to spare. The delay was absorbed. This is the max-of-inputs rule working in your favor: a slip on a non-binding path costs nothing until it becomes the latest input."
+---
+
+**When one operation runs late, a finite capacity scheduler cascades the delay forward only: every downstream step that depends on the late operation shifts to a later start, while upstream steps and completed work stay exactly where they are.** EDGEBIC by User Solutions builds a dependency graph from the routing, records each step's end as it places it, and reads those ends when it places the next step. A late operation changes one recorded end, and that change flows downstream through the chain. It never flows backward. Understanding the one-directional ripple tells you, at a glance, which jobs a slip endangers and which it leaves untouched.
+
+## The dependency chain carries the delay
+
+A routing is not a flat list. It is a chain of operations linked by which must finish before which can start. The engine reads those links, builds a graph, and sorts the steps predecessor before successor, so it always places an operation after everything it depends on.
+
+As it places each step, it records the time that step frees its output. The next step reads that record to find its own earliest possible start. This is the wire the delay travels on. Change one step's end time and every step that reads it, directly or through a chain, sees a later input and moves. The mechanics of that end-time record live in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and how each step's start is set is covered in [how a scheduler decides when to start a job](/blog/how-a-scheduler-decides-when-to-start-a-job).
+
+## The ripple flows forward, never backward
+
+The critical property is direction. The cascade only ever flows forward, from the late step toward the finish.
+
+Upstream steps do not move, because they already ran or were placed before the late one; the delay is behind them and cannot reach them. Completed work is especially safe: a reschedule never moves a step with an actual start and end, so anything already done is untouched. When a delay ripples, it touches only the not-yet-started operations downstream of the late step. Everything before it is fixed. See [why completed work is never moved on reschedule](/blog/how-edgebic-preserves-completed-work-on-reschedule).
+
+This is why a single late operation does not throw the whole plan into chaos. Its blast radius is precisely its own downstream chain, and no further.
+
+## A join waits for the later input
+
+Routings branch and merge. When two paths feed one operation, an assembly step joining two sub-parts, that step needs both inputs before it can start. The engine handles this by taking the maximum of the two upstream end times when it places the join.
+
+The consequence is that a delay ripples through a join only if the late branch is the later one. If the branch that ran late still finishes before the other branch, the join was already waiting on the other branch, and the late branch had slack. The delay is absorbed and the finish does not move. If the late branch becomes the latest input, the join moves with it and the ripple continues. This max-of-inputs rule is why the same size slip sometimes costs a day and sometimes costs nothing.
+
+## A worked example
+
+A job runs Cut, then two parallel branches, Mill and Grind, that both feed Assemble, then Ship. One shift, Monday to Friday.
+
+Planned:
+
+| Step | Ends | Feeds |
+|---|---|---|
+| Cut | Mon 12:00 | Mill, Grind |
+| Mill | Tue 12:00 | Assemble |
+| Grind | Tue 09:00 | Assemble |
+| Assemble | Tue 15:00 | Ship |
+| Ship | Tue 17:00 | done |
+
+Assemble waits for the later of Mill (Tue 12:00) and Grind (Tue 09:00), so Mill is the binding input and Assemble starts Tue 12:00.
+
+Now Grind runs three hours long and ends Tue 12:00 instead of Tue 09:00. Does the finish move? No. Grind is now tied with Mill, not later, so Assemble's binding input is unchanged and it still starts Tue 12:00. Ship still lands Tue 17:00. A three-hour slip on the non-binding branch cost nothing.
+
+Change the story: Mill runs three hours long and ends Tue 15:00. Now Mill is later than ever, Assemble's binding input moves to Tue 15:00, and the forward search places Assemble in the next open slot, which spills past the shift end to Wednesday 08:00. Ship follows Wednesday. A slip on the binding branch pushed the finish a full day, more than the three hours, because the delayed Assemble landed in a full part of the calendar. Same size delay, two very different outcomes, decided entirely by whether the late step was on the binding path.
+
+## Why the ripple sometimes amplifies
+
+A slip does not always cost exactly its own length. On a busy resource it can cost more. If a downstream step slips past the end of a shift or into a day its machine is already booked, the forward search cannot just add three hours; it walks to the next genuinely open slot, which might be the next morning. The delay lands the step in a fuller part of the calendar, and the wait for capacity stretches the ripple.
+
+The reverse also happens: slack absorbs slips. If a downstream step was going to wait for a busy machine anyway, a small upstream delay can disappear into that existing wait and cost nothing. Whether a slip amplifies or vanishes depends on the load it lands in, which is exactly what a finite capacity plan makes visible.
+
+## Reading the ripple
+
+The practical value is that the cascade tells you the blast radius immediately. When an operation runs late, you do not have to guess which jobs are affected. Reschedule, and the plan shows precisely which downstream steps moved and by how much, while everything upstream and everything on non-binding branches stays put.
+
+That turns a vague worry, "will this slip hurt us?", into a specific answer you can act on: these three operations shifted, the finish moved to Wednesday, and this other branch was unaffected. You then decide whether to expedite, reroute, or accept it. See how a delay ripples through your own routings in [EDGEBIC](/edgebic), and for the wider picture of how work flows through a job, [job shop scheduling challenges](/blog/job-shop-scheduling-challenges) is a useful companion.
+
+<Accordion title="What happens to the rest of a job when one operation runs late?">
+When one operation runs late, a finite capacity scheduler cascades the delay forward only. Every step that depends on the late operation shifts to a later start, because it cannot begin until its input is ready. Steps upstream of the late one, and any completed work, do not move at all, since the delay is behind them. The engine recomputes only the downstream chain, so the ripple flows in one direction: forward, from the late step to the finish.
+</Accordion>
+
+<Accordion title="Does a late step always push the finish date out?">
+A late step pushes the finish date only if it sits on the path that determines completion and the downstream steps have no slack to absorb it. If a downstream operation was going to wait for a busy machine anyway, a small upstream slip may vanish into that existing wait. But if the late step feeds directly into the finishing operations with no buffer, the whole tail shifts and the finish moves out by roughly the delay. The cascade shows you which case you are in.
+</Accordion>
+
+<Accordion title="Why does a step that depends on two others wait for the later one?">
+A step that joins two upstream paths needs both inputs on hand before it can start, so it waits for whichever finishes later. The engine records each upstream step's end time and takes the maximum when placing the joining step. If one of the two feeders runs late, the join moves with it; if the other was already later, the late feeder may not matter. This max-of-inputs rule is why a delay on one branch sometimes ripples and sometimes does not.
+</Accordion>

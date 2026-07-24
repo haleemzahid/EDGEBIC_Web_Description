@@ -1,0 +1,106 @@
+---
+title: "How a Reschedule Keeps Inventory Consistent in EDGEBIC"
+description: "Reschedule the same order twice and on-hand still reconciles. Here is the reverse-then-repost design that keeps at most one live consume issue per order."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - reschedule inventory consistency
+  - idempotent netting
+  - consume issue reversal
+  - inventory ledger reschedule
+  - reverse then repost
+  - stock reconciliation
+targetPhrase: "reschedule inventory consistency"
+wordCount: 1620
+readingTime: 8
+faqQuestions:
+  - question: "Why does rescheduling an order not double-count its stock consumption?"
+    answer: "Because the engine reverses the order's prior consume issue before it re-nets. When a rescheduled order is scheduled again, EDGEBIC first cancels its existing consume issue with an inverse entry, restoring the stock, then reads on-hand and posts a fresh issue if the order still consumes. The reversal is committed before the engine reads on-hand, so no matter how many times you reschedule, there is at most one live consume issue for the order at any moment."
+  - question: "Does rescheduling ever touch the original ledger entries?"
+    answer: "No. The ledger is append-only, so a reschedule never edits or deletes an existing entry. It marks the prior consume issue as reversed and appends an inverse entry, then appends a new consume issue. Both the reversed original and its reversal survive forever as a matched pair that nets to zero, and the new issue stands beside them. The result is a full audit trail of every reschedule, not a rewritten history."
+  - question: "What happens to the build receipt when a make-to-stock order is rescheduled?"
+    answer: "Nothing. Rescheduling reverses only the consume issues for an order, never its build receipts, so a completed build stays in stock across the reschedule. This is a deliberate distinction: consumption is a planning commitment that should re-evaluate on each run, while a completed build is a physical fact that a reschedule must not undo. Only deleting or reopening the order reverses the receipt."
+qaQuestions:
+  - question: "We rescheduled a 50-unit order twice against 70 on hand. Won't on-hand drift down each time?"
+    answer: "No. The first schedule posts an issue of minus 50, leaving 20. The second schedule first reverses that issue with a plus 50, restoring 70, then posts a fresh minus 50, landing back at 20. On-hand is still 20 after two reschedules, and the ledger shows three entries: the original issue, its reversal, and the new issue. Every reschedule cycle nets clean because the reversal always comes before the re-post."
+  - question: "After several reschedules, how do we prove the ledger is still correct?"
+    answer: "Open the transaction history for the product and read the consume issues and their reversals as pairs. Each reversed issue has a matching inverse entry that nets to zero, and exactly one live consume issue remains for the order if it still consumes stock. Sum the whole ledger and it equals current on-hand. If a reversed issue lacks its pair, or two live issues exist for one order, the anomaly report surfaces it; in normal operation the reverse-first design prevents both."
+---
+
+**Rescheduling keeps inventory consistent by reversing an order's prior stock consumption before it re-nets, so on-hand always reconciles no matter how many times the order is scheduled.** In EDGEBIC by User Solutions, the rule is simple and strict: reverse first, then read on-hand, then re-post. That ordering guarantees at most one live consume issue per order at any moment, which is what makes a reschedule safe to run again and again without drifting the balance.
+
+This post explains the reverse-then-repost design and traces it through two reschedules of one order. It sits under the [EDGEBIC planning guide](/blog/edgebic-planning-guide) and builds on the [inventory ledger explained](/blog/edgebic-inventory-ledger-explained).
+
+## The problem a reschedule could create
+
+A demand that consumes stock posts a negative issue at scheduling time. Reschedule that order and the naive outcome is a second issue: consume the stock twice, drift on-hand down by the demand each cycle. Reschedule a 50-unit order three times and on-hand silently falls by 150 for a single order that only ever needed 50. That is the failure the design exists to prevent.
+
+The fix is not to skip re-netting. Stock moves between runs, so an order that consumed last week might need to build this week, or the reverse. The engine must re-evaluate. It just has to undo the old decision first.
+
+## Reverse first, then re-net
+
+Every reschedule of a consuming order follows the same three-step order.
+
+1. **Reverse the prior consume issue.** The engine marks the order's existing consume issue as reversed and appends an inverse entry that restores the stock. This commits before anything else runs.
+2. **Read restored on-hand.** With the old consumption undone, the engine reads on-hand as if this order had never consumed. That is the honest starting position for re-netting.
+3. **Re-net and re-post.** The engine decides afresh whether the order consumes, and if so posts a new consume issue for the current need.
+
+The critical detail is that the reversal commits before the engine reads on-hand. This makes the whole cycle idempotent: whether you reschedule once or ten times, there is never more than one live consume issue for the order, because each run cancels the last before creating the next.
+
+## A worked reschedule: 50 units, run twice
+
+Take a stocked part with 70 on hand and a customer order for 50.
+
+**First schedule.** No prior issue exists, so the reversal step is a no-op. The engine reads 70, nets the 50-unit demand, and posts:
+
+| # | Qty | Type | Tag | Balance |
+|---|---|---|---|---|
+| 1 | −50 | Issue | Schedule Transaction | 20 |
+
+On-hand is 20. The order is satisfied from stock.
+
+**The customer moves the delivery date. Reschedule.**
+
+**Second schedule.** The engine first reverses the prior issue, appending an inverse entry, which restores on-hand to 70. Then it reads 70, still enough for 50, and posts a fresh issue:
+
+| # | Qty | Type | Tag | Balance |
+|---|---|---|---|---|
+| 1 | −50 | Issue | Schedule Transaction | 20 |
+| 2 | +50 | Issue reversal | Reversal of #1 | 70 |
+| 3 | −50 | Issue | Schedule Transaction | 20 |
+
+On-hand is still 20 after two reschedules. The ledger reads honestly: original issue, its reversal, new issue. Entries 1 and 2 are a matched pair that nets to zero; entry 3 is the single live consume. Reschedule a third time and you get another +50, −50 pair, and the balance stays 20.
+
+## Receipts are left alone
+
+The reschedule reverses only consume issues, never build receipts. This distinction is deliberate. A consume issue is a planning commitment that should re-evaluate each run. A build receipt is a physical fact: units were produced and put away. Rescheduling the order that consumed stock must not undo a completed build. Only deleting or reopening the order reverses receipts, because those actions genuinely unwind the production event. For that fuller reversal path, see [why inventory transactions are append-only](/blog/why-inventory-transactions-are-append-only-in-edgebic).
+
+## Why append-only makes this work
+
+The reverse-then-repost design depends on the ledger being append-only. Because no entry is ever edited or deleted, a reschedule can safely mark the old issue as reversed and add its inverse, leaving a complete record of what was consumed, when it was undone, and what was consumed instead. The alternative, editing the old issue in place, would erase the history and make a mid-reschedule crash impossible to reason about. The append-only ledger turns every reschedule into a clean, auditable transaction.
+
+This is the inventory counterpart to a broader EDGEBIC principle: rescheduling never moves completed work. In scheduling, actuals are preserved; in inventory, receipts stand and consumption re-nets. Both protect the record of what already happened while re-planning what has not. If on-hand ever looks wrong after a reschedule, the reconciliation path is documented in [inventory on-hand looks wrong after a reschedule](/blog/inventory-on-hand-looks-wrong-after-a-reschedule-edgebic).
+
+## Reschedule with confidence
+
+The practical takeaway is that you can reschedule freely. Move due dates, re-run the plan after a machine goes down, or re-sequence the whole book, and the inventory ledger stays consistent because every consuming order cancels its old commitment before making a new one. On-hand is always the sum of the ledger, and the sum always reflects at most one live consumption per order.
+
+That reliability is what lets the finite capacity engine re-plan as often as reality demands without a planner ever hand-correcting stock. It is the same discipline that keeps [safety stock](/blog/safety-stock-calculation) triggers and promise math trustworthy across re-runs: the numbers you read are the numbers the ledger can prove.
+
+<Accordion title="Why does rescheduling an order not double-count its stock consumption?">
+Because the engine reverses the order's prior consume issue before it re-nets. When a rescheduled order is scheduled again, EDGEBIC first cancels its existing consume issue with an inverse entry, restoring the stock, then reads on-hand and posts a fresh issue if the order still consumes. The reversal is committed before the engine reads on-hand, so no matter how many times you reschedule, there is at most one live consume issue for the order at any moment.
+</Accordion>
+
+<Accordion title="Does rescheduling ever touch the original ledger entries?">
+No. The ledger is append-only, so a reschedule never edits or deletes an existing entry. It marks the prior consume issue as reversed and appends an inverse entry, then appends a new consume issue. Both the reversed original and its reversal survive forever as a matched pair that nets to zero, and the new issue stands beside them. The result is a full audit trail of every reschedule, not a rewritten history.
+</Accordion>
+
+<Accordion title="What happens to the build receipt when a make-to-stock order is rescheduled?">
+Nothing. Rescheduling reverses only the consume issues for an order, never its build receipts, so a completed build stays in stock across the reschedule. This is a deliberate distinction: consumption is a planning commitment that should re-evaluate on each run, while a completed build is a physical fact that a reschedule must not undo. Only deleting or reopening the order reverses the receipt.
+</Accordion>
+
+See rescheduling keep the ledger clean in the [EDGEBIC platform overview](/edgebic), or [contact US for a demo](/contact-us).

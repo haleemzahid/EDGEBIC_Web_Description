@@ -1,0 +1,81 @@
+---
+title: "A Booking Falls Outside Its Shift Hours"
+description: "When an operation's clock window runs outside the shift's working hours, a work-center shift override or a changed shift is usually the cause. Align the hours and re-run."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - booking outside shift hours
+  - operation outside working window
+  - work center shift override
+  - shift hours changed after scheduling
+  - daily hours by weekday
+  - shift bounds anomaly
+targetPhrase: "booking outside shift hours"
+wordCount: 1320
+readingTime: 7
+faqQuestions:
+  - question: "Why is an operation booked outside its shift's working hours?"
+    answer: "The usual cause is a mismatch between the shift the booking used and the working hours in effect: a work-center-specific shift override with a different window than the global shift, or a shift whose daily hours were changed after the plan was made. The booking's clock window falls outside the hours now defined for that weekday. Aligning the shift's hours to cover the window and re-running scheduling clears it."
+  - question: "How does a shift define its working hours?"
+    answer: "A shift carries separate start and end times for each weekday, so Monday can run different hours than Saturday. The scheduler places operations inside those windows. If a booking's clock times fall outside the start and end defined for that day of week, the shift-bounds check flags it, usually because a work-center override or a later edit changed the hours the booking should have respected."
+  - question: "Does a work-center shift override replace the global shift hours?"
+    answer: "Yes, for that work center. When a work center has its own shift definition, the scheduler uses those hours in preference to the global shift for bookings on that machine. If the override window differs from what you expect, an operation can look like it runs outside hours when it is actually following the override. Check the work-center-specific shift first when a booking on one machine falls outside the hours the rest of the plant uses."
+qaQuestions:
+  - question: "One machine keeps booking work into the evening even though our standard shift ends at four. Everything else stops on time. What is different about that machine?"
+    answer: "That machine almost certainly has its own shift override with a later end time than the global shift. The scheduler uses a work-center-specific shift in preference to the global one, so if the override runs to eight in the evening, bookings on that machine will fill until eight while the rest of the plant stops at four. Open the machine's shift assignment and compare its hours to the global shift. If the later window is not intended, correct the override and re-run scheduling for that machine's jobs."
+  - question: "We shortened our afternoon shift last week and now old bookings show running past the new end time. Is that a real error?"
+    answer: "It is a stale-plan artifact, not a live scheduling error. Those bookings were placed when the shift was longer, and shortening the shift does not retroactively move work already scheduled into the hours you removed. The shift-bounds check flags them because their clock windows now fall outside the shorter day. Re-run scheduling for the affected jobs and the engine replans them inside the new hours. Editing shift hours always calls for a reschedule of anything already booked in the changed window."
+---
+
+**A booking that falls outside its shift's working hours has a mismatch between the shift the operation used and the hours now in effect: usually a work-center shift override with a different window than the global shift, or a shift whose daily hours were changed after the plan was made.** The scheduler places work inside the defined hours, so a booking outside them almost always means those hours changed or an override you did not expect is in play. Aligning the hours and re-running scheduling clears it.
+
+[EDGEBIC by User Solutions](/edgebic) defines a shift as a set of per-weekday working windows, and it schedules operations inside those windows. When a booking's clock times fall outside the hours defined for its day of week, the anomaly report flags it. This post, part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide), covers the two causes and their fixes.
+
+## Shifts Define Hours by Weekday
+
+A shift is not a single block; it carries separate start and end times for each day of the week, so Monday can run eight to four while Saturday runs a half day or none at all. The scheduler places every operation inside the window for the relevant weekday. The shift-bounds check flags any booking whose clock window falls outside the start and end defined for that day, comparing the operation's actual times against the shift's daily hours.
+
+Overnight shifts, where the end time is earlier in the clock than the start, are excluded from the check to avoid false positives, since those legitimately cross midnight.
+
+## Cause 1: A Work-Center Shift Override
+
+A work center can carry its own shift definition that takes precedence over the global shift for bookings on that machine. If the override window differs from the global one, an operation on that machine can run to hours the rest of the plant does not, and it looks like it is running outside shift when it is actually following the override.
+
+**How to tell:** the symptom appears on one machine while the rest of the plant stops on time, and that machine has a work-center-specific shift with different hours.
+
+**Fix:** open the machine's shift assignment and compare its window to the global shift. If the difference is intended (that machine genuinely runs later), the booking is correct. If not, correct the override so its hours match what you expect, then re-run scheduling for the machine's jobs. See [how to add a second shift](/blog/how-to-add-a-second-shift-in-edgebic) and [how to set up shifts, holidays, and downtime](/blog/how-to-set-up-shifts-holidays-downtime-in-edgebic) for where shift windows live.
+
+## Cause 2: The Shift Hours Changed After Scheduling
+
+If a shift's daily hours were edited after a plan was made, bookings placed under the old hours can now fall outside the new ones. Shortening an afternoon shift, for example, leaves any work already scheduled into the removed hours sitting outside the shorter day. Editing shift hours does not retroactively move work already booked into the window you changed.
+
+**How to tell:** the shift was edited recently, and the flagged bookings predate the edit, running past the new start or end.
+
+**Fix:** re-run scheduling for the affected jobs. The engine replans them inside the current hours. Any time you change a shift's hours, reschedule the jobs already booked in the affected window.
+
+## Confirming the Fix
+
+After aligning the shift hours or correcting the override and re-running scheduling, re-open the anomaly report and confirm the shift-bounds chip returns zero rows for the job. On the Gantt, each operation's clock window should sit inside the shift's working hours for its weekday.
+
+## Prevention
+
+- **Reschedule after any shift edit.** Whenever you change a shift's start or end times, run one scheduling pass over the jobs booked in the changed window, so no plan is left running past the hours it should respect.
+- **Know which machines carry overrides.** A work-center-specific shift is easy to forget. When a booking on one machine looks wrong, check its override before assuming a bug, since the override is the scheduler doing exactly what it was told.
+- **Keep weekday hours complete.** A shift with hours defined only for some weekdays can push work into a day it should not run; fill in every weekday the machine actually works.
+- **Distinguish this from a missing second shift.** If work is not filling an evening shift at all, that is a different symptom covered under [the schedule not using your second shift](/blog/the-schedule-did-not-use-my-second-shift-edgebic); this post is about work running outside the hours that are defined.
+
+<Accordion title="Why is an operation booked outside its shift's working hours?">
+The usual cause is a mismatch between the shift the booking used and the working hours in effect: a work-center-specific shift override with a different window than the global shift, or a shift whose daily hours were changed after the plan was made. The booking's clock window falls outside the hours now defined for that weekday. Aligning the shift's hours to cover the window and re-running scheduling clears it.
+</Accordion>
+
+<Accordion title="How does a shift define its working hours?">
+A shift carries separate start and end times for each weekday, so Monday can run different hours than Saturday. The scheduler places operations inside those windows. If a booking's clock times fall outside the start and end defined for that day of week, the shift-bounds check flags it, usually because a work-center override or a later edit changed the hours the booking should have respected.
+</Accordion>
+
+<Accordion title="Does a work-center shift override replace the global shift hours?">
+Yes, for that work center. When a work center has its own shift definition, the scheduler uses those hours in preference to the global shift for bookings on that machine. If the override window differs from what you expect, an operation can look like it runs outside hours when it is actually following the override. Check the work-center-specific shift first when a booking on one machine falls outside the hours the rest of the plant uses.
+</Accordion>

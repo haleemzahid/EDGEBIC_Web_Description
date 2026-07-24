@@ -1,0 +1,107 @@
+---
+title: "Reading Projected Available Balance Across the Horizon in EDGEBIC"
+description: "How EDGEBIC rolls projected available balance forward bucket by bucket, why past buckets use real ledger movement, and how a negative balance triggers action."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - projected available balance
+  - pab roll forward
+  - inventory projection horizon
+  - net demand against supply
+  - scheduled receipts
+  - projected stockout
+targetPhrase: "projected available balance"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "What is projected available balance in EDGEBIC?"
+    answer: "Projected available balance is a rolling forecast of on-hand stock, computed one bucket at a time. Each bucket's balance equals the previous bucket's balance, plus scheduled receipts landing in the bucket, minus that bucket's gross requirements. It tells you how much stock you will have on each future date given current demand and supply, which is the number that drives replenishment suggestions and the projected stockout date."
+  - question: "Why do past buckets use different arithmetic than future buckets?"
+    answer: "Past buckets use only realized ledger movement, the actual receipts and issues that happened, rather than the planning model. Future buckets use gross requirements and scheduled receipts. This means the balance rolls through history truthfully using what really occurred, then switches to the plan at today's boundary. The result is a single continuous line that is factual up to now and forecast from now on."
+  - question: "Is a negative projected balance an error?"
+    answer: "No, it is a signal. A negative balance means projected demand exceeds projected supply in that bucket, which is exactly the condition that fires a replenishment suggestion and sets the projected stockout date. It is meaningful rather than broken. A planner reads a negative balance as a call to commit a build in that bucket or an earlier one, not as a data problem to be cleaned up."
+qaQuestions:
+  - question: "Our calendar shows a balance of negative 70 three buckets out but nothing wrong today. How do I read that?"
+    answer: "Read it as a forecast that current supply does not cover that far out. In the documented bracket example, a product opening at 250 rolls down through weekly demand of 120 and 120 to a balance of 10 in week 2 and then to negative 70 in week 3, because no receipts arrive to offset the demand. The negative 70 is telling you week 3 will be short by 70 units unless you build ahead. The fix is to firm a replenishment in week 2 or earlier so its receipt lands before week 3 goes negative."
+  - question: "A suggested build shows in three buckets. If I firm the first, do the others clear?"
+    answer: "Not until the firmed order's receipt appears. A suggestion does not change the projected balance of later buckets on its own, so three consecutive buckets can each show a suggestion against the same depressed balance. When you firm the first suggestion and its build-to-stock order completes, that completion date lands as a scheduled receipt on the next projection, the balance recovers, and the downstream suggestions that existed only because the balance was low drop to zero. The balance moves on real receipts, not on suggestions."
+---
+
+**Projected available balance is EDGEBIC's rolling forecast of on-hand stock, computed one bucket at a time across the planning horizon.** Each bucket's balance is the previous bucket's balance, plus scheduled receipts landing in that bucket, minus that bucket's gross requirements. EDGEBIC by User Solutions rolls this line forward bucket by bucket, using real ledger movement for the past and the planning model for the future, so the balance is factual up to today and a forecast from today on. This post explains the roll-forward, why the past and future are computed differently, and how to read a negative balance as a call to action rather than an error.
+
+The projected balance is the number the whole planning layer revolves around. It drives replenishment suggestions, the projected stockout date, and available-to-promise. Reading it correctly is the core skill of using the calendar. For the wider layer, see the [inventory and planning pillar](/blog/edgebic-planning-guide); for the generic planning context, see the [master production schedule guide](/blog/master-production-schedule-guide).
+
+## The Roll-Forward Formula
+
+The projected balance is deceptively simple. For each future bucket:
+
+```
+projected balance = previous balance
+                  + scheduled receipts in this bucket
+                  - gross requirements in this bucket
+```
+
+Gross requirements is demand for the bucket, already netted between forecast and firm demand under the product's consumption rule. Scheduled receipts are open build-to-stock orders expected to complete in the bucket. The previous balance is what carried over from the bucket before. That carry-over is what makes it a roll-forward: each bucket starts where the last one ended, so a shortage in one bucket depresses every bucket after it until a receipt offsets it.
+
+The single most important consequence of the carry-over is that suggestions are visual until firmed. A suggested build does not add itself to scheduled receipts. So a bucket that goes negative stays negative in every following bucket until a real receipt lands, which is why you can see a run of red buckets each carrying a suggestion.
+
+## Why the Past and Future Differ
+
+The balance line covers history as well as the future, and the two halves are computed differently. Past buckets, entirely before today, use only realized ledger movement: the actual receipts and issues that happened. Future buckets use the planning model of gross requirements and scheduled receipts.
+
+This split is deliberate. History should be truthful, not a plan, so the balance rolls through the past using what really occurred. At today's boundary, it switches to the forecast model. The result is one continuous line: factual up to now, projected from now on. Reading it, a planner can see where stock actually was and where it is heading, on the same axis, without confusing what happened with what is planned.
+
+## Reading a Negative Balance
+
+A negative projected balance is not a data error. It is the signal that projected demand exceeds projected supply in that bucket. It does three things at once: it flags the row, it can fire a replenishment suggestion, and if it is the first negative bucket, it sets the projected stockout date on the KPI strip.
+
+The right reading of a negative balance is as a deadline. It tells you a bucket will be short by a specific amount unless a build lands before it. A balance of negative 70 in week 3 says week 3 will be 70 units short. The fix is to commit and firm a build in week 3 or an earlier bucket so its receipt arrives in time. The balance is telling you exactly how much and by when.
+
+## The Roll-Forward on a Worked Product
+
+Take the documented bracket, make-to-stock, opening at 250 units, with weekly forecasts and firm orders combining into gross requirements of 120, 120, 80, 80. No receipts arrive.
+
+| Week | Opening | Receipts | Gross req | Projected balance |
+|---|---|---|---|---|
+| 1 | 250 | 0 | 120 | 130 |
+| 2 | 130 | 0 | 120 | 10 |
+| 3 | 10 | 0 | 80 | -70 |
+| 4 | -70 | 0 | 80 | -150 |
+
+Each week starts where the last ended. Week 1 rolls 250 down to 130. Week 2 rolls 130 down to 10. Week 3 has only 10 to start and 80 of demand, so it goes to negative 70. Week 4 compounds it to negative 150. The carry-over is visible: the week 2 shortfall is what pushes week 3 and week 4 negative, not any demand spike in those weeks.
+
+Now firm a replenishment of 290 in week 2 and let it complete there.
+
+| Week | Opening | Receipts | Gross req | Projected balance |
+|---|---|---|---|---|
+| 2 | 130 | 290 | 120 | 300 |
+| 3 | 300 | 0 | 80 | 220 |
+| 4 | 220 | 0 | 80 | 140 |
+
+The single receipt in week 2 lifts the balance to 300, and the carry-over now works in your favor: weeks 3 and 4 stay comfortably positive. One receipt, placed at the right bucket, cured three weeks of projected shortage. That is the roll-forward working for you instead of against you.
+
+## Available to Promise Rides Alongside
+
+The projected balance answers how much stock you will have. A companion number, available to promise, answers a different question: how many units are not already committed to firm demand, so you could promise them to a new order. Available to promise is driven by firm demand only, not forecast, so a bucket can show a healthy projected balance built partly on forecasted receipts while its available-to-promise is modest. Promising against available to promise is safe; promising against a balance propped up by forecast is not. Keep the two distinct when a customer asks what you can commit.
+
+## Overdue Demand Does Not Vanish
+
+One behavior of the roll-forward deserves its own note, because it prevents a subtle way plans go wrong. An order or a demand whose date has already passed does not stay stranded in a history bucket where the forward projection would never see it. Overdue open demand is rolled into today's bucket, so it shows up as a requirement you still have to satisfy now, right at the start of the forward line.
+
+This matters because a missed demand that vanished into the past would quietly disappear from the plan. A customer order that was due last week and is still open is a real obligation, and the projected balance has to account for it. By clamping overdue demand into today, the roll-forward keeps the forward line honest: everything you still owe, whether it was due yesterday or is due next month, sits somewhere on the line you are actually reading. The same clamping applies to overdue supply, so an open build-to-stock order that was expected to complete last week counts as a receipt in today's bucket rather than being lost behind the today boundary.
+
+The practical effect is that the first forward bucket can look heavier than a single day or week of fresh demand would suggest, because it also carries whatever was overdue. That is correct, not a glitch. It is the plan telling you that the backlog is real and still has to be worked off before the clean forward demand even begins.
+
+## Why the Roll-Forward Design Works
+
+Computing the balance as a carry-forward line, rather than a per-bucket snapshot, is what makes the calendar honest about consequences. A shortage does not stay contained; it propagates until a receipt clears it, exactly as real stock does. This is why placing one build at the right bucket can rescue several downstream buckets, and why a suggestion that is never firmed leaves the whole downstream line depressed. The planner's job is to read where the line first crosses zero and place a receipt before it, and the roll-forward makes that first crossing, the projected stockout date, impossible to miss.
+
+Because the balance uses real ledger movement for the past, it also reconciles with reality. The line does not drift from what actually happened; it is anchored to the ledger up to today and only forecasts beyond it. That anchoring is what lets a planner trust the forward projection: it is built on the same truthful on-hand the shop floor sees.
+
+In practice, the single most valuable habit is to read the balance for the first crossing and place a receipt before it. Find the earliest bucket where the line goes negative, then commit and firm a build in that bucket or an earlier one so its completion lands before the crossing. Because the roll-forward carries a receipt forward through every later bucket, one well-placed build often clears several weeks of projected shortage at once, as the bracket example showed. You are not fixing each negative bucket individually; you are placing supply upstream of the first crossing and letting the carry-forward do the rest.
+
+To turn a negative balance into an order, read [how a forecast becomes a replenishment suggestion](/blog/how-a-forecast-becomes-a-replenishment-suggestion-in-edgebic). To choose the bucket size the balance rolls through, read [choosing a planning bucket](/blog/choosing-a-planning-bucket-day-week-or-period-in-edgebic), and for the platform overview visit [EDGEBIC](/edgebic).

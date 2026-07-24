@@ -1,0 +1,100 @@
+---
+title: "How a Scheduler Decides When to Start a Job"
+description: "How a finite capacity scheduler sets each operation's start time: the later of release and prerequisite end, then a forward search for real capacity, with numbers."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - when to start a job
+  - operation start time scheduling
+  - earliest start date manufacturing
+  - forward capacity search
+  - prerequisite step scheduling
+  - finite capacity start time
+targetPhrase: "when to start a job"
+wordCount: 1550
+readingTime: 8
+faqQuestions:
+  - question: "How does a scheduler decide when to start a job?"
+    answer: "A finite capacity scheduler sets each operation's earliest possible start as the later of two moments: the order's release date and the finish time of every prerequisite step. From that moment it searches forward in time, day by day, for the first shift with real capacity on the target work center. The start time you see is where the earliest-possible moment and the first free slot meet, so a job never starts before its release, before its inputs are ready, or on a machine that is already full."
+  - question: "Why does a job not start on its release date?"
+    answer: "A job starts on its release date only if the work center has open capacity that day and no upstream step is still running. If the machine is booked, the scheduler moves forward to the first shift with room. If an earlier operation in the routing is not finished, the next step waits for it. The release date is the earliest the job may start, not a promise that it will."
+  - question: "What is the difference between when a job starts and which job runs first?"
+    answer: "Which job runs first is a sequencing decision made by sorting all orders by priority, then start date, then due date. When a job starts is a placement decision made after the sort, by finding the first free capacity from each operation's earliest-possible moment. Sequencing sets the order of claims on contested machine time; start-time placement sets the actual clock time each operation lands on the calendar."
+qaQuestions:
+  - question: "Our third operation keeps starting two days after the second one finishes, and there is no queue time set. Why the gap?"
+    answer: "With zero queue and zero transit, the third step's earliest-possible moment equals the second step's end. If it still starts two days later, the target work center had no open capacity on those two days: it was full with other jobs. Open the capacity view for that work center and you will see it loaded solid until the day your step lands. The fix is more capacity there, a lower-priority competitor moved, or an alternate work center for the step."
+  - question: "We released a rush job with today's date but it scheduled to start next week. What happened?"
+    answer: "The release date only says the job may start today. Its first operation still needs an open slot on its work center, and that work center was booked for a week. Lowering the job's priority number gives it first claim on contested time ahead of the jobs currently holding those slots, so it can pull earlier. Without that, a today release competes for capacity like any other order and lands at the first genuinely free moment."
+---
+
+**A finite capacity scheduler decides when to start each operation by taking the later of two moments, the order's release date and the moment every prerequisite step has finished, and then searching forward in time for the first shift that has real capacity on the target work center.** EDGEBIC by User Solutions never starts an operation before its inputs are ready, before the job is released, or on a machine that is already full. The start time you read off the Gantt is simply where the earliest-possible moment and the first free slot meet. Understanding those two forces answers almost every "why does that job start then?" question before you open the schedule.
+
+## Two forces set the earliest possible moment
+
+Every operation has an earliest moment it *could* begin. The engine computes it as the maximum of two inputs.
+
+The first input is the order's release, its start date. A job cannot begin before you release it, no matter how empty the shop is.
+
+The second input is the finish time of every step that must come before it. The engine builds a dependency graph from the routing links, sorts the steps predecessor before successor, and records each step's end time as it places it. When it reaches a step, it reads the recorded end of every prerequisite and takes the latest one. A step that feeds off two upstream operations waits for the later of the two, because both inputs have to be on hand.
+
+The earliest-possible moment is the larger of those two numbers. Release says "not before this date." Prerequisites say "not before your inputs exist." The operation obeys whichever is later.
+
+## Then a forward search for real capacity
+
+The earliest-possible moment is a floor, not the answer. Finite capacity means a machine does one thing at a time, so the engine now searches forward from that floor for a shift with room. It scans calendar day by calendar day, checking each work center's shift for available hours, and stops at the first slot that can hold the operation. If the target work center is booked solid for six days, the operation lands on day seven, even though its inputs were ready on day one.
+
+This is the difference finite scheduling makes. An infinite-capacity plan would drop the operation on its earliest-possible moment and ignore the contention, then the floor discovers the conflict. The forward search instead surfaces the wait as a real start date you can see and plan around. For the wider contrast, see [finite vs infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) and [why a scheduler searches forward in time for capacity](/blog/why-a-scheduler-searches-forward-in-time-for-capacity).
+
+Sequencing decides who gets first claim on contested time. Placement then finds the clock time. The two are separate: which job runs first is settled by the sort covered in [how a scheduler decides which job runs first](/blog/how-a-scheduler-decides-which-job-runs-first), and only after that does each operation get placed at its first free slot.
+
+## Backward scheduling asks the opposite question
+
+Forward scheduling asks "how soon can this start?" Backward scheduling asks "how late can this start and still finish on time?" When you flag an order to schedule backward, the engine anchors the last step to the due date and works upstream, placing the whole job as late as it can while still meeting the promise. The start date becomes an output of the due date rather than an input.
+
+Backward is opt-in per order, and it falls back to forward automatically when the just-in-time plan will not fit before the due date. It also only applies to jobs with no actual dates yet: once a step has started, "start as late as possible" is meaningless and the remaining work goes forward from where it stands. The [forward vs backward scheduling](/blog/forward-vs-backward-scheduling) comparison covers when to choose each.
+
+## A worked example
+
+A three-step job releases Monday at 08:00. The plant runs one shift, Monday to Friday, 08:00 to 16:00.
+
+| Step | Work center | Hours | Prerequisite |
+|---|---|---|---|
+| Cut | Saw | 4 | none |
+| Mill | Mill-1 | 10 | Cut |
+| Inspect | QC | 2 | Mill |
+
+Cut's earliest-possible moment is the release, Monday 08:00. The Saw is open, so Cut runs Monday 08:00 to 12:00.
+
+Mill's earliest-possible moment is the later of the release (Monday) and Cut's end (Monday 12:00), so Monday 12:00. But Mill-1 is already committed to another job until Wednesday 08:00. The forward search skips Monday afternoon and Tuesday, both full, and lands Mill at Wednesday 08:00. It runs 10 hours across Wednesday and finishes Thursday 10:00.
+
+Inspect's earliest-possible moment is Mill's end, Thursday 10:00. QC is open, so Inspect runs Thursday 10:00 to 12:00.
+
+The job spans Monday to Thursday, yet only 16 hours of work sits inside it. The rest is the wait for Mill-1 to come free. Nothing about the job changed; the shop's load on Mill-1 pushed the start. That is exactly the signal a finite schedule exists to give you.
+
+## What actually holds a job back
+
+When a job starts later than you expected, three checks explain nearly every case.
+
+First, is a prerequisite still running? The next step cannot begin until the latest input is done. Add queue or transit time deliberately and the wait grows further, as [lead time as the sum of its parts](/blog/lead-time-as-the-sum-of-its-parts) explains.
+
+Second, is the work center full? If the earliest-possible moment is clear but the machine is booked, the forward search walks to the first free shift. The fix is capacity, priority, or an alternate route, not the job itself.
+
+Third, was the job released? A future release date is a hard floor. Nothing starts before it.
+
+Work those three in order and the start date stops being a mystery. It becomes a readout of your inputs, your load, and your release policy, which is what a schedule is for. See it happen on your own routings in [EDGEBIC](/edgebic), and read the full pipeline in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+<Accordion title="How does a scheduler decide when to start a job?">
+A finite capacity scheduler sets each operation's earliest possible start as the later of two moments: the order's release date and the finish time of every prerequisite step. From that moment it searches forward in time, day by day, for the first shift with real capacity on the target work center. The start time you see is where the earliest-possible moment and the first free slot meet, so a job never starts before its release, before its inputs are ready, or on a machine that is already full.
+</Accordion>
+
+<Accordion title="Why does a job not start on its release date?">
+A job starts on its release date only if the work center has open capacity that day and no upstream step is still running. If the machine is booked, the scheduler moves forward to the first shift with room. If an earlier operation in the routing is not finished, the next step waits for it. The release date is the earliest the job may start, not a promise that it will.
+</Accordion>
+
+<Accordion title="What is the difference between when a job starts and which job runs first?">
+Which job runs first is a sequencing decision made by sorting all orders by priority, then start date, then due date. When a job starts is a placement decision made after the sort, by finding the first free capacity from each operation's earliest-possible moment. Sequencing sets the order of claims on contested machine time; start-time placement sets the actual clock time each operation lands on the calendar.
+</Accordion>

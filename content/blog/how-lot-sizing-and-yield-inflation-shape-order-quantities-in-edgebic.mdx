@@ -1,0 +1,113 @@
+---
+title: "How Lot Sizing and Yield Inflation Shape Order Quantities in EDGEBIC"
+description: "EDGEBIC rounds a raw shortfall into a buildable quantity with lot-size rules and yield inflation. Here is how lot-for-lot, fixed-order-qty, and scrap allowance each work."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - lot sizing rules
+  - fixed order quantity
+  - lot for lot
+  - yield inflation scrap
+  - suggested order quantity
+  - reorder quantity rounding
+targetPhrase: "lot sizing rules"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "What is a lot-size rule in EDGEBIC?"
+    answer: "A lot-size rule decides how a raw shortfall is rounded into a buildable order quantity. Lot-for-lot uses the exact shortfall with no rounding. Fixed-order-quantity rounds the shortfall up to a whole multiple of the product's reorder quantity, so it always builds in full lots. Period-order-quantity batches demand across a period. The rule is set per product and applies to every replenishment suggestion for that product."
+  - question: "How does yield inflation change a suggested quantity?"
+    answer: "If a product's yield is set below one, the suggestion is inflated so the good output after scrap still clears the target. The engine divides the lot-sized quantity by the yield and rounds up. A 400-unit target at 90 percent yield becomes the ceiling of 400 divided by 0.90, which is 445 units to start. You start 445, lose about 10 percent to scrap, and roughly 400 good units arrive, which is what the plan needed."
+  - question: "In what order do lot sizing and yield inflation apply?"
+    answer: "Lot sizing runs first, then yield inflation. The engine takes the raw shortfall, rounds it by the lot rule, and then inflates the rounded number for scrap. So a shortfall of 360 with a reorder quantity of 100 rounds up to 400 lots first, and a 0.90 yield then inflates 400 to 445. Applying them in this order means the started quantity reflects both whole lots and the scrap allowance together."
+qaQuestions:
+  - question: "Our castings scrap 10 percent and come in pallets of 100. A projection shows a shortfall of 360. What does EDGEBIC suggest?"
+    answer: "Walk both rules. With fixed-order-quantity and a reorder quantity of 100, the shortfall of 360 rounds up to four pallets, or 400. With a yield of 0.90, the 400 is then inflated to the ceiling of 400 divided by 0.90, which is 445. So the suggested quantity is 445 units to start. The scheduler starts 445 castings, about 400 good units survive scrap, and the plan gets the four pallets it needed. You never add the scrap or the pallet rounding by hand."
+  - question: "A fixed-order-quantity item keeps over-ordering when the shortfall is tiny. Is that expected?"
+    answer: "Yes, and it is the known trade-off of fixed-order-quantity. That rule always rounds up to a whole multiple of the reorder quantity, so a shortfall of 5 units with a reorder quantity of 100 still suggests a full 100. If the small over-order matters, switch that product to lot-for-lot, which suggests exactly the shortfall with no rounding. Fixed-order-quantity is the right rule when you must build in fixed batches like pallets or furnace loads; lot-for-lot is right when you want to build only what is short."
+---
+
+**Lot-size rules and yield inflation** are the two rounding steps that turn a raw shortfall into a quantity a shop can actually build. EDGEBIC by User Solutions first rounds the shortfall with a lot-size rule, then inflates it for scrap if the product has a yield below one, and the result is the number in the suggested column. This post explains each rule, the order they apply in, and how they combine, with the documented worked numbers, so a suggestion that looks larger than the shortfall always has a clear explanation.
+
+The raw shortfall, the gap between where projected stock will sit and where it needs to be, is almost never the number you build. Shops build in pallets, furnace loads, and whole batches, and processes scrap material along the way. Lot sizing and yield inflation encode both realities. For the full path a shortfall travels, see [how a forecast becomes a replenishment suggestion](/blog/how-a-forecast-becomes-a-replenishment-suggestion-in-edgebic); for the wider planning layer, see the [inventory and planning pillar](/blog/edgebic-planning-guide).
+
+## Where the Raw Shortfall Comes From
+
+Before rounding, the engine has computed a raw shortfall for a bucket that fell below its reorder trigger. For a reorder-point product, the target is the reorder level plus the reorder quantity, and the raw shortfall is that target minus the projected balance. For a min/max product, the target is the maximum level and the shortfall is the maximum minus the projected balance. Either way, the raw shortfall is a plain difference, and it is the input to lot sizing.
+
+## The Three Lot-Size Rules
+
+A lot-size rule decides how the raw shortfall is rounded.
+
+| Rule | How it rounds the shortfall |
+|---|---|
+| Lot-for-lot | Exact shortfall, no rounding |
+| Fixed-order-quantity | Round up to a whole multiple of the reorder quantity |
+| Period-order-quantity | Batch demand across a period |
+
+Lot-for-lot is the simplest and most precise. It suggests exactly the shortfall. If projected stock is 40 short, it suggests 40. This is the right rule when you can build any quantity and you want to build only what is missing, avoiding excess stock.
+
+Fixed-order-quantity rounds the shortfall up to a whole multiple of the product's reorder quantity. If the reorder quantity is 100 and the shortfall is 360, it rounds up to four lots, or 400. This is the right rule when the shop builds in fixed batches: pallets of a set size, a furnace that holds a fixed load, a mold that runs a set count. The trade-off is over-ordering on small shortfalls: a shortfall of 5 with a reorder quantity of 100 still suggests a full 100, because the rule always fills whole lots.
+
+Period-order-quantity batches demand across a period so a single order covers multiple buckets. It is meaningful mainly with period-based calendars, where you want one build to cover a stretch rather than a build per bucket.
+
+## Yield Inflation: Building for Scrap
+
+After lot sizing, the engine checks the product's yield. Yield is the fraction of good output a process produces, between zero and one. A yield of 0.90 means 10 percent of what you start is scrapped. If the yield is below one, the engine inflates the lot-sized quantity so that the good output after scrap still clears the target.
+
+The arithmetic is a division and a round-up. The engine divides the lot-sized quantity by the yield and rounds up to a whole unit. A 400-unit target at a yield of 0.90 becomes the ceiling of 400 divided by 0.90, which is 445. You start 445, lose about 45 to scrap, and roughly 400 good units arrive, which is exactly what the plan needed. Yield inflation runs only when yield is set below one; a product with a yield of 1.0 skips this step entirely.
+
+## The Order of Operations
+
+The two steps apply in a fixed order: lot sizing first, yield inflation second. The engine takes the raw shortfall, rounds it by the lot rule, and then inflates the rounded number for scrap. The order matters because it means the started quantity reflects both whole lots and the scrap allowance together, rather than one or the other.
+
+```
+raw shortfall  ->  lot sizing (round to lots)  ->  yield inflation (divide by yield)  ->  suggested quantity
+```
+
+## A Worked Example: Pallets and Scrap Together
+
+Take a casting that is make-to-stock, uses fixed-order-quantity with a reorder quantity of 100, and has a yield of 0.90. A min/max projection shows the projected balance at 40 against a maximum level of 400, so the raw shortfall is 360.
+
+```
+Raw shortfall:     400 - 40         = 360
+Lot sizing (FOQ):  ceil(360 / 100) * 100 = 4 * 100 = 400
+Yield inflation:   ceil(400 / 0.90) = ceil(444.4)  = 445
+Suggested quantity:                             = 445
+```
+
+The shortfall of 360 rounds up to four pallets, or 400, then inflates to 445 to cover scrap. The suggested column reads 445. The scheduler starts 445 castings, about 400 good units survive, and the projected balance recovers to roughly 440 in that bucket, above the maximum but correct given the scrap allowance the yield policy requires. Neither the pallet rounding nor the scrap allowance was added by hand; both fell out of the product's settings.
+
+## Rounding to Whole Units
+
+One final detail sits at the very end of the chain. When a suggestion is firmed into a manufacturing order, the order quantity is a whole number, so the decimal suggestion is rounded up to the next integer. A suggestion of 444.4 becomes an order for 445. This ceiling-to-integer step is separate from lot sizing and yield inflation and applies at firm time, ensuring an order never asks for a fractional unit while never rounding down below what the plan needs.
+
+## Choosing the Right Rules for a Product
+
+Both settings live on the product, alongside the reorder method and levels. Choose them by how the item is actually built and processed.
+
+- Use lot-for-lot when you can build any quantity and want to minimize excess stock. It suggests exactly the shortfall.
+- Use fixed-order-quantity when the shop builds in fixed batches, and set the reorder quantity to the batch size, pallet count, or furnace load. Accept that small shortfalls will over-order to a full lot.
+- Set the yield below one for any process with meaningful scrap, and set it to the fraction of good output you actually get. Leave it at 1.0 for lossless processes.
+
+Because the engine recomputes suggestions on every refresh, changing a lot rule or a yield updates every future suggestion for that product at once. A change to the scrap rate, for example, reflows through every bucket's suggested quantity with no re-entry.
+
+## Yield Inflation and the Received Quantity
+
+There is one subtlety worth understanding about yield inflation: the suggestion inflates the started quantity, but the receipt into stock is the good output, not the started quantity. When a 445-unit build at 90 percent yield completes, roughly 400 good units post into the inventory ledger, not 445. This is correct: you started 445 to survive scrap, and stock should rise by what actually passed, which is around 400.
+
+This means the projected balance after a yield-inflated build recovers by the good output, which is what the plan targeted in the first place. If you started 445 and all 445 somehow passed, stock would overshoot, but that is a happy variance, not a planning error. The yield figure is your expected pass rate, and the plan is built around it. When actual yield differs from the expected figure over time, the fix is to update the product's yield so future inflation tracks reality, rather than to override individual suggestions by hand.
+
+A related point: because the started quantity and the received quantity differ, a build that was firmed for 445 and receives 400 is not a discrepancy to be reconciled away. It is the yield policy working. The plan cares about the good output clearing the target, and it does. Understanding this keeps a planner from chasing a phantom shortfall between what was started and what was received.
+
+## The Payoff
+
+Lot sizing and yield inflation are what make a suggestion buildable rather than merely arithmetic. The raw shortfall says how short you are; the lot rule says how the shop packages a build; the yield says how much you must start to end with what you need. Together they turn a plain difference into a number you can hand to the floor. And because both are product settings that the engine applies automatically, a planner never has to remember to round to a pallet or pad for scrap, which is exactly the kind of arithmetic that gets forgotten under pressure.
+
+If a suggestion ever looks wrong, these two settings are the first place to check. Walk them in order: was the raw shortfall reasonable, did the lot rule round it the way you expect, did the yield inflate it by the right factor. A suggestion that seems too large almost always traces to a fixed-order-quantity rule filling a whole lot for a small shortfall, or to a low yield padding heavily for scrap. A suggestion that seems too small usually means lot-for-lot is doing exactly what it should on a modest shortfall. In every case the number reconstructs from the raw shortfall and the two rules, so it always explains itself.
+
+To see where the suggested quantity fits the full pipeline, read [how a forecast becomes a replenishment suggestion](/blog/how-a-forecast-becomes-a-replenishment-suggestion-in-edgebic). To set a lot rule on a product, see [how to set a lot-size rule](/blog/how-to-set-a-lot-size-rule-in-edgebic), and for the platform overview visit [EDGEBIC](/edgebic).

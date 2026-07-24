@@ -1,0 +1,90 @@
+---
+title: "How a Plan Absorbs a Late Material Delivery"
+description: "How a finite capacity plan reflects a late material delivery: model the arrival as a material step or job start, reschedule, and let downstream shift while completed work stays."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - late material delivery scheduling
+  - material availability scheduling
+  - material step lead time
+  - reschedule after material delay
+  - supplier delay production plan
+  - procurement lead time scheduling
+targetPhrase: "late material delivery scheduling"
+wordCount: 1580
+readingTime: 8
+faqQuestions:
+  - question: "How does a production plan handle a late material delivery?"
+    answer: "You reflect a late delivery by moving the material's ready date in the plan, then rescheduling. The cleanest way is to set the material step's lead time or the job's start date to the new arrival date, so the first operation cannot begin until the parts land. On reschedule, completed and in-progress work stays put and the downstream operations shift to the new earliest-possible start. The plan then shows an honest finish date instead of promising a date the missing material makes impossible."
+  - question: "Does a scheduler check whether material has arrived before starting a job?"
+    answer: "The engine treats a material step as an instant assignment that consumes no machine capacity, and it uses the material step's lead time to place the material's ready point on the timeline. It does not automatically read a live purchase order status, so hard pegging to a supplier promise date is not automatic. You represent availability by setting the material step's lead time or transit days, or by setting the job's start date to the confirmed arrival, then rescheduling so downstream work respects it."
+  - question: "What happens to work already done when material for a later step is late?"
+    answer: "Completed work is never moved by a reschedule. If earlier operations are already finished, their dates and hours are preserved exactly, and only the not-yet-started steps that depend on the late material shift forward. This is the same actuals-preserving behavior that protects any reschedule: the past is fixed, the future reflows. You get a new, realistic finish date without losing the record of what already ran."
+qaQuestions:
+  - question: "Our steel slipped from the 12th to the 18th. How do I get the plan to show the real ship date instead of the old one?"
+    answer: "Push the material's ready date to the 18th in the plan, then reschedule. Set the material step's lead time so its ready point lands on the 18th, or set the job's start date to the 18th if the material feeds the first operation. The reschedule shifts every downstream operation forward from the 18th, and the finish date updates to reflect the delay. Nothing that already ran moves. The new date is honest, which is the point: you would rather tell the customer the real date now than discover it on the floor."
+  - question: "The material feeds our second operation, not the first. Setting the job start does nothing. What else can I do?"
+    answer: "Put the delay on the step that consumes the material, not on the job. Model that incoming part as a material step immediately before the operation and set its lead time or transit days to the new arrival, so the consuming operation cannot start until the parts are there. On reschedule, the first operation keeps its slot, the material step marks the wait, and everything downstream of it shifts. The delay lands exactly where it belongs in the routing instead of pushing the whole job."
+---
+
+**A finite capacity plan absorbs a late material delivery by moving the material's ready date in the model and rescheduling: completed and in-progress work stays exactly where it is, and every downstream operation that depends on the late material shifts forward to the new earliest-possible start.** In EDGEBIC by User Solutions you represent the delay by setting the material step's lead time or the job's start date to the confirmed arrival, then rerunning the schedule. The result is an honest finish date the shop can actually hit, rather than a plan that quietly assumes parts that are not there.
+
+## Material in the plan is a step, not a machine
+
+The scheduler models a purchased or sub-assembled input as a material step: a routing step with no work center that names the component being consumed. It consumes no machine capacity and gets an instant assignment on the timeline. Its job is to mark the point at which the material is available so the operation that uses it cannot start earlier.
+
+A material step carries a lead time in days. That lead time shifts the material's ready point on the Gantt, drawing its bar ahead of the operation it feeds so the procurement wait is visible. When you change that lead time to reflect a late supplier, you are moving the exact point downstream work is allowed to begin from.
+
+The engine does not read a live purchase order feed and peg the job to a supplier's promise date on its own. Hard pegging to an external receipt date is a roadmap capability, not automatic behavior. What you do have today is direct and reliable: you tell the plan when the material lands, and the plan respects it. For the routing-side mechanics, see [lead time as the sum of its parts](/blog/lead-time-as-the-sum-of-its-parts).
+
+## Three honest ways to reflect the delay
+
+Which lever you use depends on where the material enters the routing.
+
+If the material feeds the very first operation, set the job's start date to the confirmed arrival. Nothing can begin before the release, so the whole job slides to the new date cleanly.
+
+If the material feeds a later operation, put the delay on that step. Model the incoming part as a material step just before the operation and set its lead time or transit days to the arrival date. The earlier operations keep their slots, and only the work downstream of the material step shifts. Transit days are useful here when the parts physically travel from an outside vendor, since they add a calendar or working-day wait before the next step can start.
+
+If you only need a short buffer, not a hard gate, queue time on the consuming step adds a shift-aware wait that ticks only during working hours. That is better for a cooling or staging delay than for a multi-day supplier slip.
+
+The common thread is that you move the ready date and let the engine reflow. You are not hand-editing downstream operations one by one.
+
+## Reschedule preserves what already ran
+
+When you reschedule after moving a material date, the engine separates the job into what is done and what remains. Completed steps, with both an actual start and end, are written back verbatim; the engine never touches their dates. In-progress steps, started but not finished, are preserved too, and the remaining work resumes from the later of the last completed end and any in-progress projected end.
+
+Only the not-yet-started operations that sit downstream of the late material move. They pick up new start times from the new material ready date, using the same forward search for capacity that governs any placement. Your finish date updates to the real one. See [why completed work is never moved on reschedule](/blog/how-edgebic-preserves-completed-work-on-reschedule) for the full guarantee.
+
+## A worked example
+
+A job runs Cut, then Weld, then Paint. Cut needs raw bar; Weld needs a purchased bracket promised on the 12th. The plant runs one shift, Monday to Friday.
+
+Original plan: Cut Monday, Weld Tuesday (bracket on hand the 12th), Paint Wednesday, finish Wednesday afternoon.
+
+On Monday the supplier calls: the bracket now lands the 18th. You model the bracket as a material step before Weld and set its lead time so the ready point is the 18th. Then you reschedule.
+
+Cut has already run Monday, so its dates are preserved. The material step now marks the 18th as the bracket's ready point. Weld's earliest-possible moment becomes the 18th, and the forward search places it in the first open Weld slot on or after the 18th. Paint follows Weld. The finish date moves from Wednesday to the following week, and the plan says so.
+
+Without the change, the plan would still show a Wednesday finish, the floor would reach Weld on Tuesday with no bracket, and the schedule would be fiction from that moment on. Moving one date kept the plan true.
+
+## Why an honest late finish beats a hidden one
+
+A plan that ignores a missing part does not make the part arrive. It only hides the slip until the floor hits it, which is the most expensive place to discover it. By the time the operation reaches an empty rack, the downstream schedule was built on a lie and every promise behind it is wrong.
+
+Moving the material date turns a surprise into a decision. You see the new finish date before you commit it, so you can expedite the material, offer the customer the real date, or reroute around the shortage. That is the same discipline finite capacity brings to machine load: surface the constraint early, in the plan, where you can still act on it. Bring your own routing and a real supplier date to [EDGEBIC](/edgebic) and watch the finish date move, or read the wider pipeline in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+<Accordion title="How does a production plan handle a late material delivery?">
+You reflect a late delivery by moving the material's ready date in the plan, then rescheduling. The cleanest way is to set the material step's lead time or the job's start date to the new arrival date, so the first operation cannot begin until the parts land. On reschedule, completed and in-progress work stays put and the downstream operations shift to the new earliest-possible start. The plan then shows an honest finish date instead of promising a date the missing material makes impossible.
+</Accordion>
+
+<Accordion title="Does a scheduler check whether material has arrived before starting a job?">
+The engine treats a material step as an instant assignment that consumes no machine capacity, and it uses the material step's lead time to place the material's ready point on the timeline. It does not automatically read a live purchase order status, so hard pegging to a supplier promise date is not automatic. You represent availability by setting the material step's lead time or transit days, or by setting the job's start date to the confirmed arrival, then rescheduling so downstream work respects it.
+</Accordion>
+
+<Accordion title="What happens to work already done when material for a later step is late?">
+Completed work is never moved by a reschedule. If earlier operations are already finished, their dates and hours are preserved exactly, and only the not-yet-started steps that depend on the late material shift forward. This is the same actuals-preserving behavior that protects any reschedule: the past is fixed, the future reflows. You get a new, realistic finish date without losing the record of what already ran.
+</Accordion>

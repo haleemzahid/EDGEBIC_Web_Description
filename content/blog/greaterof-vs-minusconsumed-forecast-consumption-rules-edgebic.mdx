@@ -1,0 +1,117 @@
+---
+title: "Greater-Of vs Minus-Consumed: Forecast Consumption Rules in EDGEBIC"
+description: "How EDGEBIC's two forecast consumption rules stop firm orders and forecasts double-counting the same demand, with worked numbers for choosing between them."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - forecast consumption
+  - greater of consumption rule
+  - minus consumed rule
+  - firm demand netting
+  - gross requirements calculation
+  - demand double counting
+targetPhrase: "forecast consumption rules"
+wordCount: 1610
+readingTime: 8
+faqQuestions:
+  - question: "What does forecast consumption mean in production planning?"
+    answer: "Forecast consumption is the rule that stops a forecast and the firm orders that fulfill it from being counted as two separate demands. When a customer places an order inside a period you forecast, that order is usually the forecast coming true, not extra demand on top of it. Consumption combines the two into a single gross requirement so the plan does not build twice for the same need."
+  - question: "What is the difference between the greater-of and minus-consumed rules?"
+    answer: "Greater-of takes the larger of forecast and firm demand in each bucket, which fits shops where firm orders replace the forecast that predicted them. Minus-consumed lets firm orders eat into the forecast first, then adds the firm orders on top of whatever forecast remains, which fits shops where firm orders genuinely arrive in addition to the forecast rather than instead of it. Both prevent double-counting, but they distribute leftover forecast differently."
+  - question: "Does EDGEBIC ever change my forecast numbers when orders arrive?"
+    answer: "No. Consumption happens entirely in the calculation, never on your stored forecast rows. The forecast quantity you entered stays exactly as typed, and the netting against firm demand is recomputed fresh on every projection run. This means the same forecast row produces different gross requirements as firm orders evolve, and you always keep the original forecast for audit and comparison."
+qaQuestions:
+  - question: "We forecast 100 a week and this week we already hold 60 in firm orders. Under each rule, what demand does the plan use?"
+    answer: "Under greater-of, gross requirements is the larger of 100 and 60, which is 100. The 60 orders are treated as living inside the forecast, so the plan still expects a total of 100 and no double-count occurs. Under minus-consumed, the firm orders eat into the forecast first, leaving 40 of uncovered forecast, then the 60 firm orders add on top, giving 40 plus 60, which is also 100 in this case. The rules agree here because firm demand did not exceed the forecast."
+  - question: "When firm demand is higher than the forecast, say 130 against a 100 forecast, do the rules still agree?"
+    answer: "Yes, both give 130. Greater-of takes the larger of 100 and 130, which is 130. Minus-consumed consumes the full 100 of forecast with the firm orders, leaving zero uncovered forecast, then adds the 130 firm orders, giving 130. Neither rule ever suppresses firm demand: whatever customers have actually committed to always flows through in full. The rules only differ in how they treat forecast that firm orders have not yet consumed."
+---
+
+**Forecast consumption rules** decide how EDGEBIC combines a forecast with the firm orders that arrive inside the same period, so the same demand is never planned twice. EDGEBIC by User Solutions offers two rules per product: greater-of, which takes the larger of forecast and firm demand, and minus-consumed, which lets firm orders eat the forecast first and then adds them back on top of the remainder. This post explains what each rule does, when to choose it, and the arithmetic that makes them agree in some cases and diverge in others.
+
+The two rules solve a problem every planner meets: a forecast says 100 units this week, three customers place orders totaling 60, and a naive plan now sees 160 units of demand and builds stock nobody needs. Consumption fixes that. For the wider planning picture, see the [inventory and planning pillar](/blog/edgebic-planning-guide); for the mechanics of what happens once demand is netted, see [how a forecast becomes a replenishment suggestion](/blog/how-a-forecast-becomes-a-replenishment-suggestion-in-edgebic).
+
+## Why Consumption Exists at All
+
+Independent demand for a make-to-stock product comes from two places: a forecast, which is a planner's estimate of future need, and firm demand, which is committed customer orders. Both describe the same future. When a customer places an order for something you already forecast, the order is that forecast becoming real. If your plan adds the forecast and the order, it plans the same need twice, projects a stockout that is not there, and recommends building phantom stock.
+
+Consumption is the arithmetic that prevents this. It combines forecast and firm demand for each bucket into one gross requirement, and gross requirement is what actually drives the projected balance and any replenishment suggestion. The rule you pick per product decides how the combination works.
+
+## The Greater-Of Rule
+
+Greater-of is the default and the simpler of the two. For each bucket, gross requirements is the larger of forecast and firm demand:
+
+```
+gross requirements = max(forecast, firm)
+```
+
+The mental model is that firm orders live inside the forecast. If you forecast 100 and hold 60 firm orders, the plan still expects a total of 100 for the week, because the 60 are assumed to be part of the 100 you already predicted. Only if firm orders exceed the forecast does the firm number take over. This rule fits shops where a forecast is a ceiling on expected demand and real orders fill it up rather than pile on top.
+
+Greater-of is the right default for most build-to-stock products. It is easy to reason about, it never double-counts, and it never suppresses firm demand, because once firm exceeds forecast the firm number wins outright.
+
+## The Minus-Consumed Rule
+
+Minus-consumed is the more granular rule. Firm orders consume the forecast first, and whatever forecast is left over is then added on top of the full firm demand:
+
+```
+gross requirements = max(0, forecast - firm) + firm
+```
+
+The mental model here is that firm orders and the uncovered part of the forecast are both real demand. If you forecast 100 and hold 60 firm orders, minus-consumed says 40 of the forecast is still uncovered (customers you expect but have not yet heard from), and it adds those 40 to the 60 firm orders for a total of 100. This rule fits shops where firm orders genuinely arrive in addition to a baseline forecast, rather than being the forecast coming true.
+
+The two rules agree whenever firm demand is less than or equal to the forecast, because the leftover forecast plus firm always reconstructs the forecast total. They diverge only when you want the uncovered forecast to keep contributing after firm orders have started arriving, which is exactly what minus-consumed preserves and greater-of collapses.
+
+## The Rules Side by Side
+
+Run both rules on the same inputs to see where they agree and where they separate.
+
+| Forecast | Firm | Greater-of | Minus-consumed |
+|---|---|---|---|
+| 100 | 0 | 100 | 100 |
+| 100 | 60 | 100 | 100 |
+| 100 | 100 | 100 | 100 |
+| 100 | 130 | 130 | 130 |
+| 60 | 20 | 60 | 60 |
+
+In every row here the two rules match, because firm demand never exceeds the forecast by an amount that would leave residual forecast the rules treat differently. The divergence shows up in a real multi-bucket plan where forecast and firm are both nonzero and you care about whether uncovered forecast keeps driving requirements. The documented daily example makes the mechanism concrete.
+
+## A Worked Example With Minus-Consumed
+
+Take a casting, make-to-stock, running minus-consumed. Daily forecasts are 60 units Monday through Friday. Firm demand is 80 on Monday (larger than the forecast) and 20 on Tuesday.
+
+```
+Mon:  forecast 60, firm 80  ->  max(0, 60-80)=0  + 80  =  80
+Tue:  forecast 60, firm 20  ->  max(0, 60-20)=40 + 20  =  60
+Wed:  forecast 60, firm 0   ->  max(0, 60-0)=60  + 0   =  60
+Thu:  forecast 60, firm 0   ->  60
+Fri:  forecast 60, firm 0   ->  60
+```
+
+Monday's firm order of 80 exceeds the 60 forecast, so the forecast is fully consumed and gross requirements is 80, the firm number alone. Tuesday's firm order of 20 consumes only part of the 60 forecast, leaving 40 uncovered, which adds to the 20 firm for a gross requirement of 60. Wednesday through Friday have no firm orders, so gross requirements is the full forecast of 60 each day. Firm demand is never lost: Monday's full 80 flows through even though it is more than you forecast.
+
+## Choosing the Rule for Your Shop
+
+The decision comes down to one question: when a firm order arrives inside a forecast period, does it replace forecast demand or add to it?
+
+- If a customer order is the forecast coming true, choose greater-of. This is the common case for standard catalog products where the forecast estimates total demand and orders fill it.
+- If a customer order is genuinely extra demand on top of a baseline you expect anyway, choose minus-consumed. This fits products with a steady forecasted base plus sporadic large orders that do not displace the base.
+
+Because the rule is set per product, you can mix both across a catalog. A high-volume commodity part might use greater-of while a base-load chemical with occasional spot orders uses minus-consumed. The change takes effect on the next projection with no data migration, since consumption is always recalculated rather than stored. There is no penalty for revising the choice later: if a product's ordering pattern shifts, flip the rule and the very next projection reflects it, because nothing about consumption is baked into stored data.
+
+## Make-to-Order Products Skip Consumption Entirely
+
+Both rules apply only to make-to-stock products, because only make-to-stock products carry a forecast that needs consuming. For a make-to-order product, the engine ignores forecast at the gross-requirements step and drives demand from firm orders alone. You can still enter forecasts against a make-to-order product, and they are stored, but they contribute nothing to the plan while the product stays make-to-order. If the build method later changes to make-to-stock, those stored forecasts immediately begin participating under whichever consumption rule is set.
+
+This matters when a product's role changes. A part that was custom-built to order and becomes a stocked catalog item does not need its forecast re-entered; the forecasts that were dormant start driving suggestions the moment the build method flips. Conversely, moving a stocked item to make-to-order silences its forecast without deleting it, which is a clean way to pause forecast-driven planning for an item without losing the history.
+
+## What Consumption Never Does
+
+Two guarantees are worth stating plainly. First, consumption never modifies your forecast rows. The quantity you entered stays exactly as typed; the netting happens only in the calculation, fresh on every run. This keeps the original forecast available for audit and for comparison against actuals. Second, neither rule ever suppresses firm demand. Whatever customers have committed to always contributes in full, because both formulas add or take the maximum of firm demand, never subtract from it. The rules only redistribute forecast that firm orders have not yet consumed.
+
+A closing point on picking a default. If you are unsure which rule fits a product, start with greater-of. It is the safer default because it never over-plans: it takes the larger of forecast and firm and stops there, so it cannot inflate requirements by carrying leftover forecast on top of firm orders. Move a product to minus-consumed only when you have a clear reason, namely that its firm orders genuinely land in addition to a forecasted base you still expect to sell. Choosing greater-of when you are uncertain errs toward building less, which is usually the cheaper mistake to correct.
+
+Consumption is the first calculation in a longer chain. Once gross requirements is known, it drives the projected balance and any suggestion, which is covered in [how a forecast becomes a replenishment suggestion](/blog/how-a-forecast-becomes-a-replenishment-suggestion-in-edgebic). To see where firm demand itself comes from, read [why only confirmed sales orders count as firm demand](/blog/why-only-confirmed-sales-orders-count-as-firm-demand-in-edgebic). For the platform overview, visit [EDGEBIC](/edgebic).

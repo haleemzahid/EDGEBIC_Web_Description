@@ -1,0 +1,117 @@
+---
+title: "How Build-to-Stock and Consume-from-Stock Work Together in EDGEBIC"
+description: "Build-to-stock posts a receipt when an order completes; consume-from-stock posts an issue when demand is met from stock. Here is how the two halves close one loop."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - build to stock and consume from stock
+  - inventory receipt and issue
+  - make to stock scheduling
+  - finished goods netting
+  - inventory ledger loop
+  - satisfied from stock
+targetPhrase: "build to stock and consume from stock"
+wordCount: 1720
+readingTime: 9
+faqQuestions:
+  - question: "What is the difference between a build-to-stock receipt and a consume-from-stock issue?"
+    answer: "A build-to-stock receipt is a positive ledger entry posted when a make-to-stock order completes, adding its quantity to on-hand. A consume-from-stock issue is a negative ledger entry posted when the scheduler meets a demand from existing stock. One puts stock in, one takes stock out. Together they are the two directions of the same append-only inventory ledger, and their sum is your true on-hand."
+  - question: "When does the receipt post, and when does the issue post?"
+    answer: "The receipt posts at completion: when a planner marks a make-to-stock order complete, its quantity enters the ledger in the same save as the status change, tagged Build to Inventory. The issue posts at scheduling time, not completion: when the engine nets a demand against stock, it records the consumed quantity as an issue tagged Schedule Transaction at the persist step. So supply is confirmed on completion and consumption is committed the moment the schedule commits to it."
+  - question: "Does a fully covered order still get scheduled on a machine?"
+    answer: "No. When on-hand covers the entire demand, the order is marked satisfied from stock and no work-center operations are created for it. The only trace is the consume issue in the ledger. That is the payoff of the loop working together: capacity is spent building the orders that actually need building, while orders that stock can cover consume it and leave the machines free."
+qaQuestions:
+  - question: "We build a valve body to stock in batches of 200, then customer orders draw it down. What does the ledger show across one cycle?"
+    answer: "After the batch completes you get one receipt of +200 tagged Build to Inventory, and on-hand reads 200. When an 80-unit customer order schedules against that stock, the engine nets it, marks the order satisfied from stock, and posts one issue of -80 tagged Schedule Transaction, leaving on-hand at 120. Every entry pegs back to its order, so the ledger reads cleanly as build 200, consume 80, balance 120, with no machine time spent on the consumed order."
+  - question: "If a make-to-stock product is set correctly but no receipt appears after completion, where do we look?"
+    answer: "Check that the product is flagged stocked and that the order resolved to make-to-stock, because a product marked not stocked skips all receipt and issue posting silently. If the product is make-to-stock but not flagged stocked, the anomaly report surfaces that mismatch. Also confirm the order was not already satisfied from stock, which correctly posts no receipt because nothing was built. The receipt only fires for an order that actually produced units and resolved to build-to-stock."
+---
+
+**Build-to-stock and consume-from-stock are the two directions of a single inventory ledger, and they close one loop: a make-to-stock order completes and posts a positive receipt that raises on-hand, then a later demand nets against that stock and posts a negative issue that lowers it.** EDGEBIC by User Solutions treats these not as two features but as the supply half and the demand half of the same running balance. Understanding how they hand off to each other is the difference between trusting your on-hand and second-guessing it.
+
+This post walks the full cycle of one stocked product, receipt then issue, and shows exactly what each half writes to the ledger and when. It builds on the [EDGEBIC planning guide](/blog/edgebic-planning-guide), which covers the whole inventory and scheduling layer.
+
+## The two halves of the loop
+
+Every stocked product has a supply side and a demand side, and the ledger records both as signed entries.
+
+**Build-to-stock is the supply half.** A make-to-stock (MTS) product is one you build ahead of a specific customer order and place into finished-goods stock. When that build completes, its quantity posts as a receipt: a positive ledger entry that raises on-hand. The entry is tagged Build to Inventory so it is unmistakable in the transaction history. It posts in the same save as the completion itself, so the stock exists the instant the order is done.
+
+**Consume-from-stock is the demand half.** When a demand exists for a product that already has stock on hand, the scheduling engine satisfies it from that stock rather than building fresh. It records the consumed quantity as an issue: a negative ledger entry tagged Schedule Transaction. This does not happen at completion; it happens at scheduling time, when the schedule commits to using the stock.
+
+The reason the two tags differ matters. Build to Inventory is a physical event (units were produced and put away). Schedule Transaction is a planning commitment (the schedule reserved and consumed stock). Both are real ledger movements, and on-hand is always their running sum. For the mechanics of that ledger, see the [inventory ledger explained](/blog/edgebic-inventory-ledger-explained).
+
+## Why the split into two moments
+
+It would be simpler to post everything at completion, but that would hide commitments. Consider a stocked part with 200 on hand and a customer order for 80 scheduled next week. If the issue waited until the order shipped, your on-hand would read 200 all week, and a second order could be promised the same 80 units. By posting the consume issue at scheduling time, EDGEBIC drops on-hand to 120 the moment the schedule commits, so the next order sees the real remaining stock.
+
+This is the same reason [available-to-promise in EDGEBIC](/blog/available-to-promise-in-edgebic) works forward from physical on-hand: the ledger reflects committed consumption, not just physical movement, so promises never overlap.
+
+## A worked cycle: valve body, 200 built then 80 consumed
+
+Take a valve body set to make-to-stock, flagged stocked, unit cost $12.50, starting on-hand of 0.
+
+**Step 1, the build order schedules.** MO-101 for 200 units is treated as a producer. It builds normally on the shop floor; no stock is consumed because it is the supply side. Nothing posts to the ledger yet.
+
+**Step 2, the build order completes.** The planner marks MO-101 complete. One receipt posts:
+
+| Entry | Quantity | Type | Tag | Balance |
+|---|---|---|---|---|
+| 1 | +200 | Receipt | Build to Inventory | 200 |
+
+On-hand is now 200, and the moving-average cost is set to $12.50.
+
+**Step 3, a customer order arrives.** MO-102 needs 80 valve bodies, make-to-order (it ships straight to the customer).
+
+**Step 4, the customer order schedules.** The engine seeds its run with the 200 on hand. For MO-102 it finds available (200) is at least the need (80), so it consumes 80, marks the order satisfied from stock, and creates no work-center operations. At the persist step one issue posts:
+
+| Entry | Quantity | Type | Tag | Balance |
+|---|---|---|---|---|
+| 2 | -80 | Issue | Schedule Transaction | 120 |
+
+**The full ledger after one cycle:**
+
+| # | Qty | Type | Tag | Balance |
+|---|---|---|---|---|
+| 1 | +200 | Receipt | Build to Inventory | 200 |
+| 2 | -80 | Issue | Schedule Transaction | 120 |
+
+On-hand is 120, ready for the next demand. The customer order for 80 consumed no machine hours at all, because stock covered it in full.
+
+## Partial cover: when the loop does both at once
+
+The halves are not exclusive. Suppose the same valve body has 120 on hand and a new order needs 200. On-hand covers part of the demand, so the engine builds only the shortfall of 80 and posts an issue for the 120 it consumed. The order is a partial build, not satisfied from stock, and it does occupy work-center capacity for the 80 units it actually produces. The [consume-from-stock netting walkthrough](/blog/consume-from-stock-netting-walkthrough-edgebic) traces this partial case in detail.
+
+Yield rides on top of the build half. If the valve body has a first-pass yield below 100%, the build quantity inflates so the net good output still covers the need. A 90% yield on a 100-unit shortfall means the engine plans to start about 112 units to reliably yield 100 good ones.
+
+## Per-order override: one loop, flexible policy
+
+The build method is a product default, but any single order can override it. A normally stocked valve body can run one direct-ship order (forced make-to-order, no receipt), and a normally custom part can run one build-ahead batch (forced build-to-stock, which posts a receipt on completion). This lets you run one loop across a mixed order book without reclassifying the product. For the classification decision itself, see [when to net demand against stock versus build fresh](/blog/when-to-net-demand-against-stock-vs-build-fresh-in-edgebic).
+
+## Why the two halves stay in balance
+
+The loop is designed so it can be replayed and always reconciles. Deleting or reopening an order reverses its ledger entries with inverse rows rather than deletions, so a canceled build removes its receipt and a canceled consume restores the stock. Rescheduling the same order twice does not double-post, because the consume issue is reversed before the engine re-nets. The result is that build and consume never drift apart: on-hand is always the honest sum of every receipt and every issue.
+
+This connects directly to finite capacity. The orders that stock cannot cover become schedulable work that the engine plans against real machine load, the same way it handles any [production schedule](/blog/what-is-production-scheduling). Stock absorbs what it can; capacity handles the rest; the ledger records both. That is the loop, and it is why an [inventory management approach for manufacturers](/blog/inventory-management-manufacturers) that keeps supply and demand on one ledger stays trustworthy under real order churn.
+
+## Getting the loop right
+
+Three habits keep build-to-stock and consume-from-stock working cleanly together. Flag your stocked products so both halves post; a make-to-stock product that is not flagged stocked silently skips receipts and issues. Let the engine post consume issues at scheduling time rather than adjusting on-hand by hand, so commitments show up before shipment. And read the transaction history when a balance surprises you: every receipt and issue pegs back to its order, so the answer to "why did on-hand move" is one filter away.
+
+<Accordion title="What is the difference between a build-to-stock receipt and a consume-from-stock issue?">
+A build-to-stock receipt is a positive ledger entry posted when a make-to-stock order completes, adding its quantity to on-hand. A consume-from-stock issue is a negative ledger entry posted when the scheduler meets a demand from existing stock. One puts stock in, one takes stock out. Together they are the two directions of the same append-only inventory ledger, and their sum is your true on-hand.
+</Accordion>
+
+<Accordion title="When does the receipt post, and when does the issue post?">
+The receipt posts at completion: when a planner marks a make-to-stock order complete, its quantity enters the ledger in the same save as the status change, tagged Build to Inventory. The issue posts at scheduling time, not completion: when the engine nets a demand against stock, it records the consumed quantity as an issue tagged Schedule Transaction at the persist step. So supply is confirmed on completion and consumption is committed the moment the schedule commits to it.
+</Accordion>
+
+<Accordion title="Does a fully covered order still get scheduled on a machine?">
+No. When on-hand covers the entire demand, the order is marked satisfied from stock and no work-center operations are created for it. The only trace is the consume issue in the ledger. That is the payoff of the loop working together: capacity is spent building the orders that actually need building, while orders that stock can cover consume it and leave the machines free.
+</Accordion>
+
+See the whole planning and scheduling layer in the [EDGEBIC platform overview](/edgebic), or [contact US for a demo](/contact-us) to watch the receipt and issue post against your own part numbers.

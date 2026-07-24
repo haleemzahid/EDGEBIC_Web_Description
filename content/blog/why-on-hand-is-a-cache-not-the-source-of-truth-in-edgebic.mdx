@@ -1,0 +1,97 @@
+---
+title: "Why On-Hand Is a Cache, Not the Source of Truth in EDGEBIC"
+description: "The on-hand number you see is a fast cache over an append-only ledger. Here is why the ledger sum is authoritative, how drift is caught, and how to reconcile it."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - on-hand cache
+  - inventory ledger source of truth
+  - on-hand drift
+  - reconcile inventory
+  - derived on-hand
+  - cache versus ledger
+targetPhrase: "on-hand cache"
+wordCount: 1540
+readingTime: 8
+faqQuestions:
+  - question: "Is the on-hand number in EDGEBIC authoritative?"
+    answer: "The displayed on-hand is a cache, not the authority. The authoritative on-hand is the sum of every inventory ledger entry for the product. The cache exists so screens and grids can show a number fast without re-summing the ledger each time, and it is recomputed from the ledger on every posting. When the two ever disagree, the ledger sum wins, because it is the record and the cache is only a fast copy of it."
+  - question: "Why keep a cache at all if the ledger is the truth?"
+    answer: "Speed. Summing a long ledger every time a grid draws would be slow, so EDGEBIC keeps a cached on-hand figure that is recomputed atomically each time an entry posts. In normal operation the cache always equals the ledger sum because the same transaction that appends an entry updates the cache. The cache is a performance copy of an authoritative number, which is a common and safe pattern as long as nothing writes the cache except the posting path."
+  - question: "How is drift between the cache and the ledger detected?"
+    answer: "The anomaly report checks whether the cached on-hand equals the sum of the ledger for each product, and flags any product where they disagree. Because the posting path always updates both together, drift should not occur in normal operation; when it is flagged it usually means something wrote the cache outside the ledger, which is exactly the mistake the check exists to catch. The fix is to reconcile the cache back to the ledger sum with an adjustment."
+qaQuestions:
+  - question: "Our product grid shows 340 on hand but summing the ledger gives 325. Which is right and what do we do?"
+    answer: "The ledger sum of 325 is right; the 340 on the grid is a stale cache. This drift means something set on-hand outside the posting path, because the posting path always keeps the two in step. Fix it by posting an adjustment of minus 15 with a clear reason, which appends a real ledger entry and brings the cache back to 325 in the same transaction. Never hand-edit the cached figure to 325; that would repeat the exact mistake that caused the drift."
+  - question: "Can we just type the correct on-hand into the grid when it looks wrong?"
+    answer: "No. Typing into the cache creates a number with no ledger entry behind it, so the cache and the ledger sum diverge and the anomaly check flags it. The correct move is always to post through the ledger: an adjustment for a count correction, a receipt for incoming stock, an issue for consumption. That way on-hand is recomputed from real history and the audit trail explains the change. The cache is a display copy; it is not a field you edit."
+---
+
+**The on-hand number you see in EDGEBIC is a cache, a fast display copy, while the authoritative on-hand is the sum of every entry in the append-only inventory ledger.** In EDGEBIC by User Solutions, the ledger sum is the record and the cached figure is only a performance copy of it, recomputed every time an entry posts. Understanding this relationship is what keeps you from ever hand-editing an on-hand number, which is the one action that breaks it.
+
+This post explains why on-hand is derived, why a cache exists anyway, and how drift is caught and reconciled. It sits under the [EDGEBIC planning guide](/blog/edgebic-planning-guide) and builds on the [inventory ledger explained](/blog/edgebic-inventory-ledger-explained).
+
+## Two numbers that should always agree
+
+There are two on-hand figures in the system, and in normal operation they are identical.
+
+The **ledger sum** is the authority: add up every signed entry for a product, receipts positive and issues negative, and the total is the true on-hand. This is what the scheduling engine nets against, what the projection opens from, and what an auditor can prove.
+
+The **cached on-hand** is a stored figure on the product record, kept so a grid or a dropdown can show a number without re-summing the whole ledger every time it draws. It is recomputed from the ledger sum every time an entry posts, in the same transaction, so it tracks the authority automatically.
+
+They should always agree because the same posting path that appends a ledger entry updates the cache. When they ever do not, the ledger sum is right and the cache is stale, because the cache is only a copy.
+
+## Why keep a cache at all
+
+If the ledger sum is the truth, why not just compute it every time? Speed. A product with years of history has a long ledger, and summing it on every screen draw, every grid refresh, every dropdown, would be slow at scale. Caching the current on-hand and recomputing it atomically on each posting gives fast reads without giving up correctness, because the cache is never allowed to drift in normal operation.
+
+This is a standard and safe pattern, with one hard rule: nothing writes the cache except the posting path. The moment some other code sets on-hand directly, the cache and the ledger can diverge, and the number on the grid stops meaning what everyone assumes it means.
+
+## How drift is caught
+
+Because the posting path keeps the two in step, drift should never happen in normal operation. But the system does not assume; it checks. The anomaly report compares, per product, the cached on-hand against the sum of the ledger, and flags any product where they disagree.
+
+A flagged product almost always means something wrote the cache outside the ledger, which is exactly the mistake the check exists to catch. This is why the discipline matters: the check is a safety net, not a routine reconciliation you should need. If it fires, treat it as a signal that on-hand was set somewhere it should not have been.
+
+## A worked reconciliation
+
+Suppose the product grid shows 340 on hand for a bracket, but summing its ledger gives 325. The anomaly check flags the 15-unit drift. Which number is right, and what do you do?
+
+The ledger sum of 325 is right; the 340 is a stale cache. The fix is not to type 325 into the grid, because that would repeat the exact mistake, writing the cache outside the ledger. Instead, post an adjustment through the ledger:
+
+| # | Qty | Type | Reason | Balance |
+|---|---|---|---|---|
+| … | | | | 325 (ledger sum) |
+| new | −15 | Adjustment | Reconcile cache to ledger | 325 |
+
+The adjustment appends a real ledger entry and recomputes the cache in the same transaction, bringing both to the reconciled figure. The audit trail now shows the correction as an honest entry, and the cache equals the ledger sum again. Reconciliation always flows through the ledger, never around it. This is the same append-only discipline described in [why inventory transactions are append-only](/blog/why-inventory-transactions-are-append-only-in-edgebic).
+
+## The one rule that keeps it clean
+
+Everything about the cache reduces to a single habit: never hand-set on-hand. Every change goes through a ledger movement, an adjustment for a count correction, a receipt for incoming stock, an issue for consumption. Do that and the cache never drifts, the anomaly check never fires, and on-hand always means what everyone assumes.
+
+This rule is also why opening balances go through the ledger rather than a field, as covered in [how opening balances seed a new install](/blog/how-opening-balances-seed-a-new-edgebic-install). Seeding a product by posting an opening balance keeps the cache and the ledger equal from the first entry; typing a starting quantity into the cache would start the product in drift.
+
+## Why this matters downstream
+
+The cache-versus-ledger relationship is not an implementation detail a planner can ignore, because everything downstream trusts the authoritative number. The scheduling engine nets demand against the ledger sum, not the cache, so a stale cache never causes an over-consume or an under-consume in the actual plan. The projection opens each window from the ledger sum. [Available-to-promise](/blog/available-to-promise-in-edgebic) promises forward from the ledger sum. The cache is purely for display speed; the decisions run on the truth.
+
+That separation is deliberate protection. Even if a cache somehow drifted, the plan itself stays correct because it reads the ledger, and the anomaly check surfaces the display discrepancy so you can reconcile it. The result is that the number you glance at is fast, the number the engine acts on is authoritative, and the two are kept honest by a check rather than by hope. It is a quiet but real part of what makes EDGEBIC's [inventory management for manufacturers](/blog/inventory-management-manufacturers) trustworthy, and it is the same reason sound [material requirements planning](/blog/what-is-mrp) insists that on-hand be a computed record, not an editable guess.
+
+<Accordion title="Is the on-hand number in EDGEBIC authoritative?">
+The displayed on-hand is a cache, not the authority. The authoritative on-hand is the sum of every inventory ledger entry for the product. The cache exists so screens and grids can show a number fast without re-summing the ledger each time, and it is recomputed from the ledger on every posting. When the two ever disagree, the ledger sum wins, because it is the record and the cache is only a fast copy of it.
+</Accordion>
+
+<Accordion title="Why keep a cache at all if the ledger is the truth?">
+Speed. Summing a long ledger every time a grid draws would be slow, so EDGEBIC keeps a cached on-hand figure that is recomputed atomically each time an entry posts. In normal operation the cache always equals the ledger sum because the same transaction that appends an entry updates the cache. The cache is a performance copy of an authoritative number, which is a common and safe pattern as long as nothing writes the cache except the posting path.
+</Accordion>
+
+<Accordion title="How is drift between the cache and the ledger detected?">
+The anomaly report checks whether the cached on-hand equals the sum of the ledger for each product, and flags any product where they disagree. Because the posting path always updates both together, drift should not occur in normal operation; when it is flagged it usually means something wrote the cache outside the ledger, which is exactly the mistake the check exists to catch. The fix is to reconcile the cache back to the ledger sum with an adjustment.
+</Accordion>
+
+See how the ledger drives every planning decision in the [EDGEBIC platform overview](/edgebic), or [contact US for a demo](/contact-us).

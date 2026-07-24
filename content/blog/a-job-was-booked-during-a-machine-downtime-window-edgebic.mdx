@@ -1,0 +1,83 @@
+---
+title: "A Job Was Booked During a Machine Downtime Window"
+description: "When a job schedules inside a maintenance or downtime window, the downtime was almost always added after the last run. Re-run scheduling to route the work around it."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - job booked during downtime
+  - scheduled inside maintenance window
+  - downtime event not respected
+  - recurring downtime scheduling
+  - re-run schedule after downtime
+  - downtime work center mismatch
+targetPhrase: "job booked during downtime"
+wordCount: 1330
+readingTime: 7
+faqQuestions:
+  - question: "Why did a job schedule inside a machine's downtime window?"
+    answer: "Almost always because the downtime was recorded after the last scheduling run, so the plan predates the block. The engine subtracts downtime from capacity before it allocates, so a job scheduled before the downtime existed still sits inside it. Re-run scheduling for the affected job and the engine routes the work around the downtime window. Less often, the downtime is attached to a different work center than the one the job runs on."
+  - question: "What is the difference between a downtime window and a holiday in scheduling?"
+    answer: "A holiday is a whole-day closure that applies plant-wide, to a work center, or to a shift, and blocks the entire day. A downtime window is a machine-level block for maintenance, either one-off on a specific date or recurring on a weekday. The scheduler subtracts both from capacity before allocating, but they are separate records: a job can dodge every holiday and still land in a downtime window that was added later."
+  - question: "Does adding a downtime window automatically move the jobs already scheduled through it?"
+    answer: "No. Adding a downtime record blocks that window for future scheduling, but it does not automatically reschedule jobs already placed there. You have to re-run scheduling for the affected jobs so the engine regenerates their plans with the new block in place. Record the downtime first, then schedule; recording it after a run leaves the existing plan sitting inside the window until you re-run."
+qaQuestions:
+  - question: "We booked preventive maintenance for next Wednesday, but a job still shows running on that machine all Wednesday. Did the downtime not take?"
+    answer: "The downtime almost certainly took; the plan just predates it. The job was scheduled before you recorded Wednesday's maintenance, and adding the downtime does not retroactively move work already placed there. Re-run scheduling for that job and the engine will route it around Wednesday's block. If it still lands in the window after a clean run, check that the downtime is attached to the same work center the job runs on, since a mismatch there is the other cause."
+  - question: "A recurring Friday-afternoon maintenance block is being ignored on one machine but respected on others. What is different?"
+    answer: "Look at how the recurring downtime is attached. Recurring downtime is matched by weekday, and it has to be associated with the work center whose jobs you expect it to block. If the Friday block was created against a different work center or shift than the one that keeps scheduling through it, the engine never subtracts it for that machine. Confirm the downtime record's work center matches the machine in question, then re-run scheduling for the jobs on it."
+---
+
+**A job scheduled inside a maintenance or downtime window was almost always planned before the downtime was recorded: the plan predates the block.** The engine subtracts downtime from a machine's capacity before it allocates, so a fresh scheduling run routes the work around the window. The less common cause is a downtime record attached to a different work center than the one the job runs on.
+
+[EDGEBIC by User Solutions](/edgebic) models machine downtime as a one-off or recurring block that reduces a work center's capacity before scheduling allocates against it. When a booking lands inside a downtime window anyway, the anomaly report flags it. This post, part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide), covers why it happens and how to clear it.
+
+## Downtime Is Subtracted Before Allocation
+
+For every machine and day, capacity starts from the shift hours and then has downtime subtracted before any job is placed. A recorded downtime window, whether a one-off on a specific date or a recurring block on a given weekday, removes those hours from what the scheduler may use. So under normal conditions, no job is placed inside a downtime window.
+
+The off-calendar check flags a booking that falls inside a downtime window as a warning. It is a warning rather than a critical error because the schedule is otherwise valid; it just crosses a block that was not in effect when the plan was made.
+
+This is a separate record from a holiday. A holiday closes a whole day plant-wide, per work center, or per shift, and is covered under [a job scheduled on a holiday](/blog/job-scheduled-on-a-holiday-edgebic). Downtime is a machine-level maintenance block, and a job can dodge every holiday yet still sit in a downtime window that was added afterward.
+
+## Cause 1: The Downtime Was Added After Scheduling
+
+This is the common case. The job was scheduled, then the maintenance window was recorded, so the plan predates the block. Adding a downtime record blocks that window for future scheduling but does not reach back and move work already placed there.
+
+**How to tell:** the downtime record's creation is more recent than the job's last scheduling run, and the job sits squarely in the window.
+
+**Fix:** re-run scheduling for the affected job. The engine subtracts the now-recorded downtime from the machine's capacity and routes the operation around the window. See [how to block a machine for a maintenance day](/blog/how-to-block-a-machine-for-a-maintenance-day-in-edgebic) for where downtime is recorded, and [how a schedule accounts for holidays and downtime](/blog/how-a-schedule-accounts-for-holidays-and-downtime) for how the subtraction works.
+
+## Cause 2: The Downtime Is on a Different Work Center
+
+If the booking still lands in the window after a clean re-run, the downtime is probably attached to a different work center than the one the job runs on. The engine only subtracts a downtime block from the machine it belongs to; a block recorded against the wrong work center, or against a shift the job's machine does not use, never reduces the right capacity.
+
+**How to tell:** the downtime is respected on some machines but ignored on the one in question, or the block was created against a work center other than the job's.
+
+**Fix:** confirm the downtime record names the same work center the job runs on. Correct the association if it is wrong, then re-run scheduling for the jobs on that machine. For recurring downtime, also confirm the weekday matches, since recurring blocks are matched by day of week.
+
+## Confirming the Fix
+
+After recording or correcting the downtime and re-running scheduling, re-open the anomaly report and confirm the downtime chip returns zero rows for the job. On the Gantt, the operation should now sit before or after the window rather than across it.
+
+## Prevention
+
+- **Record downtime before you schedule.** The order matters: enter the maintenance window first, then run scheduling, and no job is ever placed inside it. Recording it after a run leaves the existing plan sitting in the window until you re-run.
+- **Re-run after adding a block.** Any time you add downtime that overlaps existing work, run one scheduling pass over the affected jobs so their plans move out of the window.
+- **Attach downtime to the right machine.** Double-check the work center on every downtime record, especially recurring ones, so the block reduces the capacity it is meant to.
+- **Audit after imports.** If downtime or maintenance calendars [arrive from your ERP](/edgebic-erp-integration), a scheduling pass and an anomaly-report read catch any window that was added out of order or against the wrong machine.
+
+<Accordion title="Why did a job schedule inside a machine's downtime window?">
+Almost always because the downtime was recorded after the last scheduling run, so the plan predates the block. The engine subtracts downtime from capacity before it allocates, so a job scheduled before the downtime existed still sits inside it. Re-run scheduling for the affected job and the engine routes the work around the downtime window. Less often, the downtime is attached to a different work center than the one the job runs on.
+</Accordion>
+
+<Accordion title="What is the difference between a downtime window and a holiday in scheduling?">
+A holiday is a whole-day closure that applies plant-wide, to a work center, or to a shift, and blocks the entire day. A downtime window is a machine-level block for maintenance, either one-off on a specific date or recurring on a weekday. The scheduler subtracts both from capacity before allocating, but they are separate records: a job can dodge every holiday and still land in a downtime window that was added later.
+</Accordion>
+
+<Accordion title="Does adding a downtime window automatically move the jobs already scheduled through it?">
+No. Adding a downtime record blocks that window for future scheduling, but it does not automatically reschedule jobs already placed there. You have to re-run scheduling for the affected jobs so the engine regenerates their plans with the new block in place. Record the downtime first, then schedule; recording it after a run leaves the existing plan sitting inside the window until you re-run.
+</Accordion>

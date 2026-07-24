@@ -1,0 +1,105 @@
+---
+title: "EDGEBIC for Semiconductor Scheduling: Recipe Changeovers"
+description: "Semiconductor production scheduling in EDGEBIC: a sequence-dependent setup matrix prices every recipe changeover on shared tools so lot sequence stops burning capacity."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - semiconductor production scheduling
+  - recipe changeover scheduling
+  - sequence dependent setup semiconductor
+  - wafer fab scheduling
+  - shared tool scheduling
+  - setup matrix semiconductor
+targetPhrase: "semiconductor production scheduling"
+wordCount: 1780
+readingTime: 9
+faqQuestions:
+  - question: "How does EDGEBIC handle recipe changeovers on shared semiconductor tools?"
+    answer: "EDGEBIC uses a sequence-dependent setup matrix. For each tool, you record how long the changeover takes to go from one recipe or product to another, because the cost is not symmetric: switching from a light process to a heavy one may take minutes while the reverse takes hours of purge and requalification. The scheduler reads the matrix, so it knows the true cost of every lot-to-lot transition and can sequence lots to keep total changeover time down."
+  - question: "Can EDGEBIC group similar recipes to reduce requalification time?"
+    answer: "Yes, through setup families. You assign products or recipes to families, and record changeover times at the family level, so a fab with hundreds of recipes needs only a manageable grid of family-to-family transitions instead of a matrix that explodes. Same-family lots incur little or no changeover; crossing families incurs the family cost. This mirrors how a fab actually campaigns compatible recipes together."
+  - question: "Does EDGEBIC support the multi-step routings semiconductor lots follow?"
+    answer: "Yes. A semiconductor routing with photolithography, etch, diffusion, deposition, and metrology steps is modeled as a multi-step bill of routing, each step targeting the right tool or tool group. EDGEBIC schedules the steps in dependency order, respects each tool's finite capacity, and can overlap steps with lot streaming where a downstream step can begin before the whole upstream lot finishes."
+qaQuestions:
+  - question: "Our photolithography tools lose hours to recipe changes, and the schedule never accounts for it. How would EDGEBIC change that?"
+    answer: "The root problem is that a flat setup time cannot describe a changeover whose cost depends on what ran before. EDGEBIC prices each transition in a per-tool matrix. Say switching a track from a light-field mask set to a dark-field one costs 60 minutes, while the reverse costs 240 minutes of clean and requalification. Once those real numbers are in the matrix, the scheduler stops assuming a constant changeover and starts sequencing lots to avoid the expensive transitions. On a tool running a dozen lots a shift, sequencing light-to-dark instead of ping-ponging can recover hours of capacity you are currently losing invisibly."
+  - question: "We run wafer lots through many steps and different tool sets. Can EDGEBIC keep the lot moving instead of waiting for a whole lot to finish each step?"
+    answer: "Yes, that is lot streaming. Instead of holding the entire lot at a step until the last wafer is done, you define a transfer batch so a downstream step can start once the first sublot is ready. If a diffusion step runs a lot of 25 wafers and the next step can begin after the first 5 are through, the downstream tool starts earlier and the lot's total cycle time drops. EDGEBIC composes that overlap with queue and transit times between tool sets, so the schedule reflects how wafers really flow, not an all-or-nothing handoff."
+---
+
+**EDGEBIC handles semiconductor scheduling by pricing every recipe changeover on a shared tool in a sequence-dependent setup matrix, so the scheduler knows that switching a lot from one process to another is not a fixed cost but depends entirely on what ran before, and sequences lots to stop burning capacity on avoidable requalification.** [EDGEBIC by User Solutions](/edgebic) brings the same finite-capacity discipline that has served demanding manufacturers since 1991 to the recipe-changeover problem that quietly drains fab capacity. This post shows how.
+
+## The Changeover Problem in a Fab
+
+In a wafer fab, the expensive resource is the tool, and the hidden thief of tool time is the recipe change. Switching a track, an etcher, or a diffusion furnace from one process to another is rarely a fixed cost. Going from a light process to a heavy one might mean a short gas purge. Going the other way might mean a full clean, a season run, and a requalification that eats hours.
+
+A scheduler that treats changeover as a single flat number cannot see this. It assumes every lot-to-lot transition costs the same, so it sequences lots by due date or arrival and lets the real changeover cost fall out however it falls. On a tool running a dozen lots a shift, that indifference to sequence can silently cost hours of capacity every day. The tool looks busy. It is actually spending a chunk of its time purging and requalifying because nobody sequenced the recipes to avoid it.
+
+## The Sequence-Dependent Setup Matrix
+
+EDGEBIC's answer is a setup matrix defined per tool. Instead of one changeover number, you record the cost of going from each process to each other process. The matrix captures the asymmetry that a flat number cannot:
+
+| From recipe | To recipe | Changeover |
+|---|---|---|
+| Same recipe | Same recipe | 0 min |
+| Light field | Dark field | 60 min |
+| Dark field | Light field | 240 min |
+| Standard | Contamination-sensitive | 180 min |
+
+Once these real numbers are in the matrix, the scheduler stops guessing. When it places the next lot on a tool, it reads the actual cost of transitioning from whatever ran last, and it can sequence lots to avoid the expensive transitions. This is the same mechanism explained in general in [the EDGEBIC setup matrix](/blog/edgebic-setup-matrix-explained), applied to recipes instead of paint colors or alloys.
+
+## Setup Families Keep the Matrix Manageable
+
+A fab may run hundreds of recipes. A full recipe-by-recipe matrix would explode into tens of thousands of cells nobody could maintain. EDGEBIC solves this with setup families, the concept covered in [what is a setup family](/blog/what-is-a-setup-family-sequence-dependent-changeover).
+
+You assign each recipe to a family, then record changeover times at the family level. Light-field recipes go in one family, dark-field in another, contamination-sensitive processes in a third. The matrix becomes a small grid of family-to-family transitions instead of an unmanageable recipe-by-recipe explosion. Lots in the same family incur little or no changeover; crossing a family boundary incurs the family cost. Where a specific recipe pair genuinely differs from its family, you add a product-level override for just that pair. This is exactly how a fab campaigns compatible recipes together in practice.
+
+## A Worked Example: Sequencing a Track's Shift
+
+Consider a coat-and-develop track scheduled to run six lots in a shift, using two recipe families: light-field and dark-field. The family changeover costs are 0 minutes within a family, 60 minutes going light to dark, and 240 minutes going dark to light because the reverse requires a clean and requalification.
+
+Suppose the lots arrive in an order that alternates families:
+
+Light, Dark, Light, Dark, Light, Dark
+
+With a flat changeover assumption, the scheduler would happily accept that order and quietly incur: 60, then 240, then 60, then 240, then 60. That is 660 minutes, eleven hours, of changeover crammed into a shift that is only eight hours long. The schedule would look feasible on paper and be impossible on the floor.
+
+EDGEBIC, reading the matrix, knows the true cost of each transition. It can group the lots by family and order them light-first:
+
+Light, Light, Light, Dark, Dark, Dark
+
+Now the changeovers are 0, 0, then a single 60-minute light-to-dark transition, then 0, 0. Total changeover: 60 minutes. The same six lots that could not fit an eight-hour shift now fit comfortably, because the sequence stopped ping-ponging across the expensive boundary. That recovered time is real tool capacity, and it came from nothing but ordering the lots correctly.
+
+## Multi-Step Routings and Lot Streaming
+
+Semiconductor lots do not visit one tool. They flow through photolithography, etch, diffusion, deposition, and metrology, often circling back through the same tool sets across many layers. EDGEBIC models this as a multi-step bill of routing, with each step targeting the right tool or tool group, and schedules the steps in dependency order while respecting each tool's finite capacity.
+
+It also handles the reality that a lot does not have to finish a step entirely before the next step begins. With lot streaming, you define a transfer batch so a downstream step can start once the first sublot is ready. If a diffusion step processes a lot of 25 wafers and the next step can begin after the first 5 are through, the downstream tool starts earlier and the lot's total cycle time falls. EDGEBIC composes that overlap with the queue and transit times between tool sets, so the schedule reflects how wafers really move rather than an all-or-nothing handoff. The general mechanism is covered in [EDGEBIC lot streaming](/blog/edgebic-lot-streaming-explained).
+
+## Shared Tools and Tool Groups
+
+Many fab tools are interchangeable within a class: several etchers that can run the same recipes, a bank of identical furnaces. EDGEBIC represents these as work center groups, a pool of interchangeable tools that a routing step can target instead of a single named tool. The scheduler picks a member of the pool based on the group's strategy, whether that is earliest completion or a designated primary tool first, and never overbooks a tool. This keeps lots moving when one tool in the class is busy, without forcing a planner to hand-assign every lot to a specific chamber.
+
+## Why This Matters for a Fab
+
+The economics of a fab are the economics of tool time. A tool that spends its shift requalifying because lots were sequenced carelessly is a tool that is not producing wafers, and in a capital-intensive fab that lost time is expensive. The value of pricing changeovers correctly is not abstract. It is the difference between a schedule that fits the shift and one that quietly cannot.
+
+By capturing the true, asymmetric cost of every recipe transition, keeping it manageable through families, and letting the scheduler sequence lots to avoid the costly transitions, [EDGEBIC](/blog/edgebic-by-industry) turns changeover from an invisible tax into a variable the schedule actually controls. Combined with multi-step routings, lot streaming, and interchangeable tool pools, it gives a fab a schedule that respects both the physics of recipe changes and the finite capacity of the tools. For a deeper picture of how the same engine handles other recipe-driven environments, the [general semiconductor scheduling overview](/blog/semiconductor-scheduling) is a useful companion.
+
+The starting point is always the same: get the real changeover numbers into the matrix. A fab that has been losing hours to unsequenced recipe changes usually finds that its biggest capacity gain is not a new tool. It is sequencing the tools it already has.
+
+<Accordion title="How does EDGEBIC handle recipe changeovers on shared semiconductor tools?">
+EDGEBIC uses a sequence-dependent setup matrix. For each tool, you record how long the changeover takes to go from one recipe or product to another, because the cost is not symmetric: switching from a light process to a heavy one may take minutes while the reverse takes hours of purge and requalification. The scheduler reads the matrix, so it knows the true cost of every lot-to-lot transition and can sequence lots to keep total changeover time down.
+</Accordion>
+
+<Accordion title="Can EDGEBIC group similar recipes to reduce requalification time?">
+Yes, through setup families. You assign products or recipes to families, and record changeover times at the family level, so a fab with hundreds of recipes needs only a manageable grid of family-to-family transitions instead of a matrix that explodes. Same-family lots incur little or no changeover; crossing families incurs the family cost. This mirrors how a fab actually campaigns compatible recipes together.
+</Accordion>
+
+<Accordion title="Does EDGEBIC support the multi-step routings semiconductor lots follow?">
+Yes. A semiconductor routing with photolithography, etch, diffusion, deposition, and metrology steps is modeled as a multi-step bill of routing, each step targeting the right tool or tool group. EDGEBIC schedules the steps in dependency order, respects each tool's finite capacity, and can overlap steps with lot streaming where a downstream step can begin before the whole upstream lot finishes.
+</Accordion>

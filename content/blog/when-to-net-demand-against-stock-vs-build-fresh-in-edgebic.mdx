@@ -1,0 +1,108 @@
+---
+title: "When to Net Demand Against Stock vs Build Fresh in EDGEBIC"
+description: "Should an order consume stock or build new units? Here are the exact gates EDGEBIC checks, the product settings that drive them, and how to decide per product."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - net demand against stock
+  - make to stock vs make to order
+  - consume from stock decision
+  - build to inventory
+  - netting gates
+  - inventory planning policy
+targetPhrase: "net demand against stock"
+wordCount: 1700
+readingTime: 9
+faqQuestions:
+  - question: "What decides whether an order nets against stock or builds fresh?"
+    answer: "Three things decide it: whether the product is stocked, whether the order is make-to-order rather than a build-to-stock producer, and whether enough on-hand exists to cover the need. A stocked make-to-order demand with sufficient stock nets and consumes; a producer order always builds because producers do not consume their own stock; and any order for a non-stocked product always builds. The engine checks these gates at scheduling time, not at order creation."
+  - question: "Why does a make-to-stock producer order never consume stock?"
+    answer: "A producer exists to add stock, so letting it consume would defeat its purpose and could leave demand uncovered. The engine treats build-to-stock orders as supply and routes them straight to building, registering their output as a receipt. Only make-to-order demand and consuming orders are eligible to net against on-hand. This separation is what keeps supply and demand from canceling each other out inside a single scheduling run."
+  - question: "Does an in-progress order still get netted against stock?"
+    answer: "No. An order that already has actuals logged is never retroactively satisfied from stock. Netting runs only after completed steps are preserved, so the engine never tries to consume stock against work the floor has already started or finished. This protects in-flight orders: once real hours or pieces exist, the order builds out its remaining work rather than being quietly replaced by a stock issue."
+qaQuestions:
+  - question: "We have 70 castings on hand and a customer order for 50. Should we let it consume or build a fresh 50?"
+    answer: "Let it consume. The casting is stocked, the order is make-to-order demand, and 70 on hand covers the 50 needed, so the engine nets it, marks it satisfied from stock, and posts an issue of minus 50, leaving 20 on hand. No machine time is spent. Building a fresh 50 when stock covers the demand would waste capacity and leave 70 units aging on the shelf. Consuming is the right call whenever stock covers the need and the order is not itself a producer."
+  - question: "A stocked part has 30 on hand and an order needs 100. What does the engine do?"
+    answer: "It does both. Thirty is a partial cover, so the engine builds only the shortfall of 70 and posts an issue for the 30 it consumed. The order is a partial build, not satisfied from stock, so it occupies work-center capacity for the 70 units it actually produces. If the part has a yield below 100 percent, the build quantity inflates so the net good output still covers the 70-unit shortfall after expected scrap."
+---
+
+**An order nets against stock when three gates all pass: the product is stocked, the order is consuming demand rather than a build-to-stock producer, and on-hand covers at least part of the need; otherwise it builds fresh.** EDGEBIC by User Solutions checks these gates at scheduling time, so the decision reflects the real stock position when the schedule runs, not a guess made when the order was entered. Getting the product settings right is what makes the decision automatic and correct.
+
+This post lays out the gates and the settings behind them so you can decide per product with confidence. For the step-by-step mechanics of the netting itself, see [how EDGEBIC nets demand against stock](/blog/how-edgebic-nets-demand-against-stock); both sit under the [EDGEBIC planning guide](/blog/edgebic-planning-guide).
+
+## The three gates, in order
+
+The engine asks three questions before it will net a demand against stock. All three must pass.
+
+**Is the product stocked?** A product flagged not stocked skips all netting, receipt, and issue posting. Service items, overhead SKUs, and anything you never hold in finished-goods inventory belong here. If a product is not stocked, its orders always build; there is no stock to net against.
+
+**Is this order a consumer, not a producer?** A build-to-stock order is a producer: it exists to add stock, so it never consumes. Only make-to-order demand and consuming orders are eligible to net. This keeps a run's supply from canceling its own demand.
+
+**Does on-hand cover the need?** If available stock is at least the demand, the order can be satisfied from stock in full. If it covers only part, the engine builds the shortfall and consumes the rest. If it covers nothing, the order builds in full.
+
+A fourth guard runs quietly: an order with actuals already logged is never retroactively satisfied from stock, because netting runs only after completed steps are preserved. In-flight work is protected.
+
+## The product settings that drive the gates
+
+Two settings do most of the work.
+
+**Build method** sets the product default: make-to-order (build only for a customer order, ship direct, never touch inventory) or make-to-stock (build ahead, output goes to stock, demand consumes it). A third option builds to stock by default but lets individual orders override to make-to-order.
+
+**Is-stocked** turns netting on or off entirely. A make-to-stock product must be flagged stocked, or it silently skips posting; the anomaly report flags that exact mismatch.
+
+Any single order can override the product default in either direction. A normally stocked part can run one direct-ship order; a normally custom part can run one build-ahead batch. The override lets you handle exceptions without reclassifying the product. The [make-to-stock versus make-to-order decision](/blog/make-to-stock-vs-make-to-order-in-edgebic) covers the classification itself in depth.
+
+## A worked decision: three orders, one casting
+
+Take a casting, make-to-stock, flagged stocked, with 70 on hand. Three demands arrive.
+
+**Order A: customer order for 50.** Stocked? Yes. Consumer? Yes (make-to-order demand). Covered? 70 covers 50. Decision: net and consume. The engine posts an issue of −50, marks the order satisfied from stock, spends zero machine time, and leaves 20 on hand.
+
+**Order B: customer order for 100, scheduled after A.** Stocked? Yes. Consumer? Yes. Covered? Only 20 remain after A consumed 50. This is partial cover. Decision: build the shortfall of 80, consume 20. The order occupies capacity for the 80 it produces, and posts an issue of −20.
+
+**Order C: a build-to-stock replenishment for 200.** Stocked? Yes. Consumer? No, it is a producer. Decision: build in full. It never nets; on completion it posts a receipt of +200.
+
+| Order | Type | Need | On-hand seen | Consumes | Builds |
+|---|---|---|---|---|---|
+| A | Customer | 50 | 70 | 50 | 0 |
+| B | Customer | 100 | 20 | 20 | 80 |
+| C | Replenishment | 200 | (producer) | 0 | 200 |
+
+Notice the on-hand each order sees changes as earlier orders consume it. That is the reservation map at work, decrementing stock the moment each consumer nets so two orders never claim the same units. The [inventory reservation map explained](/blog/the-inventory-reservation-map-explained-edgebic) covers that mechanism.
+
+## Yield: netting still respects scrap
+
+When the engine builds a shortfall, yield rides on top. A product with a first-pass yield below 100% inflates its build quantity so the net good output covers the need. Order B's 80-unit shortfall on a casting with 90% yield means the engine plans to start about 89 units to reliably yield 80 good ones. Netting decides how much to build; yield decides how much to start.
+
+## When to prefer consume, and when to prefer build
+
+The gates make the routine decision automatic, but the policy behind them is yours to set.
+
+Prefer consuming from stock for your runners: high-volume, standard parts you always hold. Classify them make-to-stock with a reorder trigger, and let demand draw down stock while replenishment refills it. Capacity goes to the orders that genuinely need building, and shelf stock does its job.
+
+Prefer building fresh for custom or low-volume work: parts you would never hold, engineered-to-order items, anything where finished stock would just age. Classify them make-to-order so they never net and never post a receipt.
+
+The overrides handle the edges: a rush direct-ship order on a stocked part, or a one-off build-ahead batch on a custom part ahead of a known spike. A handful of correctly classified A-items beats a full catalog of guesses, the same logic behind [ABC analysis for inventory](/blog/abc-analysis-inventory) and disciplined [inventory management for manufacturers](/blog/inventory-management-manufacturers).
+
+## Why the decision waits until scheduling
+
+Deciding at scheduling time, not order entry, is deliberate. On-hand moves constantly as builds complete and orders consume. An order entered when stock was zero might, by the time it schedules, sit behind a completed replenishment that covers it. By evaluating the gates when the schedule runs, EDGEBIC uses the real position rather than a stale one, and the same order can consume this week and build next week if stock changed underneath it. That is also why rescheduling reverses the prior consume first and re-nets on restored stock, a point covered in [how a reschedule keeps inventory consistent](/blog/how-a-reschedule-keeps-inventory-consistent-in-edgebic).
+
+<Accordion title="What decides whether an order nets against stock or builds fresh?">
+Three things decide it: whether the product is stocked, whether the order is make-to-order rather than a build-to-stock producer, and whether enough on-hand exists to cover the need. A stocked make-to-order demand with sufficient stock nets and consumes; a producer order always builds because producers do not consume their own stock; and any order for a non-stocked product always builds. The engine checks these gates at scheduling time, not at order creation.
+</Accordion>
+
+<Accordion title="Why does a make-to-stock producer order never consume stock?">
+A producer exists to add stock, so letting it consume would defeat its purpose and could leave demand uncovered. The engine treats build-to-stock orders as supply and routes them straight to building, registering their output as a receipt. Only make-to-order demand and consuming orders are eligible to net against on-hand. This separation is what keeps supply and demand from canceling each other out inside a single scheduling run.
+</Accordion>
+
+<Accordion title="Does an in-progress order still get netted against stock?">
+No. An order that already has actuals logged is never retroactively satisfied from stock. Netting runs only after completed steps are preserved, so the engine never tries to consume stock against work the floor has already started or finished. This protects in-flight orders: once real hours or pieces exist, the order builds out its remaining work rather than being quietly replaced by a stock issue.
+</Accordion>
+
+See the netting decision run against your parts in the [EDGEBIC platform overview](/edgebic), or [contact US for a demo](/contact-us).

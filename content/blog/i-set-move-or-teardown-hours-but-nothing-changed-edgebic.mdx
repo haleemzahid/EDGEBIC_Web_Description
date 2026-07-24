@@ -1,0 +1,88 @@
+---
+title: "I Set Move or Teardown Hours but Nothing Changed"
+description: "Move and teardown hours do not move the schedule: the scheduler never reads them for timing or capacity. Use setup, queue, or a separate step to affect dates."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - move hours no effect schedule
+  - teardown hours do not delay
+  - dead routing field scheduling
+  - setup vs teardown time
+  - queue time buffer
+  - routing field ignored
+targetPhrase: "move hours no effect schedule"
+wordCount: 1290
+readingTime: 6
+faqQuestions:
+  - question: "Why did setting move or teardown hours not change the schedule?"
+    answer: "Because the scheduler does not read those fields for timing or capacity. Move hours and teardown hours have no effect on an operation's dates or on how much machine capacity it reserves, so filling them in does not move anything. Teardown hours do feed the cost rollup and can be drawn on the Gantt as a display segment, but neither field delays the next step. To affect the schedule, use setup time, queue time, or a separate operation."
+  - question: "Which routing fields actually move the schedule?"
+    answer: "Setup time reserves capacity before a run and extends the operation's window. Per-unit hours times quantity is the run time. Queue time adds buffer between steps. Transit days add an inter-step delay in calendar or working days. Those four move dates and reserve time. Move hours and teardown hours do not: they are not read by the scheduler for timing or capacity, so they never change when a step starts or ends."
+  - question: "Does teardown time do anything at all in EDGEBIC?"
+    answer: "Teardown time feeds the routing step's cost rollup, so quotes and cost estimates include the cleanup, and it can be drawn as a segment after the operation on the Gantt if you turn on that display option. What it does not do is reserve capacity or push the next step later. If you need cleanup to actually hold the machine or delay the next operation, model it as setup time on the next job or as its own short operation."
+qaQuestions:
+  - question: "I put two hours of move time between two operations expecting a gap, but they still run back to back. What did I miss?"
+    answer: "Move hours are not read by the scheduler, so they create no gap no matter what you enter. To put real time between two operations, use queue time on the downstream step, which is exactly the buffer field for this, or transit days if the delay is a move between locations measured in days. Both are figures the engine acts on. Move hours will keep reading as populated but change nothing, which is why the anomaly report flags them as a dead field to clear."
+  - question: "We want paint-booth cleanup to both show up in cost and hold the booth for 30 minutes. Can teardown hours do both?"
+    answer: "Teardown hours cover the cost half only. Set the teardown to 0.5 to add the cleanup to the cost rollup, and turn on the teardown display option if you want it drawn after the paint bar. To also hold the booth, that half hour has to reserve capacity, and teardown does not: put it as setup time on the next job, or model the cleanup as a short work-center step with its own hours. Use teardown for the cost and display, and setup or a real step for the reservation."
+---
+
+**Move hours and teardown hours do not change the schedule because the scheduler never reads them for timing or capacity: filling them in reserves nothing and delays nothing.** Teardown hours do feed the cost rollup and can be drawn on the Gantt as a display segment, but neither field moves an operation's dates. To actually affect the schedule, use setup time, queue time, or a separate operation. The anomaly report flags a populated move or teardown field so the intent stays honest.
+
+[EDGEBIC by User Solutions](/edgebic) reads a specific set of routing fields to build the plan, and move hours and teardown hours are not among the timing inputs. This post, part of the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide), explains which fields move the schedule and which do not, so a field you filled in never silently does nothing.
+
+## The Fields the Scheduler Reads for Timing
+
+The engine builds an operation's window from a defined set of inputs:
+
+- **Setup time** reserves capacity before the run and extends the operation's window.
+- **Per-unit hours times quantity** is the run time.
+- **Queue time** adds buffer between operations, counted as elapsed time.
+- **Transit days** add an inter-step delay in calendar or working days.
+
+Those four move dates and reserve capacity. Move hours and teardown hours are not on that list. The scheduler does not consult them when it places an operation or computes when the next step can start, so setting them has zero effect on the plan.
+
+## Why Nothing Changed
+
+When you fill in move hours expecting a gap, or teardown hours expecting the next step to slide, nothing moves because the engine never looks at those fields for timing. The value is stored, but it is inert for scheduling. The anomaly report flags a populated move or teardown field as a dead field, warning-level, precisely so the config does not carry numbers that imply an effect they do not have.
+
+This is different from a field that was overridden by another (as when [queue time and flow time fight each other](/blog/queue-time-and-flow-time-are-fighting-each-other-edgebic)); move and teardown hours are not competing with anything, they are simply not read.
+
+## What Teardown Hours Do Instead
+
+Teardown hours are not entirely idle: they feed the routing step's cost rollup, so quotes and cost estimates include the cleanup labor, and they can be drawn as a segment after the operation on the Gantt if you turn on that display option. What they do not do is reserve capacity or push the next step later. That split is the whole point: teardown records and optionally shows post-run cleanup as a cost, without changing the plan's dates. See [how to add teardown time to a routing step](/blog/how-to-add-teardown-time-to-a-routing-step-in-edgebic) for the cost and display behavior in full.
+
+## How to Make Cleanup or Movement Affect the Schedule
+
+If you need the time to actually reserve the machine or delay the next step, use a field the scheduler acts on:
+
+- **Cleanup that must hold the machine:** put it as setup time on the next job, which reserves capacity and extends the window, or model it as its own short work-center step with real hours. See [how to add setup time to a routing step](/blog/how-to-add-setup-time-to-a-routing-step-in-edgebic).
+- **A wait or move between operations:** use queue time on the downstream step, the dedicated buffer field. See [how to add queue time before an operation](/blog/how-to-add-queue-time-before-an-operation-in-edgebic).
+- **A move measured in days between locations:** use transit days, in calendar or working-day mode. See [how to add transit days between two steps](/blog/how-to-add-transit-days-between-two-steps-in-edgebic).
+
+## Confirming and Clearing
+
+After moving the intent to a real field and re-running scheduling, confirm the gap or reservation now appears on the Gantt. Then clear the move and teardown hours you set expecting an effect (leave teardown only where you genuinely want the cost rollup or the display segment). Re-open the anomaly report and confirm the dead-field chip returns zero rows, so the routing carries no numbers that imply a schedule effect they do not have.
+
+## Prevention
+
+- **Learn the four timing fields.** Setup, run hours, queue, and transit are the levers that move dates. Reach for those, not move or teardown hours, when you want the schedule to change.
+- **Use teardown for cost and display only.** Set teardown hours when you want cleanup in the cost estimate or drawn on the bar, and expect no date change from it.
+- **Keep the routing honest.** Clear any move or teardown value entered by mistake, so the next planner does not assume it is doing something. The dead-field check exists to keep that config clean.
+- **Audit after imports.** If routings [arrive from your ERP](/edgebic-erp-integration) carrying move or teardown values from an old system, a scheduling pass and an anomaly-report read surface them so you can decide which to keep and which to move to a real timing field.
+
+<Accordion title="Why did setting move or teardown hours not change the schedule?">
+Because the scheduler does not read those fields for timing or capacity. Move hours and teardown hours have no effect on an operation's dates or on how much machine capacity it reserves, so filling them in does not move anything. Teardown hours do feed the cost rollup and can be drawn on the Gantt as a display segment, but neither field delays the next step. To affect the schedule, use setup time, queue time, or a separate operation.
+</Accordion>
+
+<Accordion title="Which routing fields actually move the schedule?">
+Setup time reserves capacity before a run and extends the operation's window. Per-unit hours times quantity is the run time. Queue time adds buffer between steps. Transit days add an inter-step delay in calendar or working days. Those four move dates and reserve time. Move hours and teardown hours do not: they are not read by the scheduler for timing or capacity, so they never change when a step starts or ends.
+</Accordion>
+
+<Accordion title="Does teardown time do anything at all in EDGEBIC?">
+Teardown time feeds the routing step's cost rollup, so quotes and cost estimates include the cleanup, and it can be drawn as a segment after the operation on the Gantt if you turn on that display option. What it does not do is reserve capacity or push the next step later. If you need cleanup to actually hold the machine or delay the next operation, model it as setup time on the next job or as its own short operation.
+</Accordion>

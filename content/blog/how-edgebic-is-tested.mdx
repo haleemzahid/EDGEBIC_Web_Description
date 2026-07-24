@@ -1,0 +1,107 @@
+---
+title: "How EDGEBIC Is Tested: The Quality Story for Buyers"
+description: "How EDGEBIC is tested: the three-layer test suite, regression gates, and dual-database checks that keep your production schedule correct as the software evolves."
+published: 2026-08-01T12:00:00.000Z
+modified: 2026-08-01T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - production scheduling software testing
+  - scheduling software quality
+  - regression testing manufacturing software
+  - reliable scheduling software
+  - software quality for buyers
+  - scheduling engine verification
+targetPhrase: "production scheduling software testing"
+wordCount: 1780
+readingTime: 9
+faqQuestions:
+  - question: "How is EDGEBIC tested?"
+    answer: "EDGEBIC is verified by a three-layer automated test suite: fast unit tests that check individual pieces of logic, integration tests that run against a real database, and convention tests that enforce architectural rules. On top of these sit regression gates, each written to lock in a specific bug fix so the same defect can never silently return. The suite runs on every code change before it ships."
+  - question: "What is a regression gate?"
+    answer: "A regression gate is a test added specifically to lock in a bug fix. It must fail against the buggy code and pass after the fix. Once it exists, that exact defect can never come back unnoticed, because the gate would go red before the change ever ships. EDGEBIC uses regression gates for every significant scheduling bug it has fixed, from inverted dates to stale capacity reservations."
+  - question: "Does EDGEBIC test against both databases it supports?"
+    answer: "Yes. EDGEBIC runs on both a local SQLite database and enterprise SQL Server, and its integration tests exercise both. The same behavior is verified on each engine, so a shop that starts on the desktop database and later moves to a shared server gets the same tested behavior. The dual-database checks catch provider-specific differences before they reach a customer."
+qaQuestions:
+  - question: "We have been burned by scheduling software that broke old features every time it added a new one. How does EDGEBIC avoid that?"
+    answer: "That failure mode has a name: regression. EDGEBIC's answer is the regression gate. Every time a bug is found, the team writes a test that reproduces it, confirms the test fails against the broken code, then fixes the code so the test passes. That test stays in the suite forever. When a later feature accidentally reintroduces the old bug, the gate fails and the change is blocked before it ships. The suite also includes deterministic scheduling scenarios that assert exact dates, so a change in engine behavior surfaces as a failed assertion, not a customer complaint."
+  - question: "How much of the scheduling engine itself is actually covered, versus just the simple screens?"
+    answer: "The scheduling engine is the most heavily covered part. There is a dedicated set of engine scenario tests that stand up real routings, work centers, and shifts, then assert the exact schedule the engine should produce, down to specific start dates. Known-hard cases have their own gates: partial completion on reschedule, routing snapshot provenance, duplicate hour rows, and stale capacity reservations after a completed step. These are the exact areas where a naive scheduler drifts, and they are locked in by name."
+---
+
+**EDGEBIC is verified by a three-layer automated test suite, backed by regression gates that lock in every bug fix and dual-database checks that confirm the same behavior on both supported engines, so your production schedule stays correct as the software keeps improving.** [EDGEBIC by User Solutions](/edgebic) is built on a simple principle: a scheduling tool is only worth trusting if adding tomorrow's feature cannot silently break today's schedule. This post explains, in plain terms, how that trust is earned in code.
+
+If you are evaluating scheduling software, quality is hard to see from a demo. A demo shows the happy path. What you actually need to know is what happens on the two hundredth change, when a new capability lands next to the feature you depend on. That is a testing question, and it is the right one to ask.
+
+## The Three Layers of Testing
+
+Testing in [EDGEBIC](/blog/edgebic-complete-guide) is organized as a pyramid, from many fast checks at the bottom to fewer, broader checks at the top.
+
+**Unit tests** exercise one piece of logic in isolation. They replace the database and other dependencies with in-memory stand-ins, so they run in well under a tenth of a second each. Every public method has at least one, and every branch that behaves differently gets its own case. These are the fast feedback that catches a mistake the moment it is made.
+
+**Integration tests** run multiple real components together against a real database. They are slower, on the order of a few seconds, because they actually create tables, write rows, and read them back. This is where wiring bugs surface: the kind a mocked unit test cannot see because the mock always behaves. Integration tests caught real defects in the data import path that unit tests had missed, which is exactly why the layer exists.
+
+**Convention tests** enforce architectural rules rather than behavior. They assert, for example, that the application core never depends on the user-interface framework, that changes are published only after they are safely saved, and that certain screens do not hold their own stale copies of lookup data. These rules keep the codebase healthy over years, and a violation fails the build like any other test.
+
+## Regression Gates: Bugs That Cannot Come Back
+
+The single most important idea in this story is the regression gate. When a bug is found, whether in production or by the test suite, the required sequence is strict:
+
+1. Write a failing test first. It must fail against the buggy code.
+2. Fix the code. The test turns green.
+3. Commit the test and the fix together.
+
+That test then lives in the suite permanently. If a future change reintroduces the old defect, the gate fails before the change can ship. The team does not rely on remembering the bug. The suite remembers it for them.
+
+This pattern has been applied to every significant scheduling defect the engine has ever had: inverted actual dates, routing identity that got lost across a reschedule, duplicate daily-hour rows, and a stale capacity reservation that pushed a downstream step days too far into the future. Each of those is now a named test that would go red on sight if the defect returned.
+
+## The Snapshot Checks Are Also Gates
+
+If you have read about the [EDGEBIC data snapshot](/blog/edgebic-data-snapshot-support-tool), you already know part of this story. The integrity checks the snapshot runs (inverted dates, orphan schedule rows, split operations, unexplained gaps, on-hand drift) are not only a support tool. They are also wired into the test suite as regression gates. The same rule that helps a planner diagnose a live problem is the rule that blocks that problem from ever shipping again. One discipline, two payoffs.
+
+## Verified on Both Databases
+
+EDGEBIC runs on two databases: a local SQLite file for a single workstation, and SQL Server for a shared, multi-user deployment. A subtle risk with any dual-database product is that behavior diverges: something works on one engine and quietly misbehaves on the other.
+
+The integration tests guard against exactly this. The core reliability contracts, including the way the software isolates concurrent work and the way it handles two people saving at once, are verified on both engines. The SQL Server checks run against a real server instance so the test sees the actual database, not an approximation. For a shop that starts on the desktop database and later scales up to a shared server, this is the assurance that the move does not change how the schedule behaves. You can read how that choice works in [EDGEBIC database options for IT buyers](/blog/edgebic-database-options-for-it-buyers).
+
+## A Worked Example: The Stale Reservation Bug
+
+Here is one gate in concrete terms, because it shows how the discipline plays out.
+
+A job had two operations. Operation one ran on a milling work center and was completed, with real recorded times. Operation two, on a different work center, had not started. When the job was rescheduled, the engine failed to clear the finished operation's hold on the milling center. Operation two, which did not even use that center, found the shop artificially full and was pushed six days later than it should have been.
+
+The fix followed the rule. First a test was written that set up exactly this scenario and asserted that operation two should schedule the next morning, Tuesday. Against the broken code, the test failed: the actual result was more than a week out. The engine was then corrected to drop finished operations' reservations on reschedule, and the test turned green. That test now runs in every change that touches the scheduling engine. The bug is closed for good, not just for now.
+
+This is the difference between "we fixed it" and "it cannot come back." A shop that has been burned by [the challenges of job shop scheduling](/blog/job-shop-scheduling-challenges) in less disciplined software knows how much that distinction is worth.
+
+## Deterministic Scenarios: The Engine Is Pinned to Exact Dates
+
+The scheduling engine is covered by scenario tests that build real routings, work centers, and shift calendars, then assert the exact schedule the engine should produce. These use a fixed reference start date so results never drift with the real calendar. When the engine's behavior changes, even subtly, an assertion about a specific start time fails, and a human decides whether the change was intended.
+
+This matters because scheduling is the kind of logic where a small change can ripple. A tweak to how setup time composes with queue time can move a downstream operation by hours. Pinning the engine to exact expected dates means those ripples are caught as failed tests during development, not as surprises on the floor.
+
+## What This Means for a Buyer
+
+Software quality is usually invisible until it fails. The value of the testing story is that it makes the invisible legible before you buy.
+
+- **New features do not put your current schedule at risk**, because regression gates block the return of old defects.
+- **The behavior you test in evaluation is the behavior you get in production**, because the engine is pinned to deterministic, asserted results.
+- **Moving from a desktop database to a shared server does not change your results**, because both engines are verified against the same contracts.
+- **When something does go wrong, the fix is permanent**, because every fix ships with the test that reproduces the bug.
+
+None of this is a marketing claim you have to take on faith. It is the working method behind the product, the same method that lets [EDGEBIC](/edgebic) keep adding capability without eroding the reliability you are actually paying for. In scheduling, where the whole point is a plan people can trust, that is the quality that counts.
+
+<Accordion title="How is EDGEBIC tested?">
+EDGEBIC is verified by a three-layer automated test suite: fast unit tests that check individual pieces of logic, integration tests that run against a real database, and convention tests that enforce architectural rules. On top of these sit regression gates, each written to lock in a specific bug fix so the same defect can never silently return. The suite runs on every code change before it ships.
+</Accordion>
+
+<Accordion title="What is a regression gate?">
+A regression gate is a test added specifically to lock in a bug fix. It must fail against the buggy code and pass after the fix. Once it exists, that exact defect can never come back unnoticed, because the gate would go red before the change ever ships. EDGEBIC uses regression gates for every significant scheduling bug it has fixed, from inverted dates to stale capacity reservations.
+</Accordion>
+
+<Accordion title="Does EDGEBIC test against both databases it supports?">
+Yes. EDGEBIC runs on both a local SQLite database and enterprise SQL Server, and its integration tests exercise both. The same behavior is verified on each engine, so a shop that starts on the desktop database and later moves to a shared server gets the same tested behavior. The dual-database checks catch provider-specific differences before they reach a customer.
+</Accordion>
