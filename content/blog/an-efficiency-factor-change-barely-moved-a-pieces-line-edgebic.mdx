@@ -1,0 +1,80 @@
+---
+title: "An Efficiency Factor Change Barely Moved a Pieces Line: Why, and the Fix"
+description: "The efficiency factor on a pieces-based work center is clamped to a range, so a value pushed past the ceiling is capped and the schedule barely moves. Here is the fix."
+published: 2026-08-06T12:00:00.000Z
+modified: 2026-08-06T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - efficiency factor no effect
+  - efficiency factor clamped
+  - pieces per hour efficiency factor
+  - effective pieces per hour
+  - pieces line scheduling factor
+  - efficiency factor troubleshooting
+targetPhrase: "efficiency factor barely moved a pieces line"
+wordCount: 1210
+readingTime: 6
+faqQuestions:
+  - question: "Why did raising the efficiency factor on my pieces line barely change the schedule?"
+    answer: "Because the efficiency factor on a pieces-based work center is clamped to a fixed range, so a value set above the ceiling is capped before it reaches the calculation. The effective pieces-per-hour rate is the base rate times the factor, and the factor is held between a floor and a ceiling. If you set it well above the ceiling expecting a proportional speedup, the scheduler quietly uses the ceiling instead, so the output rate rises far less than you asked. Set a value inside the allowed range, or raise the base pieces-per-hour rate."
+  - question: "What is the efficiency factor on a pieces work center?"
+    answer: "It is a multiplier on the base pieces-per-hour rate that produces the effective output rate the scheduler uses. Effective pieces per hour equals base pieces per hour times the efficiency factor, and the factor is clamped to a range so it cannot drive the rate to unrealistic extremes. A factor above one speeds the line up, a factor below one slows it down, but only within the allowed band. Beyond the band the value is capped, which is why an out-of-range factor barely changes the plan."
+  - question: "How do I make a pieces line schedule faster than the efficiency factor ceiling allows?"
+    answer: "Raise the base pieces-per-hour rate rather than pushing the factor past its ceiling. The factor is a bounded multiplier on the base rate, so once you hit the ceiling the only lever left is the base rate itself. If the line genuinely runs faster than the base rate suggests, correct the base rate to match the real output, and keep the factor for the smaller trim adjustments it is designed for. That gives you the full speedup without fighting the clamp."
+qaQuestions:
+  - question: "I set the efficiency factor to 3.0 to model a line running triple its rated speed, but the jobs barely got shorter. What happened?"
+    answer: "The factor is clamped to a range with a ceiling near two, so 3.0 was capped and the scheduler used the ceiling, giving you roughly double the base rate instead of triple. The effective pieces per hour is the base rate times the capped factor, so the speedup stopped at the ceiling. If the line really runs at triple speed, that belongs in the base pieces-per-hour rate, not the factor. Raise the base rate to match reality and leave the factor for fine adjustments inside its band."
+  - question: "We lowered the efficiency factor to 0.05 for a badly worn machine but the run times did not stretch as much as expected. Is the factor working?"
+    answer: "It is working, but it is clamped at a floor near one tenth, so 0.05 was raised to the floor before the calculation used it. The effective pieces per hour is the base rate times the floored factor, so the slowdown stopped at the floor rather than continuing down to one twentieth of the rate. If the machine is genuinely that slow, drop the base pieces-per-hour rate instead, which has no such floor, and the run times will stretch the full amount."
+---
+
+**The efficiency factor on a pieces-based work center is a multiplier clamped to a fixed range, so a value set past the ceiling or below the floor is capped before the scheduler uses it, which is why an aggressive factor change barely moves the plan.** [EDGEBIC by User Solutions](/edgebic) computes the effective pieces per hour as the base rate times this bounded factor, and the bound is deliberate.
+
+This post lives in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and pairs with [pieces-based versus hours-based capacity](/blog/pieces-based-vs-hours-based-capacity-edgebic) and the wider question of [what is production scheduling](/blog/what-is-production-scheduling).
+
+## What You Are Seeing
+
+You have a pieces-based work center, and you changed the efficiency factor to reflect a line running much faster (or much slower) than its rated speed. You expected the schedule to react in proportion: a factor of three should roughly third the run time, a factor of a twentieth should stretch it out. Instead the durations moved only a little, as if the scheduler ignored most of your change. The factor field accepted the number, but the plan did not follow it.
+
+## Why It Happens
+
+The efficiency factor is a bounded multiplier, and the bound is the whole story.
+
+- **Effective rate is base rate times factor.** The scheduler sizes a pieces operation from the effective pieces per hour, which is the work center's base pieces-per-hour rate multiplied by the efficiency factor.
+- **The factor is clamped to a range.** That factor is held between a floor near one tenth and a ceiling near two. Values outside the band are pulled back to the nearest edge before the multiplication happens.
+- **An out-of-range value is silently capped.** Set the factor to three and the scheduler uses the ceiling, so you get roughly double the base rate, not triple. Set it to a twentieth and the scheduler uses the floor, so the slowdown stops well short of what you asked. The field kept your number, but the calculation used the capped one.
+
+The clamp exists on purpose: it keeps a single mistyped factor from driving a line to an impossible output rate that would corrupt the whole plan. The trade-off is that the factor is for trimming, not for large speed corrections.
+
+## How to Fix It
+
+Decide whether you are trimming or correcting, and use the right lever.
+
+1. **Keep the factor inside its band for fine adjustments.** A worn machine at ninety percent, a fast cell at one hundred and thirty percent: these sit comfortably inside the range and behave exactly as entered.
+2. **Move large speed differences to the base rate.** If the line genuinely runs at triple or a fraction of its rated speed, that belongs in the base pieces-per-hour rate, which has no clamp. Set the base rate to the real observed output.
+3. **Re-run scheduling and check one operation.** The duration should be pieces required divided by (base rate times the factor actually used). If it still looks capped, your factor is outside the band and the base rate is the lever to move.
+4. **Reserve the factor for what it is for.** Per-instance and machine-to-machine speed differences within a normal band are the factor's job. Wholesale rate corrections are the base rate's job.
+
+## How to Prevent It
+
+- **Set the base rate to reality first.** Get the base pieces-per-hour rate matching the line's real output before you touch the factor, so the factor only ever carries a small, in-band adjustment.
+- **Treat a factor above two or below a tenth as a signal.** If you find yourself reaching past the band, that is the base rate telling you it is wrong. Fix the base rate instead.
+- **Do not confuse this with utilization.** The efficiency factor scales output rate; utilization scales how many shift hours a work center offers. They are different dials, described in [pieces-based versus hours-based capacity](/blog/pieces-based-vs-hours-based-capacity-edgebic).
+- **Spot-check after any factor edit.** Confirm the effective rate on one operation matches base rate times the factor you expect. A capped value shows up immediately as an effective rate that stopped at an edge.
+
+If your pieces work center is scheduling in run hours rather than by output at all, that is a different symptom covered in [a pieces work center scheduled in hours](/blog/a-pieces-work-center-scheduled-in-hours-edgebic).
+
+<Accordion title="Why did raising the efficiency factor on my pieces line barely change the schedule?">
+Because the efficiency factor on a pieces-based work center is clamped to a fixed range, so a value set above the ceiling is capped before it reaches the calculation. The effective pieces-per-hour rate is the base rate times the factor, and the factor is held between a floor and a ceiling. If you set it well above the ceiling expecting a proportional speedup, the scheduler quietly uses the ceiling instead, so the output rate rises far less than you asked. Set a value inside the allowed range, or raise the base pieces-per-hour rate.
+</Accordion>
+
+<Accordion title="What is the efficiency factor on a pieces work center?">
+It is a multiplier on the base pieces-per-hour rate that produces the effective output rate the scheduler uses. Effective pieces per hour equals base pieces per hour times the efficiency factor, and the factor is clamped to a range so it cannot drive the rate to unrealistic extremes. A factor above one speeds the line up, a factor below one slows it down, but only within the allowed band. Beyond the band the value is capped, which is why an out-of-range factor barely changes the plan.
+</Accordion>
+
+<Accordion title="How do I make a pieces line schedule faster than the efficiency factor ceiling allows?">
+Raise the base pieces-per-hour rate rather than pushing the factor past its ceiling. The factor is a bounded multiplier on the base rate, so once you hit the ceiling the only lever left is the base rate itself. If the line genuinely runs faster than the base rate suggests, correct the base rate to match the real output, and keep the factor for the smaller trim adjustments it is designed for. That gives you the full speedup without fighting the clamp.
+</Accordion>

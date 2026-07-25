@@ -1,0 +1,80 @@
+---
+title: "My High-Priority Job Scheduled Behind a Lower One: Why, and the Fix"
+description: "Priority sets the order jobs claim capacity, not a guarantee of the earliest finish. A high-priority job can still land later when it does not compete for the same resource."
+published: 2026-08-06T12:00:00.000Z
+modified: 2026-08-06T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - high priority job scheduled late
+  - job priority not working
+  - priority dispatch order
+  - priority vs finish date
+  - forward netting producer consumer
+  - priority scheduling troubleshooting
+targetPhrase: "high-priority job scheduled behind a lower one"
+wordCount: 1270
+readingTime: 6
+faqQuestions:
+  - question: "Why did my high-priority job schedule behind a lower-priority one?"
+    answer: "Because priority controls the order in which jobs claim capacity during the run, not where they land on the calendar. A high-priority job is dispatched first, but if it does not compete with the lower-priority job for the same work center, or if its release date is later, or if netting places a producing sub-assembly ahead of it, it can still finish later. Priority is the primary sort key among jobs contending for the same resource. When two jobs never contend, priority never decides between them, so the earlier-releasing job wins the slot."
+  - question: "How does priority order jobs in EDGEBIC?"
+    answer: "Priority is the primary sort key when the scheduler sequences jobs for dispatch, with start time and due date as tie-breakers, so a lower priority number is dispatched before a higher one. Dispatch order decides who claims a contested work center slot first. It does not override a later release date, and it does not move a job onto a resource it never uses. When forward netting is active, a leading key sequences producing sub-assemblies ahead of the jobs that consume them regardless of priority, so a supplier step can precede a higher-priority consumer."
+  - question: "How do I guarantee a job finishes first, not just dispatches first?"
+    answer: "Anchor it to a target date rather than relying on priority alone. Priority wins the contested slot at dispatch time, but a hard finish commitment comes from a target start or target end date the scheduler builds the job around, or from the optimizer with a tardiness-weighted objective. If the job simply needs to start earlier, check its release date, because a later release keeps it out of the early slots no matter how high its priority. Priority orders contention; a target date pins the calendar."
+qaQuestions:
+  - question: "Two jobs run through different work centers with no overlap. The critical one is top priority, yet it finishes after the routine one. Is priority broken?"
+    answer: "Priority is working, but it only decides between jobs that contend for the same resource, and these two never contend. Because they use different work centers, neither ever waits on the other, so priority has nothing to arbitrate and each job schedules from its own release date and routing. The routine job releases earlier or has a shorter path, so it finishes first. If the critical job must land by a date, give it a target date to anchor to, which pins its finish independent of what the routine job is doing."
+  - question: "Our top-priority assembly keeps scheduling after a low-priority part it depends on. Both are jobs. Shouldn't priority pull the assembly first?"
+    answer: "No, and this is expected when forward netting is active. Netting adds a leading sort key that sequences producing jobs ahead of the jobs that consume their output, so the part that feeds the assembly is dispatched before the assembly regardless of the priority numbers. The assembly cannot start until its input exists, so ordering the supplier first is correct. Priority still orders jobs within the same producer or consumer group, but it does not invert a genuine supply dependency."
+---
+
+**Priority in EDGEBIC sets the order in which jobs claim capacity during a run, not a guarantee that a high-priority job finishes first, so a top-priority job can still land behind a lower one when the two never compete for the same resource, when its release date is later, or when netting sequences a supplier ahead of it.** [EDGEBIC by User Solutions](/edgebic) uses priority as the primary dispatch sort key, with start time and due date as tie-breakers, and dispatch order is about who grabs a contested slot first.
+
+This post belongs to the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and extends [job priority and sequencing strategy](/blog/job-priority-and-sequencing-strategy-edgebic) and the general [forward versus backward scheduling](/blog/forward-vs-backward-scheduling).
+
+## What You Are Seeing
+
+You set a job to your highest priority, expecting it to run first and finish first. When the schedule came back, a lower-priority job landed ahead of it: earlier start, earlier finish, better slot. The priority field is set correctly, the run completed, and yet the important job sits behind the routine one. It looks as if priority did nothing.
+
+## Why It Happens
+
+Priority orders contention. It decides who wins a slot when two jobs want the same resource at the same time. It is not a calendar override, and three situations make that difference visible.
+
+- **The jobs never compete.** Priority is the primary sort key, but it only arbitrates between jobs contending for the same work center. If the high-priority job runs through different work centers than the low-priority one, they never wait on each other, so priority never chooses between them. Each schedules from its own release date, and the earlier-releasing job finishes first.
+- **The release date is later.** Dispatch order puts the high-priority job first in line, but the scheduler cannot start a job before its release or earliest-start date. A high-priority job released next week still schedules after a routine job released today, because the routine one is eligible sooner.
+- **Netting sequences suppliers first.** When forward netting is active, a leading sort key places producing sub-assemblies ahead of the jobs that consume them, regardless of priority. A part that feeds your top-priority assembly is dispatched before the assembly, because the assembly cannot begin until its input exists. That is correct, not inverted.
+
+Underneath, the sort is priority first, then start time, then due date. Priority genuinely wins among jobs that contend, which is exactly why the cases where it seems inert are the cases where no contention exists.
+
+## How to Fix It
+
+Match the tool to what you actually need: an earlier finish, an earlier start, or a hard commitment.
+
+1. **Confirm the two jobs actually share a resource.** If they run through different work centers, priority will never reorder them. This is the most common cause and it is working as designed.
+2. **Check the release date on the high-priority job.** A later release keeps it out of the early slots. Pull the release date forward if the material and demand allow it.
+3. **Use a target date for a hard finish.** Priority orders dispatch; a target start or target end date makes the scheduler build the job around a fixed date. That is how you pin a finish rather than merely a dispatch position ([how to anchor a job to a target start date](/blog/how-to-anchor-a-job-to-a-target-start-date-in-edgebic)).
+4. **Consider the optimizer for tardiness.** When the goal is fewest late jobs across the whole plan, a tardiness-weighted optimizer objective sequences for lateness directly, which priority alone does not do.
+
+## How to Prevent It
+
+- **Reserve priority for real contention.** Priority earns its keep when many jobs fight for the same constrained work center. On resources with slack, it changes little, and that is expected.
+- **Keep release dates honest.** A job released too late cannot be pulled early by priority. Align the release date with when the job truly can start.
+- **Anchor the jobs that carry a hard commitment.** For dates you cannot miss, a target date is the right instrument, not a priority bump. See [production bottleneck identification](/blog/production-bottleneck-identification) for protecting the constraint those jobs run through.
+- **Understand netting before you fight it.** A supplier job ahead of its consumer is a dependency being honored, not a priority failure. Priority orders within a group, not across a genuine supply link.
+
+If instead your job scheduled far later than any priority question would explain, that is a different symptom covered in [a job was scheduled far in the future](/blog/a-job-was-scheduled-far-in-the-future-edgebic).
+
+<Accordion title="Why did my high-priority job schedule behind a lower-priority one?">
+Because priority controls the order in which jobs claim capacity during the run, not where they land on the calendar. A high-priority job is dispatched first, but if it does not compete with the lower-priority job for the same work center, or if its release date is later, or if netting places a producing sub-assembly ahead of it, it can still finish later. Priority is the primary sort key among jobs contending for the same resource. When two jobs never contend, priority never decides between them, so the earlier-releasing job wins the slot.
+</Accordion>
+
+<Accordion title="How does priority order jobs in EDGEBIC?">
+Priority is the primary sort key when the scheduler sequences jobs for dispatch, with start time and due date as tie-breakers, so a lower priority number is dispatched before a higher one. Dispatch order decides who claims a contested work center slot first. It does not override a later release date, and it does not move a job onto a resource it never uses. When forward netting is active, a leading key sequences producing sub-assemblies ahead of the jobs that consume them regardless of priority, so a supplier step can precede a higher-priority consumer.
+</Accordion>
+
+<Accordion title="How do I guarantee a job finishes first, not just dispatches first?">
+Anchor it to a target date rather than relying on priority alone. Priority wins the contested slot at dispatch time, but a hard finish commitment comes from a target start or target end date the scheduler builds the job around, or from the optimizer with a tardiness-weighted objective. If the job simply needs to start earlier, check its release date, because a later release keeps it out of the early slots no matter how high its priority. Priority orders contention; a target date pins the calendar.
+</Accordion>

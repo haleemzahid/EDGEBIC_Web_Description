@@ -1,0 +1,81 @@
+---
+title: "My Bottleneck Flag Did Nothing Without a Target Date: Why, and the Fix"
+description: "Marking a work center as a bottleneck enables anchor scheduling, but anchor scheduling needs a target date to schedule around. Without one, the job schedules forward and the flag looks inert."
+published: 2026-08-06T12:00:00.000Z
+modified: 2026-08-06T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - bottleneck flag no effect
+  - anchor scheduling target date
+  - bottleneck work center scheduling
+  - is bottleneck did nothing
+  - backward from target date
+  - bottleneck scheduling troubleshooting
+targetPhrase: "bottleneck flag did nothing"
+wordCount: 1230
+readingTime: 6
+faqQuestions:
+  - question: "Why did marking a work center as a bottleneck change nothing in my schedule?"
+    answer: "Because the bottleneck flag enables anchor scheduling, which schedules a job around a fixed date at the constraint, and anchor scheduling needs a target date on the job to anchor against. With no target date, there is nothing to schedule backward from, so the job schedules forward as usual and the flag appears inert. Set a target start or target end date on the jobs that run through the bottleneck, and the anchor logic then places the constraint step on that date and schedules the rest around it."
+  - question: "What does the bottleneck flag actually do?"
+    answer: "It tells the scheduler to treat that work center as the constraint and to build the job's schedule around the constraint step rather than purely front-to-back. When a job through the bottleneck has a target date, the scheduler places the bottleneck step at that date, schedules the steps before it backward so they finish in time, and schedules the steps after it forward. Without a target date to anchor to, this backward-and-forward split has no pivot, so the flag has no visible effect on that job."
+  - question: "Do I have to set a target date on every job for the bottleneck flag to work?"
+    answer: "You set a target date on the jobs you want scheduled around the constraint. The flag identifies the constraint work center once, but the anchor behavior is per job and only engages when that job carries a target date. Jobs through the bottleneck with no target date schedule forward normally. So the flag plus a target date on the relevant jobs is what produces anchor scheduling; the flag alone marks the constraint without changing how a target-free job is placed."
+qaQuestions:
+  - question: "We flagged our heat-treat oven as the bottleneck expecting jobs to pull in around it, but nothing moved. The jobs have due dates. Is a due date enough?"
+    answer: "A due date is the finish commitment, but anchor scheduling pivots on a target date for the constraint, so set a target start or target end on the jobs that run through the oven. With the flag on and a target date present, the scheduler places the oven step at the target and schedules the upstream steps to finish in time and the downstream steps after it. If you only ever set due dates, add a target date to the jobs you want anchored, and the flag will visibly reshape those schedules."
+  - question: "Half our jobs through the bottleneck anchor correctly and half schedule forward. The flag is on for all of them. Why the split?"
+    answer: "The difference is the target date. The jobs that anchor have a target date on the constraint to pivot around; the jobs that schedule forward do not, so the anchor logic has no date to build backward from and falls to normal forward scheduling. This is expected: the flag marks the constraint once, but the anchor behavior engages per job only when that job carries a target date. Add a target date to the forward-scheduling jobs and they will anchor like the others."
+---
+
+**Marking a work center as a bottleneck enables anchor scheduling, but anchor scheduling needs a target date on the job to schedule around, so a bottleneck flag with no target date leaves the job scheduling forward and the flag looks inert.** [EDGEBIC by User Solutions](/edgebic) uses the bottleneck flag to identify the constraint and the target date to pivot the schedule around it, and both are required for the anchor behavior to appear.
+
+This post sits in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide) and is the constraint-scheduling companion to [production bottleneck identification](/blog/production-bottleneck-identification) and [forward versus backward scheduling](/blog/forward-vs-backward-scheduling).
+
+## What You Are Seeing
+
+You marked a work center as the bottleneck (the oven, the plating line, the five-axis cell), expecting the schedule to reorganize around it: upstream steps pulled in to feed it, downstream steps following it, the constraint protected. Instead nothing changed. The jobs schedule the same front-to-back way they did before. The flag is on, and it appears to have done nothing.
+
+## Why It Happens
+
+The bottleneck flag and the target date do two different jobs, and the anchor behavior needs both.
+
+- **The flag identifies the constraint.** Setting a work center as the bottleneck tells the scheduler which step is the constraint and that the job should be built around that step rather than purely forward.
+- **The target date is the pivot.** Anchor scheduling places the constraint step on the job's target date, then schedules the steps before it backward so they finish in time to feed it, and the steps after it forward. That backward-and-forward split needs a date to pivot on.
+- **No target date means no pivot.** With the flag on but no target date on the job, there is nothing for the backward pass to build from, so the scheduler falls to normal forward scheduling. The flag has marked the constraint, but the job is placed as if it were not anchored.
+
+A due date is not the same thing. A due date is the finish commitment; anchor scheduling pivots on a target start or target end date for the constraint. A job with a due date but no target date still schedules forward.
+
+## How to Fix It
+
+Give the jobs that run through the bottleneck a target date so the anchor logic has a pivot.
+
+1. **Confirm the flag is set on the constraint work center.** The bottleneck is identified once, on the work center, and it stays set.
+2. **Set a target date on the relevant jobs.** Add a target start or target end date to the jobs you want scheduled around the constraint ([how to anchor a job to a target start date](/blog/how-to-anchor-a-job-to-a-target-start-date-in-edgebic) shows the field). This is per job, because the anchor behavior is per job.
+3. **Re-run scheduling.** With the flag on and a target date present, the scheduler places the constraint step at the target, schedules the upstream steps backward to finish in time, and the downstream steps forward.
+4. **Check the result on one job.** The constraint step should land on the target date, with the steps before it timed to feed it. If a job still schedules forward, it is missing a target date.
+
+## How to Prevent It
+
+- **Set the flag and the target date together.** Treat identifying the constraint and anchoring the jobs that run through it as one setup, so the flag never sits on without a pivot on the jobs.
+- **Use a target date, not just a due date, for anchored jobs.** The due date is the commitment; the target date is what the anchor logic pivots on. Jobs you want protected around the constraint need the target date.
+- **Anchor the jobs that matter.** You do not have to anchor every job. Jobs through the bottleneck with no target date schedule forward normally, which is fine when you do not need them pulled in around the constraint.
+- **Verify the constraint is really the bottleneck.** Flagging a work center that is not the true constraint moves the anchor to the wrong step. [Production bottleneck identification](/blog/production-bottleneck-identification) covers finding the real one.
+- **Spot-check the constraint step's placement.** After a run, confirm the bottleneck step sits on the target date on an anchored job, which is the visible sign the flag and the date are working together.
+
+If instead the job anchored but missed its target date, that is a different symptom covered in [an anchored job did not hit its target date](/blog/an-anchored-job-did-not-hit-its-target-date-edgebic).
+
+<Accordion title="Why did marking a work center as a bottleneck change nothing in my schedule?">
+Because the bottleneck flag enables anchor scheduling, which schedules a job around a fixed date at the constraint, and anchor scheduling needs a target date on the job to anchor against. With no target date, there is nothing to schedule backward from, so the job schedules forward as usual and the flag appears inert. Set a target start or target end date on the jobs that run through the bottleneck, and the anchor logic then places the constraint step on that date and schedules the rest around it.
+</Accordion>
+
+<Accordion title="What does the bottleneck flag actually do?">
+It tells the scheduler to treat that work center as the constraint and to build the job's schedule around the constraint step rather than purely front-to-back. When a job through the bottleneck has a target date, the scheduler places the bottleneck step at that date, schedules the steps before it backward so they finish in time, and schedules the steps after it forward. Without a target date to anchor to, this backward-and-forward split has no pivot, so the flag has no visible effect on that job.
+</Accordion>
+
+<Accordion title="Do I have to set a target date on every job for the bottleneck flag to work?">
+You set a target date on the jobs you want scheduled around the constraint. The flag identifies the constraint work center once, but the anchor behavior is per job and only engages when that job carries a target date. Jobs through the bottleneck with no target date schedule forward normally. So the flag plus a target date on the relevant jobs is what produces anchor scheduling; the flag alone marks the constraint without changing how a target-free job is placed.
+</Accordion>

@@ -1,0 +1,102 @@
+---
+title: "How Parallel Machines Clear a Big Lot Faster"
+description: "When a work center holds several identical machines, load balancing spreads a large lot across them so it finishes in a fraction of the time. See the arithmetic and the limits."
+published: 2026-08-06T12:00:00.000Z
+modified: 2026-08-06T12:00:00.000Z
+category: Outcomes & ROI
+author: user-solutions
+cluster: edgebic-outcomes
+pillarSlug: edgebic-results-guide
+keywords:
+  - parallel machine scheduling
+  - resource instance load balancing
+  - multiple machines one work center
+  - reduce job elapsed time
+  - capacity across machines
+  - finite capacity instances
+targetPhrase: "parallel machine scheduling"
+wordCount: 1470
+readingTime: 7
+faqQuestions:
+  - question: "How does scheduling across multiple identical machines shorten a job?"
+    answer: "Scheduling across multiple identical machines shortens a job by splitting its hours across the machines that run at the same time. In EDGEBIC, a work center with several instances can load-balance a large lot so each machine takes a share. In the documented 28-hour milling case across two identical mills, the job finishes in about 28 elapsed hours of two-machine work rather than 28 hours on one, because both mills run the lot in parallel. The total hours are unchanged; the elapsed time is cut."
+  - question: "What is the difference between machine instances and work center groups?"
+    answer: "Machine instances are identical units inside one work center, like three copies of the same mill on the same setup. Work center groups are different but interchangeable machines pooled so a step can run on any of them. Instances load-balance a single lot across identical capacity to cut elapsed time. Groups route a job to whichever qualified machine is free to avoid a queue. EDGEBIC supports both, and they solve different problems: instances speed one job, groups keep jobs moving across dissimilar resources."
+  - question: "When should a work center not load-balance across its machines?"
+    answer: "It should not when the operation requires one dedicated machine per job for the day, which EDGEBIC handles with a one-per-day setting. Batch equipment like a heat-treat furnace or a paint line often runs one job per instance per day because the setup or the batch cannot be shared mid-run. In that case the engine assigns whole jobs to separate instances rather than splitting one job across them, which is the correct behavior for that kind of equipment."
+qaQuestions:
+  - question: "We have four identical CNCs treated as one work center. A 20-hour lot ties the department up for a day. Can the plan actually run it on all four?"
+    answer: "Yes, when the operation allows a single lot to be split. With load balancing on and four instances available, EDGEBIC divides the 20 hours across the machines, roughly 5 hours each, so the lot clears in about a shift instead of tying up a machine for twenty hours straight. The total work is still 20 machine-hours; what changes is that it happens four ways at once. The one thing to confirm is that the operation genuinely permits splitting a lot: if each machine needs its own setup for the whole run, you want the one-per-day behavior instead, and the plan supports that too."
+  - question: "If splitting a lot across machines is faster, why not force every job to split every time?"
+    answer: "Because faster elapsed time is not free, and it is not always what the operation wants. Splitting a lot means more concurrent setups and more material staged at once, and for batch equipment it is physically impossible because the furnace or booth runs one load at a time. EDGEBIC lets you choose per work center: load-balance where machines are truly identical and splitting helps, dedicate one job per instance per day where the equipment demands it, or fill one machine before using the next where that suits the floor. The default is not always split; it is match the machine's real behavior."
+---
+
+**When a work center holds several identical machines, a large lot does not have to wait its turn on one of them. EDGEBIC by User Solutions can load-balance the lot across the instances that run at the same time, so the elapsed time drops in proportion to the machines available while the total hours stay the same.** A twenty-hour lot on four identical machines clears in about a shift, not a full day on one.
+
+This post shows the arithmetic on documented examples, explains when splitting is the wrong answer, and names the limits. For the foundation, see [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling). This post sits under the [EDGEBIC results guide](/blog/edgebic-results-guide).
+
+## Machines Inside a Work Center
+
+A work center in EDGEBIC is not always a single machine. Many are a set of identical units: three copies of the same mill, four identical CNCs, a bank of the same press. The plant treats them as one capability, and the schedule treats their capacity as a pool of concurrent hours.
+
+That pool is the opportunity. A lot that would run for hours on one machine can be spread across several that run at once, and the elapsed clock falls by roughly the number of machines you use. The total machine-hours do not change, so this is not free capacity. It is the same work, done in parallel, finishing sooner.
+
+## The Load-Balancing Arithmetic
+
+The documented milling case makes the mechanism concrete. A milling operation needs 28 hours of run time. The work center holds two identical mills with load balancing on:
+
+| | One machine | Two machines, balanced |
+|---|---|---|
+| Total run hours | 28 | 28 |
+| Machines running at once | 1 | 2 |
+| Elapsed hours of work | 28 | about 14 per machine, in parallel |
+| Result | Ties up one mill for 28 h | Both mills clear the lot together |
+
+Each mill takes a share of the lot and runs it at the same time as the other, so the job is delivered in roughly half the elapsed time. Extend the same logic to four machines and it scales: a documented 20-hour lot split across four instances is about 5 hours on each, and the lot clears in about a shift instead of a full day on a single machine.
+
+The rule is simple and honest: elapsed time falls with the number of concurrent machines, total hours do not. You are trading no capacity to buy back calendar time on a big lot.
+
+## Instances Are Not Work Center Groups
+
+Two features sound similar and solve opposite problems. Keeping them straight matters when you configure the plant.
+
+- **Machine instances** are identical units inside one work center. Load balancing splits one lot across them to cut that lot's elapsed time.
+- **[Work center groups](/blog/edgebic-work-center-groups-explained)** are different but interchangeable machines pooled together so a routing step can run on whichever is free. That keeps a job moving past a busy machine rather than speeding one big lot.
+
+Instances speed a single job by parallelizing it. Groups avoid a queue by routing around contention. You will often use both: identical machines inside a work center for the split, and a group across dissimilar work centers for the routing choice. See [how work center groups add capacity without buying machines](/blog/how-work-center-groups-add-capacity-without-buying-machines) for the pooled case.
+
+## When Splitting Is the Wrong Answer
+
+Load balancing is right when the machines are truly identical and the operation permits one lot to run on several at once. It is wrong for equipment that runs one job per instance per day, and EDGEBIC has a dedicated behavior for exactly that.
+
+Batch equipment is the clear case. A heat-treat furnace, a paint line, or an oven with a long changeover cannot share a lot mid-run: the batch is the batch. For those work centers, the one-per-day setting assigns whole jobs to separate instances rather than splitting one job across them. Three furnaces with one-per-day active run three different jobs that day, one to each furnace, which is the physically correct plan. Forcing a split there would produce a schedule the floor cannot execute.
+
+There is also a middle mode, where the engine fills one machine to capacity before starting the next. That suits a floor that would rather keep a machine fully loaded and another free than run both half-used. The point is that the plant, not a fixed rule, decides which behavior fits each work center.
+
+## Why This Beats Just Adding a Machine
+
+The instinct when a big lot ties up the department is to buy another machine. Load balancing across the machines you already own attacks the same elapsed-time problem for nothing, by using capacity that was standing idle while one machine ran the whole lot. It is the same family of move as pooling interchangeable machines: get the calendar-time benefit from the metal you already have before you spend on more of it. The capital case for a new machine should start after you have confirmed your existing identical machines are being run in parallel, not before.
+
+## The Honest Limits
+
+**Splitting needs an operation that can split.** A lot that requires a single continuous setup on one machine cannot be divided, no matter how many identical machines exist. The gain applies to work that genuinely runs in parallel.
+
+**Concurrent runs mean concurrent setups and staging.** Running one lot on four machines means four setups happening and more material staged at once. That is a real floor cost, and on a short lot the setup overhead can eat the elapsed-time saving. The benefit is largest on big lots where run time dwarfs setup.
+
+**Total hours do not fall.** Load balancing cuts elapsed time, not work content. If the plant is capacity-constrained overall, parallelizing one lot does not create hours; it moves them into the same window. Read the load view to see whether you are trading elapsed time you want for concurrency you can staff.
+
+**The machines have to be genuinely identical.** Treating unlike machines as one work center to force a split produces a plan the floor cannot honor. When machines differ but can do the same job, a work center group is the right tool, not an instance split.
+
+Want to see one of your big lots split across the machines you already own? [Bring a long-running operation and its machine count to a demo](/edgebic), and we will show the elapsed time on one machine next to the same lot balanced across all of them.
+
+<Accordion title="How does scheduling across multiple identical machines shorten a job?">
+Scheduling across multiple identical machines shortens a job by splitting its hours across the machines that run at the same time. In EDGEBIC, a work center with several instances can load-balance a large lot so each machine takes a share. In the documented 28-hour milling case across two identical mills, the job finishes in about 28 elapsed hours of two-machine work rather than 28 hours on one, because both mills run the lot in parallel. The total hours are unchanged; the elapsed time is cut.
+</Accordion>
+
+<Accordion title="What is the difference between machine instances and work center groups?">
+Machine instances are identical units inside one work center, like three copies of the same mill on the same setup. Work center groups are different but interchangeable machines pooled so a step can run on any of them. Instances load-balance a single lot across identical capacity to cut elapsed time. Groups route a job to whichever qualified machine is free to avoid a queue. EDGEBIC supports both, and they solve different problems: instances speed one job, groups keep jobs moving across dissimilar resources.
+</Accordion>
+
+<Accordion title="When should a work center not load-balance across its machines?">
+It should not when the operation requires one dedicated machine per job for the day, which EDGEBIC handles with a one-per-day setting. Batch equipment like a heat-treat furnace or a paint line often runs one job per instance per day because the setup or the batch cannot be shared mid-run. In that case the engine assigns whole jobs to separate instances rather than splitting one job across them, which is the correct behavior for that kind of equipment.
+</Accordion>

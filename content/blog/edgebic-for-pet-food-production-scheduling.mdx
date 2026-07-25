@@ -1,0 +1,105 @@
+---
+title: "EDGEBIC for Pet Food: Extrusion and Changeover Scheduling"
+description: "Pet food production scheduling in EDGEBIC: model the extruder as a continuous process, sequence species and formula changeovers, and keep drying and packaging fed across shifts."
+published: 2026-08-06T12:00:00.000Z
+modified: 2026-08-06T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - pet food production scheduling
+  - extrusion line scheduling
+  - kibble changeover sequencing
+  - continuous process scheduling
+  - pet food manufacturing software
+  - recipe changeover scheduling
+targetPhrase: "pet food production scheduling"
+wordCount: 1480
+readingTime: 7
+faqQuestions:
+  - question: "How does EDGEBIC schedule a pet food extruder that runs continuously?"
+    answer: "EDGEBIC models the extruder as a continuous-process work center, so a run books the line for its full duration rather than being split into hourly slices. That matches how an extruder physically behaves: once you start a recipe it runs until you change over, and the schedule reflects the whole run as one block. Downstream drying, coating, and packaging then schedule against the extruder's real output timing instead of a fictional hourly capacity."
+  - question: "Can EDGEBIC sequence recipe and species changeovers to reduce flushing?"
+    answer: "Yes. EDGEBIC prices each recipe-to-recipe changeover in a sequence-dependent setup matrix per line. Another batch of the same recipe needs almost nothing, a related formula needs a short flush, and a change from a meat-bearing recipe to an allergen-sensitive or grain-free one needs a full cleanout. The scheduler sequences runs to campaign compatible recipes and defer the expensive flushes, so the extruder spends more of its day making kibble."
+  - question: "Does EDGEBIC coordinate extrusion, drying, and packaging across shifts?"
+    answer: "Yes. You model the flow as a multi-step routing, extrusion then drying then coating then packaging, each targeting the right work center. EDGEBIC schedules the steps in dependency order across as many shifts as you run, so an extruded run flows to the dryer and on to packaging without a planner hand-coordinating every handoff. Lot streaming lets drying and packaging begin on early output while extrusion continues, so downstream lines stay fed."
+qaQuestions:
+  - question: "We lose production every time we jump between a fish recipe and a grain-free one because of the full cleanout. How would EDGEBIC change that?"
+    answer: "Random recipe order guarantees you hit the worst transitions repeatedly. Price the meat-bearing-to-grain-free change at its true cleanout time and the compatible-recipe changes near zero, and the scheduler campaigns your runs, grouping compatible recipes and putting the sensitive one after a full cleanout that happens once. Instead of flushing three or four times a shift you flush once, and the recovered extruder hours are real capacity you can promise against."
+  - question: "Our dryer holds a fixed batch and takes a set cycle. How does EDGEBIC keep it from being the hidden bottleneck?"
+    answer: "Model the dryer honestly, either as a continuous-process step with its own cycle or, if it runs one load at a time, as a one-per-day style batch resource so a load books it for the full cycle. Once the dryer's true timing is in the plan, EDGEBIC schedules extrusion so its output arrives at a rate the dryer can absorb rather than piling up in front of it. When the dryer is the constraint, the plan makes that visible so you can decide whether to slow the extruder or add a shift."
+---
+
+**EDGEBIC schedules pet food production by modeling the extruder as a continuous process that books the line for a full run, pricing every recipe and species changeover in a sequence-dependent setup matrix, and coordinating drying and packaging across shifts so nothing sits idle.** [EDGEBIC by User Solutions](/edgebic) brings finite-capacity scheduling to a plant where a careless recipe order buys you flushes you did not need. This post shows how it fits a kibble operation.
+
+## Where a Pet Food Plant Loses Time
+
+A dry pet food plant runs a chain that looks continuous from the outside: grind and mix, extrude, dry, coat with fats and flavors, then package. The two costs that dominate the schedule are the character of the extruder and the order of the recipes.
+
+An extruder is not a machine you split into hours. Once a recipe starts, the line runs until you change over. A scheduler that pretends the extruder has "sixteen hours available" and slices two unrelated runs into that window is describing something the line cannot physically do. The run is the unit, not the hour.
+
+The order of recipes then decides how much time goes to flushing. Another batch of the same recipe needs almost nothing. A related formula needs a short flush. But moving from a meat-bearing recipe to a grain-free or allergen-sensitive one needs a full cleanout that can stop the line for a long stretch. A plant that sequences runs in due-date order keeps hitting the expensive transition. [EDGEBIC](/blog/edgebic-by-industry) fixes both problems at once.
+
+## Modeling the Extruder as a Continuous Process
+
+EDGEBIC lets you mark the extruder as a continuous-process work center, so a run books the line for its full duration as a single block rather than a bucket of divisible hours. That is the honest model for a machine that runs one recipe until changeover. Downstream steps then schedule against the extruder's real output timing.
+
+This is the same modeling choice explained in [continuous process scheduling for food manufacturing](/blog/edgebic-for-food-manufacturing-continuous-process), and it is the difference between a plan the floor believes and a spreadsheet of hours it ignores. The general contrast is covered in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+## The Changeover Matrix for Recipes
+
+EDGEBIC records the cost of each recipe-to-recipe changeover in a sequence-dependent setup matrix per line:
+
+| From | To | Changeover |
+|---|---|---|
+| Same recipe | Same recipe | 0 min |
+| Chicken formula | Related chicken formula | 20 min |
+| Fish formula | Grain-free | 120 min |
+| Any meat-bearing | Allergen-sensitive | 150 min |
+
+With the real numbers in place, the scheduler knows the true cost of every transition and campaigns compatible recipes, deferring the expensive cleanouts so they happen once rather than repeatedly. Due dates stay the priority; the matrix stops a careless order from costing you flushes you did not need. The general mechanism is [the EDGEBIC setup matrix](/blog/edgebic-setup-matrix-explained).
+
+## A Worked Example: An Extruder's Day
+
+Consider an extruder scheduled to run six recipes across a day, mixed between meat-bearing and grain-free in entry order:
+
+Meat, Grain-free, Meat, Grain-free, Meat, Grain-free
+
+From the matrix, a meat-to-grain-free change costs 120 minutes and the reverse a modest 20. In entry order the line spends 120, 20, 120, 20, 120, roughly six and a half hours of flushing across the day. Half the extruder's day is lost to cleaning.
+
+EDGEBIC campaigns the runs instead: all the grain-free recipes first while the line is clean, one full cleanout, then all the meat-bearing recipes:
+
+Grain-free, Grain-free, Grain-free, Meat, Meat, Meat
+
+Now there is a single 120-minute cleanout and near-zero changeover elsewhere. The same six runs that ate the day now fit with hours to spare, and the recovered extruder time is real capacity produced by sequence alone.
+
+## Coordinating Drying and Packaging
+
+Extrusion is one step. A finished bag flows through extrusion, drying, coating, and packaging, and every handoff is a chance for a downstream line to sit idle. EDGEBIC schedules the whole routing in dependency order, each step targeting the right work center, across as many shifts as you run. An extruded run flows to the dryer and on to packaging without a planner hand-coordinating every handoff.
+
+With [lot streaming](/blog/edgebic-lot-streaming-explained), drying and packaging can begin on early extruder output while extrusion continues, so the downstream lines stay fed rather than waiting for the full run to finish. When the dryer is the real constraint, the plan makes that visible so you can decide whether to slow the extruder or add a shift, which is the practical heart of [production bottleneck identification](/blog/production-bottleneck-identification).
+
+## Records and an Honest Boundary
+
+EDGEBIC schedules production as runs through their routing and records the planned and actual production for each, and its append-only change history preserves how the plan evolved. Operators log actual start and finish on a shop-floor kiosk, so a run that took longer than planned is captured as a measured duration and a reschedule around it never moves output that already ran.
+
+The honest boundary: EDGEBIC schedules and records production. It is not a replacement for a dedicated food-safety or quality management system. What it gives a pet food plant is the scheduling backbone, a plan that models the extruder honestly, sequences changeovers to protect line time, and coordinates the flow to packaging across shifts.
+
+## The Takeaway for a Pet Food Plant
+
+The scheduling problem in pet food is the extruder's character and the order of your recipes. Model the extruder as the continuous process it is, get the real flush numbers into the matrix, let the scheduler campaign compatible recipes, and coordinate drying and packaging across shifts, and the extruder hours you were losing to cleanouts become production. That is the practical value [EDGEBIC](/blog/edgebic-by-industry) brings, grounded in the finite-capacity engine that has served demanding manufacturers since 1991. For the fundamentals, see [what is production scheduling](/blog/what-is-production-scheduling).
+
+Ready to see it on your line? [Contact US for a demo](/contact-us) and bring one week of recipe run and changeover records.
+
+<Accordion title="How does EDGEBIC schedule a pet food extruder that runs continuously?">
+EDGEBIC models the extruder as a continuous-process work center, so a run books the line for its full duration rather than being split into hourly slices. That matches how an extruder physically behaves: once you start a recipe it runs until you change over, and the schedule reflects the whole run as one block. Downstream drying, coating, and packaging then schedule against the extruder's real output timing instead of a fictional hourly capacity.
+</Accordion>
+
+<Accordion title="Can EDGEBIC sequence recipe and species changeovers to reduce flushing?">
+Yes. EDGEBIC prices each recipe-to-recipe changeover in a sequence-dependent setup matrix per line. Another batch of the same recipe needs almost nothing, a related formula needs a short flush, and a change from a meat-bearing recipe to an allergen-sensitive or grain-free one needs a full cleanout. The scheduler sequences runs to campaign compatible recipes and defer the expensive flushes, so the extruder spends more of its day making kibble.
+</Accordion>
+
+<Accordion title="Does EDGEBIC coordinate extrusion, drying, and packaging across shifts?">
+Yes. You model the flow as a multi-step routing, extrusion then drying then coating then packaging, each targeting the right work center. EDGEBIC schedules the steps in dependency order across as many shifts as you run, so an extruded run flows to the dryer and on to packaging without a planner hand-coordinating every handoff. Lot streaming lets drying and packaging begin on early output while extrusion continues, so downstream lines stay fed.
+</Accordion>
