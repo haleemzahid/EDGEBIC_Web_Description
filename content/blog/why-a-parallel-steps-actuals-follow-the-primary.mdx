@@ -1,0 +1,99 @@
+---
+title: "Why a Parallel Step's Actuals Follow the Primary in EDGEBIC"
+description: "A parallel work center shares one routing step with a primary. See why EDGEBIC mirrors actuals one way only, scaled by the factor, and where to log the correction."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - parallel actuals mirroring
+  - parallel work center actuals
+  - shop floor actuals
+  - primary and sibling schedule
+  - logging actuals parallel step
+  - manufacturing actuals rules
+targetPhrase: "parallel actuals mirroring"
+wordCount: 1400
+readingTime: 7
+faqQuestions:
+  - question: "What is parallel actuals mirroring in EDGEBIC?"
+    answer: "Parallel actuals mirroring means a parallel work center's logged actuals are copied from its primary rather than entered independently. One routing step configured with a parallel work center produces two scheduled rows that share a step identity. The primary carries the truth: its actual start and end are copied one to one onto the sibling, and its daily hours are copied across scaled by the parallel factor."
+  - question: "Can an operator log actuals directly on a parallel work center?"
+    answer: "You can type them, but they will not survive. The next actuals save anywhere in that manufacturing order overwrites the parallel row from its primary, including zeroing any day the primary has no hours on. The correct move is always to log or correct the primary row, and let the mirror carry the change across. This is one rule, in one direction, with no exceptions."
+  - question: "Does the mirror run on every step or only parallel ones?"
+    answer: "It runs on every actuals save, but it does nothing on an ordinary single work center step. Only routing steps that were configured with a parallel work center have a sibling row to mirror onto. For the vast majority of operations in a typical shop, the mirror is a no-op you will never notice."
+qaQuestions:
+  - question: "My parallel machine ran at half the rate of the primary. Will the mirror overstate its hours?"
+    answer: "No, because the mirror scales by the parallel factor set on that alternative. If the primary logged 6.0 hours on Tuesday and the alternative carries a factor of 0.5, the sibling row receives 3.0 hours for Tuesday. Dates are copied straight across because both machines ran in the same window, and only the hours are scaled. Set the factor to match the real relationship before the job runs, not after."
+  - question: "I corrected the primary's Tuesday hours but the sibling still looks wrong on Monday. Why?"
+    answer: "The mirror rebuilds the sibling from the primary across the whole job, not just the date you touched, so Monday should have moved too. If it has not, refresh the job view: one actuals save can cascade onto sibling rows and onto upstream steps that were backfilled, so EDGEBIC resyncs the whole job rather than patching a single row. If Monday still disagrees after that, check that you edited the primary and not the sibling."
+---
+
+**In EDGEBIC by User Solutions, a parallel work center's actuals always follow its primary, never the reverse: the primary's actual dates are copied one to one onto the sibling row and its daily hours are copied across scaled by the parallel factor.** That single directional rule is what keeps two machines running one routing step from drifting into two contradictory versions of what happened. It applies at every save, from the kiosk, from the planner, or from a Gantt edit.
+
+If you run synchronized machines, mirrored spindles, or a second booth carrying part of a load, this is the rule that decides where you type the number. Get it wrong and your correction quietly evaporates. Get it right and one entry keeps both rows honest.
+
+## Why One Step Produces Two Rows
+
+A routing step configured with a parallel work center is one operation performed on two resources at the same time. EDGEBIC schedules it as two rows: the primary, on the work center the step names, and the sibling, on the alternative. Both rows share the same step identity, both consume real capacity on their own machines, and both appear on the Gantt so a supervisor can see that two resources are committed.
+
+That shape is deliberate and it is covered in the platform's parallel work center behavior more broadly. What matters for actuals is the consequence: two rows exist, and only one of them can be the source of truth without inviting contradiction.
+
+## The One-Way Rule
+
+The primary is the source of truth. Every time actuals are saved anywhere in that manufacturing order, EDGEBIC reconciles the parallel siblings against their primaries:
+
+| What is mirrored | How |
+|---|---|
+| Actual start date | Copied one to one from the primary |
+| Actual end date | Copied one to one from the primary |
+| Daily hours per date | Copied and multiplied by the alternative's factor |
+| Dates the primary has no hours on | Zeroed on the sibling |
+| Provenance | Tagged as system-generated, not hand-entered |
+
+The last two rows are the ones that catch people out. If you type six hours onto the sibling for a Thursday the primary never worked, the next mirror pass will zero it, because the mirror is an overwrite rather than a merge. And because the mirrored values are tagged as system-generated rather than human-entered, the planner grid marks them so nobody mistakes a copy for an independent observation. See [the auto-filled actuals badge explained](/blog/the-auto-filled-actuals-badge-explained) for how that tag surfaces.
+
+## The Factor Does the Scaling
+
+The parallel alternative carries a factor that expresses its relationship to the primary. A factor of 1.0 means the alternative does the same work in the same time. A factor of 0.5 means it carries half the hours in the same window.
+
+Worked example. A dependent parallel pair runs Tuesday and Wednesday. The primary logs 6.0 hours Tuesday and 3.1 hours Wednesday. The alternative carries a factor of 0.5.
+
+| Date | Primary hours | Factor | Sibling hours |
+|---|---|---|---|
+| Tue | 6.0 | 0.5 | 3.0 |
+| Wed | 3.1 | 0.5 | 1.55 |
+
+Actual start and actual end on the sibling match the primary exactly, because the two machines genuinely ran in the same window. Only the hours differ, and they differ by the factor you configured, not by anything an operator typed.
+
+## Why Not Let Each Machine Report Itself
+
+It is a fair question. Two machines, two operators, two sets of taps. Why not just capture both independently?
+
+Because the two rows are one operation, and the plan has to answer one question about it: is this step done, and when did it finish. Two independent records give you two answers, and the moment they disagree, every downstream calculation has to pick a winner without any principled basis for the choice. A reschedule reading contradictory finishes on one step will plan the successor from the wrong one. A progress report will show a step both complete and running.
+
+The one-way mirror removes the ambiguity by construction. There is exactly one place to record what happened, and exactly one rule for propagating it. This is the same discipline behind [why actuals are immutable](/blog/why-actuals-are-immutable-in-edgebic): a plan can only be as trustworthy as the single clean record underneath it. For the vendor-neutral version of the concept, see [what is parallel actuals mirroring in scheduling](/blog/what-is-parallel-actuals-mirroring-in-scheduling).
+
+## The Mirror Runs Job-Wide, Not Step-Wide
+
+When you save actuals on one step, EDGEBIC reconciles every parallel pair in that manufacturing order, not only the pair you touched. That looks like overkill until you consider the cascade.
+
+Suppose an operator starts a downstream operation before an upstream one was ever logged. The prior-step gate warns them, they acknowledge, and EDGEBIC backfills the upstream steps from their planned dates so the record is not left with a hole. See [the prior-step actuals gate at the kiosk](/blog/the-prior-step-actuals-gate-at-the-kiosk) for what that costs. If one of those backfilled upstream steps is itself a parallel primary, its sibling now needs to follow it, even though nobody touched that step directly. Reconciling job-wide catches it. Reconciling only the edited step would leave the sibling stale until somebody noticed by hand.
+
+The visible consequence in the planner is that a single actuals save refreshes every work center row on the job rather than one row. Your selection is preserved, and the numbers you see afterward are the ones that were actually written.
+
+## Where to Log and Where to Fix
+
+The practical guidance is short.
+
+- **Logging at the kiosk:** operators punch on the primary work center's terminal. The sibling receives its hours automatically.
+- **Logging from the planner:** open the primary row in the Log Actuals dialog. See [logging actuals from the planner](/blog/logging-actuals-from-the-planner-in-edgebic).
+- **Correcting a mistake:** correct the primary. Never the sibling.
+- **A sibling looks wrong:** check the factor first, then check that the primary is right. The sibling is a function of those two inputs and nothing else.
+- **A supervisor corrected a punch:** the correction lands on the primary's punch stream, the daily rows rebuild, and the mirror carries the fix across on the next save.
+
+## The Bottom Line
+
+One step, two rows, one direction of truth. A parallel work center's actual dates copy from the primary exactly, and its hours copy across scaled by the factor you set, with days the primary never worked zeroed rather than left standing. That rule keeps synchronized machines from telling two stories about the same operation, and it means there is only ever one place to type a correction. Explore the wider loop in the [shop floor execution guide](/blog/edgebic-shop-floor-guide), or see the platform at [EDGEBIC](/edgebic).

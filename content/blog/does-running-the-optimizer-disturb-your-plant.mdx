@@ -1,0 +1,92 @@
+---
+title: "Does Running the Optimizer Disturb Your Plant?"
+description: "A run holds everything in memory, locks nothing, and is invisible to other users until you accept. Here is exactly what a run touches and what it leaves alone."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - optimizer safe to run
+  - in-memory schedule proposal
+  - multi user scheduling
+  - production scheduling disruption
+  - schedule optimization software
+  - run without risk
+targetPhrase: "does running the optimizer disturb the plant"
+wordCount: 1400
+readingTime: 7
+faqQuestions:
+  - question: "Does running the schedule optimizer disturb the live schedule?"
+    answer: "No. A run computes entirely in memory and holds its result on your screen. Until you press Accept, the database is untouched, no records are locked, and no other user sees anything different. Jobs and capacity stay exactly as they are while the optimizer thinks, and canceling a run mid-way is harmless because nothing had been written to begin with."
+  - question: "Can two planners run the optimizer at the same time?"
+    answer: "Yes. Each run holds its own proposal in memory for the person who started it, so two planners can optimize the same data simultaneously without interfering. Neither sees the other's proposal. If one accepts and the other then tries to accept a proposal built on the older plan, the second Accept refuses rather than overwrite, and offers to rerun on the latest data."
+  - question: "Will operators or supervisors notice that a run is happening?"
+    answer: "No. Nothing changes on the Gantt, in Job View, on the Drive Schedule grid, or on any dashboard while a run is in progress. Those views only refresh after an Accept, and the refresh is announced on the accepting planner's screen. Kiosk punches and actuals continue to be recorded normally throughout, because the optimizer is not writing to the same data."
+qaQuestions:
+  - question: "I want to try the optimizer during a shift but I am nervous about the floor. Is it really safe?"
+    answer: "It is. The three promises printed under every result cover exactly this: nothing saved yet, completed work untouched, never worse than current plan. Run it, read the verdict and the move list, then press Discard. The database is byte for byte as it was and nobody on the floor saw anything. Closing the application also drops a pending proposal, which is equally safe."
+  - question: "Actuals kept landing from the kiosk while I was reading a proposal. What happens?"
+    answer: "The floor keeps recording normally, because your proposal is not holding any of that data. When you press Accept, the system re-checks whether the plan moved underneath you. It has, so Accept refuses rather than overwrite the new actuals, and a banner offers a Re-run button that solves again on the latest data. You review the fresh result and accept that instead."
+---
+
+**Running the optimizer disturbs nothing. A run computes in memory, locks no records, and is invisible to every other user until you press Accept.** Jobs and capacity stay exactly as they are while it thinks, canceling mid-run is harmless, and Discard leaves the database byte for byte as it was. That is what makes it reasonable to run the optimizer during a live shift rather than treating it as an after-hours exercise.
+
+EDGEBIC by User Solutions prints three promises under every result for this reason: nothing saved yet, completed work untouched, and never worse than current plan. This post takes each of those apart and explains what a run touches, what it leaves alone, and how concurrent users are handled.
+
+## What a run actually does
+
+When you click Run, the optimizer reads the current inputs and builds the baseline: the plan the unchanged scheduling engine produces for that data. It then builds and scores a set of complete alternative schedules, all in memory, and keeps the best one. The result is held under a token that belongs to your screen and nowhere else.
+
+Reads are the only database contact. The proposal is never written, never staged in a table, never queued. This is why closing the application drops a pending proposal, and why that is always safe: there was nothing to lose because nothing was saved.
+
+## Nothing locks while it thinks
+
+A common worry with any long-running calculation is that it holds records and blocks everyone else. This one does not. Colleagues can open jobs, edit orders, reschedule, and record actuals from the kiosk while your run is in progress, exactly as if you were not running anything.
+
+The run also fits inside a wall-clock budget you choose, with options of 10, 30, or 60 seconds and 30 as the default. It stops when the budget expires and returns the best result it has. Cancel stops it earlier and reports that nothing was changed, because nothing was. See [setting the optimizer time budget](/blog/setting-the-optimizer-time-budget) and [stopping the optimizer early](/blog/stopping-the-optimizer-early-still-gives-a-valid-plan).
+
+## Other users see nothing
+
+Until Accept, no view anywhere in the system changes. The Gantt, Job View, the Drive Schedule grid, and the dashboards all continue to show the committed plan, because that is still the plan. There is no draft state visible to anyone.
+
+Two planners can therefore optimize the same data at the same time without interfering. Each holds their own proposal, neither sees the other's, and the two runs do not contend for anything.
+
+## What happens when someone else commits first
+
+That concurrency creates one situation worth understanding. Suppose two planners each build a proposal, and one accepts. The other planner's proposal was built against a plan that no longer exists.
+
+The system handles this rather than hoping nobody notices. A fingerprint of the plan is taken before the solve, and Accept re-checks it. If the plan moved, whether from a colleague's accept, a normal reschedule, or actuals arriving, Accept refuses rather than overwrite. A banner appears saying changes arrived while you reviewed, with a Re-run button that solves again on the latest data.
+
+This is never a data loss situation. The worst case is that you review a second proposal. See [optimizer staleness protection](/blog/staleness-protection-in-the-optimizer).
+
+## The moment something does change
+
+Accept is the single action in the entire feature that writes. It does five things, all at once and all visible:
+
+| What happens | Detail |
+|---|---|
+| The plan updates | Proposed starts and ends replace current ones for exactly the operations in the move list |
+| Recorded work passes through | Completed and in-progress steps are unchanged, as in every reschedule |
+| Capacity re-forms | Work center load rebuilds around the new plan |
+| Views refresh | Gantt, Job View, Drive Schedule grid, and dashboards all update |
+| An audit record is written | Goal, numbers before and after, moves, and the seed, retrievable months later |
+
+The accepting planner sees a confirmation that the plan was accepted and saved and that schedule views are refreshing. Everyone else simply sees the new plan next time their view refreshes, which is the same experience as any normal scheduling run. See [what happens when you accept an optimized schedule](/blog/what-happens-when-you-accept-an-optimized-schedule).
+
+## Why proposals are deliberately temporary
+
+Holding proposals only in memory is a design choice with a real consequence: restarting the application drops any pending one. That is intentional. A proposal is an opinion about a plan at a moment in time, and a plan moves as the floor records work. A proposal that survived a restart would be an opinion about yesterday, and accepting it later would be exactly the overwrite the staleness check exists to prevent.
+
+The database only ever holds accepted plans. That is a simpler and safer contract than one where draft schedules accumulate somewhere waiting to be reconciled.
+
+## What this makes possible
+
+Because a run is free of consequences, you can use it as a question rather than a commitment. Try a goal you are unsure about. Test whether the plan survives a search before a production meeting. Let a supervisor run it for their own area and bring you the copied Explain text.
+
+The habit worth building is running after every meaningful scheduling run. It costs the seconds you allotted and returns useful information either way: a better plan, or a verdict naming how many alternatives your plan just beat. See [working the optimizer into your scheduling routine](/blog/working-the-optimizer-into-your-scheduling-routine).
+
+## The bottom line
+
+A run holds everything in memory, locks nothing, and changes no view for any user. Cancel is harmless, Discard leaves the database untouched, and closing the application drops a pending proposal safely. Accept is the only write, and it refuses rather than overwrite if the plan moved while you were reading. That combination is what makes it reasonable to run the optimizer mid-shift on a live plan. To try it, open the Optimizer tab in Schedule Jobs, run once, and press Discard. For more, read the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide) and [why the optimizer never applies changes automatically](/blog/why-the-optimizer-never-applies-changes-automatically), and explore the platform at [EDGEBIC](/edgebic).

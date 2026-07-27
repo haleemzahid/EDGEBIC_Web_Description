@@ -1,0 +1,106 @@
+---
+title: "When the Kiosk Cannot Compute Pieces in EDGEBIC"
+description: "A routing with no cycle time gives the kiosk no rate, so piece fields stay at zero instead of guessing. See why that is the right behavior and how to fix the root cause."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - effective rate zero
+  - kiosk piece counting
+  - missing cycle time routing
+  - hours primary work center
+  - pieces primary work center
+  - shop floor data quality
+targetPhrase: "effective rate zero"
+wordCount: 1290
+readingTime: 6
+faqQuestions:
+  - question: "Why does the kiosk show zero pieces on some operations?"
+    answer: "Because it has no rate to work from. The effective rate comes from the routing's pieces per unit and hours per unit combined with the work center's efficiency factor, and if either routing value is missing or zero the rate is zero. Rather than fabricate a piece count, EDGEBIC records zero and keeps the hours, which stay accurate because they come from the punch clock rather than a calculation."
+  - question: "Does a zero rate break hours-primary work centers?"
+    answer: "No. On an hours-primary work center the elapsed clock is the measurement and pieces are only a derived convenience, so a zero rate costs you the derived number and nothing else. Actual hours, daily rollups, the reschedule, and plan versus actual variance all continue to work exactly as normal on that operation."
+  - question: "What is the impact on a pieces-primary work center?"
+    answer: "There the piece counter is the primary measurement, so a zero rate decouples it from any hours calculation. The operator can still tap or enter counts and those counts are recorded, but hours will not be derived from them. Fix the routing's cycle time, because a pieces-primary work center without a rate is missing the number its whole entry mode is built on."
+qaQuestions:
+  - question: "A job's percent complete reads almost zero even though half the work is done. Could a missing rate be the cause?"
+    answer: "It used to be a common cause, which is why percent complete is now hours-primary: actual hours over planned hours, with a pieces fallback only for lines that carry punch counts alone. A near-zero derived piece count can no longer drag a half-finished job toward zero. If you still see a wrong percentage, check that the operation has planned hours at all, because a step quoted at zero hours has no denominator."
+  - question: "We edited the routing's cycle time yesterday. Will old punches recalculate?"
+    answer: "No, and that is intentional. The rate is snapshotted onto each punch when it opens, so historical punches keep the rate that was in force when the work actually ran. Editing the routing changes future punches only. That is what keeps a report on last quarter from quietly changing shape because somebody corrected a standard this morning."
+---
+
+**When a routing step has no usable cycle time, the EDGEBIC by User Solutions kiosk computes an effective rate of zero and records piece fields as zero rather than inventing a number.** The hours keep working perfectly, because they come from a clock rather than a calculation. The pieces stay honestly blank. That choice, refusing to fabricate, is worth understanding because the alternative would quietly corrupt every downstream number that touches output.
+
+Here is where the rate comes from, what a zero costs you, and how to fix the routing that caused it.
+
+## Where the Rate Comes From
+
+Hours and pieces are two views of the same work, and EDGEBIC converts between them with an effective rate expressed in pieces per hour:
+
+```
+effective rate = (pieces per unit / hours per unit) x work center efficiency factor
+```
+
+Both inputs on the left come from the routing step, and the efficiency factor comes from the work center. The rate is calculated and snapshotted onto each punch at the moment the punch opens. The conversion itself is covered in [how hours and pieces convert on the shop floor](/blog/how-hours-and-pieces-convert-on-the-floor).
+
+If hours per unit is zero, the division has no answer. If pieces per unit is zero, the numerator is zero. Either way the rate is zero, and there is no rate to convert with.
+
+## What Zero Actually Costs
+
+The honest answer is: less than people fear on most work centers, and quite a lot on some.
+
+| Entry mode | Primary measurement | Effect of a zero rate |
+|---|---|---|
+| Hours-primary | Elapsed clock | Derived pieces show zero, hours unaffected |
+| Pieces-primary | Tapped or entered counts | Counts recorded, hours not derived from them |
+| Both | Each captured independently | Variance between them cannot be computed |
+
+On an hours-primary work center, the loss is cosmetic. Punch hours are measured, not calculated, so daily actual hours, the reschedule, plan versus actual variance, and job percent complete all behave exactly as they should. See [how punches roll up into daily actual hours](/blog/how-punches-roll-up-into-daily-actual-hours).
+
+On a pieces-primary work center the loss is real. That entry mode exists because output is the meaningful unit there, and without a rate the counts stand alone rather than feeding an hours figure. Operators can still record piece counts and those counts are kept, but you have a work center configured for one model and a routing that cannot support it. That is a routing to fix rather than a behavior to work around.
+
+## Why Not Just Estimate
+
+It would be easy to fall back to some plausible number: the work center's nominal rate, an average from similar parts, last quarter's observed rate for this product. Every one of those options is worse than zero, and for the same reason.
+
+A fabricated piece count is indistinguishable from a measured one once it is in the record. It flows into the day's output, into the observed rate for that date, into the quality factor of OEE, and into any quoting analysis built on historical output. Nobody looking at the number later can tell that it was a guess. A zero, by contrast, is obviously an absence, and an absence prompts somebody to go find out why.
+
+This is the same principle behind [the auto-filled actuals badge](/blog/the-auto-filled-actuals-badge-explained): EDGEBIC would rather show you that data is missing or assumed than smooth it over. A plan is only as trustworthy as the truth underneath it.
+
+## The Snapshot Rule
+
+The rate is frozen onto each punch when the punch opens, and later routing edits do not reach back.
+
+That matters for two reasons. First, historical reporting stays stable: last quarter's rates are whatever was actually in force last quarter, and correcting a standard today does not silently rewrite them. Second, a fix works immediately in the direction you want. Set the missing cycle time this morning and punches opened this afternoon carry a real rate, while nothing about yesterday's record changes.
+
+The daily rollup follows the same spirit. For a date with both hours and pieces it uses the observed rate, pieces divided by hours, which is the truth about that day. Only when one of them is missing does it fall back to the snapshotted rate from the last closed punch.
+
+## Diagnosing and Fixing It
+
+The symptom is easy to spot: an operation running normally, hours accumulating correctly, and piece fields stubbornly at zero.
+
+Work through the inputs in this order.
+
+**Check hours per unit on the routing step.** This is the usual culprit. A step created quickly, imported from a spreadsheet with a blank column, or copied from a template that never had a cycle time will carry zero here. See [logging actuals from the planner](/blog/logging-actuals-from-the-planner-in-edgebic) if you need to correct the record for work already run.
+
+**Check pieces per unit on the routing step.** Less common, but a zero here produces the same result.
+
+**Check the work center efficiency factor.** A factor of zero would zero out an otherwise valid rate. This is rare and usually a data entry slip.
+
+**Decide whether the step should be pieces-primary at all.** Some operations genuinely have no meaningful piece count: a heat treat soak, a paint cure, an inspection hold. Those belong on hours-primary work centers, and a zero derived piece count there is not a problem to solve.
+
+## A Worked Example
+
+Two operations, same job, same shift.
+
+**Operation 30, CNC-1, hours-primary.** Routing carries 0.14 hours per piece and 1 piece per unit, so the rate is about 7.14 pieces per hour. The operator runs 7.53 hours and taps 42 good pieces. The daily row shows 7.53 hours, 42 pieces, and an observed rate of 5.58 pieces per hour, which is below standard and points at the quality hold recorded on its own punch.
+
+**Operation 40, Cure Oven, hours-primary, no cycle time on the routing.** The rate is zero. The operator punches 4.0 hours and the piece field stays at zero. The daily row shows 4.0 hours and no pieces.
+
+The job's percent complete is computed from hours, so operation 40's blank piece count does not drag it down. The reschedule reads hours and plans the remainder correctly. Nothing about the plan is impaired, and the only thing you cannot say is how many pieces came out of a cure oven, which is not a question worth asking.
+
+## The Bottom Line
+
+A missing cycle time produces a zero rate, and EDGEBIC records a zero rather than a guess. Hours keep working because they are measured; pieces stay blank because they would have to be invented. Fix the routing where output genuinely matters, especially on pieces-primary work centers, and accept the blank where it does not. Rates are snapshotted per punch, so your fix applies forward without disturbing history. See the whole capture loop in the [shop floor execution guide](/blog/edgebic-shop-floor-guide), or explore [EDGEBIC](/edgebic).

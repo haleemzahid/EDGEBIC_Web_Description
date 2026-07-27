@@ -1,0 +1,127 @@
+---
+title: "Mapping Your ERP's Units of Measure for Scheduling"
+description: "How to reconcile ERP units of measure with EDGEBIC when you import: quantity units, time units, per-hundred standards, and the conversion factors that keep dates honest."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - ERP unit of measure mapping
+  - unit conversion import mask
+  - minutes to hours scheduling import
+  - stocking unit versus production unit
+  - EDGEBIC unit of measure import
+  - ERP quantity units scheduling
+targetPhrase: "ERP unit of measure mapping"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "How does EDGEBIC handle an ERP that stores times in minutes?"
+    answer: "Set a conversion factor on that column in the import mask and the multiplication happens before the value is stored. Minutes to hours uses 0.016667 and seconds to hours uses 0.000278. Different columns in the same file can carry different factors, so a setup column in minutes and a run column in hours both land correctly in a single pass with no pre-editing of the file."
+  - question: "What happens if my ERP quantity unit differs from my routing unit?"
+    answer: "The schedule multiplies run time by the order quantity, so both must describe the same thing. If orders are counted in cases and run time is quoted per piece, apply a conversion so one side matches the other before import. The safest convention is to make the piece the scheduling unit everywhere and convert case quantities into pieces on the order import, since the routing already thinks per piece."
+  - question: "Does EDGEBIC need a unit of measure on every product?"
+    answer: "A unit of measure belongs on the product record because it makes quantities readable on the schedule, reports, and dispatch lists. What actually drives the dates is numeric consistency between the order quantity and the per-unit run time, not the label. Carry the ERP's unit through on the product import so planners see the same word the ERP uses, then make sure the numbers agree underneath it."
+qaQuestions:
+  - question: "Our ERP quotes standards per hundred pieces and our orders are in pieces. Everything imported cleanly and every job now looks a hundred times too long. What is the fix?"
+    answer: "Add a conversion factor of 0.01 to the run time column in the routing mask and re-import that routing. A per-hundred standard of 2.0 hours becomes 0.02 hours per piece, so a 500-piece order costs 10 hours of run time instead of 1,000. Do not fix it by dividing order quantities by a hundred, because that breaks material, cost, and the numbers your floor recognizes. Convert once, on the side that is genuinely per-lot, and leave the piece counts alone. Then reconcile: pick one job, add setup plus run time times quantity across the operations, and confirm the schedule agrees before you rely on the dates."
+  - question: "We buy sheet in square feet, stock it in sheets, and run parts per piece. Which unit should the scheduler see?"
+    answer: "The one the routing is timed in, which is almost always the piece. The scheduler cares about how long an operation takes and how many of them there are, so pick the unit your run times are quoted against and make the order quantity match it. Purchasing units and stocking units stay in the ERP, where they belong, and never need to reach the scheduling import at all. If a routing step genuinely runs per sheet rather than per piece, express that as run time per piece divided by the parts per sheet, so a 4-up nest of 0.4 hours per sheet becomes 0.1 hours per piece. One unit through the routing keeps the arithmetic simple and auditable."
+---
+
+**Getting units of measure right in an ERP import is a numeric problem, not a labeling one: the schedule multiplies run time by order quantity, so both sides must describe the same physical thing, and any mismatch is corrected with a conversion factor on the column in the import mask rather than by editing the file.** A unit error never fails an import. It just moves every date by a clean multiple, which is why it is the most expensive quiet mistake in ERP integration.
+
+EDGEBIC by User Solutions has been reconciling ERP unit conventions since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, the same four mismatches account for nearly all of them: minutes against hours, per-lot against per-piece, stocking unit against production unit, and a time value hiding in the wrong field.
+
+## Two kinds of unit, and only one of them drives dates
+
+It helps to separate them before you map a single column.
+
+**Quantity units** describe how much you are making: pieces, cases, pounds, feet. They appear on the order and on the product record.
+
+**Time units** describe how long an operation takes: hours, minutes, seconds, or a standard quoted per lot of some size. They appear on the routing.
+
+The schedule computes operation hours as setup plus run time multiplied by quantity. Only the numbers matter to that arithmetic. The unit label on the product record is for humans, and it is still worth carrying through, because a planner reading a dispatch list should see the same word the ERP shows. The general concept is covered in [what is a unit of measure in manufacturing](/blog/what-is-a-unit-of-measure-in-manufacturing), and adding one in the application is in [how to add a unit of measure](/blog/how-to-add-a-unit-of-measure-in-edgebic).
+
+## The conversion factor is the whole mechanism
+
+Every numeric column in an import mask can carry a conversion factor, and the multiplication runs before the value is stored. That single feature handles nearly every unit problem without touching the export file:
+
+| Source unit | Target | Factor |
+|---|---|---|
+| Minutes | Hours | 0.016667 |
+| Seconds | Hours | 0.000278 |
+| Days (8-hour) | Hours | 8 |
+| Per 100 pieces | Per piece | 0.01 |
+| Per 1,000 pieces | Per piece | 0.001 |
+| Dozens | Pieces | 12 |
+
+Different columns in the same file carry different factors. A routing export with setup in minutes and run quoted per hundred converts both correctly in one pass: 0.016667 on the setup column, 0.01 on the run column.
+
+Because the conversion lives in the saved mask, it applies to every future run automatically. You solve the unit problem once, not weekly. The full option list is in [import masks explained](/blog/edgebic-import-masks-explained).
+
+## Mismatch 1: minutes imported as hours
+
+The most common one, and the easiest to spot. A 90-minute operation imported without a factor becomes 90 hours, which is a factor-of-sixty error in the wrong direction. The reverse happens when hours are imported into a system expecting minutes.
+
+The tell is a job that schedules across weeks when the shop knows it is a two-day job, or the opposite. Reconcile one job by hand and the sixty jumps out.
+
+## Mismatch 2: a per-lot standard treated as per-piece
+
+Many ERPs quote a standard time against a standard lot: 2.5 hours per 100. Imported as-is into a per-piece field, a 500-piece order costs 1,250 hours.
+
+The fix is a 0.01 factor, but only after you decide whether the lot standard includes setup. If it does, split it before applying the factor, because setup does not scale with quantity and run time does. The [combined setup and run time guide](/blog/handling-combined-setup-and-run-time-from-your-erp) walks the split with worked numbers.
+
+## Mismatch 3: stocking unit against production unit
+
+This is the one that requires a decision rather than a factor.
+
+Suppose orders arrive in cases of 24 and routings are timed per piece. Two options exist:
+
+- **Convert the order quantity to pieces** with a factor of 24 on the quantity column. The routing stays per piece.
+- **Convert the run time to per case** by multiplying by 24. The order stays in cases.
+
+Prefer the first. Making the piece the scheduling unit everywhere means the routing needs no adjustment when case sizes change, and the shop floor counts pieces anyway. Purchasing units, stocking units, and pricing units stay in the ERP where they belong, and never need to reach the scheduling import.
+
+Where an operation genuinely runs per sheet or per batch rather than per piece, express it as run time per piece: a 4-up nest at 0.4 hours per sheet is 0.1 hours per piece. One unit through the whole routing keeps the arithmetic auditable.
+
+## Mismatch 4: the value landed in the wrong field
+
+Not strictly a unit error, but it looks like one. Run time mapped into the setup field produces a job whose hours do not change with quantity, because setup is charged once. The tell is that a 10-piece job and a 1,000-piece job take the same time.
+
+Check the field mapping before you reach for a factor. The [minimum ERP fields EDGEBIC needs](/blog/which-erp-fields-edgebic-needs-to-schedule) lists what each field means.
+
+## A short conversion audit
+
+Run this once per new mask, then whenever the export changes shape.
+
+1. **Name the unit of every numeric column** you are about to map, from the ERP's own documentation or a report header. Do not assume.
+2. **Pick the scheduling unit**, usually the piece, and write it down.
+3. **Set factors** so every mapped column expresses itself in hours and in the scheduling unit.
+4. **Import, then reconcile one job by hand.** Setup plus run time times quantity, compared against the schedule.
+5. **Spot the multiple.** A gap near 60, 100, 1,000, or the case size names the culprit immediately.
+
+Step 5 is why the audit works. Unit errors produce clean multiples, unlike genuine data problems, which produce noise.
+
+## Once it is right, it stays right
+
+The factor lives in the saved mask, so it applies on every future import without anyone remembering it. That is what makes the recurring routine short: export, pick the mask, run, read the counts. The rhythm is in the [weekly ERP sync routine](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine), and the post-import verification is in the [import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist).
+
+With consistent units, the engine can do its job: finite capacity across shifts and machine instances, sequence-dependent setups, lot streaming with transfer batches, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) shows the import layer that every ERP uses.
+
+## Check your own units
+
+Export one routing file and one order file and [bring them to a demo](/contact-us). Naming the unit on every column takes a few minutes and usually surfaces at least one assumption nobody had written down.
+
+<Accordion title="How does EDGEBIC handle an ERP that stores times in minutes?">
+Set a conversion factor on that column in the import mask and the multiplication happens before the value is stored. Minutes to hours uses 0.016667 and seconds to hours uses 0.000278. Different columns in the same file can carry different factors, so a setup column in minutes and a run column in hours both land correctly in a single pass with no pre-editing of the file.
+</Accordion>
+
+<Accordion title="What happens if my ERP quantity unit differs from my routing unit?">
+The schedule multiplies run time by the order quantity, so both must describe the same thing. If orders are counted in cases and run time is quoted per piece, apply a conversion so one side matches the other before import. The safest convention is to make the piece the scheduling unit everywhere and convert case quantities into pieces on the order import, since the routing already thinks per piece.
+</Accordion>
+
+<Accordion title="Does EDGEBIC need a unit of measure on every product?">
+A unit of measure belongs on the product record because it makes quantities readable on the schedule, reports, and dispatch lists. What actually drives the dates is numeric consistency between the order quantity and the per-unit run time, not the label. Carry the ERP's unit through on the product import so planners see the same word the ERP uses, then make sure the numbers agree underneath it.
+</Accordion>

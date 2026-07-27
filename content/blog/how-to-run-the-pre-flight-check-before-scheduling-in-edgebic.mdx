@@ -1,0 +1,100 @@
+---
+title: "How to Run the Pre-Flight Check Before Scheduling in EDGEBIC"
+description: "EDGEBIC validates master data before the scheduling engine runs: how the pre-flight check works, what it inspects, and how to clear every row it flags."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - pre-flight check scheduling
+  - scheduling validation
+  - scheduling failure dialog
+  - production scheduling data errors
+  - validate routing before scheduling
+  - master data check
+targetPhrase: "pre-flight check before scheduling"
+wordCount: 1215
+readingTime: 6
+faqQuestions:
+  - question: "What is the pre-flight check in EDGEBIC?"
+    answer: "The pre-flight check is a structural validation that runs automatically before the scheduling engine starts. It confirms that every selected order has a product, that the product has a routing, that the routing has steps, that each step points at an active work center, and that each of those work centers has at least one machine instance and at least one shift. Failures open a dialog instead of burning a full run."
+  - question: "Do I have to turn the pre-flight check on?"
+    answer: "No. It runs on every scheduling request for the orders you selected, so there is nothing to enable. What you control is whether you read the results. If the check finds nothing, the engine proceeds straight into scheduling and you never see a dialog at all, which is why most planners only meet the pre-flight check on the day something is misconfigured."
+  - question: "Does the pre-flight check tell me whether there is enough capacity?"
+    answer: "No, and this is the most common misunderstanding. Pre-flight only validates that master data is wired correctly. It never looks at load, bookings, or calendars. Capacity problems such as a work center with no free hours in the search window only surface after the engine has actually run, and they appear as separate failure rows with different wording."
+qaQuestions:
+  - question: "The dialog shows nine pre-flight rows for one scheduling run. Where do I start?"
+    answer: "Group them by the affected item rather than working top to bottom. Nine rows very often trace back to two or three real causes: one deactivated work center that six routing steps still point at, one product whose routing was never built, and one new work center that has instances but no shift assigned. Fix the work center first because it clears the most rows, then the missing routing, then the shift assignment. Re-run after each fix rather than after all three, so you can tell which change cleared which rows. A run that goes from nine rows to two is progress you can prove."
+  - question: "A job scheduled fine last week and now fails pre-flight with nothing changed on the job. What happened?"
+    answer: "Something changed around the job, not on it. The three usual causes are all upstream master data. Someone deactivated a work center that the routing still uses, someone removed the last shift from a work center so it now has zero working hours defined, or the machine count on a work center was set to zero during editing. None of those touch the order, so the order looks untouched in its own history while its routing quietly stopped being schedulable. Check the work centers named in the dialog rows before you look at the job at all."
+---
+
+**The pre-flight check in EDGEBIC by User Solutions runs automatically before the scheduling engine starts, and it validates the structure of your master data: order, product, routing, routing steps, work centers, machine instances, and shifts.** If anything in that chain is missing, the run stops and a failure dialog opens with one row per problem, before any schedule is generated. This is how to read it and clear it.
+
+Every task in this library is mapped on the [EDGEBIC how-to hub](/blog/edgebic-how-to-hub). For the wider concept of what finite capacity scheduling is actually solving, start with [what production scheduling is](/blog/what-is-production-scheduling).
+
+## Before You Start
+
+- You have manufacturing orders selected and you are about to schedule them. Pre-flight only inspects the orders in the current request.
+- You have permission to edit master data, since almost every fix lands on a product, a routing, or a work center rather than on the order.
+- You are not looking for a capacity answer. Pre-flight is a wiring check, not a load check.
+
+## Step 1: Select the Orders and Schedule as Normal
+
+Open the **Manufacturing Orders** view, select the orders you want to schedule, and start the scheduling run the way you always do. There is no separate button labeled pre-flight. The check is part of the request.
+
+If everything validates, you see no dialog and the engine proceeds. That silence is the pass condition.
+
+## Step 2: Read the Failure Dialog
+
+When the check finds a problem, the Scheduling Failure Dialog opens instead of a schedule. Each row carries four useful fields.
+
+| Field | What it gives you |
+|---|---|
+| **Category** | The class of problem, for example a missing product or an empty routing |
+| **Summary** | One line naming what failed |
+| **Detail** | The specifics, usually including the job number and product name |
+| **Affected Entity** | The exact item to go and fix |
+| **Fix Hint** | The suggested first move |
+
+Pre-flight rows are marked as pre-flight, which distinguishes them from failures the engine raised later during actual scheduling. That flag matters: a pre-flight row means nothing was scheduled at all, so no partial plan was written.
+
+## Step 3: Work the Six Checks
+
+Pre-flight inspects six things in order. Reading them as a chain makes the fix obvious.
+
+1. **The order exists.** A stale selection can reference an order that was deleted in another session.
+2. **The product exists.** The order points at a product record that is present and readable.
+3. **A routing exists for that product.** No routing means no operations to schedule. Build one, or copy one from a similar product.
+4. **The routing has steps.** An empty routing shell passes the previous check and fails this one.
+5. **Every routing step points at an active work center.** Deactivating a work center does not rewrite the routings that use it, so this is the most common single cause of a wave of failures.
+6. **Each of those work centers has at least one machine instance and at least one shift.** A work center with zero instances has no capacity bucket to book into, and one with no shift has no working hours at all.
+
+## Step 4: Fix in Master Data, Not on the Job
+
+Every pre-flight failure resolves upstream of the order. Add the missing routing to the product, reactivate or replace the work center, set the machine count above zero, or assign a shift. Details for the two most frequent fixes are in [how to add a work center](/blog/how-to-add-a-work-center-in-edgebic) and [how to add a step to an existing routing](/blog/how-to-add-a-step-to-an-existing-routing-in-edgebic).
+
+Editing the order itself almost never clears a pre-flight row, because the order is rarely what is broken.
+
+## Step 5: Copy the Rows if You Need Help
+
+If a row does not make sense, use the **Copy** button in the dialog. It builds a text block containing category, summary, detail, affected entity, and fix hint for every failure, ready to paste into a ticket or an email. Occasionally another application holds the clipboard and the copy quietly does nothing, so paste to confirm before you close the dialog.
+
+## How to Check It Worked
+
+Re-run the same selection. Three outcomes are possible.
+
+- **No dialog.** Pre-flight passed and the engine ran. Open the plan and confirm the jobs you selected are on it.
+- **Fewer rows.** Your fix cleared some causes. Read the remaining rows, which are now easier to group.
+- **Different rows, no pre-flight flag.** Pre-flight passed and the engine then hit a real scheduling problem such as no available capacity. That is progress, and it is a different investigation.
+
+## Common Mistakes
+
+- **Reading pre-flight as a capacity verdict.** It never inspects load or calendars. A run that clears pre-flight can still fail on capacity a second later.
+- **Fixing rows one by one from the top.** Nine rows are often three causes. Group by affected entity first.
+- **Reactivating a work center as a reflex.** If a station is genuinely retired, the correct fix is to repoint the routing steps at its replacement, not to bring the retired station back into the plan.
+- **Assuming a passing run means good data.** Pre-flight proves the routing is wired, not that the hours on it are right. Bad hours schedule perfectly and produce a plan nobody can hit.
+
+See how EDGEBIC turns validated master data into a finite capacity plan on the [EDGEBIC product page](/edgebic).

@@ -1,0 +1,89 @@
+---
+title: "The Makespan Metric in Schedule Optimization"
+description: "Makespan measures the span from the first start to the last end of your whole plan. Here is how the optimizer calculates it, when to chase it, and when to ignore it."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - makespan metric
+  - schedule makespan
+  - production schedule length
+  - finite capacity scheduling metrics
+  - schedule optimization software
+  - plan compression
+targetPhrase: "makespan metric"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "What is makespan in production scheduling?"
+    answer: "Makespan is the total span of a plan, measured from the earliest start of any operation to the latest end of any operation. In EDGEBIC it appears as a Makespan (h) row in the optimizer comparison table, with the current value, the proposed value, and the change. A shorter makespan means the whole workload clears sooner, which frees the plant for the next block of work."
+  - question: "How is makespan different from lateness?"
+    answer: "Makespan measures how long the plan takes end to end. Lateness measures whether individual jobs finish by their due dates. The two are independent: a plan can be short and still miss a due date, or long and hit every date. That is why they are separate rows in the optimizer comparison table, and why the Fastest overall finish goal and the On-time first goal can propose different plans on the same data."
+  - question: "Should I always try to reduce makespan?"
+    answer: "No. Makespan is the right target when you are clearing a backlog or freeing capacity for incoming work. It is the wrong target when a specific customer date is the thing that matters, because compressing the whole plan can push an individual job later. Pick the Fastest overall finish goal when the plant as a whole is the constraint, and On-time first when delivery promises are."
+qaQuestions:
+  - question: "My optimizer result shows Makespan 22.0 to 18.0. What did I actually gain?"
+    answer: "You gained four hours of plant span: the last operation in the plan now finishes four hours earlier than it did. On a two work center shop running eight hour day shifts, four hours is half a shift of freed capacity at the tail of the plan. That is real room for the next order, an unplanned rush job, or maintenance you have been deferring. It does not by itself say anything about due dates, so read the Late jobs row alongside it."
+  - question: "I picked Fastest overall finish and one job now finishes later than before. Is that a bug?"
+    answer: "No, it is the trade you asked for. The Fastest overall finish goal ranks makespan above lateness, so it will accept a later finish on one job when that shortens the total plan. The comparison table shows this honestly: the makespan row reads better and a lateness row may read worse. If the later job matters more than the shorter plan, discard the proposal and rerun with On-time first."
+---
+
+**Makespan is the span of your whole plan, measured from the earliest start of any operation to the latest end of any operation, and the optimizer reports it in hours as its own row in the comparison table.** It answers one question: how long does this entire workload take to clear? A shorter makespan means the plant is free for the next block of work sooner. It says nothing about whether any individual job hits its due date, which is why lateness is measured separately and why the two can move in opposite directions on the same proposal.
+
+EDGEBIC by User Solutions computes makespan through the same shared calculator that produces every other number on the optimizer screen, so the value you see in the comparison table is the value the optimizer used to rank the plans it tried. This post covers how the number is built, what a change in it is worth on the floor, and when chasing it is the wrong call. For the full set of measures, see [how the optimizer scores a schedule](/blog/how-the-optimizer-scores-a-schedule).
+
+## How the number is calculated
+
+Makespan is a subtraction, not a sum. The calculator finds the plan start (the earliest start across every scheduled operation) and the plan end (the latest end across every scheduled operation) and reports the hours between them. Because it is a span rather than a total, it is unaffected by how much work happens in parallel inside that window. Two machines running side by side for eight hours produce sixteen assigned hours but only eight hours of makespan.
+
+That distinction matters when you read the comparison table, because Total assigned hours sits a few rows away and behaves completely differently. Assigned hours measure the workload. Makespan measures the calendar. A proposal that reorders jobs will usually leave assigned hours nearly unchanged (the same work still has to be done) while moving makespan noticeably, because reordering changes how well the machines overlap. For the companion metric, see [the total assigned hours metric](/blog/the-total-assigned-hours-metric-in-optimization).
+
+## Why reordering compresses a plan
+
+The scheduling engine plans one job at a time, most important first, and commits each job's whole routing before it looks at the next. That is fast and it never violates a constraint, but it can leave a downstream machine idle while an upstream machine grinds through a long first operation.
+
+The documented worked example makes it concrete. Three jobs, two work centers (a cut station and a mill), one shift. Job A cuts for six hours then mills for two. Job B cuts for two hours then mills for six. Job C cuts for three then mills for three. Taken in the order A, B, C, the mill sits idle all Monday morning waiting for A's six hour cut to clear the saw. The plan runs seventeen working hours and ends Wednesday morning.
+
+Reorder to B, A, C and B's two hour cut feeds the mill by ten o'clock Monday. The same three jobs, the same routings, the same capacity, and the plan now runs fourteen working hours and ends Tuesday afternoon. That is an eighteen percent reduction in makespan from nothing but sequence. No overtime, no extra machine, no shortcut.
+
+| Measure | Original order | Reordered | Change |
+|---|---|---|---|
+| Makespan | 17 working hours | 14 working hours | 3 hours shorter |
+| Total tardiness | 3 hours | 0 hours | eliminated |
+| On-time jobs | 1 of 3 | 3 of 3 | 2 more on time |
+
+Note that both measures improved here. That is common but not guaranteed, which is the next section.
+
+## When makespan and lateness disagree
+
+Makespan and lateness are independent, and a plan can be excellent on one and poor on the other. Compressing the tail of a plan sometimes means starting a job later so it can run alongside a compatible neighbor. If that job had slack, nothing is lost. If it was tight against its due date, you traded a delivery promise for plant span.
+
+This is exactly why the optimizer offers goals rather than one universal answer. The Fastest overall finish goal ranks makespan first and lateness second, so it will accept a small lateness cost to shorten the plan. The On-time first goal does the reverse and will accept a longer plan to protect due dates. Both are honest, and both are guaranteed never worse than your current plan on the goal you picked. Read [why an optimized plan can look worse on one measure](/blog/why-an-optimized-plan-can-look-worse-on-one-measure) before you judge a mixed result.
+
+## Reading the makespan row
+
+The comparison table has four columns: Measure, Current, Proposed, and Change. The makespan row gives you the current span, the proposed span, and a change cell that spells the direction out in words as well as an arrow, such as a down arrow followed by "4 better". You never have to interpret a color to know whether a number improved.
+
+A few readings and what they mean in practice:
+
+| Makespan change | What it usually means |
+|---|---|
+| Several hours better | The reorder fixed a genuine starvation problem on a downstream machine |
+| Under an hour better | Marginal compression, often not worth disrupting a committed floor |
+| No change | The plan span is set by one long chain that reordering cannot shorten |
+| Worse, with lateness better | A deliberate goal trade: due dates were protected at the cost of plan span |
+
+A makespan that will not move is itself useful information. It usually means one job's routing is the critical chain of the whole plan, and the way to shorten the plan is capacity or routing work, not sequencing. That points you at [bottleneck identification](/blog/production-bottleneck-identification) rather than another optimizer run.
+
+## What a shorter makespan is worth
+
+Translate the hours before you decide. Four hours off a plan that runs on a single eight hour day shift is half a shift of recovered capacity at the tail. On a two shift operation it is a quarter of a day. That freed span is where an unplanned rush order, a maintenance window, or the next release of work goes. If your plant is capacity constrained rather than date constrained, makespan is the number that converts most directly into throughput.
+
+If your plant is date constrained, the honest answer is that makespan is a secondary read. Look at late jobs and weighted lateness first, and treat any makespan improvement as a bonus.
+
+## The bottom line
+
+Makespan is the span from the first start to the last end of the plan, reported in hours, calculated by the same shared calculator that feeds every optimizer number. It measures calendar, not workload, so it moves when reordering improves machine overlap and stays put when one long chain sets the plan length. Chase it when you are clearing a backlog or freeing capacity, and let due dates lead when a customer promise is on the line. To see the row on your own data, open the Optimizer tab in Schedule Jobs, pick a goal, and run. For the wider picture, read the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide) and the [Fastest overall finish preset](/blog/the-minmakespan-optimizer-preset-explained), and explore the platform at [EDGEBIC](/edgebic).

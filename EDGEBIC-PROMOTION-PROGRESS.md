@@ -8,7 +8,7 @@
 > [EDGEBIC-BLOG-TAXONOMY.md](EDGEBIC-BLOG-TAXONOMY.md) (the 2,120-post plan + voice
 > standards), and [EDGEBIC-IMAGE-PLAN.md](EDGEBIC-IMAGE-PLAN.md) (screenshots).
 
-**Last updated**: 2026-08-06 · **Branch**: `feature/edgebic-promotion` (pushed to origin; not merged to main)
+**Last updated**: 2026-08-07 · **Branch**: `feature/edgebic-promotion` (pushed to origin; not merged to main)
 
 ---
 
@@ -41,22 +41,22 @@
 | Cluster | Slug | Target | Written | Published | Indexed |
 |---|---|---|---|---|---|
 | 17 | edgebic-platform | 180 | 165 | 0 | 0 |
-| 18 | edgebic-scheduling-concepts | 200 | 94 | 0 | 0 |
-| 19 | edgebic-how-to | 500 | 265 | 0 | 0 |
+| 18 | edgebic-scheduling-concepts | 200 | 100 | 0 | 0 |
+| 19 | edgebic-how-to | 500 | 277 | 0 | 0 |
 | 20 | edgebic-walkthroughs | 50 | 35 | 0 | 0 |
-| 21 | edgebic-erp-integration | 150 | 102 | 0 | 0 |
-| 22 | edgebic-industry | 110 | 91 | 0 | 0 |
-| 23 | edgebic-glossary | 350 | 219 | 0 | 0 |
+| 21 | edgebic-erp-integration | 150 | 116 | 0 | 0 |
+| 22 | edgebic-industry | 110 | 104 | 0 | 0 |
+| 23 | edgebic-glossary | 350 | 231 | 0 | 0 |
 | 24 | edgebic-troubleshooting | 120 | 93 | 0 | 0 |
 | 25 | edgebic-outcomes | 100 | 73 | 0 | 0 |
-| 26 | edgebic-optimization | 60 | 37 | 0 | 0 |
+| 26 | edgebic-optimization | 60 | 49 | 0 | 0 |
 | 27 | edgebic-visual-scheduling | 40 | 33 | 0 | 0 |
-| 28 | edgebic-shop-floor | 60 | 37 | 0 | 0 |
+| 28 | edgebic-shop-floor | 60 | 49 | 0 | 0 |
 | 29 | edgebic-quoting | 40 | 31 | 0 | 0 |
 | 30 | edgebic-planning | 80 | 50 | 0 | 0 |
 | 31 | edgebic-migration | 40 | 30 | 0 | 0 |
 | 32 | edgebic-admin | 40 | 27 | 0 | 0 |
-| | **TOTAL** | **2,120** | **1,382** | **0** | **0** |
+| | **TOTAL** | **2,120** | **1,463** | **0** | **0** |
 
 **"Written" count is derivable from disk** (don't trust memory, count files):
 PowerShell: `Select-String -Path content/blog/*.mdx -Pattern "cluster: 'edgebic-" | Group-Object { ($_.Line -split "'")[1] } | Sort-Object Name | Format-Table Name, Count`
@@ -65,6 +65,7 @@ PowerShell: `Select-String -Path content/blog/*.mdx -Pattern "cluster: 'edgebic-
 
 | Date | Wave | Posts added | Clusters touched | Commit | Notes |
 |---|---|---|---|---|---|
+| 2026-08-07 | 10 / flight 10 | 81 | erp-integration (14), industry (13), how-to (12), glossary (12), optimization (12), shop-floor (12), scheduling-concepts (6) | see git log | 7 agents. THIRD INTERRUPTION: process stopped the flight after only 4 posts landed; relaunched all 7 with adjusted targets, then a stream-stall wave hit 5 of them mid-write and all 5 were resumed in place from their transcripts (glossary had already written all 12, ERP was on its final four). Net 81. Scheduling-concepts hit an honest shortfall of 6 and is now CONFIRMED MINED OUT (100 posts; the surrounding corpus covers nearly every remaining engine mechanic) - stop weighting it. How-to opened a fresh seam in the R07-R10 recipe appendices (pre-flight checks, circular-dependency repair, setup families, report export/group/filter, permissions, security audit log). Agents rejected on honesty grounds: MaxParallelWorkCenters (stored but not documented as enforced), Hybrid BOR merge mode (code-only, no planner control), run-time skill certification (kiosk has no login - plan-time only), offline queue, thin ERP triads for 7 systems that would have required inventing product detail. Fixed 1 banned "unlocked". QA: 0 banned/em-dash/FCP/British/CTP/ControlTower, 81/81 author, 641/641 links resolve, 0 existing files touched. NOTES FOR NEXT FLIGHT: (a) glossary agents must sweep ALL ~1,920 blog files, not just the cluster - half a candidate list was lost to out-of-cluster collisions; (b) FCP-Book has NO 19-kiosk.md or 08-operators-and-skills.md (19 is queue/transit/flow, 08 is BOR) - cite 21-actuals-kiosk.md / 44-operators-skills.md; (c) owner check: the optimizer-permissions post is sourced from the CLAUDE.md registry, not the UserGuide - verify role-matrix wording. |
 | 2026-08-06 | 9 / flight 9 | 84 | glossary (12), how-to (12), industry (12), troubleshooting (12), outcomes (12), quoting (12), migration (12) | see git log | 7 agents; skipped the saturated planning cluster + rested concepts, weighting the under-built quoting (19->31) and migration (18->30) plus productive glossary/how-to/industry/troubleshooting/outcomes. SECOND INTERRUPTION: the process stopped all 7 agents after 55 of 84 landed; relaunched 6 continuation agents (glossary+how-to merged) to fill the 29-post gap, seeded with the 2026-08-06 posts on disk. Full 84, NO shortfall this flight (every cluster reached 12; agents rejected roadmap-only/unverifiable angles cleanly - setup-family-quality as roadmap A1, quoting-with-operator-skill as not in the quote-sim path, export-mask as a non-feature). Fixed 1 CTP negation ("not a capable-to-promise system" -> "hard capacity-reservation system"; phrase banned even negated) + 1 dangling cross-link to a never-written sibling. Also PUSHED the branch to origin for the first time (all 1,298 prior posts now on GitHub) before this flight's recovery. QA: 0 banned/em-dash/FCP/British/CTP/ControlTower, 84/84 author, 571/571 links resolve, 0 existing files touched. |
 | 2026-08-05 | 8 / flight 8 | 79 | glossary (12), how-to (12), platform (12), admin (12), walkthroughs (12), erp-integration (12), planning (7) | see git log | 7 agents, rotated onto the under-built admin (15->27) and walkthroughs (23->35) clusters + platform refresh (153->165) to rest the strained concepts seam. All 7 completed cleanly (no process interruption this flight). 6 clusters hit 12; planning hit an HONEST shortfall of 5 (cluster saturated at 44, only 7 uncovered mechanics remained) -> 79 net. How-to found a rich untapped seam (scenario step-overrides + config-export + Gantt display options, no shortfall). Every agent matched the live sibling category/pillar on disk. Fixed 1 British "catalogue"->"catalog". QA: 0 banned/em-dash/FCP/British/CTP/ControlTower, 79/79 author, 553/553 links resolve, 0 existing files touched. Product gaps logged: date-range/monthly capacity override has no UI entry point; shift-scoped downtime has no config screen; Is_Bottleneck/OnePerDay settable only via import; MPS behind a preview flag; schedule export is grid-snapshot only (not a round-trip module); security audit trail has no in-app browser. Planning now effectively mined out. |
 | 2026-08-04 | 7 / flight 7 | 81 | glossary (12), how-to (12), troubleshooting (12), outcomes (12), shop-floor (12), optimization (12), scheduling-concepts (9) | see git log | 7 agents into the deepest remaining clusters. INTERRUPTION: the process stopped all 7 agents mid-flight after 42 of 84 posts had landed (glossary complete; the other 6 partial). Stopped agents cannot be resumed, so relaunched 6 FRESH continuation agents seeded with the 2026-08-04 posts already on disk, each filling only its exact gap (concepts 10, troubleshooting 10, outcomes 7, optimization 6, how-to 5, shop-floor 4) and matching the live sibling convention. Net 81, not 84: concepts hit an HONEST shortfall of 3 (cluster ~89 posts already; only 9 genuinely distinct non-roadmap angles remained — flagged, not padded). Fixed 8 dangling cross-links: pre-stop posts linked to sibling slugs the stopped agents never wrote, repointed each to the real equivalent on disk. QA: 0 banned/em-dash/FCP/British/CTP/ControlTower, 81/81 author, 524/524 links resolve, 0 existing files touched. Durability proven: on-disk files survived the process stop with zero loss. |

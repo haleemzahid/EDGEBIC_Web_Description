@@ -1,0 +1,131 @@
+---
+title: "Keeping Job Numbers Aligned Between Your ERP and EDGEBIC"
+description: "How to keep work order and job identifiers consistent across your ERP and EDGEBIC: natural keys, order references, multi-line auto-numbering, and what breaks when they drift."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - job number alignment ERP scheduling
+  - work order identifier import
+  - order reference multi line jobs
+  - natural key matching import
+  - EDGEBIC job numbering
+  - ERP work order sync
+targetPhrase: "job number alignment between ERP and scheduling"
+wordCount: 1540
+readingTime: 8
+faqQuestions:
+  - question: "Should EDGEBIC job numbers match my ERP work order numbers?"
+    answer: "Yes, and it is the single most valuable convention in an ERP integration. The identifier is the natural key an import matches on, so an ERP number carried through unchanged means a repeat import updates the job you meant instead of creating a duplicate. It also means anyone on the floor, in planning, or in customer service can say one number and everyone finds the same job."
+  - question: "What happens when a multi-line order comes in from the ERP?"
+    answer: "When the export carries an order reference, rows sharing that reference group under one sales order and their jobs auto-number as the reference followed by a line number. A three-line order becomes three jobs that stay visibly related, so a planner can see the whole order at once and a customer question about the order finds every job behind it rather than one line of it."
+  - question: "What breaks if job numbers drift between the two systems?"
+    answer: "Repeat imports create duplicates instead of updating, because matching is on the identifier. The floor ends up reconciling two numbers by hand, actuals get logged against the wrong job, and reporting back to the ERP requires a lookup table nobody maintains. All three are avoidable by carrying the ERP identifier through unchanged from the first import."
+qaQuestions:
+  - question: "Our ERP work order numbers include a revision suffix that changes when the order is revised, so WO-4471 becomes WO-4471-R2. Our imports keep creating duplicates. What is the right convention?"
+    answer: "Export the stable part as the identifier and carry the revision as a separate descriptive column. Matching is on the identifier, so any suffix that changes over the life of an order guarantees a new job on every revision, which is exactly the duplication you are seeing. Map WO-4471 to the job identifier and put R2 wherever your team wants it visible, such as the description. The repeat import then updates the existing job, keeps its actuals, and shows the current revision. If you cannot change the export, normalize in the mask rather than by editing files, and check the result: a healthy repeat import reports mostly Reused and Updated, not mostly Created."
+  - question: "We renumbered our work orders during an ERP upgrade. Do we have to start the schedule from scratch?"
+    answer: "No, but you do need one deliberate pass rather than an ordinary import. A renumber means every incoming row looks new to the matcher, so a plain import creates a parallel set of jobs beside the old ones. The clean approach is to treat the renumber as a cutover: finish or close out the jobs running under the old numbers, then import the new numbering for open work only. Jobs already started keep their actuals under the old identifiers and complete normally, since completed work is never moved by a reschedule. Anything not yet started re-enters under the new number and reschedules cleanly. Run a reconciliation right after, because a renumber is the one event where a large Created count is correct and you want to confirm it matches the count of genuinely open orders."
+---
+
+**Carry your ERP's work order number through to EDGEBIC unchanged: it is the natural key that imports match on, so a stable identifier means repeat imports update the right job instead of creating duplicates, and one number identifies the work in planning, on the floor, and back in the ERP.** Identifier drift is the quietest and most expensive integration problem, because nothing errors. You just accumulate two of everything.
+
+EDGEBIC by User Solutions has run file-based ERP integrations since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, the shops with the smoothest daily rhythm are always the ones where a single number means the same job everywhere.
+
+## Why the identifier does more work than it looks
+
+An import mask matches rows against existing records on an identifier, case-insensitively. `WO-4471` finds `wo-4471`. That single behavior is what makes re-importing safe: run the same file twice and the second run reports Updated or Reused rather than doubling your data.
+
+Everything downstream depends on it:
+
+- **Repeat imports are idempotent.** A nightly or weekly refresh corrects and completes existing jobs instead of stacking new ones.
+- **Actuals attach to the right job.** Hours logged from the floor or imported from the ERP need a job to land on.
+- **Dates go back cleanly.** When you export the schedule to Excel and update your ERP, the number in the workbook is the number in the ERP.
+- **People communicate.** Customer service, planning, and the floor say one number.
+
+The [product master sync post](/blog/keeping-product-masters-in-sync-erp-edgebic) covers the same principle for item identifiers, where the stakes are identical.
+
+## The four outcomes tell you if alignment is holding
+
+Every row produces exactly one outcome: Created, Updated, Reused, or Failed. On a repeat import of open orders, the healthy shape is mostly Updated and Reused with a handful of Created for genuinely new orders.
+
+A repeat import that reports almost everything Created is telling you the key did not match. The usual causes:
+
+| Symptom | Likely cause |
+|---|---|
+| Everything Created on a repeat run | Identifier column shifted, or a prefix changed |
+| Duplicates that differ by a suffix | A revision or status code is inside the identifier |
+| Duplicates with invisible differences | Leading apostrophe or trailing space from a spreadsheet |
+| Some rows Created, most Reused | Genuinely new orders, healthy |
+
+The [import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist) makes this a ten-second check after every run.
+
+## Rule 1: the identifier must be stable for the life of the order
+
+This is the rule that breaks most often, and always for the same reason: something that changes has been baked into the number.
+
+Revision suffixes, status codes, release flags, and re-planned markers all belong in a separate column, not in the identifier. If `WO-4471` can become `WO-4471-R2` next week, the matcher sees a different job and creates one.
+
+Export the stable root as the identifier and carry the changeable part as a description or a separate field where planners can still see it.
+
+## Rule 2: do not invent a second numbering scheme
+
+It is tempting to give scheduling jobs their own sequence, especially when the ERP numbers look unwieldy. Resist it. A second scheme means a permanent lookup between two systems, maintained by hand, consulted by everyone, and wrong within a month.
+
+If the ERP number is genuinely unusable on a dispatch list, keep the ERP number as the identifier and put a friendlier label in the description. Displays can differ. Keys cannot.
+
+## Rule 3: use the order reference for multi-line orders
+
+When your work order export carries an order reference, rows sharing that reference group under one sales order and their jobs auto-number as the reference followed by a line number. A three-line customer order becomes three related jobs rather than three unrelated ones.
+
+This is worth setting up deliberately, because it changes what a planner can see at a glance. A customer calling about their order gets an answer covering every line, not the one line somebody happened to look at. The grouping also keeps a multi-line order visible as a unit on the [job schedule views](/blog/exporting-the-edgebic-schedule-back-to-your-erp) you export back.
+
+## Rule 4: decide early what an ERP job means to you
+
+Some ERPs issue one work order per end item. Others issue one per operation, or split a quantity across several releases. Before your first import, decide how those map:
+
+- **One work order equals one job.** The default and the simplest. Works when the ERP issues per end item.
+- **Several ERP releases equal several jobs.** Correct when the shop genuinely runs them as separate lots with separate setups.
+- **Operation-level work orders roll up into one job.** Correct when the ERP splits by operation but the shop runs the part as one flow. The [routing versus operations mapping guide](/blog/mapping-routings-vs-operations-from-your-erp) covers how operations reassemble into a routing, and [splitting one ERP operation into EDGEBIC steps](/blog/splitting-one-erp-operation-into-edgebic-steps) covers the reverse case.
+
+Whichever you pick, apply it consistently. A mixed convention is worse than either pure one.
+
+## Rule 5: normalize in the mask, not in the file
+
+Every fix described here belongs in the saved import mask rather than in a hand-edited copy of the export. A mask that strips a prefix or handles quoting applies on every future run automatically, while a hand-edited file is a step someone will skip on a Friday.
+
+The mask's text-enclosed-in-quotes setting handles RFC-4180 style quoting so values with embedded commas parse correctly rather than splitting into phantom columns, which is a common source of apparently-corrupt identifiers. The full option list is in [import masks explained](/blog/edgebic-import-masks-explained).
+
+## When numbers do have to change
+
+Renumbering happens: an ERP upgrade, a merged division, a new numbering standard. Treat it as a cutover rather than an ordinary import.
+
+1. Let jobs already started finish under their old identifiers. Their actuals stay attached and completed work is never moved by a reschedule.
+2. Import the new numbering for open, not-yet-started work only.
+3. Reconcile immediately. A renumber is the one event where a large Created count is correct, and you want to confirm it matches the count of genuinely open orders rather than exceeding it.
+
+The wider sequencing for a change of this size is in the [ERP and EDGEBIC go-live cutover plan](/blog/an-erp-and-edgebic-go-live-cutover-plan).
+
+## The payoff is a shorter day
+
+Aligned identifiers are what make the recurring routine take twenty minutes instead of an afternoon: export, pick the mask, run, read the counts, schedule, export the dates back. Nobody reconciles anything by hand because there is nothing to reconcile.
+
+From there the engine does the work: finite capacity across shifts and machine instances, work center groups, sequence-dependent setups, lot streaming, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine, the [ERP integration architecture](/edgebic-erp-integration) shows the import layer, and the [weekly sync routine](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine) has the cadence.
+
+## Check your own numbering
+
+Bring one work order export to [a demo](/contact-us). Looking at the identifier column together takes two minutes and usually settles the convention question for good.
+
+<Accordion title="Should EDGEBIC job numbers match my ERP work order numbers?">
+Yes, and it is the single most valuable convention in an ERP integration. The identifier is the natural key an import matches on, so an ERP number carried through unchanged means a repeat import updates the job you meant instead of creating a duplicate. It also means anyone on the floor, in planning, or in customer service can say one number and everyone finds the same job.
+</Accordion>
+
+<Accordion title="What happens when a multi-line order comes in from the ERP?">
+When the export carries an order reference, rows sharing that reference group under one sales order and their jobs auto-number as the reference followed by a line number. A three-line order becomes three jobs that stay visibly related, so a planner can see the whole order at once and a customer question about the order finds every job behind it rather than one line of it.
+</Accordion>
+
+<Accordion title="What breaks if job numbers drift between the two systems?">
+Repeat imports create duplicates instead of updating, because matching is on the identifier. The floor ends up reconciling two numbers by hand, actuals get logged against the wrong job, and reporting back to the ERP requires a lookup table nobody maintains. All three are avoidable by carrying the ERP identifier through unchanged from the first import.
+</Accordion>

@@ -1,0 +1,103 @@
+---
+title: "Comparing Two Optimizer Runs Before You Commit"
+description: "Running the optimizer twice with different goals costs a minute and shows you the trade space. Here is how to compare two proposals and pick the one to accept."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - comparing optimizer runs
+  - schedule what-if comparison
+  - optimizer goal comparison
+  - production scheduling trade-offs
+  - schedule optimization software
+  - discard and rerun
+targetPhrase: "comparing two optimizer runs"
+wordCount: 1450
+readingTime: 7
+faqQuestions:
+  - question: "Can I compare two optimizer proposals side by side?"
+    answer: "Not on one screen. The optimizer holds one proposal at a time, so comparing means running a goal, noting the numbers, discarding, and running the second goal. Discard leaves the database exactly as it was, so both runs measure against the same unchanged current plan and the comparison is fair. Copy each result from the Explain dialog and the two stories sit side by side in your notes."
+  - question: "Is it safe to run the optimizer several times in a row?"
+    answer: "Yes. A run computes in memory and holds its result on your screen only. Nothing is written until you press Accept, nothing is locked while a run is thinking, and colleagues keep working normally. Running all four goals back to back costs about two minutes at the default thirty second budget and leaves your plan untouched unless you choose to accept one."
+  - question: "Which numbers should I record when comparing runs?"
+    answer: "Record the four that move most: late jobs, weighted lateness in hours, makespan in hours, and the number of moves in the changes list. Late jobs and weighted lateness tell you the delivery outcome, makespan tells you the plan span, and the move count tells you the disruption cost. Setup hours matters too when you have setup data and are testing the Least setup time goal."
+qaQuestions:
+  - question: "I ran On-time first and Fastest overall finish and both look good. How do I choose?"
+    answer: "Compare the disruption against the gain. If On-time first takes late jobs from one to zero with six moves, and Fastest overall finish cuts four hours of makespan with twenty moves, ask which constraint is real this week. A customer date usually beats plan span. If your plant is capacity constrained and everything is comfortably on time, the shorter plan is the better buy."
+  - question: "If I discard a proposal, can I get it back?"
+    answer: "Not directly, but you can reproduce it exactly. The search is deterministic: the same inputs, the same goal, and the same seed produce the same candidates in the same order, so rerunning the discarded goal on unchanged data returns the same proposal. What breaks reproduction is the data changing underneath, for example actuals landing or a colleague rescheduling."
+---
+
+**Comparing two optimizer proposals means running one goal, recording its numbers, discarding, and running the second, because the optimizer holds one proposal at a time and Discard leaves your plan exactly as it was.** That sounds like a workaround and it is actually the safest possible arrangement: every run measures against the same unchanged current plan, so the two results are directly comparable rather than stacked on top of each other.
+
+EDGEBIC by User Solutions makes this cheap on purpose. A run costs the time budget you give it, typically thirty seconds, and it writes nothing. This post covers how to run a fair comparison, which numbers to record, and how to decide between two proposals that both look good.
+
+## Why sequential comparison is the honest kind
+
+If you could accept one proposal and then run a second on top of it, the second run would be measuring against the first, not against your real plan. Its numbers would look smaller, because the easy wins were already taken, and you would have no way to compare like with like.
+
+Running against the same baseline every time avoids that entirely. Discard drops the proposal and the database is byte for byte as it was, so the next run starts from the identical position. Both results are answering the same question about the same plan, and their numbers can be put in one table.
+
+The one thing that breaks the comparison is data changing between runs. If actuals land from the kiosk or a colleague reschedules while you are working, the baseline moved and the two runs are no longer measuring the same thing. The product notices this at Accept time and refuses a stale proposal rather than overwriting, with a banner offering to rerun on the latest data. See [optimizer staleness protection](/blog/staleness-protection-in-the-optimizer).
+
+## The comparison routine
+
+**Run the first goal.** Pick a goal, pick a time budget, run. Read the verdict.
+
+**Record four numbers.** Late jobs, weighted lateness in hours, makespan in hours, and the number of moves in the changes list header. Add setup hours if you have setup data.
+
+**Copy the Explain text.** The Explain dialog produces a plain-language story in five sections and copies to the clipboard. Paste it somewhere before you discard, and you have the whole run captured rather than four numbers scraped from a table.
+
+**Discard.** The plan is untouched.
+
+**Run the second goal** and repeat. Then compare.
+
+At the default thirty second budget, four goals take about two minutes plus reading time. That is a cheap way to see the whole trade space before disturbing anyone's day.
+
+## What a comparison table looks like
+
+Using the documented worked example as the shape, a comparison sheet reads something like this:
+
+| Measure | Current plan | On-time first | Fastest overall finish |
+|---|---|---|---|
+| Late jobs | 1 | 0 | 0 |
+| Weighted lateness (h) | 4.7 | 0.0 | 0.4 |
+| Makespan (h) | 22.0 | 18.0 | 16.5 |
+| Moves in changes list | n/a | 6 | 14 |
+
+Read it in two passes. First, did the goal deliver on its own terms? On-time first should show the best lateness numbers, Fastest overall finish the best makespan, Fewest changes the smallest move count, Least setup time the lowest changeover hours. If a goal did not win on its own measure, the plan is probably constrained by something sequencing cannot fix.
+
+Second, what did each cost? The move count is the disruption price. Fourteen moves for an extra ninety minutes of plan span is a different proposition from six moves for the same gain, especially mid-week.
+
+## Deciding between two good proposals
+
+Three questions settle most cases.
+
+**Which constraint is real this week?** A customer date usually beats plan span. Plan span usually beats changeover hours unless changeovers are genuinely your bottleneck. If everything is comfortably on time and the plant is full, the shorter plan is the better buy.
+
+**How committed is the floor?** On Monday morning nothing is set and a fourteen move proposal is fine. On Wednesday afternoon it is expensive, and the Fewest changes goal exists precisely for that situation because it only moves an operation when the gain clearly justifies the disruption. See [the Fewest changes preset](/blog/the-moststable-optimizer-preset-explained).
+
+**Does the move list contain anything you do not like?** The numbers are aggregate and the move list is specific. A proposal with better totals can still contain one move you know is wrong, because the optimizer reasons from master data and master data does not know a fixture is out for repair. See [reading the optimizer move list](/blog/reading-the-optimizer-move-list).
+
+## Comparing engines rather than goals
+
+The same routine works for comparing the two optimizer engines on one dataset, though the engine is set once in Options under Schedule rather than per run.
+
+The multi-run search reruns the scheduling engine with many different job orderings and returns the best complete schedule it found. Its badge reads best of N schedules tried, and it makes no claim beyond that honest search.
+
+The mathematical solver additionally computes how far any schedule could possibly go, so its badge reports a proven optimality gap, with a gap of zero reading as proven optimal. Both engines are clamped never worse than your current plan, and both build plans that respect every capacity constraint.
+
+Comparing them tells you something worth knowing: if the search and the solver land on the same plan and the solver proves the gap is zero, you know the search found the best answer, not just a good one. See [choosing the optimizer engine](/blog/choosing-the-optimizer-engine-multi-run-or-cp-sat).
+
+## Reproducing a run you discarded
+
+Discard does not archive the proposal, but it does not need to. The search is deterministic: the same inputs with the same goal and the same seed produce the same candidates in the same order. Rerunning a discarded goal on unchanged data returns the same proposal, and the seed is recorded in the run's statistics so a support case can be reproduced months later. See [deterministic schedule optimization](/blog/determinism-and-reproducibility-in-schedule-optimization).
+
+What breaks reproduction is the data moving. That is not a defect, it is the point: a plan built on last hour's actuals should not be reproducible as if it were current.
+
+## The bottom line
+
+Compare proposals by running one goal, recording late jobs, weighted lateness, makespan, and the move count, copying the Explain text, discarding, and running the next. Every run measures against the same unchanged plan, so the numbers are comparable, and nothing is written until you choose one and press Accept. Judge the winner by which constraint is real this week and how much disruption the floor can absorb. To try it, open the Optimizer tab in Schedule Jobs and run two goals back to back. For more, read the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide) and [what happens when you discard an optimized schedule](/blog/what-happens-when-you-discard-an-optimized-schedule), and explore the platform at [EDGEBIC](/edgebic).

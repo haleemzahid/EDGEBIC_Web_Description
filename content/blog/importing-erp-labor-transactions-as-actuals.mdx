@@ -1,0 +1,133 @@
+---
+title: "Importing ERP Labor Transactions as Scheduling Actuals"
+description: "How to turn your ERP's labor transactions into EDGEBIC actuals: which columns to export, how hours attach to a job and work center, and what a reschedule does with them."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - import ERP labor transactions actuals
+  - actuals import mask scheduling
+  - ERP time tickets scheduling
+  - actual hours finite capacity
+  - EDGEBIC actuals import
+  - shop floor hours from ERP
+targetPhrase: "import ERP labor transactions as actuals"
+wordCount: 1570
+readingTime: 8
+faqQuestions:
+  - question: "Can I feed my ERP's labor transactions into EDGEBIC instead of using a kiosk?"
+    answer: "Yes. If your ERP already collects time tickets or labor transactions, export them and import them through the actuals mask. The import needs a job number, a work center, and an actual date at minimum, plus the hours or pieces reported. That is the same data path a kiosk feeds, so shops that already have reliable time collection do not need to add a second capture point."
+  - question: "What does EDGEBIC do with imported actual hours?"
+    answer: "They become the record of what really happened, and a reschedule uses them rather than replanning over them. Completed work is never moved by a reschedule, and a partially finished job resumes from where its actuals left off with only the remaining work replanned. Imported hours also feed variance reporting, so you can compare planned against actual per work center."
+  - question: "How often should labor transactions be imported?"
+    answer: "Match the cadence to how you use the schedule. A shop that reschedules every morning imports last night's transactions before the run, which is the most common pattern. A shop that reschedules weekly imports weekly. What matters is that actuals land before the reschedule, because a reschedule with stale actuals replans work that is already done."
+qaQuestions:
+  - question: "Our ERP time tickets record hours against a work order and an operation number, but not against a work center. Can we still import them?"
+    answer: "You need to resolve the operation number to a work center, and the cleanest place to do it is in the export rather than in the mask. Most ERPs can join the time ticket to the routing operation on the same report, which gives you the work center on every row without any manual work. If the report cannot do the join, add a lookup column in the export using your routing file, since the operation-to-center relationship is stable and the mapping is a one-time build. Avoid guessing from the job's routing at import time: a job that ran an alternate machine would then have its hours credited to the wrong center, which quietly distorts both the schedule and your utilization reporting."
+  - question: "We import a full week of labor at once. Will re-importing an overlapping range double the hours?"
+    answer: "It depends on the option you choose, so pick deliberately and stick with it. The actuals import can either add reported values or replace what is already recorded for a job, work center, and date. If your export always covers a full period and re-runs are possible, replacing is the safer setting, because a repeated import then reproduces the same result rather than stacking. If your export is strictly incremental and never overlaps, adding is fine. The failure mode to avoid is mixing the two: an overlapping export run with an additive setting silently inflates hours, the affected work centers look busier than they are, and the next schedule pushes work out for capacity that was never actually consumed."
+---
+
+**If your ERP already collects labor transactions, export them and import them into EDGEBIC through the actuals mask: the schedule then knows what really happened, a reschedule preserves completed work instead of replanning it, and a partially finished job resumes from where its hours left off.** Shops with reliable time collection do not need a second capture point on the floor. The transactions they already record are exactly what the scheduler needs.
+
+EDGEBIC by User Solutions has taken shop floor hours from ERPs this way since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, the difference between a schedule that stays believable and one that drifts is almost always whether actuals get back into it.
+
+## Why the schedule needs actuals at all
+
+A plan without feedback is a forecast that never gets corrected. Actual hours do three specific jobs:
+
+- **They protect finished work.** Completed work is never moved by a reschedule, so anything already done stays where it is on the plan.
+- **They set the resume point.** A job that is 60 percent through an operation restarts the plan from that point rather than from the beginning, so only the remaining work is replanned.
+- **They feed variance.** Planned against actual, per work center, is what tells you which routing times are wrong and which machines run faster or slower than the standard says.
+
+The general behavior is covered in [how actuals flow into the schedule](/blog/how-actuals-flow-into-the-edgebic-schedule) and [what is actuals preservation on reschedule](/blog/what-is-actuals-preservation-on-reschedule).
+
+## What the import needs
+
+The actuals import matches hours to a specific piece of work, so it needs three anchors plus the reported values:
+
+| Column | Purpose |
+|---|---|
+| Job number | Which job the hours belong to |
+| Work center | Which resource consumed them |
+| Actual date | Which day the work happened |
+| Actual hours | What was reported |
+| Actual pieces | Optional, quantity completed |
+
+The job number is why identifier discipline matters so much. Matching is on the identifier, case-insensitively, so hours only find their job if the ERP number carried through unchanged on the order import. The conventions are in [keeping job numbers aligned](/blog/keeping-job-numbers-aligned-between-erp-and-edgebic).
+
+The step-by-step application view of the same import, including the replace and auto-calculate options, is in [how to import actuals from a file](/blog/how-to-import-actuals-from-a-file-in-edgebic).
+
+## Getting the work center onto the row
+
+This is the one column ERPs commonly omit. Many time tickets record hours against a work order and an operation number without naming a work center.
+
+Resolve it in the export, not at import time. Most ERPs can join the time ticket to the routing operation on the same report, which puts the work center on every row for free. If the report cannot join, add a lookup column using your routing file, since the operation-to-center relationship is stable and the mapping is a one-time build.
+
+Do not infer the center from the job's planned routing. A job that ran on an alternate machine would have its hours credited to the wrong center, which distorts both the resume point and your utilization reporting, and neither error announces itself.
+
+## Additive against replacing, and why you must choose
+
+The actuals import can either add the reported values or replace what is already recorded for a given job, work center, and date. Both are correct for different export shapes:
+
+- **Replacing** suits an export that always covers a full period, because a repeated or overlapping run reproduces the same result rather than stacking. This is the safer default for most shops.
+- **Adding** suits a strictly incremental export that never overlaps a previous run.
+
+The failure mode is mixing them. An overlapping export imported additively inflates hours silently. The affected centers look busier than they are, and the next schedule pushes work out for capacity that was never consumed. Pick one, write it into the mask, and keep the export shape consistent with it.
+
+## Unit conversion applies here too
+
+Labor transactions are frequently recorded in minutes, or in decimal hours with a different convention from your routing times. Set a conversion factor on the hours column in the mask and the multiplication happens before the value is stored: 0.016667 for minutes to hours, 0.000278 for seconds.
+
+Getting this wrong is the same clean-multiple error that shows up everywhere else in ERP integration, and the same fix applies. The wider treatment is in [mapping your ERP's units of measure](/blog/mapping-your-erps-units-of-measure-for-scheduling).
+
+## Sequence: actuals before the reschedule
+
+Order of operations in the daily or weekly routine matters more than frequency:
+
+1. Import master data changes if any: items, work centers, routings.
+2. Import new and revised work orders.
+3. **Import actuals.**
+4. Run the scheduler.
+5. Export the plan back.
+
+Actuals must land before the reschedule, because a reschedule with stale actuals replans work that is already finished. That is the single most common sequencing mistake, and it produces a schedule the floor immediately recognizes as wrong, which costs trust that takes weeks to rebuild.
+
+The full rhythm is in the [weekly ERP sync routine](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine); the higher-frequency version is in [scheduling a nightly export and import routine](/blog/scheduling-a-nightly-erp-export-import-routine).
+
+## Reconcile the counts, briefly
+
+Every row produces exactly one outcome: Created, Updated, Reused, or Failed, with a result dialog showing the counts and a per-run log recording each row. For actuals, two checks are worth thirty seconds:
+
+- **Failed rows.** Almost always a job number that does not exist yet, which means the order import ran after the actuals import or the order was closed in the ERP.
+- **Total hours.** Compare the sum of imported hours against the sum in your export. A clean multiple means a conversion factor; a partial figure means rows failed.
+
+The six-check version for all imports is in the [import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist).
+
+## When the ERP is not the right source
+
+Importing labor transactions works well when the ERP's time collection is timely and accurate. It works badly when transactions are entered a week later from paper, because the schedule is then always reacting to stale information.
+
+If that describes your shop, the alternative is capturing at the point of work rather than routing it through the ERP first. The [kiosk approach](/blog/how-kiosk-actuals-close-the-planning-loop) covers it. The two are not exclusive: some shops capture on the floor for scheduling and keep the ERP transactions for payroll and costing, since the two systems need the data for different reasons and at different speeds.
+
+## What the schedule does with them
+
+Once actuals are in, the engine plans around them: finite capacity across shifts and machine instances, work center groups, sequence-dependent setups, lot streaming with transfer batches, and mathematical optimization with a proven optimality gap, all applied only to the work that remains. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) shows where the actuals mask sits alongside the other four imports.
+
+## Bring a week of transactions
+
+Export one week of labor transactions and one week of work orders and [bring them to a demo](/contact-us). Watching a partially complete job reschedule from its actual resume point makes the behavior concrete faster than any description of it.
+
+<Accordion title="Can I feed my ERP's labor transactions into EDGEBIC instead of using a kiosk?">
+Yes. If your ERP already collects time tickets or labor transactions, export them and import them through the actuals mask. The import needs a job number, a work center, and an actual date at minimum, plus the hours or pieces reported. That is the same data path a kiosk feeds, so shops that already have reliable time collection do not need to add a second capture point.
+</Accordion>
+
+<Accordion title="What does EDGEBIC do with imported actual hours?">
+They become the record of what really happened, and a reschedule uses them rather than replanning over them. Completed work is never moved by a reschedule, and a partially finished job resumes from where its actuals left off with only the remaining work replanned. Imported hours also feed variance reporting, so you can compare planned against actual per work center.
+</Accordion>
+
+<Accordion title="How often should labor transactions be imported?">
+Match the cadence to how you use the schedule. A shop that reschedules every morning imports last night's transactions before the run, which is the most common pattern. A shop that reschedules weekly imports weekly. What matters is that actuals land before the reschedule, because a reschedule with stale actuals replans work that is already done.
+</Accordion>

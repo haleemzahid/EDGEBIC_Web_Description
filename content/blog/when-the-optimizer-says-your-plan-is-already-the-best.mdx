@@ -1,0 +1,88 @@
+---
+title: "When the Optimizer Says Your Plan Is Already the Best"
+description: "A no-improvement result is a positive finding, not a failure. Here is what the verdict means, what the nearest challenger line tells you, and what to do next."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - optimizer no improvement
+  - schedule already optimal
+  - nearest challenger
+  - production schedule validation
+  - schedule optimization software
+  - baseline retained
+targetPhrase: "optimizer found no improvement"
+wordCount: 1450
+readingTime: 7
+faqQuestions:
+  - question: "What does it mean when the optimizer finds no improvement?"
+    answer: "It means your current plan survived a serious challenge. The optimizer built and measured a set of complete alternative schedules, scored every one against the goal you chose, and none of them beat the plan you already have. The verdict reads like this: we tried 24 alternative schedules, your current plan is still the best. Nothing changes, nothing needs to be accepted, and you now have evidence that the plan is sound."
+  - question: "What is the nearest challenger line on a no-improvement result?"
+    answer: "The nearest challenger is the best alternative schedule the optimizer found even though it lost. The verdict names it and states how far behind it fell, for example how many more hours of weighted lateness it carried. It tells you whether your plan won comfortably or barely, which is useful context: a plan that wins by a wide margin is unlikely to be improved by a longer search."
+  - question: "Should I run the optimizer again after a no-improvement result?"
+    answer: "Usually not with the same settings, because the search is deterministic and will reproduce the same candidates. Two things are worth changing. A longer time budget lets the search evaluate more alternatives on larger job counts. A different goal asks a different question entirely, and a plan that is best for due dates may not be best for plan span or setup hours."
+qaQuestions:
+  - question: "I ran the optimizer three days in a row and got no improvement every time. Is it broken?"
+    answer: "Almost certainly not. A stable plan on a stable order book will keep winning, and the never-worse rule means the optimizer will always tell you so rather than invent a change. The result becomes interesting when it changes: a plan that has won all week and then loses tells you the order book shifted. Keep running it, and treat the no-improvement verdict as a clean bill of health that took seconds to get."
+  - question: "The verdict says no improvement, but the nearest challenger was only 0.4 hours behind. What does that tell me?"
+    answer: "It tells you the plan is close to a tie rather than a clear winner, and that small changes to the inputs could flip it. A challenger that close means a job added, a due date pulled in, or an hour of actuals landing could make a different ordering better tomorrow. Rerun after the next meaningful change rather than assuming today's answer holds all week."
+---
+
+**A no-improvement verdict means the optimizer built and scored a set of complete alternative schedules and none of them beat the plan you already have.** The screen says so plainly: we tried 24 alternative schedules, your current plan is still the best. That is a positive finding. Your plan just passed a test that took seconds and cost nothing, and you have a number to quote when someone asks whether the schedule could be better.
+
+EDGEBIC by User Solutions reports this outcome as proudly as it reports an improvement, because the alternative would be dishonest. An optimizer that always finds something to change is either overfitting or ignoring its own baseline. This post covers what the verdict is actually telling you, how to read the nearest challenger line, and what is and is not worth doing next. For the rule that produces this behavior, see [the never-worse guarantee](/blog/the-never-worse-guarantee-in-schedule-optimization).
+
+## Why no change is a real answer
+
+Every optimizer run starts by producing the baseline: the plan the unchanged scheduling engine builds from your current inputs. That baseline is two things at once. It is the seed the search starts from, and it is the floor the result is measured against. After the search finishes, the best alternative found is compared directly against the baseline under the goal you chose. If it does not beat the baseline outright, the baseline is what you are shown.
+
+That comparison is enforced in the product, not merely promised. It is the third check on the safety strip that sits under every result: nothing saved yet, completed work untouched, never worse than current plan. So a no-improvement verdict is the guarantee doing its job. The optimizer looked hard, found nothing better, and refused to manufacture a change so it would have something to report.
+
+## Reading the nearest challenger
+
+A no-improvement verdict often carries a second line naming the nearest challenger: the best alternative schedule found, and how far behind it finished. It might read that the closest alternative carried some number of additional hours of weighted lateness.
+
+That gap is the most useful part of the result:
+
+| Challenger gap | What it suggests |
+|---|---|
+| Wide, several hours behind | Your plan is a clear winner; a longer search is unlikely to change that |
+| Narrow, a fraction of an hour | The plan is close to a tie and small input changes could flip it |
+| No challenger reported | The search found nothing worth naming, usually a very small or very constrained job set |
+
+A narrow gap is a prompt to rerun sooner. A wide gap is permission to stop thinking about it until the order book moves.
+
+## What the result does not mean
+
+It does not mean the plan is mathematically optimal. The multi-run search evaluates many complete schedules and reports the best one it found, which is an honest search rather than a proof. Its badge always reads best of N schedules tried. If you want a proof, the mathematical solver engine adds one: its badge reports a proven optimality gap, and a gap of zero reads as proven optimal. A no-improvement verdict from the solver with a zero gap is a much stronger statement than the same verdict from the search. See [choosing the optimizer engine](/blog/choosing-the-optimizer-engine-multi-run-or-cp-sat) for the difference.
+
+It also does not mean nothing could ever improve the plan. The optimizer's lever is the order jobs are taken. It does not add capacity, change routings, or move a due date. If the plan is constrained by one long routing on a saturated machine, no sequence fixes that, and the honest answer is the one you got.
+
+## What to try next
+
+Three moves are worth making, in this order.
+
+**Change the goal.** A plan that is best for due dates is not necessarily best for plan span or changeover hours. Running Fastest overall finish or Least setup time against the same data asks a genuinely different question, and each is guaranteed never worse than your plan on its own terms. Trying costs a run and a discard.
+
+**Raise the time budget.** The search is bounded by wall clock, with 10, 30, and 60 second options and 30 as the default. On a large job count, a longer budget evaluates more alternatives. On a small job count it changes nothing, because the search already enumerated every ordering.
+
+**Do not just rerun the same settings.** The search is deterministic: the same inputs with the same seed produce the same candidates in the same order. That property is what makes results reproducible for a support case, and it also means an identical rerun is a wasted minute. See [deterministic schedule optimization](/blog/determinism-and-reproducibility-in-schedule-optimization).
+
+## When a locked plan explains the result
+
+If you are running the mathematical solver and the badge reads that there is nothing to optimize because some number of jobs use features not yet solver-optimized, that is a different message from a plain no-improvement verdict. It means every job in scope uses a capability the solver reproduces exactly rather than rearranging, such as multi-instance work centers, one-per-day work centers, transit days, lot streaming, parallel processing, or alternate work centers. The solver verified the plan and changed nothing, and it claims no optimality gap in that state.
+
+The fix is to switch to the multi-run search, which reorders whole jobs regardless of the routing features they use. Open the Explain dialog first to see the per-job reasons. For the full mechanism, read [how the optimizer locks features it does not model](/blog/how-the-optimizer-locks-features-it-does-not-model).
+
+## Use it as a routine check
+
+The cheapest way to use a no-improvement result is as a habit. Run the optimizer after every meaningful scheduling run. It takes the seconds you gave it, it cannot change anything without your Accept, and the answer is useful either way. An improvement gives you a better plan. A no-improvement verdict gives you a defensible statement that the plan withstood a real search, with the number of alternatives tried printed on the screen.
+
+That statement is worth something in a production meeting. User Solutions has been building finite capacity scheduling since 1991, and the recurring objection from the floor has never been that the math is wrong. It is that nobody can say why today's plan is the plan. A verdict naming the number of alternatives tested answers that in one line.
+
+## The bottom line
+
+No improvement means your plan beat every alternative the optimizer built, under the goal you chose, with the never-worse rule guaranteeing you were never at risk of a downgrade. Read the nearest challenger gap to judge how comfortably it won, then change the goal or the time budget rather than repeating the same run. To see it on your own plan, open the Optimizer tab in Schedule Jobs and run. For more, read the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide) and explore the platform at [EDGEBIC](/edgebic).

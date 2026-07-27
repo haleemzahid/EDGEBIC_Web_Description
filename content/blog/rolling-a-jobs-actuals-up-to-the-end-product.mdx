@@ -1,0 +1,105 @@
+---
+title: "Rolling a Job's Actuals Up to the End Product in EDGEBIC"
+description: "Actuals are captured per operation, but planners ask about the job. See how EDGEBIC rolls operation actuals into one end-product view and when a job counts as complete."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - end product actuals rollup
+  - job percent complete
+  - manufacturing job progress
+  - actual hours by job
+  - job completion rule
+  - production progress tracking
+targetPhrase: "end product actuals rollup"
+wordCount: 1360
+readingTime: 7
+faqQuestions:
+  - question: "What is an end-product actuals rollup in EDGEBIC?"
+    answer: "An end-product actuals rollup is a single read-only view of a whole job's real progress against the one item it produces. It aggregates the job's operational steps into one actual start, one actual end, total actual hours and pieces, total planned hours, a percent complete, and a completion flag. It is the answer to how is this job doing, rather than how is operation 30 doing."
+  - question: "When does a job count as complete in the rollup?"
+    answer: "A job counts as complete only when every operational step is finished. Until then the rollup's actual end stays empty, even if the last step in the routing has already been marked done. That rule prevents a job from being declared finished because one operation wrapped up early while another is still running, which is the classic way a progress report tells a comfortable lie."
+  - question: "Is percent complete based on hours or on pieces?"
+    answer: "Percent complete is hours-primary: actual hours divided by planned hours, with a pieces-based fallback for lines that only carry punch counts. It is forced to 100 percent only when every operational step is genuinely complete. Using hours as the primary basis matches how the job view rolls up its own numbers, so the same job reads the same way on both surfaces."
+qaQuestions:
+  - question: "My job shows 96 percent complete but the report will not call it finished. Is something stuck?"
+    answer: "Almost certainly one operation is still open. Percent complete measures logged hours against planned hours, so a job can reach the high nineties while a short final inspection step has never been started or marked complete. Open the job's step list and look for the operation with no actual end. Completion is an all-steps rule, not a threshold, and that is deliberate."
+  - question: "Does the rollup double-count a job that builds sub-assemblies?"
+    answer: "No. The rollup aggregates operational steps only and excludes sub-assembly rollup rows and component split rows, so hours that appear both on a component line and on its parent are counted once. If your total looks inflated, check that you are reading the end-product rollup and not summing every row in a grid that includes the component detail alongside the parent."
+---
+
+**In EDGEBIC by User Solutions, the end-product actuals rollup aggregates every operational step of a job into one read-only picture of the finished item: actual start, actual end, actual hours and pieces, planned hours, percent complete, and a completion flag.** Actuals are captured per operation because that is where work happens. Planners, customers, and shipping ask about the job. The rollup is the bridge, and it has one strict rule at its center: the job is not complete until all of its operations are.
+
+If you have ever looked at a progress report that called a job finished while a machine was still running part of it, this article explains the rule that prevents that.
+
+## Two Levels of Truth
+
+Every scheduled operation carries its own actuals: when it really started, how many hours were logged on each date, how many good pieces came off, and when it finished. That granularity is what makes [shop floor data collection](/blog/edgebic-shop-floor-guide) useful for capacity and variance work.
+
+But a job is a promise about one item. When a customer service rep asks whether order 1010 will ship Friday, nobody wants a list of eleven operations. They want one start, one finish, one percentage. Building that summary well is harder than it looks, because a job's rows are not all the same kind of thing.
+
+| Row type | Counted in the rollup? |
+|---|---|
+| Operational step on a work center | Yes |
+| Sub-assembly rollup row | No, it would double-count its children |
+| Component split row | No, same reason |
+| Material step with no work center | No hours to contribute |
+
+Filtering to operational steps only is what keeps a job that builds sub-assemblies from reporting inflated hours. For the vendor-neutral definition of the pattern, see [what is an end-product actuals rollup in manufacturing](/blog/what-is-an-end-product-actuals-rollup-in-manufacturing).
+
+## The Completion Rule
+
+The rollup's actual end stays empty until every operational step is done. Not the last step in sequence. Every step.
+
+This sounds pedantic until you have seen the failure it prevents. Consider a job whose routing branches: a machining path and a separate finishing path that rejoin at final assembly. The machining path finishes Tuesday. If completion keyed on any step finishing, or on the highest-sequence step finishing, the job would report complete while a second path was still in the middle of its work. Ship dates would be promised against it. The floor would know better and the system would not.
+
+Requiring all operational steps to be finished makes the flag honest in every routing shape: straight-line, branching, parallel, or sub-assembly. It is the job-level equivalent of the discipline described in [why one clean operation record matters](/blog/why-one-clean-operation-record-matters).
+
+## How Percent Complete Is Calculated
+
+Percent complete is hours-primary:
+
+```
+percent complete = actual hours logged / planned hours
+```
+
+forced to 100 only when the completion rule above is satisfied. For lines that carry punch counts but no meaningful hours, a pieces-based fallback fills in.
+
+Choosing hours as the primary basis was a correction of a real problem. Pieces can be derived from a rate, and a derived piece count on a work center with no cycle time can land at nearly zero, which is enough to drag a half-finished job's percentage down toward zero and make a healthy job look stalled. See [when the kiosk cannot compute pieces](/blog/when-the-kiosk-cannot-compute-pieces) for how a zero rate happens. Hours come from the punch clock and cannot evaporate that way.
+
+Using hours also keeps the number consistent across surfaces: the job view's own rollup and the progress report now read the same way for the same job, so a planner and a supervisor looking at two different screens see one figure.
+
+## A Worked Example
+
+Job MO-1010, five operational steps, 32 planned hours.
+
+| Step | Work center | Planned h | Actual h | Actual end |
+|---|---|---|---|---|
+| 10 | Saw | 3.0 | 3.4 | Mon 11:00 |
+| 20 | Mill-1 | 8.0 | 7.6 | Tue 16:00 |
+| 30 | CNC-1 | 12.0 | 12.9 | Wed 15:30 |
+| 40 | Finish | 7.0 | 6.8 | Thu 14:00 |
+| 50 | QC | 2.0 | 0.4 | not set |
+
+The rollup reads: actual start Monday 07:30, actual end empty, actual hours 31.1, planned hours 32.0, percent complete 97 percent, complete false. QC has hours logged but no finish, so the job is not done and its end date is withheld.
+
+When the inspector taps Complete Operation on step 50, the rollup's actual end appears, the flag flips, and percent complete is forced to 100 regardless of the raw hours ratio. Nothing else needed to be touched.
+
+## Where You See It
+
+The rollup drives the job-level answer wherever one is needed: the job progress report, which lists every manufacturing order with planned hours, actual hours, percent complete, due date, and days versus due; the job view's header figures; and the completion state on [the Actual Live screen](/blog/the-actual-live-screen-explained), where a job's routing diagram shows each node's status and the end item derives its own state from the steps feeding it.
+
+Because it is a single canonical source, all of those surfaces agree. A report and a screen disagreeing about whether a job is finished is a class of support call that a shared rollup removes entirely.
+
+## What It Does Not Do
+
+The rollup is read-only. It never writes actuals, never marks anything complete, and never moves a plan. It observes. Logging happens where it always happens: at the kiosk with an operator's taps, or in the planner's Log Actuals dialog. See [logging actuals from the planner](/blog/logging-actuals-from-the-planner-in-edgebic).
+
+It also does not judge lateness by itself. Days versus due comes from comparing the rollup's dates to the order's due date, which is a reporting question rather than a rollup one.
+
+## The Bottom Line
+
+Operations are where actuals are captured. Jobs are what people ask about. The end-product rollup turns one into the other by aggregating operational steps only, holding the actual end back until every step is truly finished, and computing percent complete from hours rather than a derived piece count. That combination is what makes a job progress number worth quoting to a customer. Follow the rest of the loop in the [shop floor execution guide](/blog/edgebic-shop-floor-guide), or see the platform at [EDGEBIC](/edgebic).

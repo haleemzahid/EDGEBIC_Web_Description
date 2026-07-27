@@ -1,0 +1,82 @@
+---
+title: "Why the Optimizer Never Applies Changes Automatically"
+description: "Deferred apply is a design decision, not a missing feature. Here is why a proposal waits for a planner, and what automatic application would cost you on the floor."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - deferred apply scheduling
+  - planner authority
+  - optimizer accept step
+  - automatic rescheduling risk
+  - schedule optimization software
+  - schedule nervousness
+targetPhrase: "why the optimizer never applies changes automatically"
+wordCount: 1450
+readingTime: 7
+faqQuestions:
+  - question: "Can the optimizer be set to apply its changes automatically?"
+    answer: "No, and that is deliberate. Every optimizer proposal lives only on the screen until a planner presses Accept, which is the single action that writes to the plan. The design treats the optimizer as an analyst and the planner as the decision maker. Automatic application would let the plan change with no human aware of it, which is the fastest way to lose a floor's trust in a scheduling system."
+  - question: "What is deferred apply in production scheduling?"
+    answer: "Deferred apply means the software computes a proposed change, shows it to you in full, and waits. Nothing is written until you commit. In EDGEBIC the optimizer follows this pattern strictly: a run holds its result in memory, the comparison screen shows the verdict, the measures, and every changed operation, and only Accept persists anything. Discard leaves the database exactly as it was."
+  - question: "Does waiting for a planner make the optimizer less useful?"
+    answer: "No, because the review takes about thirty seconds. The move list shows only the operations that actually changed, so a proposal on a plan with hundreds of operations may be a dozen rows. You read the measures, scan the moves, and decide. The cost of that half minute is far lower than the cost of a supervisor discovering at shift start that the day changed overnight."
+qaQuestions:
+  - question: "I trust the optimizer. Why should I still read the proposal before accepting?"
+    answer: "Because you know things the software does not. A tool is out for repair, an operator is off, a customer called this morning. The optimizer reasons from the master data it has, and the master data is never complete. Reading a dozen move rows is where your knowledge enters the decision. If everything looks right, Accept takes one click and the audit record captures why."
+  - question: "What stops someone else changing the plan while I am reviewing a proposal?"
+    answer: "Nothing stops them, and nothing needs to. Your proposal is held in memory and does not lock anything, so colleagues keep working normally. If the plan does move while you read, Accept refuses rather than overwrite their work: a banner appears asking you to rerun on the latest data, with a button that does it. You never silently commit a stale answer."
+---
+
+**The optimizer never applies its own changes because the planner is the decision maker and the optimizer is the analyst.** A run computes entirely in memory, shows you the result in full, and waits. Accept is the single action in the whole feature that writes anything. Discard leaves the database byte for byte as it was, and closing the application discards a pending proposal too, which is always safe because nothing was saved.
+
+EDGEBIC by User Solutions treats this as a contract rather than a preference, and it is printed on the screen: the three promises under every result read nothing saved yet, completed work untouched, and never worse than current plan. This post explains why that design is the right one, and what an auto-applying optimizer would actually cost you.
+
+## What automatic application would break
+
+Consider what the floor does with a schedule. A supervisor prints the day at seven in the morning, sets up the crew, and assigns operators by eight. That printed plan is a commitment made to people, not just a row in a database.
+
+Now imagine an optimizer that applies its own results. At ten o'clock a sales order lands, a background run fires, and an eleven o'clock job moves from one machine to another because the reorder freed a better one. The supervisor's operator assignment is now wrong. One machine goes idle for half an hour, another has a setup nobody prepared, and two people ask why. Repeat that for a fortnight and supervisors stop looking at the live system entirely. They run the shift from yesterday's printout, and the scheduling system becomes an expensive record of what somebody once intended.
+
+That failure mode has a name in the scheduling literature: schedule nervousness. The plan changes so often that nobody can act on it. Deferred apply is the direct answer, because a change only reaches the floor when a person decided it should.
+
+## Why the review is fast enough to be honest
+
+An approval step that takes twenty minutes gets skipped, so the design has to make review quick. Three things do that.
+
+The move list shows only what changed. On a plan with two hundred operations, a proposal may move twelve. Those twelve get a row each with the job, the work center, the current start, the proposed start, and a short reason such as starts four hours earlier. The other one hundred and eighty eight are not listed, which is both faster to read and a quiet confirmation that they did not move. See [reading the optimizer move list](/blog/reading-the-optimizer-move-list).
+
+The measures are stated as deltas in words. The comparison table gives the current value, the proposed value, and a change cell that spells the direction out, such as a down arrow followed by one better. You never interpret a color.
+
+The verdict is one sentence. Something like: this plan makes one more job on time, reduces lateness by 4.7 hours, nothing already started was touched. Read the sentence, scan the moves, decide.
+
+## What you know that the software does not
+
+The strongest argument for a human in the loop is not caution, it is information. The optimizer reasons from master data: routings, hours, calendars, capacities, due dates, priorities. That data is never complete. A fixture is out for repair. An operator who is the only one certified for a process is off tomorrow. A customer called this morning and moved a date that has not been entered yet.
+
+None of that is in the model, and all of it can make a technically better plan a practically worse one. The thirty seconds spent reading a move list is where your knowledge enters the decision. That is not overhead, it is the point.
+
+## Accept is a decision with a record
+
+Because a person decides, the decision can be recorded, and it is. Accept persists the proposal through the same pipeline a normal scheduling run uses, with the same protections for recorded work, and writes one audit record. That record carries the goal you chose, the measures before and after, the moves, and the seed that reproduces the run.
+
+The Explain dialog shows the same text at the moment you accept, and it copies to the clipboard so you can email it to a supervisor. Months later, the audit trail tells the identical story. An automatic optimizer could write an audit record too, but the record would say the software decided, which answers nobody's question in a production meeting. See [the optimizer Explain dialog and audit trail](/blog/the-optimizer-explain-dialog-and-audit-trail).
+
+## Deferred apply is a pattern, not a one-off
+
+The same discipline runs elsewhere in the product. Dragging a bar on the Gantt stages the change and waits for a save. Replacing a work center on a scheduled operation stages a pending change rather than rewriting the plan underneath you. In each case the software computes the consequence, shows it, and lets you commit or walk away.
+
+That consistency matters more than any single instance of it. A planner who learns once that nothing in the schedule changes without a save carries that expectation everywhere, and stops treating the software as something that might surprise them.
+
+## What you give up, honestly
+
+There is a real trade, and it is worth naming. An auto-applying optimizer could run continuously and keep the plan at its best all day without anyone thinking about it. Deferred apply means the plan is only as optimized as your last accepted run.
+
+In practice that trade favors deferred apply for two reasons. First, a run costs seconds, so running after every meaningful scheduling run keeps you close to current. Second, a continuously reoptimized plan is precisely the nervous plan that supervisors stop trusting. The value of a schedule is not only its quality, it is the confidence that it will still be the schedule when the shift starts.
+
+## The bottom line
+
+The optimizer never applies changes on its own because a schedule is a commitment to people, and commitments need an owner. A run writes nothing, the comparison screen makes review a thirty second job, and Accept is the one action that commits, with an audit record naming the goal, the numbers, and the moves. Discard costs nothing and leaves your plan untouched. To see it, open the Optimizer tab in Schedule Jobs and run once. For more, read the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide), [what happens when you discard an optimized schedule](/blog/what-happens-when-you-discard-an-optimized-schedule), and [the Fewest changes preset](/blog/the-moststable-optimizer-preset-explained), and explore the platform at [EDGEBIC](/edgebic).

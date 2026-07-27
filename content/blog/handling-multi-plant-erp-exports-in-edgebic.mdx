@@ -1,0 +1,136 @@
+---
+title: "Handling Multi-Plant ERP Exports in EDGEBIC"
+description: "How to import ERP data for several plants into EDGEBIC: naming work centers per site, filtering exports, modeling transit between plants, and deciding one model or several."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - multi plant ERP export scheduling
+  - multi site production scheduling import
+  - plant filter ERP export
+  - transit days between plants
+  - EDGEBIC multi plant integration
+  - departments work center grouping
+targetPhrase: "multi-plant ERP export scheduling"
+wordCount: 1590
+readingTime: 8
+faqQuestions:
+  - question: "Should each plant get its own EDGEBIC model or should they share one?"
+    answer: "Share one model when work moves between plants, and keep them separate when it does not. A part that is machined at one site and finished at another needs both sites in the same model, because the routing has to cross the boundary. Sites that make different products for different customers with no shared work have nothing to gain from a shared model and are simpler apart."
+  - question: "How do I keep two plants' work centers from colliding on import?"
+    answer: "Put the site into the work center identifier, so HOU-MILL-2 and CLE-MILL-2 are distinct records rather than one machine that appears to exist in two places. Matching is on the identifier and is case-insensitive, so a shared name across sites silently merges capacity from both. Prefix the identifier once, use the same prefix in the routing export, and the collision cannot happen."
+  - question: "How does a schedule account for shipping time between plants?"
+    answer: "A routing step can carry transit days, applied after the operation finishes and before the next step can start, in either calendar days or working days. So a step that ends Tuesday at one site with four transit days lets the receiving site's step start the following Monday. That models the physical move honestly instead of pretending the part teleports."
+qaQuestions:
+  - question: "We have three plants and our ERP exports everything in one file with a plant column. Do we filter before export or after?"
+    answer: "Filter in the export where you can, because it keeps every file small, readable, and obviously scoped. Most ERP report writers accept a plant parameter, so you end up with three routing exports and three order exports instead of one large one, each feeding the same masks. If the report cannot filter, the fallback is to make the plant visible in the identifiers themselves, since a work center prefixed HOU or CLE is unambiguous no matter what file it arrives in. What you should not do is rely on remembering which rows belong where. A single unfiltered file imported into a shared model works fine as long as the identifiers carry the site, and it becomes a problem the moment two sites share a machine name."
+  - question: "Our part is machined in Texas and heat treated in Mexico, then comes back. How does that routing schedule?"
+    answer: "As one routing with transit days on the crossing steps, which is exactly the case a shared model exists for. Suppose machining takes 8 hours in Texas, heat treat takes 2 hours in Mexico with 4 transit days to get there, and inspection back in Texas takes 1 hour with 4 transit days to return. The schedule plans machining against the Texas center's real shifts and instance count, then holds the heat treat step until the transit has elapsed, then holds inspection until the return transit has elapsed. Each site's work centers keep their own shift calendars, so a Mexican holiday does not consume Texas capacity and vice versa. The result is a lead time that reflects the actual movement rather than a sum of run times, which is usually a much longer and much more honest number."
+---
+
+**When your ERP holds several plants, decide first whether work moves between them: if it does, import every site into one model with plant-prefixed work center identifiers and transit days on the crossing routing steps, and if it does not, keep the sites in separate models.** The import mechanics are identical either way. What changes is scope, naming, and whether a routing has to cross a boundary.
+
+EDGEBIC by User Solutions has scheduled multi-site manufacturers since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, including Cummins across 33 locations, the pattern that holds is simple: model the sites together only where the work is together.
+
+## The decision that comes first
+
+Everything else follows from one question: does a part ever start at one site and finish at another?
+
+**No shared work.** Two plants making different products for different customers, each with its own machines and its own orders. Nothing connects them in a routing. Separate models are simpler: smaller data, faster schedules, and each planner sees only their own site.
+
+**Shared work.** A part machined at one site and finished at another, or a plant that offloads to a sister site when it is full. The routing crosses the boundary, so both sites must be in the same model or the crossing step has nothing to point at.
+
+**Mixed.** Most groups. The usual answer is one model per cluster of sites that genuinely exchange work, not one model for the whole company. The wider platform view of multi-site behavior is in [scheduling work that moves between plants](/blog/multi-plant-scheduling-with-transit-times-edgebic).
+
+## Naming: put the site in the identifier
+
+This is the one convention that prevents a whole class of silent errors.
+
+Matching on import is by identifier, case-insensitively. If Houston and Cleveland both have a work center called `MILL-2`, a shared model treats them as one machine and merges their capacity. Nothing errors. The schedule simply believes you have twice as many mills as you do, in a place where none of them are.
+
+Prefix the identifier with the site: `HOU-MILL-2` and `CLE-MILL-2`. Then:
+
+- The work center import creates two distinct records.
+- The routing import matches the right one, because the same prefix appears in the routing export.
+- A planner reading a dispatch list can see where the work is without a lookup.
+
+Do the same for products where a part number genuinely differs by site. Where a part number is the same across sites because it is the same part, leave it alone. Products do not hold capacity, so they do not collide the way centers do.
+
+## Filtering the export
+
+Most ERPs export multi-plant data with a plant or site column. Two workable approaches:
+
+**Filter in the report.** Pass a plant parameter and get one file per site. Each file feeds the same saved mask, so you build the mask once and run it three times. Files stay small and obviously scoped, and a mistake is visible from the filename.
+
+**Export everything, rely on identifiers.** One large file for all sites, imported once into the shared model. This works cleanly as long as the site is carried inside the identifiers. It is the right approach when work crosses sites anyway, because you want the whole picture in one pass.
+
+What does not work is an unfiltered file imported into a per-site model, because rows from other sites will create work centers and orders that do not belong there. If your models are separate, your exports must be filtered.
+
+## Shift calendars stay per site
+
+Each work center carries its own shift assignment, which is what keeps sites honest in a shared model. A plant in Mexico working Monday to Saturday with its own holiday calendar, and a plant in Ohio working Monday to Friday with US holidays, are simply two sets of centers with two sets of shifts.
+
+That means:
+
+- A holiday at one site does not consume capacity at the other.
+- A second shift added at one site does not inflate the other's availability.
+- Utilization reporting reads per center, so it reads per site by construction.
+
+Set the standard pattern first and override the exceptions, rather than trying to specify every calendar up front. The [work center list guide](/blog/building-a-work-center-list-when-your-erp-has-none) covers the build order.
+
+## Transit days: the crossing mechanism
+
+A routing step can carry transit days, applied after the operation finishes and before the next step may start. Transit can be counted in calendar days or in working days, which matters when a four-day move spans a weekend.
+
+A worked example makes the effect concrete:
+
+| Step | Site | Hours | Transit after |
+|---|---|---|---|
+| 10 Machine | Texas | 8 | 4 days |
+| 20 Heat treat | Mexico | 2 | 4 days |
+| 30 Inspect | Texas | 1 | none |
+
+Machining plans against the Texas center's real shifts and instance count. Heat treat cannot start until the four transit days have elapsed, and inspection waits for the return leg. The resulting lead time is around nine days rather than the eleven hours of run time, which is the honest number and usually the one nobody had written down.
+
+Where the same operation can be done at more than one site with different transit, keep the transit value on the step that describes that route. The routing import carries these columns like any other, and the field-level detail is in [mapping routings versus operations from your ERP](/blog/mapping-routings-vs-operations-from-your-erp).
+
+## Grouping for readability
+
+Work centers can be grouped by department, which is how a multi-site model stays navigable once it holds sixty centers instead of twelve. Group by site, or by site and area, whichever matches how your planners think.
+
+Where several sites hold genuinely interchangeable machines and a job could legitimately run at either, a [work center group](/blog/edgebic-work-center-groups-explained) models that pool with a per-member factor, so a slower or more expensive site remains a valid choice that the schedule can select when the primary is full. Use it deliberately, and only where offloading is a real option, because a pool that crosses a plant boundary implies a shipment.
+
+## Import order does not change
+
+Multi-plant adds scope, not steps. The recurring routine is the same:
+
+1. Items
+2. Work centers
+3. Routings
+4. Work orders
+5. Actuals
+6. Run the scheduler, then export the plan back
+
+Reconcile after each import. The check that matters most in a multi-site model is the orphan work center check, because a routing that names an unprefixed center will auto-create it as an empty, siteless machine with no shifts. The six checks are in the [import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist), and the cadence is in the [weekly sync routine](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine).
+
+## Then the engine plans across the group
+
+With per-site centers, per-site calendars, and honest transit, the full engine applies across the whole model: finite capacity across shifts and machine instances, sequence-dependent setups, lot streaming with transfer batches, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine, the [ERP integration architecture](/edgebic-erp-integration) shows the import layer that every ERP uses, and the [go-live cutover plan](/blog/an-erp-and-edgebic-go-live-cutover-plan) sequences the rollout when more than one site is involved.
+
+## Model your own sites
+
+Bring exports from two plants, including one routing that crosses between them, to [a demo](/contact-us). Watching the transit days push a receiving step out is the quickest way to see whether one model or several is right for your group.
+
+<Accordion title="Should each plant get its own EDGEBIC model or should they share one?">
+Share one model when work moves between plants, and keep them separate when it does not. A part that is machined at one site and finished at another needs both sites in the same model, because the routing has to cross the boundary. Sites that make different products for different customers with no shared work have nothing to gain from a shared model and are simpler apart.
+</Accordion>
+
+<Accordion title="How do I keep two plants' work centers from colliding on import?">
+Put the site into the work center identifier, so HOU-MILL-2 and CLE-MILL-2 are distinct records rather than one machine that appears to exist in two places. Matching is on the identifier and is case-insensitive, so a shared name across sites silently merges capacity from both. Prefix the identifier once, use the same prefix in the routing export, and the collision cannot happen.
+</Accordion>
+
+<Accordion title="How does a schedule account for shipping time between plants?">
+A routing step can carry transit days, applied after the operation finishes and before the next step can start, in either calendar days or working days. So a step that ends Tuesday at one site with four transit days lets the receiving site's step start the following Monday. That models the physical move honestly instead of pretending the part teleports.
+</Accordion>

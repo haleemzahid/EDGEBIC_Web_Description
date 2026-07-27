@@ -1,0 +1,86 @@
+---
+title: "How the Optimizer Is Verified Against Public Benchmarks"
+description: "The solver is checked nightly against a public job shop benchmark with a known optimal answer, plus parity, determinism, and never-worse tests. Here is what each proves."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: Schedule Optimization
+author: user-solutions
+cluster: edgebic-optimization
+pillarSlug: edgebic-optimizer-guide
+keywords:
+  - job shop benchmark
+  - scheduling solver verification
+  - optimizer testing
+  - production scheduling accuracy
+  - schedule optimization software
+  - solver correctness
+targetPhrase: "scheduling solver verification"
+wordCount: 1450
+readingTime: 7
+faqQuestions:
+  - question: "How do you know the schedule optimizer is actually correct?"
+    answer: "It is checked against problems whose right answer is already known. The best known is a public six by six job shop benchmark from the scheduling research literature with a proven optimal makespan of 55. EDGEBIC's solver proves that same 55 on a nightly run. A solver that returns a different number on a problem with a published answer has a bug, and the test catches it before anyone's plant sees it."
+  - question: "What is a parity test in schedule optimization?"
+    answer: "A parity test takes a schedule the production scheduling engine produced and asks the solver whether that schedule is legal in its own model. Any plan the engine can legally build must be feasible for the solver. If it is not, the solver's model has drifted away from how the engine really behaves, and the test fails. Parity is the check that keeps the two halves of the optimizer agreeing over time."
+  - question: "Does benchmark testing mean my plant will get optimal schedules?"
+    answer: "No, and the distinction matters. Benchmarks prove the solver reasons correctly on the problems it models. Your plant may use capabilities the solver reproduces exactly rather than rearranging, such as parallel processing or lot streaming, and those jobs are locked to the scheduling engine's decision. What benchmarks buy you is confidence that when a proven optimality gap is reported, the number is real."
+qaQuestions:
+  - question: "My operations manager asks how we know the software is not just guessing. What do I tell them?"
+    answer: "Three things. First, the multi-run search never guesses because every candidate it scores is a complete real schedule built by the same engine that runs your production plans. Second, the solver is checked nightly against a public benchmark with a published optimal answer of 55 and proves it. Third, no proposal reaches your plan without beating your current plan on the goal you chose, which is enforced in the product."
+  - question: "A benchmark number was transcribed wrong once. How is that handled?"
+    answer: "By treating the data as suspect before the solver. During development one benchmark instance transcribed from memory produced a self-consistent proof of a different value than the published one, which meant the input data was wrong rather than the solver. The response was to use only vendored benchmark files, never remembered numbers. That is the right instinct generally: when a proof disagrees with a citation, check the input first."
+---
+
+**The optimizer is verified against scheduling problems whose correct answers are already published, so a wrong result fails a test instead of reaching your plant.** The clearest example is a classic six by six job shop benchmark from the scheduling literature with a proven optimal makespan of 55. EDGEBIC's mathematical solver proves that same 55 on a nightly run. Alongside it sit parity checks, determinism checks, and never-worse checks, each proving a different property of the stack.
+
+EDGEBIC by User Solutions ships this verification layer because an optimizer's claims are only as good as the checking behind them. "Proven within a percentage of optimal" is a strong statement, and a strong statement needs evidence. This post walks through what each class of test proves and, just as importantly, what it does not.
+
+## Why an external anchor matters
+
+Most software tests compare a program against its own expectations, which catches regressions but cannot catch a shared misunderstanding. If the model and the test were both written from the same wrong assumption, both agree and both are wrong.
+
+A public benchmark breaks that circle. The scheduling research community has maintained job shop instances for decades, and for many of them the optimal makespan has been proven and published independently. The six by six instance with a known optimum of 55 is the most widely cited of these. Handing it to the solver is a check nobody inside the project can influence: either the solver returns 55 and proves it, or something is wrong.
+
+This is the same logic a machine shop uses with a certified gauge block. You do not check a micrometer against another micrometer.
+
+## What the nightly benchmark proves
+
+The benchmark run proves that the solver's reasoning is sound on the class of problem it models: jobs with sequential operations, machines that can run one operation at a time, and an objective to minimize the total span. Getting the proven optimum right on a problem that is famously hard to solve exactly means the interval model, the no-overlap capacity handling, and the objective encoding are all doing what they claim.
+
+It also proves the proof itself. The solver does not just return a plan, it returns a mathematical lower bound alongside it, and the reported gap is the distance between the plan's objective and that bound. Gap zero means the plan and the bound met, which reads as proven optimal on the badge. A benchmark with a published optimum is the direct way to confirm that this gap arithmetic is honest. See [how a proven optimality gap builds trust](/blog/how-a-proven-optimality-gap-builds-trust).
+
+## Parity: keeping the model honest about your plant
+
+A benchmark proves the solver can reason. It does not prove the solver's picture of your plant matches the scheduling engine's picture. That is what parity tests do.
+
+A parity test takes a schedule the production engine produced and pins every operation to the exact start the engine chose, then asks the solver whether that schedule is feasible in its model. The logic is airtight: any plan the engine can legally build must satisfy the solver's constraints, because both are describing the same shop. If the solver says the engine's own plan is infeasible, the model has drifted.
+
+The parity suite runs across worlds built specifically to exercise different capabilities, including queue time, precedence chains, two jobs competing for one machine, multi-instance work centers, one-per-day work centers, and both forms of lot streaming. When a capability is opened up for native optimization, its parity check ships at the same time. That rule is what stops the two halves of the system from drifting apart quietly over years of releases.
+
+## The tests you feel every day
+
+Three more checks matter to a planner more directly than any benchmark.
+
+**Never worse.** Seeded property tests generate many random plant worlds, run the optimizer on each, and assert the result is never worse than the baseline on the chosen goal. This is the guarantee printed on the safety strip, tested rather than asserted. See [the never-worse guarantee](/blog/the-never-worse-guarantee-in-schedule-optimization).
+
+**Determinism.** The same inputs with the same seed must produce the same plan. A repeat-solve test enforces it. This is why a support case can be reproduced months later, and why rerunning an optimizer run does not quietly hand you a different answer. See [deterministic schedule optimization](/blog/determinism-and-reproducibility-in-schedule-optimization).
+
+**Interrupt behavior.** Stopping a run early, whether by cancel or by the time budget expiring, must still return a valid plan with a valid bound. The test gives the solver an unreasonably small budget and asserts it returns something usable. See [stopping the optimizer early](/blog/stopping-the-optimizer-early-still-gives-a-valid-plan).
+
+## What verification does not claim
+
+Two honest limits are worth naming.
+
+The first is scope. The solver's model natively optimizes plain sequential jobs on single-instance work centers. Jobs using capabilities outside that set are reproduced exactly as the scheduling engine planned them and consume capacity while other jobs are optimized around them. Benchmarks say nothing about those jobs, because they are not being rearranged. What they do say is that the jobs being rearranged are being reasoned about correctly. See [how the optimizer locks features it does not model](/blog/how-the-optimizer-locks-features-it-does-not-model).
+
+The second is the difference between the two engines. The multi-run search is a heuristic search that evaluates many complete real schedules and returns the best of them. It carries no optimality proof and its badge never claims one: it reads best of N schedules tried. Benchmarks with published optima apply to the solver's proof, not to the search. Both engines are clamped never worse than the baseline, and both build every candidate through the same production engine, so constraint compliance is total either way.
+
+## A note on trusting the input data
+
+One episode during development is worth repeating because it generalizes. A benchmark instance transcribed from memory rather than from the published file produced a self-consistent proof of a different value than the citation claimed. The solver was right and the transcription was wrong. The response was a rule: use only vendored benchmark files, never remembered numbers.
+
+That instinct applies on the floor too. When an optimizer result contradicts what you expect, check the master data before you doubt the math. Setup times, shift calendars, and routing hours are where confidently wrong schedules come from, and an optimizer amplifies bad master data rather than correcting it.
+
+## The bottom line
+
+The optimizer is verified with a public job shop benchmark whose optimal makespan of 55 is proven nightly, parity checks that force the solver's model to agree with the scheduling engine, and property tests for never worse, determinism, and interrupt behavior. Together they support one claim: when the badge reports a proven gap, the number is real, and when the safety strip promises never worse, the promise is enforced. To see a certificate on your own plan, open the Optimizer tab in Schedule Jobs. For more, read the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide) and [an honest look at AI production scheduling](/blog/is-ai-production-scheduling-real-an-honest-look), and explore the platform at [EDGEBIC](/edgebic).

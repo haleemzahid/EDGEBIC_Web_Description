@@ -1,0 +1,96 @@
+---
+title: "How to Set the Priority of Alternate Work Centers in EDGEBIC"
+description: "Priority decides which alternate machine EDGEBIC prefers when two can finish a step at the same time. How to set it, and why the fastest machine still wins."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - alternate work center priority
+  - preferred machine scheduling
+  - alternative routing priority
+  - machine selection order
+  - fallback work center
+  - tie breaker scheduling
+targetPhrase: "priority of alternate work centers"
+wordCount: 1195
+readingTime: 6
+faqQuestions:
+  - question: "What does priority do on an alternate work center?"
+    answer: "Priority is a tie-breaker. When two or more alternate machines would finish the operation at the same time, the one with the lower priority number is chosen. It does not override completion time: if one machine finishes sooner, that machine wins whatever the priority values say. Use priority to express a preference between equals, not to force a machine."
+  - question: "How do I force a job onto one specific machine?"
+    answer: "Priority will not do it, because a faster-completing machine always wins. To pin work to one station, either make that station the only active option by clearing the active flag on the others, or use the pinning and replacement tools that hold a job on a chosen work center. Priority is a soft preference and is designed to be overruled by capacity."
+  - question: "What numbers should I use for priority?"
+    answer: "Start at 1 for your preferred machine and count upward: 1, 2, 3. Lower is preferred. Leave gaps if you expect to insert machines later, for example 10, 20, 30, so a new option can slot between two existing ones without renumbering the whole list. The absolute values carry no meaning, only the order they put the rows in."
+qaQuestions:
+  - question: "We have an old mill and a new mill on the same step. The new one keeps sitting idle. Is priority the fix?"
+    answer: "Probably not, and priority is the wrong lever to reach for first. If the old mill keeps winning, it is because it can finish sooner, which usually means the new mill is more heavily booked by other work or its shift coverage is thinner. Priority only breaks ties, so setting the new mill to 1 changes nothing while the old mill genuinely completes earlier. Check the load on both stations first. If the new mill really is free and still not chosen, look at its speed factor on this step, because a factor that makes it slower than it really is will push its projected completion out and lose it every comparison."
+  - question: "Three alternates are all free and the scheduler picks the same one every time. Is that priority working?"
+    answer: "Yes, and it is the case priority was built for. When all three can start now and finish at the same moment, there is nothing in the completion times to separate them, so the tie-breaker decides and the lowest priority number wins every run. That is also what makes the behavior stable: rerun the schedule and you get the same machine, which is what a supervisor wants when they have set the fixture up on a specific station. If you would rather spread the work across all three, do not do it with priority. Set the step up as an independent parallel group so the hours split, rather than as alternates where one machine takes the whole operation."
+---
+
+**Priority on an alternate work center row in EDGEBIC by User Solutions is a tie-breaker, not a command. The alternate that can finish the operation soonest is selected first, and priority only decides between options that would finish at the same time.** Understanding that order of precedence is the difference between priority working as expected and priority appearing to be ignored.
+
+Every task in this library is mapped on the [EDGEBIC how-to hub](/blog/edgebic-how-to-hub). For why the schedule reasons about completion time at all, see [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+## Before You Start
+
+- The routing step already has two or more alternate work centers configured. Priority is meaningless with one option.
+- You know which machine you actually prefer and why. "Newer" is not a scheduling reason on its own.
+- You have edit rights on routings.
+
+## Step 1: Open the Alternative Work Centers Grid
+
+Open the routing for the product, select the step, and open its **Alternative Work Centers** grid. Each configured machine appears as a row carrying its type, speed factor, per-machine setup, priority, and active flag.
+
+## Step 2: Number the Rows
+
+Set **Priority** on each row. Lower is preferred.
+
+| Machine | Priority | Meaning |
+|---|---|---|
+| Mill B | 1 | Try first when times are equal |
+| Mill C | 2 | Second choice |
+| Mill D | 3 | Last resort |
+
+Save the routing, then re-run the schedule for the affected jobs. Like every routing change, priority is read when the engine builds the candidate list, so the existing plan does not move until a run happens.
+
+## Step 3: Know What Beats Priority
+
+This is the part worth reading twice. The resolver sorts candidates by projected completion time first. Priority is the secondary sort.
+
+So with Mill B at priority 1 and Mill C at priority 2:
+
+- **Both free, both finish Tuesday.** Mill B is chosen. Priority decided.
+- **Mill B booked until day 5, Mill C free on day 3.** Mill C is chosen. Priority was overruled by capacity, and that is correct: the job would otherwise sit for two extra days to satisfy a preference.
+
+If you find yourself annoyed by that, the annoyance is usually pointing at a different problem. A preferred machine that never wins is a loaded machine, and the fix is capacity or shift coverage, not a lower number.
+
+## Step 4: Choose the Right Tool for a Hard Requirement
+
+Priority expresses a preference. Three other tools express a requirement.
+
+1. **Clear the active flag on the machines you do not want.** The candidate list then contains only the machine you do. Method in [how to temporarily disable a parallel work center](/blog/how-to-temporarily-disable-a-parallel-work-center-in-edgebic).
+2. **Pin the job.** Pinning holds work on a chosen station across runs, covered in [how to pin a job so the optimizer cannot move it](/blog/how-to-pin-a-job-so-the-optimizer-cannot-move-it-in-edgebic).
+3. **Let started work hold itself.** Once a job has logged actuals on a machine, that station is locked for the remaining hours automatically. Nothing to configure.
+
+## Step 5: Leave Room to Insert
+
+Number in tens rather than ones if the machine list is likely to grow: 10, 20, 30. Adding a fourth option that should sit between the first and second is then a single edit instead of a renumber of every row. The values themselves mean nothing, only their order.
+
+## How to Check It Worked
+
+- **Re-run and read which station the step landed on.** With everything free, it should be your priority 1 machine, and it should be the same machine on the next run too.
+- **Deliberately load the preferred machine and re-run.** The step should move to the next option, which proves completion time is beating priority as designed.
+- **Compare against the resource replacement audit.** If work is switching stations more than you expect, [the resource replacement audit](/blog/how-to-run-the-resource-replacement-audit-in-edgebic) shows how often and where.
+
+## Common Mistakes
+
+- **Using priority to pin a machine.** It cannot do that. A faster option always wins.
+- **Setting every row to priority 1.** With no ordering, the tie-breaker has nothing to break and selection becomes arbitrary between equals.
+- **Confusing priority with speed factor.** The factor changes how long the operation takes on that machine and therefore changes its completion time. Priority only sorts equals. A wrong factor is far more likely to explain a surprising choice than a wrong priority.
+- **Expecting priority to spread work.** Alternates give the whole operation to one machine. If you want the hours split across several, configure the step as an independent parallel group instead.
+
+See how EDGEBIC chooses between machines when it builds a plan on the [EDGEBIC product page](/edgebic).

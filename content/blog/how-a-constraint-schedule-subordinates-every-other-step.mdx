@@ -1,0 +1,122 @@
+---
+title: "How a Constraint Schedule Subordinates Every Other Step"
+description: "When a job is anchored to a constraint, the engine ranks every other step below it on a descending priority ladder. How the ladder works and why upstream steps drop fastest."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - theory of constraints scheduling
+  - subordination scheduling
+  - anchor scheduling
+  - bottleneck priority
+  - constraint scheduling
+  - finite capacity scheduling
+targetPhrase: "subordinating steps to the constraint"
+wordCount: 1650
+readingTime: 9
+faqQuestions:
+  - question: "What does it mean to subordinate a step to the constraint?"
+    answer: "It means the step is scheduled to serve the constraint's timing rather than its own convenience. When a job is anchored, EDGEBIC places the constraint operation first at maximum priority, then schedules everything else at descending priority levels around it. Upstream steps are ranked to arrive before the constraint needs them, downstream steps are ranked to follow it, and neither is allowed to compete with the constraint for a slot. That ordering is the practical form of the Theory of Constraints instruction to subordinate everything to the constraint."
+  - question: "Why do upstream steps drop in priority faster than downstream steps?"
+    answer: "Because they are further from the promise being protected and closer to the moment the plan can still absorb a change. The backward pass that schedules feeding steps steps down more sharply per step, so the operation immediately feeding the constraint outranks the one two positions upstream. Downstream steps step down more gently, since a delay there directly threatens the ship date. The ladder encodes how much slack each position genuinely has."
+  - question: "Does the constraint step get scheduled differently as well as first?"
+    answer: "Yes. The constraint is placed at the top priority level and with a strategy that favors filling its capacity rather than starting work as early as possible. On a constraint resource, an hour lost is an hour of plant output lost, so packing it tightly matters more than getting any one job started sooner. Every other step in the job is then timed around that placement."
+qaQuestions:
+  - question: "Two jobs both want my bottleneck oven on Tuesday. How does subordination decide the winner?"
+    answer: "Subordination does not arbitrate between two jobs; it arbitrates within a job. Each anchored job places its constraint operation first, at the highest priority level, before any of that job's other steps are placed, so the constraint step never loses its slot to a feeding step from the same job. Which of the two jobs reaches Tuesday's oven capacity first is decided earlier, by the order in which jobs are processed and by the capacity that remains when each is placed. If the wrong job is winning, the lever is job sequencing and the constraint's target dates, not the subordination ladder."
+  - question: "My feeding operation was scheduled earlier than the job's own start date. Is that wrong?"
+    answer: "It is expected under anchor scheduling. Once the constraint operation is fixed at its target time, the feeding steps are scheduled backward from it, each one ending in time for the next, with the constraint buffer held in front of the constraint itself. If the accumulated upstream work plus buffers is longer than the gap between the job's nominal start and the constraint's target, the first feeding step lands before that nominal start. The plan is telling you the truth: to hit the constraint on time, material has to move earlier than the order header suggests. The alternative is arriving late at the one resource that sets plant output."
+---
+
+**When a job is anchored to a constraint, EDGEBIC by User Solutions does not schedule its steps in a flat sequence. It places the constraint operation first, at the highest priority level and with a strategy that favors filling the constraint's capacity, then schedules every other step at descending priority levels around that fixed point. Feeding steps are placed backward from the constraint and step down in priority sharply, while downstream steps are placed forward and step down gently.** That ladder is what "subordinate everything to the constraint" looks like when it is arithmetic instead of a slogan.
+
+Most descriptions of constraint scheduling stop at the buffers. The priority ladder is the part that decides who yields to whom while those buffers are being built.
+
+## The constraint goes first, and it goes in differently
+
+The first thing an anchored job does is place its constraint step. Not the first step of the routing, not the earliest step chronologically: the constraint step.
+
+It is placed at the top of the priority range and with a strategy that emphasizes using the constraint's capacity well rather than starting work at the earliest possible moment. That is a real distinction. An ordinary operation is happy to start early and finish early. A constraint operation would rather be packed tightly against its neighbors, because idle time on the constraint is idle time for the whole plant, and the arithmetic behind that claim is set out in [why the bottleneck sets the pace](/blog/why-the-bottleneck-sets-the-pace).
+
+Once the constraint step has its slot, that slot is the fixed reference for everything else in the job. The rest of the routing is scheduled to serve it.
+
+## The backward pass, and why it steps down by two
+
+With the constraint placed, the engine works backward through the feeding steps in reverse routing order. Each step is given a deadline derived from the step that follows it, and the constraint buffer is held in front of the constraint so that feeding work is expected to arrive early rather than exactly on time.
+
+As it walks backward, the priority level drops by two levels per step.
+
+The reason is slack. The operation feeding the constraint directly has almost none: if it slips, the constraint starves, and starving the constraint is the one outcome the whole exercise exists to prevent. An operation two steps upstream has the intervening operation's own float plus the buffer to absorb some variation. Three steps upstream has more still.
+
+Dropping two levels per step encodes that gradient sharply. It means that when several steps of the same job are competing for the same shared machine, the one closest to the constraint wins, which is exactly the ordering a planner would choose by hand.
+
+## The forward pass, and why it steps down by one
+
+After the constraint, the engine schedules the downstream steps forward, starting from the constraint's end plus the shipping buffer, and each step drops one priority level rather than two.
+
+The gentler slope reflects a different risk. Downstream of the constraint there is no longer anything to protect the constraint from, but there is a due date to protect. A delay after the constraint is a delay to the customer with no buffer of upstream float to absorb it, so downstream steps stay closer to full priority than distant upstream steps do.
+
+Put the two passes side by side and the shape is intuitive: priority is highest at the constraint, falls quickly as you move away upstream, and falls slowly as you move away downstream. The asymmetry is the point. Upstream has time to recover; downstream has a promise to keep.
+
+## A worked example: a five-step job through a heat-treat oven
+
+A job runs five operations. Step 3 is heat treat on the plant constraint, with a target start of Wednesday 08:00.
+
+The engine places Step 3 first, at the top priority level, using the constraint's Wednesday capacity as tightly as it can.
+
+It then walks backward:
+
+- Step 2, the direct feeder, is deadlined at Wednesday 08:00 minus the constraint buffer. Say the buffer is four hours, so Step 2 must be finished by Tuesday's late shift. It is scheduled at two levels below the constraint.
+- Step 1 is deadlined at Step 2's start, and is scheduled two levels below Step 2.
+
+Then it walks forward:
+
+- Step 4 starts at the constraint's end plus the shipping buffer, one level below the constraint.
+- Step 5 follows Step 4, one level below that.
+
+Now suppose Step 1 and Step 4 both route through the same shared grinder, and the grinder has a single free window that both would like. Step 4 sits one level below the constraint. Step 1 sits four levels below it. Step 4 takes the window, and Step 1 is placed elsewhere, earlier, where it still meets its own backward deadline.
+
+That is the correct answer, and it is not the answer a naive first-come rule would give. Step 1 appears earlier in the routing and would win a purely sequential contest, but it has slack and Step 4 does not.
+
+## Subordination is within a job, not between jobs
+
+The most common misreading of this mechanism is to expect it to arbitrate between two different jobs competing for the same constraint. It does not.
+
+The ladder ranks the steps of one job relative to that job's own constraint operation. Which job gets Wednesday's oven capacity is settled earlier, by the order in which jobs are processed and by what capacity remains when each one is placed. That is the sequencing question covered in [how the scheduler sequences orders before placement](/blog/how-the-scheduler-sequences-orders-before-placement).
+
+If the wrong job is winning the constraint, the levers are the job sequencing strategy and the target dates on the constraint steps, not the subordination ladder. The ladder is doing a different job: making sure that within each job, nothing outranks the operation the whole plan is built around.
+
+## Why anchoring is what triggers all of this
+
+None of this fires for an ordinary job. A job is anchored when its constraint operation carries a target date, which is the mechanism explained in [why a bottleneck needs a target date to anchor a schedule](/blog/why-a-bottleneck-needs-a-target-date-to-anchor-a-schedule). Without that anchor, the job is scheduled forward in the normal way, all steps equal, first available capacity wins.
+
+This is deliberate. Subordination is expensive to reason about and only pays for itself where a genuine constraint exists. Applying it to every job in a plant with no real bottleneck would produce elaborate machinery around a resource that is not actually limiting anything.
+
+It is also why the buffers and the ladder always travel together. The buffers create the space that subordination is protecting, and the ladder decides who gets to consume that space when two steps want it. The buffer side is covered in [how anchor buffers protect a constraint and a due date](/blog/how-anchor-buffers-protect-a-constraint-and-a-due-date), and the broader discipline is in [Theory of Constraints scheduling](/blog/theory-of-constraints-scheduling).
+
+## Reading a subordinated plan
+
+Two things surprise planners the first time they see one.
+
+Feeding steps sometimes start earlier than the order's nominal start date. That is the backward pass telling the truth: to reach the constraint on time with a buffer in front of it, material has to move sooner than the order header suggests.
+
+Downstream steps sometimes sit slightly after the constraint finishes rather than immediately after it. That is the shipping buffer, deliberately held so that variation after the constraint does not consume the promise date.
+
+Both look like inefficiency and both are protection. The wider engine behavior is described in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+To see how your own constraint would reorder the work around it, [bring a routing and a target date to a demo](/edgebic).
+
+<Accordion title="What does it mean to subordinate a step to the constraint?">
+It means the step is scheduled to serve the constraint's timing rather than its own convenience. When a job is anchored, EDGEBIC places the constraint operation first at maximum priority, then schedules everything else at descending priority levels around it. Upstream steps are ranked to arrive before the constraint needs them, downstream steps are ranked to follow it, and neither is allowed to compete with the constraint for a slot. That ordering is the practical form of the Theory of Constraints instruction to subordinate everything to the constraint.
+</Accordion>
+
+<Accordion title="Why do upstream steps drop in priority faster than downstream steps?">
+Because they are further from the promise being protected and closer to the moment the plan can still absorb a change. The backward pass that schedules feeding steps steps down more sharply per step, so the operation immediately feeding the constraint outranks the one two positions upstream. Downstream steps step down more gently, since a delay there directly threatens the ship date. The ladder encodes how much slack each position genuinely has.
+</Accordion>
+
+<Accordion title="Does the constraint step get scheduled differently as well as first?">
+Yes. The constraint is placed at the top priority level and with a strategy that favors filling its capacity rather than starting work as early as possible. On a constraint resource, an hour lost is an hour of plant output lost, so packing it tightly matters more than getting any one job started sooner. Every other step in the job is then timed around that placement.
+</Accordion>

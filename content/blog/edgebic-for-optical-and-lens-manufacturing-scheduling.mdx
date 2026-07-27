@@ -1,0 +1,106 @@
+---
+title: "Scheduling Optical and Lens Manufacturing Around Coating Chambers"
+description: "Optical manufacturing scheduling that batches coating chambers one run per day, pools interchangeable polishers, and works backward from each prescription ship date."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: Industry Applications (EDGEBIC)
+author: user-solutions
+cluster: edgebic-industry
+pillarSlug: edgebic-by-industry
+keywords:
+  - optical manufacturing scheduling
+  - lens production planning
+  - coating chamber scheduling
+  - one job per day work center
+  - optical lab capacity planning
+  - polishing machine pool
+  - anti-reflective coating batch scheduling
+targetPhrase: "optical manufacturing scheduling"
+wordCount: 1520
+readingTime: 8
+faqQuestions:
+  - question: "How do you schedule a coating chamber that runs one recipe per day?"
+    answer: "Flag the chamber as a one-job-per-day work center, and the scheduler will place only a single job on each chamber unit per day instead of packing the daily hours full. A four-hour anti-reflective run then owns that chamber for the day, and the next job routes to a second chamber or to tomorrow. The plan matches how the chamber is actually loaded, pumped down, and vented."
+  - question: "Can several polishing machines be treated as one interchangeable pool?"
+    answer: "Yes. Group the interchangeable polishers into a work center group and bind the routing step to the group instead of one named machine. At schedule time the engine expands the group and picks the member that finishes the job earliest against live load, carrying that member's own cycle time. A job queued behind three others on the named machine can move to an idle one and finish the same shift."
+  - question: "Does the schedule respect the coating recipe order between runs?"
+    answer: "Yes, if you build a setup matrix for the chamber. The matrix carries the changeover hours from one coating family to the next, so moving from a hard coat to a mirror stack can cost far more than moving between two similar anti-reflective stacks. The scheduler adds the real changeover to the job it applies to instead of using one flat setup number for every transition."
+qaQuestions:
+  - question: "We run two coating chambers and a dozen polishers, and our lab promises next-day on most single-vision jobs. The chambers are the constraint but our current plan spreads jobs across them by hand every morning. What changes?"
+    answer: "Flag both chambers as one-job-per-day work centers so each chamber accepts a single run per day, then schedule the whole day's intake backward from each job's ship date. The engine places the chamber steps against the two real chamber slots, and any job that cannot claim a slot in time is flagged before the surfacing department starts on it. That is the difference between finding out at 4 PM that a job cannot coat today and knowing at 8 AM that only 90 of 120 jobs will make tomorrow's courier. The dozen polishers become a work center group, so the surfacing steps flow to whichever machine is free instead of queuing on the one written into the routing."
+  - question: "Our specialty coatings need a technician who is signed off on the chamber recipe, and that person works Tuesday through Friday. The schedule keeps promising Monday runs. How do we stop it?"
+    answer: "Make the chamber sign-off a skill, assign it only to the technicians who hold it, and require it on the coating routing step. The scheduler will then place that step only in a shift where a qualified technician is on the roster, so specialty runs land Tuesday through Friday and never on the empty Monday. If the qualified technician takes a week off, remove them from the roster and reschedule: the affected runs move and any job that can no longer make its promised date is flagged. Work already completed is never moved by that reschedule, so Monday's finished jobs stay recorded exactly as they were."
+---
+
+**An optical lab lives or dies on its coating chambers, and the only schedule that reflects reality is one that treats each chamber as a single run per day, pools the interchangeable polishers, and works backward from every prescription ship date.** EDGEBIC by User Solutions models the chamber as a one-job-per-day work center, expands a pool of polishers into whichever machine finishes soonest, and flags the jobs that cannot make their promised day while there is still a shift left to act.
+
+Lens production is a strange mix. The volume looks like a flow shop, the due dates look like a job shop, and the constraint is a vacuum chamber whose loading behavior no hours-per-day model describes correctly.
+
+## Why Chamber Hours Are the Wrong Unit
+
+A coating chamber does not fill up like a mill. You load it, pump it down, run the recipe, vent it, and unload it. Whether the recipe takes ninety minutes or four hours, the chamber is committed for that cycle and often for the balance of the shift once the technician has set the sources.
+
+A scheduler that sees a sixteen-hour daily capacity will happily place four separate jobs on one chamber in one day. The floor cannot do that. The fix is a one-job-per-day rule on the work center: each chamber unit accepts a single job per day, and the next job goes to a second chamber or to tomorrow. If you run three chambers, you have three slots a day, and the schedule says so plainly.
+
+This is the same modeling pattern that heat treat and cure work uses, described in [heat treating furnace scheduling](/blog/edgebic-for-heat-treating-furnace-scheduling). The chamber is a batch resource whose unit of capacity is the run, not the hour.
+
+## Pooling the Polishers Instead of Naming One
+
+Surfacing and polishing is the opposite problem. You have eight or twelve machines that can do the same job, and the routing names exactly one of them because that is how it was written years ago. Every job then queues behind every other job on that named machine while three identical machines sit idle.
+
+Bind the routing step to a work center group instead. At schedule time the engine expands the group into its member machines, compares each member's projected finish against live load, and places the job on the one that gets it done first. Members can carry their own efficiency factor, so a newer machine that runs a job in 0.8 of the standard time is modeled honestly rather than assumed equal. The general mechanics are covered in [routing a job to a backup machine when the primary is full](/blog/routing-a-job-to-a-backup-machine-when-the-primary-is-full-edgebic).
+
+Jobs already started stay on the machine that is running them. Only work that has not begun re-shops the pool on the next reschedule.
+
+## Sequence-Dependent Changeovers on the Chamber
+
+Not all coating transitions cost the same. Going from one anti-reflective stack to a similar one may cost twenty minutes of recipe change. Going from a hard coat to a mirror stack can mean changing sources and a long conditioning run. A single flat setup number on the routing step averages both and is wrong in both directions.
+
+A per-chamber setup matrix carries the real changeover hours from one coating family to the next. The scheduler looks up the transition from the job that just ran to the job it is about to place and applies that number, not the average. Group your recipes into a handful of families and the matrix stays small enough to maintain: eight families give you sixty-four cells instead of thousands of part-to-part entries. The concept is explained in [sequence-dependent setup times](/blog/sequence-dependent-setup-times), and the family shortcut in [how setup families reduce scheduling complexity](/blog/how-setup-families-reduce-scheduling-complexity).
+
+Once the matrix exists, the sequence optimizer can group compatible recipes to shrink total changeover time on the chamber rather than accepting whatever order the due-date sort produces. The multi-run layer is guaranteed never to return a schedule worse than the baseline it started from, so running it costs you nothing but the time it takes.
+
+## Backward From the Ship Date
+
+Most lab work carries a hard courier day. Forward scheduling from now tells you when a job could finish. Backward scheduling from the ship date tells you when each step has to start and whether the calendar has room. That second answer is the one you can staff against.
+
+The engine places each job's steps backward from its due date onto finite capacity. Jobs that fit are confirmed. Jobs that do not are flagged as at risk, with the step that could not be placed identified. See [forward versus backward scheduling](/blog/forward-vs-backward-scheduling) for the underlying trade-off and [high-mix low-volume job shop scheduling](/blog/high-mix-low-volume-job-shop-scheduling) for the pattern a lab shares with short-run shops.
+
+## A Worked Day
+
+Twelve jobs need coating, two chambers are available, and one job is a mirror stack.
+
+| Job group | Recipe family | Chamber demand | Result |
+|---|---|---|---|
+| Jobs 1 to 5 | AR standard | One chamber run | Chamber A, Tuesday |
+| Jobs 6 to 10 | AR standard | One chamber run | Chamber B, Tuesday |
+| Job 11 | Hard coat | One chamber run | Chamber A, Wednesday |
+| Job 12 | Mirror stack | One chamber run plus long changeover | Chamber B, Wednesday, flagged |
+
+The mirror stack is flagged Tuesday morning, not Wednesday afternoon. The planner either moves it ahead of the hard coat to shorten the transition, adds a Wednesday evening window on Chamber B, or calls the account about Thursday. All three options exist because the flag arrived a day early.
+
+## Tracking What Actually Ran
+
+Chamber cycles rarely match the standard exactly. Operators can log start, stop, and quantity at a shop floor station, and those actuals flow back into the plan. Completed runs are never moved by a later reschedule: what happened stays recorded, and only the unfinished work reflows. Over a few weeks the logged chamber times tell you which recipes are consistently over their standard, which is the input your setup matrix needs to get better.
+
+## Heritage in Batch-Constrained Work
+
+User Solutions has built finite capacity scheduling since 1991, more than 35 years, for operations where a single constrained resource sets the pace: US Navy, GE, BAE Systems, and Cummins across 33 locations. The lineage behind EDGEBIC, including the RMDB heritage, drove GE Railcar on-time delivery from 30 percent to 90 percent and handled the Nimitz refit at more than 26,000 tasks. An optical lab scheduling two chambers against 400 promises a day is the same discipline at a different scale.
+
+## Where to Start
+
+Flag your chambers as one job per day, put your interchangeable polishers into one group, define three or four coating families with real changeover hours between them, and schedule backward from tomorrow's courier. The first honest at-risk flag pays for the setup.
+
+For the fundamentals, [what is production scheduling](/blog/what-is-production-scheduling) is the plain-language start. The [industry fit guide](/blog/edgebic-by-industry) maps neighboring sectors and [EDGEBIC](/edgebic) is the product hub. Ready to see how many chamber slots you really have? [Contact US for a demo](/contact-us).
+
+<Accordion title="How do you schedule a coating chamber that runs one recipe per day?">
+Flag the chamber as a one-job-per-day work center, and the scheduler will place only a single job on each chamber unit per day instead of packing the daily hours full. A four-hour anti-reflective run then owns that chamber for the day, and the next job routes to a second chamber or to tomorrow. The plan matches how the chamber is actually loaded, pumped down, and vented.
+</Accordion>
+
+<Accordion title="Can several polishing machines be treated as one interchangeable pool?">
+Yes. Group the interchangeable polishers into a work center group and bind the routing step to the group instead of one named machine. At schedule time the engine expands the group and picks the member that finishes the job earliest against live load, carrying that member's own cycle time. A job queued behind three others on the named machine can move to an idle one and finish the same shift.
+</Accordion>
+
+<Accordion title="Does the schedule respect the coating recipe order between runs?">
+Yes, if you build a setup matrix for the chamber. The matrix carries the changeover hours from one coating family to the next, so moving from a hard coat to a mirror stack can cost far more than moving between two similar anti-reflective stacks. The scheduler adds the real changeover to the job it applies to instead of using one flat setup number for every transition.
+</Accordion>

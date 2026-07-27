@@ -1,0 +1,99 @@
+---
+title: "How to Temporarily Disable a Parallel Work Center in EDGEBIC"
+description: "Take one machine out of a parallel group in EDGEBIC without deleting its configuration, using the active flag on the alternative work center row, and put it back later."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - disable parallel work center
+  - alternative work center active flag
+  - machine down scheduling
+  - parallel processing configuration
+  - take machine out of schedule
+  - work center maintenance scheduling
+targetPhrase: "temporarily disable a parallel work center"
+wordCount: 1210
+readingTime: 6
+faqQuestions:
+  - question: "How do I stop one machine in a parallel group being scheduled?"
+    answer: "Open the routing step's alternative work centers grid, find the row for that machine, and clear its active flag. Save, then re-run the schedule. The machine drops out of the candidate list for that step and the remaining active machines absorb the work. Nothing about the configuration is deleted, so restoring the machine later is a matter of ticking the flag back on."
+  - question: "Is clearing the active flag the same as scheduling downtime on the work center?"
+    answer: "No, and the difference matters. Clearing the active flag removes the machine from one routing step's candidate list, so it is still fully available for every other step and every other product. A downtime event on the work center itself blocks that station across the entire plan for the dates you give. Use the flag for a routing decision and downtime for a calendar fact."
+  - question: "Do I have to re-run the schedule after clearing the flag?"
+    answer: "Yes. The flag is read when the engine builds the candidate list for the step, which only happens during a scheduling run. Until you re-run, the existing plan still shows work booked on the machine you just disabled. Work that has already been logged as started stays where it is, since completed and in-progress work is never moved by a reschedule."
+qaQuestions:
+  - question: "One of three parallel mills goes down for a week. Should I use the active flag or a downtime event?"
+    answer: "Use a downtime event, and this is the case that most often gets it backwards. The mill is physically unavailable for every job in the plant, not just the one step you happened to be looking at. A downtime event on the work center blocks it across the whole plan for those dates and lets it return automatically afterward, which is exactly the shape of a week-long maintenance window. The active flag is the right tool for a different situation: the mill is running fine, but you have decided this particular routing step should stop using it, perhaps because the fixture moved or the tolerance changed. That is a routing decision with no end date, and the flag holds it until someone deliberately reverses it."
+  - question: "I cleared the flag on one of two parallel machines and now the step takes twice as long. Is that a bug?"
+    answer: "That is the correct behavior and it is worth understanding rather than working around. Independent parallel machines split the hours between them, so two machines on a 20 hour operation each carry roughly 10 hours and the step finishes in about half the elapsed time. Remove one and the surviving machine carries all 20 hours alone, so the step doubles. If the resulting date is unacceptable, the answer is capacity elsewhere: add a third machine to the group, extend the shift on the survivor, or move the job's start earlier. The doubling is the schedule telling you the truth about what one machine can do."
+---
+
+**Clearing the active flag on an alternative work center row in EDGEBIC by User Solutions removes that machine from the candidate list for one routing step, without deleting any of its configuration.** The speed factor, the per-machine setup, and the priority all stay exactly as entered, waiting for the flag to be ticked back on. This is how to take a machine out and put it back.
+
+Every task in this library is mapped on the [EDGEBIC how-to hub](/blog/edgebic-how-to-hub). For the underlying idea of scheduling against real machine limits, see [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+## Before You Start
+
+- The routing step already has a parallel or alternate configuration. This task edits an existing row, it does not create one.
+- You have decided this is a routing decision rather than a calendar fact. If the machine is physically down, a downtime event is the correct tool instead.
+- You have edit rights on routings, since the flag lives on the routing step.
+
+## Step 1: Open the Step's Alternative Work Centers Grid
+
+Open the routing for the product, select the step, and open its **Alternative Work Centers** grid. Every machine configured to run alongside or instead of the primary appears here as a row, with its type, speed factor, priority, and active flag.
+
+## Step 2: Clear the Active Flag
+
+Find the row for the machine you want out and set **Active** to off. Change nothing else. The point of this task is that the row survives intact.
+
+Save the routing.
+
+## Step 3: Re-Run the Schedule
+
+The candidate list is built during a scheduling run, so the plan does not change until you run it. Re-run the schedule for the affected jobs.
+
+During that run, inactive rows are skipped before the candidate list is assembled. The engine simply proceeds with whatever machines remain active, so there is no error and no warning: the machine is not considered at all.
+
+## Step 4: Understand What Changed
+
+What happens next depends on how the step was configured.
+
+| Configuration | Effect of removing one machine |
+|---|---|
+| **Independent parallel** | Remaining machines split the hours between them, so the step takes longer in elapsed time |
+| **True alternate** | The machine is no longer a fallback, so the step stays on whatever active option finishes soonest |
+| **Dependent parallel** | The synchronized group is smaller, so the mirrored capacity for the step drops |
+
+A step that gets noticeably longer is not a fault. It is the plan reporting what the surviving machines can actually do. Method for the parallel setup itself is in [how to make two operations run in parallel](/blog/how-to-make-two-operations-run-in-parallel-in-edgebic).
+
+## Step 5: Put the Machine Back
+
+Tick the active flag back on and re-run. Because nothing was deleted, the machine returns with its original speed factor, setup, and priority. There is no reconfiguration step and no risk of typing a different factor than the one that was there before, which is the whole reason to use the flag rather than deleting the row.
+
+## Flag or Downtime: How to Choose
+
+Ask one question. Is the machine unavailable to the whole plant, or just to this routing step?
+
+- **Unavailable to the whole plant, for known dates.** Use a downtime event on the work center. See [how to schedule a downtime event for a machine](/blog/how-to-schedule-a-downtime-event-for-a-machine-in-edgebic). It blocks every step assigned to that station and releases automatically when the window ends.
+- **Available, but this step should stop using it.** Clear the active flag. It affects one step and holds until someone reverses it.
+
+Getting this backwards is the most common error. A flag used for a week-long breakdown leaves the machine fully bookable by every other product, so the plan still over-promises.
+
+## How to Check It Worked
+
+- **Re-run and read the step on the Gantt.** The disabled machine should carry no bars for that step. If it still does, the schedule was not re-run.
+- **The step's duration moved the way you expected.** On an independent parallel step, losing one of two machines should roughly double the elapsed time.
+- **Other products are unaffected.** Open a different product that uses the same station and confirm it still schedules there. If it does not, you disabled the station itself somewhere rather than the row.
+- **The row is still there.** Open the grid again. The machine should be present with its original numbers and an unticked flag.
+
+## Common Mistakes
+
+- **Deleting the row instead of clearing the flag.** Deletion loses the speed factor and per-machine setup, and rebuilding them from memory later is where wrong numbers enter a routing.
+- **Using the flag for a physical breakdown.** It only covers one step, so every other product keeps booking the broken machine.
+- **Forgetting to re-run.** The existing plan is unchanged until the engine runs again.
+- **Expecting in-progress work to move.** Work already logged as started stays on the machine it started on, which is correct: completed work is never moved by a reschedule.
+
+See how EDGEBIC schedules parallel and alternate machines on the [EDGEBIC product page](/edgebic).

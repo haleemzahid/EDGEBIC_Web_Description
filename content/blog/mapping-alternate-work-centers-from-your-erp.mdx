@@ -1,0 +1,129 @@
+---
+title: "Mapping Alternate Work Centers From Your ERP"
+description: "How to carry an ERP's alternate machine data into EDGEBIC: what a true alternate means, speed factors, priority, machine pools, and what to do when the ERP holds nothing at all."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - map alternate work centers ERP
+  - alternate machine routing import
+  - true alternate speed factor
+  - machine pool versus alternate
+  - EDGEBIC alternate work center import
+  - ERP routing alternates scheduling
+targetPhrase: "mapping alternate work centers from your ERP"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "What is a true alternate work center?"
+    answer: "A true alternate is a second machine the scheduler may choose for an operation when the primary is not the best option, with its own run time expressed through a speed factor. It is a choice, not an addition: the operation runs on one machine or the other, never both. That distinguishes it from parallel processing, where two machines work on the same operation at the same time."
+  - question: "My ERP does not record alternate machines anywhere. Can I still use them?"
+    answer: "Yes, and most shops end up defining them in the scheduler rather than the ERP, because alternates are a capacity decision and ERPs generally model routings as fixed. Add them once per operation where the flexibility genuinely exists, and they persist through later routing re-imports of the primary data as long as you keep the alternate definitions in the scheduler rather than trying to round-trip them."
+  - question: "When should I use a machine pool instead of a list of alternates?"
+    answer: "Use a pool when the machines are interchangeable and any of them is an acceptable answer, and use named alternates when the choice is a genuine fallback with different economics. Three identical mills belong in one work center with three instances or in a work center group, so the scheduler balances load automatically. A slower backup machine you only want used when the primary is full is an alternate."
+qaQuestions:
+  - question: "Our ERP routing lists a primary machine and a comment field saying 'or Mill-3'. How do we turn that into something the scheduler can act on?"
+    answer: "Treat the comment as documentation and define the relationship properly once. Import the routing with the primary machine as normal, then add Mill-3 as a true alternate on that step with a speed factor reflecting how it actually runs. If Mill-3 takes 25 percent longer, the factor stretches the run time so the scheduler weighs the real trade-off instead of treating both machines as equal. Set a priority so the primary is preferred when both are free. Do this for the operations where the flexibility is real, which in most shops is a handful, not the whole routing. Comment fields are the classic place where shop knowledge dies quietly, and moving that knowledge into the model is usually worth more than any other single data improvement."
+  - question: "We import routings nightly. Will the re-import wipe the alternates we defined by hand?"
+    answer: "The routing import wipes and recreates a product's steps once per run, so anything that lives on those steps is rebuilt from the file. The practical consequence is that alternate definitions should have a home your import respects. Two approaches work. First, carry the alternate as data in the routing export if your ERP can hold it, so it is recreated on every run like every other column. Second, and more common, define alternates against work center groups rather than against individual steps, since a group is a pool of machines that a step points at, and the group definition is not part of the product's step list. The second approach survives nightly re-imports untouched and is usually less work to maintain."
+---
+
+**Alternate work centers are the flexibility your ERP usually does not model: a second machine the scheduler may choose for an operation, with its own speed factor and priority, used instead of the primary rather than alongside it.** Carrying them from an ERP is rarely a straight column mapping, because most ERPs treat a routing operation as fixed to one resource. The practical answer is to import the primary from the ERP and define the alternates once in the scheduler, where they belong.
+
+EDGEBIC by User Solutions has captured this kind of shop knowledge since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, alternates are consistently the most valuable data that exists only in people's heads.
+
+## Three things ERPs confuse, and the schedule does not
+
+Before mapping anything, separate three ideas that ERP comment fields tend to blend:
+
+| Concept | Meaning | Machines used |
+|---|---|---|
+| True alternate | Either this machine or that one | One |
+| Machine pool | Several interchangeable units of the same capability | One, chosen automatically |
+| Parallel processing | Two machines working the same operation together | Both |
+
+A true alternate is a **choice**. The [what is a true alternate work center](/blog/what-is-a-true-alternate-work-center) post covers the definition, and [how a scheduler chooses between alternate machines](/blog/how-a-scheduler-chooses-between-alternate-machines) covers the decision.
+
+Getting the category right first saves rework, because an alternate modeled as parallel doubles your apparent capacity and an interchangeable pool modeled as a list of alternates makes every routing carry maintenance it does not need. The comparison is in [when to use a machine pool versus an alternate work center](/blog/when-to-use-a-machine-pool-vs-an-alternate-work-center).
+
+## Case 1: the ERP holds an alternate resource field
+
+Some ERPs do record a secondary resource on the operation. If yours does, export it alongside the primary and treat it as real data.
+
+Two things to check before you trust it:
+
+- **Is it maintained?** An alternate field populated during implementation five years ago and never revisited describes a shop that no longer exists.
+- **Does it carry a time?** A machine listed as an alternate with no separate run time is being treated as identical to the primary, which is usually optimistic. Machines that are truly identical belong in a pool instead.
+
+## Case 2: the alternate lives in a comment field
+
+The most common case. The routing says the operation runs on Mill-2, and a note says "or Mill-3 if busy."
+
+That note is genuine shop knowledge, and it is invisible to any scheduler. Move it into the model:
+
+1. Import the routing normally with Mill-2 as the operation's work center.
+2. Add Mill-3 as a true alternate on that step.
+3. Give it a speed factor that reflects reality. If Mill-3 runs 25 percent slower, the factor stretches the run time so the trade-off is honest.
+4. Set a priority so Mill-2 is preferred when both are free.
+
+The application steps are in [how to add an alternate work center to a step](/blog/how-to-add-an-alternate-work-center-to-a-step-in-edgebic), the factor in [how to set a true alternate with a speed factor](/blog/how-to-set-a-true-alternate-with-a-speed-factor-in-edgebic), and the ordering in [how to set the priority of alternate work centers](/blog/how-to-set-the-priority-of-alternate-work-centers-in-edgebic).
+
+Do this for the operations where flexibility is real. In most shops that is a handful, not the whole routing, and the handful is almost always on the constraint machines. [Production bottleneck identification](/blog/production-bottleneck-identification) is the right way to find them.
+
+## Case 3: the ERP holds nothing, and the machines are interchangeable
+
+If several machines are genuinely interchangeable, do not build a list of alternates on every step. Model the capability once:
+
+- **Same machine, several units:** one work center with an instance count. The scheduler balances across the instances automatically.
+- **Different but interchangeable machines:** a [work center group](/blog/edgebic-work-center-groups-explained), which is a named pool with a per-member speed factor. A routing step points at the group, and the scheduler picks the member.
+
+The group approach has a practical advantage that matters a lot for ERP integration, covered next.
+
+## The re-import question, and the durable answer
+
+The routing import wipes and recreates a product's steps once per run. That is what makes re-imports idempotent, and it is also what determines where alternate definitions should live.
+
+**If alternates ride on individual steps**, they need to be in the export, or a nightly routing import rebuilds the steps without them.
+
+**If alternates are expressed as a work center group**, the step simply points at the group and the group definition is not part of the product's step list. Nightly re-imports leave it untouched. For a shop importing routings frequently, this is the durable answer and usually less maintenance overall.
+
+So the decision rule is: capability-level flexibility goes in a group, and one-off step-level exceptions go on the step and into the export if the ERP can hold them. The engineering-change behavior around re-imports is covered in [handling engineering changes with a routing re-import](/blog/handling-engineering-changes-via-erp-re-import).
+
+## Speed factors: get them roughly right, not precisely wrong
+
+A speed factor stretches or compresses run time on the alternate relative to the primary. A factor above one means slower.
+
+Two rules keep them useful:
+
+- **Ask the floor, not the standards file.** People who run both machines know the ratio, and it is usually a round number like 1.25 rather than a precise one.
+- **Do not factor setup.** Setup is per changeover and behaves differently from run time. A machine with a genuinely different setup gets its own setup value rather than a scaled one.
+
+The split between setup and run behavior is in [handling combined setup and run time from your ERP](/blog/handling-combined-setup-and-run-time-from-your-erp).
+
+## What changes in the plan
+
+With alternates modeled, the scheduler treats a busy primary as a routing decision instead of a delay. Instead of queuing behind a full mill, a job can land on the slower one and still finish earlier, and the plan shows which choice it made and why. When a group is involved, the pool is re-shopped on every reschedule, so a machine that frees up is used on the next run rather than requiring a manual edit.
+
+That behavior sits inside the wider engine: finite capacity across shifts and machine instances, sequence-dependent setups, lot streaming with transfer batches, operator skills, and mathematical optimization with a proven optimality gap. The [EDGEBIC product overview](/edgebic) maps the engine, and the [ERP integration architecture](/edgebic-erp-integration) shows the import layer that feeds it.
+
+## One caution worth stating
+
+Alternates make a plan more flexible, not more capacity. Adding an alternate that the shop would never actually use produces schedules the floor rejects, and the rejection is correct. Model only the flexibility that exists in practice, and validate it in the first parallel run. The [go-live cutover plan](/blog/an-erp-and-edgebic-go-live-cutover-plan) has the validation loop.
+
+## Bring your comment fields
+
+Export one routing including whatever comment fields carry machine notes and [bring it to a demo](/contact-us). Turning three of those comments into real alternates takes minutes, and the effect on the schedule is usually visible immediately on your busiest machine.
+
+<Accordion title="What is a true alternate work center?">
+A true alternate is a second machine the scheduler may choose for an operation when the primary is not the best option, with its own run time expressed through a speed factor. It is a choice, not an addition: the operation runs on one machine or the other, never both. That distinguishes it from parallel processing, where two machines work on the same operation at the same time.
+</Accordion>
+
+<Accordion title="My ERP does not record alternate machines anywhere. Can I still use them?">
+Yes, and most shops end up defining them in the scheduler rather than the ERP, because alternates are a capacity decision and ERPs generally model routings as fixed. Add them once per operation where the flexibility genuinely exists, and they persist through later routing re-imports of the primary data as long as you keep the alternate definitions in the scheduler rather than trying to round-trip them.
+</Accordion>
+
+<Accordion title="When should I use a machine pool instead of a list of alternates?">
+Use a pool when the machines are interchangeable and any of them is an acceptable answer, and use named alternates when the choice is a genuine fallback with different economics. Three identical mills belong in one work center with three instances or in a work center group, so the scheduler balances load automatically. A slower backup machine you only want used when the primary is full is an alternate.
+</Accordion>

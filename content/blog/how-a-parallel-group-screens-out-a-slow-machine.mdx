@@ -1,0 +1,98 @@
+---
+title: "How a Parallel Group Screens Out a Slow Machine"
+description: "A minimum efficiency threshold keeps low-performing machines out of a parallel group. How the screen works, what it costs you in capacity, and when to raise or lower it."
+published: 2026-08-07T12:00:00.000Z
+modified: 2026-08-07T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - parallel work center scheduling
+  - minimum efficiency threshold
+  - machine efficiency scheduling
+  - work center efficiency
+  - finite capacity scheduling
+  - parallel machine selection
+targetPhrase: "minimum efficiency threshold"
+wordCount: 1550
+readingTime: 8
+faqQuestions:
+  - question: "How does a scheduler stop a slow machine from joining a parallel operation?"
+    answer: "A parallel step carries a minimum efficiency threshold, a number between 0 and 1 that a candidate machine must meet before it can be added to the group. EDGEBIC compares the threshold against each candidate work center's efficiency figure, and any machine below the line is left out of the parallel list before the capacity search even runs. The default threshold is 0.80, so a machine rated below 80 percent efficiency is excluded unless you lower the setting."
+  - question: "Does excluding a machine make the job finish later?"
+    answer: "It can, and that is the trade-off the threshold exists to make explicit. A parallel group with three machines finishes sooner than one with two, so screening out the weakest machine costs elapsed time. What it buys is predictability, because a machine with a low efficiency rating consumes more scheduled hours per unit of real output and tends to be the one that slips. If elapsed time matters more than consistency on a given step, lower the threshold for that step."
+  - question: "What number does the threshold compare against?"
+    answer: "The candidate work center's own efficiency value in its master record. That means the screen is only as good as the efficiency data behind it. If every machine is left at 100 percent because nobody ever updated the field, the threshold never excludes anything and the setting is inert. Maintaining honest efficiency figures on each work center is what turns the threshold from a decoration into a real control."
+qaQuestions:
+  - question: "My step is configured for three parallel machines but only two ever get used. Why?"
+    answer: "Check the third machine's efficiency figure against the step's minimum efficiency threshold. With the default threshold of 0.80, a machine carrying an efficiency of 0.60 is filtered out of the candidate list before the scheduler looks for capacity, so it never appears in the group no matter how free it is. The other common causes are the machine being marked inactive on the step's alternate list, or the machine not sharing a shift with the rest of the group on the day in question. Look at the efficiency value first, because it is the one that produces exactly this symptom of a machine that is available and still never chosen."
+  - question: "Should I lower the threshold to zero so the scheduler always uses every machine?"
+    answer: "Only if every machine on the step really is interchangeable in practice. Dropping the threshold to zero turns the screen off and lets the weakest machine take a share of every parallel step, which compresses the plan on paper. The risk is that the plan is compressed against a machine whose real throughput does not match its scheduled hours, so the group finishes late and the whole group's downstream steps move with it. A better middle path is to keep a threshold that reflects what you would actually accept, then fix the efficiency values so the screen makes decisions you agree with."
+---
+
+**A minimum efficiency threshold is the rule that decides which machines are good enough to join a parallel operation. Each parallel routing step in EDGEBIC by User Solutions carries a threshold between 0 and 1, and every candidate work center must meet or beat it before the scheduler will add it to the group. The default is 0.80, so a machine rated below 80 percent efficiency is screened out before the capacity search runs at all.** It is a small setting with a large effect, because it decides whether a job spreads over three machines or two.
+
+Most discussion of parallel work centers is about how the hours get divided. The threshold is the earlier question: which machines were ever allowed in the division.
+
+## The screen runs before the capacity search
+
+When a routing step is configured to run on more than one machine at once, the scheduler builds a candidate list from the step's alternate work centers. The efficiency screen is applied while that list is being assembled, not afterward. A machine whose efficiency rating falls below the step's threshold is dropped from the candidate list, and every later stage of the engine behaves as though that machine was never offered.
+
+That ordering matters for diagnosis. A machine excluded by the threshold does not show up as a rejected candidate with an empty allocation. It simply is not in the group, on any day, no matter how much idle capacity it has. If you are hunting for why a machine you configured never receives work, the threshold is the first place to look, well before you start studying shift calendars.
+
+The comparison itself is deliberately plain. The threshold is a ratio, the candidate's efficiency is a ratio, and the engine keeps machines whose efficiency is at or above the line.
+
+## What efficiency means here, and why the data matters
+
+Efficiency on a work center is the dial that says how much real output the machine produces relative to its nominal rate. A machine at 1.0 does a nominal hour of work in an hour. A machine at 0.60 needs longer to do the same work, so the scheduler has to reserve more calendar time to get the same pieces out.
+
+That makes the screen only as trustworthy as the master data behind it. In shops where every machine was imported at 100 percent and never revisited, the threshold quietly excludes nothing, because nothing is below the line. In shops that maintain honest efficiency figures, usually derived from logged actuals against planned hours, the threshold becomes a genuine quality control on which equipment is allowed into a time-critical operation.
+
+This is the same efficiency dial covered in [efficiency versus utilization](/blog/efficiency-vs-utilization-two-different-capacity-dials), used for a different purpose. There it stretches or compresses run time. Here it decides membership.
+
+## A worked example: three mills, one threshold
+
+A machining step needs 24 hours of run time on the primary mill, and the step is configured for independent parallel processing with two additional mills as candidates.
+
+- Mill A, the primary, efficiency 1.00
+- Mill B, efficiency 0.85
+- Mill C, efficiency 0.60, an older machine that produces acceptable parts but slowly and with frequent stoppages
+
+With the default threshold of 0.80, the engine screens the list before searching for capacity. Mill A and Mill B pass. Mill C is 0.20 below the line and is removed.
+
+The 24 hours are then divided across two machines rather than three. On an eight-hour day shift, that is roughly 12 hours each, so the step consumes a day and a half of elapsed time instead of the one day that three machines would have produced. The threshold cost the plan about half a day on this step.
+
+Now lower the threshold on this step to 0.55 and reschedule. Mill C passes, the 24 hours spread across three machines, and the step finishes in a single day on paper. The question is whether Mill C really delivers eight hours of usable output in an eight-hour shift. If it does not, the group's true finish is later than the plan says, and because parallel work is coordinated, every downstream step moves with the slowest member. You did not gain half a day. You moved the loss out of the plan and onto the floor.
+
+That is the entire trade-off in one example. A higher threshold produces a longer but more honest plan. A lower threshold produces a shorter plan that depends on your weakest machine performing.
+
+## When to raise the threshold, and when to lower it
+
+Raise it when the step feeds a constraint or a promise date, when the parts are difficult and a marginal machine produces rework, or when you have enough capacity that spreading over one fewer machine costs you nothing you care about. A tight threshold on a feeding operation is a cheap way to keep the constraint fed with parts that do not come back.
+
+Lower it when you are genuinely capacity-short and elapsed time is the binding problem, when the step is simple enough that a slow machine is only slow rather than unreliable, or when the low efficiency figure reflects a rate difference you have already priced into the routing. A machine that is honestly rated at 0.70 and behaves like 0.70 is a perfectly good group member, because the scheduler already reserves the extra time.
+
+The threshold sits on the step, not on the plant, so these are per-operation decisions. A finishing step that feeds a shipping deadline can hold a tight screen while a roughing step upstream lets everything in.
+
+## How it interacts with the rest of the parallel machinery
+
+The screen is one gate among several, and it fires first. After it, the group still has to clear the checks that decide whether the machines can actually run together: they need a shared shift on the target day, they need free instances, and for synchronized work they need a window where every member is simultaneously available. Those later gates are covered in [how dependent parallel mirroring locks machines together](/blog/how-dependent-parallel-mirroring-locks-machines-together) and in the comparison of [dependent and independent parallel](/blog/dependent-vs-independent-parallel-when-to-use-each).
+
+The threshold also does not touch true alternate routing, where a machine is a fallback rather than a partner. A fallback machine is chosen when the primary has no capacity, and the choice runs through the alternate resolver instead of the parallel candidate list. If you want a slow machine available as an emergency route but never as a routine partner, configure it as an alternate rather than a parallel member and leave the threshold high.
+
+All of this sits inside the wider engine described in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and it only produces a real decision because capacity is treated as [genuinely finite](/blog/finite-vs-infinite-capacity-scheduling). If capacity were infinite, adding a slow machine would be free. It is not, and the threshold is where you say so.
+
+To see how your own efficiency figures would shape parallel groups on your routings, [bring your data to a demo](/edgebic).
+
+<Accordion title="How does a scheduler stop a slow machine from joining a parallel operation?">
+A parallel step carries a minimum efficiency threshold, a number between 0 and 1 that a candidate machine must meet before it can be added to the group. EDGEBIC compares the threshold against each candidate work center's efficiency figure, and any machine below the line is left out of the parallel list before the capacity search even runs. The default threshold is 0.80, so a machine rated below 80 percent efficiency is excluded unless you lower the setting.
+</Accordion>
+
+<Accordion title="Does excluding a machine make the job finish later?">
+It can, and that is the trade-off the threshold exists to make explicit. A parallel group with three machines finishes sooner than one with two, so screening out the weakest machine costs elapsed time. What it buys is predictability, because a machine with a low efficiency rating consumes more scheduled hours per unit of real output and tends to be the one that slips. If elapsed time matters more than consistency on a given step, lower the threshold for that step.
+</Accordion>
+
+<Accordion title="What number does the threshold compare against?">
+The candidate work center's own efficiency value in its master record. That means the screen is only as good as the efficiency data behind it. If every machine is left at 100 percent because nobody ever updated the field, the threshold never excludes anything and the setting is inert. Maintaining honest efficiency figures on each work center is what turns the threshold from a decoration into a real control.
+</Accordion>
