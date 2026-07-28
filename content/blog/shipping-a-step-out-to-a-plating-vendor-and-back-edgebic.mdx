@@ -1,0 +1,134 @@
+---
+title: "Shipping a Step Out to a Plating Vendor and Back: A Transit Days Walkthrough"
+description: "An outside operation scheduling walkthrough in EDGEBIC: model a plating vendor's turnaround with transit days, pick calendar or working days, and watch the job's finish date move."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - outside operation scheduling
+  - transit days walkthrough
+  - subcontract step scheduling
+  - vendor turnaround in a routing
+  - calendar vs working days transit
+  - outside processing lead time
+targetPhrase: "outside operation scheduling"
+wordCount: 1720
+readingTime: 9
+faqQuestions:
+  - question: "How do you schedule an operation that happens at an outside vendor?"
+    answer: "Model the wait with transit days on the step whose completion starts it, rather than inventing a placeholder machine to hold the time. You set the number of days parts are away and choose whether they count as calendar days or working days. On the next scheduling run the downstream operation cannot begin until that many days after the upstream step finishes, and the job's finish date reflects the real turnaround."
+  - question: "Should outside processing use calendar days or working days?"
+    answer: "Use working days when the vendor and your receiving dock both observe your working calendar, and calendar days when the clock genuinely runs over weekends. Working-day mode counts only days the shop is open, so a three day transit starting Thursday lands the following Tuesday. Calendar mode counts every day including weekends, which can put an arrival on a day nobody is there to receive it."
+  - question: "Does a transit gap consume any work center capacity?"
+    answer: "No. Transit days add elapsed time between two operations without booking a single machine hour anywhere. That is the point of modeling outside work this way rather than creating a fake work center for the vendor: a fake station would show up on the utilization report as load that does not exist, and would compete for capacity the plant never had."
+qaQuestions:
+  - question: "Our plater quotes five days but it is really five days plus a day each way on the truck. How do we model that honestly?"
+    answer: "Add the shipping to the transit rather than pretending it is free. In this walkthrough the plater quotes 5 working days and the truck takes 1 day each way, so the transit days value is 7 working days, not 5. The finish date that comes out of that is the one the customer actually experiences. Splitting it into a separate move time is possible but it does not change the arithmetic, and one honest number on one step is easier for the next planner to read than two numbers that have to be added mentally."
+  - question: "The plating step lands on a Sunday and the vendor is closed. What do I change?"
+    answer: "Switch that step's transit to working-day mode. In calendar mode the transit counts every day including weekends, so a batch that leaves late in the week arrives on a day nobody receives it. Working-day mode counts only shop-open days, so the transit skips weekends and holidays. The mode is set per step, so an internal same-day move between two buildings and a multi-day vendor turnaround can each use the mode that matches reality without one setting compromising the other."
+---
+
+**An operation that happens at an outside vendor is scheduled as a gap, not as a machine: you set transit days on the step whose completion starts the wait, choose calendar or working days, and the downstream operation cannot begin until the parts are back.** This walkthrough runs a plated bracket through that model in [EDGEBIC by User Solutions](/edgebic), including the mistake most shops make first (inventing a fake work center for the vendor) and what it costs them. It is one of the [worked examples](/blog/edgebic-worked-examples) we publish with the numbers on the page.
+
+Outside processing is common enough that getting it wrong distorts every promise date a shop makes. Getting it right is one field and one radio button.
+
+## The Cast: One Bracket, One Plater
+
+Ridgeline Metalworks runs a bracket that goes out for zinc plating between machining and assembly:
+
+| Step | Where | Hours | Note |
+|---|---|---|---|
+| 10 SAW-1 | In house | 5.0 h | Cut blanks |
+| 20 MILL-2 | In house | 14.0 h | Machine faces |
+| 30 DEBURR-1 | In house | 4.0 h | Prep for plating |
+| 40 | **Outside** | 0 | Zinc plate at Coastal Finishing |
+| 50 ASSY-1 | In house | 9.0 h | Assemble |
+| 60 INSP-1 | In house | 2.0 h | Final |
+
+Coastal Finishing quotes 5 working days for plating. The truck runs Tuesdays and Thursdays and takes a day each way. Total time parts are away from the building: **7 working days**.
+
+Every in-house work center runs one instance on a day shift, Monday to Friday, 08:00 to 16:00. The order is 80 pieces, due Friday, November 7.
+
+## Step 1: Reject the Fake Work Center
+
+The instinct is to create a work center called PLATING with some enormous capacity, put the vendor's turnaround on it as hours, and move on. Do not.
+
+A fake work center does three things wrong. It appears on the utilization report as a real station with real load, so plant utilization numbers stop meaning anything. It competes in the scheduling logic as if it were a machine your plant owns, which it is not. And it forces you to express a five day calendar wait as a number of hours, which requires it to have a shift, which means the wait mysteriously pauses at 16:00 every day and over weekends.
+
+The transit days mechanism exists precisely so you do not have to do any of that.
+
+## Step 2: Set Transit Days on the Upstream Step
+
+The gap starts when the parts are ready to leave, which is when the deburr operation finishes. So the transit goes on step 30, not on a step of its own.
+
+1. Open the **BOR** tab and select the bracket's routing.
+2. Select step 30, the deburr operation.
+3. Set **Transit Days** to 7.
+4. Set **Is Calendar Days** to off, so it counts working days only.
+5. Save the routing.
+
+That is the whole configuration. There is no step 40 row at all in this version, because the vendor operation has no hours and consumes no capacity: it is entirely a wait, and the wait is now modeled where it belongs.
+
+If your traveler needs a visible line item for the plating operation so the shop knows the parts leave the building, you can carry a step for documentation, but the timing still lives on the transit field. The field-level recipe is [how to add transit days between two steps](/blog/how-to-add-transit-days-between-two-steps-in-edgebic).
+
+## Step 3: Schedule and Read the Gap
+
+Run **Drive Schedule** for the job. The result:
+
+| Step | Start | End |
+|---|---|---|
+| 10 SAW-1 | Mon Oct 20, 08:00 | Mon Oct 20, 13:00 |
+| 20 MILL-2 | Tue Oct 21, 08:00 | Wed Oct 22, 14:00 |
+| 30 DEBURR-1 | Thu Oct 23, 08:00 | Thu Oct 23, 12:00 |
+| *transit* | *7 working days* | |
+| 50 ASSY-1 | Mon Nov 3, 08:00 | Tue Nov 4, 09:00 |
+| 60 INSP-1 | Tue Nov 4, 09:00 | Tue Nov 4, 11:00 |
+
+Deburr finishes Thursday October 23 at noon. Seven working days from there, counting only days the shop is open, is Monday November 3. Assembly starts there.
+
+Notice what the working-day mode did: seven working days spanned 11 calendar days, because two weekends fell inside the window. In calendar mode the same 7 would have landed on Thursday October 30, which would have been a lie by two full working days. On a routing with three outside operations, that class of error compounds until nobody trusts the promise dates.
+
+The job ends Tuesday November 4, three working days ahead of the Friday November 7 due date.
+
+## Step 4: Read What the Gap Cost
+
+Total in-house machine time on this job: 34 hours. Total elapsed time from first cut to final inspection: 12 working days.
+
+The plating gap alone is seven of those days, more than half the job's calendar footprint, and it books zero machine hours. That is the honest picture of a shop that outsources a finishing operation, and it is the number a planner needs in front of them when a customer asks why a 34 hour job takes two and a half weeks.
+
+It also tells you where lead time reduction actually lives for this part. Shaving an hour off the mill step changes the finish date by an hour. Getting the plater to a four day turnaround, or arranging a daily truck instead of a twice-weekly one, changes it by days.
+
+## Step 5: What Happens When the Vendor Slips
+
+Two weeks later the plater calls: a tank is down, the batch will be three days late.
+
+You have two honest ways to record it, and the choice depends on whether this is a one-off or the new normal.
+
+**One-off:** leave the routing alone and let the job's own copy carry the change. Open the **Scheduled Job BOR** tab, select the job, and raise the transit days on step 30 from 7 to 10 on this job's copy only. Every job's routing is a frozen copy taken when it was scheduled, so editing it changes this order and nothing else. Reschedule the one job.
+
+Result: assembly moves from Monday November 3 to Thursday November 6, inspection finishes Thursday afternoon, and the job now ends one day before its due date instead of three. Still on time, with the float visibly spent. That is the moment to decide whether to tell the customer, and you can decide it with a number.
+
+**The new normal:** if the plater's turnaround has genuinely moved, change the master routing so every future order carries the truth. The next order planned will use 10 days from the start.
+
+The distinction between the master routing and a job's frozen copy is the reason both options exist, and it is covered in [production routing snapshots explained](/blog/edgebic-routing-snapshots-explained).
+
+## Step 6: Do Not Stack Transit and Transfer Delay by Accident
+
+One trap worth naming. Transit days and transfer delay are additive on the same gap. Transfer delay is a sub-hour handling lag that belongs with lot streaming, where the first transfer batch of parts is walked to the next machine. Transit days is a whole-day gap for shipping.
+
+For a multi-day vendor turnaround, use transit days alone and leave transfer delay at zero. Setting both because they sound similar produces a gap longer than either field suggests, and it is genuinely hard to spot afterward because each number looks reasonable on its own.
+
+The order the engine composes these gaps in, and the related interaction where an active lot-streaming flow replaces a queue time rather than adding to it, is laid out in [how queue, flow, and transit stack after an operation](/blog/how-queue-flow-and-transit-stack-after-an-operation).
+
+## What This Walkthrough Proves
+
+1. **An outside operation is a gap, not a machine.** Modeling it as transit days keeps the utilization report honest and stops a vendor competing for capacity you do not own.
+2. **The transit belongs on the upstream step.** The gap starts when the parts are ready to leave.
+3. **Working-day mode is usually right.** Seven working days spanned 11 calendar days here, and calendar mode would have promised two days that do not exist.
+4. **Outside time dominates the calendar.** Seven of 12 elapsed days, and zero machine hours, is where the lead time conversation actually belongs.
+5. **A vendor slip is a one-job edit or a routing change.** Which one depends on whether it is an exception or the new truth, and the frozen copy is what makes that choice available.
+
+For transit between your own buildings rather than to a vendor, [multi-plant scheduling with transit times](/blog/multi-plant-scheduling-with-transit-times-edgebic) covers the same field applied to internal shipping, and [a material step is holding up my job](/blog/a-material-step-is-holding-up-my-job-edgebic) handles the related case where the wait is for purchased material rather than for outside work.

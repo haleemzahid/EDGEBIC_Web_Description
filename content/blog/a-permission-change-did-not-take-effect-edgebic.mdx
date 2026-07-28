@@ -1,0 +1,85 @@
+---
+title: "A Permission Change Did Not Take Effect: Causes and Fixes"
+description: "When a granted permission does not reach the user, the usual cause is that the session captured its permission set at sign-in. Why a re-login is required and what else to check."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - permission change did not take effect
+  - permission requires re-login
+  - session permission set
+  - role change not applied
+  - per-user deny override
+  - effective permissions
+targetPhrase: "permission change did not take effect"
+wordCount: 1230
+readingTime: 6
+faqQuestions:
+  - question: "Why does a permission change require the user to sign out and back in?"
+    answer: "The permission set is captured once at sign-in and held for the duration of the session. That keeps every screen consistent and avoids a user's access changing mid-task, but it also means a grant made while the user is signed in does not reach them until the next sign-in. Ask the user to sign out and back in, then re-test the action. No restart of the whole workstation is needed."
+  - question: "I granted the permission and the user re-logged in, but the action is still blocked. What now?"
+    answer: "Check for a per-user deny override on that user. Effective access is what the roles grant, plus per-user grants, minus per-user denies, and a deny beats a role grant. Per-user overrides are stored separately and never appear in the role matrix, so a code can look granted at the role level and still be blocked for one person. Open the user edit dialog and inspect their permission overrides directly."
+  - question: "Does granting a permission to a role affect users who already hold that role?"
+    answer: "Yes, but only from their next sign-in. Adding a code to a role updates the role immediately and applies to every user assigned to it, so you rarely need to touch users individually. Anyone currently signed in keeps the permission set their session captured until they sign out and back in. Anyone signing in after the change picks it up straight away."
+qaQuestions:
+  - question: "I ticked the clear-data permission for a supervisor and he still gets a permission denied message. He says he restarted the application. What should I check?"
+    answer: "First confirm he actually signed out rather than just closing and reopening a window, because the permission set is captured at sign-in. Then confirm the code was ticked on a role he actually holds, not on a similarly named role. Finally check his per-user overrides, since a deny override on that code beats the role grant and never shows in the role matrix. That permission is intentionally excluded from planner-style role templates, so it is a common one to grant on the wrong role."
+  - question: "After an upgrade our custom Supervisor role lost access to a screen it used to have. Nothing was changed on purpose. Why?"
+    answer: "Custom roles never lose codes on their own, so the more likely explanation is that the screen is now gated by a new code that only the Administrator role received in the startup sync. The catalog sync inserts new codes and grants them to Administrator, but it deliberately leaves custom roles untouched. Edit the Supervisor role, find the module in the permission tree, tick the new code, and have the affected users sign out and back in."
+---
+
+**When a permission you granted does not reach the user, the usual cause is that their session captured its permission set at sign-in, so the change takes effect only after they sign out and back in.** [EDGEBIC by User Solutions](/edgebic) resolves effective access once per session rather than re-checking on every click, which keeps a screen consistent while a user works but delays new grants until the next login.
+
+This post is the detailed version of the permission-lag symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the model behind it, [what an effective permission is](/blog/what-is-an-effective-permission) explains how roles and overrides combine into one set.
+
+## What You Are Seeing
+
+You edit a role, tick the code the user is asking for, and save. The user tries the action again and gets the same permission denied message, or the button is still grayed out, or the tab is still absent. You re-open the role and the code is clearly ticked. Nothing about the configuration looks wrong, because nothing about the configuration is wrong.
+
+## Why It Happens
+
+**Cause 1: The session holds the permission set captured at sign-in.** This is the answer in the large majority of cases. Effective access is resolved once when the user authenticates, and that immutable set is what every screen consults for the rest of the session. A grant added afterward is in the database but not in the running session. Signing out and back in re-resolves the set.
+
+Note the difference between closing a window and signing out. Users often report "I restarted it" when they closed a screen and reopened it inside the same session. Only a genuine sign-out and sign-in refreshes the set.
+
+**Cause 2: A per-user deny override.** Effective access is role grants, plus per-user grants, minus per-user denies. A deny override wins over a role grant. Overrides live outside the role matrix, so inspecting the role tells you nothing about them. If a role clearly grants a code and the action is still blocked after a fresh sign-in, an override is the next place to look.
+
+**Cause 3: The code was granted on a role the user does not hold.** Roles with similar names are easy to confuse, and a user can hold more than one. Confirm the role assignment on the user, not just the tick on the role.
+
+**Cause 4: You granted a neighboring code.** Modules commonly expose several actions: view, add, edit, delete, plus module-specific ones such as generating a schedule, drag rescheduling, editing actuals, logging actuals, running imports, or managing import masks. Granting View when the user needs Edit produces exactly this symptom. Read the blocked action and match the code to it.
+
+**Cause 5: A newly shipped code never reached the custom role.** The catalog sync at startup inserts codes the software defines and grants every one of them to the Administrator role. Custom roles are left alone on purpose so an update cannot silently widen access. A screen gated by a new code stays invisible to custom roles until an administrator ticks it.
+
+**Cause 6: Startup did not finish the sync.** If startup stops before the catalog sync runs, for example because a pending database update failed to apply, the catalog stays stale and permission checks against new codes fail silently. Fix the startup problem first, then restart and re-check.
+
+## How to Fix It
+
+1. **Have the user sign out and sign back in.** Do this before changing anything else. It resolves the majority of these reports and costs less than a minute.
+2. **Confirm the exact code the blocked action needs.** Open Settings, Security, Roles, edit a role, and read the permission tree by section, module, and action. Match the code to the action the user is attempting, not the module they are standing in.
+3. **Confirm the user actually holds the role you edited.** Open Settings, Security, Users, select the user, and read the role selections in the edit dialog.
+4. **Inspect the per-user overrides.** In the same dialog, review the permission overrides. Clear a deny that is blocking a code the role grants. Clearing an override that was the only thing granting access will remove access, so check which direction the override points before you clear it.
+5. **Check the audit log for the denial.** Settings, Security, Audit Log records permission denials along with logins and permission changes. Filtering by the username tells you exactly which code was refused and when, which removes the guesswork from steps 2 and 3.
+6. **Re-test after a fresh sign-in.** Any change made in steps 3 to 5 needs one more sign-out and sign-in before it reaches the user.
+
+## How to Prevent It
+
+- **Make "sign out and back in" the standard closing line of every permission change.** Tell the requester at the time you make the grant so they are not left retrying a stale session.
+- **Grant at the role level whenever the need belongs to a job function.** Role grants reach every holder of that role on their next sign-in, and they stay legible six months later. Reserve per-user overrides for genuine exceptions.
+- **Check overrides before roles when access looks contradictory.** A deny override is the one cause the role matrix cannot show you.
+- **Add a custom-role review to your upgrade checklist.** After each update, walk each custom role's permission tree and tick the newly shipped codes that role should have.
+- **Use the audit log as your first evidence, not your last.** It names the refused code directly, which is faster than reasoning backward from a grayed-out button. If the module is missing entirely rather than blocked, [a tab I expect is missing](/blog/a-tab-i-expect-is-missing-edgebic) covers that variant, and [user and permission mistakes](/blog/user-and-permission-mistakes-edgebic) catalogs the wider set.
+
+<Accordion title="Why does a permission change require the user to sign out and back in?">
+The permission set is captured once at sign-in and held for the duration of the session. That keeps every screen consistent and avoids a user's access changing mid-task, but it also means a grant made while the user is signed in does not reach them until the next sign-in. Ask the user to sign out and back in, then re-test the action. No restart of the whole workstation is needed.
+</Accordion>
+
+<Accordion title="I granted the permission and the user re-logged in, but the action is still blocked. What now?">
+Check for a per-user deny override on that user. Effective access is what the roles grant, plus per-user grants, minus per-user denies, and a deny beats a role grant. Per-user overrides are stored separately and never appear in the role matrix, so a code can look granted at the role level and still be blocked for one person. Open the user edit dialog and inspect their permission overrides directly.
+</Accordion>
+
+<Accordion title="Does granting a permission to a role affect users who already hold that role?">
+Yes, but only from their next sign-in. Adding a code to a role updates the role immediately and applies to every user assigned to it, so you rarely need to touch users individually. Anyone currently signed in keeps the permission set their session captured until they sign out and back in. Anyone signing in after the change picks it up straight away.
+</Accordion>

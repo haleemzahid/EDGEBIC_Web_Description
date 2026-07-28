@@ -1,0 +1,100 @@
+---
+title: "Two Jobs Landed on the Same One-Per-Day Machine: Causes and Fixes"
+description: "When a one-job-per-day machine unit shows two jobs on the same date, the cause is a stale allocation, a synchronized mirror, or too few units. How to tell which and fix it."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - one job per day violation
+  - two jobs same machine unit
+  - dedicated instance scheduling problem
+  - one-per-day rule not enforced
+  - machine unit shared same day
+  - anomaly report machine collision
+targetPhrase: "two jobs landed on the same one-per-day machine"
+wordCount: 1270
+readingTime: 6
+faqQuestions:
+  - question: "Why did two jobs land on the same one-per-day machine unit?"
+    answer: "The one-job-per-day rule is enforced per machine unit per calendar date, so a violation means a booking existed on that unit before the engine placed the second job. The two documented causes are a reschedule that re-booked a unit without clearing the prior allocation and a synchronized mirror operation that copied a parent booking onto a unit that was already occupied. Re-running scheduling for both jobs clears the stale case."
+  - question: "Is it a violation when two jobs run on the same work center on the same day?"
+    answer: "No. The one-job-per-day rule applies to each machine unit, not to the work center as a whole. A booth with three units can legitimately run three different jobs on the same date, one per unit, and that is exactly what the rule is designed to allow. The check only fires when the same unit hosts two different jobs on the same date, which is the case the rule exists to prevent."
+  - question: "What do I do if the same violation returns after a clean reschedule?"
+    answer: "Treat it as a capacity shortage rather than a data problem. If the number of jobs that must run on that machine on one date exceeds the number of units, the engine has nowhere legal to put the extra job, and adding a unit to the work center is the documented fix. The alternative is to move the one-per-day rule from the machine to the single routing step that genuinely needs a dedicated day."
+qaQuestions:
+  - question: "Our vacuum furnace has two units and the report shows both of Tuesday's jobs on unit one. Nothing changed in the routing. Where do I start?"
+    answer: "Start with a fresh scheduling run for both jobs, because the most common cause is a prior allocation that was not cleared before re-booking, and a clean run rebuilds the day from scratch. If the finding survives that run, look at whether either operation is a synchronized mirror of a parent step, since a mirror is copied onto its unit deliberately without a capacity check. If neither applies, you have two jobs and one usable unit-day, and the answer is a third unit or a different date."
+  - question: "We turned on one-per-day for a booth because one part number needs a dedicated day, and now the whole booth schedules badly. Is that expected?"
+    answer: "Yes, and it is the most expensive way to model that constraint. The machine-level rule applies the dedicated-day cost to every product that touches the booth, so a two-unit booth can accept only two jobs a day no matter how short they are. The step-level version of the rule enforces the same dedicated-unit behavior for one operation while the booth runs ordinary allocation for everything else. Move the flag to the step and the rest of the booth returns to normal."
+---
+
+**When a one-job-per-day machine unit shows two different jobs on the same date, the rule was not relaxed: a booking already existed on that unit when the engine placed the second job.** [EDGEBIC by User Solutions](/edgebic) enforces the one-job-per-day contract per machine unit and per calendar date, and the allocator satisfies it by searching for a unit that carries no other job that day. A violation therefore means either a stale allocation survived a reschedule, a synchronized mirror wrote onto an occupied unit, or the work center has fewer units than the day needs.
+
+This post is the detailed version of the one-job-per-day symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the underlying behavior, [machine instances explained](/blog/edgebic-machine-instances-explained) covers how units are counted, and [what the anomaly checks actually look for](/blog/what-the-edgebic-anomaly-checks-actually-look-for) covers the family this finding belongs to.
+
+## What You Are Seeing
+
+The anomaly report shows a one-job-per-day finding naming a work center, a date, a unit, and the jobs involved. On the schedule board the same unit carries two operations from two different jobs on that date, even though the machine is configured to give a whole day to one job.
+
+Before anything else, confirm you are looking at a real violation. The rule is scoped to a single unit. Two jobs on the same work center but on different units on the same date is correct behavior, and a machine with four units is meant to accept four jobs a day. The check only fires when one unit hosts two different jobs.
+
+## Why It Happens
+
+### Cause 1: A Reschedule Re-Booked Without Clearing the Prior Allocation
+
+The allocator picks a unit by looking for one with no prior booking on the target date. If a previous allocation for that unit and date was still in the picture when the run placed the second job, the search saw an occupied unit as free and assigned it anyway.
+
+**How to tell:** the job was rescheduled recently, both operations look normal on their own, and neither is part of a parallel configuration.
+
+### Cause 2: A Synchronized Mirror Landed on an Occupied Unit
+
+When a step is configured so two machines must run in exact lockstep, the mirrored booking is written deliberately without a capacity check, because the physics of the operation demands both machines regardless of what else is planned. If the mirror's unit already carried an independent job that day, the one-job-per-day contract is broken by a booking that was never asked to respect it.
+
+**How to tell:** one of the two operations belongs to a step with synchronized parallel machines, and the machine in the finding is the mirror rather than the primary.
+
+### Cause 3: The Day Genuinely Needs More Units Than the Machine Has
+
+A one-job-per-day machine with two units can accept two jobs on a date. A third job that must run that day has nowhere legal to go. If a stale allocation is not the cause and the finding survives a clean run, the constraint and the workload are simply incompatible for that date.
+
+**How to tell:** the number of jobs competing for that date is greater than the unit count, and every unit is already carrying one job.
+
+### A Related Case: the Rule Is on the Wrong Object
+
+The one-job-per-day rule exists on the work center and on the individual routing step. The machine-level version applies the dedicated-day cost to every product that touches the machine. If the constraint really belongs to one part number, the machine-level flag is over-applied, and the schedule pressure that produced the collision is self-inflicted.
+
+## How to Fix It
+
+- **For a stale allocation:** run scheduling again for both jobs named in the finding. A clean run rebuilds the day's unit assignments from scratch and the collision clears.
+- **For a synchronized mirror:** keep the mirror machine free of independent load in the windows where the lockstep step runs. The mirror booking is correct and so is the configuration; what has to change is the other work planned onto that machine.
+- **For a genuine shortage:** add a unit to the work center so there are enough unit-days for the jobs that must share the date, or move one of the jobs to another date.
+- **For an over-applied rule:** move the one-job-per-day setting from the work center to the routing step that needs it, as described in [how a step-level one-per-day rule overrides the machine](/blog/how-a-step-level-one-per-day-rule-overrides-the-machine). The rest of the machine returns to normal allocation.
+
+## How to Diagnose It, in Order
+
+1. **Confirm the two operations share a unit,** not just a work center. Different units on one date is correct.
+2. **Check whether either operation is a synchronized mirror.** If it is, the finding is explained and the fix is load planning, not a reschedule.
+3. **Re-run scheduling for both jobs.** A stale allocation clears here, and this is the single most productive step.
+4. **Count the jobs against the units** for that date. More jobs than units means the finding will return no matter how many times you re-run.
+5. **Check where the rule is set.** A machine-level flag that should have been a step-level flag is a common source of avoidable pressure.
+
+## How to Prevent It
+
+- **Reserve mirror machines.** A machine used as a synchronized mirror should not also carry ordinary independent work in the same windows, because the mirror is booked without a capacity check by design.
+- **Size the unit count to the day.** One-job-per-day converts a question about free hours into a question about free unit-days, and those are very different on a busy machine. [How a job sticks to the same machine unit](/blog/how-a-job-sticks-to-the-same-machine-instance) covers the related consistency behavior.
+- **Put the rule where the constraint lives.** Equipment constraints belong on the machine; product constraints belong on the step. [Running a dedicated day with one-per-day](/blog/running-a-dedicated-oven-day-with-oneperday-edgebic) walks a worked setup.
+- **Re-run the anomaly report after the fix** and confirm the one-job-per-day finding returns zero rows for the date, rather than assuming the reschedule did it.
+
+<Accordion title="Why did two jobs land on the same one-per-day machine unit?">
+The one-job-per-day rule is enforced per machine unit per calendar date, so a violation means a booking existed on that unit before the engine placed the second job. The two documented causes are a reschedule that re-booked a unit without clearing the prior allocation and a synchronized mirror operation that copied a parent booking onto a unit that was already occupied. Re-running scheduling for both jobs clears the stale case.
+</Accordion>
+
+<Accordion title="Is it a violation when two jobs run on the same work center on the same day?">
+No. The one-job-per-day rule applies to each machine unit, not to the work center as a whole. A booth with three units can legitimately run three different jobs on the same date, one per unit, and that is exactly what the rule is designed to allow. The check only fires when the same unit hosts two different jobs on the same date, which is the case the rule exists to prevent.
+</Accordion>
+
+<Accordion title="What do I do if the same violation returns after a clean reschedule?">
+Treat it as a capacity shortage rather than a data problem. If the number of jobs that must run on that machine on one date exceeds the number of units, the engine has nowhere legal to put the extra job, and adding a unit to the work center is the documented fix. The alternative is to move the one-per-day rule from the machine to the single routing step that genuinely needs a dedicated day.
+</Accordion>

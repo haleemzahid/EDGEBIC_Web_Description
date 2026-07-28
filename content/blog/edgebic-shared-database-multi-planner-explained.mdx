@@ -1,0 +1,103 @@
+---
+title: "How Several Planners Share One EDGEBIC Database"
+description: "How multi-user scheduling works in EDGEBIC: one shared database, per-user screen layouts, sign-in identity, refresh behavior, and what happens when two people save the same row."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - multi user scheduling software
+  - shared scheduling database
+  - concurrent planners scheduling
+  - SQL Server production scheduling
+  - manufacturing software multi user
+  - finite capacity scheduling
+targetPhrase: "multi user scheduling software"
+wordCount: 1400
+readingTime: 7
+faqQuestions:
+  - question: "How do several people use EDGEBIC at the same time?"
+    answer: "Each person runs the EDGEBIC application on their own PC, and all of those installations point at the same SQL Server database. There is no separate server application to install for the schedule itself: the shared database is what makes it one plan. A planner in the office and a supervisor on the floor open the same jobs, the same capacity, and the same routings, and each of them sees their own screen layouts on top of that shared data."
+  - question: "Can more than one person use the single-file database?"
+    answer: "No. The default single-file database is a single-workstation setup by design, which is why it needs no server and no setup at all. Sharing a schedule between people means moving to SQL Server, which is a change made on the DataSource tab and takes effect after a restart. Switching providers does not move your data, so the move is planned as a backup, a switch, and a rebuild of master data from imports."
+  - question: "What happens if two planners save the same record at the same time?"
+    answer: "The last save wins. If two people edit the same record and both save, the second save overwrites the first, and nobody is warned. That makes ownership a working practice rather than a setting: agree who owns which products, work centers, and jobs, and the collision essentially stops happening. It is also why a scheduling run is something a team coordinates rather than something two people start independently."
+qaQuestions:
+  - question: "Our supervisor says the schedule on his screen does not match the planner's. Both are on the same database. What is going on?"
+    answer: "Almost always it is the age of what is on screen rather than a disagreement in the data. Screens load their data when you open them, and the dashboard in particular does not refresh on its own: each tab loads as you switch to it and reloads on demand. So a supervisor who opened a view at seven and has left it open all morning is looking at seven o'clock, and the planner who re-ran the scheduler at ten is looking at ten. The fix is a refresh rather than an investigation. Worth knowing as the exception: an open job view or the live actuals screen does update by itself when a kiosk save lands, because that is the one flow where stale data would have someone standing at a machine reading yesterday."
+  - question: "Do we need to stop the other planners while someone runs the scheduler?"
+    answer: "You do not have to, but a shop with two or three planners should still treat a run as a coordinated act rather than something anyone starts whenever. The reason is not a technical lock, it is that a scheduling run rewrites the forward plan, and anyone who was mid-way through staged Gantt edits, or reading a job list to make a promise, is now working from something that has moved under them. The common working pattern is one owner of the run, a known cadence, whether that is every morning or after every batch of new orders, and a quick word before an unscheduled one. Everything else, entering orders, logging actuals, editing routings, happily runs in parallel."
+---
+
+**EDGEBIC by User Solutions supports several planners working from one schedule by having every installation point at the same SQL Server database.** Each person runs the application on their own PC. What is shared is the data. What is personal is the way each person's screens are arranged.
+
+That split is the whole model, and understanding which side of the line something falls on answers most of the questions a growing team runs into.
+
+## Two Deployment Shapes
+
+EDGEBIC connects to its data through the DataSource tab of the Settings screen, and there are two shapes.
+
+| Setup | Who can use it | Setup effort |
+|---|---|---|
+| Single-file local database | One workstation | None: it is the default |
+| SQL Server | Everyone pointed at that server | A server, a database name, and a connection |
+
+The single-file option is genuinely zero-setup, which is why it is the default and why most evaluations start there. It is also single-workstation by design. The moment a second person needs to see the same plan, the answer is SQL Server.
+
+Two facts about the move are worth knowing before you make it. Switching providers requires a restart, and switching does not carry your data across: the old database keeps everything and the new one starts empty. So the migration is a planned sequence, back up, switch, rebuild master data from imports, rather than a toggle. [How to switch from the local database to SQL Server](/blog/how-to-switch-from-sqlite-to-sql-server-in-edgebic) covers the mechanics, and [choosing a database](/blog/edgebic-database-options-for-it-buyers) covers the decision.
+
+## What Is Shared and What Is Yours
+
+Once you are on a shared database, this is the line.
+
+**Shared, immediately, by everyone:** products, routings, work centers, departments, shifts and calendars, manufacturing orders, sales orders, quotes, inventory, schedules, and actuals. One version of each, for the whole site.
+
+**Personal to each user:** grid column widths, ordering, grouping and filters, which are saved per user automatically; the display configuration of the scheduler and Gantt; and anything else about how a screen is arranged rather than what it contains.
+
+That second list is what makes a shared system tolerable in practice. A planner who wants twelve columns on the job list and a supervisor who wants four are not fighting over one layout, because [layouts are per user](/blog/edgebic-grid-layout-persistence-explained). Two people can also configure the Gantt entirely differently, different colors, different bar labels, different overlays, and still be looking at the same underlying schedule. Display settings change what you see; they never change what the engine computed.
+
+## Identity and Permission
+
+Everyone signs in as themselves. That is not ceremony: it is what makes the rest of the model work.
+
+Each person's [roles decide what they can do](/blog/edgebic-users-and-roles-explained), so a supervisor who should log actuals but never wipe data simply does not have the controls that would let them. Security events, sign-ins, failed attempts, lockouts, role changes, are recorded permanently, which is worth nothing if three people share one login and worth a lot if they do not.
+
+The rule that follows is short: one account per person, no shared logins, and deactivate rather than delete when somebody leaves so their history stays intact.
+
+## How Fresh Is What You Are Looking At
+
+Screens load their data when you open them. That is the single most useful thing to know about working alongside other people, because almost every "our screens disagree" conversation is really about the age of a view rather than a conflict in the data.
+
+The dashboard is explicit about it: it does not refresh on its own, each tab loads as you switch to it, and there is a refresh control to reload on demand. Most grids behave the same way and offer a refresh. So a view left open since the morning shows the morning, and a colleague who re-ran the scheduler at ten is looking at something newer. Refreshing is the answer, and it is worth teaching as a habit on day one rather than as a discovery in month three.
+
+One flow deliberately breaks that pattern. An open job view or the live actuals screen updates by itself when a [kiosk](/blog/edgebic-shop-floor-kiosk-explained) save lands, because that is precisely the case where somebody standing at a machine would otherwise be reading yesterday.
+
+## Two People, One Record
+
+EDGEBIC's contract when two saves collide is last-write-wins: if two people edit the same record and both save, the second save overwrites the first, silently. No exception, no merge, no warning.
+
+That is a real property to design your working practice around rather than a gap to be nervous about, and it is worth being plain about the consequences.
+
+The practical answer is ownership. Agree who owns which slice of the master data, one person for work centers, one for routings, one for the order book, and collisions essentially stop occurring, because two people rarely have a reason to edit the same product on the same afternoon. Where two planners genuinely share a screen, the master production schedule is the usual example, the discipline is to refresh before acting on what you see, because the risk is not the save mechanism, it is deciding from a stale number.
+
+The concept in general terms is covered in [what is last-write-wins concurrency](/blog/what-is-last-write-wins-concurrency).
+
+## Coordinating the Scheduling Run
+
+Nothing stops two people running the scheduler. Most teams still put one person in charge of it, and the reason is human rather than technical.
+
+A run rewrites the forward plan. Anyone who had staged Gantt edits in progress, or was reading a job list to promise a date, is suddenly working from something that moved. So the common pattern is a named owner, a known cadence, every morning, or after each batch of new orders, and a word before an unscheduled run. The [reschedule safely guide](/blog/how-to-reschedule-safely-in-edgebic) covers the run itself.
+
+Everything else parallelizes fine. Entering orders, logging actuals, building routings, running reports, quoting: several people can do all of that at once without stepping on each other, because they are touching different records.
+
+## Where It Fits
+
+Multi-user working is a deployment decision more than a feature, and it is worth taking in the right order: get one planner producing a schedule people trust, then move to the shared database, then add the supervisors and the kiosks. [Planning a multi-user rollout](/blog/planning-a-multi-user-edgebic-rollout) covers that sequence, and [keeping the database healthy over time](/blog/keeping-the-edgebic-database-healthy-over-time) covers what changes about maintenance once a server is involved.
+
+The [complete EDGEBIC guide](/blog/edgebic-complete-guide) maps how the pieces connect, and [/edgebic](/edgebic) covers the platform as a whole.
+
+## One Plan, Several People
+
+The value of a shared database is not that several people can log in. It is that there stops being more than one answer to what the plant is doing this week. A supervisor's copy of the schedule cannot drift from the planner's, because there is no copy. What is left is a much smaller and much more solvable problem: making sure the screen in front of you was loaded recently, and agreeing who owns what.

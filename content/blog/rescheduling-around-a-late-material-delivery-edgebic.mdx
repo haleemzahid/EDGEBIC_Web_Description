@@ -1,0 +1,137 @@
+---
+title: "Rescheduling Around a Late Material Delivery, Start to Finish"
+description: "A late material delivery walkthrough in EDGEBIC: move the material's ready date, reschedule one job, read the new promise, and reclaim the freed capacity."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - late material delivery
+  - reschedule after supplier delay
+  - material shortage rescheduling
+  - material step lead time
+  - supplier slip production plan
+  - recover freed capacity
+targetPhrase: "late material delivery"
+wordCount: 1720
+readingTime: 9
+faqQuestions:
+  - question: "What should a planner do first when a supplier misses a delivery date?"
+    answer: "Get the new date confirmed in writing, then find which routing step actually consumes the material. Those two facts decide everything that follows. If the material feeds the first operation you move the job's start date; if it feeds a later operation you move that material step's ready point instead, so the earlier operations keep their slots. Guessing at either fact produces a reschedule you have to redo."
+  - question: "Does a scheduler automatically know a purchase order is late?"
+    answer: "No. A material step is modeled as an instant gate on the timeline that consumes no machine capacity, and its lead time places the material's ready point. The engine does not read a live purchase order status and peg the job to a supplier promise, so you tell the plan the new date by setting the material step's lead time or transit days, or the job's start date, and then reschedule. That is one field and one run."
+  - question: "What happens to work already finished when material for a later step arrives late?"
+    answer: "Nothing moves. Completed operations keep their dates and their logged hours exactly, and an in-progress operation keeps the hours already logged with only its remaining hours re-planned on the same machine. Only the not-yet-started steps downstream of the late material shift forward. You get a new finish date without losing any record of what already ran."
+qaQuestions:
+  - question: "Our steel slipped eight days and the customer will not accept the new date. What can I actually change?"
+    answer: "Separate the two questions, because only one of them is yours. The material date is fixed by the supplier, so the operation that consumes it cannot move earlier no matter what the plan says. What you control is everything after it: whether the downstream steps run back to back once material lands, whether an alternate work center shortens the tail, and whether the job jumps the queue on the days after arrival. In this walkthrough that recovered nothing on the weld step and one day on the tail, which is an honest answer to give a customer instead of a hopeful one."
+  - question: "A job slipped a week and now a machine sits idle for two days. How do I stop losing that capacity?"
+    answer: "Reschedule the jobs that were queued behind it, not just the delayed one. Rescheduling the late job alone releases its reservation but does not offer that time to anyone, because a run only touches the jobs you select. In this walkthrough the delayed job freed 12 hours on the weld cell, and a second targeted run on the two jobs behind it pulled one of them in by two days. The delay was fixed cost; the freed capacity was recoverable, but only because somebody went and claimed it."
+---
+
+**When a supplier slips, you move the material's ready date in the plan and reschedule: completed work stays exactly where it is, the operations downstream of the material shift forward, and the freed capacity becomes available to other jobs the moment you go and claim it.** This walkthrough follows one Tuesday morning phone call end to end in [EDGEBIC by User Solutions](/edgebic), from the supplier's call at 09:10 to a customer conversation at 11:30 with a number in it. It is one of the [worked examples](/blog/edgebic-worked-examples) we publish so the recovery is visible rather than described.
+
+The delay itself is not the interesting part. What you do with the hole it leaves is.
+
+## 09:10, The Call
+
+Corbin Fabrication, single day shift 07:00 to 15:00, Monday to Friday.
+
+The steel service center calls about JOB-4520, 80 pressure plates. The purchased weld bracket promised Tuesday the 12th now lands Wednesday the 20th. Eight days.
+
+Before touching anything, get the new date confirmed by email. A reschedule built on a verbal date you rerun on Thursday is worse than no reschedule, because the plan will have been reissued to the floor in between.
+
+## 09:15, Find Which Step Consumes It
+
+Open the job and read its routing. The question is not "is this job late", it is "which operation cannot start without this part".
+
+| Step | Work center | Hours | State Tuesday morning |
+|---|---|---|---|
+| 10 Saw | Saw-1 | 5.0 | Completed Monday |
+| 20 Mill | Mill-1 | 18.0 | In progress, 6.0 logged |
+| Material | (none) | 0 | The late bracket |
+| 30 Weld | Weld-1 | 12.0 | Not started |
+| 40 Inspect | Inspect-1 | 3.0 | Not started |
+
+The bracket feeds the weld step, not the first operation. That single fact decides the lever.
+
+If the material fed step 10, you would move the job's start date and the whole job would slide cleanly. Because it feeds step 30, moving the job start would push the saw and mill work that has already happened, which is both wrong and impossible: completed work is never moved by a reschedule.
+
+The delay belongs on the step that consumes the material. The mechanics of that node are in [how a material step schedules as an instant gate](/blog/how-a-material-step-schedules-as-an-instant-gate).
+
+## 09:25, Move the Ready Date
+
+A material step is a routing step with no work center that names the component being consumed. It books no machine hours. Its whole job is to mark the point at which the part is available so the operation behind it cannot start earlier.
+
+Set that material step's lead time so its ready point lands on Wednesday the 20th. If the parts physically travel from an outside vendor, transit days do the same work with a calendar or working-day wait. Either way you are moving one date, not editing four operations by hand.
+
+The step-by-step is in [how to add a material step to a routing](/blog/how-to-add-a-material-step-to-a-routing-in-edgebic). One caution while you are in there: change the job's own routing snapshot rather than the master routing, unless every future job for this product genuinely has an eight day supply problem. Each scheduled job carries its own snapshot precisely so a correction for one order does not silently reshape the others.
+
+## 09:35, Reschedule One Job
+
+Use the single-job **Re-Schedule** on the Job View tab, not the plant-wide run. You are correcting one order and the polite option cannot disturb jobs you never touched.
+
+The engine sorts the job into three zones and treats each differently.
+
+The saw step is completed, with both an actual start and end, so it is written back verbatim. The mill step is in progress: its 6.0 logged hours stay locked on the days they really happened, and only the remaining 12.0 hours are re-planned, on the same machine, because a started operation never moves work centers. The weld and inspect steps have no actuals, so they are freely re-planned from the new material ready date.
+
+Before and after:
+
+| | Weld | Inspect | Item Start | Job End | Days Late |
+|---|---|---|---|---|---|
+| Before | Wed 13, Thu 14 | Thu 14 | Thu 14 | Fri 15 | 0 |
+| After | Wed 20, Thu 21 | Thu 21 | Thu 21 | Fri 22 | 3 |
+
+Due date was Tuesday the 19th. The job had two working days of float; the slip ate them and three more.
+
+That number, Days Late 3, is the honest one. Without the change the plan would still promise Friday the 15th, the floor would reach the weld cell next Wednesday with an empty rack, and every job sequenced behind it would have been planned against a fiction.
+
+## 09:50, Look for Real Recovery, Not Hopeful Recovery
+
+Now ask what can actually move, and be strict about it.
+
+**The weld start cannot move earlier.** No amount of resequencing puts a bracket on the bench before the truck arrives. Anything that claims otherwise is the plan lying.
+
+**The tail can compress.** Inspect is three hours on a station with open capacity, and it already runs the same day weld finishes. Nothing to win.
+
+**An alternate work center could shorten the weld.** Corbin has a second weld cell configured as an alternate on this routing. It is slower on this fixture, so routing there costs more hours than it saves in queue. Checked, rejected, and the check took two minutes.
+
+**The queue after arrival is worth one day.** Two other jobs are already booked on Weld-1 for Wednesday the 20th. Raising JOB-4520's priority ahead of them puts it first on the bench the morning the material lands, and the job end pulls from Friday the 22nd to Thursday the 21st. Days Late goes from 3 to 2.
+
+One day recovered out of eight. That is the true answer, and it is worth more than an optimistic one because you can defend it.
+
+## 10:20, Claim the Hole
+
+This is the step most planners miss, and it is where the money is.
+
+JOB-4520's weld work was holding Wednesday the 13th and Thursday the 14th on Weld-1. Rescheduling the job released that reservation, but releasing is not the same as offering. A scheduling run only touches the jobs you select, so the twelve freed hours sit there until somebody goes and claims them.
+
+Open the work center utilization report, drill into Weld-1's backlog, and read what is queued behind. Two jobs. Select those two on the Drive Schedule grid, run them, and one pulls in by two days because the bench in front of it is suddenly empty.
+
+The delay cost three days on one order. The recovery gave two days back on a different one. Neither is visible unless you go looking, and the whole exercise took eight minutes. This is the same discipline as [fixing an overloaded work center found in the utilization report](/blog/fixing-an-overloaded-work-center-found-in-the-utilization-report-edgebic), pointed at the opposite problem.
+
+## 11:30, The Customer Call
+
+You now have a number instead of an apology. The bracket lands Wednesday the 20th, the plate ships Thursday the 21st, two days past the promise, and the reason is a supplier slip you can name and date.
+
+Offer the customer the choice that is actually available: take the 21st, or pay to expedite the bracket and take the original date back. Both options are real, which is the only reason the conversation goes well.
+
+## 12:00, Stop It Recurring
+
+Two entries close the loop.
+
+Record the supplier's real performance against this part. If a promised ten day lead time has run fourteen on three of the last four orders, the material step's lead time is wrong and every job using it is quoted optimistically. Correcting that one number on the master routing makes every future promise honest without a single reschedule.
+
+Then note the date on the job for the audit trail. When someone asks in October why this order shipped late, the reschedule history shows the old dates, the new dates, and when the change was made.
+
+## What This Walkthrough Proves
+
+1. **Find the consuming step before you touch anything.** Job start and material step are different levers and only one of them is right.
+2. **Move one date, not four operations.** The engine reflows everything downstream on its own.
+3. **Completed and in-progress work is untouchable.** The saw kept its dates, the mill kept its six logged hours.
+4. **Separate what you control from what you do not.** The arrival date is fixed; the queue after it is yours.
+5. **Releasing capacity is not the same as using it.** Run the jobs behind the delayed one or the freed hours evaporate.
+
+For the underlying mechanics see [how a plan absorbs a late material delivery](/blog/how-a-plan-absorbs-a-late-material-delivery), for the preservation guarantee see [why completed work is never moved on reschedule](/blog/how-edgebic-preserves-completed-work-on-reschedule), and for the wider pipeline see the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide).

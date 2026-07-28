@@ -1,0 +1,100 @@
+---
+title: "EDGEBIC Downtime Events Explained: Time a Shift Loses but Keeps"
+description: "How EDGEBIC downtime events subtract hours inside a shift, the difference between recurring and one-off windows, and how scheduled and unscheduled downtime are recorded."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - downtime event scheduling
+  - planned downtime capacity
+  - recurring downtime window
+  - shift capacity subtraction
+  - maintenance scheduling capacity
+  - finite capacity planning
+targetPhrase: "downtime event scheduling"
+wordCount: 1440
+readingTime: 7
+faqQuestions:
+  - question: "What is a downtime event in EDGEBIC?"
+    answer: "A downtime event is a window of unavailability inside a shift that subtracts hours from that shift's capacity without closing the shift. A two-hour maintenance slot on a nine-hour shift leaves seven schedulable hours, not zero. That is the distinction from a holiday, which removes the working day entirely. Downtime is the mechanism for the regular interruptions that eat into a working day but do not end it."
+  - question: "What is the difference between recurring and one-off downtime?"
+    answer: "A recurring downtime event is tied to a day of the week and fires on every matching day, which is how you model a standing maintenance slot such as two hours every Wednesday morning. A one-off event is tied to a single specific date and fires only on that date, which is how you model a scheduled rebuild, a planned outage, or a one-time inspection. Both subtract their duration the same way once they fire."
+  - question: "Does downtime reduce capacity below zero?"
+    answer: "No. If a downtime window is longer than the shift it sits inside, the resulting capacity floors at zero rather than going negative. That is safe arithmetic but it is also a trap, because a mistyped duration silently closes the day instead of raising an error. If a work center shows no capacity on a day you expected it to run, an oversized downtime entry on that shift is one of the first things to check."
+qaQuestions:
+  - question: "We do preventive maintenance every Wednesday morning. Should that be a downtime event, a holiday, or a shorter Wednesday shift?"
+    answer: "Make it a recurring downtime event on Wednesday. A holiday is wrong because the machine still runs Wednesday, it just runs less, and a holiday removes the day entirely so the scheduler will not book the remaining seven hours. A shorter Wednesday shift is closer but it lies about the shape of the day: the shift start time would have to move or the end time shorten, and neither matches a machine that is genuinely unavailable from eight to ten and running normally after. A recurring downtime window says the true thing, that this shift exists at its usual hours and loses two of them every Wednesday, and it keeps doing so without anyone re-entering it each week. It also stays visible as a maintenance decision rather than disappearing into calendar arithmetic somebody has to reverse-engineer later."
+  - question: "A machine broke down for four hours yesterday. Do we log that as a downtime event?"
+    answer: "You can, and the record is worth having, but be clear about what it buys you. Downtime events are read when the scheduler plans, so an event entered for a date that is already in the past does not retroactively change a plan that was already made and, more importantly, does not change the actuals your operators logged. The completed and in-progress work stands. What a past-dated unscheduled event gives you is the honest record that those hours were lost and why, which matters when you are looking at a work center's real available time versus its nominal capacity over a quarter. If the breakdown extends forward into days not yet run, that forward portion is where entering it changes the plan: put the remaining outage in as downtime or a capacity change on the affected days and re-run so the schedule stops promising hours the machine will not have."
+---
+
+**EDGEBIC by User Solutions models an interruption inside a working day as a downtime event, a window that subtracts its hours from the shift's capacity while leaving the rest of the shift schedulable.** A two-hour maintenance slot on a nine-hour shift leaves seven hours the scheduler can book. That is the whole idea, and it fills the gap between a calendar that says the plant is open and a plant where the machine is genuinely not available from eight until ten.
+
+Downtime sits alongside holidays and capacity overrides in the [capacity model](/blog/how-edgebic-calculates-work-center-capacity), and each of the three answers a different question.
+
+## Downtime Is Not a Holiday
+
+The difference is whether the working day survives.
+
+| Mechanism | What it does | Use it for |
+|---|---|---|
+| Holiday | Removes the working day entirely | Plant closure, a public holiday, a machine out of service for whole days |
+| Downtime event | Subtracts hours from inside a shift | Maintenance slots, meetings, planned outages, cleaning, changeover-unrelated stoppages |
+| Capacity override | Replaces the day's hours with a stated number | One-off overtime or a short shift, where the number itself is the decision |
+
+Using a holiday for a two-hour maintenance slot costs you the other seven hours, and the scheduler will move work it could have run. Using a shortened shift instead moves the start or end time and misrepresents when the machine is actually free. Downtime is the mechanism that says the true thing: this shift runs at its usual hours and loses some of them.
+
+## Recurring Versus One-Off
+
+Every downtime event is one of two shapes.
+
+A **recurring** event is tied to a day of the week and fires on every matching day. Two hours every Wednesday morning for preventive maintenance, a Friday afternoon safety meeting, a daily cleaning window on a food line: these are standing losses, and modeling them once means the plan is honest about them forever without anyone re-entering them week after week.
+
+A **one-off** event is tied to a single specific date and fires only on that date. A planned rebuild, an annual inspection, a utility outage the plant was given notice of, a validation run that blocks the machine for an afternoon. These are known interruptions that will not repeat on a pattern.
+
+Once an event fires, both shapes behave identically: the duration comes out of that shift's available hours for that work center.
+
+## Scheduled Versus Unscheduled
+
+Downtime also carries a type, scheduled or unscheduled, and the distinction is about record-keeping rather than arithmetic.
+
+Scheduled downtime is downtime you knew about and planned around: maintenance, meetings, changeover windows that belong to the calendar rather than to a job. Unscheduled downtime is downtime that happened to you: a breakdown, a utility failure, an unplanned stop. Recording which is which turns the capacity model into a source of truth about how much of a machine's nominal time is actually being lost and to what, which is the same question the [planned versus unplanned downtime](/blog/glossary-planned-downtime) split exists to answer in maintenance practice.
+
+For the plan itself, both types subtract the same hours. For understanding the plant, keeping them separate is the difference between "we lost 60 hours on the press last quarter" and "we lost 40 hours to maintenance we chose and 20 to failures we did not."
+
+## How It Enters the Capacity Number
+
+A day's capacity for a work center is built by starting from the shift's gross hours and subtracting what is genuinely unavailable. Breaks come out. Downtime that fires on that date comes out. A partial holiday, if one applies, comes out. What remains is then scaled by the work center's instance count and its utilization setting to produce the hours the scheduler is allowed to book.
+
+Two consequences follow from downtime being a subtraction rather than a replacement.
+
+First, downtime and a capacity override are different tools and the override does not stack on it: if you have stated an explicit number of hours for a day, that number is the answer, and the day's arithmetic is not re-derived from the shift and its downtime. That precedence is covered in [daily capacity overrides](/blog/edgebic-daily-capacity-overrides-explained).
+
+Second, the subtraction floors at zero. A downtime window longer than the shift it sits inside produces no capacity rather than negative capacity. That is correct arithmetic and a real trap: a five-hour entry against a four-hour shift silently closes the day rather than complaining. When a work center shows no capacity on a day you expected it to run, an oversized downtime entry is one of the first things to check.
+
+## What Downtime Does Not Do
+
+Downtime blocks capacity. It does not remind anyone that maintenance is due, and it does not carry out the maintenance decision for you. EDGEBIC tracks a machine's service cadence separately, through [preventive maintenance tracking](/blog/edgebic-preventive-maintenance-tracking-explained) that raises a due banner where the operators are. Those two things work together and are worth wiring together deliberately: the banner tells you service is due, and the downtime event is how you then block the hours so the schedule stops promising them.
+
+Downtime also does not touch work that has already been logged. Completed and in-progress operations keep their actual dates and hours, and a downtime event entered afterward does not rewrite history. This is the same rule that governs [why actuals are immutable](/blog/why-actuals-are-immutable-in-edgebic) everywhere else in the system.
+
+## Practical Modeling Advice
+
+A few habits keep the downtime picture honest.
+
+Model the standing losses as recurring events rather than absorbing them into a shorter shift, so the shift keeps saying when the machine is open and the downtime keeps saying what it loses. Keep durations realistic rather than aspirational, because a maintenance slot that always runs three hours and is entered as one produces a plan that is short by two hours every week. Check the total: if the recurring downtime on a work center adds up to a large fraction of its week, that is worth knowing on its own, and it usually means either the maintenance program needs attention or the nominal capacity everybody quotes is fiction.
+
+And when you configure it, do it alongside the rest of the calendar rather than in isolation, following [shift, holiday and downtime setup](/blog/how-to-set-up-shifts-holidays-downtime-in-edgebic) so the three layers are consistent.
+
+## Where It Fits
+
+Downtime events are the honesty layer inside the working day. Shifts declare when the plant is open, holidays remove the days it is not, capacity overrides state a specific number when a day is deliberately different, and downtime accounts for the hours a normal open day still loses.
+
+Get all four right and the capacity number the scheduler plans against matches what the plant can actually deliver, which is the entire premise of finite capacity planning. The [complete EDGEBIC guide](/blog/edgebic-complete-guide) maps how the capacity model feeds the rest of the system, and [/edgebic](/edgebic) covers the platform as a whole.
+
+## The Point of Modeling Small Losses
+
+Two hours a week does not sound like a scheduling problem until you multiply it. Across a year on a constraint machine, a standing maintenance slot nobody modeled is roughly a hundred hours the plan promised and the plant never had, and every one of those hours was quietly borrowed from a job that then ran late. Downtime events are how the small, regular, entirely predictable losses get into the plan before they get into your delivery performance.

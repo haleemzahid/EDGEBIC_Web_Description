@@ -1,0 +1,122 @@
+---
+title: "Reading Parallel and Alternate Branches on the EDGEBIC Canvas"
+description: "Three connector types, three very different meanings. How the EDGEBIC routing designer draws a sequential step, a parallel machine, and a true alternative."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: Visual Scheduling
+author: user-solutions
+cluster: edgebic-visual-scheduling
+pillarSlug: edgebic-visual-scheduling-guide
+keywords:
+  - routing connector types
+  - parallel work center diagram
+  - alternate work center routing
+  - visual routing branches
+  - bill of routing flow chart
+  - manufacturing routing designer
+targetPhrase: "routing connector types"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "What do the different connector types mean in the EDGEBIC routing designer?"
+    answer: "A connector carries the routing meaning between two nodes, and there are three types. Normal (Sequential) means then do this, the ordinary next-in-sequence link. Parallel (Dashed) attaches a machine that runs alongside the step at the same time. True Alternative attaches a machine that can replace the step's primary machine, with the scheduler booking exactly one of them."
+  - question: "How do I tell a parallel machine from an alternate on the diagram?"
+    answer: "By the connector and by the node's Properties panel. A parallel machine is joined with a dashed connector and its Properties shows a Parallel Work Center banner, where only Parallel Factor and Finite Capacity are editable because everything else inherits from the parent step. A true alternative is joined with a True Alternative connector and its Properties shows a True Alternative Work Center banner with its own setup and hours."
+  - question: "Why won't the connector menu let me set Parallel or True Alternative on a link?"
+    answer: "Those two types attach an extra machine to a step; they do not replace routing links. If the target is an end product node, a product node, or a work center already in a sequence chain, the link must stay Normal (Sequential). Seeing the menu refuse the change is a sign the diagram shape needs rethinking rather than a sign the feature is missing."
+qaQuestions:
+  - question: "Our diagram shows two mills on one step and nobody can remember whether they split the work or mirror each other. How do I check?"
+    answer: "Select the second mill node and read its Properties panel. If Finite Capacity is ticked, it is an independent parallel machine: the group starts together, each machine runs its own capacity-checked share, and the wall-clock time drops, so 51 hours of milling on one mill becomes roughly 25.5 hours on each of two. If it is unticked, it is a dependent mirror: it copies the primary's exact start and end, books the primary's hours scaled by the Parallel Factor, and shortens nothing. Hovering the node tells you the same thing in the tooltip."
+  - question: "We added an alternate mill and the scheduler ignored it even though the machine was free. Why?"
+    answer: "Two documented causes. The selection strategy may have been Primary First, which stays on the primary whenever it has same-day capacity and only falls back when the primary is fully booked today. Or the step already carries recorded actuals, in which case it is locked to the machine that actually ran it, because the scheduler never swaps machines under work in progress. Switching the strategy to Earliest Completion covers the first case: in the documented two-mill example, a 20 percent slower alternate still wins because it finishes about a day and a half earlier."
+---
+
+**On the EDGEBIC routing canvas, the arrow between two nodes is not decoration: its type is the difference between "then do this," "do this at the same time," and "do this instead."** Three connector types carry three completely different scheduling behaviors, and reading them correctly is what separates a diagram you can trust from a picture that merely looks organized.
+
+This post covers how each branch type is drawn, how to confirm what you are looking at, and what the engine does with it. For the plain chain-and-dependency reading that comes first, start with [reading dependencies on the design canvas](/blog/reading-dependencies-on-the-edgebic-design-canvas) in EDGEBIC by User Solutions.
+
+## Three Connector Types, Three Meanings
+
+Right-click any connector in the designer and the menu offers **Connector Type** with three choices, plus Delete Connector.
+
+| Connector | Drawn as | Meaning | What the engine books |
+|---|---|---|---|
+| Normal (Sequential) | Solid arrow | Then do this | One step after another, the ordinary next-in-sequence link |
+| Parallel (Dashed) | Dashed arrow | Do this at the same time | An extra machine running alongside the step |
+| True Alternative | Alternative-typed arrow | Do this instead | Exactly one machine, chosen at schedule time |
+
+Routing links stay Normal. The other two attach an extra machine to an existing step, which is why the menu refuses to convert some links: if the target is an end product node, a product node, or a work center already sitting in a sequence chain, the link must remain sequential. That refusal is a shape warning, not a missing feature.
+
+## Reading a True Alternative Branch
+
+A true alternative is a substitute. "Mill it on Mill-1, but if Mill-1 is booked solid, Mill-2 is acceptable." The scheduler evaluates the candidates and books exactly one machine. It is not extra capacity running alongside.
+
+On the canvas, an alternative is a node joined with a True Alternative connector, and selecting it shows a *True Alternative Work Center* banner in the Properties panel. In the data grid the same thing appears as a child row under the step, marked with a circular-arrow glyph. Two views, one routing, as always.
+
+The critical detail is that an alternative carries its **own** setup and hours, not a scaled copy of the primary's. An older, slower mill gets larger values, and the scheduler uses them directly. That is what makes the selection meaningful:
+
+```
+Mill-1 booked 3 days   Mill step waits          starts Thu, 51.0 h
+Mill-2 free tomorrow   1.0 setup + 0.60 x 100   starts Wed, 61.0 h
+                       Mill-2 finishes about 1.5 days EARLIER despite being slower
+```
+
+When a schedule run touches steps with alternatives, EDGEBIC asks how to decide: **Auto** with a selection strategy, or **Manual** with a per-step choice. The three strategies are Earliest Completion (fastest outcome wins), Primary First (stay on the primary while it has same-day capacity), and Earliest Start (whichever machine can begin soonest). On a reschedule, a step that already has actuals stays locked to the machine that actually ran it.
+
+## Reading a Parallel Branch
+
+A parallel machine runs at the same time as the primary on the same step, and there are two fundamentally different kinds hiding behind one dashed connector. The Properties panel is where you tell them apart, through the **Finite Capacity** checkbox.
+
+**Independent Parallel (Finite Capacity), ticked.** Two machines split one batch. All members must start together, each then runs its own capacity-checked share, and the wall-clock time drops. Fifty-one hours of milling on one mill becomes roughly 25.5 hours on each of two. The group waits for the first moment every member is simultaneously free, so it will not start one mill alone.
+
+**Dependent Parallel (Factor Based), unticked.** A synchronized mirror. The extra machine copies the primary's exact start and end, and books the primary's hours multiplied by the Parallel Factor (1.0 for equal work, 0.5 for half). It does not shorten anything. It records that a second machine is physically committed to the same window, which is the right model for multi-spindle drilling, synchronized welding fixtures, and paired presses.
+
+One consequence to know before you use mirrors: a dependent mirror is booked without checking that machine's own load. If a mirror machine also carries independent work, it can end up committed twice in the same window, and the resource load view will show it above 100 percent. Keep mirror machines dedicated in the affected periods and watch the scheduler anomalies report.
+
+A parallel child's Properties panel edits only Parallel Factor and Finite Capacity; everything else inherits from the parent step, and the banner says so. If you find yourself unable to change hours on a node, that banner is the reason: edit the parent.
+
+## Hover Before You Edit
+
+The node boxes on the canvas deliberately show a single title so large diagrams stay readable. Everything else lives in the tooltip and the Properties panel: sequence, setup time, hours required, queue time, flow step, instance counts, and the node's role as a primary step, a parallel copy, a true alternative, or a sub-assembly.
+
+Editing the wrong node is the classic mistake in a diagram with branches, and one hover prevents it. The full tooltip vocabulary is in [what a routing node tooltip tells you](/blog/edgebic-graphical-bor-designer-tour).
+
+## Alternates, Parallels, or a Pool?
+
+Three tools sound similar and are not:
+
+- **True alternative** when the substitution is specific to one operation. "This mill step may run on Mill-2 instead."
+- **Independent parallel** when you want throughput on one operation. "Both mills work this step at once."
+- **A work center group** when the substitution is general. "Any mill in the pool may take this step, plant-wide," which is better modeled once as a group than hand-configured on every routing step.
+
+Choosing wrongly is not fatal, but it shows up as maintenance: hand-configured alternates on forty steps is the sign a group was the right answer.
+
+## What Happens on the Next Run
+
+Nothing on the Gantt moves when you save the diagram. These are routing fields, and the engine reads them on the next scheduling run. Then:
+
+- A new alternative brings up the selection dialog, and steps may book onto the alternate.
+- A new independent parallel shortens the operation's wall clock and makes the group wait for a common free slot.
+- A new dependent parallel adds mirror rows with identical start and end on the extra machines, leaving the primary's dates unchanged.
+
+Bars that then overlap on the chart are usually correct rather than broken, especially where lot streaming is also configured. Saving a routing and rescheduling are two separate acts, which is the same discipline as [save versus re-schedule on the Gantt](/blog/save-vs-re-schedule-on-the-edgebic-gantt).
+
+## The Diagram Should Answer the Question
+
+The reason to draw a routing rather than only tabulate it is that branch structure is spatial. A mirror, a split, and a substitution look different from three feet away, and a missing connector is obvious in a way a broken cell value never is.
+
+User Solutions has been modeling real shop routings since 1991, in ten-person job shops and in organizations including the US Navy, GE, BAE Systems, and Cummins, where the Nimitz program alone ran more than 26,000 tasks. Complex routings are readable when the picture is honest about which machines are alternatives and which are running together, which is the heart of [finite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
+
+[See the full EDGEBIC platform](/edgebic), start from the [visual scheduling pillar guide](/blog/edgebic-visual-scheduling-guide), or bring your most branched routing to a demo and let US draw it on the canvas with you.
+
+<Accordion title="What do the different connector types mean in the EDGEBIC routing designer?">
+A connector carries the routing meaning between two nodes, and there are three types. Normal (Sequential) means then do this, the ordinary next-in-sequence link. Parallel (Dashed) attaches a machine that runs alongside the step at the same time. True Alternative attaches a machine that can replace the step's primary machine, with the scheduler booking exactly one of them.
+</Accordion>
+
+<Accordion title="How do I tell a parallel machine from an alternate on the diagram?">
+By the connector and by the node's Properties panel. A parallel machine is joined with a dashed connector and its Properties shows a Parallel Work Center banner, where only Parallel Factor and Finite Capacity are editable because everything else inherits from the parent step. A true alternative is joined with a True Alternative connector and its Properties shows a True Alternative Work Center banner with its own setup and hours.
+</Accordion>
+
+<Accordion title="Why won't the connector menu let me set Parallel or True Alternative on a link?">
+Those two types attach an extra machine to a step; they do not replace routing links. If the target is an end product node, a product node, or a work center already in a sequence chain, the link must stay Normal (Sequential). Seeing the menu refuse the change is a sign the diagram shape needs rethinking rather than a sign the feature is missing.
+</Accordion>

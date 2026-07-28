@@ -1,0 +1,93 @@
+---
+title: "EDGEBIC Units of Measure Explained: The Unit That Also Tells the Scheduler How to Count"
+description: "How EDGEBIC units of measure work as master data: name, symbol, category, the default unit, and the scheduling behavior flag that ties a unit to hours or pieces."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - manufacturing unit of measure
+  - unit of measure setup
+  - production scheduling units
+  - pieces vs hours capacity
+  - product master data
+  - finite capacity scheduling
+targetPhrase: "manufacturing unit of measure"
+wordCount: 1400
+readingTime: 7
+faqQuestions:
+  - question: "What is a unit of measure in EDGEBIC?"
+    answer: "A unit of measure in EDGEBIC is a master data record, not free text on a product. Each unit carries a full name such as Each, a short symbol such as EA, a category that groups it as count, mass, or length, an active flag, and a scheduling behavior that marks it as an hours unit or a pieces unit. Products point at a unit from this list, so the same symbol means the same thing everywhere."
+  - question: "Does EDGEBIC convert between units of measure?"
+    answer: "No. A product carries one unit of measure, and quantities on orders, routings, and inventory transactions are all in that unit. There is no conversion arithmetic between kilograms and pounds or between eaches and boxes inside EDGEBIC. Conversion belongs upstream, at the point your ERP data is mapped on import, which is where a conversion factor is applied once rather than being re-derived on every screen."
+  - question: "Why does a unit of measure carry a scheduling behavior?"
+    answer: "Because how you count an item is closely tied to how its work should be measured. A unit's scheduling behavior marks it as belonging to hours-based or pieces-based work, which lines the master data up with the capacity type on your work centers. A work center scheduled by output rate needs the pieces side of that picture to be consistent, and having the unit record say so keeps the intent visible in master data rather than buried in one dialog."
+qaQuestions:
+  - question: "We buy steel in pounds, stock it in pounds, but our routings talk in pieces. How should we set that up?"
+    answer: "Model them as two products, not one product with two units. The purchased material is a product measured in pounds and appears in a routing as a material step. The blank or the finished part is a separate product measured in each, produced by the routing steps that consume the material. That mirrors what physically happens: the pounds stop being pounds the moment they are cut, and the conversion is really a yield relationship, not a unit conversion. Trying to make one product carry both units invites the failure mode where a quantity of 400 means 400 pounds on one screen and 400 pieces on another, and nobody notices until a job runs with the wrong quantity."
+  - question: "Our ERP export has units like EA, EACH, ea, and Each all in the same column. What is the right way to handle that?"
+    answer: "Fix it in the import mapping, not in the unit list. Creating four separate units so that every incoming spelling matches something is the tempting shortcut and it produces a permanent mess: four records that mean one thing, four ways a product can be tagged, and reports that split a single unit into four buckets. The better move is one unit record named Each with the symbol EA, and an import mask that maps every incoming spelling onto it. That is exactly what a mask is for, and it means the day your ERP adds a fifth spelling you change one mapping instead of discovering a fifth unit in your master data."
+---
+
+**EDGEBIC by User Solutions treats a unit of measure as master data with its own record, not as free text typed onto a product.** Each unit carries a full name, a short symbol, a category, an active flag, and a scheduling behavior. Products point at that record, so EA means the same thing on the product list, the sales order, the inventory ledger, and the kiosk.
+
+That sounds like housekeeping. It is, and housekeeping is exactly where quantity errors are prevented, because a quantity is meaningless until you know what it counts.
+
+## What a Unit Record Holds
+
+| Field | What it is for |
+|---|---|
+| Name | The readable name, for example Each, Kilogram, Square Meter |
+| Symbol | The short code shown in grids and on screens: EA, kg, m² |
+| Category | A grouping such as Count, Mass, or Length |
+| Scheduling behavior | Whether the unit belongs to hours-based or pieces-based work |
+| Default | Exactly one unit can be the default for new products |
+| Active | Inactive units disappear from the pickers without deleting history |
+
+The split between **Name** and **Symbol** is the one that earns its keep daily. Grids and bars have limited room, so the symbol is what a planner reads on the [work center schedule](/blog/edgebic-work-center-schedule-view-explained) and in a product list, while the full name is what removes ambiguity when someone is setting a product up for the first time. Keeping both means you never have to choose between a screen that fits and a screen that is clear.
+
+**Category** does no arithmetic. It groups the list so that a long unit list stays navigable and so that an obviously wrong pick, a mass unit on a counted item, stands out while you are choosing.
+
+**Active** is the field people forget and then wish they had used. Units accumulate over years, often from imports. Deactivating an obsolete unit takes it out of every picker while every historical product and transaction that used it keeps its record intact. That is almost always the right move over deleting, for the same reason it is the right move for [products you no longer make](/blog/how-to-deactivate-a-product-without-losing-history-in-edgebic).
+
+## The Scheduling Behavior Flag
+
+The field that makes this more than a lookup table is **scheduling behavior**, which marks a unit as belonging to hours-based or pieces-based work.
+
+EDGEBIC can schedule a work center two ways. The usual way is by time: the routing states hours per unit, and the scheduler books hours against the calendar. The other way is by output: the work center states a rate, and the scheduler works out how long a quantity takes from that rate. Which mode a work center uses is set on the work center, and the trade-offs are covered in [pieces versus hours capacity](/blog/pieces-based-vs-hours-based-capacity-edgebic).
+
+The unit's scheduling behavior is the master data half of that picture. An item counted in eaches on a line that is genuinely rated in pieces per hour belongs to the pieces world. An item measured in square meters through a process rated by run time belongs to the hours world. Recording that on the unit keeps the intent explicit and in one place, instead of being something a planner infers from a work center setting three screens away.
+
+It does not override the work center. A work center's capacity type still decides how that work center schedules. What the flag does is make an inconsistency visible in master data, and inconsistency between how you count an item and how you time its work is one of the more expensive quiet mismatches in a scheduling model.
+
+## Why There Is No Unit Conversion
+
+EDGEBIC does not convert between units. A product carries one unit, and every quantity attached to that product, on manufacturing orders, on routing steps, in the [inventory ledger](/blog/edgebic-inventory-ledger-explained), on sales orders, is in that unit.
+
+This is a deliberate simplification, and it is the right one for a scheduling system. A conversion table is a second source of truth about quantity, and the moment two of them disagree, every number downstream becomes negotiable. A scheduler that has to ask which unit a quantity is in before it can plan is a scheduler that will eventually plan the wrong amount.
+
+Two consequences follow.
+
+**Conversion happens on import.** When your ERP sends quantities in a different unit than you plan in, the conversion is applied once, in the [import mask](/blog/edgebic-import-masks-explained), where the mapping is written down and reviewable. That is also where you normalize spelling variants, which is a much more common problem than genuine conversion: EA, EACH, ea, and Each are one unit with four spellings, and mapping them onto one record is a mask's job, not a reason to create four units.
+
+**A real conversion is usually two products.** Buying in pounds and selling in pieces is not a unit conversion, it is a material relationship, and the honest model is a purchased product measured in pounds appearing in the routing as a [material step](/blog/edgebic-material-steps-explained), producing a separate product measured in each. That model survives yield loss, scrap, and partial batches; a conversion factor does not.
+
+## Setting the List Up
+
+The practical approach is a short list, defined early.
+
+Build the units you actually plan in, not every unit anyone in the business uses. Pick one as the default so new products start somewhere sensible rather than unset. Give each one a symbol that will still be readable in a narrow grid column. Then leave it alone: a unit list that grows during an implementation usually means the import mapping is doing too little.
+
+Products then pick from the list. The product record shows the unit alongside price, cost, lead time, and category, and the unit symbol travels with the product into every screen that shows a quantity. The [product master setup guide](/blog/how-to-set-up-products-in-edgebic) covers where the field sits, and [how to add a unit of measure](/blog/how-to-add-a-unit-of-measure-in-edgebic) covers creating one.
+
+## Where It Fits
+
+Units of measure sit at the base of the data model, under products, and every quantity in EDGEBIC inherits their meaning: the quantity on a job, the pieces logged at a kiosk, the balance in the inventory projection, the line quantity on a [sales order](/blog/edgebic-sales-orders-explained). Get them defined once and consistently, and none of those numbers ever need a footnote.
+
+The [complete EDGEBIC guide](/blog/edgebic-complete-guide) shows how the master data layers stack, and [/edgebic](/edgebic) covers the platform as a whole.
+
+## The Small Field That Prevents Big Errors
+
+Nobody has ever been excited about a unit of measure list. But almost every plant has a story about a quantity that was read in the wrong unit, and the cost of that story is usually a run of scrapped parts or a shipment short by an order of magnitude. Making the unit a real record, with one spelling, one symbol, and one meaning, is how you make sure the number on the screen and the number in someone's head are counting the same thing.

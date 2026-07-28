@@ -1,0 +1,95 @@
+---
+title: "A Job Header Date Does Not Match Its Operations: Causes and Fixes"
+description: "When a job's summary start or end date disagrees with its own earliest and latest operations, the cause is a partial replan that never recomputed the header. How to clear it."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - job header date wrong
+  - job summary dates do not match operations
+  - schedule header drift
+  - job end date disagrees with gantt
+  - partial reschedule header
+  - late job list wrong date
+targetPhrase: "job header date does not match its operations"
+wordCount: 1110
+readingTime: 6
+faqQuestions:
+  - question: "Why does a job's summary end date disagree with its last operation?"
+    answer: "The job header is a summary record whose start and end must equal the earliest start and the latest end of its own operations. When they disagree by more than a minute, a replan changed the operations without recomputing the header afterward. Running scheduling again for that job recomputes the header from its children, because the recompute step runs after each job is scheduled."
+  - question: "How much difference does the header-drift check tolerate?"
+    answer: "One minute. Drift under that threshold is treated as a normal sub-minute scheduling artifact and is not reported, because operations can land on second-level boundaries that do not round identically in a summary. Anything at or beyond a minute means the header and the operations were written at different times, which is the condition worth investigating. The check compares the header against the minimum start and maximum end of its own child operations."
+  - question: "Which date should I trust while the drift is unresolved?"
+    answer: "Trust the operations. They are the plan the engine actually built and the machines will actually run, while the header is a summary derived from them. Any screen that reads the header, such as a job list or a late-job report, can be off until the header is recomputed. That is exactly why the drift matters: it is not a scheduling error, it is a reporting error waiting to mislead someone who never opens the board."
+qaQuestions:
+  - question: "Our late-job report shows a job finishing Thursday but the board clearly ends it Tuesday. Which is right and what do I do?"
+    answer: "The board is right. The report is reading the job header, which is a summary of the earliest start and latest end of the job's operations, and the header was not recomputed after the operations moved. Run scheduling once for that job. The header recompute runs after each job is scheduled, so a single pass brings the summary back in line and the report agrees with the board on the next refresh."
+  - question: "The header starts a week before any remaining operation. Is that drift?"
+    answer: "Probably not. Completed operations count toward the header just like planned ones, so a job that started last week and still has work ahead legitimately shows a header start in the past. Completed work is never moved by a reschedule, so that early date is a record rather than a plan. Compare the header against every operation on the job, finished ones included, before treating an early start as a defect."
+---
+
+**When a job's summary start or end date disagrees with the earliest and latest of its own operations by more than a minute, a replan changed the operations and never recomputed the header, and one scheduling run for that job puts them back in step.** [EDGEBIC by User Solutions](/edgebic) keeps a header record for every scheduled job that summarizes the whole thing: its start is the earliest operation start, its end is the latest operation end. Screens that need one date per job read the header rather than walking every operation, which is why a stale header quietly misleads a report while the board is perfectly correct.
+
+This post is the detailed version of the header-drift symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the wider set of consistency findings and their tolerances, see [what the anomaly checks actually look for](/blog/what-the-edgebic-anomaly-checks-actually-look-for).
+
+## What You Are Seeing
+
+A job list, a due-date report, or a late-job view shows a start or end date for a job that does not match what the schedule board shows for that job's first and last operations. The anomaly report names the job, shows the header dates and the earliest and latest child dates side by side, and reports the gap in minutes.
+
+## Why It Happens
+
+### Cause 1: A Partial Replan Moved Operations Without Recomputing the Header
+
+This is the documented cause. The header is recomputed after a job is scheduled, so a full run always leaves the two in agreement. A path that adjusts child operations without going through that recompute leaves the header holding the previous window while the operations sit somewhere else.
+
+**How to tell:** the header dates match where the job used to be, and the operations match where it is now.
+
+### Cause 2: The Gap Is Under a Minute and Is Not Drift at All
+
+The check tolerates one minute. Operations can land on second-level boundaries that do not round identically into a summary, and that is a normal artifact rather than a disagreement between two writers. Anything at or beyond a minute means the header and the operations were written at different moments.
+
+**How to tell:** the gap is measured in seconds, and no finding appears in the report even though two screens show slightly different times.
+
+### Cause 3: The Header Includes Operations You Are Not Looking At
+
+The header spans every operation on the job, including ones already complete and material steps that carry no labor hours. A job that started last week and still has work in front of it legitimately shows a header start in the past, because completed work is never moved by a reschedule and its recorded dates still count toward the span.
+
+**How to tell:** the header start or end matches an operation you were mentally excluding, usually a finished one or a material line.
+
+## How to Fix It
+
+- **For a stale header:** run scheduling for that job. The recompute runs after each job is scheduled, so a single pass rebuilds the header from its own operations and the drift clears.
+- **For a sub-minute gap:** nothing to do. The tolerance exists precisely so this does not generate noise.
+- **For an apparent gap explained by a completed or material operation:** nothing to fix in the schedule. Widen the comparison to every operation on the job and the header will make sense.
+
+Until the header is recomputed, trust the operations. They are the plan the engine built. The header is a summary derived from them, so it is the one that can be behind.
+
+## How to Diagnose It, in Order
+
+1. **List every operation on the job,** including completed ones and material steps, and note the earliest start and the latest end.
+2. **Compare those two dates to the header.** If they match, the disagreement you saw was a filtered view rather than drift.
+3. **Measure the gap.** Under a minute is expected and unreported; a minute or more is a genuine finding.
+4. **Ask what changed the job last.** A targeted replan after a downtime event or a priority change is the usual trigger.
+5. **Re-run scheduling for that job** and re-open the anomaly report to confirm the finding returns zero rows.
+
+## How to Prevent It
+
+- **Prefer a full scheduling pass over piecemeal edits** when a job's dates need to change, because the header recompute is part of the pass.
+- **Check the header after any targeted replan.** A single job re-run is fast, and it is far cheaper than explaining a late-job report that nobody can reconcile against the board.
+- **Read reports and boards as two views of one plan.** When they disagree, the operations win and the header gets rebuilt, not the other way around. If two screens disagree on hours rather than dates, [the same job shows different hours in two places](/blog/the-same-job-shows-different-hours-in-two-places-edgebic) covers that case.
+- **Run the anomaly report after a large replan.** Consistency findings are quick to clear the same day. [How to run and read the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic) covers the routine, and [what is production scheduling](/blog/what-is-production-scheduling) covers why one job carries so many dates in the first place.
+
+<Accordion title="Why does a job's summary end date disagree with its last operation?">
+The job header is a summary record whose start and end must equal the earliest start and the latest end of its own operations. When they disagree by more than a minute, a replan changed the operations without recomputing the header afterward. Running scheduling again for that job recomputes the header from its children, because the recompute step runs after each job is scheduled.
+</Accordion>
+
+<Accordion title="How much difference does the header-drift check tolerate?">
+One minute. Drift under that threshold is treated as a normal sub-minute scheduling artifact and is not reported, because operations can land on second-level boundaries that do not round identically in a summary. Anything at or beyond a minute means the header and the operations were written at different times, which is the condition worth investigating. The check compares the header against the minimum start and maximum end of its own child operations.
+</Accordion>
+
+<Accordion title="Which date should I trust while the drift is unresolved?">
+Trust the operations. They are the plan the engine actually built and the machines will actually run, while the header is a summary derived from them. Any screen that reads the header, such as a job list or a late-job report, can be off until the header is recomputed. That is exactly why the drift matters: it is not a scheduling error, it is a reporting error waiting to mislead someone who never opens the board.
+</Accordion>

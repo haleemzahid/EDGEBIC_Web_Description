@@ -1,0 +1,122 @@
+---
+title: "What Happens When You Resize a Gantt Bar in EDGEBIC"
+description: "Stretching a schedule bar records dates, not hours. What a resize actually writes in EDGEBIC, what it leaves alone, and when to change the routing step instead."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: Visual Scheduling
+author: user-solutions
+cluster: edgebic-visual-scheduling
+pillarSlug: edgebic-visual-scheduling-guide
+keywords:
+  - resize gantt bar
+  - change operation duration schedule
+  - manufacturing gantt editing
+  - actual dates vs planned hours
+  - production schedule adjustment
+  - drag to change duration
+targetPhrase: "resize gantt bar"
+wordCount: 1509
+readingTime: 8
+faqQuestions:
+  - question: "Does resizing a Gantt bar change how long an operation takes?"
+    answer: "No. Resizing records dates, not work content. Dragging a bar's edge stretches the window the operation occupied and, once saved, writes that window to the operation's actual dates. The routing step's per-unit hours and setup time are untouched, so the next scheduling run plans the same work content it always did. To change how long an operation should take, edit the routing step and reschedule."
+  - question: "Is resizing a bar staged like a move?"
+    answer: "Yes. A resize runs through the same path as a drag: the bar enters the pending Overridden state, the pending-changes count goes up, and nothing reaches the database until you press Save Changes. Discard snaps every pending bar back to its previous position and size. There is no per-bar undo inside the pending set, so review the whole set before saving."
+  - question: "What does a saved resize actually write?"
+    answer: "That depends on the drag mode selected on the toolbar. Actual Start and End writes both actual dates to the new window. Actual Start writes only the start and leaves the end open, marking the operation in progress. Planned Start writes a durable planned pin with no actuals at all. In every case the engine's original scheduled dates are kept alongside, so plan and reality stay separable."
+qaQuestions:
+  - question: "An operation was planned for four hours and actually took seven. Should I stretch the bar or log actuals?"
+    answer: "Log actuals. Stretching the bar to seven hours records the window the work occupied, which is genuinely useful, but the daily actuals grid records dates and hours per day, and hours per day is what progress reporting and the next reschedule actually consume. A stretched bar tells the board when the operation ran. Logged hours tell the system how much work was done, which is what drives remaining hours, percent complete, and how the engine plans the rest of the job. If the seven hours is a pattern rather than a one-off, fix the routing step's per-unit hours too, or every future job repeats the same four-hour fiction."
+  - question: "I stretched one bar and six others on the same machine turned orange. What did I do?"
+    answer: "You have auto re-sequencing switched on, so the later operations on that work center were pushed along to close the gap or resolve the overlap your resize created. They joined your pending set and will be written when you press Save Changes. That is usually what you want on a tight machine queue, but read the whole pending set before saving, because a single edge drag on a busy resource can stage a dozen operations. If you did not intend the cascade, press Discard, turn the option off in the scheduler configuration, and redo the resize on its own."
+---
+
+**Resizing a bar on the EDGEBIC by User Solutions schedule board changes dates, not work content.** Dragging an edge stretches the window an operation occupied, and saving that writes the window to the operation's actual dates. The routing step's per-unit hours and setup time are untouched, so the next scheduling run plans exactly the work it planned before. Understanding that distinction is the difference between recording history accurately and quietly building a schedule nobody can trust.
+
+This post covers what a resize stages, what a save writes, what stays fixed, and when the right tool is the routing step instead. For the move side of the same interaction, see [drag and drop rescheduling](/blog/drag-and-drop-rescheduling-in-edgebic).
+
+## A Resize Is a Drag With a Different Grip
+
+Grabbing an edge and grabbing the middle run through the same path. The bar enters the pending Overridden state, the pending-changes counter goes up, and the change lives only on your screen until you commit it.
+
+That means everything you know about staging applies unchanged:
+
+- **Nothing is saved until you press Save Changes.** Pending bars exist in memory only.
+- **Discard reverts all pending changes**, not the one you regret. There is no per-bar undo inside the set.
+- **You can stage several edits together**, review them as a group, and commit them as one batch.
+
+The full model is in [staging Gantt changes with Save and Discard](/blog/staging-gantt-changes-with-save-and-discard). The habit that matters most: review the whole pending set before you save, because a resize can pull other operations into it.
+
+## What the Save Writes Depends on the Mode
+
+The toolbar's drag mode selector decides what a committed resize means. Pick it before you resize, not after.
+
+| Mode | What a saved resize writes | The claim you are making |
+|---|---|---|
+| Actual Start and End | Both actual dates land on the new window | "This operation ran from here to here" |
+| Actual Start | Only the actual start, end left open | "This operation began here and is still running" |
+| Planned Start | A durable planned start pin, no actuals | "I want this to run here, and it has not started" |
+
+The trap is the default. With Actual Start and End selected, stretching a bar that sits three weeks in the future tells the system that future work already happened, which skews progress figures and every report built on them. If you are shaping a future window rather than recording a past one, switch to Planned Start first.
+
+## What a Resize Deliberately Leaves Alone
+
+Three things stay fixed, and each one is protecting something.
+
+**The routing step's hours.** Per-unit hours, setup, and every other number on the step are properties of how the part is made, not of when one operation happened to run. A resize never touches them. That is why stretching a bar does not make the next job on the same product take longer.
+
+**The engine's scheduled dates.** Saving writes actual dates and keeps the original scheduled window alongside. This is what lets the board tell plan from reality, and it is why a moved operation reads as Applied rather than as Rescheduled. The states are covered in [reading the Gantt planned versus actual](/blog/reading-the-edgebic-gantt-planned-vs-actual).
+
+**Capacity.** A saved resize does not re-run capacity math. Stretching an operation from four hours to nine does not check whether the machine had nine hours available, and does not push anything out of the way on its own. That is the override-and-warn contract: the system trusts your judgment on the floor and leaves the arithmetic for the reschedule you choose to run.
+
+## What It Does Set Off
+
+Two things happen automatically after a saved resize, and both are visual prompts rather than silent rewrites.
+
+**Downstream flags.** Later operations in the same job that now start before your resized bar's new end are marked as possibly out of sequence. Nothing about them changed in stored data. It is a review list, and the usual response is to press Re-Schedule for that job so the engine tidies the rest.
+
+**Auto re-sequencing, if enabled.** With the option on, later operations on the same work center are pushed along to close the gap or resolve the overlap your resize created, and they join the pending set. On a busy machine one edge drag can stage a dozen operations. That is often exactly right, and it is exactly why you read the pending set before saving. See [auto re-sequencing after a drag](/blog/auto-re-sequencing-after-a-gantt-drag-in-edgebic).
+
+## The One Hard Rejection
+
+Capacity is override-and-warn, but structure is not. An operation whose end is at or before its start is physically impossible, and that is rejected outright rather than warned about. A bar with no width also has nothing to draw, which is why the board enforces a minimum span.
+
+So the rule of thumb is simple: you can overload a machine on purpose, and you cannot record an operation that ended before it began.
+
+## When to Change the Routing Instead
+
+Resizing answers "when did this run." The routing answers "how long does this take." Reaching for the wrong one is the most common mistake here, and it compounds quietly.
+
+If an operation ran long once because of a tooling problem, resize the bar or log the actual hours and move on. If it runs long every time, the four-hour estimate on the routing step is wrong, and stretching bars job after job just papers over it. Fix the step's per-unit hours or setup time and reschedule, as covered in [changing the hours on a routing step](/blog/how-to-change-the-hours-on-a-routing-step-in-edgebic). A job already in flight can have its own copy of the routing edited without touching the product standard, which is the point of [editing a live job's routing](/blog/editing-a-live-jobs-routing-in-edgebic).
+
+## And When to Log Actuals Instead
+
+There is a third option that beats both for recording reality, and planners underuse it.
+
+Resizing records dates. The daily actuals grid records dates and hours per day, and hours per day is what progress reporting and the next reschedule actually consume. A stretched bar tells the board when work happened. Logged hours tell the system how much work was done, which is what drives remaining hours, percent complete, and how the engine plans the rest of the job.
+
+Use the bar for quick date corrections. Use [logging actual hours and pieces](/blog/how-to-log-actual-hours-and-pieces-in-edgebic) when the number matters.
+
+## One Bar That Will Not Resize
+
+The slate lead-time band after a job's last operation is not an operation. It is a display-only tail showing the end-item lead time between the last operation's finish and the job's availability date, it consumes no capacity, and it is blocked from dragging, resizing, and editing entirely. If an edge refuses to grab, check whether you are holding the tail, along with the other documented reasons [a bar will not move](/blog/why-a-gantt-bar-will-not-move-in-edgebic).
+
+## Dates and Work Content Are Different Facts
+
+A schedule that confuses when something ran with how long it takes stops being useful within a quarter, because every estimate drifts toward whatever the last bar got stretched to. Keeping the two separate is why EDGEBIC writes actuals and keeps the engine's plan beside them, and why the routing stays the single source for work content.
+
+That separation is what makes [drag and drop scheduling](/blog/drag-and-drop-scheduling-pros-cons) safe rather than corrosive, and it reflects how User Solutions has built scheduling with manufacturers since 1991, in ten-person shops and in organizations including the US Navy, GE, BAE Systems, and Cummins.
+
+[See the full EDGEBIC platform](/edgebic), start from the [visual scheduling pillar guide](/blog/edgebic-visual-scheduling-guide), or bring one chronically underestimated operation to a demo and let US show you the difference between fixing the bar and fixing the routing.
+
+<Accordion title="Does resizing a Gantt bar change how long an operation takes?">
+No. Resizing records dates, not work content. Dragging a bar's edge stretches the window the operation occupied and, once saved, writes that window to the operation's actual dates. The routing step's per-unit hours and setup time are untouched, so the next scheduling run plans the same work content it always did. To change how long an operation should take, edit the routing step and reschedule.
+</Accordion>
+
+<Accordion title="Is resizing a bar staged like a move?">
+Yes. A resize runs through the same path as a drag: the bar enters the pending Overridden state, the pending-changes count goes up, and nothing reaches the database until you press Save Changes. Discard snaps every pending bar back to its previous position and size. There is no per-bar undo inside the pending set, so review the whole set before saving.
+</Accordion>
+
+<Accordion title="What does a saved resize actually write?">
+That depends on the drag mode selected on the toolbar. Actual Start and End writes both actual dates to the new window. Actual Start writes only the start and leaves the end open, marking the operation in progress. Planned Start writes a durable planned pin with no actuals at all. In every case the engine's original scheduled dates are kept alongside, so plan and reality stay separable.
+</Accordion>

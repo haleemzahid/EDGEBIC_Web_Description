@@ -1,0 +1,97 @@
+---
+title: "Hours Landed on a Date Outside the Operation Window: Causes and Fixes"
+description: "When an operation's day-by-day hour split shows a date its own bar does not cover, the cause is almost always rows left behind when a reschedule moved the window."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - hours outside operation window
+  - daily breakdown wrong date
+  - stale schedule rows after reschedule
+  - day by day hours do not match bar
+  - schedule consistency drift
+  - anomaly report breakdown date
+targetPhrase: "hours landed on a date outside the operation window"
+wordCount: 1180
+readingTime: 6
+faqQuestions:
+  - question: "Why does an operation show hours on a date outside its own schedule window?"
+    answer: "The day-by-day hour rows belong to the operation and must fall inside the operation's start and end dates. When they do not, a reschedule moved the window and rows from the previous window were left behind instead of being replaced. The persist step normally deletes and rebuilds the day rows for any operation that is not complete, so a single clean scheduling run for that job clears the finding."
+  - question: "Does this finding have a tolerance?"
+    answer: "No. Unlike the hour-comparison checks, which allow a hundredth of an hour or a one-minute drift, the breakdown-date check has no tolerance at all. A row is either inside the operation's date window or it is not. That makes it one of the easiest findings to confirm by eye, because you can compare the dates on the day rows against the start and end dates of the operation itself."
+  - question: "Should I delete the offending day rows by hand?"
+    answer: "No. Re-running scheduling for the affected job is the documented fix, because the persist pipeline clears the existing day rows and machine bookings for every operation that is not complete before writing new ones. Editing the day rows directly leaves the machine bookings for that operation untouched, which trades one consistency finding for another and makes the total hours disagree between two screens."
+qaQuestions:
+  - question: "A job slipped two days after a machine went down, and now its day-by-day hours still show the old Monday. Is the plan wrong or the report?"
+    answer: "The plan is right and the leftover row is wrong, which is exactly the case this check exists to catch. When the operation moved, the day rows from the previous window should have been replaced and one was not, so a screen that totals hours by date is now counting a day the operation no longer touches. Run scheduling once more for that job. The persist step rebuilds the day rows for every operation that is not complete, and the old date disappears."
+  - question: "The finding names an operation we finished last week. Do we still need to fix it?"
+    answer: "No, and you should not try. Completed work is never moved by a reschedule, so its recorded days are history rather than a plan, and re-running will not rewrite them. Treat a finding on a completed operation as a record of what happened, confirm the recorded hours match what the floor reported, and move on. The findings worth acting on are the ones on operations that are still in the future, because those are the ones a reschedule can still correct."
+---
+
+**When an operation's day-by-day hour split carries a date that the operation's own window does not cover, the cause is nearly always rows left behind when a reschedule moved the window, and one clean scheduling run for that job clears it.** [EDGEBIC by User Solutions](/edgebic) stores each operation twice on purpose: once as a start and end window, and once as a set of per-date hour rows that let a screen total hours by day. Those two views must agree, so a day row dated outside the window is a consistency finding, not a scheduling decision.
+
+This post is the detailed version of the out-of-window hours symptom in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the wider family, [what the anomaly checks actually look for](/blog/what-the-edgebic-anomaly-checks-actually-look-for) covers every consistency check and its tolerance, and [schedule diagnostics explained](/blog/edgebic-schedule-diagnostics-explained) covers why the system audits itself at all.
+
+## What You Are Seeing
+
+The anomaly report shows a finding naming a date and the operation's own start and end dates, and the two do not line up. On screen the effect is a day-by-day hours view that shows time on a date the Gantt bar does not cover, or a daily total that includes a day the operation clearly does not run.
+
+The check has no tolerance. A day row is either inside the operation's date window or it is not, which makes this one of the quickest findings to confirm by eye.
+
+## Why It Happens
+
+### Cause 1: A Reschedule Moved the Window and a Row Stayed Behind
+
+This is the documented cause and the one to assume first. When a job is rescheduled, the persist step clears the existing day rows and machine bookings for every operation that is not complete, then writes new ones for the new window. If the previous window's rows were not cleared before the rebuild, the operation ends up carrying dates from where it used to be.
+
+**How to tell:** the job moved recently, and the flagged date sits where the operation was scheduled before the move.
+
+### Cause 2: The Operation Is Complete and the Dates Are History
+
+Completed work is never moved by a reschedule. That is deliberate, and it means the day rows on a finished operation record what happened rather than what is planned. A finding on a completed operation is not something to correct in the schedule, because no scheduling run will rewrite it.
+
+**How to tell:** the operation shows recorded start and end dates, and the flagged day sits inside the period the floor actually worked.
+
+### Cause 3: You Are Looking at a Component Row, Not the Operation's Own
+
+Sub-assembly component rows are tracked separately from the operation's own day rows and are evaluated on their own terms. A component line that looks out of window in a report is a different object from the parent operation's daily split, so it is not this finding.
+
+**How to tell:** the row belongs to a component of a sub-assembly rather than to the operation itself.
+
+## How to Fix It
+
+- **For a stale row after a move:** run scheduling once for the affected job. The persist pipeline deletes the existing day rows and machine bookings for every operation that is not complete before writing new ones, which is precisely the operation needed here.
+- **For a completed operation:** leave it. Confirm the recorded hours match what the floor reported, and if they do not, correct the record through the actuals screens rather than through a reschedule.
+- **For a component row:** trace it back to the sub-assembly it belongs to and read it against that routing rather than against the parent operation's window.
+
+Do not edit the day rows by hand. The operation's machine bookings carry the same hours from a different angle, and changing one without the other produces a different consistency finding: totals that disagree between two screens, which is covered in [the same job shows different hours in two places](/blog/the-same-job-shows-different-hours-in-two-places-edgebic).
+
+## How to Diagnose It, in Order
+
+1. **Read the operation's own start and end dates** and compare them against the flagged date. The gap usually points straight at the previous window.
+2. **Check whether the operation is complete.** If it is, the finding is a record rather than an error.
+3. **Ask whether the job moved recently.** A downtime event, a priority change, or a capacity edit followed by a reschedule are the common triggers.
+4. **Re-run scheduling for that job alone** rather than for the whole plant, so you can see whether the finding clears without disturbing anything else.
+5. **Re-open the anomaly report** and confirm the finding returns zero rows for that job, instead of assuming the run did it.
+
+## How to Prevent It
+
+- **Let the reschedule finish.** A run that is canceled part-way through its persist step is the situation where an operation can end up holding rows from two different windows.
+- **Re-run the anomaly report after any large replan.** Consistency findings are cheap to clear the same day and confusing to explain a month later, and the report is built for exactly this pass. [How to run and read the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic) covers the routine.
+- **Correct actuals through the actuals screens,** not by editing the plan, so recorded days and planned days never get mixed. If hours appear with no plan behind them at all, [actual hours appear with no planned hours](/blog/actual-hours-appear-with-no-planned-hours-edgebic) covers that separate case.
+- **Treat totals-by-date screens as the early warning.** A daily total that includes a day the job does not run is usually the first place this shows up, well before anyone opens the report.
+
+<Accordion title="Why does an operation show hours on a date outside its own schedule window?">
+The day-by-day hour rows belong to the operation and must fall inside the operation's start and end dates. When they do not, a reschedule moved the window and rows from the previous window were left behind instead of being replaced. The persist step normally deletes and rebuilds the day rows for any operation that is not complete, so a single clean scheduling run for that job clears the finding.
+</Accordion>
+
+<Accordion title="Does this finding have a tolerance?">
+No. Unlike the hour-comparison checks, which allow a hundredth of an hour or a one-minute drift, the breakdown-date check has no tolerance at all. A row is either inside the operation's date window or it is not. That makes it one of the easiest findings to confirm by eye, because you can compare the dates on the day rows against the start and end dates of the operation itself.
+</Accordion>
+
+<Accordion title="Should I delete the offending day rows by hand?">
+No. Re-running scheduling for the affected job is the documented fix, because the persist pipeline clears the existing day rows and machine bookings for every operation that is not complete before writing new ones. Editing the day rows directly leaves the machine bookings for that operation untouched, which trades one consistency finding for another and makes the total hours disagree between two screens.
+</Accordion>

@@ -1,0 +1,65 @@
+---
+title: "What Is a BOR Chain Issue in a Routing?"
+description: "A BOR chain issue is a broken link between routing steps: a dangling reference, a cycle, or a missing successor. Learn the three kinds and how each one breaks a schedule."
+published: 2026-08-08T12:00:00.000Z
+modified: 2026-08-08T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - BOR chain issue
+  - routing chain validation
+  - dangling reference routing
+  - routing cycle
+  - missing successor step
+  - bill of routing errors
+targetPhrase: "BOR chain issue"
+wordCount: 1230
+readingTime: 6
+faqQuestions:
+  - question: "What is a BOR chain issue in a routing?"
+    answer: "A BOR chain issue is a broken link in the sequence that connects one routing step to the next, and it comes in three kinds. A dangling reference points at a step or product that does not exist in the routing. A cycle means the links loop back on themselves so no step can be first. An empty next-in-sequence means a step names no successor when it should have one."
+  - question: "What are the three kinds of BOR chain issue?"
+    answer: "Dangling reference, cycle, and empty next-in-sequence. A dangling reference names a successor that is not in the routing, usually left behind when a step was deleted or renumbered. A cycle is a loop of links with no starting point, which makes ordering impossible. An empty next-in-sequence is a step with no successor named and no valid reason to lack one."
+  - question: "Will a chain issue stop a job from being scheduled?"
+    answer: "It depends on the kind. A cycle is fatal because the scheduler cannot decide what runs first without a valid order. A dangling reference and an empty next-in-sequence tend to produce a schedule that runs but is wrong, with steps ordered by fallback rules rather than by the sequence you intended, which is the more dangerous failure because nothing complains."
+qaQuestions:
+  - question: "We deleted a step from a routing and now the schedule puts operations in the wrong order, but nothing errors. What happened?"
+    answer: "You most likely left a dangling reference behind. The step before the one you removed is still pointing at it, and the target no longer exists in the routing. The scheduler cannot follow that link, so the predecessor loses its stated successor and the ordering falls back on other rules, which is why the job still schedules and still looks plausible. Re-open the routing, find the step that pointed at the deleted one, and connect it to the correct new successor. Then re-run the chain check before you schedule so you can confirm the link count is clean rather than inferring it from the Gantt."
+  - question: "Our routing looks correct on screen but the check reports a cycle. Where do we start looking?"
+    answer: "Start with the steps you edited most recently, and specifically with any place you re-pointed a link rather than deleting and redrawing it. A cycle is almost never intentional and almost never obvious on a diagram, because two links drawn on opposite sides of a layout can close a loop that the eye reads as a straight line. The practical method is to trace forward from your intended first step and write down each successor in order. The moment you arrive at a step you already wrote down, you have found the closing link, and that is the one to change."
+---
+
+**A BOR chain issue is a broken link in the sequence that connects routing steps to each other, reported as one of three kinds: a dangling reference, a cycle, or an empty next-in-sequence.** The chain is what tells the scheduler which operation follows which. When a link is wrong, the schedule is either impossible to build or quietly built in the wrong order. EDGEBIC by User Solutions classifies chain problems so you know which of the three you are looking at before you open the routing.
+
+## How it works
+
+A bill of routing is more than a list of operations. It is a directed sequence: each step names the step that follows it, and the collection of those links is what lets the scheduler work out a valid order before it books any capacity. That ordering pass is the reason the chain has to be sound. A routing whose links do not resolve cannot be turned into a running order.
+
+Three things can go wrong with a link, and the classification exists because the fixes are different.
+
+**Dangling reference.** A step points at a successor that is not in the routing. The identifier resolves to nothing, either because the target step was deleted or because a product reference no longer belongs to this routing. Nothing about the step looks wrong on its own. The problem is only visible when you try to follow the link.
+
+**Cycle.** A step is part of a loop: follow the links forward far enough and you arrive back where you started. A cycle has no first step by definition, so there is no valid order to schedule in. This is the one genuinely fatal kind, and it is the one most likely to be caught immediately.
+
+**Empty next-in-sequence.** A step names no successor at all, and it has no legitimate reason to lack one. Some steps rightly have no successor, in particular a step that runs as one branch of a parallel pair, because its continuation is implied by the parent rather than named directly. The check accounts for that, so an empty link is only reported when it is genuinely a gap.
+
+The severity ranking is worth internalizing. A cycle stops you. A dangling reference and an empty link usually do not stop you, which is why they cause more damage: the run completes, the Gantt looks reasonable, and the operations are in an order nobody chose.
+
+## A concrete example
+
+Think of a relay race where each runner is told who to hand the baton to. A dangling reference is a runner told to hand off to someone who is not on the team, so the baton stops with them and the race quietly reorganizes itself. A cycle is runner one handing to runner two, two handing to three, and three handing back to one, which means the race can never start because nobody is first. An empty next-in-sequence is a runner given no instruction at all, standing on the track waiting.
+
+On a routing, here is how that plays out. A four-step routing runs cut, drill, deburr, inspect. Somebody deletes deburr because the operation moved to an outside vendor. Drill is still pointing at deburr. Following the chain from cut gets you to drill and then stops, so the link from drill to inspect that you assumed existed never did. The job still schedules, because every step still has a work center and hours, but inspect is no longer guaranteed to come after drill, and on a busy week it will not.
+
+Now suppose that instead of deleting deburr, somebody re-pointed inspect back at drill while rearranging the diagram. Cut goes to drill, drill goes to inspect, inspect goes to drill. There is no first step in that loop, so the ordering pass has nothing to return and the run fails outright. That failure is annoying, and it is also the friendlier outcome of the two, because it happened before anything was promised to a customer.
+
+## How EDGEBIC uses it
+
+Chain checking runs against the routing rather than against the schedule, which means you can catch these before a scheduling run rather than after: see [how to run the pre-flight check before scheduling](/blog/how-to-run-the-pre-flight-check-before-scheduling-in-edgebic) and [how to fix a circular dependency in a routing](/blog/how-to-fix-a-circular-dependency-in-a-routing-in-edgebic) for the cycle case specifically.
+
+The links themselves are drawn in the routing editor, so most chain issues are created and repaired in the same place: see [how to connect two steps in the routing designer](/blog/how-to-connect-two-steps-in-the-routing-designer-in-edgebic) and [the EDGEBIC visual routing editor explained](/blog/edgebic-visual-routing-editor-explained). Deletion is the single most common source of dangling references, which is why [how to delete a routing step safely](/blog/how-to-delete-a-routing-step-safely-in-edgebic) exists as its own task.
+
+For what the chain is used for downstream, see [what is a dependency graph in scheduling](/blog/what-is-a-dependency-graph-in-scheduling) and [what is a topological sort in job scheduling](/blog/what-is-a-topological-sort-in-job-scheduling), which is the ordering pass a cycle defeats. The related numbering concepts are [what is a sequence number in a routing](/blog/what-is-a-sequence-number-in-a-routing) and [what is a BOR level in a routing](/blog/what-is-a-bor-level-in-a-routing).
+
+A clean chain is the cheapest scheduling insurance there is, because every other calculation assumes it. For the wider vocabulary, see the [manufacturing glossary](/blog/manufacturing-glossary), and to see routings validated before they reach the schedule, explore [EDGEBIC](/edgebic).
