@@ -1,0 +1,113 @@
+---
+title: "A Product Yield Value Is Out of Range: Causes and Fixes"
+description: "Yield must sit between zero and one. A yield of zero blocks the build quantity calculation and a yield above one inflates nothing. How to spot and correct both."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - product yield out of range
+  - yield zero scheduling error
+  - scrap inflation build quantity
+  - first pass yield value
+  - yield greater than one
+  - yield anomaly check
+targetPhrase: "product yield value out of range"
+wordCount: 1182
+readingTime: 6
+faqQuestions:
+  - question: "What yield values are valid on a product?"
+    answer: "Yield must be greater than zero and no more than one, because it is a pass-rate fraction rather than a percentage or a multiplier. A yield of 1.0 means every piece passes and no inflation happens. Typical real values sit between 0.90 and 0.99. A yield of zero or below is a critical error because the build quantity calculation divides by it, and a yield above one is flagged as a warning because it implies fewer pieces out than in."
+  - question: "What happens if I leave yield at zero?"
+    answer: "Scheduling errors on the next run for that product. The engine inflates the build quantity by dividing the required quantity by the yield, so a yield of zero has no valid result. The anomaly report flags it as critical for exactly that reason. Correct it in the product's inventory planning fields before the next run: set it to 1.0 if you do not want scrap inflation at all, or to the real pass rate if you do."
+  - question: "Did someone enter 95 instead of 0.95?"
+    answer: "That is the most common cause of an out-of-range yield. Yield is a fraction, not a percentage, so a 95 percent pass rate is entered as 0.95. Typing 95 produces a yield far above one, which the anomaly report flags as a warning because it would shrink rather than inflate the build quantity. Check the value first whenever a yield row appears after a data import or a bulk edit."
+qaQuestions:
+  - question: "We set yield to 0.9 on a part that needs 500 good pieces. What quantity should the order actually build?"
+    answer: "Around 556. The engine inflates the required quantity by dividing by the yield, so 500 divided by 0.9 is 555.6, rounded up to a whole number. That is the point of yield: the order starts enough pieces that the expected scrap still leaves 500 good ones. If yield were left at 1.0 the order would start exactly 500 and come up short by roughly 50 pieces, which is the shortage planners usually discover at the end of the routing rather than at the start."
+  - question: "The yield warning is on a make-to-order product that never inflates anything. Do I still need to fix it?"
+    answer: "Yes, and it is a two-minute fix. The check is structural: it flags any product whose yield sits outside the valid range, whether or not the inflation path is reached for that product today. Leaving a bad value in place means the day someone changes that product to a stocked build method, the bad yield goes live with it. Set it to 1.0 if the product genuinely has no scrap inflation, which keeps the record honest and clears the row."
+---
+
+**Yield is a pass-rate fraction that must sit above zero and no higher than one, and a value outside that range is either a critical error or a warning depending on which side it falls.** [EDGEBIC by User Solutions](/edgebic) inflates a build quantity by dividing the required quantity by the yield, so a yield of zero has no valid result and a yield above one would shrink the order instead of protecting it.
+
+The anomaly report catches both cases as part of its plant-wide inventory checks. This post covers what each side of the range does, how the bad values usually get entered, and the correction, and it sits with the other master-data symptoms in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the intended use of the field see [how to set a product yield for scrap inflation](/blog/how-to-set-a-product-yield-for-scrap-inflation-in-edgebic), and for the concept see [what is first pass yield](/blog/what-is-first-pass-yield).
+
+## What You Are Seeing
+
+One of two things. Either a product will not schedule and the run reports an error tied to that product, or a plant-wide anomaly scan lists the product with a yield value the check calls out of range. The value in the product record is a zero, a negative, or a number well above one such as 95.
+
+## Why It Happens
+
+### Cause 1: Yield Was Entered as a Percentage
+
+The field holds a fraction. A 95 percent pass rate is 0.95, not 95. A value of 95 reads as ninety-five pieces out for every one piece in, which is not a thing a routing can do, so the check flags it as a warning.
+
+This is the most common cause after a bulk edit or a data import, where a spreadsheet column held percentages and the mapping carried them across unchanged.
+
+**How to tell:** the value is a whole number greater than one, and it matches a percentage you recognize.
+
+### Cause 2: Yield Was Left at Zero
+
+A zero yield is the critical case. The build quantity calculation divides the required quantity by the yield, and division by zero has no result, so scheduling for that product fails on the next run rather than producing a wrong number quietly.
+
+**How to tell:** the value is exactly zero and the product will not schedule.
+
+### Cause 3: A Negative Value Was Saved
+
+A negative yield is treated the same way as zero: critical, and unusable. Negatives normally arrive through an import that carried a minus sign or an inverted column rather than through manual entry.
+
+**How to tell:** the value carries a minus sign and arrived with an import.
+
+### A Related Case: the Value Is Valid but Wrong
+
+A yield of 1.0 is perfectly valid and means no inflation at all. If a product that genuinely scraps five percent of its pieces carries a yield of 1.0, no check fires, but every order for it starts short. That is not an out-of-range row, it is an accuracy problem, and it shows up as chronic shortages at the end of the routing.
+
+## How to Fix It
+
+- **Convert a percentage to a fraction.** Divide by one hundred: 95 becomes 0.95, 99.5 becomes 0.995.
+- **Replace a zero or a negative** with the real pass rate, or with 1.0 if the product has no scrap inflation.
+- **Use realistic values.** Typical figures sit between 0.90 and 0.99. A number below 0.5 says half the pieces fail, which is worth confirming before you save it.
+- **Re-run scheduling** so the affected orders are rebuilt with the corrected quantity, then re-open the anomaly report to confirm the row cleared.
+
+## The Arithmetic, in One Example
+
+A customer needs 500 good pieces. The product's yield is 0.9.
+
+| Step | Value |
+|---|---|
+| Required good pieces | 500 |
+| Yield | 0.9 |
+| Quantity to start | 500 divided by 0.9, rounded up: 556 |
+| Expected scrap | 56 pieces |
+
+Leave the yield at 1.0 and the order starts 500, finishes around 450 good, and the shortage surfaces at the end of the routing when there is no time left to recover. That is the failure yield exists to prevent, and it is why an out-of-range value is worth clearing rather than tolerating.
+
+## How to Diagnose It, in Order
+
+1. **Run a plant-wide anomaly scan.** The yield check is plant-wide, so a job-filtered run will not show it.
+2. **Read the flagged value.** Zero or negative is critical; above one is a warning.
+3. **Open the product's inventory planning fields** and compare the stored number against the pass rate the shop actually sees.
+4. **Correct the value and save.**
+5. **Re-run scheduling** for orders on that product, then re-open the report to confirm the row is gone.
+
+## How to Prevent It
+
+- **Treat yield as a fraction everywhere,** including in the spreadsheets you import from. A percentage column should be converted before it is mapped, not after it lands.
+- **Audit yields after every product import.** A plant-wide scan immediately after the import catches the whole batch at once rather than one order at a time.
+- **Set 1.0 deliberately** on products that genuinely have no scrap inflation, instead of leaving the field to chance. An explicit 1.0 reads as a decision.
+- **Check yields against real results periodically.** A value that was right two years ago drifts as processes change, and a stale yield quietly under-builds or over-builds every order. For the inventory side of the same audit see [my on-hand quantity does not match the inventory ledger](/blog/my-on-hand-quantity-does-not-match-the-inventory-ledger-edgebic).
+
+<Accordion title="What yield values are valid on a product?">
+Yield must be greater than zero and no more than one, because it is a pass-rate fraction rather than a percentage or a multiplier. A yield of 1.0 means every piece passes and no inflation happens. Typical real values sit between 0.90 and 0.99. A yield of zero or below is a critical error because the build quantity calculation divides by it, and a yield above one is flagged as a warning because it implies fewer pieces out than in.
+</Accordion>
+
+<Accordion title="What happens if I leave yield at zero?">
+Scheduling errors on the next run for that product. The engine inflates the build quantity by dividing the required quantity by the yield, so a yield of zero has no valid result. The anomaly report flags it as critical for exactly that reason. Correct it in the product's inventory planning fields before the next run: set it to 1.0 if you do not want scrap inflation at all, or to the real pass rate if you do.
+</Accordion>
+
+<Accordion title="Did someone enter 95 instead of 0.95?">
+That is the most common cause of an out-of-range yield. Yield is a fraction, not a percentage, so a 95 percent pass rate is entered as 0.95. Typing 95 produces a yield far above one, which the anomaly report flags as a warning because it would shrink rather than inflate the build quantity. Check the value first whenever a yield row appears after a data import or a bulk edit.
+</Accordion>

@@ -1,0 +1,83 @@
+---
+title: "What Is a Lot Streaming Configuration Check?"
+description: "A lot streaming configuration check finds overlap settings that silently do nothing: flow lag on an alternate machine, flow with queue, flow with transfer batch, and a batch bigger than the order. Definition and how EDGEBIC reports it."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - lot streaming configuration check
+  - flow step ignored scheduling
+  - transfer batch bigger than order
+  - overlap settings audit
+  - queue time and flow step conflict
+  - scheduling anomaly lot streaming
+targetPhrase: "lot streaming configuration check"
+wordCount: 1230
+readingTime: 6
+faqQuestions:
+  - question: "What is a lot streaming configuration check?"
+    answer: "A lot streaming configuration check audits the overlap settings on routing steps for combinations that silently do nothing or do something other than what the planner intended. It finds four conditions: a flow lag on a step that ran on an alternate machine, a flow lag and a queue time set together, a flow lag and a transfer batch set together, and a transfer batch larger than the order quantity. Only the first is critical; the other three are warnings."
+  - question: "Why does a flow lag stop working when the step runs on an alternate machine?"
+    answer: "Because the overlap calculation looks up the upstream operation by its primary work center. When the step was rerouted to an alternate machine, the lookup cannot find the schedule it needs, so the flow lag is not applied and the downstream step waits for the full upstream finish instead of overlapping. Nothing errors, and the plan looks legitimate; it is just longer than the routing intended, which is why this one is marked critical."
+  - question: "What happens when both a flow lag and a queue time are set on the same step?"
+    answer: "The engine applies the queue time first and then replaces the result with the flow gate, so the queue buffer effectively disappears. If you intended the two to compose, meaning a queue buffer sitting on top of the overlap, the downstream step will start earlier than you wanted. The way to add a handling lag on top of an overlap is the transfer delay field, which is designed to stack rather than replace."
+qaQuestions:
+  - question: "We set transfer batches of 500 pieces and see no overlap at all. The check flags the steps. What is happening?"
+    answer: "Your transfer batch is at least as large as the order quantity, so it is being capped at the order size and the first transfer batch is the whole job. That makes streaming behave exactly like no streaming: the downstream step waits for the entire upstream operation to finish before it can start. The number is usually a placeholder that was never revised against real order sizes. Pick a batch that represents a real handling unit, such as a tray, a pallet, or a rack, and one that is genuinely smaller than a typical run. A batch of 25 on a 500-piece order gives you twenty handoffs and real overlap; a batch of 500 gives you one and none."
+  - question: "A routing step has both a flow lag and a transfer batch filled in. Which one does the engine use, and does it matter that both are set?"
+    answer: "On an ordinary discrete work center the engine prefers the transfer batch and ignores the flow lag entirely, so the piece-count model wins. It matters because the routing now says two contradictory things and the next person to read it cannot tell which one is live. The fix is to clear whichever field you did not mean, so the intent is explicit on the step itself. The exception worth knowing is a continuous-process work center, where the piece-count model never fires and the flow lag is what applies, which is precisely why leaving both set is confusing."
+---
+
+**A lot streaming configuration check is an audit of the overlap settings on routing steps, looking for combinations that silently do nothing or do something other than what the planner intended. It tests four conditions: a flow lag on a step that ended up running on an alternate machine, a flow lag and a queue time set on the same step, a flow lag and a transfer batch set on the same step, and a transfer batch at least as large as the order quantity. The first reports as critical; the other three report as warnings.**
+
+These are configuration audits rather than hard failures. In every case the schedule builds cleanly and the arithmetic is legal. The plan is simply not doing the thing the routing appears to ask for, and nothing on screen says so.
+
+This entry belongs to the [EDGEBIC by User Solutions](/edgebic) glossary. For the wider vocabulary, see the [manufacturing glossary](/blog/manufacturing-glossary), and for the underlying concept, the definition of [lot streaming](/blog/what-is-lot-streaming).
+
+## How the Lot Streaming Configuration Check Works
+
+Overlap between two sequential operations can be expressed two ways. A **flow lag** is a start-to-start offset in hours: set it to one and a successor may begin an hour after its predecessor started, regardless of quantity. A **transfer batch** is a piece count: send parts downstream in trays of twenty-five as soon as twenty-five are ready. The four tests all sit around the edges of those two models.
+
+### Flow lag on an alternate machine
+
+The overlap calculation looks up the upstream operation by its primary work center. If the step was rerouted to an alternate machine, that lookup fails to find the schedule it needs and the flow lag is never applied. The downstream step then waits for the full upstream finish instead of overlapping. This is the critical firing, because a real routing intention has been silently dropped and the job is longer than designed.
+
+### Flow lag and queue time together
+
+The engine computes the queue buffer first, then replaces that result with the flow gate. The queue time therefore stops mattering. Planners who set both usually intend them to compose, meaning a handling buffer sitting on top of the overlap, and instead get an earlier downstream start than they wanted. The field designed to stack on top of an overlap is the transfer delay, not the queue time.
+
+### Flow lag and transfer batch together
+
+Two overlap models on one step is ambiguous. On an ordinary discrete machine the engine prefers the piece-count transfer batch and ignores the flow lag. The routing is not wrong, but it now says two contradictory things and nobody reading it later can tell which is live. Clear the unused field.
+
+### Transfer batch as large as the order
+
+The engine caps a transfer batch at the order quantity, because you cannot ship more parts downstream than the job contains. A batch set at or above the largest order size therefore collapses into a single handoff, and piece-count streaming becomes plain serial processing with no overlap at all. It usually means the field was filled with a placeholder that was never checked against real order sizes.
+
+## Why These Fail Quietly
+
+Overlap settings are unusual in that a wrong value never produces an error. Every one of these four conditions results in a schedule that is internally consistent, passes every other check, and simply runs longer than the planner expected. The only visible symptom is a lead time nobody can account for.
+
+That is the case for auditing them explicitly. A flow field that does nothing is worse than a flow field left empty, because the empty one tells the truth.
+
+## A Concrete Example
+
+A shop machines 500 brackets and assembles them. To overlap the two operations, the planner sets a transfer batch of 25 pieces on the machining step: as soon as a tray of 25 is done, assembly can begin.
+
+That works. Assembly starts after roughly one twentieth of the machining time rather than at the end, and the job finishes days earlier.
+
+Six months later a new planner copies that routing to a similar product and, wanting a bigger handling unit, sets the transfer batch to 500. The check flags it. With order quantities also around 500, the batch is capped at the order size, so the first transfer batch is the entire job and assembly waits for all of it. The routing looks like it streams; the plan does not.
+
+The fix is to pick a batch that is a real handling unit and genuinely smaller than a run, such as 50. The overlap returns, and the warning clears.
+
+On a different step in the same routing, the check also reports that a flow lag and a queue time are both set. The planner had wanted four hours of inspection queue after machining plus a one-hour overlap. What the plan actually did was drop the queue entirely. Moving the four hours into the transfer delay field gives the intended stack: overlap first, handling lag on top.
+
+## How EDGEBIC Reports Lot Streaming Configuration
+
+In EDGEBIC, these tests run inside the Scheduler Anomalies report under the Reports menu. The alternate-machine case is scoped to a job, since it depends on where a specific step actually ran. The other three audit the routing itself and run plant-wide, so a full scan is the right way to sweep them.
+
+The neighboring definitions are the [transfer batch](/blog/what-is-a-transfer-batch), [flow step overlap](/blog/what-is-flowstep-overlap), [transfer delay](/blog/what-is-transfer-delay-in-lot-streaming) which is the field that stacks on top, [queue time](/blog/what-is-queue-time-in-manufacturing-scheduling), and the [continuous process work center](/blog/what-is-a-continuous-process-work-center) where the piece-count model never fires. For the mechanism, see [EDGEBIC lot streaming explained](/blog/edgebic-lot-streaming-explained), and for the practical walkthrough of the report, [how to run and read the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic).
+
+Overlap is one of the largest lead-time levers available, and one of the easiest to leave switched off by accident. That is exactly what this check is for.

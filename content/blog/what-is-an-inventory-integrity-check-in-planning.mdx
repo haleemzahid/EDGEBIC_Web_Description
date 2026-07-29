@@ -1,0 +1,85 @@
+---
+title: "What Is an Inventory Integrity Check in Planning?"
+description: "An inventory integrity check compares the on-hand number against the ledger that produced it, and audits the flags that let a product hold stock at all. Definition and how EDGEBIC reports it."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - inventory integrity check
+  - on-hand cache drift
+  - inventory ledger validation
+  - negative inventory balance check
+  - make to stock not stocked
+  - planning data audit manufacturing
+targetPhrase: "inventory integrity check"
+wordCount: 1200
+readingTime: 6
+faqQuestions:
+  - question: "What is an inventory integrity check?"
+    answer: "An inventory integrity check audits the inventory side of the planning data for conditions that make the numbers untrustworthy. It compares a product's on-hand figure against the sum of its ledger entries, looks for balances that have gone negative, finds make-to-stock products that are not flagged as stocked, validates the yield value's range, checks that a job satisfied from stock actually drew stock in the ledger, and finds released master schedule rows whose manufacturing order no longer exists. All of these run plant-wide rather than per job."
+  - question: "Why compare on-hand against the ledger if on-hand is the real number?"
+    answer: "On-hand is not the source of truth; it is a running total kept for speed. The ledger of receipts and issues is what actually happened, and the on-hand figure is recomputed from it after every posting. If the two disagree, the fast number has drifted from the authoritative one, and every projection, netting decision, and replenishment suggestion built on the fast number is quietly wrong. Comparing them is the only way to notice."
+  - question: "What is a firmed-forever orphan?"
+    answer: "It is a master production schedule row that was released into a manufacturing order, where that order has since been canceled or deleted. The row still shows as released, so the planner believes the quantity is covered, but no build exists behind it. It is a warning because nothing is corrupt, but the plan is carrying a promise nothing will fulfill. The fix is to reset the row so it can be released again."
+qaQuestions:
+  - question: "Our on-hand for a part reads 340 but the ledger sums to 285. Which one do we believe and how do we fix it?"
+    answer: "Believe the ledger. Every receipt and issue is a recorded event, and the on-hand figure is a convenience total recomputed from those events after each posting. A gap of 55 means a posting path updated one and not the other, which is most likely to happen around a reschedule that reposted issues for a job. Audit the ledger for that part first so you can see the actual transaction history, confirm no entries are missing or duplicated, and then let a posting cycle recompute the on-hand from the ledger. Do not hand-edit the on-hand number to match, because that hides the cause and the gap will come back."
+  - question: "We set several products to make to stock but their builds never seem to post receipts. What is the check telling us?"
+    answer: "It is telling you those products are set to build for stock but are not flagged as stocked, and the stocked flag is what enables inventory behavior at all. With it off, netting, replenishment, and receipt and issue posting are all skipped, so a make-to-stock build completes and nothing arrives on the shelf, which means consumers downstream can never net against it. The two settings have to agree. Turn on the stocked flag for every product whose build method is make to stock or make to stock with an order-level override, and the receipts will start posting."
+---
+
+**An inventory integrity check is a plant-wide audit of the inventory side of the planning data, looking for conditions that make the numbers untrustworthy. It compares each product's on-hand figure against the sum of its ledger entries, finds balances that have gone negative, flags make-to-stock products that are not marked stocked, validates the yield value's range, confirms that a job recorded as satisfied from stock actually drew that stock in the ledger, and finds released master schedule rows whose manufacturing order no longer exists.**
+
+The core idea is the same one that governs any set of books. The ledger of receipts and issues is what happened. Everything else, including the on-hand number every screen displays, is a summary computed from it. When a summary and its ledger disagree, the summary is the one that is wrong, and every decision built on it inherits the error.
+
+This entry belongs to the [EDGEBIC by User Solutions](/edgebic) glossary. For the wider vocabulary, see the [manufacturing glossary](/blog/manufacturing-glossary), and for the parent concept, the definition of a [scheduling anomaly check](/blog/what-is-a-scheduling-anomaly-check).
+
+## How the Inventory Integrity Check Works
+
+### On-hand against the ledger
+
+Every product carries an on-hand quantity for speed, and a ledger of receipts and issues that is the authoritative record. After each posting the on-hand figure is recomputed from the ledger. The check sums the ledger independently and compares. A gap is critical, because the fast number that drives netting, projections, and replenishment has drifted from the record that produced it.
+
+### Negative balances
+
+Physical stock cannot go below zero, so a ledger summing negative for a stocked product means more has been issued than was ever received. This is a warning rather than a critical, because the arithmetic is legal even though the physical situation is not. It usually points at issues posted against receipts that never landed.
+
+### Make to stock without the stocked flag
+
+A product's build method says whether it is made to order or made for the shelf. A separate flag says whether it holds inventory at all. With that flag off, netting, replenishment, and receipt and issue posting are all skipped. A product set to build for stock but not flagged as stocked therefore builds and never arrives, and nothing downstream can net against it. The check flags the contradiction.
+
+### Yield range
+
+A product's yield is a fraction, so it must be greater than zero and no more than one. A value of zero or below is critical because it is used as a divisor. A value above one is a warning, because the field has been filled with a percentage or a count rather than a fraction.
+
+### Satisfied from stock with no draw-down
+
+When a job's demand is met from stock rather than by building, the schedule records it as satisfied from stock and an issue is posted to the ledger. The check confirms both halves exist. A job claiming stock was consumed with no matching issue entry means the plan and the ledger disagree about whether anything left the shelf.
+
+### Firmed-forever orphans
+
+A master production schedule row released into a manufacturing order carries a link to that order. If the order is later canceled or removed, the row still reads as released. The planner believes the quantity is covered; nothing is building it. The check finds those orphans so the row can be reset and released again.
+
+## Why These Are Plant-Wide
+
+Every one of these tests audits master data or a ledger rather than a single plan. There is no job to open. Running them per job would be meaningless, so they scan the whole product list and the whole ledger, which is also why the natural cadence is periodic rather than every publish: run them after a data migration, after a cleanup, and on a regular rhythm.
+
+## A Concrete Example
+
+A shop keeps 400 brackets in finished goods and a make-to-stock policy on the part.
+
+A customer order for 250 arrives. The plan satisfies it from stock, so no machine time is scheduled and an issue for 250 is posted. On-hand drops to 150. Both stores agree.
+
+Two weeks later the planner runs the inventory integrity check as part of a monthly audit. Two findings come back. The first is a warning on a different part: it is set to build for stock but is not flagged as stocked, so three completed builds never posted receipts and the shelf still reads zero. The planner turns on the stocked flag and reposts.
+
+The second is critical: a third part's on-hand reads 340 while its ledger sums to 285. The planner audits that part's ledger, finds a reschedule that reposted issues without the on-hand being recomputed, and lets a posting cycle rebuild the total from the ledger. The 340 becomes 285, and the replenishment suggestion that had been suppressed by the inflated figure appears as it should have two weeks earlier.
+
+## How EDGEBIC Reports Inventory Integrity
+
+In EDGEBIC, the inventory integrity tests run inside the Scheduler Anomalies report under the Reports menu. Because they are plant-wide, run a full scan rather than a single-job one. Severity does the triage: the on-hand drift, the bad yield value, and the malformed satisfied-from-stock row are critical; the negative balance, the unstocked make-to-stock product, the missing draw-down, and the firmed-forever orphan are warnings.
+
+The neighboring definitions are the [inventory ledger](/blog/what-is-an-inventory-ledger) that holds the authoritative record, [consume from stock netting](/blog/what-is-consume-from-stock-netting) which produces the satisfied-from-stock rows, and the [is-stocked flag](/blog/what-is-the-is-stocked-flag-in-inventory-planning) that governs whether a product participates at all. For the practical walkthrough, see [how to audit the inventory ledger for a part](/blog/how-to-audit-the-inventory-ledger-for-a-part-in-edgebic), and for the symptom-first version, [inventory on-hand looks wrong after a reschedule](/blog/inventory-on-hand-looks-wrong-after-a-reschedule-edgebic).
+
+A planning system is only as honest as its ledger. These checks are how you find out whether yours still is.

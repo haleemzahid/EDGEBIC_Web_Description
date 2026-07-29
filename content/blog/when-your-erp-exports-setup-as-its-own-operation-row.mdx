@@ -1,0 +1,120 @@
+---
+title: "When Your ERP Exports Setup as Its Own Operation Row"
+description: "How to import an ERP routing that models setup as a separate operation line: merge it into the run step's setup field, or keep it as a real step when setup runs off the machine."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - ERP setup operation row
+  - separate setup line routing import
+  - setup time versus run time scheduling
+  - merge setup operation routing
+  - EDGEBIC routing import setup
+  - ERP routing structure scheduling
+targetPhrase: "ERP setup as a separate operation row"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "My ERP has a separate SETUP operation line before each run line. How should that import?"
+    answer: "In almost every case, merge it: put the setup line's hours into the run step's setup time field and import one routing step instead of two. EDGEBIC charges setup once per job and multiplies run time by quantity, so a single step already models both behaviors correctly. Keep two steps only when the setup genuinely happens somewhere else, such as an offline tool-build bench that occupies a different work center."
+  - question: "What goes wrong if I import the setup row as an ordinary operation?"
+    answer: "The most damaging outcome is mapping setup hours into the hours-per-unit field, because run time multiplies by quantity. A 0.5 hour setup on a 200-piece order then books 100 hours of machine time instead of 0.5. It never fails and never warns, so the only symptom is a job that suddenly needs weeks. Reconciling one job by hand after the first import is what catches it."
+  - question: "Does merging the setup row lose information my ERP relies on?"
+    answer: "No, because the merge happens in the file you import rather than in the ERP. Your ERP keeps its two-line structure for costing, labor reporting, and whatever your travelers print. EDGEBIC receives one step carrying both numbers in their correct fields. This is the same one-way pattern used for every ERP: export, import through a mask, schedule, export dates back, with no write-back to the ERP."
+qaQuestions:
+  - question: "Our routings alternate SETUP and RUN lines on the same machine, so a five-operation part exports as ten rows. What is the cleanest way to collapse that?"
+    answer: "Do it in the export, not by hand each week. Add a grouping to the saved report or query that pairs each setup line with the run line that follows it on the same work center, and emit one row carrying the run step name, the run hours per unit, and the setup line's hours in a separate setup column. Your five-operation part then exports as five rows with two time columns, which is exactly the shape the routing mask wants. Number the surviving rows 10, 20, 30, 40, 50 so the chain wires cleanly. If the reporting tool cannot group, the fallback is to export both lines and drop the setup rows in the same saved query, then carry the setup hours as a lookup column on the run row. Either way the work is one-time: once the export is shaped correctly, every future import is two clicks."
+  - question: "One of our operations really does set up on a separate bench while the machine keeps running the previous job. Should that stay two rows?"
+    answer: "Yes, and that is the case where two steps are the accurate model rather than a data artifact. If the tool build happens on a physically different work center, it has its own capacity, its own queue, and its own people, so it deserves its own routing step with its own hours. Number it ahead of the machining step, point it at the bench work center, and let the finite capacity engine load the bench as the real resource it is. You may find the bench is a constraint nobody had measured, because a lumped setup number inside a machining step never shows up as bench load. The test is simple: if the setup consumes capacity somewhere other than the machine that runs the job, model it as a step."
+---
+
+**When an ERP routing carries setup on its own operation line, the usual correct move is to merge it into the run step: import one routing step whose setup time field holds the setup line's hours and whose run field holds hours per piece.** EDGEBIC already models the two behaviors separately inside one step, charging setup once per job and multiplying run time by quantity. Two rows describing one physical operation add nothing and introduce a specific, expensive failure mode.
+
+EDGEBIC by User Solutions has unpacked ERP routing structures this way since 1991, and across 35+ years of scheduling for the US Navy, GE, BAE Systems, and Cummins, the separate setup line is one of the most common shapes to arrive in a first export. This post covers the merge, the exception where two steps are genuinely right, and the trap that makes this worth getting correct before the first schedule.
+
+## Why the separate setup line exists at all
+
+It is usually a costing decision. Setup labor and run labor are often reported at different rates, by different people, or against different accounts, so many ERPs give setup its own operation line with its own standard. That is a sound way to record cost. It is a poor way to describe capacity, because both lines occupy the same machine for one continuous block of time.
+
+The related case, one blended number that contains both, is covered in [handling an ERP export with combined setup and run time](/blog/handling-combined-setup-and-run-time-from-your-erp). This post is the opposite shape: the ERP has already separated the numbers, and has separated them one level too far.
+
+## What one EDGEBIC routing step already models
+
+A routing step carries three time fields, and they behave differently on purpose:
+
+| Field | Meaning | Scales with |
+|---|---|---|
+| Setup time | Preparation, once per job | Nothing (fixed per job) |
+| Run time (hours per unit) | Time to make one piece | Order quantity |
+| Queue time | Buffer before the step may start | Nothing |
+
+So a step is already a setup plus a run. Splitting it across two rows does not give the engine more information. It gives it a second operation to place, with its own position in the chain and its own opportunity to be scheduled somewhere you did not intend.
+
+## The trap: setup hours landing in the run field
+
+This is the reason to fix the shape rather than live with it.
+
+A separate setup row has one obvious numeric column, and the routing mask's most prominent time field is hours per unit. Mapping the setup row's hours there is an easy mistake, and run time multiplies by order quantity:
+
+| Order quantity | Setup as a fixed 0.5 hours | Setup mapped as 0.5 hours per unit |
+|---|---|---|
+| 10 | 0.5 hours | 5 hours |
+| 200 | 0.5 hours | 100 hours |
+| 1,000 | 0.5 hours | 500 hours |
+
+Nothing fails. The import reports clean counts and the dates are simply wrong, in a direction that grows with lot size. Unit and field errors are the most expensive quiet mistakes in ERP integration, which is why reconciling one job by hand belongs on every [import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist).
+
+## Doing the merge in the export
+
+Shape the file once and the recurring routine never thinks about it again.
+
+1. **Pair each setup line with the run line that follows it** on the same work center, in the saved report or query that produces your routing export.
+2. **Emit one row per physical operation**, carrying the run step name, the work center, hours per unit, and the setup hours in a separate setup column.
+3. **Renumber the survivors** in gaps of ten so the chain wires cleanly on import. The mechanics are in [importing your ERP's operation sequence numbers](/blog/importing-erp-operation-sequence-numbers).
+
+If the reporting tool cannot group rows, the workable fallback is to filter the setup lines out of the export and carry their hours as a lookup column on the run row.
+
+Unit differences ride along in the mask rather than in the file. A setup column quoted in minutes and a run column quoted per hundred both convert correctly in one pass, with 0.016667 on one and 0.01 on the other. The full option list is in [mapping your ERP's units of measure](/blog/mapping-your-erps-units-of-measure-for-scheduling).
+
+## When two steps really are correct
+
+There is a genuine exception, and it is worth looking for rather than assuming it away.
+
+If the setup consumes capacity **somewhere other than the machine that runs the job**, it is a real routing step. A tool-build bench, a die prep cell, a program-proving station, or an offline fixture build all occupy their own work center, their own queue, and their own people, often while the machine is still running the previous job.
+
+Model those as separate steps pointed at the real work center. Two things follow immediately:
+
+- The bench gets loaded as a resource, so you can see whether it is a constraint. A setup number buried inside a machining step never appears as bench load, which is how a genuine bottleneck stays invisible for years. The general method is in [production bottleneck identification](/blog/production-bottleneck-identification).
+- The overlap becomes visible, because an offline setup that runs in parallel with the previous job is exactly the kind of flow a finite capacity engine can represent and a lumped number cannot.
+
+The wider decision about routing granularity is covered in [splitting one ERP operation into multiple steps](/blog/splitting-one-erp-operation-into-edgebic-steps). The test here is short: if the setup happens on the same machine that runs the job, merge it; if it happens elsewhere, model it.
+
+## What the merged setup unlocks
+
+Once setup lives in the setup field of the step it belongs to, the rest of the engine can use it. Setup becomes the per-operation fallback that a [sequence-dependent setup matrix](/blog/edgebic-setup-matrix-explained) overrides where the changeover genuinely depends on what ran before, such as a paint line that takes four hours to go from black back to white but minutes to go light to light. A work center can also carry a default setup that applies when an operation does not specify its own, so you seed a sensible number once per machine rather than on every routing line.
+
+None of that works from a floating setup row, because the matrix and the default both attach to the operation that runs the work.
+
+## Fixing it later is safe
+
+You do not have to solve this before your first schedule. Re-importing a corrected routing is safe at any time: the routing import wipes and recreates a product's steps once per run, and every scheduled job carries a frozen snapshot of the routing it was planned with, so a change applies to future jobs and leaves work in progress untouched.
+
+Work in priority order. Fix the routings that run on tight work centers first, because that is where a misplaced setup number actually moves the schedule. Centers that are never busy can wait. The recurring rhythm around all of this is in the [weekly ERP sync routine](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine), and the whole file-based method is in [why EDGEBIC connects to every ERP the same way](/blog/why-edgebic-connects-to-every-erp-the-same-way).
+
+## Bring a two-line routing
+
+Export a routing that alternates setup and run lines and [bring it to a demo](/contact-us). Collapsing it live takes minutes, and you will see immediately which of your setups belong inside the step and which are really a separate resource. The engine that consumes the result is mapped on the [EDGEBIC product overview](/edgebic), and the import layer every ERP shares sits under the [ERP integration architecture](/edgebic-erp-integration).
+
+<Accordion title="My ERP has a separate SETUP operation line before each run line. How should that import?">
+In almost every case, merge it: put the setup line's hours into the run step's setup time field and import one routing step instead of two. EDGEBIC charges setup once per job and multiplies run time by quantity, so a single step already models both behaviors correctly. Keep two steps only when the setup genuinely happens somewhere else, such as an offline tool-build bench that occupies a different work center.
+</Accordion>
+
+<Accordion title="What goes wrong if I import the setup row as an ordinary operation?">
+The most damaging outcome is mapping setup hours into the hours-per-unit field, because run time multiplies by quantity. A 0.5 hour setup on a 200-piece order then books 100 hours of machine time instead of 0.5. It never fails and never warns, so the only symptom is a job that suddenly needs weeks. Reconciling one job by hand after the first import is what catches it.
+</Accordion>
+
+<Accordion title="Does merging the setup row lose information my ERP relies on?">
+No, because the merge happens in the file you import rather than in the ERP. Your ERP keeps its two-line structure for costing, labor reporting, and whatever your travelers print. EDGEBIC receives one step carrying both numbers in their correct fields. This is the same one-way pattern used for every ERP: export, import through a mask, schedule, export dates back, with no write-back to the ERP.
+</Accordion>

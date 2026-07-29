@@ -1,0 +1,85 @@
+---
+title: "What Is a Transit Days Configuration Check?"
+description: "A transit days configuration check catches working-day transit that silently falls back to calendar days, and audits which mode your routing steps are actually in. Definition and how EDGEBIC reports it."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - transit days configuration check
+  - working days fell back to calendar days
+  - transit time validation scheduling
+  - outside vendor transit routing
+  - calendar day vs working day audit
+  - scheduling anomaly transit
+targetPhrase: "transit days configuration check"
+wordCount: 1090
+readingTime: 6
+faqQuestions:
+  - question: "What is a transit days configuration check?"
+    answer: "A transit days configuration check audits routing steps that carry a transit delay between operations. It flags a step set to count transit in working days whose work center is missing, inactive, or deleted, because in that state the calculation silently falls back to counting calendar days and the transit is shorter than intended in real working time. It also reports a summary of how many steps sit in each mode, so a plant can see whether its routings are deliberately configured or just carrying whatever default they arrived with."
+  - question: "Why does the mode fall back rather than fail?"
+    answer: "Counting working days requires knowing which days the work center is open, and that comes from the work center's calendar. If the work center is missing or inactive, there is no calendar to consult, so the calculation falls through to plain calendar-day arithmetic rather than stopping the whole schedule. That choice keeps a plan buildable, but it means a three working day transit quietly becomes three calendar days, which across a weekend is two days shorter than you designed."
+  - question: "Is the mode summary a problem or just information?"
+    answer: "It is information, and it exists because the two defaults in the product have not always agreed. Rows that were never explicitly set can therefore be sitting in a mode nobody chose. The summary simply counts how many steps are in each, so a planner can review the split and set the mode deliberately on the routings where transit actually matters, rather than discovering the difference when a vendor return date lands on a Saturday."
+qaQuestions:
+  - question: "We send parts to an anodizing vendor with a three working day turnaround, and the return keeps landing a couple of days early. Where do we look?"
+    answer: "Check whether the routing step's transit mode is genuinely counting working days and whether the work center on that step is still active. If the work center has been deactivated or replaced, the working-day calculation has no calendar to read and silently reverts to calendar days, so three working days becomes three calendar days and a Friday send returns on Monday instead of Wednesday. The check flags exactly this. Reactivate or correct the work center on the step, re-run the schedule, and confirm the return date moves back out. If the work center is fine, look at the mode itself, since a step set to calendar days will behave this way by design."
+  - question: "Should we set every routing step to working days to be safe?"
+    answer: "No, choose per step based on what physically happens. A truck that drives over the weekend is a calendar-day delay: the parts really are in transit on Saturday and Sunday, so calendar days is the honest model. A vendor process that only runs when their shop is open, such as heat treating or plating, is a working-day delay, because nothing happens while they are closed. Setting everything to one mode makes half your routings wrong in a way nobody notices until a delivery slips. The mode summary is there to help you review the split rather than to push you toward one answer."
+---
+
+**A transit days configuration check audits routing steps that carry a transit delay between operations. It flags any step set to count transit in working days whose work center is missing, inactive, or deleted, because in that state the calculation silently falls back to counting calendar days and the real delay is shorter than the routing intended. It also produces a summary of how many steps sit in each mode, so a plant can confirm its routings were configured deliberately rather than inheriting a default.**
+
+The analogy is a promise from an outside vendor. "Three days" means one thing if it counts the weekend and something else if it does not, and the difference only shows up when the parts fail to arrive on the day you told the customer they would.
+
+This entry belongs to the [EDGEBIC by User Solutions](/edgebic) glossary. For the wider vocabulary, see the [manufacturing glossary](/blog/manufacturing-glossary), and for the underlying concept, the definition of [transit time in production scheduling](/blog/what-is-transit-time-in-production-scheduling).
+
+## How the Transit Days Configuration Check Works
+
+A routing step can carry a transit delay: days for parts to travel between this operation and the next, typically to an outside vendor and back, or between two buildings. That delay counts in one of two modes. **Calendar days** count every day including weekends and closures. **Working days** count only days the work center is actually open.
+
+Working-day counting needs a calendar, and the calendar comes from the work center on the step. That dependency is what the first test exists for.
+
+### The silent fallback
+
+If a step is set to working-day mode but its work center is missing, inactive, or has been deleted, there is no calendar to consult. Rather than failing the whole schedule, the calculation falls through to plain calendar-day arithmetic. The plan builds, the dates look reasonable, and the transit is quietly shorter than designed. Across a weekend, three working days becomes three calendar days, and the parts are expected back two days early.
+
+That is a warning at plant scope: it is a routing configuration issue rather than a problem with one job's plan.
+
+### The mode summary
+
+The second part of the family is informational rather than a fault. It counts how many routing steps sit in each mode. It exists because the stored default and the in-code default for the mode have not always agreed, which means rows that were never explicitly set can be sitting in a mode nobody chose.
+
+The summary is not telling you anything is wrong. It is telling you to look, so that on the routings where transit genuinely matters, the mode is a decision rather than an inheritance.
+
+## Choosing the Mode Deliberately
+
+The right mode depends on what physically happens during the delay.
+
+If parts are on a truck, the truck drives on Saturday. Nothing pauses for the weekend, so **calendar days** is the honest model. A three-day freight leg really is three days.
+
+If parts are sitting in a vendor's plating line, and that vendor closes at the weekend, then nothing happens Saturday or Sunday, so **working days** is the honest model. A three working day turnaround sent on Thursday comes back on Tuesday.
+
+Blanket-setting everything to one mode guarantees that half your routings are wrong in a way that only surfaces when a date slips.
+
+## A Concrete Example
+
+A fabrication shop sends brackets out for anodizing. The routing step carries a three-day transit in working-day mode, so a Thursday send returns the following Tuesday.
+
+The vendor changes and the planner creates a new work center for the new supplier, deactivating the old one but leaving the old routing step pointing at it. The next reschedule builds without complaint, and the return date now reads Sunday.
+
+The anomaly report flags the step. With the work center inactive, there is no calendar behind the working-day mode, so the calculation used calendar days: Thursday plus three calendar days is Sunday. The planner repoints the step at the new work center, re-runs, and the return moves back to Tuesday.
+
+The same run also reports the mode summary: 180 routing steps carry a transit value, of which 140 have never had the mode set explicitly. The planner reviews the twenty that involve outside vendors, sets those to working days deliberately, and leaves the freight legs on calendar days.
+
+## How EDGEBIC Reports Transit Days Configuration
+
+In EDGEBIC, the working-day fallback test runs inside the Scheduler Anomalies report under the Reports menu and appears both in the in-app report and in the exported query set. The mode summary is an informational count, aimed at a periodic review rather than a pre-publish sweep.
+
+Because both are plant-scope, run a full scan rather than a single-job one, and run it after any change to the work center list, since deactivating a work center is exactly what triggers the fallback.
+
+The neighboring definitions are [transit time](/blog/what-is-transit-time-in-production-scheduling), the distinction between [working days and calendar days](/blog/working-day-vs-calendar-day-in-scheduling), and [queue time](/blog/what-is-queue-time-in-manufacturing-scheduling) which is the other buffer that sits between two operations. For the mechanism, see [EDGEBIC queue and transit times explained](/blog/edgebic-queue-and-transit-times-explained), and for the symptom-first version, [my transit days used calendar days instead of working days](/blog/my-transit-days-used-calendar-days-instead-of-working-days-edgebic).
+
+Transit is the part of a routing where nothing on your shop floor is happening, which is exactly why nobody notices when it is wrong.

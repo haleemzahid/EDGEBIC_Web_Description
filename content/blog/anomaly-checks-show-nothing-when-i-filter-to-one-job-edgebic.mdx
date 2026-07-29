@@ -1,0 +1,100 @@
+---
+title: "Anomaly Checks Show Nothing When I Filter to One Job: Causes and Fixes"
+description: "Inventory and setup matrix anomaly checks return no rows on a single-job scan because they are plant-wide. How to read the chip strip and pick the right scope."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - anomaly report job filter
+  - plant wide anomaly checks
+  - scheduler anomalies scope
+  - anomaly chip shows zero
+  - inventory checks no rows
+  - setup matrix audit scan
+targetPhrase: "anomaly checks show nothing when filtered to one job"
+wordCount: 1194
+readingTime: 6
+faqQuestions:
+  - question: "Why do the inventory anomaly checks show no rows when I filter to one job?"
+    answer: "The inventory and setup matrix checks are plant-wide by design and only produce rows on a full scan with no job filter. They audit product records, ledger balances, and matrix cells, none of which belong to a single job, so a job-filtered run has nothing for them to report. That is expected behavior, not a clean result. Re-run the report with no job filter when you want an inventory or matrix audit."
+  - question: "A chip shows zero rows. Does that mean the check passed?"
+    answer: "Not always. The summary strip shows one chip for every check in the catalog whether or not it produced rows, so a chip reading zero can mean the check passed or that its scope was suppressed by your job filter. For the job-shaped checks, over-utilization, instance collision, dependency, calendar, and consistency drift, zero really is a pass. For the plant-wide checks, confirm you ran a full scan before you treat zero as clean."
+  - question: "Which checks need a full scan and which work on a single job?"
+    answer: "Job-shaped checks work on either scope: over-utilization, instance collisions, idle gaps, dependency violations, off-calendar bookings, plan inversion, configuration gaps, lost hours, and consistency drift all filter cleanly by job number. Plant-wide checks need a full scan: the inventory series, the setup matrix series, and the routing-level flow, transit, and dead-field checks, which evaluate configuration records rather than schedules."
+qaQuestions:
+  - question: "I audited a job before publishing, saw a clean report, and then a stale setup matrix cell bit us a week later. Was the report wrong?"
+    answer: "The report was right about that job and silent about the matrix. Setup matrix checks are plant-wide, so a job-filtered run never evaluates them and their chips read zero. Make the audit two passes: filter to the job for the schedule-shaped checks, then clear the filter and run a plant-wide scan for the inventory, matrix, and routing-configuration checks. The second pass takes seconds and is the one that catches master-data rot."
+  - question: "Our routing configuration warnings disappeared as soon as I typed a job number. Did saving the routing clear them?"
+    answer: "No. The routing-level checks, the ones covering overlap gates, transit mode, and fields the scheduler does not read, evaluate the routing record itself rather than any schedule, so a job filter suppresses them. Clear the filter and re-run to see them again. This is also why those checks fire right after you save a routing change, before you have scheduled anything: they never needed a scheduling run to have an opinion."
+---
+
+**When the inventory or setup matrix checks return no rows on a job-filtered anomaly run, nothing is wrong with the report: those checks are plant-wide and only produce rows on a full scan.** [EDGEBIC by User Solutions](/edgebic) runs more than forty structural checks after a scheduling run, and they do not all share a scope. Some are job-shaped, some audit master data across the whole plant, and one group audits routing configuration that has no job attached at all.
+
+Reading the scope wrong is the most common way a planner gets a false sense of a clean plant. This post explains which checks live at which scope, why a chip can read zero without having run, and the two-pass habit that closes the gap. It is the scope entry in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the report itself, [how to run the scheduler anomalies report](/blog/how-to-run-the-scheduler-anomalies-report-in-edgebic) covers the screen step by step, and [what is a scheduling anomaly check](/blog/what-is-a-scheduling-anomaly-check) covers the concept.
+
+## What You Are Seeing
+
+You open the anomaly report, type a job number to narrow the scan, and the result looks reassuring. The chip strip is mostly quiet. The inventory chips read zero. The setup matrix chips read zero. The routing-configuration chips read zero. Then a plant-wide scan run later that day, or a problem on the floor, shows that one of those checks had rows all along.
+
+## Why It Happens
+
+### Cause 1: The Check Is Plant-Wide and the Filter Excluded It
+
+The job filter narrows the scan to schedules whose job number matches what you typed. That works for anything measured against a schedule. It cannot work for a check whose subject is a product record, a ledger balance, or a matrix cell, because those objects do not belong to a job.
+
+The inventory series and the setup matrix series are both in that category. They run only when the scan has no job filter. On a filtered run they are skipped, and skipped is not the same as passed.
+
+**How to tell:** you ran the report with a job number in the filter and the inventory or matrix chips are all quiet.
+
+### Cause 2: The Chip Strip Always Shows Every Check
+
+The summary strip is built from the full catalog, so every check gets a chip on every run regardless of scope or result. A chip with no rows renders the same way whether the check ran and found nothing or never ran at all. The strip is a catalog view, not a proof of execution.
+
+**How to tell:** the chip is present and quiet, but the check belongs to a plant-wide series.
+
+### Cause 3: The Check Audits a Routing, Not a Schedule
+
+A third group evaluates routing configuration: the overlap gates, the transit mode, and the fields the scheduler does not read. These fire on the routing record itself, which is why they can flag a problem immediately after you save a routing change and before you have scheduled anything. A job filter suppresses them for the same reason it suppresses the inventory series: their subject is not a schedule.
+
+**How to tell:** you saw routing warnings on a full scan and they vanished when you narrowed to a job.
+
+### A Related Case: the Check Ran and Genuinely Passed
+
+If the check is job-shaped, over-utilization, instance collisions, idle gaps, dependency violations, off-calendar bookings, plan inversion, configuration gaps, lost hours, or consistency drift, then zero rows on a filtered run is a real pass for that job. Those are the checks a job filter is built for.
+
+## How to Fix It
+
+- **For a master-data audit, clear the filter.** Run the report with no job number so the inventory and setup matrix checks evaluate. This is the only scope that produces their rows.
+- **For a routing-configuration audit, clear the filter too.** The overlap, transit, and dead-field checks need the unfiltered scan.
+- **For a single job, keep the filter.** It is the fastest way to triage one job's schedule without reading the whole plant.
+- **Treat a quiet chip as a question, not an answer,** until you know which scope you ran.
+
+## How to Diagnose It, in Order
+
+1. **Look at what you typed in the filter.** A job number in the box means plant-wide checks were skipped.
+2. **Identify the series of the check you care about.** Schedule-shaped checks filter; inventory, matrix, and routing-configuration checks do not.
+3. **Re-run with no filter** and compare the chip strip against the filtered run. Any chip that lights up now was suppressed before.
+4. **Sort the new rows by severity** and work the critical ones first, as in [clearing scheduler anomalies before publishing](/blog/clearing-scheduler-anomalies-before-publishing-edgebic).
+5. **Re-run the report after any fix,** because it reads current stored state rather than the state at the time of the run you were looking at.
+
+## How to Prevent It
+
+- **Make the audit two passes.** Filter to the job when you are chasing one job's schedule, then clear the filter for the plant-wide pass. The second pass is the one that catches inventory drift and matrix rot.
+- **Run the plant-wide scan on a schedule you keep,** for example before every published plan and after every master-data import. A freshly imported setup matrix is exactly the case that needs an unfiltered scan.
+- **Audit routing configuration right after you save a routing,** not after the next scheduling run. Those checks do not wait for the engine.
+- **Read severity before scope.** A critical row on a filtered run still deserves attention first, and [the anomaly report flags a job I think is fine](/blog/the-anomaly-report-flags-a-job-i-think-is-fine-edgebic) covers the findings that are usually acceptable.
+
+<Accordion title="Why do the inventory anomaly checks show no rows when I filter to one job?">
+The inventory and setup matrix checks are plant-wide by design and only produce rows on a full scan with no job filter. They audit product records, ledger balances, and matrix cells, none of which belong to a single job, so a job-filtered run has nothing for them to report. That is expected behavior, not a clean result. Re-run the report with no job filter when you want an inventory or matrix audit.
+</Accordion>
+
+<Accordion title="A chip shows zero rows. Does that mean the check passed?">
+Not always. The summary strip shows one chip for every check in the catalog whether or not it produced rows, so a chip reading zero can mean the check passed or that its scope was suppressed by your job filter. For the job-shaped checks, over-utilization, instance collision, dependency, calendar, and consistency drift, zero really is a pass. For the plant-wide checks, confirm you ran a full scan before you treat zero as clean.
+</Accordion>
+
+<Accordion title="Which checks need a full scan and which work on a single job?">
+Job-shaped checks work on either scope: over-utilization, instance collisions, idle gaps, dependency violations, off-calendar bookings, plan inversion, configuration gaps, lost hours, and consistency drift all filter cleanly by job number. Plant-wide checks need a full scan: the inventory series, the setup matrix series, and the routing-level flow, transit, and dead-field checks, which evaluate configuration records rather than schedules.
+</Accordion>

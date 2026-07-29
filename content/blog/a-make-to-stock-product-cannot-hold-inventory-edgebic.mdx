@@ -1,0 +1,108 @@
+---
+title: "A Make-to-Stock Product Cannot Hold Inventory: Causes and Fixes"
+description: "When a make-to-stock product has the stocked flag off, builds post no receipts and nothing nets against it. How to spot the mismatch and turn stocking back on."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - make to stock not stocked
+  - stocked flag off inventory
+  - build posts no receipt
+  - product cannot hold inventory
+  - netting skipped not stocked
+  - inventory planning flags
+targetPhrase: "make-to-stock product cannot hold inventory"
+wordCount: 1125
+readingTime: 6
+faqQuestions:
+  - question: "Why does my make-to-stock product never show any on-hand quantity?"
+    answer: "Almost always because the stocked flag is off. Build method and stocked status are two separate settings, and when a product is not flagged as stocked, receipt and issue posting, demand netting, and replenishment are all skipped for it. The build runs and the job completes, but nothing lands in inventory, so on-hand stays at zero forever. Turn on the stocked flag in the product's inventory planning fields and the next completed build posts a receipt."
+  - question: "Is a make-to-order product allowed to be stocked?"
+    answer: "Yes, and it is a normal configuration. A semi-finished part can be built to order and still held in stock between operations, so a stocked make-to-order product is legitimate and raises no flag. The anomaly check only looks at the opposite combination, a make-to-stock product that is not stocked, because that pairing defeats the point of the build method: there is nowhere for the output to go."
+  - question: "Will turning the stocked flag on backfill the inventory I already built?"
+    answer: "No. The flag governs posting from that point forward, so builds completed while the flag was off never posted receipts and no history appears retroactively. Bring the balance up to reality with an opening balance or an adjustment entry that states the physical count, and give it a clear reason. That keeps the ledger honest as an append-only trail rather than pretending the earlier receipts happened."
+qaQuestions:
+  - question: "We build a stock item every week and the on-hand has read zero for months. Nobody changed anything. Where do I look first?"
+    answer: "Open the product and check the stocked flag before anything else. If a product carries a make-to-stock build method with stocking off, every completed build is a no-op as far as inventory is concerned: no receipt posts, no consumer nets against it, and no replenishment suggestion ever fires. That combination shows up on a plant-wide anomaly scan as a warning. Turn stocking on, then post an adjustment for the stock you physically hold so the ledger matches the shelf."
+  - question: "Our consuming jobs keep building parts we already have on the floor. Could this be the cause?"
+    answer: "It is one of the usual causes. Netting a demand against stock requires the supplying product to be stocked, so with the flag off there is no balance for a consumer to net against and every job builds from scratch. Check the supplying product's stocked flag, then confirm the on-hand balance is real rather than a cache reading. Once both are in order, a consumer with enough coverage is satisfied from stock instead of scheduling work."
+---
+
+**A product with a make-to-stock build method but the stocked flag turned off cannot hold inventory: receipt and issue posting, demand netting, and replenishment are all skipped for it, so builds complete and on-hand never moves.** [EDGEBIC by User Solutions](/edgebic) treats build method and stocked status as two separate decisions, and the plant-wide anomaly scan flags the combination that cancels itself out.
+
+This post covers what the flag actually switches off, how the mismatch usually arises, and how to correct it without inventing history. It belongs with the inventory symptoms in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide). For the concept see [what is the is-stocked flag in inventory planning](/blog/what-is-the-is-stocked-flag-in-inventory-planning), and for the planning consequences see [what not stocked means for a product's planning](/blog/what-not-stocked-means-for-a-products-planning-in-edgebic).
+
+The symptom is quiet, which is what makes it expensive. Nothing errors, no job fails, and the plan looks normal, so a plant can run this way for months while every consumer of the part builds from scratch and every replenishment review shows nothing to do.
+
+## What You Are Seeing
+
+The product is set up to build to stock. Jobs for it schedule and complete normally. But the on-hand quantity stays at zero, no consuming job ever nets against it, and no replenishment suggestion appears no matter how low the balance goes. A plant-wide anomaly scan lists it as a warning saying the product cannot hold inventory.
+
+## Why It Happens
+
+### Cause 1: The Stocked Flag Is Off
+
+This is the cause in the large majority of cases. Build method says how the product is planned. The stocked flag says whether the product participates in inventory at all. With stocking off, three things stop happening:
+
+| What is skipped | What you notice |
+|---|---|
+| Receipt and issue posting | Completed builds never raise the on-hand balance |
+| Demand netting | Consumers schedule work instead of drawing from stock |
+| Replenishment | No suggestion fires however low the balance goes |
+
+Nothing errors. The product simply sits outside the inventory system while looking like it belongs to it.
+
+**How to tell:** the product's build method is make-to-stock and its stocked flag is off.
+
+### Cause 2: The Product Was Imported With Defaults
+
+An import that maps a build method but not a stocking flag can land a product in exactly this state. The build method looks right because it was mapped; the stocking flag carries whatever the import left behind.
+
+**How to tell:** several products share the same combination and they arrived in the same import batch.
+
+### Cause 3: The Flag Was Turned Off Deliberately and Never Revisited
+
+A product that used to be a pass-through part may have had stocking switched off on purpose. When its role later changes to a stocked build, the build method gets updated and the flag does not.
+
+**How to tell:** one product, not a batch, and the change tracks a change in how the part is used.
+
+## How to Fix It
+
+- **Turn the stocked flag on** in the product's inventory planning fields. This is the whole fix for the configuration.
+- **Bring the balance up to reality.** Builds completed while the flag was off posted nothing, and turning the flag on does not backfill them. Post an opening balance or an adjustment for the physical count, with a reason line that says what it is, as covered in [how to make an inventory adjustment](/blog/how-to-make-an-inventory-adjustment-in-edgebic).
+- **Re-run scheduling** so consumers can net against the corrected balance instead of building from scratch.
+- **Re-open the anomaly report on a plant-wide scan** to confirm the row cleared. This check is plant-wide, so a job-filtered run will not show it.
+
+## How to Diagnose It, in Order
+
+1. **Run a plant-wide anomaly scan** and read the inventory rows.
+2. **Open the flagged product** and compare its build method against its stocked flag.
+3. **Check the transaction history** for the product. No receipts at all despite completed builds confirms the diagnosis, and [how to audit the inventory ledger for a part](/blog/how-to-audit-the-inventory-ledger-for-a-part-in-edgebic) covers the reading.
+4. **Correct the flag and post the true balance.**
+5. **Re-run scheduling and re-scan** so the row clears and consumers start netting.
+
+## The Combination That Is Fine
+
+A make-to-order product that is also stocked raises no flag and is a normal setup: semi-finished parts often build to order and still sit in stock between operations. The check is specifically about the pairing that contradicts itself, a stock build method with nowhere for the stock to go. Do not turn stocking off on make-to-order parts to make a report quieter.
+
+## How to Prevent It
+
+- **Map the stocked flag in every product import,** not just the build method. The two settings travel together.
+- **Audit after every import** with a plant-wide scan, which catches the whole batch in one pass rather than one shortage at a time.
+- **Treat a change of build method as a two-field change.** Whenever a product moves to a stock build, confirm stocking is on in the same edit.
+- **Watch for the symptom, not just the flag.** A product that builds regularly and never shows on-hand is telling you something even before the report does, and a related reading appears in [inventory on-hand looks wrong after a reschedule](/blog/inventory-on-hand-looks-wrong-after-a-reschedule-edgebic).
+
+<Accordion title="Why does my make-to-stock product never show any on-hand quantity?">
+Almost always because the stocked flag is off. Build method and stocked status are two separate settings, and when a product is not flagged as stocked, receipt and issue posting, demand netting, and replenishment are all skipped for it. The build runs and the job completes, but nothing lands in inventory, so on-hand stays at zero forever. Turn on the stocked flag in the product's inventory planning fields and the next completed build posts a receipt.
+</Accordion>
+
+<Accordion title="Is a make-to-order product allowed to be stocked?">
+Yes, and it is a normal configuration. A semi-finished part can be built to order and still held in stock between operations, so a stocked make-to-order product is legitimate and raises no flag. The anomaly check only looks at the opposite combination, a make-to-stock product that is not stocked, because that pairing defeats the point of the build method: there is nowhere for the output to go.
+</Accordion>
+
+<Accordion title="Will turning the stocked flag on backfill the inventory I already built?">
+No. The flag governs posting from that point forward, so builds completed while the flag was off never posted receipts and no history appears retroactively. Bring the balance up to reality with an opening balance or an adjustment entry that states the physical count, and give it a clear reason. That keeps the ledger honest as an append-only trail rather than pretending the earlier receipts happened.
+</Accordion>

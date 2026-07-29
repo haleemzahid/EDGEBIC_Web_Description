@@ -1,0 +1,77 @@
+---
+title: "What Is a Configuration Gap Check in Scheduling?"
+description: "A configuration gap check flags a schedule built on master data that no longer supports it: a work center with no shifts, an orphan machine instance, or hours beyond the window. Definition and how EDGEBIC reports it."
+published: 2026-08-09T12:00:00.000Z
+modified: 2026-08-09T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - configuration gap check
+  - work center with no shifts
+  - orphan machine instance booking
+  - master data validation scheduling
+  - scheduling anomaly configuration
+  - stale resource rows
+targetPhrase: "configuration gap check"
+wordCount: 1150
+readingTime: 6
+faqQuestions:
+  - question: "What is a configuration gap check?"
+    answer: "A configuration gap check flags a schedule that rests on master data no longer able to support it. It runs three tests: a job scheduled on a work center that defines no shifts of its own and does not inherit the global ones, a booking that names a machine instance which no longer exists at that work center, and a schedule whose total booked hours exceed what its own time window and instance count allow. The first and third are warnings; the orphan instance is critical."
+  - question: "How does a work center end up with no shift definition at all?"
+    answer: "It happens when a work center is set to not use the global shifts and then nobody adds shift rows of its own. That combination leaves the engine with no working windows to allocate against, so the cell has no capacity even though it looks like a normal work center on every list. It is a common state right after an import, because import files often carry work centers without their calendars."
+  - question: "What does an orphan machine instance booking mean?"
+    answer: "It means an allocation names a specific machine number at a work center, and that machine number is no longer in the work center's instance list. The usual cause is that the instance count was reduced after the schedule was built, so bookings that referenced the removed machine now point at nothing. It is marked critical because the plan is committing work to a resource that does not exist."
+qaQuestions:
+  - question: "We imported forty work centers and now several jobs will not schedule, with configuration gap warnings on the same cells. What is the fix?"
+    answer: "Those work centers almost certainly have no shift definition. Import files usually carry the machine list but not the calendar, so the cells arrive set to use their own shifts with no shift rows behind them, which leaves the engine no working windows to place work into. Open each flagged work center and either switch it to inherit the global shifts, which is the fastest fix for a plant that runs one common calendar, or add the shift rows it genuinely needs. Re-run the schedule afterward and the warnings clear along with the jobs that would not place."
+  - question: "The check says a schedule booked more hours than its window and instance count allow. How is that different from the over-utilization check?"
+    answer: "They look at overlapping evidence from different angles. The over-utilization check asks whether a work center was booked past its physical daily capacity across all jobs. The configuration gap version asks a narrower question about one schedule row: do the hours attached to this single operation fit inside its own start-to-end window multiplied by its instances? A firing usually means duplicate or stale allocation rows survived a reschedule that should have collapsed a split operation into one. Re-run the job and see whether the number drops to something the window can hold."
+---
+
+**A configuration gap check is a scheduling anomaly test that flags a plan resting on master data no longer able to support it. It runs three tests: a job scheduled on a work center that defines no shifts of its own and does not inherit the global ones, a booking that names a machine instance which no longer exists at that work center, and a single schedule whose booked hours exceed what its own time window and instance count physically allow. The first and third report as warnings; the orphan instance reports as critical.**
+
+The unifying idea is simple. Every other check asks whether the plan is internally consistent. This one asks whether the plan still matches the shop it was built for. Master data moves, and a plan built last Tuesday can quietly outlive the work center list it was based on.
+
+This entry belongs to the [EDGEBIC by User Solutions](/edgebic) glossary. For the wider vocabulary, see the [manufacturing glossary](/blog/manufacturing-glossary), and for the parent concept, the definition of a [scheduling anomaly check](/blog/what-is-a-scheduling-anomaly-check).
+
+## How the Configuration Gap Check Works
+
+### The work center with no calendar
+
+A work center can either inherit the plant's global shifts or define its own. If it is set to define its own and nobody adds any, the engine has zero working windows to allocate against. The cell appears on every dropdown, accepts routing steps, and shows up in reports, but it has no hours. A job routed through it either fails to place or produces a plan nobody can trust.
+
+The check flags any schedule sitting on a work center in that state. It is a warning rather than a critical because the numbers themselves are not corrupt; the cell is simply missing the calendar that would make them meaningful.
+
+### The orphan machine instance
+
+Every allocation names the physical machine it ran on: instance 1, instance 2, and so on within a work center. If the work center's instance count is later reduced, bookings that referenced the removed machine now point at a machine that is not there. That is a critical firing, because the plan is committing work to a resource which no longer exists in the master data.
+
+The cause is nearly always housekeeping: someone trimmed a work center's instance list after the schedule ran, usually to reflect a machine being sold, scrapped, or moved to its own cell.
+
+### More hours than the window can hold
+
+The third test is arithmetic on a single operation. It sums the hours booked against one schedule row and compares them to the row's own start-to-end window multiplied by its instance count. Exceeding that is not possible for a real operation, so the firing points at duplicate or stale allocation rows.
+
+The usual source is a partial completion that split into a historical portion and a forward portion and never collapsed back into one row. The check measures the window in whole minutes so it matches the equivalent database query, which makes it slightly more forgiving than the tighter over-utilization test that uses a hair-thin tolerance.
+
+## A Concrete Example
+
+A shop imports its machine list from a spreadsheet: sixty work centers, names, descriptions, instance counts. The import lands cleanly and the planner starts routing products through them.
+
+The first schedule run leaves a dozen jobs unplaced. The anomaly report comes back with configuration gap warnings on eleven of the imported cells. Every one of them was created set to use its own shifts, and the spreadsheet carried no shift rows, so all eleven have no working windows at all.
+
+The planner selects the eleven, switches them to inherit the plant's global shifts, and re-runs. The warnings clear, the jobs place, and the imported cells start behaving like the hand-entered ones.
+
+Six weeks later a different firing appears: critical, orphan instance. A drilling cell had been entered with four machines; one was moved into its own work center and the count reduced to three. Three jobs still carried allocations naming instance 4. Re-running those jobs re-placed the work across the three remaining machines and the critical chip went green.
+
+## How EDGEBIC Reports Configuration Gaps
+
+In EDGEBIC, the configuration gap tests run inside the Scheduler Anomalies report under the Reports menu. Run it plant-wide after any master data change, especially after an import or after editing a work center's instance count, because those are the two moments the plan is most likely to have outlived its inputs.
+
+Every firing is scoped to a job, so the report gives you a job number and the work center involved rather than a general complaint. From there the fix is usually one of three moves: give the work center a calendar, restore or re-place the missing instance, or re-run the job so a stale split row collapses.
+
+The related definitions are the [work center shift](/blog/what-is-a-work-center-shift) that supplies the calendar, the [machine instance](/blog/what-is-a-machine-instance-in-scheduling) that a booking names, and the [over-utilization check](/blog/what-is-an-over-utilization-check) that catches the same excess-hours pattern from the work center's side. For the practical walkthrough, see [how to run and read the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic), and for the symptom-first version, [capacity shows zero for a work center](/blog/capacity-shows-zero-for-a-work-center-edgebic).
+
+Treat a clean configuration gap strip as proof that the plan and the shop still describe the same place.

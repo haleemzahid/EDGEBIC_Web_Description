@@ -8,8 +8,19 @@
 > [EDGEBIC-BLOG-TAXONOMY.md](EDGEBIC-BLOG-TAXONOMY.md) (the 2,120-post plan + voice
 > standards), and [EDGEBIC-IMAGE-PLAN.md](EDGEBIC-IMAGE-PLAN.md) (screenshots).
 
-**Last updated**: 2026-08-08 · **Branch**: `feature/edgebic-promotion` (pushed to origin; not merged to main)
+**Last updated**: 2026-08-09 · **Branch**: `feature/edgebic-promotion` (pushed to origin; not merged to main)
 
+> 🔴 **SOURCE-RELIABILITY RULE (established flight 12, after three defects traced to it).**
+> The FCP-Book's **R-series recipe appendices contradict the UserGuide** in several places,
+> and the UserGuide is the one that describes what actually ships. Confirmed conflicts:
+> per-user permission overrides (R09 R9/R10 vs UserGuide §27 "permissions come only from
+> roles"); an in-app security Audit Log screen (R09 R16 vs §27 "no viewing screen");
+> min/max batch sizes on the work center editor (R01 R76 vs UserGuide 06); routing-level
+> recalculation (R01 R87); setup-matrix paste (R01 R55 vs UserGuide 09); Gantt event colors
+> (enum appendix vs config-knobs appendix). **When they disagree, the UserGuide wins.**
+> Every agent brief now carries this. Worth reporting to whoever maintains the book: the
+> recipes appear to document intended or partially-built behavior, not shipped behavior.
+>
 > ⚠️ **OPEN CONTENT-ACCURACY ITEM FOR THE OWNER — yield / scrap inflation.** Two separate
 > agents (flights 3 and 11) have now flagged the same inconsistency. The rulebook treats
 > upstream yield inflation (inflating start quantity so scrap still ships the ordered qty)
@@ -52,21 +63,21 @@
 |---|---|---|---|---|---|
 | 17 | edgebic-platform | 180 | 177 | 0 | 0 |
 | 18 | edgebic-scheduling-concepts | 200 | 100 | 0 | 0 | ⛔ mined out |
-| 19 | edgebic-how-to | 500 | 289 | 0 | 0 |
+| 19 | edgebic-how-to | 500 | 313 | 0 | 0 |
 | 20 | edgebic-walkthroughs | 50 | 47 | 0 | 0 |
-| 21 | edgebic-erp-integration | 150 | 116 | 0 | 0 |
+| 21 | edgebic-erp-integration | 150 | 128 | 0 | 0 |
 | 22 | edgebic-industry | 110 | 116 | 0 | 0 | ✅ over target |
-| 23 | edgebic-glossary | 350 | 243 | 0 | 0 |
-| 24 | edgebic-troubleshooting | 120 | 105 | 0 | 0 |
-| 25 | edgebic-outcomes | 100 | 73 | 0 | 0 |
+| 23 | edgebic-glossary | 350 | 255 | 0 | 0 |
+| 24 | edgebic-troubleshooting | 120 | 117 | 0 | 0 | 🟡 3 short, remainder judged too thin |
+| 25 | edgebic-outcomes | 100 | 85 | 0 | 0 |
 | 26 | edgebic-optimization | 60 | 49 | 0 | 0 |
 | 27 | edgebic-visual-scheduling | 40 | 44 | 0 | 0 | ✅ over target |
 | 28 | edgebic-shop-floor | 60 | 49 | 0 | 0 |
 | 29 | edgebic-quoting | 40 | 31 | 0 | 0 |
 | 30 | edgebic-planning | 80 | 50 | 0 | 0 | ⛔ mined out |
 | 31 | edgebic-migration | 40 | 30 | 0 | 0 |
-| 32 | edgebic-admin | 40 | 27 | 0 | 0 |
-| | **TOTAL** | **2,120** | **1,546** | **0** | **0** |
+| 32 | edgebic-admin | 40 | 39 | 0 | 0 |
+| | **TOTAL** | **2,120** | **1,630** | **0** | **0** |
 
 **"Written" count is derivable from disk** (don't trust memory, count files):
 PowerShell: `Select-String -Path content/blog/*.mdx -Pattern "cluster: 'edgebic-" | Group-Object { ($_.Line -split "'")[1] } | Sort-Object Name | Format-Table Name, Count`
@@ -75,6 +86,7 @@ PowerShell: `Select-String -Path content/blog/*.mdx -Pattern "cluster: 'edgebic-
 
 | Date | Wave | Posts added | Clusters touched | Commit | Notes |
 |---|---|---|---|---|---|
+| 2026-08-09 | 12 / flight 12 | 84 + 7 corrections | how-to (24, two partitioned agents), glossary (12), erp-integration (12), outcomes (12), admin (12), troubleshooting (12) | see git log | 7 agents, all completed with NO shortfall (first uninterrupted flight since 9). How-to split into two agents on partitioned domains (master-data setup vs running-the-plant) since how-to needs 211 more; zero overlap resulted. Glossary found a fresh seam in the anomaly-check families (K/G/L/H/M/I/F/T). **SECOND ACCURACY REMEDIATION**: an admin agent surfaced that R09 recipes describe per-user permission overrides and an in-app security Audit Log screen, both of which UserGuide 27 explicitly says do not exist. A dedicated remediation agent then rewrote 2 how-tos built entirely on those non-existent flows and surgically fixed 5 more posts; what-is-an-effective-permission had its CORE MECHANISM wrong (roles + grants - denies with ''explicit deny wins'') vs the real union-of-roles model. Substituted the real Users-grid Active/Locked/Last-login diagnostic path rather than deleting content. Corpus-wide verification after: 0 audit-screen claims, 0 per-user-override claims. Established the source-reliability rule at the top of this file. Fixed 3 British ''catalogue''. QA: 0 em-dash/FCP/British/CTP/ControlTower, 92/92 author, 693/693 links resolve. |
 | 2026-08-08 | 11 / flight 11 | 83 | glossary (12), how-to (12), industry (12), platform (12), troubleshooting (12), walkthroughs (12), visual-scheduling (11) | see git log | 7 agents, then 6 continuation agents after the process stopped the flight at 45 of 84. Concepts + planning retired as mined out; rotated onto walkthroughs (35->47) and visual-scheduling (33->44). Only shortfall: visual-scheduling 1 (cluster saturated). **CORRECTED A COMMITTED OVERCLAIM**: `edgebic-gantt-view-explained.mdx` (flight 8) marketed "a highlighted critical path" as a Gantt feature; the source is explicit that critical-path classification is `BorFeatureFlags.EnableCriticalClassification`, a compile-time constant **currently disabled**. Verified against A4-appendix-enums + A5-appendix-config-knobs, then rewrote the description, keywords, lead, H2 section, 3 Q&A answers and 2 body paragraphs to claim only the dependency links that genuinely render. This is the ONLY intentional edit to committed content in the program so far. Agents rejected several of MY OWN candidate angles as inventions: a PM banner, a category-rename filter behavior, group-lane-vs-machine-lane, multi-select/bulk actions, a job-vs-resource axis toggle, and "quote status will not advance" (the source says there is no enforced status sequence, so the symptom cannot occur). Password/lockout policy tasks excluded because they are configured through application config files. Fixed 1 British "travelling", 1 borderline "unlock", 3 dangling links. QA: 0 em-dash/FCP/British/CTP/ControlTower, 83/83 author, 714/714 links resolve. |
 | 2026-08-07 | 10 / flight 10 | 81 | erp-integration (14), industry (13), how-to (12), glossary (12), optimization (12), shop-floor (12), scheduling-concepts (6) | see git log | 7 agents. THIRD INTERRUPTION: process stopped the flight after only 4 posts landed; relaunched all 7 with adjusted targets, then a stream-stall wave hit 5 of them mid-write and all 5 were resumed in place from their transcripts (glossary had already written all 12, ERP was on its final four). Net 81. Scheduling-concepts hit an honest shortfall of 6 and is now CONFIRMED MINED OUT (100 posts; the surrounding corpus covers nearly every remaining engine mechanic) - stop weighting it. How-to opened a fresh seam in the R07-R10 recipe appendices (pre-flight checks, circular-dependency repair, setup families, report export/group/filter, permissions, security audit log). Agents rejected on honesty grounds: MaxParallelWorkCenters (stored but not documented as enforced), Hybrid BOR merge mode (code-only, no planner control), run-time skill certification (kiosk has no login - plan-time only), offline queue, thin ERP triads for 7 systems that would have required inventing product detail. Fixed 1 banned "unlocked". QA: 0 banned/em-dash/FCP/British/CTP/ControlTower, 81/81 author, 641/641 links resolve, 0 existing files touched. NOTES FOR NEXT FLIGHT: (a) glossary agents must sweep ALL ~1,920 blog files, not just the cluster - half a candidate list was lost to out-of-cluster collisions; (b) FCP-Book has NO 19-kiosk.md or 08-operators-and-skills.md (19 is queue/transit/flow, 08 is BOR) - cite 21-actuals-kiosk.md / 44-operators-skills.md; (c) owner check: the optimizer-permissions post is sourced from the CLAUDE.md registry, not the UserGuide - verify role-matrix wording. |
 | 2026-08-06 | 9 / flight 9 | 84 | glossary (12), how-to (12), industry (12), troubleshooting (12), outcomes (12), quoting (12), migration (12) | see git log | 7 agents; skipped the saturated planning cluster + rested concepts, weighting the under-built quoting (19->31) and migration (18->30) plus productive glossary/how-to/industry/troubleshooting/outcomes. SECOND INTERRUPTION: the process stopped all 7 agents after 55 of 84 landed; relaunched 6 continuation agents (glossary+how-to merged) to fill the 29-post gap, seeded with the 2026-08-06 posts on disk. Full 84, NO shortfall this flight (every cluster reached 12; agents rejected roadmap-only/unverifiable angles cleanly - setup-family-quality as roadmap A1, quoting-with-operator-skill as not in the quote-sim path, export-mask as a non-feature). Fixed 1 CTP negation ("not a capable-to-promise system" -> "hard capacity-reservation system"; phrase banned even negated) + 1 dangling cross-link to a never-written sibling. Also PUSHED the branch to origin for the first time (all 1,298 prior posts now on GitHub) before this flight's recovery. QA: 0 banned/em-dash/FCP/British/CTP/ControlTower, 84/84 author, 571/571 links resolve, 0 existing files touched. |
