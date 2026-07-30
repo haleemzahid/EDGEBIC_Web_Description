@@ -1,0 +1,93 @@
+---
+title: "What Is Greedy Scheduling in Manufacturing?"
+description: "Greedy scheduling plans one job at a time, taking the earliest feasible slot at each step and never revisiting it. Fast, always feasible, and predictably suboptimal in one specific way."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - greedy scheduling
+  - one job at a time scheduling
+  - greedy algorithm production planning
+  - first fit scheduling manufacturing
+  - why scheduling is not optimal
+  - greedy versus optimized schedule
+targetPhrase: "greedy scheduling"
+wordCount: 1230
+readingTime: 6
+faqQuestions:
+  - question: "What is greedy scheduling in manufacturing?"
+    answer: "Greedy scheduling plans jobs one at a time in a fixed queue order, placing each operation in the earliest slot that satisfies every constraint, and never going back to revisit a decision once made. Each job claims real capacity as it is placed, so later jobs plan around what earlier ones took. The result is always feasible and always fast, and it is systematically imperfect in one specific way: it cannot see a rearrangement that would need an earlier job to give something up."
+  - question: "Is a greedy schedule wrong?"
+    answer: "No. Every constraint is respected, so a greedy schedule is a plan you can actually run. What it is not is the best possible plan, because finding that requires considering combinations rather than one job at a time. The gap is usually modest and occasionally large, and it is entirely a matter of arrangement rather than correctness. That gap is what an optimizer exists to close, and an optimizer that cannot beat the greedy plan simply returns it."
+  - question: "Why does queue order matter so much in greedy scheduling?"
+    answer: "Because whoever is planned first gets first choice of capacity, and nothing later can take it back. The queue order therefore does most of the work in determining the outcome, which is why priority, start date and due date drive the sort. On a busy plant this is the single highest-leverage thing a planner controls: reordering the queue changes the plan far more than adjusting any individual job does."
+qaQuestions:
+  - question: "Two jobs both need the same machine and the less urgent one got the good slot. How?"
+    answer: "It was planned first. Greedy scheduling places jobs in queue order and each one claims the capacity it needs as it goes, so a job earlier in the queue takes what it wants before the more urgent job is even considered. Check the sort: priority first, then start date, then due date. If the urgent job is genuinely more important, giving it a lower priority number puts it ahead in the queue and it will take the slot instead. Nothing about the machine or the routing needs changing."
+  - question: "Would a small manual rearrangement really beat what the engine produced?"
+    answer: "Sometimes, and that is not a criticism of the engine so much as a description of what greedy means. The engine cannot consider a move that requires an already-placed job to accept a worse slot, because it never revisits placements. A planner looking at the finished board can see exactly that kind of trade. The disciplined route is to test it rather than assert it: make the change, save it, run a targeted reschedule, and compare the dates. Where you want the machine to search for such trades systematically, that is what the optimizer does."
+---
+
+**Greedy scheduling plans jobs one at a time in a fixed queue order, placing each operation in the earliest slot that satisfies every constraint and never revisiting a decision once it is made.** Each job claims real capacity as it is placed, so every job after it plans around what has already been taken. The approach is fast, entirely deterministic, and always produces a feasible plan. It is also systematically imperfect in one specific and predictable way, which is worth understanding precisely because that way is the same every time. EDGEBIC by User Solutions uses a greedy engine as its default scheduler.
+
+## How it works
+
+The method has two nested loops and no backtracking.
+
+**Jobs are sorted, then processed in that order.** The queue is sorted by priority, with lower numbers first, then by start date, then by due date. Each job is planned completely before the next one begins. This is the decision that matters most, because whoever comes first gets first choice.
+
+**Within a job, operations follow the routing.** An operation cannot start until everything it depends on has finished, plus whatever waiting the routing adds through queue time, transit or overlap rules.
+
+**Within an operation, the engine takes the earliest feasible slot.** It walks forward day by day and shift by shift looking for capacity on the operation's work center, splitting across shifts and days as needed and spreading across machine units where more than one exists. The first arrangement that works is the one taken.
+
+**Nothing is revisited.** Once a job is placed, its capacity is booked and later jobs treat those hours as gone. There is no step where the engine looks back and asks whether an earlier decision should be undone in light of a later one.
+
+That last property is what the word greedy means and it is the whole story. A greedy algorithm takes the locally best option at each decision point and trusts that the accumulation is good enough. Usually it is. What it cannot do is find an arrangement that requires an already-placed job to accept something worse, because from the perspective of the job being placed that option was never on the table.
+
+The compensating virtues are real and easy to underrate. A greedy plan is fast enough to produce on demand rather than overnight. It is deterministic, so the same inputs give the same plan and a planner can reason about why something landed where it did. And it never emits an infeasible arrangement, because feasibility is checked at every placement rather than repaired at the end.
+
+## A concrete example
+
+Two jobs both need the mill. Job A needs eight hours and is due Friday. Job B needs four hours and is due Wednesday. Both are ready Monday morning and both have the same priority number, so the queue sorts by start date and then due date, putting B first.
+
+Job B is planned. It takes Monday 08:00 to 12:00 on the mill.
+
+Job A is planned. Monday afternoon offers four hours, so A runs Monday 12:00 to 16:00 and continues Tuesday 08:00 to 12:00. It finishes Tuesday midday, and paint follows on Tuesday afternoon, and the job is comfortably inside Friday.
+
+Now change B's due date to Thursday. The sort now puts A first, because both are ready Monday and A is due sooner. A takes Monday 08:00 to 16:00 in one clean block. B then runs Tuesday 08:00 to 12:00. Both still meet their dates, but the plan is a different shape, and neither job changed at all. Only the order did.
+
+Consider a case where greedy leaves something on the table. Suppose A's routing has a long queue time after the mill, so finishing the mill four hours earlier would pull A's downstream steps forward by a whole day. Placing B first costs A that day. Greedy will never discover this, because when it plans B it has no knowledge of A's routing, and when it plans A the mill's morning is already gone. A planner looking at the finished board can see it in ten seconds.
+
+## How EDGEBIC uses it
+
+The greedy engine is the default and the foundation. Every scheduling run goes through it, every constraint is enforced inside it, and the plan it produces is the one that ships unless something deliberately improves on it. The sort that determines the queue is covered in [how the scheduler sequences orders before placement](/blog/how-the-scheduler-sequences-orders-before-placement), and the slot search inside each operation is covered in [how multi-shift allocation fills capacity](/blog/how-multi-shift-allocation-fills-capacity).
+
+The known gap is addressed rather than ignored. An optimizer runs beside the engine, searching arrangements the greedy pass could not consider, and it is bound by a rule that it may only return a plan that beats the baseline. The nature of the gap is described in [how a greedy schedule leaves capacity on the table](/blog/how-a-greedy-schedule-leaves-capacity-on-the-table), and the guarantee is described in [what is the never-worse clamp in scheduling optimization](/blog/what-is-the-never-worse-clamp-in-scheduling-optimization). The sidecar arrangement itself is covered in [what is an optimizer sidecar in scheduling](/blog/what-is-an-optimizer-sidecar-in-scheduling).
+
+The queue order remains the planner's highest-leverage lever regardless, because it determines who chooses first. See [what is job status in manufacturing scheduling](/blog/what-is-job-status-in-manufacturing-scheduling) for how a job's place in the plan surfaces, and [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide) for when to reach past the greedy result.
+
+## The takeaway
+
+Greedy scheduling trades the best plan for a good plan you can have immediately and can explain afterwards. On a plant where the schedule changes daily, that is usually the right trade, and the discipline it demands is a small one: understand that queue order does most of the work, because the first job placed takes what it wants. When you look at a finished board and see an obviously better arrangement, you are not finding a fault. You are seeing the exact thing a greedy method cannot see, which is a trade that costs one job to benefit another. For the wider vocabulary see the [manufacturing glossary](/blog/manufacturing-glossary), and for the product itself see [EDGEBIC](/edgebic).
+
+<Accordion title="What is greedy scheduling in manufacturing?">
+Greedy scheduling plans jobs one at a time in a fixed queue order, placing each operation in the earliest slot that satisfies every constraint, and never going back to revisit a decision once made. Each job claims real capacity as it is placed, so later jobs plan around what earlier ones took. The result is always feasible and always fast, and it is systematically imperfect in one specific way: it cannot see a rearrangement that would need an earlier job to give something up.
+</Accordion>
+
+<Accordion title="Is a greedy schedule wrong?">
+No. Every constraint is respected, so a greedy schedule is a plan you can actually run. What it is not is the best possible plan, because finding that requires considering combinations rather than one job at a time. The gap is usually modest and occasionally large, and it is entirely a matter of arrangement rather than correctness. That gap is what an optimizer exists to close, and an optimizer that cannot beat the greedy plan simply returns it.
+</Accordion>
+
+<Accordion title="Why does queue order matter so much in greedy scheduling?">
+Because whoever is planned first gets first choice of capacity, and nothing later can take it back. The queue order therefore does most of the work in determining the outcome, which is why priority, start date and due date drive the sort. On a busy plant this is the single highest-leverage thing a planner controls: reordering the queue changes the plan far more than adjusting any individual job does.
+</Accordion>
+
+<Accordion title="Two jobs both need the same machine and the less urgent one got the good slot. How?">
+It was planned first. Greedy scheduling places jobs in queue order and each one claims the capacity it needs as it goes, so a job earlier in the queue takes what it wants before the more urgent job is even considered. Check the sort: priority first, then start date, then due date. If the urgent job is genuinely more important, giving it a lower priority number puts it ahead in the queue and it will take the slot instead. Nothing about the machine or the routing needs changing.
+</Accordion>
+
+<Accordion title="Would a small manual rearrangement really beat what the engine produced?">
+Sometimes, and that is not a criticism of the engine so much as a description of what greedy means. The engine cannot consider a move that requires an already-placed job to accept a worse slot, because it never revisits placements. A planner looking at the finished board can see exactly that kind of trade. The disciplined route is to test it rather than assert it: make the change, save it, run a targeted reschedule, and compare the dates. Where you want the machine to search for such trades systematically, that is what the optimizer does.
+</Accordion>

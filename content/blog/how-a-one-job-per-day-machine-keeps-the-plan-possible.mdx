@@ -1,0 +1,116 @@
+---
+title: "The Furnace Does Not Care How Many Hours Are Left"
+description: "Batch equipment takes one job per chamber per day whatever the clock says. Scheduling it as pooled hours over-promises the constraint by a factor you can calculate."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Outcomes & ROI
+author: user-solutions
+cluster: edgebic-outcomes
+pillarSlug: edgebic-results-guide
+keywords:
+  - batch equipment scheduling
+  - one per day scheduling rule
+  - furnace capacity planning
+  - paint booth scheduling
+  - dedicated machine capacity
+  - overstated capacity manufacturing
+targetPhrase: "batch equipment scheduling"
+wordCount: 1520
+readingTime: 8
+faqQuestions:
+  - question: "Why does a furnace need a different capacity model from a mill?"
+    answer: "Because its unit of capacity is a load, not an hour. A mill that finishes at 11:00 can start something else at 11:05, so counting its hours describes it accurately. A furnace chamber running a two-hour cycle is not available for an unrelated alloy at 10:00, because the load, the atmosphere, and the cool-down own the chamber for the day. Counting its hours describes a machine that does not exist, and every promise built on that count is optimistic by construction."
+  - question: "What does the One Per Day flag actually do in EDGEBIC?"
+    answer: "When One Per Day is on for a work center, each instance accepts at most one job per calendar day. The job owns that machine for the day even if it uses only part of the shift. With the flag off, which is the default, all instances pool their hours and the scheduler fills them job by job until the hours run out. The flag is set through the work-center import in the current release, using the One_Per_Day_Flag column, and the current value is shown in the Work Center grid."
+  - question: "Does turning the flag on lose me capacity?"
+    answer: "On paper, yes, and that is the point where it is true. In a three-chamber bank running an 8-hour shift, three jobs of 6, 7, and 5 hours consume 18 of 24 clock hours and the fourth job waits until tomorrow even though 6 hours appear free. Those 6 hours were never real if the physics of the equipment says one load per chamber per day. Where the physics does not say that, the flag is a straight loss and should not be on."
+qaQuestions:
+  - question: "Our heat treat is always the reason we are late, and we cannot work out why the schedule keeps saying it has room. Where do we start?"
+    answer: "Compare two numbers for that work center. The first is the capacity the schedule believes it has, which is shift hours times instances, less holidays and downtime. The second is the number of loads the equipment can physically run per day, times the number of chambers. If the first number is much larger than the hours implied by the second, the schedule has been promising against capacity that cannot be delivered, and the gap widens the smaller your average job is. A three-chamber bank on an 8-hour shift shows 24 hours a day. If a typical load is 3 hours, the pooled model implies 8 loads a day while the equipment runs 3. Every date downstream of that machine has been built on a number 2.7 times too large. Turning One Per Day on for that work center makes the schedule tell the truth, which usually means dates move out once and then stop moving."
+  - question: "Someone here wants the flag on for a machine that is not really a batch process. What is the argument against?"
+    answer: "That it deliberately wastes hours, and it does not care whether the waste is justified. Its whole behavior is to refuse a second job on an instance for the rest of the day once one has landed, regardless of how much shift is left. On genuine batch equipment that refusal matches reality and costs nothing, because the hours were never available. On a machine where a changeover is merely inconvenient rather than physically exclusive, the same refusal throws away real, sellable capacity every single day and hides it inside what looks like an honest plan. The test is not whether a second job would be annoying. It is whether it is possible. Furnace loads, paint colors, and sterile campaigns pass that test. A mill with a long setup does not, and belongs in the setup matrix instead."
+---
+
+**A three-chamber furnace bank shows 24 hours a day on a capacity report and runs three jobs.** If the average load is three hours, the report is overstating what that equipment can deliver by a factor of nearly three, and every promise date that passes through it inherits the error. Nothing on the schedule looks wrong. The jobs are just always late.
+
+EDGEBIC by User Solutions carries a specific flag for this class of machine, and the reason it matters is not the flag itself but what happens to your delivery record when it is missing. This post covers the two capacity models, the arithmetic of the gap between them, how to find out which of your work centers is being modeled wrongly, and the honest cost of turning the flag on where it does not belong. It sits under the [EDGEBIC results guide](/blog/edgebic-results-guide).
+
+## Two capacity models, and why hours is the wrong one sometimes
+
+The scheduler turns a work center's calendar into a number. For each shift and date it computes available hours as shift hours times instances times utilization, less holidays and downtime, then fills those hours job by job until they run out.
+
+That model is correct for most machines. A mill that finishes a job at 11:00 is genuinely free at 11:05. Hours are fungible on a mill, so counting them describes the machine.
+
+Hours are not fungible on a furnace. A heat treat cycle owns the chamber through load, soak, and cool-down, and the atmosphere it was set for is the atmosphere it has. A paint booth that has been set for black is a black booth until somebody flushes it. A sterile campaign owns the room for the campaign. On this equipment the unit of capacity is a load, and a schedule that counts hours instead is describing a machine you do not own.
+
+The **One Per Day** flag is the second model. With it on, each instance accepts at most one job per calendar day, and that job owns the machine for the day even if it uses only part of the shift.
+
+## The arithmetic, both directions
+
+Take the documented case. A furnace bank with 3 instances, One Per Day on, Day Shift 08:00 to 16:00. Three jobs land: 6 hours, 7 hours, and 5 hours.
+
+That is 18 hours consumed out of 24 clock hours. Six hours appear unused, and a fourth job still waits until tomorrow. With the flag off, all three instances pool their hours and the fourth job fits on Monday.
+
+Read that as a loss and the flag looks expensive. Read it as physics and it is free, because a furnace load or a paint color locks the chamber for the day and those six hours were never available to sell.
+
+Now run it the other way, which is where the delivery record actually lives. Suppose the average job on that bank is 3 hours rather than 6.
+
+| | Pooled hours model | One load per chamber |
+|---|---|---|
+| Daily capacity shown | 24 hours | 3 jobs |
+| Jobs implied per day | 8 | 3 |
+| Jobs over 21 working days | 168 | 63 |
+
+The plan has been promising 168 slots a month against equipment that runs 63. Nothing in the plan is visibly broken. The queue in front of the furnace simply grows, every date downstream of it drifts, and the machine gets a reputation for being the reason nothing ships. The gap is not a rounding error and it widens as the average job gets smaller, which is exactly the direction most job shops move over time.
+
+## Finding the work center that is modeled wrongly
+
+This is a twenty minute audit and it does not need any special report.
+
+Walk the list of work centers and ask one question about each: once a job starts here, can a genuinely different job start on the same unit before the day is out? Not would it be awkward. Can it physically happen.
+
+For every work center where the answer is no, check the **One Per Day** column in the Work Center grid. If it is not ticked, that machine is being scheduled as a pool of hours and is over-promising by the ratio above. Compute the ratio for your own numbers: shift hours divided by average job hours gives the jobs per instance per day the pooled model implies, and the honest figure is one.
+
+Two flags on a work center are worth reading together, because they usually appear on the same machines. **Is Bottleneck** turns on constraint-based anchor scheduling around the work center. **One Per Day** decides how its capacity is counted. A batch machine that is also your constraint is the highest-value pair in the plant to get right, and it is common for both to be missing on the same row.
+
+An honest note about how these are set today: neither flag is on the work center edit dialog in the current release. Both are set through the work-center import, using the **Is_Bottleneck** and **One_Per_Day_Flag** columns, and re-importing updates existing work centers. The grid shows both values, so you can audit from the screen even though you change them from a file.
+
+## What the flag is not
+
+**It is not a load-size model.** One Per Day counts occupancy of the day, not volume in the chamber. If your furnace could genuinely hold two small loads together and your real constraint is cubic capacity rather than day occupancy, this flag will understate what you can do. It is the right tool for one load per chamber per day, and the wrong tool for a volume constraint.
+
+**It is not a changeover tool.** A machine where a second job is possible but expensive belongs in the sequence-dependent setup matrix, which charges the real transition time based on what ran before, rather than in a flag that refuses the second job outright. See [how EDGEBIC cuts changeover hours](/blog/how-edgebic-cuts-changeover-hours) for that mechanism, and [dedicated cells versus shared work centers](/blog/dedicated-cells-vs-shared-work-centers) for the wider trade-off.
+
+**It does not add capacity anywhere.** Turning it on will make your promise dates move out, once, and then stop drifting. That is the entire benefit and it is worth being straight about internally before you do it, because the first schedule run after the change looks like bad news. It is the same news you were already living with, arriving early enough to sell around.
+
+**It is not a substitute for more chambers.** When the audit shows the flag belongs and the resulting dates are unacceptable, the answers are the ordinary ones: add instances, pool the equipment with comparable machines through a [work center group](/blog/how-work-center-groups-add-capacity-without-buying-machines), or sell less of the work that goes through it.
+
+## Why an honest number beats a flattering one
+
+The argument for modeling batch equipment correctly is not that it makes the schedule better. It makes the schedule worse-looking and more true, and those are the same thing.
+
+A plant promising 168 furnace slots against 63 is not scheduling. It is generating a list of dates that will be wrong in a predictable direction, then spending management attention on the surprise every month. A plant promising 63 quotes longer lead times on heat treat work, wins the orders it can actually deliver, and stops paying for the recovery on the ones it cannot. User Solutions has been building finite capacity schedulers since 1991 on that principle: the value is not in the optimism, it is in the arithmetic being right.
+
+## The takeaway
+
+Batch equipment takes loads, not hours. Audit every work center for the one question of whether a second job can physically start the same day, set One Per Day where the answer is no, expect the first schedule run afterward to push dates out, and treat that as the correction it is. The mechanism in full detail is in [how one-per-day dedicates a machine for a full day](/blog/how-oneperday-dedicates-a-machine-for-a-full-day). If you want to see the gap on your own equipment, bring a month of furnace or booth history to a [walkthrough of EDGEBIC](/edgebic) and we will compute both numbers side by side.
+
+<Accordion title="Why does a furnace need a different capacity model from a mill?">
+Because its unit of capacity is a load, not an hour. A mill that finishes at 11:00 can start something else at 11:05, so counting its hours describes it accurately. A furnace chamber running a two-hour cycle is not available for an unrelated alloy at 10:00, because the load, the atmosphere, and the cool-down own the chamber for the day. Counting its hours describes a machine that does not exist, and every promise built on that count is optimistic by construction.
+</Accordion>
+
+<Accordion title="What does the One Per Day flag actually do in EDGEBIC?">
+When One Per Day is on for a work center, each instance accepts at most one job per calendar day. The job owns that machine for the day even if it uses only part of the shift. With the flag off, which is the default, all instances pool their hours and the scheduler fills them job by job until the hours run out. The flag is set through the work-center import in the current release, using the One_Per_Day_Flag column, and the current value is shown in the Work Center grid.
+</Accordion>
+
+<Accordion title="Does turning the flag on lose me capacity?">
+On paper, yes, and that is the point where it is true. In a three-chamber bank running an 8-hour shift, three jobs of 6, 7, and 5 hours consume 18 of 24 clock hours and the fourth job waits until tomorrow even though 6 hours appear free. Those 6 hours were never real if the physics of the equipment says one load per chamber per day. Where the physics does not say that, the flag is a straight loss and should not be on.
+</Accordion>
+
+<Accordion title="Our heat treat is always the reason we are late, and we cannot work out why the schedule keeps saying it has room. Where do we start?">
+Compare two numbers for that work center. The first is the capacity the schedule believes it has, which is shift hours times instances, less holidays and downtime. The second is the number of loads the equipment can physically run per day, times the number of chambers. If the first number is much larger than the hours implied by the second, the schedule has been promising against capacity that cannot be delivered, and the gap widens the smaller your average job is. A three-chamber bank on an 8-hour shift shows 24 hours a day. If a typical load is 3 hours, the pooled model implies 8 loads a day while the equipment runs 3. Every date downstream of that machine has been built on a number 2.7 times too large. Turning One Per Day on for that work center makes the schedule tell the truth, which usually means dates move out once and then stop moving.
+</Accordion>
+
+<Accordion title="Someone here wants the flag on for a machine that is not really a batch process. What is the argument against?">
+That it deliberately wastes hours, and it does not care whether the waste is justified. Its whole behavior is to refuse a second job on an instance for the rest of the day once one has landed, regardless of how much shift is left. On genuine batch equipment that refusal matches reality and costs nothing, because the hours were never available. On a machine where a changeover is merely inconvenient rather than physically exclusive, the same refusal throws away real, sellable capacity every single day and hides it inside what looks like an honest plan. The test is not whether a second job would be annoying. It is whether it is possible. Furnace loads, paint colors, and sterile campaigns pass that test. A mill with a long setup does not, and belongs in the setup matrix instead.
+</Accordion>

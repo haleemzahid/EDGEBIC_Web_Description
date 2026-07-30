@@ -1,0 +1,122 @@
+---
+title: "Closing ERP Work Orders That EDGEBIC Still Thinks Are Open"
+description: "Your ERP closing a work order is invisible to EDGEBIC. There is no status column on the order mask, and a job whose every step is done is not closed automatically. Here is the closing pass that keeps your numbers honest."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - closing ERP work orders in EDGEBIC
+  - completed flag manufacturing order
+  - open but done jobs
+  - ERP job closure not imported
+  - days late reads zero
+  - weekly job closing pass
+targetPhrase: "closing ERP work orders in EDGEBIC"
+wordCount: 1560
+readingTime: 9
+faqQuestions:
+  - question: "Does closing a work order in my ERP close the job in EDGEBIC?"
+    answer: "No. The sales order import mask carries product, quantity, dates, priority, price, and an order reference, but it has no status or completion column, so closure is not a thing the order file can express. On top of that, an import only ever creates, updates, or reuses records: it never deletes what is absent from the file. A work order you closed in the ERP last Tuesday keeps sitting in EDGEBIC by User Solutions exactly as it was until somebody closes it there too."
+  - question: "If every operation on a job is complete, is the job closed?"
+    answer: "Not automatically, and this is the detail that catches most shops. The Completed? checkbox shows ticked when either the order is formally closed or every work center reports complete, so a job whose last operation finished looks closed on screen. It is not. A derived-complete job stays schedulable until somebody clicks the checkbox and confirms the completion date. Until that happens it is still eligible to be planned and still counted among your open work."
+  - question: "What does an open-but-done job actually cost me?"
+    answer: "Two things that matter to anyone reading a number. First, Days Late always reads 0 for a closed job, so leaving finished work open means it keeps accruing lateness against a due date it already met, and your late-job count is wrong in the pessimistic direction. Second, dashboard status counts treat it as live work. The cost is not a broken schedule; it is a set of reports nobody trusts, which is worse because it is quiet."
+qaQuestions:
+  - question: "We have about 200 jobs in EDGEBIC and the ERP says 140 are open. How do we work out which 60 to close without going through them one at a time?"
+    answer: "Use the export you already run. If your work order export is filtered by status rather than by a rolling date window, then the difference between the two lists is meaningful: anything in the EDGEBIC plan that was not in this week's file is a candidate for closing, because it left the file for a reason you can name. That turns a 200-row review into a 60-row list, and most of those 60 will be obvious at a glance because their last operation already reports complete. Work the list once, close what is genuinely done, and then investigate whatever is left, because a job that vanished from the export while still having unfinished operations is a real question rather than housekeeping. After the first pass the weekly difference is usually five or ten rows, which is a two-minute job. The reason a date-window filter makes this impossible is that a job can drop out of the window because its due date moved, and you cannot tell that apart from a job that closed."
+  - question: "Somebody deleted a batch of finished orders to clean up instead of closing them. What did that break?"
+    answer: "Deleting an order deletes its production schedules with it, and it cannot be undone. So the hours those jobs consumed, the actual dates the floor recorded against them, and the history behind any variance or utilization figure that covered that period are gone from the plan. Nothing about tomorrow's schedule is wrong, because the work was finished anyway, but anything that looks backward is now missing rows it used to have, and a utilization report for last month will read lower than it did. The safe habit is to close rather than delete: closing keeps the record and takes the job out of the live picture, which is the whole point. If you only want a job out of the current plan without losing the order, clearing its schedule does that instead. One warning attached to that path is worth knowing, because clearing a job's schedule also resets its Completed? flag, so a closed job you clear becomes open again and needs closing a second time."
+---
+
+**Your ERP closing a work order is completely invisible to EDGEBIC, because the sales order import mask has no status or completion column and an import never deletes what is missing from a file.** In EDGEBIC by User Solutions the plan keeps every job it was ever given until somebody closes it there. Left alone, that residue does not corrupt your schedule so much as your reporting, which is the harder problem to notice.
+
+## Closure is not something the order file can say
+
+Look at what a sales order row actually carries. The mandatory columns are the product, the quantity, and the job date. The optional ones are an order reference, a job number, a customer name, a due date, an order date, a priority, a unit price, and free-text notes.
+
+There is no status field in that list, and no completion flag. The mask was built to describe demand, not to describe the life cycle of demand. So even if your ERP export includes a status column and you would happily map it, there is nothing on the EDGEBIC side for it to land on.
+
+That is the first half of the problem. The second half is the import model itself: every row ends as Created, Updated, Reused, or Failed. There is no Deleted. A job that disappears from this week's export is not removed; it simply stops being mentioned, keeps whatever it had, and stays in the plan. The consequence for export design is covered in [deciding which ERP work orders to import](/blog/deciding-which-erp-work-orders-to-import). The consequence for the jobs already sitting in EDGEBIC is this post.
+
+## The one closure signal that can ride in on a file
+
+There is exactly one, and it comes in on a different mask.
+
+The actuals import carries an optional `Complete` column, and a truthy value in it marks that operation finished. The mask options also include **MarkCompleteOnImport**, which marks every imported operation complete, with the per-row `Complete` column overriding it row by row.
+
+So if your ERP produces labor transactions with an operation-complete flag, you can close operations from a file. That is genuinely useful, and it is the reason a shop with good labor reporting sees far less residue than one without.
+
+But read what it closes. It closes **operations**, not jobs. Which brings us to the trap.
+
+## A job with every step done is not a closed job
+
+The **Completed?** checkbox on a manufacturing order shows ticked when either the order is formally closed or every work center reports complete. That is helpful on screen and misleading in the mind, because those two states are not the same thing.
+
+A job that is derived-complete, meaning all of its steps report done, **is not auto-closed**. It stays schedulable until somebody clicks the checkbox and confirms the completion date.
+
+So the sequence that produces silent residue looks like this:
+
+1. The ERP export drops the work order, because it closed there.
+2. The actuals feed, or the kiosk, marks the last operation complete.
+3. The grid shows a ticked Completed? box.
+4. Everyone assumes the job is closed.
+5. It is not. Nobody clicks the box.
+
+Nothing looks wrong at any step. That is exactly why it accumulates.
+
+## What the residue costs
+
+| What it touches | Effect |
+|---|---|
+| Days Late | Reads 0 only for closed jobs, so finished-but-open work keeps accruing lateness against a date it already met |
+| Dashboard status counts | Counts the job as live work in progress |
+| The open-order picture | Inflates what the plant appears to owe |
+| Scheduling eligibility | The job remains schedulable, so a full reschedule can still consider it |
+
+The first row is the one that bites hardest, because a late-job count that reads high for a reason nobody can explain is the fastest way to lose a management audience. Closing jobs promptly is a documented best practice precisely because open-but-done work distorts Days Late and dashboard status counts.
+
+Note that none of these are schedule corruption. A finished job with all its actuals recorded will not steal capacity from live work on a reschedule, because completed operations are preserved rather than replanned. The damage is entirely to the numbers people read.
+
+## The weekly closing pass
+
+Fold this into the routine you already run rather than making it its own ceremony. Ten minutes a week is the right size.
+
+**Compare the two open lists.** Your export filter defines what your ERP considers live. Anything in the EDGEBIC plan that was not in this week's file is a candidate for closing. This check only works if your export filters on status rather than a rolling date window, because a job can leave a date window without closing, and you cannot tell the two cases apart.
+
+**Close what is genuinely finished.** Tick the Completed? checkbox and confirm the completion date. Use the real finish date rather than today, because the completion date is what the record keeps.
+
+**Investigate what is left.** A job that vanished from the export while still carrying unfinished operations is a genuine question, not housekeeping. Usually it is a canceled order that nobody told the floor about, or a status code the export filter does not recognize.
+
+**Write down who does it.** This is the step that decides whether the routine survives contact with a busy month. The general argument for a named owner is in [who owns the ERP import routine on your team](/blog/who-owns-the-erp-import-routine-on-your-team), and the closing pass belongs to the same person.
+
+## Close, do not delete
+
+Two mechanics are worth knowing before somebody tidies up enthusiastically.
+
+**Deleting an order deletes its production schedules with it, and it cannot be undone.** The confirmation says so. That takes the recorded hours and actual dates with it, so any backward-looking report covering that period quietly loses rows.
+
+**Clearing a schedule resets the Completed? flag.** If you only want a job out of the current plan while keeping the order, clearing its schedule does that. But a closed job you clear becomes open again, so it needs closing a second time. This matters most for anyone who clears schedules as part of a periodic reset.
+
+The rule is short: close finished work, clear work you want replanned, and delete almost nothing.
+
+## Where this fits in the sync routine
+
+Closing is the fourth step in a cycle most shops only run three steps of. Export from the ERP, import through the mask, run the scheduler, and then close what the file stopped mentioning. The first three are in [the weekly ERP sync routine](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine); the count check that surfaces the divergence sits naturally alongside [an ERP import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist), and a wider quarterly sweep is in [a monthly ERP to EDGEBIC data audit](/blog/a-monthly-erp-to-edgebic-data-audit).
+
+## The takeaway
+
+An ERP work order closing does not close the EDGEBIC job, because the sales order mask has no status column and an import never deletes an absent row. The only closure signal that arrives in a file is the actuals import's `Complete` column, and that closes operations rather than jobs. A job whose every step reports complete still shows a ticked Completed? box while remaining open and schedulable until somebody confirms the completion date. Left alone that residue does not break the plan, it breaks Days Late and your dashboard counts. Run a weekly pass comparing the export against the plan, close what finished, and never delete an order when clearing or closing will do. See the engine on the [EDGEBIC product overview](/edgebic), the shared import layer on the [ERP integration architecture](/edgebic-erp-integration), and bring a work order export and a job list to [a working session](/contact-us) to see how far apart they currently are.
+
+<Accordion title="Does closing a work order in my ERP close the job in EDGEBIC?">
+No. The sales order import mask carries product, quantity, dates, priority, price, and an order reference, but it has no status or completion column, so closure is not a thing the order file can express. On top of that, an import only ever creates, updates, or reuses records: it never deletes what is absent from the file. A work order you closed in the ERP last Tuesday keeps sitting in EDGEBIC exactly as it was until somebody closes it there too.
+</Accordion>
+
+<Accordion title="If every operation on a job is complete, is the job closed?">
+Not automatically, and this is the detail that catches most shops. The Completed? checkbox shows ticked when either the order is formally closed or every work center reports complete, so a job whose last operation finished looks closed on screen. It is not. A derived-complete job stays schedulable until somebody clicks the checkbox and confirms the completion date. Until that happens it is still eligible to be planned and still counted among your open work.
+</Accordion>
+
+<Accordion title="What does an open-but-done job actually cost me?">
+Two things that matter to anyone reading a number. First, Days Late always reads 0 for a closed job, so leaving finished work open means it keeps accruing lateness against a due date it already met, and your late-job count is wrong in the pessimistic direction. Second, dashboard status counts treat it as live work. The cost is not a broken schedule; it is a set of reports nobody trusts, which is worse because it is quiet.
+</Accordion>

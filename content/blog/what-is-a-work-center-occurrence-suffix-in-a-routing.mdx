@@ -1,0 +1,93 @@
+---
+title: "What Is a Work Center Occurrence Suffix in a Routing?"
+description: "An occurrence suffix distinguishes repeat visits to the same machine in one routing, so a job that mills, heat-treats, then mills again keeps two distinct steps rather than one confused one."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - work center occurrence suffix
+  - same machine twice in a routing
+  - repeat work center routing step
+  - routing revisits a machine
+  - duplicate work center name routing
+  - second pass same machine
+targetPhrase: "work center occurrence suffix"
+wordCount: 1200
+readingTime: 6
+faqQuestions:
+  - question: "What is a work center occurrence suffix?"
+    answer: "It is a small marker appended to a routing step's display identity when the same work center appears more than once in that routing, so the first visit and the second visit are distinguishable. A routing that mills, sends the part out for heat treatment, then mills again has two milling steps that are genuinely different operations at different points in the sequence. The suffix is what lets dependency links, predecessor lookups and schedule rows keep them apart."
+  - question: "Why does a routing need to visit the same machine twice?"
+    answer: "Because plenty of real processes do. Rough machining before heat treatment and finish machining after it is the classic case, since the part changes dimension during treatment and cannot be finished first. Inspection at two points in a sequence is another. Nothing about revisiting a machine is unusual or a modeling shortcut; it reflects what the part physically does, and a routing that could not express it would be the limitation."
+  - question: "What goes wrong without a suffix?"
+    answer: "Dependency resolution can attach a link to the wrong visit. If a later step says it follows milling and two milling steps exist with the same name, a name-based lookup has no way to tell which one was meant, and picking the earlier one makes the successor appear schedulable far too soon. The safer fix in all cases is linking steps by their identifiers rather than by name, since an identifier is unique regardless of how many times a machine is used."
+qaQuestions:
+  - question: "My routing visits the same machine twice and the second pass scheduled before the middle step finished. What happened?"
+    answer: "A dependency almost certainly resolved to the first visit instead of the second, which is the standard symptom when two steps share a machine name and the links between them are name-based rather than identifier-based. Two fixes apply and both are worth doing: give each visit a distinct display identity so the names are no longer ambiguous, and make sure the successor links point at step identifiers. The identifier route is the one that holds regardless of naming."
+  - question: "A grid groups my two milling steps as one row but the Gantt shows two. Which is correct?"
+    answer: "Both are, because they are answering different questions. A summary grid that reports load per machine correctly collapses every visit under one heading, since the machine is the same machine and its hours are its hours. The Gantt and the schedule rows keep the visits separate, because they are showing operations and the two visits are different operations at different points in the sequence. The scheduler always works on the operation-level view, so nothing about the grouped display affects the plan."
+---
+
+**A work center occurrence suffix is a small marker added to a routing step's display identity when the same work center appears more than once in that routing, so each visit stays distinguishable from the others.** A part that is rough-milled, sent for heat treatment, then finish-milled passes through the same machine twice, and those two passes are different operations at different points in the sequence even though the machine's name is identical. The suffix is what keeps them apart when something needs to refer to one of them by name. EDGEBIC by User Solutions carries it on the step's display name only, leaving the underlying work center reference untouched.
+
+## How it works
+
+A routing is a sequence of steps, and steps refer to each other so the scheduler knows what must finish before what. Those references can be resolved in two ways, and the difference matters entirely when a machine repeats.
+
+**By identifier, which is always unambiguous.** Each step has its own identity independent of which machine it uses, so a successor link that names a step identifier points at exactly one step no matter how many times the machine appears. This is the preferred route and the one the editor populates.
+
+**By name, which is a fallback.** Older or imported routings sometimes express links by naming the successor rather than identifying it. This works perfectly while every machine appears once, and stops working the moment one appears twice, because the name no longer identifies a single step.
+
+The occurrence suffix exists to rescue the second case. Giving the two milling visits distinct display identities means the name-based lookup has something to distinguish them by, and the correct visit is found. It is a naming device, not a structural one.
+
+Two properties of the suffix are worth being precise about.
+
+**It lives on the display identity, not on the work center reference.** The step still points at the same real machine, and the machine's own name is unchanged. Nothing about capacity, calendars or setup is affected by whether a step carries a suffix, because none of those read the display identity.
+
+**It survives into schedule rows, and reporting handles that.** Because the marker is part of how the step identifies itself, it can appear on the scheduled operation too. Summary views that report load per machine deliberately strip it back to the base name so both visits group under one heading, which is correct: the machine is one machine and its hours are its hours. Operation-level views keep the visits separate, which is also correct, because they are separate operations.
+
+## A concrete example
+
+A shaft routing runs: turn, mill, heat treat at an outside vendor, mill again to finish, then inspect. The two milling steps use the same machine, because the shop has one mill and the part needs it twice.
+
+Without any distinguishing marker, the routing contains two steps both identifying themselves as milling. When the finish operation after heat treatment declares that it follows milling, a name-based lookup finds the first match, which is the rough milling step. The scheduler concludes the finish milling can begin as soon as rough milling ends, and places it before the heat treatment has even started. The plan looks plausible on the board and is physically impossible.
+
+With occurrence suffixes, the rough pass and the finish pass identify themselves distinctly. The finish operation's link resolves to the second visit. The scheduler waits for heat treatment plus its transit days, and the finish pass lands where it belongs.
+
+The better fix, applied in the same sitting, is to make the links identifier-based so the naming stops mattering at all. The two approaches are complementary rather than alternative: distinct display identities make the routing readable to a human scanning it, and identifier links make it unambiguous to the engine regardless of what anything is called.
+
+Once scheduled, the mill's own load report shows both passes under one machine heading, totaling their hours together, which is what a capacity conversation needs. The job's own view shows two separate operations at two separate points in the week, which is what a shop floor conversation needs.
+
+## How EDGEBIC uses it
+
+The suffix is a naming convention rather than a feature to switch on, and it matters most on routings that were imported or hand-built rather than assembled in the editor, since the editor populates identifier links as a matter of course. Where a routing genuinely revisits a machine, the recommended practice is both: identifier links for correctness and distinct display identities for legibility.
+
+How the engine builds the sequence from those links is covered in [how EDGEBIC orders operations dependency graphs](/blog/how-edgebic-orders-operations-dependency-graphs), and the link field itself is described in [what is a next in sequence link in a routing](/blog/what-is-a-next-in-sequence-link-in-a-routing). The ordering that results is described in [what is a topological sort in job scheduling](/blog/what-is-a-topological-sort-in-job-scheduling).
+
+The failure mode a missing suffix produces is a dependency resolving to the wrong step, which surfaces the same way other sequencing faults do: see [what is a dependency violation in scheduling](/blog/what-is-a-dependency-violation-in-scheduling) and [dependency and sequencing mistakes in EDGEBIC](/blog/dependency-and-sequencing-mistakes-edgebic). The gap between the two milling visits in the example is created by the routing's own waiting rules, described in [what is transit time in production scheduling](/blog/what-is-transit-time-in-production-scheduling).
+
+## The takeaway
+
+A work center occurrence suffix solves a naming problem, not a scheduling one. The scheduling problem underneath it is that a routing which revisits a machine has two steps that look identical to anything reading names, and the durable fix is to stop reading names by linking steps through their identifiers. Where you inherit a routing you did not build, a machine appearing twice is the specific thing worth checking, because the symptom it produces is a plausible-looking plan in which a later pass runs before the process in the middle of it. For the wider vocabulary see the [manufacturing glossary](/blog/manufacturing-glossary), and for the product itself see [EDGEBIC](/edgebic).
+
+<Accordion title="What is a work center occurrence suffix?">
+It is a small marker appended to a routing step's display identity when the same work center appears more than once in that routing, so the first visit and the second visit are distinguishable. A routing that mills, sends the part out for heat treatment, then mills again has two milling steps that are genuinely different operations at different points in the sequence. The suffix is what lets dependency links, predecessor lookups and schedule rows keep them apart.
+</Accordion>
+
+<Accordion title="Why does a routing need to visit the same machine twice?">
+Because plenty of real processes do. Rough machining before heat treatment and finish machining after it is the classic case, since the part changes dimension during treatment and cannot be finished first. Inspection at two points in a sequence is another. Nothing about revisiting a machine is unusual or a modeling shortcut; it reflects what the part physically does, and a routing that could not express it would be the limitation.
+</Accordion>
+
+<Accordion title="What goes wrong without a suffix?">
+Dependency resolution can attach a link to the wrong visit. If a later step says it follows milling and two milling steps exist with the same name, a name-based lookup has no way to tell which one was meant, and picking the earlier one makes the successor appear schedulable far too soon. The safer fix in all cases is linking steps by their identifiers rather than by name, since an identifier is unique regardless of how many times a machine is used.
+</Accordion>
+
+<Accordion title="My routing visits the same machine twice and the second pass scheduled before the middle step finished. What happened?">
+A dependency almost certainly resolved to the first visit instead of the second, which is the standard symptom when two steps share a machine name and the links between them are name-based rather than identifier-based. Two fixes apply and both are worth doing: give each visit a distinct display identity so the names are no longer ambiguous, and make sure the successor links point at step identifiers. The identifier route is the one that holds regardless of naming.
+</Accordion>
+
+<Accordion title="A grid groups my two milling steps as one row but the Gantt shows two. Which is correct?">
+Both are, because they are answering different questions. A summary grid that reports load per machine correctly collapses every visit under one heading, since the machine is the same machine and its hours are its hours. The Gantt and the schedule rows keep the visits separate, because they are showing operations and the two visits are different operations at different points in the sequence. The scheduler always works on the operation-level view, so nothing about the grouped display affects the plan.
+</Accordion>

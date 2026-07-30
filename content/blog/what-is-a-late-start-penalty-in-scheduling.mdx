@@ -1,0 +1,91 @@
+---
+title: "What Is a Late-Start Penalty in Scheduling?"
+description: "A late-start penalty is the capacity a shift loses when an operation only becomes eligible partway through it. Learn why a machine can show free hours and still schedule nothing."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - late start penalty scheduling
+  - partial first shift capacity
+  - mid shift eligibility
+  - capacity from a point in time
+  - shift hours already gone
+  - free capacity but nothing scheduled
+targetPhrase: "late-start penalty"
+wordCount: 1220
+readingTime: 6
+faqQuestions:
+  - question: "What is a late-start penalty in scheduling?"
+    answer: "It is the capacity a shift effectively loses for one operation because that operation only becomes eligible partway through the shift. The hours before the eligible moment have not vanished and may well be booked by other work, but they are unreachable for this operation, so the shift offers it only the time remaining from that point forward. It is not a fine or a setting; it is arithmetic about what part of a shift is still ahead of you."
+  - question: "Why does a work center show free hours but schedule nothing?"
+    answer: "Because the free hours are behind the operation's eligible moment rather than ahead of it. A shift ending at four in the afternoon with three hours free earlier in the day offers nothing at all to an operation that only becomes eligible at four, and the capacity report will still honestly show three free hours for the day. The two figures are answering different questions: one is how much of the shift is unbooked, the other is how much of it is unbooked and still to come."
+  - question: "Does the lost capacity get used by anything else?"
+    answer: "Yes, and this is why the penalty is a reasonable way to model it. Nothing is destroyed; the hours before the eligible moment remain available to any operation that could actually start in them. They are only lost to this one operation, which is exactly what happens on a real floor when material arrives at two in the afternoon. Utilization reporting sees a shift with genuinely free hours, which is a truthful reading even though a specific job could not use them."
+qaQuestions:
+  - question: "An operation was ready at three in the afternoon and did not start until the next morning. Was a whole afternoon wasted?"
+    answer: "Not wasted, but genuinely unusable for that operation if it needed more hours than the shift had left. Where a job needs four hours and one remains, the engine can either book that hour and continue tomorrow or start clean tomorrow, and which it does depends on whether the remaining time clears the minimum worth allocating. Either way the picture is the same: the afternoon was mostly behind the eligible moment. If this happens routinely on the same work center, the eligible moment is the thing to investigate, not the shift."
+  - question: "How do I find out what made an operation eligible so late?"
+    answer: "Trace backwards through its own routing rather than looking at the machine. An operation becomes eligible when its predecessor finishes plus whatever waiting the routing adds, so late eligibility almost always comes from upstream: a predecessor that ran long, queue time on the link, transit days to an outside process, or a job whose own start date was pushed by recorded actuals. The machine is usually the last place the cause is, even though it is the first place the symptom shows."
+---
+
+**A late-start penalty is the capacity a shift effectively loses for one operation because that operation only becomes eligible partway through the shift.** It is not a setting or a punishment but plain arithmetic: a shift can offer an operation only the time still ahead of the moment the operation is ready, not the shift's whole span and not even all of its unbooked hours. The practical consequence is one of the most common questions on a scheduling board, which is why a work center showing free hours can nevertheless schedule nothing. EDGEBIC by User Solutions computes the reachable hours per candidate shift before ranking it.
+
+## How it works
+
+An operation becomes eligible at a specific moment, determined by its predecessors and by whatever waiting the routing adds. The engine then walks forward through shifts looking for capacity, and for each candidate shift it must answer a narrower question than "how much of this shift is free."
+
+**The effective start is the later of the two.** For any shift, the earliest the operation could actually begin is the later of the shift's own start and the operation's eligible moment. If the shift began at eight and the operation is ready at eight, they coincide and nothing is lost. If the operation is ready at one in the afternoon, the effective start is one in the afternoon and the morning is simply not available to it.
+
+**Reachable hours are measured from the effective start.** The shift's contribution is what remains between the effective start and the shift's end, capped by whatever is genuinely unbooked. A shift running eight to four with everything free offers eight hours to a job ready at eight and three hours to a job ready at one.
+
+**If nothing is reachable, the shift is skipped.** When the effective start lands at or past the shift's end, the reachable figure is zero and the shift is discarded before it is even ranked. This is the case that produces the confusing report: the shift may still have unbooked hours in the morning and will still say so, but they are behind the eligible moment.
+
+**Multiple machines multiply the remainder, not the shift.** Where a work center runs several units, the reachable hours are multiplied by the unit count, so a three-hour tail on a two-machine center offers six hours rather than sixteen. The penalty applies to the window; the machines apply to what is left of it.
+
+The reason this is worth naming rather than treating as an implementation detail is that it separates two figures people expect to agree. Free capacity for a day is a property of the day. Reachable capacity is a property of a day and an operation together. Only the second one determines whether anything can be scheduled, and only the first one appears on a capacity report.
+
+## A concrete example
+
+A milling center runs two identical machines on a day shift from 08:00 to 16:00, and nothing is booked on Monday. The day's free capacity reads sixteen hours.
+
+An operation needing six hours becomes eligible Monday at 13:00, because its predecessor at the saw finished at noon and the routing adds an hour of queue time.
+
+The engine tests Monday's day shift. The effective start is 13:00, since that is later than the shift's 08:00 start. Three hours remain to 16:00, multiplied by two machines, giving six reachable hours. The operation needs six. It fits exactly, running 13:00 to 16:00 across both machines.
+
+Now change one number. The saw finishes at 14:00 instead, so the operation is eligible at 15:00. The effective start is 15:00, one hour remains, and two machines give two reachable hours against a six-hour need. The engine books what it can and continues into Tuesday, or, if the remainder falls below the floor worth allocating, skips Monday entirely and starts clean Tuesday morning.
+
+In both versions Monday's capacity report says the same thing it always said. The difference is entirely in when the operation became ready, which is a fact about the saw and the routing rather than about the mill.
+
+## How EDGEBIC uses it
+
+The penalty is applied when candidate shifts are evaluated, before any of them are ranked or booked. It is what the allocator means by capacity available from a given time, and it is deliberately not the same as the shift's remaining total. How the resulting partial slot is filled is covered in [how the allocator fills a partial first shift](/blog/how-the-allocator-fills-a-partial-first-shift), and the reachable figure is one of the terms in [what is a shift priority score in scheduling](/blog/what-is-a-shift-priority-score-in-scheduling).
+
+The distinction between the two capacity figures is set out in [what is available capacity in scheduling](/blog/what-is-available-capacity-in-scheduling), and the slot the figures describe is the structure covered in [what is a shift resource allocation in scheduling](/blog/what-is-a-shift-resource-allocation-in-scheduling). Where an operation spills past a shortened first shift into later ones, the result is the ordinary split described in [what is a cross-shift operation in scheduling](/blog/what-is-a-cross-shift-operation-in-scheduling).
+
+The eligible moment itself is upstream work, produced by predecessors plus the routing's waiting rules. Those are covered in [what is the delay composition order in scheduling](/blog/what-is-the-delay-composition-order-in-scheduling) and in [how EDGEBIC allocates hours across shifts](/blog/how-edgebic-allocates-hours-across-shifts).
+
+## The takeaway
+
+A late-start penalty is the difference between a shift's free hours and its remaining hours, and the second number is the only one that can schedule anything. Holding both in mind resolves the whole family of complaints that begin with the machine was empty and ends with so why did nothing run. When a work center repeatedly loses most of its afternoons this way, the fix is almost never on that work center: it is upstream, in whatever keeps making operations eligible in the middle of a shift rather than at the start of one. For the wider vocabulary see the [manufacturing glossary](/blog/manufacturing-glossary), and for the product itself see [EDGEBIC](/edgebic).
+
+<Accordion title="What is a late-start penalty in scheduling?">
+It is the capacity a shift effectively loses for one operation because that operation only becomes eligible partway through the shift. The hours before the eligible moment have not vanished and may well be booked by other work, but they are unreachable for this operation, so the shift offers it only the time remaining from that point forward. It is not a fine or a setting; it is arithmetic about what part of a shift is still ahead of you.
+</Accordion>
+
+<Accordion title="Why does a work center show free hours but schedule nothing?">
+Because the free hours are behind the operation's eligible moment rather than ahead of it. A shift ending at four in the afternoon with three hours free earlier in the day offers nothing at all to an operation that only becomes eligible at four, and the capacity report will still honestly show three free hours for the day. The two figures are answering different questions: one is how much of the shift is unbooked, the other is how much of it is unbooked and still to come.
+</Accordion>
+
+<Accordion title="Does the lost capacity get used by anything else?">
+Yes, and this is why the penalty is a reasonable way to model it. Nothing is destroyed; the hours before the eligible moment remain available to any operation that could actually start in them. They are only lost to this one operation, which is exactly what happens on a real floor when material arrives at two in the afternoon. Utilization reporting sees a shift with genuinely free hours, which is a truthful reading even though a specific job could not use them.
+</Accordion>
+
+<Accordion title="An operation was ready at three in the afternoon and did not start until the next morning. Was a whole afternoon wasted?">
+Not wasted, but genuinely unusable for that operation if it needed more hours than the shift had left. Where a job needs four hours and one remains, the engine can either book that hour and continue tomorrow or start clean tomorrow, and which it does depends on whether the remaining time clears the minimum worth allocating. Either way the picture is the same: the afternoon was mostly behind the eligible moment. If this happens routinely on the same work center, the eligible moment is the thing to investigate, not the shift.
+</Accordion>
+
+<Accordion title="How do I find out what made an operation eligible so late?">
+Trace backwards through its own routing rather than looking at the machine. An operation becomes eligible when its predecessor finishes plus whatever waiting the routing adds, so late eligibility almost always comes from upstream: a predecessor that ran long, queue time on the link, transit days to an outside process, or a job whose own start date was pushed by recorded actuals. The machine is usually the last place the cause is, even though it is the first place the symptom shows.
+</Accordion>

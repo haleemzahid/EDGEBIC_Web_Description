@@ -89,6 +89,12 @@ classes were found and closed:
 
 ### 📥 THE IMPORT MASKS COVER EXACTLY 8 ENTITY TYPES (verified flight 14, UserGuide 25)
 **Product · Workcenter · Customer · SalesOrder · BOR · Actuals · PlantHoliday · Shift.**
+⚠️ **Shift and PlantHoliday ARE two of the eight — do not repeat the common error of
+calling them "configuration you re-create by hand."** UserGuide 25 line 15 lists them
+explicitly. Hand-entry is a legitimate *choice* when you only have a few shift patterns;
+it is not a requirement. This mistake reached both a published post and an agent brief
+before being caught, so check it whenever migration or calendar setup comes up.
+
 Never write that anything else can be imported. Confirmed hand-built, with sources:
 departments (UG 03, export only) · work center groups and members (UG 07) · operators,
 skills, certifications, rosters, time off (UG 08) · the sequence-dependent setup matrix

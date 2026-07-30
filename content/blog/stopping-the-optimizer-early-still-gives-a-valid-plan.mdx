@@ -1,76 +1,78 @@
 ---
-title: "Stopping the Optimizer Early Still Gives a Valid Plan"
-description: "Cancel a running optimization and EDGEBIC still hands back the best plan found so far, plus its bound. Here is why the optimizer is safe to interrupt."
+title: "Canceling the Optimizer Is Safe, and the Run Is Discarded"
+description: "Canceling a running optimization in EDGEBIC stops it harmlessly and changes nothing, but no plan survives the cancel. What Cancel really does, and why the time budget is a ceiling."
 published: 2026-08-04T12:00:00.000Z
-modified: 2026-08-04T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
 category: Schedule Optimization
 author: user-solutions
 cluster: edgebic-optimization
 pillarSlug: edgebic-optimizer-guide
 keywords:
-  - interrupt optimizer
-  - anytime optimization
+  - cancel optimizer run
+  - stopping the optimizer early
   - schedule optimization time budget
   - production schedule optimizer
-  - optimizer incumbent
+  - deferred apply scheduling
   - finite capacity scheduling
 targetPhrase: "stopping the optimizer early"
-wordCount: 1460
+wordCount: 1590
 readingTime: 7
 faqQuestions:
   - question: "What happens if I stop the EDGEBIC optimizer before it finishes?"
-    answer: "You still get a usable plan. The optimizer keeps its best result found so far, called the incumbent, and can return it the moment you interrupt. That incumbent has already passed the never-worse check and the safety gate, so it is a valid schedule that is at least as good as your baseline. Stopping early trades away the chance of a further improvement, not the plan itself. You are never left empty-handed by an interrupt."
+    answer: "The run stops and nothing is kept. The status changes to \"Stopped, nothing was changed,\" and no proposal appears, because a partial run never produces one. Cancel is an off switch, not a request for the best result so far. What it guarantees is that your live schedule is exactly as it was before you pressed Run, since the optimizer holds its work in memory and writes nothing until a planner presses Accept. If you want a proposal, let the run finish."
   - question: "Does the optimizer always run for the full time budget?"
-    answer: "Not necessarily. The time budget is a ceiling, not a fixed duration. The mathematical solver can finish early if it proves it has reached the best possible plan, and either engine can be stopped by you before the budget expires. In all three cases, whether it finishes naturally, proves optimality, or is interrupted, the optimizer returns the best valid plan it has, along with a bound that tells you how good that plan is."
-  - question: "If I interrupt the solver, do I still get an optimality gap?"
-    answer: "Yes. When the mathematical solver is stopped early, it returns both the best plan it found and the bound it had proven at that moment, so you still get an optimality gap. The gap may be wider than if you had let it run longer, because it had less time to tighten the bound, but it is honest. You see how close to optimal the interrupted plan is, and you decide whether that is close enough or worth more time."
+    answer: "No. The time budget is a ceiling, not a fixed duration. The mathematical solver can stop early when it has proven it cannot do better on your goal, and either engine ends the moment you press Cancel. A run that comes back well inside its budget with a result on screen has finished early on purpose. A run that comes back because you canceled it has no result at all, which is the difference worth keeping straight."
+  - question: "If I cancel the solver, do I still get an optimality gap?"
+    answer: "No. The optimality gap arrives with a finished result, printed on the badge as \"Proven within X% of optimal.\" Canceling ends the run before it reports, so there is no badge, no comparison table, and no gap to read. That is not a loss of anything you had, because until the run completes there was no proposal on screen in the first place. To see the gap, let the run reach the end of its budget or finish early on its own."
 qaQuestions:
   - question: "The optimizer is still running and I need to make a decision now. Can I just stop it?"
-    answer: "Yes, and you will still get a good answer. Interrupt the run and the optimizer returns its incumbent, the best plan it has found up to that point, already clamped never worse than your baseline and cleared by the safety gate. If it is the solver, you also get the bound proven so far. You are not forced to wait out the full budget to get a valid, applyable plan. Stopping early costs you potential extra gain, nothing more."
+    answer: "Yes, and it costs you nothing except the run. Press Cancel and the optimizer stops with \"Stopped, nothing was changed.\" Your current plan stands untouched, because the run never wrote anything to begin with. What you will not get is a plan out of the canceled run: there is no partial proposal to review or apply, so the decision you make next is made on the schedule you already had.\n\nIn practice this rarely costs much, because the budgets on offer are 10, 30, or 60 seconds. Waiting out a 30 second run is usually cheaper than canceling it and wondering afterward what it would have found. Cancel is there for the times you started a run at the wrong moment, not as a way to harvest an early answer."
   - question: "I gave the optimizer a long budget but it returned after a few seconds. Did something go wrong?"
-    answer: "No, the solver likely proved it was done. The time budget is a maximum. If the mathematical solver reaches a plan it can prove is optimal within your goal, it stops early because there is nothing left to improve. A fast return with a zero or near-zero gap means it finished, not that it failed. The bound in the result tells you exactly how close to optimal the plan is, so you can confirm it was a genuine finish."
+    answer: "No, and this is the one case where a short run is genuinely good news. The budget is the maximum time the optimizer may search, not a duration it has to fill. If the mathematical solver reaches a plan it can prove cannot be beaten on your goal, it stops immediately, because more searching would change nothing.\n\nYou can tell the difference by what is on screen. A genuine early finish shows the full comparison: the verdict, the badge, the before and after numbers, and the move list. A badge reading \"Proven optimal\" is exactly that finish. A canceled run shows none of it, only the stopped message. So if you are looking at a result, the run completed, whatever the clock said."
 ---
 
-**Stopping the optimizer early still gives you a valid plan: EDGEBIC keeps the best schedule found so far, and it can return that plan, already checked and safe to apply, the moment you interrupt.** An interrupt costs you the chance of further improvement, never the plan itself.
+**Correction first: canceling a running optimization in EDGEBIC does not hand you a plan.** The run stops, the status reads "Stopped, nothing was changed," and the work in progress is discarded. If you have read that stopping early returns the best schedule found so far, along with an applyable result and a proven bound, that describes how solver engines behave in the abstract rather than what the Optimizer tab does. Cancel is an off switch, not a "give me what you have" button.
 
-EDGEBIC by User Solutions builds every optimization to be time-boxed and interruptible, which means you are never trapped waiting for a run to finish before you can act. This is the anytime property: at any moment, the optimizer has a usable answer ready. Understanding it explains why a long time budget is safe to set and why an interrupt is a normal, supported action rather than an emergency. For the wider optimizer picture, see the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide).
+What is true, and genuinely worth knowing, is that Cancel is completely harmless. EDGEBIC by User Solutions runs the optimizer in memory and writes nothing to your schedule until a planner presses Accept, so stopping a run mid-flight cannot damage the plan, disturb a colleague, or leave anything half-applied. This post separates the safety, which is real, from the anytime behavior, which the screen does not offer. For the wider picture, see the [EDGEBIC optimizer guide](/blog/edgebic-optimizer-guide).
 
-## The incumbent: always a plan in hand
+## What Cancel Actually Does
 
-The key idea is the incumbent, the best valid plan the optimizer has found up to the current moment. From early in a run, the optimizer holds an incumbent and keeps replacing it whenever it finds something better. The incumbent is not a rough sketch. It is a complete, decoded schedule that has already cleared the same checks any final result must pass.
+Press Run and the status shows "Trying schedules..." while the optimizer builds and measures complete alternative schedules. Press Cancel during that and the run ends immediately with a single message: "Stopped, nothing was changed."
 
-That means at any instant, there is a real plan ready to return. Whether the run finishes on its own, the solver proves it is done, or you interrupt it, the optimizer hands back the incumbent it is holding. You are never given a partial or broken schedule as the price of stopping early. The worst case of an interrupt is that the incumbent is not quite as good as it might have become with more time, and even then it is at least as good as where you started.
+That message is the whole story. There is no proposal, no comparison table, no move list, and no badge. The screen returns to where it was before you started, and your current plan is what you still have. The message is deliberately worded as a reassurance rather than an error, because nothing failed: you asked the optimizer to stop, and it stopped. The same wording is cataloged alongside every other run-state notice in [optimizer messages and what they mean](/blog/optimizer-messages-and-what-they-mean).
 
-## What the incumbent has already passed
+## Why Nothing Survives the Cancel
 
-An interrupted result is safe because the incumbent has already been through the same protections as a completed one. It has been scored against your baseline with the shared calculator and kept only because it does not lose to the baseline on your goal, the never-worse guarantee covered in [the never-worse guarantee in schedule optimization](/blog/the-never-worse-guarantee-in-schedule-optimization). It has cleared the structural safety gate, so it contains no dropped jobs and no inverted dates.
+The reason a canceled run leaves nothing behind is the same reason it is safe. The optimizer is deferred-apply from end to end: a run computes entirely in memory, presents its result on screen, and touches the database only when a planner presses Accept. Discard drops the proposal and writes nothing. Closing the application drops it too, and that is equally safe.
 
-Because those checks are what qualify a plan to be the incumbent in the first place, there is no separate validation step that an interrupt could skip. The plan you get from stopping early is held to the same standard as the plan you would get from letting the run finish. The only variable is how much better it might have gotten.
+A run that never reaches the point of presenting a result therefore has nothing to leave behind. It held its candidates in memory, it had written nothing anywhere, and canceling released the lot. The absence of a partial plan and the absence of any risk to your schedule are two sides of one design decision, not a shortcoming bolted onto a good idea.
 
-## Three ways a run ends
+## The Time Budget Is a Ceiling, Not a Fixed Duration
 
-An optimizer run reaches its conclusion in one of three ways, and all three return the best valid plan available.
+Here is the part of the original story that holds up. When you pick a time budget of 10, 30, or 60 seconds, you are setting a maximum, not a stopwatch the optimizer must run down.
 
-The first is a natural finish within the time budget: the search exhausts what it can try, or the solver works through its passes, and the optimizer returns its final incumbent. The second is an early proof: the mathematical solver reaches a plan it can prove is the best possible for your goal and stops immediately, because continuing would gain nothing. The third is your interrupt: you stop the run, and the optimizer returns whatever incumbent it holds at that moment. This is why a run given a long budget can still return in seconds. It proved it was done, described in [how a proven optimality gap builds trust](/blog/how-a-proven-optimality-gap-builds-trust).
+The multi-run search uses the time to try more job orderings, and reports the best complete schedule it built, badged as "best of N schedules tried" and clamped so it can never be worse than your current plan. The mathematical solver can go further and stop early: if it proves that no schedule can beat the one it is holding on your chosen goal, it returns straight away, because further searching cannot improve on a proof. That is why a run given 60 seconds can legitimately come back in three, badged "proven optimal" or "proven within X% of optimal."
 
-## The bound survives an interrupt
+An early finish and a cancel look nothing alike on screen. The finish shows the whole comparison. The cancel shows only the stopped message. Details on choosing the number are in [setting the optimizer time budget](/blog/setting-the-optimizer-time-budget), and the badge language is unpacked in [how a proven optimality gap builds trust](/blog/how-a-proven-optimality-gap-builds-trust).
 
-For the mathematical solver, an interrupt gives you more than just a plan. It gives you the bound the solver had proven so far. The bound is the solver's certificate of how good the best possible plan could be, and together with the incumbent it produces the optimality gap: the honest distance between the plan you have and the best that could exist.
+## What You Give Up, and What You Never Risk
 
-Stopping early does not erase this. You get the incumbent and the gap as of the moment you interrupted. The gap may be wider than it would have been after a full run, because the solver had less time to tighten it, but it is truthful. A wide gap tells you there may be meaningful room left and more time could help. A narrow gap tells you the interrupted plan is already close to optimal and probably good enough to apply now. Either way, you are deciding with real information, not guessing.
+Canceling costs you the run: the seconds already spent searching, and whatever the optimizer might have found in the seconds remaining. That is the entire cost.
 
-## Why this makes the time budget safe to set generously
+What it does not cost you is anything at all in the plant. Your jobs, your capacity, your recorded work, and every other planner's view of them are untouched, because the optimizer never held a lock on them and never wrote a row. The live schedule during an optimizer run is not "being changed," it is being read. That is why a planner can start a run, think better of it, and cancel with no more consequence than closing a window.
 
-The anytime property changes how you think about the time budget, covered in [setting the optimizer time budget](/blog/setting-the-optimizer-time-budget). Because an interrupt always yields a valid incumbent, the budget is a ceiling on how long the optimizer may search, not a commitment you are locked into.
+## Let It Finish to Get a Proposal
 
-You can set a generous budget for an overnight or between-shifts run, knowing the solver will stop early if it proves optimality and you can stop it early yourself if you need the answer sooner. There is no penalty for giving it more time than it turns out to need, and no risk that a long budget strands you waiting. Set the budget to the most time the situation can spare, and take the answer whenever you actually need it.
+If what you want is a plan to look at, the answer is simply to let the run complete. When it does, you get the verdict sentence, the badge, the before and after numbers, the list of exactly which operations move, and the safety strip confirming that nothing has been saved.
 
-## Interrupt, then decide as usual
+Then the normal review applies. Read the move list, and press Accept to apply the plan or Discard to keep the one you have. Every proposal you are shown has already been measured against your current schedule, so it can only be an improvement or an honest report that your plan is already the best of those tried, which is covered in [when the optimizer says your plan is already the best](/blog/when-the-optimizer-says-your-plan-is-already-the-best). The planner always presses Accept: the optimizer proposes, and never applies on its own.
 
-An interrupted result flows into the same review you would have anyway. The optimizer presents the incumbent as its proposal, with the comparison table and, for the solver, the gap. You read the deltas exactly as you would for a completed run, and you Accept to apply the plan or Discard to keep your current schedule. Nothing about the interrupt changes that final step.
+## Choosing a Budget You Can Wait Out
 
-So stopping early is not a special mode with different rules. It is the ordinary optimizer flow, entered a little sooner. You get a valid plan, you see how good it is, and you stay in control of whether it lands.
+Because a canceled run yields nothing, the practical advice is to pick a budget you are willing to sit through. With 10, 30, and 60 seconds on offer, that is a low bar, and 30 seconds is the sensible default for everyday use.
 
-## The bottom line
+Reach for 60 when the plan matters and you want the hardest search available, typically the considered planning run at the start of a shift or a week. Reach for 10 when you are trying goals quickly and comparing what each one favors. In all three cases you are setting the point at which the optimizer must report, and in all three cases it may report sooner if it has proven there is nothing left to gain.
 
-Stopping the optimizer early is a supported, safe action, not a failure. The optimizer always holds an incumbent, the best valid plan found so far, and it can return that plan the moment you interrupt, already clamped never worse than your baseline and cleared by the safety gate. The solver hands back its proven bound too, so you still see an honest optimality gap. That anytime behavior makes the time budget a ceiling rather than a commitment: give the optimizer as much time as you can spare, and take a valid answer whenever you need one. Explore the platform at [EDGEBIC](/edgebic).
+## The Bottom Line
+
+Cancel stops an optimizer run harmlessly and discards it: the status reads "Stopped, nothing was changed," and no proposal, badge, or gap survives. The safety is real and unconditional, because the optimizer writes nothing before Accept, but there is no partial plan to collect on the way out. The time budget genuinely is a ceiling rather than a fixed duration, so a run can finish early on a proof, and a completed run is the only thing that produces something to review. Pick a budget you can wait out, read the comparison when it lands, and keep the final call where it belongs. Explore the platform at [EDGEBIC](/edgebic).
