@@ -1,13 +1,18 @@
 # EDGEBIC PROMOTION — RESUME IN A FRESH CHAT
 
 **Read this file first. It is the complete handoff.**
-Last session ended: 2026-08-10 · Last commit: `b0ffc64` · Branch `feature/edgebic-promotion`, pushed to origin, working tree clean.
+Last session ended: 2026-08-13 (flight 14) · Branch `feature/edgebic-promotion`, pushed to origin, working tree clean.
 
 ---
 
 ## 1. WHERE THINGS STAND
 
-**1,686 EDGEBIC blog posts written, committed and pushed.** Target was 2,120.
+**1,694 EDGEBIC blog posts written, committed and pushed.** Target was 2,120.
+
+> Flight 14 (8 migration posts) was written **directly by the main session with no agents**,
+> which is viable at roughly 8 posts per flight if agent dispatch is unavailable or unwanted.
+> It also **reconstructed the missing flight-13 wave-log row and fixed the scoreboard**, which
+> was a full flight stale (it still read 1,630). Verify counts from disk, never from a summary.
 
 | | |
 |---|---|
@@ -49,10 +54,10 @@ procedure to the post already covering it.
 | walkthroughs | 49 | 50 | ~1 |
 | erp-integration | 142 | 150 | ~8, and the last agent said closing them needs either invented product detail or thinner angles than it would write. |
 | outcomes | 85 | 100 | ~10 |
-| optimization | 49 | 60 | ~11 |
+| optimization | 49 | 60 | **~5, not 11.** Flight 14 checked this against UserGuide 16: the 49 posts already cover nearly all of it. The genuinely uncovered angles are the missing **Least setup time** goal (hidden until setup data exists), the CP-SAT component being absent so the badge silently falls back to multi-run, the "Nearest challenger" line, the arrow-and-word Change cells, and first-run prerequisites. |
 | shop-floor | 49 | 60 | ~11 |
 | quoting | 31 | 40 | ~9 |
-| migration | 30 | 40 | ~10 |
+| migration | 38 | 40 | **~2.** Flight 14 took 8. The seam was migrating the features whose data is NOT importable; that seam is now worked. |
 
 **Do not pad to hit 2,120.** The documented source material does not contain
 2,120 non-duplicative posts. Padding is what produced the defects described next.
@@ -81,6 +86,16 @@ classes were found and closed:
 - **Job-level `Schedule at Utilization`** — REAL.
 - **Kiosk pause reason codes** — REAL (four categories, seeded list).
 - **Job priority = plain positive number, lower first** — the blog is RIGHT; the UserGuide's own §30 quick-reference table is stale. Detailed sections beat summary tables.
+
+### 📥 THE IMPORT MASKS COVER EXACTLY 8 ENTITY TYPES (verified flight 14, UserGuide 25)
+**Product · Workcenter · Customer · SalesOrder · BOR · Actuals · PlantHoliday · Shift.**
+Never write that anything else can be imported. Confirmed hand-built, with sources:
+departments (UG 03, export only) · work center groups and members (UG 07) · operators,
+skills, certifications, rosters, time off (UG 08) · the sequence-dependent setup matrix
+(UG 09 is explicit: Export CSV exists, "There is no import button on this dialog") ·
+quotes and scenarios (UG 21/22). Also: **grid exports are snapshots and deliberately do
+not round-trip**, **imports never schedule**, and a **BOR re-import replaces that product's
+entire routing per run**, so all of one product's steps must be in one file.
 
 ### Also confirmed NOT to exist (never write a how-to for these):
 Per-work-center holiday rows · date-range/monthly capacity override entry screen ·
