@@ -1,0 +1,105 @@
+---
+title: "How to Turn Off Lot Streaming on a Step in EDGEBIC"
+description: "Return a routing step to strict serial flow in EDGEBIC by zeroing Transfer Batch and Flow Step. What comes back, what queue time does next, and how to confirm the overlap is gone."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: EDGEBIC How-To
+author: user-solutions
+cluster: edgebic-how-to
+pillarSlug: edgebic-how-to-hub
+keywords:
+  - turn off lot streaming
+  - stop operations overlapping schedule
+  - zero the transfer batch
+  - remove flow step overlap
+  - serial routing step scheduling
+  - transfer delay cleanup
+targetPhrase: "turn off lot streaming"
+wordCount: 1107
+readingTime: 6
+faqQuestions:
+  - question: "How do you stop two routing steps overlapping in EDGEBIC?"
+    answer: "Set both Transfer Batch and Flow Step to zero on the upstream step, clear Transfer Delay if it is only there to support the streaming gate, and save with Update Standard BOR. With every overlap field at zero the downstream step waits for the upstream step to finish completely. The change takes effect on the next scheduling run."
+  - question: "Does turning off lot streaming bring queue time back?"
+    answer: "Yes. A lot-streaming gate replaces any queue time configured on the same step, so a cooling or inspection buffer sitting on that step has no effect while streaming is active. Zero the streaming fields and the queue time on that step starts governing the successor again, shift-aware as designed. Check the value is still the one you want before you reschedule."
+  - question: "Will turning off overlap push my delivery dates out?"
+    answer: "Almost certainly, and that is the point. Overlap buys real days: a transfer batch of 20 on a long sawing operation can start the next step two days earlier. Removing it returns those days to the plan. Turn streaming off when the shop cannot actually move partial lots between stations, because a plan built on overlap that never happens is worse than a longer honest one."
+qaQuestions:
+  - question: "Someone set a transfer batch on our heat-treat step and the Gantt now shows the next operation starting mid-run. The furnace physically cannot release partial loads. What do I fix?"
+    answer: "Zero the Transfer Batch on the heat-treat step and save the routing, then reschedule. Piece-count streaming assumes the first sublot can physically leave the station while the rest is still in process, and a furnace load is exactly the case where that is untrue. While you are on the step, check whether it also carries queue time: if a cool-down buffer was configured there it has been inert the whole time the batch was set, and zeroing the batch will bring it back into effect. Expect the job's finish date to move out by roughly the overlap you just removed."
+  - question: "I zeroed the transfer batch but the steps still overlap on the Gantt. What else is doing it?"
+    answer: "Check three things on the same upstream step. First, Flow Step: it is a separate start-to-start lag in hours and it works independently of the transfer batch, so a value left there keeps the overlap alive. Second, the work center: if it is marked Continuous-Process, transfer batches are ignored on it entirely and Flow Step is the only streaming model in play, which means zeroing the batch changed nothing. Third, confirm you saved the standard routing and not just the panel, then rerun Drive Schedule, because the recipe change does nothing until the scheduler consumes it."
+---
+
+**To turn off lot streaming on a routing step in EDGEBIC by User Solutions, set both Transfer Batch and Flow Step (hrs) to zero on that step and save the routing. With every overlap field at zero, the next step waits for this one to finish completely.** Two fields, one save, one scheduling run. The reason it is worth a dedicated procedure is that the two fields are independent, and clearing one while leaving the other set produces exactly the symptom you were trying to remove.
+
+Overlap is usually a good thing. Letting the next operation start on the first pallet while the rest of the lot is still being made is the classic transfer batch idea, and it buys real days. It stops being a good thing the moment the shop cannot actually do it: a furnace that cannot release a partial load, a plating line that ships whole lots, a cell where the material handler runs twice a shift and no more.
+
+## Before You Start
+
+- **Know which step carries the setting.** Streaming lives on the upstream step, the one whose partial output the successor is waiting for. That is the row to edit.
+- **Check whether the work center is marked Continuous-Process.** On such a machine, transfer batches are ignored and only Flow Step streams. Zeroing the batch there changes nothing. See [how to mark a work center as continuous process](/blog/how-to-mark-a-work-center-as-continuous-process-in-edgebic).
+- **Expect dates to move out.** Removing overlap returns the time it was saving.
+
+## Step 1: Open the Routing and Find the Step
+
+Open the **BOR** tab and select the routing. In the data grid, the relevant columns are **Flow Step (hrs)**, **Transfer Batch**, **Transfer Delay h**, and **Transit Days**. Overlapping bars on the Gantt trace back to a non-zero value in one of the first two.
+
+## Step 2: Zero Both Streaming Fields
+
+On the upstream step's row:
+
+- Set **Transfer Batch** to `0`. This is the piece-count model: it was letting the successor start once the first N pieces existed.
+- Set **Flow Step (hrs)** to `0`. This is the start-to-start lag model: it was letting the successor start a fixed number of hours after this step began, regardless of quantity.
+
+Zero both even if you believe only one was set. They are separate mechanisms and they do not clean each other up.
+
+## Step 3: Decide What Happens to Transfer Delay
+
+**Transfer Delay h** is a flat handling lag that rides on top of a streaming gate: forklift time, a cooldown before parts can be touched. With streaming off, ask what it was there for.
+
+| Why the delay was set | Do this |
+|---|---|
+| Purely to pad the streaming gate | Set it to `0` as well |
+| It represents real handling time that still happens | Consider moving that time into **Queue Time (hrs)** on the same step, which is shift-aware, rather than leaving a flat elapsed lag |
+
+Queue time is the natural home for a post-operation buffer on a serial step. Flat elapsed hours can land past shift end, at which point the capacity search simply finds the next open slot, which is rarely what a planner means by a two-hour cooldown. [How to add queue time before an operation](/blog/how-to-add-queue-time-before-an-operation-in-edgebic) covers that field.
+
+## Step 4: Save the Routing
+
+Click **Update Standard BOR** to change the recipe for every future job, or update the job's own copy if you only want one order affected. Nothing on the Gantt moves at this point. Routing edits change the recipe, not the plan.
+
+## Step 5: Reschedule
+
+Run **Drive Schedule**. The successor step now waits for the upstream step to complete, plus whatever queue time or transit days remain on it.
+
+## What Changes When You Save
+
+| Field zeroed | What the next run does differently |
+|---|---|
+| **Transfer Batch** | The successor no longer starts at the first-N-pieces gate; it waits for full completion |
+| **Flow Step (hrs)** | The start-to-start head start disappears; the successor waits for the end |
+| **Transfer Delay h** | The flat handling lag stops being added |
+| Queue time already on the step | Starts governing the successor again, because a streaming gate was replacing it |
+
+That last row is the one people miss. While a streaming gate is active on a step, any **Queue Time (hrs)** configured on the same step is discarded, even if the queue would have ended later. Turning streaming off hands the step back to its queue time. If that value is stale, it is about to start mattering again. Look at it before you reschedule rather than after someone asks why welding now starts four hours later than expected.
+
+## How to Check It Worked
+
+1. On the BOR grid, confirm both **Transfer Batch** and **Flow Step (hrs)** read `0` on the step.
+2. Run **Drive Schedule**.
+3. Open the Job View Gantt and look at the two bars. The downstream bar should now begin at or after the upstream bar's end, with a visible gap if queue time or transit days apply.
+4. Open the Scheduler Anomalies report and confirm the F-checks for that step are quiet. A step with two streaming models set, or with queue time fighting a flow step, shows up there.
+
+## Common Mistakes
+
+- **Zeroing one field and not the other.** Transfer Batch and Flow Step are independent. Clear both.
+- **Editing the wrong step.** Streaming sits upstream, on the step producing the parts, not on the step waiting for them.
+- **Forgetting the continuous-process rule.** On a work center flagged Continuous-Process, a transfer batch was never doing anything, so removing it cannot be the fix. Flow Step is the field in play there.
+- **Leaving a stale queue time to surprise you.** It was inert; now it is not.
+- **Not rescheduling.** The recipe changed. The plan did not, until you run it.
+- **Turning overlap off when the real problem is the size.** If the shop can move partial lots but not in sublots of 5, raise the batch rather than removing streaming altogether. A practical starting point is the order quantity split into four or five sublots.
+
+## Where to Go Next
+
+If you are switching models rather than removing overlap, [how to set a transfer batch size](/blog/how-to-set-a-transfer-batch-size-in-edgebic) covers the piece-count route and [how to set a flow step overlap](/blog/how-to-set-a-flow-step-overlap-in-edgebic) covers the hours-based one. For gaps that are travel rather than overlap, see [how to add transit days between two steps](/blog/how-to-add-transit-days-between-two-steps-in-edgebic). The full index is at [the EDGEBIC How-To Library](/blog/edgebic-how-to-hub), and the platform is at [EDGEBIC](/edgebic).

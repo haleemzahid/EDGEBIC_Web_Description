@@ -1,0 +1,65 @@
+---
+title: "What Is a Continuous-Process Model Mismatch Check?"
+description: "This check flags a transfer batch set on a step that ran on a continuous-process machine, where the piece-count overlap model can never fire. Definition and fix."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - continuous process model mismatch
+  - transfer batch ignored
+  - continuous process work center check
+  - lot streaming model selection
+  - piece count model not firing
+  - flow lag continuous process
+targetPhrase: "continuous process model mismatch"
+wordCount: 1140
+readingTime: 6
+faqQuestions:
+  - question: "What is a continuous-process model mismatch check?"
+    answer: "It is an anomaly check that flags a routing step carrying a transfer batch when that step ran on a work center marked as continuous process. On such a machine the piece-count overlap model never fires, so the transfer batch has zero effect and the flow lag applies instead. The check reports as a warning at job scope, because the configuration is inert rather than incorrect."
+  - question: "Why does a transfer batch not work on a continuous-process machine?"
+    answer: "Because the piece-count model depends on counting discrete pieces as they complete, and a continuous process does not produce countable pieces in that sense. A chemical reactor or a paint line yields product as a flow, not as trays of parts. Rather than pretend otherwise, the engine ignores the transfer batch on those machines and uses the start-to-start flow lag, which expresses overlap in hours instead."
+  - question: "How do I fix a step the check flags?"
+    answer: "Decide which model the operation really needs. If the machine genuinely runs a continuous process, clear the transfer batch and express the overlap as a flow lag in hours, which is what the engine will use anyway. If the machine actually produces countable pieces and was flagged as continuous process by mistake, correct the machine's setting instead and the transfer batch becomes live."
+qaQuestions:
+  - question: "We set a transfer batch of twenty-five on a coating step and see no overlap. The check flags it. What is happening?"
+    answer: "The coating line is marked as a continuous-process work center, so the piece-count model never fires there. Your transfer batch is being ignored and the engine is falling back to the flow lag, which on that step is probably zero, so the downstream operation waits for the whole coating run to finish. There are two honest fixes. If coating really is continuous, clear the transfer batch and set a flow lag instead: a value of one lets the successor start an hour after coating starts. If coating actually produces discrete parts you can count and move in trays, the continuous-process flag on the work center is the thing that is wrong."
+  - question: "Should the continuous-process flag be per product instead of per machine, since some runs are countable and some are not?"
+    answer: "It is deliberately a machine setting, because the physical character of the equipment does not change with what you run on it. A reactor is continuous whatever recipe is in it; a mill produces discrete parts whatever it is cutting. Making it per product would let a routing declare that a given item makes a reactor discrete, which is not a statement about reality. If you genuinely have equipment that behaves both ways, the practical route is to model it as two work centers with different flags and route each product to the appropriate one, rather than trying to make one machine mean two things."
+---
+
+**A continuous-process model mismatch check flags a routing step carrying a transfer batch when that step ran on a work center marked as continuous process, where the piece-count overlap model can never fire.** It exists because the setting is silently ignored rather than rejected, so a planner can configure it, see nothing happen, and never learn why. [EDGEBIC by User Solutions](/edgebic) reports it as a warning at job scope.
+
+## How it works
+
+Two operations can overlap in two different ways, and the platform models both.
+
+The piece-count model uses a transfer batch: a number of pieces that move downstream as soon as they are ready. Machine twenty-five brackets, send the tray to assembly, keep machining. This is the industry-standard form of lot streaming and it is the model most discrete shops want.
+
+The start-to-start model uses a flow lag expressed in hours. Set it to one and the successor may begin one hour after the predecessor starts, regardless of quantity, run time, or setup. This is the model that suits a process where there is nothing discrete to count.
+
+Which model applies is decided by the work center, not the step. A machine flagged as continuous process always uses the flow lag, and the transfer batch on any step routed to it is ignored entirely. A machine not so flagged uses the transfer batch when one is set, and falls back to the flow lag when it is zero.
+
+The flag sits on the machine because that is where the physical fact lives. A reactor is continuous regardless of what is in it. A mill produces countable parts regardless of what it is cutting. Putting the flag on the routing step would let a product declare that a given machine has changed physical character, which is not something a product can do.
+
+The check exists because the ignoring is silent. Setting a transfer batch on a continuous-process step produces no error, no warning at entry, and no change in the plan. Without a check, the only signal is an overlap the planner expected and did not get.
+
+## A concrete example
+
+Picture a paint line. Product enters wet at one end and leaves cured at the other in a steady stream. There is no moment where twenty-five finished units exist that you could load onto a trolley and walk to the next station, because the line is a river rather than a stack of trays.
+
+A planner used to discrete work sets a transfer batch of twenty-five on the coating step, expecting the packing station to start once twenty-five units are done. Nothing overlaps. Packing waits for the whole coating run, and the plan is longer than the planner intended by exactly the amount they thought they had saved.
+
+The engine's behavior here is right: it cannot count trays on a river, so it ignores the instruction rather than inventing a batch boundary that does not exist. What it needs is the other model. A flow lag of one hour on the coating step says packing may begin an hour after coating starts, which is a statement a paint line can actually honor, and the overlap appears.
+
+Same intent, different vocabulary, and the machine's flag is what decides which vocabulary the routing has to speak.
+
+## How EDGEBIC uses it
+
+The check runs with the other anomaly checks and appears in the report, described in [scheduling anomaly check](/blog/what-is-a-scheduling-anomaly-check) and run through in [how to run the scheduler anomalies report in EDGEBIC](/blog/how-to-run-the-scheduler-anomalies-report-in-edgebic).
+
+The machine setting that triggers it has its own glossary entry in [continuous process work center](/blog/what-is-a-continuous-process-work-center), and how such machines behave in practice is covered in [continuous process work centers in EDGEBIC](/blog/continuous-process-work-centers-edgebic). The two overlap models are documented in [transfer batch](/blog/what-is-a-transfer-batch) for the piece-count form and [flow lag overlap](/blog/what-is-flowstep-overlap) for the start-to-start form.
+
+A companion check covers the discrete-machine failures of the same family, including a flow lag and a transfer batch set together and a batch larger than the order: see [lot streaming configuration check](/blog/what-is-a-lot-streaming-configuration-check). The general technique both models serve is explained in [lot streaming](/blog/what-is-lot-streaming). For the wider vocabulary, see the [manufacturing glossary](/blog/manufacturing-glossary), and to see overlap models inside a live plan, explore [EDGEBIC](/edgebic).

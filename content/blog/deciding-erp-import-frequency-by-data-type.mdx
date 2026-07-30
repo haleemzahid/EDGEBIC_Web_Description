@@ -1,0 +1,117 @@
+---
+title: "Deciding ERP Import Frequency by Data Type"
+description: "Set a refresh cadence per data type instead of one global schedule: why work orders come daily, routings come on change, and why re-importing everything nightly costs more than it gives."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - ERP import frequency
+  - how often to import ERP data for scheduling
+  - master data refresh cadence
+  - work order import schedule
+  - routing re-import frequency
+  - EDGEBIC import cadence
+targetPhrase: "ERP import frequency"
+wordCount: 1590
+readingTime: 8
+faqQuestions:
+  - question: "How often should you import ERP data into a scheduler?"
+    answer: "Each data type gets its own cadence, matched to how fast it changes. Open work orders and actuals move daily, so they import daily. Routings change on an engineering change, so they import when one happens. Products and work centers change monthly at most. Shift calendars change once a year plus exceptions. One global nightly refresh of everything adds runs without adding information."
+  - question: "Is it harmful to re-import data that has not changed?"
+    answer: "For products, work centers, customers, and orders it is harmless, because a row that matches an existing record comes back Reused and untouched. Routings are the exception worth knowing: a routing import wipes and recreates each end product's steps, which is what makes re-imports consistent, and it regenerates the step identities in the process. Re-import routings on purpose rather than on a timer."
+  - question: "Does re-importing a routing disturb jobs already on the schedule?"
+    answer: "No. Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing change applies to future jobs and leaves work in progress alone. That is what makes an engineering change safe to import mid-week. The one thing to know is that a job you later switch to use the current routing will pick up the recreated steps and their current timings."
+qaQuestions:
+  - question: "Our IT group offered to automate a full nightly refresh of every table. It sounds like an upgrade. Is there a reason not to take it?"
+    answer: "Take the export half and decline the import half for master data. Having the ERP drop fresh files in a folder every night is genuinely useful, because it means the file is always current when you decide to run something. The part to keep deliberate is the routing import, which wipes and recreates each end product's steps every run. Nightly, that regenerates the routing steps 250 times a year for a routing that changed twice, and it turns a controlled engineering change into background noise nobody reviews. There is also a review problem: an automated run still produces four outcome counts, and nobody reads counts at 2am. Work orders and actuals are the two that genuinely reward a nightly cycle, so automate their export, run those two imports each morning in two minutes, and refresh routings when engineering tells you something changed."
+  - question: "We have 6,000 products and 40 work centers. Does importing the whole product catalog every week waste time?"
+    answer: "It wastes very little, and it buys consistency. Rows that already match come back Reused rather than rewritten, so the run finishes in a couple of minutes and the count line tells you exactly how many were genuinely new. A 6,000 row product file returning 5,988 Reused and 12 Created is a useful weekly signal: those twelve are the parts that appeared since last week, and it is worth glancing at whether they have routings yet. The alternative, exporting only changed products, requires a changed-since filter in the ERP that not every report writer supports and that quietly breaks when someone edits the report. Full refresh with a Reused-heavy count is the simpler and more honest routine."
+---
+
+**Import frequency should follow the change rate of each data type rather than one global schedule: open work orders and actuals daily, routings when an engineering change happens, products and work centers monthly, and shift calendars yearly plus exceptions.** Matching cadence to change rate keeps the routine short and keeps every run meaningful, which is what makes anyone still read the counts six months in.
+
+EDGEBIC by User Solutions imports through saved Excel, CSV, and database masks, one mask per recurring routine. Because each mask runs independently, cadence is a per-mask decision rather than an all-or-nothing one. This post sets the default cadences, explains the one data type where over-importing genuinely costs something, and shows how to combine them into a workable week.
+
+## The cadence table
+
+| Data type | How fast it changes | Suggested cadence | Cost of being late |
+|---|---|---|---|
+| Open work orders | Hourly | Daily, or per shift | The plan misses new demand |
+| Actuals from the floor | Continuously | Daily | Progress is stale, remaining hours are wrong |
+| Products | Weekly at most | Weekly or monthly | A new part has no record to schedule against |
+| Work centers | Rarely | Monthly, or on change | Capacity math is built on an old machine count |
+| Routings | On engineering change | When one happens | Jobs plan against the wrong operations |
+| Customers | Occasionally | With products | Order rows cannot resolve a customer |
+| Shift calendars and holidays | Yearly plus exceptions | Yearly, plus each exception | The schedule plans work on a closed day |
+
+Read the fourth column, not the third. The right cadence is the one where the cost of being late is acceptable until the next run. A work center that gained a second machine is wrong for a month if you refresh monthly, which is fine if you also refresh on change, and not fine if monthly is the only trigger. Almost every cadence on this list is really "on a timer, and also whenever someone tells you."
+
+## Why re-importing unchanged data is cheap
+
+Three of the five core imports reconcile against an existing record by a natural key: products by product name, work centers by name, orders by their reference. When the row matches and nothing needs changing, it comes back Reused and the record is left alone. Names match case-insensitively, so a file carrying `BRK-200` finds a record stored as `brk-200`.
+
+That is why a weekly full refresh of a 6,000 row product catalog is not wasteful. It runs in a couple of minutes and produces a genuinely useful signal in the split: 5,988 Reused and 12 Created tells you exactly which parts are new this week. Chasing a changed-since filter in the ERP to avoid that is usually more fragile than the thing it optimizes.
+
+The same reasoning is why you can re-run a routine whenever you are unsure. Reading the counts is covered in [the import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist).
+
+## The one exception: routings
+
+Routings do not reconcile row by row, because operations reference each other. Step 10 feeds step 20 feeds step 30, and a row-by-row import cannot wire those links, since step 20 does not exist yet when step 10 is written.
+
+So the routing import runs in two passes. Pass one reads and validates every row, auto-creates any work center or product the file names that does not exist yet, and buffers the steps. Pass two groups the buffered rows by end product, sorts them by sequence number, writes them, and wires the chain. To make that repeatable, the import wipes and recreates each end product's steps once per run.
+
+That gives routings three properties worth planning around:
+
+- **Re-import is consistent.** Running the same file twice produces the same routing, not a duplicate one.
+- **All of one product's steps must be in one file.** Split across two runs, the second run's wipe deletes the first run's steps. This is the single most common routing import mistake.
+- **Step identities are regenerated.** Scheduled jobs are unaffected because each carries a frozen snapshot of the routing it was planned with. A job you later switch to use the current routing will pick up the recreated steps and their current timings.
+
+None of that makes a nightly routing refresh dangerous. It makes it pointless and noisy: 250 rebuilds a year for a routing that changed twice, with nobody reviewing any of them. Import routings when engineering says something changed, which is also when you would want to look at the result. The mechanics are in [handling engineering changes via ERP re-import](/blog/handling-engineering-changes-via-erp-re-import).
+
+## Building the cadences into a week
+
+Combined, the cadences produce a rhythm rather than a single job.
+
+**Daily, five minutes.** Import work orders. Import actuals. Run the scheduler. Export the plan for the floor.
+
+**Weekly, twenty minutes.** Everything in the daily cycle, plus products, customers, and work centers. Read the Created versus Reused split on the master data, because that split is where a mapping problem shows up first.
+
+**On event, ten minutes.** A routing import when engineering changes something. A work center import when a machine is added or removed. A calendar update when a holiday or a shutdown is confirmed.
+
+**Yearly, one hour.** Next year's shift calendar and plant holidays, before the first schedule that crosses into it. Details in [importing shift calendars and plant holidays](/blog/importing-shift-calendars-and-plant-holidays-from-your-erp).
+
+The import order inside any cycle never changes, because routings reference products and work centers, and orders reference products. Run master data first, routings second, demand third, actuals last. The daily and weekly shapes are worked out in [the weekly import routine](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine) and [the nightly export and import routine](/blog/scheduling-a-nightly-erp-export-import-routine).
+
+## The signals that a cadence is wrong
+
+Two symptoms tell you a cadence needs adjusting, and neither shows up in the counts.
+
+**Too slow.** The planner works around the data rather than from it: overriding a due date by hand because the import has not caught up, or scheduling a part that is not in the system yet. Any manual correction that repeats weekly is a cadence problem wearing a data problem's clothes.
+
+**Too fast.** Nobody reads the result. A run whose counts are never checked has stopped being verification and become noise, and the honest fix is usually fewer runs rather than more discipline. If a master data refresh has returned the same picture for three months, move it out a cadence step and use the time on the routing review instead.
+
+## What to automate and what to keep by hand
+
+Automate the export. Having current files waiting in a folder every morning costs nothing and removes the most common delay in the routine.
+
+Keep the import runs attended. Not because they are risky, but because each one produces four counts whose meaning depends on knowing the shop, and nobody reads counts overnight. Two minutes of attention each morning is what makes the count check survive as a habit.
+
+Never automate the scheduler. Importing changes data and scheduling changes the plan, and keeping them separate means an import can never silently rearrange the floor. That separation is deliberate throughout the [EDGEBIC ERP integration architecture](/edgebic-erp-integration), and it is the same for every ERP.
+
+## Set your own cadences
+
+Take the seven rows in the table above and write the actual change rate for your shop beside each one. Most teams find two surprises: a data type they refresh far more often than it changes, and one they refresh far less. [Bring the list to a working session](/contact-us) with a current export, and the cadence question usually settles in one conversation. The engine those imports feed is described on the [EDGEBIC product overview](/edgebic).
+
+<Accordion title="How often should you import ERP data into a scheduler?">
+Each data type gets its own cadence, matched to how fast it changes. Open work orders and actuals move daily, so they import daily. Routings change on an engineering change, so they import when one happens. Products and work centers change monthly at most. Shift calendars change once a year plus exceptions. One global nightly refresh of everything adds runs without adding information.
+</Accordion>
+
+<Accordion title="Is it harmful to re-import data that has not changed?">
+For products, work centers, customers, and orders it is harmless, because a row that matches an existing record comes back Reused and untouched. Routings are the exception worth knowing: a routing import wipes and recreates each end product's steps, which is what makes re-imports consistent, and it regenerates the step identities in the process. Re-import routings on purpose rather than on a timer.
+</Accordion>
+
+<Accordion title="Does re-importing a routing disturb jobs already on the schedule?">
+No. Every scheduled job carries a frozen snapshot of the routing it was planned with, so a routing change applies to future jobs and leaves work in progress alone. That is what makes an engineering change safe to import mid-week. The one thing to know is that a job you later switch to use the current routing will pick up the recreated steps and their current timings.
+</Accordion>

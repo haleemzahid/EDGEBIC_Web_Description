@@ -2,7 +2,7 @@
 title: "What Is an Off-Calendar Booking Check in Scheduling?"
 description: "An off-calendar booking check flags work scheduled on a day the plant, the machine, or the shift was closed. Definition, the four calendar sources it tests, and how EDGEBIC reports it."
 published: 2026-08-09T12:00:00.000Z
-modified: 2026-08-09T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
 category: Glossary (EDGEBIC)
 author: user-solutions
 cluster: edgebic-glossary
@@ -25,9 +25,9 @@ faqQuestions:
     answer: "It is a real scheduling problem with a data cause. The hours themselves are valid arithmetic; the plan simply assumes people and machines that will not be there. Left alone, the work silently does not happen and every downstream operation inherits the delay. The fix is either to correct the calendar entry so the closure applies where it should, or to re-run the schedule so the engine moves those hours to an open day."
 qaQuestions:
   - question: "Our plant shut for a public holiday, we entered it, and the anomaly report still flags three jobs booked that day. What went wrong?"
-    answer: "The jobs were scheduled before the holiday was entered, so their hours were placed while the day was still open, and nothing goes back and moves existing bookings when a calendar record is added. The check is doing exactly its job: telling you the live plan disagrees with the live calendar. Re-run the schedule for those jobs and the engine will skip the closed day and push the hours forward. Check the scope of the holiday too, because a plant-wide closure entered as a single work center holiday only closes that one machine and would leave the rest of the plant booked."
-  - question: "A machine is flagged as booked during its planned maintenance window, but the maintenance is recurring every Tuesday afternoon. Does the check handle that?"
-    answer: "Yes. The downtime test understands both one-off windows and windows that recur by day of week, so a standing Tuesday afternoon service block is compared against every Tuesday in range, not just the date it was first entered. A firing means hours genuinely landed inside that recurring window. The usual cause is that the recurring downtime was created after those weeks were already scheduled. Re-running the affected jobs clears it, and from then on the engine treats the block as unavailable capacity when it searches for slots."
+    answer: "The jobs were scheduled before the holiday was entered, so their hours were placed while the day was still open, and nothing goes back and moves existing bookings when a calendar record is added. The check is doing exactly its job: telling you the live plan disagrees with the live calendar. Re-run the schedule for those jobs and the engine will skip the closed day and push the hours forward. Check the holiday record itself too: an inactive record is honored by nothing, and a recurring holiday matches only the month and day, so a mistyped date closes a day nobody expected."
+  - question: "A machine is flagged as booked during its planned maintenance window, but the maintenance is recurring every Tuesday afternoon. How should that be modeled?"
+    answer: "The downtime test itself understands windows that recur by day of week, so it will compare a standing block against every Tuesday in range. The catch is that the current release has no screen for creating downtime records and no weekly recurrence anywhere in the calendar, so you cannot enter a recurring Tuesday block directly. Two routes work instead. If the machine loses that time every week, put it in the shift by giving the work center its own calendar with a shorter Tuesday, and the hours stop being schedulable with nothing left to maintain. If the block varies, enter a per-day capacity override on each affected Tuesday with the reduced hours and a reason, then re-run the affected jobs."
 ---
 
 **An off-calendar booking check is a scheduling anomaly test that flags any hours a plan has booked onto a date or window where the resource was supposed to be closed. It compares every allocation against four separate sources of non-working time: a plant-wide holiday, a holiday that belongs to one work center, a holiday that belongs to one shift, and a downtime window such as planned maintenance. Each firing is a warning scoped to a single job, so it names the job that assumes people and machines who will not be there.**
@@ -46,9 +46,11 @@ The second test looks at **work-center holidays**: closures entered against one 
 
 The third test looks at **shift holidays**: closures entered against one shift over a date range, again for the whole working day. This test matches on the shift the booking was assigned to, so a night-shift closure does not flag day-shift work on the same date.
 
-The fourth test looks at **downtime windows**: planned or unplanned blocks such as preventive maintenance. Unlike the holiday tests, these are time windows rather than whole days, and they can either be a one-off block or a block that recurs on a given day of the week. The check evaluates both forms.
+The fourth test looks at **downtime windows**: blocks such as preventive maintenance. Unlike the holiday tests, these are time windows rather than whole days, and they can either be a one-off block or a block that recurs on a given day of the week. The check evaluates both forms.
 
 Every one of the four reports at warning severity and at job scope. That combination matters: a warning will not stop you publishing, and job scope means the report hands you a job number to open rather than a vague plant-level complaint.
+
+One practical caveat before you go looking for records. The check tests four sources, but the current release lets you create only the first: the plant holiday. There is no editor for work center holidays, shift holidays, or downtime events, so the way you actually close a single machine or a single date is a per-day capacity override on that work center, shift, and date. Reading the check is still worth doing, because it tells you what kind of closure the plan crossed; just do not go hunting for a downtime screen that is not there.
 
 ## Why Bookings End Up Off-Calendar
 
@@ -56,7 +58,9 @@ The plan does not drift onto closed days by itself. The engine reads the calenda
 
 The common story is **sequence**. The plan was built while the day was still open, and the closure was entered afterward. Adding a holiday record does not reach back and move bookings that already exist, so the plan and the calendar quietly disagree until something compares them. That something is this check.
 
-The second story is **scope**. Non-working time entered at the wrong level closes far less than intended. A plant shutdown recorded as a single work-center holiday closes exactly one machine. A maintenance block recorded on the wrong shift leaves the shift that actually runs wide open. The check catches the mismatch because it tests the level the closure was actually entered at, not the level you meant.
+The second story is **scope**. Non-working time entered at the wrong level closes far less than intended. A per-day capacity override entered against the wrong shift leaves the shift that actually runs wide open, because an override is keyed to work center, shift, and date together. The check catches the mismatch because it tests where the closure actually landed, not where you meant it to land.
+
+There is a third story that is really a variant of the second: the closure was never entered at all. Of the four sources the check tests, only the plant-wide holiday has a screen in the current release. Someone who goes looking for a per-machine holiday or a recurring downtime editor will not find one, and if they stop there the maintenance day never reaches the system. Nothing fires, nothing moves, and the machine keeps taking bookings, because as far as the engine knows it was open.
 
 ## A Concrete Example
 
@@ -66,12 +70,12 @@ Two jobs come back flagged. Both were scheduled on the Tuesday of the prior week
 
 The planner re-runs the schedule for those two jobs. The engine now sees the closure, skips Monday, and places the hours on Tuesday and Wednesday instead. Downstream steps queue behind the new end dates, the report comes back clean, and the week is publishable.
 
-Had the planner instead entered the closure against a single work center, only that machine's bookings would have moved, and the check would have kept flagging every other cell that still had Monday work. The severity would still be a warning, but the story would be a scope error rather than a timing one.
+Had the planner instead taken a single machine out with a per-day capacity override, only that machine's bookings would have moved, and the check would have kept flagging every other cell that still had Monday work. The severity would still be a warning, but the story would be a scope error rather than a timing one.
 
 ## How EDGEBIC Reports Off-Calendar Bookings
 
 In EDGEBIC, the off-calendar tests run inside the Scheduler Anomalies report under the Reports menu. Run it for a single job while you are debugging, or plant-wide to sweep everything before you publish. Each firing names the job, the work center, and the date, so the trail from the report row to the offending allocation is one click.
 
-The four calendar sources it tests are the same four you maintain in the product: [plant holidays](/blog/what-is-a-plant-holiday-in-scheduling), work center holidays, shift-level closures on a [work center shift](/blog/what-is-a-work-center-shift), and [downtime events](/blog/what-is-a-downtime-event-in-scheduling). Getting a firing is usually a prompt to check which of those four you used.
+The four calendar sources it tests are [plant holidays](/blog/what-is-a-plant-holiday-in-scheduling), work center holidays, shift-level closures on a [work center shift](/blog/what-is-a-work-center-shift), and [downtime events](/blog/what-is-a-downtime-event-in-scheduling). Only the first of those is a record you create on a screen in the current release; the other three are concepts the engine honors but gives you no editor for. In practice that means a firing points you at one of two things: a plant holiday whose date or active flag is wrong, or a machine-level block that should have been a per-day capacity override and either landed on the wrong work center, shift, or date, or was never entered at all.
 
 For the practical walkthrough of running the report and acting on what it returns, see [how to run and read the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic), and for the symptom-first version of this exact problem, [a job was booked on a holiday](/blog/a-job-was-booked-on-a-holiday-edgebic). The habit worth building is simple: enter calendar changes first, re-run the affected jobs second, and treat a clean off-calendar strip as part of what publishing a week means.

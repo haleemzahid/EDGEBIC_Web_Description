@@ -2,7 +2,7 @@
 title: "Why a Quote Scenario Respects Maintenance Downtime in EDGEBIC"
 description: "A what-if quote in EDGEBIC does not run against a fantasy calendar. See how a scenario honors your configured maintenance downtime, holidays, and daily capacity overrides."
 published: 2026-08-06T12:00:00.000Z
-modified: 2026-08-06T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
 category: Quoting & Promising
 author: user-solutions
 cluster: edgebic-quoting
@@ -19,14 +19,14 @@ wordCount: 1470
 readingTime: 7
 faqQuestions:
   - question: "Does a quote scenario in EDGEBIC account for scheduled maintenance?"
-    answer: "Yes. A scenario simulation in EDGEBIC by User Solutions reads the same daily and monthly capacity overrides and holiday calendars that the production scheduler uses. So a machine down for maintenance next Tuesday, a plant holiday, or a day configured at reduced capacity all show up in the what-if. The scenario runs against your real, constrained calendar, not an idealized one, which is what makes its quoted date trustworthy."
+    answer: "Yes. A scenario simulation in EDGEBIC by User Solutions reads the same per-day capacity overrides and holiday calendars that the production scheduler uses. So a machine zeroed for maintenance next Tuesday, a plant holiday, or a day set to reduced capacity all show up in the what-if. The scenario runs against your real, constrained calendar, not an idealized one, which is what makes its quoted date trustworthy."
   - question: "Where does the scenario get its calendar constraints from?"
-    answer: "From the same configuration the live schedule uses. Maintenance downtime, holidays, and per-day capacity changes are set once in the calendar and capacity-override tables, and both the production scheduler and the scenario simulation read them. There is no separate quoting calendar to maintain. When a planner marks a work center down for a day or lowers a shift's capacity, every future scenario reflects it automatically without any extra step."
+    answer: "From the same configuration the live schedule uses. Maintenance, holidays, and per-day capacity changes are set once, as plant holidays and per-day capacity overrides, and both the production scheduler and the scenario simulation read them. There is no separate quoting calendar to maintain. When a planner marks a work center down for a day or lowers a shift's capacity, every future scenario reflects it automatically without any extra step."
   - question: "Why does it matter that a what-if uses the real calendar?"
     answer: "Because a quote is only as honest as the calendar behind it. If a scenario simulated against a calendar that ignored maintenance and holidays, it would promise dates the shop cannot hit, exactly the trap of a lead-time rule of thumb. By reading the configured downtime, holidays, and daily overrides, the scenario produces a date that already accounts for the days the shop is not fully running, so the promise holds when the job runs for real."
 qaQuestions:
   - question: "We have a mill going down for a two-day preventive maintenance next week. If I quote a rush job that needs that mill, will the what-if know?"
-    answer: "It will, as long as the downtime is configured in the calendar. A scenario simulation reads the same daily and monthly capacity overrides the production scheduler reads, so the two days the mill is down for maintenance are simply unavailable in the what-if. The simulation schedules the mill step around them, and the estimated finish already includes the two-day gap. You do not have to remember the maintenance and add days by hand; the constraint is baked into the calendar once and every scenario honors it. The lesson is to keep downtime configured in the calendar rather than in your head, because the calendar is what the simulation trusts."
+    answer: "It will, as long as the downtime is in the calendar. In the current release that means a per-day capacity override of zero on the mill for each of the two days, since there is no separate downtime screen to enter it on. A scenario reads the same overrides and holidays the production scheduler reads, so those two days are simply unavailable in the what-if. The simulation schedules the mill step around them and the estimated finish already includes the gap. The lesson is to enter maintenance as overrides as soon as you know about it rather than keeping it in your head, because the calendar is what the simulation trusts and an unentered window is invisible to it."
   - question: "A scenario finished later than I expected even though the shop looked open that week. What am I missing?"
     answer: "Check the calendar for a holiday, a reduced-capacity day, or a maintenance window you forgot about. The scenario is not padding the date; it is reading a constraint that is configured but not front-of-mind, such as a plant holiday mid-week or a shift dropped to half capacity for a training day. Open the capacity and holiday configuration for the work centers on that routing and look at the days in question. When you find the configured constraint, the later date makes sense, and it is the honest one. If the constraint is wrong or stale, fix it in the calendar and re-simulate, and the scenario will move with it."
 ---
@@ -43,16 +43,18 @@ EDGEBIC avoids this by giving the scenario the same calendar the real schedule o
 
 ## One calendar, two consumers
 
-Maintenance downtime, holidays, and per-day capacity changes are configured once, in the calendar and capacity-override tables. Two things read that configuration: the production scheduler that plans real jobs, and the scenario simulation that answers what-ifs. There is no second quoting calendar to keep in sync.
+Maintenance, holidays, and per-day capacity changes are configured once, as plant holidays and per-day capacity overrides. Two things read that configuration: the production scheduler that plans real jobs, and the scenario simulation that answers what-ifs. There is no second quoting calendar to keep in sync.
+
+Worth naming the mechanism precisely, because "maintenance downtime" sounds like its own record. The current release has no downtime screen, so a machine's maintenance day reaches the calendar as a per-day capacity override on that work center, shift, and date. That is the thing the scenario reads.
 
 Concretely, a scenario reads:
 
 | Configured constraint | What it does in the scenario |
 |---|---|
-| A work center marked down for maintenance on specific days | Those days are unavailable; the step schedules around them. |
-| A plant holiday | No work is placed that day for affected work centers. |
-| A daily capacity override lowering a shift | The reduced capacity limits how much work lands that day. |
-| A monthly capacity override | The month's adjusted capacity applies across the scenario. |
+| A per-day capacity override zeroing a machine for maintenance | Those days are unavailable; the step schedules around them. |
+| A plant holiday, whole-day or partial | No work is placed that day, or the window's overlap is subtracted from each shift. |
+| A per-day override lowering a shift | The reduced capacity limits how much work lands that day. |
+| The machine's own shift hours | Whatever the calendar says the machine works is all the scenario can use. |
 
 Because both consumers share the source, marking a machine down once is enough. Every future scenario reflects it automatically, with no extra step at quoting time. When the base [quote simulation](/blog/edgebic-quote-simulation-explained) loads plant holidays, and a scenario additionally loads the daily and monthly overrides, the what-if is running on the same constrained ground as production.
 
@@ -66,7 +68,7 @@ This is the difference between a date that survives contact with the floor and o
 
 A customer wants a rush job that needs the mill, and you want to test whether a second-shift capacity boost gets it done in time. You build a scenario, add the capacity override, and re-simulate.
 
-The mill, though, is scheduled down for two days of preventive maintenance next week, configured in the calendar weeks ago. The scenario reads that downtime. So even with the capacity boost active on the days the mill is running, the simulation leaves the two maintenance days empty and schedules the work around them. The estimated finish includes the two-day gap.
+The mill, though, is down for two days of preventive maintenance next week, zeroed in the calendar with per-day overrides weeks ago. The scenario reads that reduction. So even with the capacity boost active on the days the mill is running, the simulation leaves the two maintenance days empty and schedules the work around them. The estimated finish includes the two-day gap.
 
 That is the honest answer. Had the scenario ignored the maintenance, it would have promised a date two days too early, and the job would have run into a locked-out machine. Instead you get a date that a planner can defend, because it already respects the downtime that is really coming.
 
@@ -74,7 +76,7 @@ If the finish comes back later than you expected and the shop looked open, the s
 
 ## Keep constraints in the calendar, not in your head
 
-The practical discipline follows directly. Configure downtime, holidays, and capacity changes in the calendar as soon as you know them. That is the single source both the schedule and every quote read. A maintenance window remembered only in someone's head is invisible to the simulation, and a quote built without it will promise a date the shop cannot keep.
+The practical discipline follows directly. Enter maintenance, holidays, and capacity changes as soon as you know them, using the plant holiday screen for site-wide closures and per-day overrides for anything narrower. That is the single source both the schedule and every quote read. A maintenance window remembered only in someone's head is invisible to the simulation, and a quote built without it will promise a date the shop cannot keep.
 
 Kept in the calendar, the same fact protects both your live schedule and your quotes, with no double entry and no chance the two disagree.
 

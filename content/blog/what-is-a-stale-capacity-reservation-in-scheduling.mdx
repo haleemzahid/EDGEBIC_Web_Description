@@ -1,0 +1,65 @@
+---
+title: "What Is a Stale Capacity Reservation in Scheduling?"
+description: "A stale capacity reservation is a machine booking left by an earlier run for work that never started. Learn why a reschedule must release it before re-planning."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - stale capacity reservation
+  - released machine booking
+  - reschedule frees capacity
+  - old slot blocking schedule
+  - phantom booking scheduling
+  - capacity map rebuild
+targetPhrase: "stale capacity reservation"
+wordCount: 1150
+readingTime: 6
+faqQuestions:
+  - question: "What is a stale capacity reservation?"
+    answer: "A stale capacity reservation is a machine booking left behind by an earlier scheduling run for an operation that never started. When the job is rescheduled, that old booking must be released before the engine re-plans, or the engine will see the machine as busy and push the new placement later than it needs to be. It is stale precisely because the work it represents has not happened and is about to be planned again."
+  - question: "Why does a reschedule have to release old bookings first?"
+    answer: "Because the engine rebuilds its capacity map before scheduling anything, and if a job's own previous bookings are still in that map the job effectively competes with itself. The result is a plan pushed out by days for no physical reason. Releasing the bookings for operations with no actuals returns the capacity to the pool so the engine can place the work honestly."
+  - question: "Are bookings for started work released too?"
+    answer: "No, and the distinction is the whole point. A booking for an operation that has actual dates represents work the shop really did on that machine, so its capacity stays consumed. Only bookings for operations with no actuals are released. On a three-step job where step one has run, step one keeps its reservation and steps two and three give theirs back."
+qaQuestions:
+  - question: "We rescheduled a job after a small change and it jumped six days into the future. Nothing on the shop floor changed. Why?"
+    answer: "That is the classic symptom of stale reservations not being released. The job's own previous bookings were still sitting in the capacity map when the engine re-planned it, so the machines it wanted looked fully booked by work that was only ever a plan. The engine did the only thing it could and searched forward until it found genuinely free capacity, six days out. The fix is at the release step rather than in your data: the reschedule has to drop the bookings for operations with no actuals before the placement pass, and once it does, the job lands back where the capacity actually is."
+  - question: "A job has one completed step and two that have not started. Which of its bookings survive a reschedule?"
+    answer: "The completed step's booking survives and the other two are released. That asymmetry is deliberate and it is applied per operation, not per job. Keeping the completed step's reservation is correct because that machine really was occupied for those hours and other jobs should not be able to book over history. Releasing the two unstarted ones is equally correct because that capacity was only ever reserved on paper. If the filter were applied at job level instead, the whole job would keep its old bookings just because one step had actuals, and the two remaining steps would be pushed forward by their own phantom reservations."
+---
+
+**A stale capacity reservation is a machine booking left behind by an earlier scheduling run for an operation that never started.** It has to be released before a reschedule re-plans the job, or the engine sees the machine as busy with work that exists only on paper. [EDGEBIC by User Solutions](/edgebic) releases these bookings per operation, before any placement decision is made.
+
+## How it works
+
+Before scheduling anything, the engine builds a capacity map: one slot for every combination of work center, shift, and date, each carrying the hours available and the hours already consumed. Existing schedules are loaded into that map so their bookings count against the capacity a new run may use.
+
+That is exactly right for other jobs. It is wrong for the job being rescheduled, because the reschedule is about to place that work again. If its old bookings stay in the map, the job competes against its own previous plan, finds its preferred machines apparently full, and searches forward until it hits capacity nobody has claimed.
+
+So the rebuild applies a filter. For a job that is not in the reschedule set, every booking is preserved and the capacity stays consumed. For a job that is in the set, only bookings with an actual start or actual end are kept. Everything else is dropped and its capacity returns to the pool.
+
+The filter runs at operation level rather than job level, and that detail is what makes it work. A three-step job where step one has actuals and steps two and three do not keeps step one's reservation, because that machine genuinely was occupied, and releases the other two, because those hours were only planned. A job-level filter would preserve all three simply because one of them had run, and steps two and three would then be pushed out by their own phantom bookings.
+
+Actuals are the discriminator throughout. A booking backed by a recorded start or end reflects something that happened and stays. A booking backed by nothing but a previous plan is an intention, and an intention that is about to be replaced should not be allowed to constrain its own replacement.
+
+## A concrete example
+
+Think of a hotel that takes a provisional hold on a room when a booking is drafted. The hold blocks the room for anyone else, which is fine while the draft stands.
+
+Now the guest calls to move the stay. The clerk goes to re-book and the system tells her the room is unavailable, because her own provisional hold from ten minutes ago is still on it. She books the guest three days later into a room that was free all along, and everyone is unhappy for no reason.
+
+The correct sequence is to drop the hold first, then re-book. The room is free, the guest gets the night they asked for, and nothing was lost, because the hold was never a stay.
+
+Change one thing: the guest already checked in for the first night. That night is not a hold, it is history. It stays occupied, nobody else gets it, and only the remaining nights are released and re-booked.
+
+A reschedule is the same operation on machine hours. Release what was only ever provisional, keep what actually happened, then plan.
+
+## How EDGEBIC uses it
+
+The release runs at the start of every scheduling run, before any job is placed, as part of the capacity map rebuild. Watching it happen on a real job, including the six-day symptom that shows up when reservations are not released, is walked through in [how a reschedule frees stale capacity reservations](/blog/how-a-reschedule-frees-stale-capacity-reservations).
+
+The slot the bookings live in has its own glossary entry in [shift resource allocation](/blog/what-is-a-shift-resource-allocation-in-scheduling), and how much room a slot has left is covered in [available capacity](/blog/what-is-available-capacity-in-scheduling). Which jobs are in the reschedule set at all depends on the run's [scheduling mode](/blog/what-is-a-scheduling-mode), so the mode you pick decides whose bookings are eligible for release.
+
+The rule that decides which bookings survive is the same one that governs the rest of a reschedule: recorded work is untouchable. That is set out in [actuals preservation on reschedule](/blog/what-is-actuals-preservation-on-reschedule) and in [why actuals are immutable in EDGEBIC](/blog/why-actuals-are-immutable-in-edgebic). For the wider vocabulary, see the [manufacturing glossary](/blog/manufacturing-glossary), and to see a reschedule reclaim its own capacity, explore [EDGEBIC](/edgebic).

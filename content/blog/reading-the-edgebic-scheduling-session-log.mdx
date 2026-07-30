@@ -1,0 +1,104 @@
+---
+title: "Reading the EDGEBIC Scheduling Session Log"
+description: "The scheduling session log is the third diagnostic surface: a decision-by-decision trace of one scheduling run. What it records, how to read it, and when to switch it off."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: Admin & Deployment
+author: user-solutions
+cluster: edgebic-admin
+pillarSlug: edgebic-admin-guide
+keywords:
+  - scheduling session log
+  - scheduling diagnostics admin
+  - trace a scheduling run
+  - manufacturing scheduler log file
+  - support diagnostics scheduling
+  - reading a scheduler trace
+targetPhrase: "scheduling session log"
+wordCount: 1250
+readingTime: 6
+faqQuestions:
+  - question: "What is the EDGEBIC scheduling session log?"
+    answer: "It is a per-run trace file recording the decisions the scheduling engine made during one scheduling action. Each file covers exactly one run, with a header naming the action and the jobs, phase banners for each stage of the pipeline, and marked lines for branches taken, routing identity, actuals propagation, and warnings. It is the third and deepest diagnostic surface, below the failure dialog and the anomaly report."
+  - question: "When should an administrator turn scheduling diagnostics on?"
+    answer: "Only for a specific investigation, after the failure dialog and the anomaly report have failed to explain the behavior, and usually alongside a support case. It is off by default on a normal install for good reason: the value of a trace is that somebody reads it, and a folder of files nobody opens is just accumulation. Switch it on, reproduce the symptom once, capture the file, switch it off."
+  - question: "Do two scheduling runs at the same time write into the same log?"
+    answer: "No. Each run writes its own file, so a kiosk save landing while a planner runs a reschedule produces two separate traces that never interleave their lines. Identify the file you want by the label in its header, which names the action and the jobs involved. That separation is what makes the log readable on a busy plant rather than an interleaved mess."
+qaQuestions:
+  - question: "Support asked us for a session log and we have never turned one on. What do we actually have to do?"
+    answer: "Three things, in order. First, arrange the switch: diagnostic logging is enabled on the machine that runs the schedule rather than from a Settings tab inside the application, and it takes effect after a restart, so ask your EDGEBIC support contact for the exact step for your install. Second, reproduce the symptom once, ideally on the smallest job set that shows it, because a plant-wide run produces a much longer file for no extra insight. Third, send the file for that run and switch the logging back off."
+  - question: "We left diagnostics on for a month. Is that hurting anything?"
+    answer: "Not performance, and not the schedule. The engine checks whether a session is open before it composes any message, so when logging is off it costs effectively nothing, and when it is on the writing is not what makes a run slow. The real cost is housekeeping and confusion: files accumulate one per run, and a colleague who finds a folder of month-old traces will assume the newest one describes today's problem. Turn it off when the investigation closes and keep only the files attached to a case."
+---
+
+**The scheduling session log is a decision-by-decision trace of a single scheduling run, and it is the third diagnostic surface in [EDGEBIC by User Solutions](/edgebic): the one you reach for after the failure dialog and the anomaly report have not explained what happened.** It is an administrator's tool rather than a planner's, because switching it on happens on the machine that runs the schedule rather than inside the application, and because reading it well means knowing what the pipeline does.
+
+This post covers what the log contains, how to read one without drowning in it, and the governance around turning it on and off. It sits with the rest of the [EDGEBIC admin guide](/blog/edgebic-admin-guide).
+
+## Where It Sits in the Escalation Ladder
+
+Three surfaces answer three different questions, in a deliberate order:
+
+| Tier | Surface | Answers | Audience |
+|---|---|---|---|
+| 1 | Scheduling failure dialog | Why did this job not schedule? | Planner, immediately |
+| 2 | Anomaly report | The schedule exists, but something looks wrong | Planner, self-service |
+| 3 | Session log | Why did the engine choose what it chose? | Administrator, usually with support |
+
+Almost every scheduling question is answered at tier 1 or 2. The failure dialog names the job, the category, and a fix hint. The anomaly report scans a schedule against dozens of known problem patterns and lists the offending rows, and you can run it plant-wide or scoped to one job, then export the rows into a ticket. Reach for those first, and read [running the anomaly report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic) if you have not used it in anger.
+
+The session log earns its place on the residual cases: the ones where the schedule is arguably correct, no check fires, and the question is genuinely "why did it decide that." The two upper tiers are covered in [schedule diagnostics](/blog/edgebic-schedule-diagnostics-explained).
+
+## What One File Covers
+
+One file, one scheduling action. Not a day, not a session at the keyboard, not a job. If a planner runs three reschedules in an afternoon, that is three files.
+
+Each file opens with a header banner giving the start time and a label naming the action and the jobs involved, and closes with a footer giving the finish time. Between them the trace is structured in four levels: phase banners for the major stages of the pipeline, narrower subsections inside a phase, plain observations, and marked lines.
+
+The marked lines are where the value is. Four families matter:
+
+**Decision lines** record a branch the pipeline took, with the reason recorded alongside it. This is the heart of the log. When a planner asks why a partially complete job was treated as partial rather than restarted, the decision line says so in words.
+
+**Routing identity lines** trace where each scheduled operation's routing link came from at each stage of the run, including where one was missing and had to be filled in. These diagnose the family of symptoms where daily hours appear duplicated or attached to the wrong operation after several reschedules.
+
+**Actuals lines** trace how actual start and end dates propagated through the run. These are the ones to read when dates look wrong after a reschedule, or when a job appears to have moved work that was already recorded.
+
+**Warning lines** flag conditions the pipeline found suspicious but not fatal. A run can complete successfully and still carry several of these, and they are frequently the first real clue.
+
+## How to Read One
+
+Do not read it top to bottom. Read it in three passes.
+
+**Pass 1: the shape of the run.** Skim only the phase banners. You are checking that the run did the stages you expected, in the order you expected, and that it reached the persist stage at the end. A run that stopped early shows it here in about five seconds.
+
+**Pass 2: the decisions.** Read only the decision lines. This is usually where the answer is, because a schedule that surprises a planner is almost always the result of a branch nobody knew the engine would take. Each one carries its reason.
+
+**Pass 3: the family that matches your symptom.** If dates look wrong, read the actuals lines. If hours look duplicated or misattributed, read the routing identity lines. If nothing else has helped, read the warnings.
+
+That order matters because a plant-wide run on a busy database produces a long file. Reading it linearly is how people conclude the log is unusable. Reading it by marker family is how it answers a question in ten minutes.
+
+## Two Practical Points
+
+**Runs never interleave.** Each scheduling run writes its own trace, so a kiosk save landing while a planner runs a reschedule produces two files rather than one confused one. Pick the file whose header label names the action you are investigating. On a plant with a busy kiosk this separation is the difference between a readable trace and a useless one.
+
+**Files accumulate, one per run, and that is deliberate.** Being able to put a good run beside a bad one is the most powerful thing the log offers. If a reschedule started producing a strange result last Thursday, the run from Wednesday is the control. Capture both when you open a support case.
+
+## Turning It On, and Off
+
+Diagnostic logging is off by default on a normal installation and is switched on deliberately for one investigation.
+
+It is not a Settings tab inside the application. It is arranged on the computer that runs the schedule, and the application has to be restarted before the change takes effect, so it is an administrator task with a short window of downtime attached. Ask your EDGEBIC support contact for the exact step that applies to your install rather than guessing.
+
+Three rules make it a healthy habit rather than a mess:
+
+**Reproduce on the smallest job set that shows the symptom.** A trace of one job is short and readable. A plant-wide trace of the same symptom is long and says nothing extra.
+
+**Switch it off when the investigation closes.** The cost while it is on is not performance, because the engine checks whether a session is open before composing any message, so it is effectively free when off and cheap when on. The cost is confusion: a colleague who finds a folder of old traces will assume the newest describes today's problem.
+
+**Treat the files as production records.** They contain job numbers, dates, and work center names, which is ordinary operational data but still yours. Handle them the way you handle an exported schedule, and delete the ones not attached to an open case.
+
+## What It Is Not
+
+The session log is one of several logs an administrator meets, and confusing them wastes an afternoon. It is not the import run log, not the integration run history, not the security audit trail, and not the schedule change log that answers who moved this job and why. Those four are covered in [reading run logs and run history](/blog/reading-edgebic-run-logs-and-run-history), and three of them are readable from inside the application, which the session log is not.
+
+The distinction that matters most: the schedule change log is a permanent business record of what changed, and it belongs in your audit story. The session log is a temporary engineering trace of why one run behaved as it did, and it belongs in a support case. Do not use one for the other's job.

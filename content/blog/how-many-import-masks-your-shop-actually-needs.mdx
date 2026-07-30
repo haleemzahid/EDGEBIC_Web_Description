@@ -1,0 +1,127 @@
+---
+title: "How Many Import Masks Your Shop Actually Needs"
+description: "Five masks cover most shops, and the reasons to add a sixth are specific. How to decide when a second mask on the same data type helps and when it just doubles maintenance."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - how many import masks
+  - import mask design
+  - one mask per routine
+  - splitting import masks
+  - import mask naming convention
+  - EDGEBIC mask count
+targetPhrase: "how many import masks"
+wordCount: 1560
+readingTime: 8
+faqQuestions:
+  - question: "How many import masks does a typical shop need?"
+    answer: "Five: products, work centers, routings, work orders, and actuals. That set covers a complete scheduling model for a single-site shop with one ERP. Customers become a sixth when order rows carry a customer that must resolve. Beyond that, extra masks are justified by a different file shape or a different set of options, not by convenience."
+  - question: "Should you build a separate mask for each ERP export file?"
+    answer: "One mask per recurring routine, not per file. If two files share the same headings and the same options, the same mask reads both, which is how multi-site shops run one work center mask against several site files. A second mask is warranted when the headings differ, the units differ, or the options need to differ, since all three live on the mask."
+  - question: "What is the cost of having too many masks?"
+    answer: "Maintenance and ambiguity. Every mask holds its own mapping, so a renamed ERP column has to be repaired in each mask that reads it. Duplicated masks also invite drift, where two supposedly identical routines map one column slightly differently and the schedule changes depending on who ran the cycle. Fewer masks with clear names are easier to keep honest."
+qaQuestions:
+  - question: "We want a full refresh mask and a quick daily mask for work orders. Is that two masks or one?"
+    answer: "It is one mask if the file shape and the options are the same, and two if either differs. In practice most shops find it is one, because the daily file and the weekly file usually come from the same report with a different filter, so the headings match and the same mask reads both. Where it genuinely becomes two is when the daily run needs different options: for example, updates on for the daily refresh so changed due dates land, and updates off for a bulk backfill so nothing existing gets overwritten. Options live on the mask rather than being chosen at run time, so two option sets means two masks. Name them so the difference is obvious, something like Daily Work Orders and Work Order Backfill, and note the difference beside them, because six months later the reason for two will not be visible from the mappings."
+  - question: "We run two ERPs after an acquisition. Does that double every mask?"
+    answer: "It doubles the ones whose column headings differ, which in practice is most of them, because two ERPs rarely name the same field the same way. Expect roughly ten masks rather than five, and treat that as normal rather than as a problem to engineer away. What matters more than the count is that the masks are named by source and routine, so nobody runs the wrong one against the wrong file. Both sets feed the same model, so the naming convention carries into the data as well: work center identifiers should make clear which plant and therefore which system a record came from, since the import matches on name and two systems can easily use the same code for different machines."
+---
+
+**Five import masks cover most shops: products, work centers, routings, work orders, and actuals, with customers as a sixth when order rows carry one.** The rule for adding more is that a second mask is warranted by a different file shape or a different set of options, never by convenience, because every extra mask is another place a renamed column has to be repaired.
+
+EDGEBIC by User Solutions treats a mask as a saved recipe for one recurring routine: which kind of data, what format, whether the first row is headings, and how each column maps onto a field. This post is how to decide how many recipes your shop needs, and how to name them so nobody runs the wrong one.
+
+## The five that cover a shop
+
+| Mask | What it carries | Typical cadence |
+|---|---|---|
+| Products | Part identifiers, unit of measure, type | Weekly or monthly |
+| Work centers | Machines, instance counts, setup defaults, rates | On change |
+| Routings | Operations, sequence, run and setup hours | On engineering change |
+| Work orders | Product, quantity, reference, dates | Daily |
+| Actuals | Hours and pieces by job, work center, and date | Daily |
+
+Customers becomes a sixth when your order export carries a customer that has to resolve to a record. Some shops let the order import create customers automatically instead, which is on by default, and skip the mask entirely.
+
+That set is complete rather than minimal. Nothing further is required to build and run a finite capacity schedule, which is worth stating because teams often assume a larger integration surface than exists.
+
+## One mask per routine, not per file
+
+The distinction matters, because it decides whether a growing shop ends up with six masks or thirty.
+
+A mask maps column headings to fields. It knows nothing about which file produced those headings. So two files with identical headings can be read by the same mask, which is exactly how a multi-site shop runs one work center mask against a Houston file and a Cleveland file, or how a daily and a weekly work order export share one mask when they come from the same report with different filters.
+
+Three things force a second mask, and only these three:
+
+- **Different headings.** The mapping is heading-based, so a file that names the same field differently needs its own mapping.
+- **Different units.** Conversion factors live on the mask's columns, so a file quoting setup in minutes and another quoting hours cannot share one.
+- **Different options.** Whether updates overwrite, whether a bad row stops the run, whether missing records are auto-created: all of these are saved on the mask, not chosen at run time.
+
+Everything else is the same routine wearing a different file name.
+
+## When a second mask genuinely helps
+
+Four cases come up often enough to name.
+
+**Two ERPs.** After an acquisition, expect roughly ten masks rather than five, because two systems rarely name a field the same way. That is normal. The related modeling question, keeping records from two systems distinct, is in [scheduling a shop that runs two ERPs](/blog/scheduling-a-shop-that-runs-two-erps).
+
+**A backfill that must not overwrite.** A one-time historical load usually wants updates off so nothing current is disturbed, while the recurring routine wants updates on so changed dates land. Two option sets, so two masks, with names that make the difference obvious.
+
+**A different actuals source.** Floor terminal exports and payroll exports have different shapes and often different grains, so they do not share a mask even though both carry hours.
+
+**A per-site file whose headings differ.** Rare, but real when two plants run different ERP versions or different report writers.
+
+## When a second mask is a mistake
+
+**One mask per file name.** `Products Week 29` and `Products Week 30` are the same routine. The naming problem is solved by naming the mask after the routine, not by creating masks.
+
+**One mask per person.** Two planners with their own copies of the same mapping is how drift starts, because one gets a repair and the other does not, and the schedule changes depending on who ran the cycle.
+
+**Splitting one product's routing across masks.** This one is worse than untidy. A routing import wipes and recreates each end product's steps once per run, which is what makes re-imports consistent. Split one end product across two runs and the second run's wipe deletes the first run's steps. All of one product's operations belong in one file, read by one mask, in one run.
+
+## Naming them
+
+Three rules, and they cost nothing.
+
+- **Name the routine, not the file.** `Weekly Work Orders` outlives `wo-week29.csv` and tells the next person what it is for.
+- **Put the source in the name when there is more than one.** `Kinetic Routings` and `Fourth Shift Routings` remove an entire class of mistake.
+- **Make an option difference visible.** `Work Order Backfill` beside `Daily Work Orders` says what the mappings cannot.
+
+Names are the only documentation most masks ever get, so they carry weight. What they cannot carry belongs in the note beside them, covered in [keeping a change log of import mask edits](/blog/keeping-a-change-log-of-import-mask-edits).
+
+## The maintenance arithmetic
+
+The reason to keep the count honest is repair cost. Every mask holds its own mapping, so a heading renamed in a file that feeds three masks is three edits, not one.
+
+That isolation is deliberate and worth having: a mistake in one mask cannot propagate into two others, and you can repair the mask you run tomorrow without touching the two you run monthly. But it makes duplication expensive in exactly the way that is easy to ignore while creating masks and painful the week an ERP upgrade changes a report.
+
+The practical mitigation is a one-line map of which mask reads which export. It turns a heading rename from a hunt into six minutes, and it is the same note that makes an upgrade a checklist rather than a discovery exercise: [what to check after an ERP version upgrade](/blog/what-to-check-after-an-erp-version-upgrade).
+
+## Order matters more than count
+
+Whatever the number, the sequence never changes, because routings reference products and work centers, and orders reference products.
+
+1. Products
+2. Work centers
+3. Routings
+4. Work orders
+5. Actuals
+
+Then run the scheduler, which is always a separate deliberate act, so an import can never silently rearrange the floor. The rhythm around that order is in [the weekly import routine](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine), and building an individual mask is stepped through in [how to build an import mask](/blog/how-to-build-an-import-mask-in-edgebic).
+
+Bring your current exports to [a working session](/contact-us) and count the masks they genuinely need. Most shops find the answer is five, and that the files they thought needed separate treatment share a mask. The architecture is on the [EDGEBIC ERP integration page](/edgebic-erp-integration), and the engine those masks feed is on the [EDGEBIC product overview](/edgebic).
+
+<Accordion title="How many import masks does a typical shop need?">
+Five: products, work centers, routings, work orders, and actuals. That set covers a complete scheduling model for a single-site shop with one ERP. Customers become a sixth when order rows carry a customer that must resolve. Beyond that, extra masks are justified by a different file shape or a different set of options, not by convenience.
+</Accordion>
+
+<Accordion title="Should you build a separate mask for each ERP export file?">
+One mask per recurring routine, not per file. If two files share the same headings and the same options, the same mask reads both, which is how multi-site shops run one work center mask against several site files. A second mask is warranted when the headings differ, the units differ, or the options need to differ, since all three live on the mask.
+</Accordion>
+
+<Accordion title="What is the cost of having too many masks?">
+Maintenance and ambiguity. Every mask holds its own mapping, so a renamed ERP column has to be repaired in each mask that reads it. Duplicated masks also invite drift, where two supposedly identical routines map one column slightly differently and the schedule changes depending on who ran the cycle. Fewer masks with clear names are easier to keep honest.
+</Accordion>

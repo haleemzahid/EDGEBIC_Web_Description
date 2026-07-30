@@ -1,8 +1,8 @@
 ---
 title: "How Hours and Pieces Convert on the Shop Floor in EDGEBIC"
-description: "EDGEBIC derives one actuals quantity from the other using an effective rate. Learn how hours-primary and pieces-primary work centers convert and why the rate is snapshotted."
+description: "EDGEBIC derives one actuals quantity from the other using an effective rate. Learn how hours-led and pieces-led capture convert and why the rate is snapshotted."
 published: 2026-08-02T12:00:00.000Z
-modified: 2026-08-02T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
 category: Shop Floor Execution
 author: user-solutions
 cluster: edgebic-shop-floor
@@ -19,48 +19,50 @@ wordCount: 1400
 readingTime: 7
 faqQuestions:
   - question: "How does EDGEBIC convert between hours and pieces?"
-    answer: "It uses an effective rate in pieces per hour, computed from the routing step's pieces-per-unit and cycle time, multiplied by the work center's efficiency factor. From that rate, pieces equal hours times rate, and hours equal pieces divided by rate. Which side an operator enters depends on the work center's entry mode; the other side derives automatically so a day always has both a time figure and a piece figure."
-  - question: "What is the difference between hours-primary and pieces-primary work centers?"
-    answer: "On an hours-primary work center the operator drives an elapsed clock and pieces are derived from hours times the rate. On a pieces-primary work center the operator taps piece counters and hours are derived from pieces divided by the rate. A both mode accepts each independently so variance between them can be measured. The mode simply decides which quantity the operator captures directly and which the system computes."
+    answer: "It uses an effective rate in pieces per hour, computed from the routing step's pieces-per-unit and cycle time. From that rate, pieces equal hours times rate, and hours equal pieces divided by rate. Which side derives depends on the Auto Calc Hours control in the daily actuals grid: leave it ticked and typing one side fills the other, so a day always has both a time figure and a piece figure."
+  - question: "What is the difference between hours-led and pieces-led capture?"
+    answer: "Hours-led means the elapsed clock is the recorded truth and pieces are derived from hours times the rate. Pieces-led means the counted output is the recorded truth and hours are derived from pieces divided by the rate. Recording both means each is entered independently, so the variance between them can be measured. This is a convention a shop adopts per operation, expressed when the day is logged rather than configured per machine."
   - question: "Why is the effective rate snapshotted onto each punch?"
     answer: "The rate is frozen at the moment a punch opens so historical records stay accurate even if the routing is edited later. If someone changes a step's cycle time next month, punches already recorded keep the rate they were captured with, and their derived quantities do not silently shift. Report accuracy over past work does not depend on the current routing staying unchanged."
 qaQuestions:
-  - question: "Our pieces-primary work center shows zero derived hours. What happened?"
-    answer: "The effective rate came out as zero, which happens when the routing step has no cycle time or no pieces-per-unit to compute a rate from. EDGEBIC records a zero rate honestly rather than fabricating a number, so the derived side stays zero. On a pieces-primary work center that means the operator must enter piece counts manually, because there is no rate to convert them into hours. Fix the routing's cycle time and the conversion resumes on new punches."
+  - question: "We count pieces on a press and the derived hours show zero. What happened?"
+    answer: "The effective rate came out as zero, which happens when the routing step has no cycle time or no pieces-per-unit to compute a rate from. EDGEBIC records a zero rate honestly rather than fabricating a number, so the derived side stays zero. The counts themselves are still captured and kept; what you lose is the hours figure that would have been calculated from them. Fix the routing's cycle time and the conversion resumes on new punches."
   - question: "The observed rate on a finished day is lower than the routing standard. Is that a problem?"
     answer: "Usually it is information, not an error. When a day logged both real hours and real pieces, EDGEBIC computes the observed rate as pieces divided by hours for that day, and it can differ from the standard. A run that made 42 pieces in 7.53 hours shows about 5.58 pieces per hour against a 7.14 standard, because a quality hold ate into the time. That gap is exactly the variance you want to see and act on."
 ---
 
-**EDGEBIC by User Solutions converts between hours and pieces using an effective rate in pieces per hour, so a day's actuals always carry both a time figure and a piece figure even when the operator entered only one.** The rate comes from the routing step and the work center's efficiency, and it is frozen onto each punch when it opens. This bidirectional conversion is what lets an hours-driven machine and a piece-driven machine feed the same [shop floor data collection](/blog/edgebic-shop-floor-guide) model without anyone doing arithmetic by hand.
+**EDGEBIC by User Solutions converts between hours and pieces using an effective rate in pieces per hour, so a day's actuals always carry both a time figure and a piece figure even when only one was recorded.** The rate comes from the routing step, and it is frozen onto each punch when it opens. This bidirectional conversion is what lets an hours-driven machine and a piece-driven machine feed the same [shop floor data collection](/blog/edgebic-shop-floor-guide) model without anyone doing arithmetic by hand.
 
-Some operations are naturally timed and some are naturally counted. A long paint cure is an elapsed clock; a stamping press is a piece count. EDGEBIC does not force one metric on both. It lets each work center capture the quantity that fits, then derives the other so the plan and the reports always have a full picture.
+Some operations are naturally timed and some are naturally counted. A long paint cure is an elapsed clock; a stamping press is a piece count. EDGEBIC does not force one metric on both. The terminal captures both at every machine, you record the side that fits the work, and the other derives so the plan and the reports always have a full picture.
 
 ## The Effective Rate
 
 The conversion hinges on one number, the effective rate:
 
 ```
-effective rate (pieces/hour) = (pieces per unit / cycle time) x work center efficiency factor
+effective rate (pieces/hour) = pieces per unit / cycle time
 ```
 
-The pieces-per-unit and cycle time come from the routing step; the efficiency factor comes from the work center. Once you have the rate, both directions follow:
+The pieces-per-unit and cycle time both come from the routing step that runs at the machine, which is where piece-rate math lives rather than on the work center record. Once you have the rate, both directions follow:
 
 - Pieces = hours x rate
 - Hours = pieces / rate
 
 So a step running at 7.14 pieces per hour turns a logged 6 hours into roughly 43 pieces, or a logged 43 pieces into roughly 6 hours. The operator captures one; the system supplies the other.
 
-## Hours-Primary, Pieces-Primary, and Both
+## Hours-Led, Pieces-Led, and Both Recorded
 
-Each work center has an entry mode that decides which side the operator drives:
+Which side leads is a convention a shop adopts per operation, not a per-machine setting:
 
-| Mode | Operator captures | System derives |
+| Convention | You record | The system derives |
 |---|---|---|
-| Hours-primary | Elapsed run clock | Pieces from hours x rate |
-| Pieces-primary | Tap-to-increment counters | Hours from pieces / rate |
-| Both | Each entered independently | Variance between the two |
+| Hours-led | Elapsed run clock | Pieces from hours x rate |
+| Pieces-led | Tap-to-increment counters | Hours from pieces / rate |
+| Both recorded | Each entered independently | Nothing; the gap is the signal |
 
-Hours-primary suits work where time is the honest metric and a piece count is a byproduct. Pieces-primary suits work where the count is what matters and the time is inferred. Both mode is for operations where you want to capture each directly and measure the gap, which is useful input for performance analysis. The mode is a work center setting, so an operator never has to think about it: they simply tap what the screen asks for.
+Hours-led suits work where time is the honest metric and a piece count is a byproduct. Pieces-led suits work where the count is what matters and the time is inferred. Recording both suits operations where you want each captured directly and the gap measured, which is useful input for performance analysis.
+
+The terminal does not need to know which you have chosen. It captures both at every machine: during a run the elapsed clock advances on its own, and the good and scrap counters are there to tap. The convention asserts itself when the day is logged, through the **Auto Calc Hours** control in the daily actuals grid. Ticked, it derives the missing side from the rate; unticked, both columns become independent. The concept is covered in [what is an actual entry mode](/blog/what-is-an-actual-entry-mode-in-shop-floor-tracking).
 
 ## Why the Rate Is Frozen at Punch Open
 
@@ -70,8 +72,8 @@ The effective rate is snapshotted onto each punch the moment it opens. This matt
 
 If a routing step has no cycle time or no pieces-per-unit, there is nothing to compute a rate from, and EDGEBIC records the rate as zero rather than inventing one. The consequences are honest:
 
-- On an **hours-primary** work center this is fine. Hours are the primary metric and the derived pieces simply stay at zero until the routing carries a real cycle time.
-- On a **pieces-primary** work center it means the piece counter is decoupled from any rate, so the operator enters piece counts manually and no hours are derived from them.
+- Where hours are the recorded truth this is fine. Hours are measured rather than calculated, and the derived pieces simply stay at zero until the routing carries a real cycle time.
+- Where pieces are the recorded truth it means the counts are decoupled from any rate. They are still captured and kept, but no hours are derived from them.
 
 The fix is always the same: give the routing step a real cycle time and pieces-per-unit, and conversion resumes on new punches. Nothing about the frozen historical punches changes.
 
@@ -88,14 +90,14 @@ The gap is not an error; it is the story. A 1.5-hour quality hold ate into the p
 
 ## A Worked Example
 
-Two work centers, one job, different modes.
+Two work centers, one job, two conventions.
 
-**Paint-Booth-3 (hours-primary).** The operator runs the elapsed clock across a two-day cure with a mid-job pause. The day's productive hours roll up from run time. Because the mode is hours-primary and no counters were tapped, derived pieces stay at zero unless a rate and count apply, and the planner reads the operation by its hours.
+**Paint-Booth-3, hours-led.** A cure has no meaningful piece count, so the elapsed clock across a two-day run with a mid-job pause is the number that matters. The day's productive hours roll up from run time, no counters were tapped, and the planner reads the operation by its hours.
 
-**Press-2 (pieces-primary).** The operator taps a piece counter as parts come off. With an effective rate of 120 pieces per hour, a logged 600 pieces derive to 5 hours. The plan gets both the count the operator captured and the hours the system computed.
+**Press-2, pieces-led.** The operator taps a piece counter as parts come off. With an effective rate of 120 pieces per hour, a logged 600 pieces derive to 5 hours. The plan gets both the count that was captured and the hours the system computed.
 
 Same platform, same rollup, two honest metrics, and neither operator did any conversion math.
 
 ## The Bottom Line
 
-Hours and pieces are two views of the same work, and EDGEBIC converts between them with an effective rate drawn from the routing and the work center. The entry mode decides which side an operator captures directly, the other side derives, and the rate is frozen onto each punch so history stays accurate through later routing edits. A zero rate is recorded honestly rather than faked, and the observed rate on a finished day surfaces real variance against the standard. That is how a timed machine and a counted machine feed one clean model for [finite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling). Explore the whole loop in the [shop floor execution guide](/blog/edgebic-shop-floor-guide), or see the platform at [EDGEBIC](/edgebic).
+Hours and pieces are two views of the same work, and EDGEBIC converts between them with an effective rate drawn from the routing step. You record the side your shop genuinely counts, the other side derives, and the rate is frozen onto each punch so history stays accurate through later routing edits. A zero rate is recorded honestly rather than faked, and the observed rate on a finished day surfaces real variance against the standard. That is how a timed machine and a counted machine feed one clean model for [finite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling). Explore the whole loop in the [shop floor execution guide](/blog/edgebic-shop-floor-guide), or see the platform at [EDGEBIC](/edgebic).

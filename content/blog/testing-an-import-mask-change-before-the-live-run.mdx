@@ -1,0 +1,111 @@
+---
+title: "Testing an Import Mask Change Before the Live Run"
+description: "A five-step way to prove an import mask edit before it touches real data: a ten-row slice, updates off, the count check, the hour arithmetic, then the full file."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - testing an import mask
+  - safe import mask change
+  - import dry run scheduling
+  - verifying a mask edit
+  - ten row import test
+  - EDGEBIC import verification
+targetPhrase: "testing an import mask"
+wordCount: 1610
+readingTime: 8
+faqQuestions:
+  - question: "How do you test an import mask change safely?"
+    answer: "Cut the export down to about ten rows, run the edited mask against that slice with updates turned off, and read the four outcome counts. Rows that should match existing records must come back Reused. Then do the arithmetic on one job you know by heart. Only after both checks pass do you turn updates on and run the full file."
+  - question: "What does it mean if every row comes back Created on a test?"
+    answer: "It means the key column moved. Products match on product name, work centers on name, orders on their reference, so a slice of existing records returning Created rather than Reused says the mapping is no longer pointing at the identifier. Running the full file at that point would duplicate the catalog rather than update it, which is exactly what the ten-row test exists to prevent."
+  - question: "Can you test a routing mask the same way?"
+    answer: "Not on a live product, because a routing import wipes and recreates each end product's steps every run. Test a routing mask change against a scratch product name that appears nowhere else, or against one product you are willing to re-import from a known-good file afterward. The two-pass wiring still runs, so you can confirm the sequence chain came out right."
+qaQuestions:
+  - question: "We do not have a test database. Is a ten-row slice against the live one actually safe?"
+    answer: "With updates off, yes, for products, work centers, customers, and orders. Those imports reconcile by natural key, and with updates off a matching row comes back Reused and the existing record is left untouched. The only rows that change anything are genuinely new ones, which is why the test slice should be drawn from records you know already exist. Routings are the exception and need a scratch product, because their import always wipes and recreates the steps for each end product it touches. Actuals are the other one to think about, since the import overwrites the dates the file carries. Pick a job and a date you can verify afterward, or test on a job that is already complete. If your shop has the option of a separate database for this, use it, but the absence of one is not a reason to skip the test."
+  - question: "The edit is one column. Do we really need five steps for that?"
+    answer: "The five steps take about four minutes and two of them are reading numbers, so the honest answer is yes, and here is why the small edits deserve it most. Large changes get attention automatically. It is the single column remap that gets saved and run against 2,000 rows on a Friday, and column edits are where the silent failures live: a heading that now points at a different field, a unit that changed inside an unchanged heading, a key column nudged one row down in the mapping grid. None of those fail. They all produce a full run with zero errors and a schedule that is quietly wrong. The count check catches the key problem and the arithmetic check catches the unit problem, and between them they cover almost every way a one-column edit goes bad."
+---
+
+**Test an import mask change by running it against a ten-row slice with updates turned off, confirming that existing records come back Reused rather than Created, and checking the hour arithmetic on one job you know: only then run the full file.** The whole routine takes about four minutes, and it catches the failures that produce a clean run and a wrong schedule.
+
+EDGEBIC by User Solutions imports through saved masks, and mask edits are quick by design: you drag a column heading onto a field and save. Quick edits deserve a quick proof, because the dangerous import failures do not throw errors. They complete successfully with the wrong numbers.
+
+## Why a successful run proves nothing on its own
+
+Every row of an import comes back as exactly one of four outcomes: Created, Updated, Reused, or Failed. A result of 500 rows and 0 Failed feels like verification. It is not, because three of the most damaging mistakes produce exactly that result.
+
+- **The key column moved.** Every row is genuinely new to the system now, so every row is created. Zero failures, and a duplicated catalog.
+- **A unit changed inside an unchanged heading.** Standard time still parses, still lands in the right field, and is now sixty times too large. Zero failures.
+- **A value landed in the wrong field.** Quantity in a date field fails loudly, but hours in a setup field or the reverse imports cleanly. Zero failures.
+
+The counts and the arithmetic together catch all three, which is why the test is two checks rather than one.
+
+## The five steps
+
+**1. Cut the file to about ten rows.** Draw them from records you know already exist, not from new ones, because the point of the test is to see matching behavior. Keep the heading row.
+
+**2. Turn updates off.** With updates off, a row that matches an existing record comes back Reused and the record is left untouched. That is what makes this safe to run against live data: nothing is overwritten while you are checking the mapping.
+
+**3. Run it and read the counts.** For a slice of known-existing records you want Reused across the board. Anything else is the signal.
+
+| Result on a slice of existing rows | What it means |
+|---|---|
+| All Reused | The key column is mapped correctly. Continue. |
+| All Created | The key moved. Stop and fix the mapping. |
+| Mixed, unexpectedly | Some identifiers differ from what is stored. Check for a stray suffix or a trimmed prefix. |
+| Any Failed | Read the reason on the row. Usually a required cell is blank. |
+
+**4. Do the arithmetic on one job.** Take a part whose operations you know. Three operations at 0.25, 0.40, and 0.10 hours per piece with 1.5 hours of setup on the first, on an order of 200 pieces, totals `(0.25 + 0.40 + 0.10) x 200 = 150` run hours plus 1.5 setup, so 151.5. If the import produces that, units and field mapping are both right. If it produces 9,090 you are in minutes. If it produces roughly 2.5 a per-lot standard is being read as per-piece.
+
+**5. Turn updates on and run the full file.** Then read the counts once more, because the split between Created and Reused on the full file is its own useful signal.
+
+## The pre-flight gate you get for free
+
+Before any of this, one class of mistake is caught automatically. The mandatory field check runs against the mask configuration rather than the data, so if a required field is not mapped to any column, the run aborts before it opens the file. Nothing is imported, and the failure names the missing field.
+
+That covers the loud half of mask breakage: a required heading that got renamed cannot silently do damage. It does not cover a required field mapped to the wrong column, which is what step three exists for. The mandatory fields per entity type are listed in [which ERP fields EDGEBIC needs to schedule](/blog/which-erp-fields-edgebic-needs-to-schedule).
+
+## Routings need a different test
+
+Routings are the one import that cannot be tested against live data with updates off, because they do not reconcile row by row at all. Operations reference each other, so the import runs in two passes: pass one reads, validates, and buffers every row, and pass two groups by end product, sorts by sequence number, writes the steps, and wires the chain. To make that repeatable, each end product's steps are wiped and recreated once per run.
+
+So test a routing mask change one of two ways:
+
+- **Against a scratch product name** that appears nowhere else in your data. You get to confirm the two-pass wiring produced a connected chain, then delete it.
+- **Against one real product** you are willing to re-import from a known-good file immediately afterward.
+
+Two things make this less alarming than it sounds. Scheduled jobs are unaffected, because each carries a frozen snapshot of the routing it was planned with, so work in progress does not move. And re-importing the correct file restores the routing exactly, since the wipe-and-recreate is what makes routing imports consistent rather than cumulative. The one caveat is that a wipe regenerates the step identities, so a job you later switch to use the current routing picks up the recreated steps.
+
+The rule that catches most people here: keep all of one product's steps in one file. Split across two runs, the second run's wipe deletes the first run's steps.
+
+## Actuals need a chosen job
+
+Actuals overwrite the dates the file carries, which is what makes re-importing a corrected timesheet safe. For a test, that means picking your slice deliberately: use a job and dates you can verify afterward, or a job that is already complete so nothing in the live plan depends on the result. The related option that clears actuals on dates the file does not cover is the one to leave alone during a test. Details are in [importing ERP labor transactions as actuals](/blog/importing-erp-labor-transactions-as-actuals).
+
+## Stop on error, or continue
+
+One option shapes what a test tells you. By default a bad row is marked Failed with its reason recorded, and the run continues through the remaining rows, so one bad date never blocks 500 good ones. The alternative aborts the run on the first error.
+
+For a ten-row test, either is fine and continuing is more informative, because you see every problem in one pass rather than one at a time. For the full production run, continuing is almost always right: you want the 498 good rows in and a short list of the two to fix. The setting lives with the other per-mask options in [how to set import options for a mask](/blog/how-to-set-import-options-for-a-mask-in-edgebic).
+
+## Record what the test proved
+
+The proof from step three or four is the last field of a good change log line: "10 rows Reused" or "Job 4412 totals 151.5 hours". It takes five seconds to write and it is the sentence that answers the question in six months. The format is in [keeping a change log of import mask edits](/blog/keeping-a-change-log-of-import-mask-edits), and the fuller post-import pass is [the import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist).
+
+Bring a mask you are nervous about editing to [a working session](/contact-us). Running the ten-row test live is usually the moment the routine stops feeling like process and starts feeling like the obvious thing to do. The architecture is on the [EDGEBIC ERP integration page](/edgebic-erp-integration), and the engine the data feeds is on the [EDGEBIC product overview](/edgebic).
+
+<Accordion title="How do you test an import mask change safely?">
+Cut the export down to about ten rows, run the edited mask against that slice with updates turned off, and read the four outcome counts. Rows that should match existing records must come back Reused. Then do the arithmetic on one job you know by heart. Only after both checks pass do you turn updates on and run the full file.
+</Accordion>
+
+<Accordion title="What does it mean if every row comes back Created on a test?">
+It means the key column moved. Products match on product name, work centers on name, orders on their reference, so a slice of existing records returning Created rather than Reused says the mapping is no longer pointing at the identifier. Running the full file at that point would duplicate the catalog rather than update it, which is exactly what the ten-row test exists to prevent.
+</Accordion>
+
+<Accordion title="Can you test a routing mask the same way?">
+Not on a live product, because a routing import wipes and recreates each end product's steps every run. Test a routing mask change against a scratch product name that appears nowhere else, or against one product you are willing to re-import from a known-good file afterward. The two-pass wiring still runs, so you can confirm the sequence chain came out right.
+</Accordion>

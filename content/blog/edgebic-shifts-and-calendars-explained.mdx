@@ -2,7 +2,7 @@
 title: "Shifts, Holidays, and Calendars in EDGEBIC: The Plant Clock"
 description: "A production shift calendar drives every scheduling promise date. How shifts, holidays, downtime, and capacity overrides layer into available hours in EDGEBIC."
 published: 2026-07-24T12:00:00.000Z
-modified: 2026-07-24T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
 category: EDGEBIC Platform
 author: user-solutions
 cluster: edgebic-platform
@@ -32,12 +32,12 @@ qaQuestions:
   - question: "We work a normal 8-hour day but lose 45 minutes to a plant meeting on the first Monday of every month. Do I shrink the shift?"
     answer: "No, model it as a recurring partial plant holiday for the meeting window. Shrinking the shift would cost you 45 minutes every single day and it would hide the reason, so a year later nobody remembers why the day is short. A partial holiday costs each shift only its own overlap with the window, applies plant-wide from one record, and repeats automatically once you tick recurring. The day shift drops from 8 hours to 7.25 per machine on those Mondays and the night shift is untouched, which matches what actually happens."
   - question: "Our schedule promises dates that assume we run at full clock all week, and we never do. What is the honest way to leave headroom?"
-    answer: "Put the headroom into the calendar rather than hoping the plan absorbs it. Three approaches work and all three are honored identically by the scheduler and the dashboards: enter shift hours net of the time you reliably lose, record recurring maintenance as downtime so it is subtracted before the instance multiplier, or use per-day capacity overrides on the specific days that differ. What does not work is planning to 100% of the theoretical clock and treating the shortfall as a surprise every Friday. A plan with no recovery room propagates its first breakdown through every downstream date."
+    answer: "Put the headroom into the calendar rather than hoping the plan absorbs it. Three approaches work and all three are honored identically by the scheduler and the dashboards: enter shift hours net of the time you reliably lose, enter a partial plant holiday for a dated plant-wide interruption, or use per-day capacity overrides on the specific days and machines that differ. What does not work is planning to 100% of the theoretical clock and treating the shortfall as a surprise every Friday. A plan with no recovery room propagates its first breakdown through every downstream date."
 ---
 
 **A production shift calendar is the set of rules that tells a finite scheduler when work is possible, and in EDGEBIC it resolves into a single number: available hours for one work center, one shift, one date.** Everything visible downstream (Gantt bars, utilization percentages, promised delivery dates) is that number, computed thousands of times. Get the calendar wrong and every promise inherits the error.
 
-[EDGEBIC by User Solutions](/edgebic) builds the calendar from four layers that stack in a fixed order: shifts, holidays, downtime, and planner overrides. This article explains what each layer is for and how they combine. The click-by-click configuration is in [how to set up shifts, holidays, and downtime](/blog/how-to-set-up-shifts-holidays-downtime-in-edgebic), and the exact arithmetic is in [how EDGEBIC resolves capacity day by day](/blog/how-edgebic-resolves-capacity-day-by-day).
+[EDGEBIC by User Solutions](/edgebic) builds the calendar from four layers that stack in a fixed order: shifts, holidays, downtime, and planner overrides. This article explains what each layer is for, how they combine, and which of them you can actually configure on a screen today. The click-by-click setup is in [the calendar setup guide](/blog/how-to-set-up-shifts-holidays-downtime-in-edgebic), and the exact arithmetic is in [how EDGEBIC resolves capacity day by day](/blog/how-edgebic-resolves-capacity-day-by-day).
 
 ## Layer 1: The Shift
 
@@ -83,25 +83,29 @@ A closure is not always plant-wide, and the scheduler recognizes three levels th
 
 The hierarchy resolves in the obvious direction. A whole-day plant holiday wins outright: no work center gets an allocation that day regardless of what the other two levels say. Below that, a shift-scoped closure blocks one shift while the others keep working, and a machine-specific closure takes one work center out while its neighbors continue.
 
-In the current release the plant level is the one with its own screen. Shift-scoped closures and machine-specific closure records are honored by the engine, and the practical way to model them today is a partial plant holiday for anything genuinely plant-wide, and a per-day capacity override set to zero for a single machine on a single date. The override version is arguably better anyway: it carries a reason and shows as overridden in the grid, so the plan explains itself later.
+**Only the plant level has a screen.** That table describes what the engine understands, not what you can create. Shift-scoped and machine-specific closure records are honored if they exist, but the current release gives you no way to enter them, so treat the plant holiday page as the one closure surface you have. Anything narrower than the whole plant is a per-day capacity override: set the affected machine, shift, and date to reduced hours or to zero, with a reason. For a single machine's teardown day that is the whole procedure, and it leaves a better audit trail than a closure record would, because the override shows in the grid with the reason attached.
 
 ## Layer 3: Downtime
 
-Downtime is unavailability inside a shift rather than instead of it: a weekly lubrication window, a recurring PM slot, a one-off bearing replacement. It subtracts hours from the shift without eliminating the shift.
+Downtime is unavailability inside a shift rather than instead of it: a lubrication window, a PM slot, a one-off bearing replacement. It subtracts hours from the shift without eliminating the shift, and the engine treats it exactly that way: the hours come off the per-machine shift duration before the multipliers, which is why an hour of PM on a three-instance work center removes three hours of capacity, not one. Maintenance on multi-machine resources is always more expensive than the clock suggests.
 
-Recurring downtime fires on every matching weekday. One-off downtime fires on its specific date. Like a partial holiday, downtime is subtracted from the per-machine shift duration before the multipliers, which is why an hour of Wednesday PM on a three-instance work center removes three hours of capacity, not one. Maintenance on multi-machine resources is always more expensive than the clock suggests.
+That is the concept, and the capacity effect is real. What does not exist in the current release is a downtime record you configure on its own screen. Standalone downtime events and shift-scoped closures are honored by the scheduling engine, but there is no UI for creating them, so the practical way to put maintenance into the calendar today is one of three:
 
-Shift-scoped closures and standalone downtime records are honored by the scheduling engine. The current release has no dedicated screen for configuring them, so the practical way to model the same situations today is a partial plant holiday for anything plant-wide, and a per-day capacity override for anything specific to one machine on one date.
+- **Net it into the shift.** If the loss is genuinely every week, define the shift hours net of it. Simple, permanent, and it never drifts.
+- **A partial plant holiday** for a dated, plant-wide interruption. Note that the recurring flag matches the same month and day each year, so it fits an annual event rather than a weekly one.
+- **A per-day capacity override** for anything specific to one machine on one date: type the reduced hours, or zero, and add the reason.
+
+The override version is arguably the better record anyway. It carries a reason and shows as overridden in the grid, so six months later the plan still explains why that Wednesday was short.
 
 ## Layer 4: Capacity Overrides
 
 The first three layers describe the rules. The fourth lets a planner state an answer directly.
 
-A **per-day capacity override** sets the effective hours for one work center, one shift, one date. It carries a reason, it is flagged as overridden in the grid, and it replaces the formula entirely for that cell. Approved Saturday overtime, a half-day PM window, a temporarily de-rated machine: all of them are one typed number rather than a calendar edit.
+A **per-day capacity override** sets the effective hours for one work center, one shift, one date. It carries a reason, it is flagged as overridden in the grid, and it replaces the formula entirely for that cell. Approved Saturday overtime, a half-day PM window, a temporarily de-rated machine, a single machine closed for its annual teardown: all of them are one typed number rather than a calendar edit. This is the workhorse of the fourth layer and the one you will actually use.
 
-A **date-range override** does the same job for a period. Give it a total hours budget for a window and the engine spreads it across the available days and shifts inside that window. A retooling week that can only guarantee 60 machine-hours is one record, not five daily edits.
+A **date-range override**, which spreads a total hours budget across a period, also exists in the engine, but it has no visible entry point in the current release. Per-day overrides cover the day-to-day cases, including a retooling week, which is five typed numbers rather than one budget.
 
-The two combine in a strict order, and the more specific instruction wins:
+Resolution runs in a strict order, and the more specific instruction wins:
 
 ```
 1. per-day override for this work center, shift, and date
@@ -151,7 +155,7 @@ This is also why the calendar is where a new implementation starts. [The greenfi
 
 ## Keeping It Honest
 
-Standard finite-capacity practice, and the reasoning behind buffer management in the [Theory of Constraints and APS literature](https://www.ascm.org), is that a resource planned to 100% of the theoretical clock has no recovery room: the first breakdown propagates through every downstream date. Express the headroom in the calendar rather than in hope. Honest shift hours, recorded downtime, and per-day overrides are all read identically by the scheduler and the dashboards.
+Standard finite-capacity practice, and the reasoning behind buffer management in the [Theory of Constraints and APS literature](https://www.ascm.org), is that a resource planned to 100% of the theoretical clock has no recovery room: the first breakdown propagates through every downstream date. Express the headroom in the calendar rather than in hope. Honest shift hours, partial plant holidays, and per-day overrides are all read identically by the scheduler and the dashboards.
 
 A few standards that hold up in practice:
 
@@ -164,4 +168,4 @@ A few standards that hold up in practice:
 
 ## Next
 
-Build the calendar with [the step-by-step setup guide](/blog/how-to-set-up-shifts-holidays-downtime-in-edgebic). Understand exactly how the layers resolve in [how EDGEBIC resolves capacity day by day](/blog/how-edgebic-resolves-capacity-day-by-day). Then read [the shift and calendar mistakes](/blog/shift-and-calendar-mistakes-edgebic) that produce right-looking, wrong plans. If a job has landed somewhere it should not, [a job scheduled on a holiday](/blog/job-scheduled-on-a-holiday-edgebic) explains the usual cause.
+Build the calendar with [the step-by-step setup guide](/blog/how-to-set-up-shifts-holidays-downtime-in-edgebic), which covers the shift and plant-holiday screens. Understand exactly how the layers resolve in [how EDGEBIC resolves capacity day by day](/blog/how-edgebic-resolves-capacity-day-by-day). Then read [the shift and calendar mistakes](/blog/shift-and-calendar-mistakes-edgebic) that produce right-looking, wrong plans. If a job has landed somewhere it should not, [a job scheduled on a holiday](/blog/job-scheduled-on-a-holiday-edgebic) explains the usual cause.

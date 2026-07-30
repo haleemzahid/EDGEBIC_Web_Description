@@ -1,0 +1,63 @@
+---
+title: "What Is Per-Instance Capacity in Scheduling?"
+description: "Per-instance capacity is one machine's share of a work center's shift hours. Learn how the scheduler uses it to decide whether a machine can take another job."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - per instance capacity
+  - machine share of shift hours
+  - instance capacity check
+  - work center capacity per machine
+  - instance availability scheduling
+  - capacity divided by instances
+targetPhrase: "per instance capacity"
+wordCount: 1130
+readingTime: 6
+faqQuestions:
+  - question: "What is per-instance capacity?"
+    answer: "Per-instance capacity is one machine's share of a work center's total capacity in a given shift and date, calculated as the work center's shift capacity divided by its number of machines. The scheduler uses it as the ceiling when deciding whether a particular machine can accept more hours, so a single machine can never be booked beyond the share it actually owns."
+  - question: "Why divide capacity rather than tracking each machine separately?"
+    answer: "Because a work center's capacity is computed once for the whole resource, from shift duration multiplied by machine count and utilization, minus downtime and any partial holiday. Dividing that figure back out gives each machine a consistent share that automatically reflects every adjustment already applied. It also means a change to utilization or a downtime entry flows through to every machine without being re-entered per machine."
+  - question: "Does per-instance capacity change when a machine count is fractional?"
+    answer: "Yes, and that is the point of allowing fractions. A work center with two and a half machines has its total capacity computed on that basis, and the share works out proportionally. A half machine is the way to model a unit that is only available part of the time or runs at half rate, without pretending it is a whole machine that is idle half the shift."
+qaQuestions:
+  - question: "A work center has three machines and eight hours each, but a twelve-hour job would not fit on one of them. Why can it not use the whole twenty-four?"
+    answer: "Because the twenty-four hours are three separate eight-hour shares, not one twenty-four-hour pool. A job placed on a single machine is bounded by that machine's per-instance capacity, and one machine cannot run twelve hours in an eight-hour shift no matter how idle its neighbors are. There are two honest ways forward. Let the scheduler split the hours across machines, which is what load balancing does, and the twelve hours clear inside the shift. Or let the operation span shifts, in which case it stays on one machine and finishes the following day. Which you want depends on whether the operation can physically be shared."
+  - question: "We raised utilization from fifty to eighty percent and per-instance capacity barely moved. What happened?"
+    answer: "Check whether downtime or a partial holiday is subtracted before the multipliers. The capacity formula takes the shift duration, removes downtime and any partial-holiday overlap, then multiplies by machine count and utilization. If most of the shift is already being removed as downtime, a higher utilization percentage is applied to a much smaller base and the gain is small. Look at the work center's downtime entries for that day first, because a recurring maintenance window is the usual explanation for a utilization change that does not show up where you expected."
+---
+
+**Per-instance capacity is one machine's share of a work center's capacity in a given shift and date, obtained by dividing the work center's shift capacity by its number of machines.** It is the ceiling the scheduler applies when deciding whether a specific machine can take on more hours. [EDGEBIC by User Solutions](/edgebic) computes the work center's figure once and derives each machine's share from it, so every adjustment applied at the work center level flows through automatically.
+
+## How it works
+
+A work center's capacity for one shift on one date is computed from a single formula. The shift's duration has downtime and any partial-holiday overlap subtracted, then the remainder is multiplied by the machine count and by the work center's utilization percentage. That produces one number for the whole resource, and it is stored on the capacity slot for that combination of work center, shift, and date.
+
+Per-instance capacity is that number divided by the machine count. If a work center has three machines and its shift capacity is twenty-four hours, each machine's share is eight.
+
+The share matters when the scheduler allocates. Before placing hours on a machine, it checks how much that machine has already consumed and compares it against the share. If the remaining room is effectively zero, the machine is skipped and the next one is considered. This is what keeps a single machine from being booked beyond its physical day even when its neighbors are idle, which would otherwise be an easy mistake for a pooled capacity number to allow.
+
+How hours are then distributed across the machines depends on the work center's settings. Load balancing spreads the hours evenly so the machines finish together. Sequential filling packs one machine before moving to the next. A one-job-per-day rule dedicates a machine to a single job for the whole day regardless of how few hours it uses. In all three cases the per-instance share is still the ceiling; only the distribution differs.
+
+Machine counts can be fractional, which is how you model a unit that is only partly available or runs at reduced rate. The total capacity reflects the fraction and so does each share, which is more honest than declaring a whole machine and then trying to hold half of it back.
+
+## A concrete example
+
+Think of a taxi rank rather than a taxi company. The rank has three cars and each driver works an eight-hour day, so the rank offers twenty-four driver-hours. That total is a useful planning number, but you cannot hand one passenger a twelve-hour ride and expect a single car to deliver it inside a shift. One car owns eight of those hours and no more.
+
+Now put a job on the rank. A four-hour job fits on any car. A twelve-hour job does not fit on one car at all, and the dispatcher has two choices: split it across cars if the work can be shared, or let it run past the end of the shift and finish tomorrow on the same car.
+
+Change one thing. A car goes in for a two-hour service that morning. The rank's total drops accordingly and so does that car's share. Nobody has to re-enter anything per car, because the service was recorded once against the rank and the shares are derived from the total.
+
+That is exactly how a work center and its machines behave. One capacity number for the resource, divided into shares, and every adjustment applied once.
+
+## How EDGEBIC uses it
+
+The share is derived inside the allocator on every scheduling run, so it is always current with the work center's configuration. The individual machine it applies to has its own glossary entry in [machine instance](/blog/what-is-a-machine-instance-in-scheduling), and the remaining room on the whole resource is covered in [available capacity](/blog/what-is-available-capacity-in-scheduling).
+
+How the total is derived, including where downtime and partial holidays are subtracted relative to the multipliers, is set out in [how capacity is computed for a work center, shift, and day](/blog/how-capacity-is-computed-for-a-work-center-shift-and-day). The multiplier that most often surprises people has its own entry in [work center utilization percentage](/blog/what-is-work-center-utilization-percentage-in-scheduling).
+
+Which machine actually receives the hours, and why a job tends to stay on the machine it started on, is walked through in [how EDGEBIC picks an instance: load balancing vs one per day](/blog/how-edgebic-picks-an-instance-load-balancing-vs-one-per-day). Setting the count and the percentage together is covered in [how to configure instances and utilization in EDGEBIC](/blog/how-to-configure-instances-and-utilization-in-edgebic). For the wider vocabulary, see the [manufacturing glossary](/blog/manufacturing-glossary), and to see capacity shares inside a live plan, explore [EDGEBIC](/edgebic).

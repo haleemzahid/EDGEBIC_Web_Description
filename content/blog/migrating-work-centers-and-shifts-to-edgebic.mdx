@@ -2,7 +2,7 @@
 title: "Migrating Your Work Center and Shift Definitions to EDGEBIC"
 description: "Migrate work centers to EDGEBIC through an import mask, then re-create shifts, holidays, and calendars in the app and verify capacity against RMDB before you trust a schedule."
 published: 2026-08-03T12:00:00.000Z
-modified: 2026-08-03T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
 category: Upgrade & Comparison
 author: user-solutions
 cluster: edgebic-migration
@@ -22,10 +22,10 @@ faqQuestions:
   - question: "Do shifts and calendars import the same way work centers do?"
     answer: "Work centers migrate as data through an import mask, while shifts, holidays, and calendars are configured directly in EDGEBIC. There are usually only a handful of shift patterns and a holiday list per plant, so re-creating them in the app is quick, and it lets you confirm each one against what RMDB assumed. After setup, you verify that EDGEBIC's capacity numbers match your current system before trusting any schedule."
   - question: "Why verify capacity after migrating work centers?"
-    answer: "Capacity is the product of shift hours, instances, and efficiency, so a single mismatched calendar or instance count shifts every date on the schedule. Verifying capacity after migration catches those differences before they can confuse a date comparison. You set the shifts, holidays, and per-work-center calendars, then check the daily and weekly capacity figures against what RMDB showed, and reconcile any gap before you schedule against the new model."
+    answer: "Capacity is the product of shift hours and instances, so a single mismatched calendar or instance count shifts every date on the schedule. Verifying capacity after migration catches those differences before they can confuse a date comparison. You set the shifts, holidays, and per-work-center calendars, then check the daily and weekly capacity figures against what RMDB showed, and reconcile any gap before you schedule against the new model."
 qaQuestions:
   - question: "Our work centers have multiple identical machines and some run at reduced efficiency. Will EDGEBIC model that, and how does it come across in the migration?"
-    answer: "Yes, EDGEBIC models both, and both come across as work center attributes you map or set. Multiple identical machines are instances: a work center with three of the same machine has three instances, and the scheduler load-balances or dedicates across them depending on the flags you set. Reduced efficiency is a factor on the work center that stretches run times accordingly. In the migration, you map your instance count and any capacity or rate columns in the work center import mask, and you set the efficiency and behavior flags on the work center in EDGEBIC. The one thing to check carefully afterward is capacity: because effective capacity is shift hours times instances times efficiency, you want to confirm that a work center with three instances at reduced efficiency reports the same available hours EDGEBIC and RMDB both expect, before you trust a date."
+    answer: "Yes, EDGEBIC models both, though they arrive by different routes. Multiple identical machines are instances: a work center with three of the same machine has three instances, and the scheduler load-balances or dedicates across them depending on the flags you set. Reduced speed is not an editable field on the work center dialog, so it is modeled where the engine reads it: put interchangeable machines of different speeds into a work center group, where each member row carries its own factor, or put the honest per-piece time on the routing step for a dedicated machine. In the migration you map instance counts and the capacity, rate, and flag columns on the work center import mask, then set up the pools. The one thing to check carefully afterward is capacity: because effective capacity is shift hours times instances, confirm that a three-instance work center reports the available hours both systems expect before you trust a date."
   - question: "We have a bottleneck cell we want the scheduler to protect. Does that survive the migration, or do we set it up fresh?"
     answer: "You set it up on the work center in EDGEBIC, and it is a small, deliberate step rather than something to import. Mark the bottleneck work center as a bottleneck, and EDGEBIC's Theory of Constraints anchor scheduling builds the plan around it, scheduling feeding operations backward to it and the rest forward from it. In the migration this is a flag you set once on the relevant work center after the import, not a column you have to have carried out of RMDB. It is worth doing early, because a correctly flagged bottleneck is what makes the migrated schedule reflect how the cell actually behaves, and it gives your capacity comparison a meaningful constraint to test."
 ---
@@ -57,13 +57,13 @@ A few behavior settings are not spreadsheet columns but flags you set on the wor
 
 In EDGEBIC, a shift is a named pattern of daily hours: a Day Shift that runs 08:00 to 16:00 with a break, for example, defined per day of the week. You re-create your shift patterns to match RMDB, then attach them to the work centers that run them, using global shifts for the common case and per-work-center overrides where a machine keeps different hours.
 
-Holidays and downtime work the same way. Set the plant holiday list, and add any per-work-center holidays or downtime events where a specific machine is out while the rest of the plant runs. The result is a calendar per work center that says exactly when it is available.
+Holidays and maintenance work the same way, with one caveat about where they go. Set the plant holiday list on the holiday screen, then use per-day capacity overrides wherever a specific machine or a single shift is out while the rest of the plant runs, since the current release has no per-work-center holiday or downtime screen. The result is a calendar per work center that says exactly when it is available.
 
 Because this is configuration rather than a bulk import, it is quick, and it is the moment to get capacity right. Every hour EDGEBIC schedules against comes from these definitions, so a missing holiday or a wrong shift length is the single most common source of a date that does not match RMDB.
 
 ## Verify capacity before you compare dates
 
-Here is the rule that saves migrations: verify capacity before you read a single schedule date. Effective capacity is shift hours times instances times efficiency, so any one of those being off shifts every downstream date. If you compare EDGEBIC's dates to RMDB's before confirming capacity, you will chase date differences that are really just a calendar gap.
+Here is the rule that saves migrations: verify capacity before you read a single schedule date. Effective capacity is shift hours times instances, so either one being off shifts every downstream date. If you compare EDGEBIC's dates to RMDB's before confirming capacity, you will chase date differences that are really just a calendar gap.
 
 So the order is: set the shifts, holidays, and per-work-center calendars, then check EDGEBIC's daily and weekly capacity figures against what your current system shows, work center by work center. Reconcile any difference at the capacity level first. Only then does a date comparison mean anything. This is why the capacity check is a required step in [planning an EDGEBIC pilot on one cell](/blog/planning-an-edgebic-pilot-on-one-cell), and it is the difference between finite capacity scheduling that you trust and one you second-guess. The underlying idea is covered in [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling).
 
@@ -73,8 +73,8 @@ A shop migrates its CNC cell: five work centers, two of them with multiple insta
 
 1. **Import work centers.** The planner exports the five work centers, maps the name, capacity, rate, and instance columns in one mask, and imports. The mill comes in with three instances.
 2. **Set flags.** They mark the mill as the bottleneck so it anchors the schedule, and leave the others as standard.
-3. **Build the calendar.** They re-create the Day Shift pattern, attach it to the five work centers, and add the plant holiday list plus a two-day downtime on the grinder for planned maintenance.
-4. **Verify capacity.** They compare EDGEBIC's weekly available hours per work center against RMDB. The mill matches. The grinder is short by two shifts, which traces to the downtime, exactly as intended. One number is off on a second work center, and they correct an instance count.
+3. **Build the calendar.** They re-create the Day Shift pattern, attach it to the five work centers, add the plant holiday list, and zero the grinder for two days with per-day capacity overrides for planned maintenance.
+4. **Verify capacity.** They compare EDGEBIC's weekly available hours per work center against RMDB. The mill matches. The grinder is short by two shifts, which traces to the maintenance overrides, exactly as intended. One number is off on a second work center, and they correct an instance count.
 5. **Schedule and compare.** Now, with capacity confirmed, they schedule the cell and compare dates. The differences that remain are real, not calendar noise.
 
 Capacity was verified before any date was read, so the date comparison was clean.
@@ -84,7 +84,7 @@ Capacity was verified before any date was read, so the date comparison was clean
 - **Name drift.** Routings link to work centers by name. Keep work center names identical between your work center file and your routing file, or the steps will not resolve.
 - **Missing instances.** A work center imported with one instance when it has three reports a third of its real capacity. Confirm instance counts against the floor.
 - **Forgotten holidays.** A single missing holiday moves every date after it. Set the full holiday list before comparing dates.
-- **Efficiency assumptions.** If RMDB modeled a work center at reduced efficiency, set the same factor in EDGEBIC so run times match.
+- **Efficiency assumptions.** If RMDB modeled a work center at reduced efficiency, reproduce that in EDGEBIC where the engine reads it: a factor on that machine's row in a work center group, or an honest per-piece time on the routing step.
 
 ## The takeaway
 

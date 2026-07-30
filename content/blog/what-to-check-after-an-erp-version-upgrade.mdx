@@ -1,0 +1,140 @@
+---
+title: "What to Check in EDGEBIC After an ERP Version Upgrade"
+description: "The checks to run after an ERP upgrade breaks or changes an export: column headings, units, date formats, row counts, and how to prove the schedule still reflects reality."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - ERP upgrade scheduling integration
+  - ERP version upgrade import mask
+  - ERP export changed after upgrade
+  - EDGEBIC ERP upgrade checklist
+  - production scheduling after ERP upgrade
+  - import mask remapping
+targetPhrase: "ERP upgrade scheduling integration"
+wordCount: 1690
+readingTime: 8
+faqQuestions:
+  - question: "Does an ERP version upgrade break the EDGEBIC integration?"
+    answer: "Almost never, because there is nothing installed inside the ERP to break. EDGEBIC reads exported files through saved import masks, so the only thing an upgrade can disturb is the shape of an export: a renamed heading, a new column, a changed date or number format. The fix is remapping one or two rows in a mask, not rebuilding an interface."
+  - question: "How long should post-upgrade verification take?"
+    answer: "About an hour for a normal point release and half a day for a major version. The work is exporting the same four files you always export, running each mask on a ten-row slice, comparing the result counts against the last known-good run, and then scheduling one job you can verify by hand. Most of that hour is reading counts, not fixing anything."
+  - question: "What is the single most dangerous post-upgrade change?"
+    answer: "A silent unit change on a time column. A renamed heading fails loudly and a new column is visible, but a standard time that switches from minutes to hours or from per-lot to per-piece imports without any error and quietly multiplies or divides every duration in the schedule. Always reconcile one known job's total hours before trusting a post-upgrade load."
+qaQuestions:
+  - question: "Our ERP vendor is pushing a major release next month and IT wants to know what they owe us. What do we actually ask for?"
+    answer: "Ask for two things and nothing else. First, a copy of each of your four standard exports produced from the upgraded system, in the same file format you use today, before the upgrade reaches production. Second, thirty minutes of a functional consultant's time in the week after go-live in case a report definition needs re-saving. You do not need an integration project, a test connection, credentials, or a migration window, because nothing lives inside the ERP. If IT can hand you those sample files a week early, you can remap and verify every mask against the new exports while the old system is still running, and the day the upgrade lands your Monday routine is unchanged."
+  - question: "We upgraded, the import ran with zero failures, and a week later the schedule was clearly wrong. How did that pass?"
+    answer: "Zero failures means every row parsed, not that every value was correct. The usual culprit is a format or unit change that is still perfectly valid data. A run time column that was minutes and became hours imports cleanly and inflates every operation by sixty. A date format that flipped day and month imports cleanly and moves due dates by weeks for any day under the thirteenth. Both are invisible in the four outcome counts. The check that catches them is arithmetic on one job you know: pick a job whose routing you can total on paper, add its imported operation hours, and confirm the number matches. Two minutes of arithmetic finds what a clean import log cannot."
+---
+
+**After an ERP version upgrade, nothing inside EDGEBIC needs to change, because nothing was installed inside the ERP in the first place: verify that each export still produces the same column headings, the same units, and the same date format, run every saved import mask on a small slice, and reconcile one job's hours by hand before you schedule.** That is the whole post-upgrade routine, and for a point release it takes about an hour.
+
+EDGEBIC by User Solutions reads ERP data through saved Excel, CSV, and database import masks rather than a certified connector, and that architecture is exactly why an upgrade is a small event here. There is no bundle to promote, no script to re-version, no API contract to renegotiate. The only surface an upgrade can touch is the shape of the files you export, and a file's shape is something you can look at.
+
+## Why the blast radius is small
+
+A conventional integration couples two systems at the code level. When one side moves, the other has to be rebuilt, retested, and redeployed, and the work usually lands on whoever is least available. The [reason EDGEBIC connects to every ERP the same way](/blog/why-edgebic-connects-to-every-erp-the-same-way) is that a file is a far more stable interface than a code surface.
+
+Three things follow for an upgrade:
+
+- **Nothing to promote.** Your sandbox-to-production process does not carry any scheduling component, so the upgrade path is unaffected.
+- **Nothing to authenticate.** No integration user exists, so no credential expires or needs re-granting under new security defaults.
+- **Nothing to schedule around.** Your last export is still a valid file. If the upgrade runs long, you schedule from Friday's data rather than not scheduling at all.
+
+What can change is real, though, and it is worth being systematic about it.
+
+## The four things an upgrade actually changes
+
+| Change | How it shows up | Severity |
+|---|---|---|
+| A heading was renamed | The mask cannot find the column; the run refuses to start or the field imports empty | Loud, easy |
+| A column was added or moved | Values land in the wrong field, or a new column is simply ignored | Loud if wrong, silent if ignored |
+| A unit changed | Nothing errors; every duration is wrong by a constant factor | Silent, dangerous |
+| A date or number format changed | Rows fail, or worse, parse into the wrong date | Mixed |
+
+The first two are found by opening the file. The last two are found only by arithmetic. Plan your hour accordingly: ten minutes looking, fifty minutes checking.
+
+## Check 1: open the new export next to the old one
+
+Before you run anything, export the same four files you always export (items, work centers, routings, open work orders) from the upgraded system and put a new file beside its predecessor.
+
+Compare the heading row, in order. You are looking for three specific things:
+
+1. **Renamed headings.** A mask maps by heading, so a rename is a break. It is also the easiest repair in the whole list.
+2. **New columns inserted in the middle.** These shift everything to their right. If a mask ever relied on position rather than heading, this is where it bites. The general handling is in [handling an ERP export that changed column order](/blog/handling-an-erp-export-that-changed-column-order).
+3. **Columns that disappeared.** A dropped column is not always a problem: if it fed an optional field, the import still runs and simply stops updating that field.
+
+Check the row count too. An upgrade sometimes changes a report's default filter, so a work order export that used to carry open orders may now carry every order ever released.
+
+## Check 2: run every mask on a slice
+
+Do not run the full file first. Load ten rows through each saved mask and read the result, exactly as you would for [any new or changed mask](/blog/the-data-import-governance-workflow-in-edgebic).
+
+Every row comes back as one of four outcomes: Created, Updated, Reused, or Failed. Those counts are the fastest post-upgrade signal you have, because you know what they looked like last month.
+
+- **Ten Reused** on a master-data slice is the answer you want. It means the identifiers still match and nothing moved.
+- **Ten Created** on a slice that should have matched means the key column shifted. Stop immediately. Continuing this run duplicates your catalog.
+- **Any Failed** means open the per-run log and read the reason, which names the row and the problem. Dates and numbers are the usual causes.
+
+The [import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist) is the longer version of this pass, and it is worth running in full the first time rather than the abbreviated version.
+
+## Check 3: reconcile one job's hours by hand
+
+This is the check that catches what the counts cannot.
+
+Pick one product whose routing you know, ideally a short one with three or four operations. Total its imported operation hours for a real order quantity, on paper, and compare against what the ERP says the same job should take.
+
+A worked example. Say part `BRK-200` has three operations at 0.25, 0.40, and 0.10 hours per piece, with 1.5 hours of setup on the first. For 200 pieces that is:
+
+- (0.25 + 0.40 + 0.10) x 200 = 150 hours of run time
+- plus 1.5 hours of setup
+- 151.5 hours total
+
+If the post-upgrade import produces 9,090 hours, your times arrived in minutes and need a conversion factor of `0.016667`. If it produces 2.5 hours, a per-lot standard is being read as per-piece. Both import with zero failures. Both are found in two minutes of arithmetic. The mechanics are in [converting minutes to hours during an import](/blog/how-to-convert-minutes-to-hours-during-an-import-in-edgebic), and the symptom-first version is [my imported hours came in wrong](/blog/my-imported-hours-came-in-wrong-edgebic).
+
+Do the same for one date. Import one work order whose due date you know and confirm it reads the same day, not a transposed one.
+
+## Check 4: confirm what the ERP does not own
+
+Some values in EDGEBIC are yours, not the ERP's: machine instance counts, shift assignments, bottleneck flags, setup families, work center groups, operator skills. An upgrade cannot touch them, but a post-upgrade re-import with updates turned on can overwrite them if the new export suddenly carries a column for something it never carried before.
+
+This is why [choosing the system of record for each field](/blog/choosing-the-system-of-record-for-each-scheduling-field) matters more after an upgrade than before it. If the new export includes a capacity or efficiency column your old one lacked, leave it unmapped. The ERP does not know how many machines are really in that cell.
+
+## Check 5: schedule, then look at a work center you know
+
+Run the scheduler and open the load on one work center whose real capacity you can state from memory. If the paint booth runs two shifts and shows 40 hours available in a week, something upstream changed. If it shows 80, you are fine.
+
+Then confirm the thing that is always true regardless of upgrades: completed work is never moved by a reschedule. Jobs with recorded actuals keep their history, and each scheduled job carries the routing snapshot it was planned with, so even a materially changed routing import does not disturb work already in progress.
+
+## The hour, on one page
+
+| Minutes | Step |
+|---|---|
+| 10 | Export all four files; compare heading rows and row counts against last month |
+| 15 | Run each mask on a ten-row slice; read the four outcome counts |
+| 10 | Reconcile one job's total hours and one due date by hand |
+| 10 | Confirm no EDGEBIC-owned field is newly mapped |
+| 15 | Full import in the standard order, then schedule and check one work center |
+
+Fold this into the [monthly data audit](/blog/a-monthly-erp-to-edgebic-data-audit) rather than treating it as a separate ritual. The audit already checks whether the export has changed shape; an upgrade is simply the case where you know in advance that it might have.
+
+## If a heading really did change
+
+Open the mask, drag the new heading onto the field it belongs to, save, and re-run the slice. That is the repair. It does not require a consultant, a change window, or a version match, which is the practical payoff of the [import mask architecture](/blog/edgebic-import-masks-explained). The full [ERP integration architecture](/edgebic-erp-integration) works this way for every ERP, and the engine behind it is mapped on the [EDGEBIC product overview](/edgebic).
+
+If your upgrade is imminent, bring one pre-upgrade export and one post-upgrade export to [a working session](/contact-us). Remapping both live takes minutes and tells you exactly what your Monday looks like afterward.
+
+<Accordion title="Does an ERP version upgrade break the EDGEBIC integration?">
+Almost never, because there is nothing installed inside the ERP to break. EDGEBIC reads exported files through saved import masks, so the only thing an upgrade can disturb is the shape of an export: a renamed heading, a new column, a changed date or number format. The fix is remapping one or two rows in a mask, not rebuilding an interface.
+</Accordion>
+
+<Accordion title="How long should post-upgrade verification take?">
+About an hour for a normal point release and half a day for a major version. The work is exporting the same four files you always export, running each mask on a ten-row slice, comparing the result counts against the last known-good run, and then scheduling one job you can verify by hand. Most of that hour is reading counts, not fixing anything.
+</Accordion>
+
+<Accordion title="What is the single most dangerous post-upgrade change?">
+A silent unit change on a time column. A renamed heading fails loudly and a new column is visible, but a standard time that switches from minutes to hours or from per-lot to per-piece imports without any error and quietly multiplies or divides every duration in the schedule. Always reconcile one known job's total hours before trusting a post-upgrade load.
+</Accordion>

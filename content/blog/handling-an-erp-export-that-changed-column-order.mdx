@@ -1,0 +1,124 @@
+---
+title: "Handling an ERP Export That Changed Column Order"
+description: "When an ERP export adds, moves, or renames columns, here is how an EDGEBIC import mask reacts, which changes are safe, and the ten-minute repair that keeps the schedule honest."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - ERP export column order changed
+  - import mask column mapping
+  - ERP export format change scheduling
+  - remapping an import mask
+  - CSV column shift import
+  - EDGEBIC import mask repair
+targetPhrase: "ERP export column order changed"
+wordCount: 1640
+readingTime: 8
+faqQuestions:
+  - question: "Does moving a column break an EDGEBIC import mask?"
+    answer: "Not by itself, because a mask maps by column heading rather than by position. Reordering columns whose headings are unchanged is safe, and the same mask keeps working. What does break a mask is a renamed heading, because the mask can no longer find the column it was pointed at, and that failure is loud rather than silent."
+  - question: "What happens if the ERP adds a new column to an export?"
+    answer: "Nothing. An unmapped column is ignored, so a new column simply passes through unused until you decide to map it. That is the safe default, and it is also why a new column deserves a deliberate look: if the ERP now exports a value EDGEBIC already owns, such as a machine count or an efficiency, mapping it would hand that field back to a system that does not know the shop floor."
+  - question: "How do I repair a mask after a heading changed?"
+    answer: "Open the mask, drag the new heading onto the field the old one fed, save, and re-run ten rows to confirm the counts look right. It is a two-minute edit. The longer part is proving the repair worked, which means checking that a master-data slice comes back Reused rather than Created and that one job's hours still total correctly."
+qaQuestions:
+  - question: "Our ERP report writer lets anyone reorder columns, and someone did. Half our work orders imported with the quantity in the due date field. How do we recover?"
+    answer: "First, this is why an unfamiliar file gets ten rows before it gets the whole thing. To recover, re-export the file, fix the mask so each heading points at the right field, and re-import the same orders with updates on. Order records match on their reference, so the corrected run updates the same rows in place rather than creating duplicates, and the four outcome counts confirm it: you want Updated where you previously saw Created. Then run the scheduler again, because the bad dates are still sitting in the plan until you do. The durable fix is not technical. Give the export report a fixed definition, save it under a name that says it belongs to scheduling, and treat it as a shared asset rather than something anyone can adjust on their way to a different question."
+  - question: "We have five masks and our ERP just changed one heading in a file that feeds three of them. Do we edit three masks?"
+    answer: "Yes, and that is worth knowing before it happens. Each mask holds its own mapping, so a heading used by three masks needs the change in all three. It sounds tedious and takes about six minutes, but the isolation is deliberate: a mistake in one mask cannot silently propagate into two others, and you can repair the mask you run tomorrow without touching the two you run monthly. Keep a short note of which masks read which export, and the question stops being a hunt. That note is the same one that makes an ERP upgrade a one-hour job instead of an afternoon."
+---
+
+**An EDGEBIC import mask maps a file by column heading, not by column position, so reordering columns with unchanged headings is safe and needs no repair: what breaks a mask is a renamed heading, and the fix is dragging the new heading onto the same field and re-running ten rows.** Adding a column is harmless because unmapped columns are ignored. Removing one is harmless if the field it fed was optional.
+
+EDGEBIC by User Solutions reads ERP data through saved Excel, CSV, and database masks rather than a certified connector, which means the export file is the whole interface. That makes format changes the only failure mode you need a routine for, and a small one. This post is that routine.
+
+## The four ways an export can change
+
+Not all of these are equal, and confusing them wastes an afternoon.
+
+| Change | Mask behavior | What you do |
+|---|---|---|
+| Columns reordered, headings unchanged | Keeps working | Nothing |
+| Column added | Ignored unless you map it | Decide whether it belongs |
+| Column removed | The field it fed stops updating | Confirm the field was not mandatory |
+| Heading renamed | The mapping is broken | Remap that one row in the mask |
+
+The second row is the one people get wrong in the safe direction and the fourth is the one people fear. Neither deserves the anxiety. The genuinely dangerous cases are covered further down, and none of them involve column order at all.
+
+## Why heading-based mapping is the right default
+
+A mask is a saved recipe. It remembers what kind of data you are importing, what format it arrives in (Excel workbook, or comma, semicolon, tab, or space delimited text), whether the first row holds headings, whether text values are quoted, and how each column of your file maps onto an EDGEBIC field. You build it once by dragging your file's column headings onto target fields, and every run after that is two clicks. The full walkthrough is in [how import masks work](/blog/edgebic-import-masks-explained).
+
+Because the mapping is anchored to headings, a report writer that shuffles columns cannot break you. That matters more than it sounds, because ERP report definitions get edited by people who are not thinking about scheduling: someone adds a customer name column to answer a different question, and the file that feeds your Monday run now has eleven columns instead of ten. With heading-based mapping, that is a non-event.
+
+The one prerequisite is that the export actually carries a heading row. If the first-row-is-headings option is off, the mask has nothing to anchor to and position becomes the only reference. Turn headings on and leave them on. That single setting is the difference between a resilient interface and a brittle one.
+
+## Repairing a renamed heading
+
+The repair itself is short:
+
+1. Export a fresh file so the mask sees the current headings.
+2. Open the mask and find the field whose mapping is now empty.
+3. Drag the new heading onto it.
+4. Save.
+5. Run ten rows and read the counts.
+
+Step five is the part that is not optional. Every row comes back as exactly one of four outcomes: Created, Updated, Reused, or Failed. On a master-data slice you want Reused, which proves the identifiers still match and you have not accidentally pointed the key column somewhere new. If ten rows come back Created, stop: the key mapping moved, and running the full file would duplicate your catalog rather than update it. The meaning of each outcome is in [import row status](/blog/what-is-an-import-row-status).
+
+Mandatory fields are flagged in the mask, and a run refuses to start until they are mapped, so a heading rename on a required column fails before it reads a single row rather than importing something incomplete.
+
+## The changes that hurt more than reordering
+
+Column order is a visible problem with a visible fix. These are the ones that pass every check and still wreck a schedule.
+
+**A unit changed inside an unchanged heading.** The column is still called standard time and still sits in the same place, but it now holds minutes where it held hours. Nothing fails. Every operation in your model becomes sixty times longer. A conversion factor on that column fixes it (`0.016667` for minutes to hours, `0.000278` for seconds), and [conversion factors](/blog/what-is-a-conversion-factor-in-data-import) explain the mechanism. The check that catches it is arithmetic, not counts.
+
+**A per-lot standard became per-piece, or the reverse.** Same column, same units, completely different meaning. A standard quoted per lot of 100 needs `0.01` to become per piece. A schedule built on the wrong one is off by two orders of magnitude and looks entirely plausible on screen.
+
+**Blank became zero.** On an update run a blank cell preserves the existing value, which is what makes a partial refresh file safe. A zero is a value, not a blank, so an export that started filling empty cells with zeros will overwrite real numbers with nothing. If a column is not being refreshed, leave it out of the export rather than zero-filling it. The symptom-first version is [a blank cell in my import wiped a value](/blog/a-blank-cell-in-my-import-wiped-a-value-edgebic).
+
+**A date format flipped.** Dates parse against the invariant format first and your machine's regional format second, which handles most locale differences without a pre-processing step. A genuine day-month transposition still parses, though, and moves due dates by weeks for every day under the thirteenth.
+
+The common thread: reordered columns announce themselves, and changed meanings do not. Budget your verification time for the second kind.
+
+## Proving the repair, in two minutes
+
+After any mask edit, do the arithmetic on one job you know.
+
+Take a part with three operations at 0.25, 0.40, and 0.10 hours per piece and 1.5 hours of setup on the first. For an order of 200 pieces:
+
+- (0.25 + 0.40 + 0.10) x 200 = 150 run hours
+- plus 1.5 setup hours
+- 151.5 total
+
+If the import produces that number, the mapping and the units are both right. If it produces 9,090, you are in minutes. If it produces roughly 2.5, a per-lot standard is being read as per-piece. This one check finds every silent failure in the list above, and it is faster than reading a log. The fuller pass is the [import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist).
+
+## Making the next change a non-event
+
+Three habits cost nothing and remove most of the recurrence.
+
+**Freeze the export definition.** Save the report or view under a name that says it feeds scheduling, and treat edits to it as changes to a shared asset. Most format churn comes from a well-meaning edit by someone answering a different question.
+
+**Name masks after the routine, not the file.** `Weekly Work Orders` outlives `wo-week29.csv`, and it tells the next person what the mask is for.
+
+**Keep a one-line note of which masks read which export.** When a heading changes in a file that feeds three masks, you edit three masks. Knowing which three in advance turns a hunt into six minutes. The habit belongs with [documenting your plant's conventions](/blog/documenting-your-plants-edgebic-conventions), and it is the same note that makes an [ERP version upgrade](/blog/what-to-check-after-an-erp-version-upgrade) a one-hour job.
+
+## The wider point about file interfaces
+
+A coded integration fails when either side moves, and the repair is a development task. A file interface fails only at the column level, and the repair is a drag. That trade is the reason the [EDGEBIC ERP integration architecture](/edgebic-erp-integration) is identical for every ERP, and why the same masks feed the finite capacity engine described on the [EDGEBIC product overview](/edgebic) regardless of what system produced the file.
+
+Bring an export that changed on you to [a working session](/contact-us). Remapping it live is usually a two-minute demonstration of the whole argument.
+
+<Accordion title="Does moving a column break an EDGEBIC import mask?">
+Not by itself, because a mask maps by column heading rather than by position. Reordering columns whose headings are unchanged is safe, and the same mask keeps working. What does break a mask is a renamed heading, because the mask can no longer find the column it was pointed at, and that failure is loud rather than silent.
+</Accordion>
+
+<Accordion title="What happens if the ERP adds a new column to an export?">
+Nothing. An unmapped column is ignored, so a new column simply passes through unused until you decide to map it. That is the safe default, and it is also why a new column deserves a deliberate look: if the ERP now exports a value EDGEBIC already owns, such as a machine count or an efficiency, mapping it would hand that field back to a system that does not know the shop floor.
+</Accordion>
+
+<Accordion title="How do I repair a mask after a heading changed?">
+Open the mask, drag the new heading onto the field the old one fed, save, and re-run ten rows to confirm the counts look right. It is a two-minute edit. The longer part is proving the repair worked, which means checking that a master-data slice comes back Reused rather than Created and that one job's hours still total correctly.
+</Accordion>

@@ -2,7 +2,7 @@
 title: "How to Schedule Jobs Across Shifts in EDGEBIC"
 description: "Step by step setup to schedule jobs across shifts in EDGEBIC: define shifts, assign them to work centers, set instances and utilization, then verify the split."
 published: 2026-07-24T12:00:00.000Z
-modified: 2026-07-24T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
 category: EDGEBIC Platform
 author: user-solutions
 cluster: edgebic-platform
@@ -23,7 +23,7 @@ faqQuestions:
   - question: "Where do I assign a shift to a work center?"
     answer: "Open the work center, edit it, and use the Associated Shifts tab to move shifts from the available list to the assigned list. If the work center is set to use global shifts, the plant-wide shift list applies instead and the associated list is bypassed. Turn off global shifts when one machine needs its own hours, such as a furnace running 06:00 to 18:00 while the rest of the plant runs 08:00 to 16:00."
   - question: "What should work center utilization be set to?"
-    answer: "Utilization is the percentage of nominal shift hours the scheduler is allowed to claim, and it defaults to 50 percent. That default is deliberately conservative and halves your effective capacity if left alone. Set it per machine from what the work center genuinely converts to production after breaks, minor stoppages, and unrecorded interruptions. Many shops land between 80 and 90 percent for well-run equipment."
+    answer: "Utilization is the percentage of nominal shift hours the scheduler is allowed to claim, and it sits at 100 percent with no editor field on the work center screen. So nothing scales the hours down for you, and the honest place to describe what a machine genuinely converts to production is the shift itself, after breaks, minor stoppages, and unrecorded interruptions. Many shops land between 80 and 90 percent of the clock for well-run equipment, which on an 8-hour window is a shift of roughly 6.5 to 7.2 hours."
   - question: "How do I model a Saturday of overtime without changing my weekly calendar?"
     answer: "Use a daily capacity override rather than editing the shift. Open the per-day capacity dialog from the dashboard or the work center grid, find the Saturday, enter the override hours, and add a reason. The override replaces the calculated capacity for that one work center, shift, and date. EDGEBIC creates a slot for that day even though no regular shift runs, so jobs can be placed there."
   - question: "Do I need to change routings when I add a shift?"
@@ -79,7 +79,7 @@ These two fields decide how large each slot is, and both live on the work center
 
 **Number of instances** is the count of physical machines the work center represents. A cell of four identical mills modeled as one work center with four instances offers four times the hours per shift, and load balancing splits an operation across all four so it finishes in a quarter of the elapsed time. A cell modeled as four separate work centers cannot do that: each operation would have to name one machine.
 
-**Utilization** is the percentage of nominal shift hours the scheduler may claim, and this is the field most often left wrong. It defaults to 50 percent. That default halves your capacity until you change it. Set it per machine, deliberately, from what the work center genuinely converts to production once breaks, minor stoppages, and unrecorded interruptions are accounted for.
+**Utilization** is the percentage of nominal shift hours the scheduler may claim. It sits at 100 percent and is not editable on the work center screen, so nothing shrinks the day on your behalf. That makes the shift definition the field most often left wrong: enter it as what the work center genuinely converts to production once breaks, minor stoppages, and unrecorded interruptions are accounted for, or add a downtime event to take recurring losses off automatically.
 
 The resulting slot size is straightforward:
 
@@ -89,7 +89,7 @@ capacity = (shift hours − downtime − partial holiday hours)
            × utilization %
 ```
 
-Two instances, an 8-hour shift, 80 percent utilization: 12.8 hours in that slot. Change any input and the next scheduling run reflects it.
+Two instances, a shift of 6.4 productive hours, utilization at 100 percent: 12.8 hours in that slot. Change any input and the next scheduling run reflects it.
 
 ## Step 4: Handle the Exceptions
 
@@ -115,7 +115,7 @@ Run **Generate Schedule**, then check three things.
 
 **The Job View hour display.** An operation that took 8 hours Monday and 4 hours Tuesday reads as "8,4". That single column tells you the operation spanned two days and how the hours divided. If a long operation shows one number, it fit in one slot.
 
-**The start and end dates.** For a 28-hour operation on a two-instance work center with day and night shifts, an earliest start of Monday 10:00 should produce a Monday midnight finish (12 hours on the clipped day shift, 16 on the night shift). If it produces Thursday, capacity is being consumed by other work or your utilization setting is lower than you think.
+**The start and end dates.** For a 28-hour operation on a two-instance work center with day and night shifts, an earliest start of Monday 10:00 should produce a Monday midnight finish (12 hours on the clipped day shift, 16 on the night shift). If it produces Thursday, capacity is being consumed by other work, a shift is shorter than you think, or an override is in force on one of those dates.
 
 **The capacity view.** Check the loaded hours against available hours for the affected work centers and dates. A machine sitting at zero on a day it should be running usually means an unassigned shift or an all-zero shift definition, not an engine problem. If you see gaps where you expected continuous work, [idle gaps in the schedule](/blog/schedule-has-idle-gaps-edgebic) has the common causes. If a machine reads over 100 percent, [work center overloaded](/blog/work-center-overloaded-in-edgebic-causes-fixes) covers that direction.
 
@@ -126,7 +126,7 @@ When the result is not what you expected, work down this list before assuming th
 | Symptom | Check first | Usual cause |
 |---|---|---|
 | Work center schedules nothing | The shift's per-weekday hours | A shift saved with zeroes contributes no capacity anywhere |
-| Capacity is about half what you expect | Work center utilization | The 50 percent default was never raised |
+| Capacity is more than the machine delivers | The shift's per-weekday hours | The shift describes the gross clock, not the productive window |
 | A machine-specific shift is ignored | Use Global Shifts on that work center | The plant list is overriding the assignment |
 | Night work never gets scheduled | The work center's assigned shift list | Only assigned shifts are searched for capacity |
 | A holiday you added changed nothing | Whether you reran the schedule | Calendar edits do not move existing plans by themselves |
@@ -138,10 +138,10 @@ Before you finish, decide how each cell of identical machines is modeled, becaus
 
 Four interchangeable mills modeled as one work center with four instances let the scheduler split an operation across all four so a 20-hour job finishes in about 5 elapsed hours, and any job can take whichever mill is free. The same four modeled as four separate work centers force every routing to name one machine, which removes that flexibility entirely and produces queues in front of a named machine while its neighbors sit idle.
 
-If the machines are interchangeable but not identical, differing in speed or setup time, the right structure is a machine pool rather than instances. Each member carries its own efficiency and setup, and the scheduler shops the pool on every run. [What a work center group is](/blog/what-is-a-work-center-group-machine-pool) covers when to reach for one.
+If the machines are interchangeable but not identical, differing in speed or setup time, the right structure is a machine pool rather than instances. Each member row carries its own speed factor and its own setup override, and the scheduler shops the pool on every run. [What a work center group is](/blog/what-is-a-work-center-group-machine-pool) covers when to reach for one.
 
 ## Before You Go Live
 
-Two habits save the most time. First, set utilization on every work center before your first real schedule, rather than discovering the 50 percent default three weeks in. Second, read [the multi-shift mistakes post](/blog/multi-shift-scheduling-mistakes-edgebic), which collects the configuration errors that produce almost every "the schedule looks wrong" report on this feature.
+Two habits save the most time. First, get every shift describing real productive hours before your first real schedule, rather than discovering three weeks in that the plan was written against the gross clock. Second, read [the multi-shift mistakes post](/blog/multi-shift-scheduling-mistakes-edgebic), which collects the configuration errors that produce almost every "the schedule looks wrong" report on this feature.
 
 For the wider setup path, from products through routings to the first run, the [complete guide to EDGEBIC](/blog/edgebic-complete-guide) is the map. If your shift and work center data already exists in an ERP export, [EDGEBIC's import and export masks](/edgebic-erp-integration) can bring it in as a spreadsheet rather than as retyping.

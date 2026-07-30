@@ -1,0 +1,117 @@
+---
+title: "When Two ERP Rows Map to One EDGEBIC Work Center"
+description: "Your ERP holds two resource rows for what the floor treats as one work center. Here is how to decide between merging, an instance count, and a machine pool before you import."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - two ERP rows one work center
+  - consolidating ERP work centers
+  - work center instance count import
+  - duplicate resource codes scheduling
+  - machine pool versus instances
+  - EDGEBIC work center mapping
+targetPhrase: "two ERP rows one work center"
+wordCount: 1650
+readingTime: 8
+faqQuestions:
+  - question: "What happens if two ERP rows import to the same work center name?"
+    answer: "The second row matches the first by name and comes back Reused or Updated rather than creating a duplicate, because work center names are the natural key and match case-insensitively. That sounds convenient, but on an update run the second row's values overwrite the first row's, so a merge done accidentally in the mapping produces one work center carrying whichever row happened to be last."
+  - question: "Should two identical machines be one work center or two?"
+    answer: "One work center with an instance count of 2, when the machines are truly interchangeable and share a queue. The scheduler then loads both units, balances across them, and reports capacity as one number the supervisor recognizes. Two separate work centers are right when the routing genuinely names one machine or the other, or when the machines run different shifts."
+  - question: "When should you use a machine pool instead of an instance count?"
+    answer: "Use a work center group when the machines are different but interchangeable, so the same operation takes different times on each. An instance count assumes identical units running at the same rate. A group holds separate work centers as members, each with its own speed factor and setup, and the scheduler shops the pool on every reschedule."
+qaQuestions:
+  - question: "Our ERP has MILL01 and MILL01A. They are the same machine; the second code was created years ago for a costing change nobody remembers. What do we import?"
+    answer: "Import one and drop the other, and do the dropping in the export rather than the mask. Filter the resource export to exclude the dead code, save that filter as part of the report definition, and note beside the mask why the code is excluded. Doing it in the export means the exclusion is visible to whoever maintains the report, and it survives the next person who opens the mask and wonders why a code is unmapped. The routing side is the part to check first, though: if any operation rows still point at the retired code, those steps will auto-create a work center by that name during the routing import, and you get the duplicate back through a side door with a default of one machine and no shifts. Search the routing export for the retired code before you import, and fix it in the ERP if it is still in live routings."
+  - question: "We run three press brakes. Two are identical and the third is older and slower. Do we model one work center with three instances?"
+    answer: "No, and this is the case the instance count gets wrong. An instance count assumes every unit runs at the same rate, so three instances would tell the scheduler the old brake matches the new ones and the plan would over-promise every time it lands there. Model the two identical brakes as one work center with an instance count of 2, model the old brake as its own work center, then put both work centers into a machine pool so a routing step can target the pool rather than a specific machine. The pool carries a speed factor per member, so the old brake can be set at, say, 1.4 times the run time, and the scheduler chooses by the strategy you pick rather than by assuming they are equal. Actual timings for that factor should come from your own actuals, not a guess."
+---
+
+**When your ERP holds two resource rows for what the floor treats as one work center, the right answer is almost never two work centers: it is one work center with an instance count when the machines are identical, or a machine pool when they are interchangeable but different.** Get that decision made before the import, because the mapping is the wrong place to merge things by accident.
+
+EDGEBIC by User Solutions matches work centers by name on import, so two file rows that carry the same name collapse into one record. That behavior is helpful when it is intentional and confusing when it is not. This post separates the three real cases, shows what the import does in each, and gives the check that catches a merge you did not mean.
+
+## First, name what the two rows actually are
+
+Almost every instance of this problem is one of three situations, and they have different answers.
+
+| What the two rows are | The right model | Why |
+|---|---|---|
+| One machine, two codes (legacy, costing, department split) | One work center, one instance | The second code is a data artifact, not capacity |
+| Two identical machines sharing a queue | One work center, instance count 2 | The scheduler balances across units and reports one capacity number |
+| Two different machines that can both do the work | Two work centers inside a machine pool | Different speeds and setups need separate records |
+
+The failure people make most often is the third row treated as the second. Two press brakes that are not the same speed, modeled as one work center with two instances, tells the scheduler both units run at the listed rate. Every plan that lands on the slower one is optimistic, and the schedule looks fine until the floor falls behind for no visible reason.
+
+## Case 1: one machine, two codes
+
+This is a housekeeping problem wearing a modeling costume. Somewhere in the ERP's history a second resource code was created for a machine that already had one, usually to route cost differently or to split a department, and nothing ever retired it.
+
+Fix it in the export, not the mask. Add the exclusion to the saved report definition so it is visible to whoever maintains that report, and note beside the mask why a code is deliberately absent. A filter hidden inside a mask mapping is invisible to the next person.
+
+Then check the routing export before you import it. If live routing rows still reference the retired code, the routing import will auto-create a work center by that name, since auto-create for missing work centers is on by default. You get the duplicate back through a side door, this time with a default of one machine, no shift assignment, and no setup time. Search the routing file for the retired code first. If it is still in live routings, the durable fix belongs in the ERP.
+
+## Case 2: two identical machines
+
+This is the case the instance count exists for. One work center, one name, and a machine count that says how many identical units it really holds.
+
+The import carries that directly: the work center file has a column for the number of instances, and it defaults to 1 when blank. That default is worth remembering, because a work center export that omits the column entirely produces a plant where every cell is a single machine, and the schedule will be roughly as wrong as your true machine counts are above one.
+
+The arithmetic is what makes it worth doing properly. A cell with two identical machines on an 8 hour shift holds 16 hours of capacity, not 8. A job needing 12 hours fits in one day across both units. Modeled as a single instance, the same job spills into a second day, and every downstream operation moves with it. Multiply that across 40 work centers and the plan is systematically pessimistic in a way no single job explains.
+
+Two conditions have to hold before you merge:
+
+- **They share a queue.** Work arrives for the cell, not for a named machine.
+- **They run the same hours.** Different shifts means different calendars, which means separate work centers.
+
+## Case 3: different machines, same capability
+
+Here the two rows are genuinely two work centers, and the thing you want is a pool that a routing step can target instead of naming a machine.
+
+A work center group holds member work centers, each keeping its own capacity, calendar, and setup time. A member carries a speed factor, so an older machine that takes 40 percent longer is modeled as such rather than pretended equal. When a routing step targets the group, the scheduler shops the pool and picks a member by the strategy you choose, and it re-shops on every reschedule rather than pinning the job to whichever machine won the first time.
+
+What the ERP usually holds for this is thin: an alternate resource field, or a comment on the operation naming a second machine. Carrying that across is covered in [mapping alternate work centers from your ERP](/blog/mapping-alternate-work-centers-from-your-erp), and the concept itself is in [what a work center group is](/blog/what-is-a-work-center-group-machine-pool). The speed factors should come from your own actual hours rather than an estimate, which is one of the better reasons to import labor transactions early: see [importing ERP labor transactions as actuals](/blog/importing-erp-labor-transactions-as-actuals).
+
+## What the import does when two rows share a name
+
+Worth knowing precisely, because it is quiet.
+
+Work centers reconcile by name, matched case-insensitively, so `MILL-01` in the file finds a record stored as `mill-01`. When a second row in the same file carries that same name:
+
+- With updates off (the default), the second row comes back **Reused** and changes nothing. The first row's values stand.
+- With updates on, the second row comes back **Updated** and its values overwrite the first row's. Last row in the file wins.
+
+Neither outcome creates a duplicate, and neither one warns you. That is why an unintended merge is best caught by arithmetic rather than by counts: if the file had 42 work center rows and the plant has 41 work centers afterward, two rows shared a name. Compare the row count in the export to the record count in the application after the run. This is check three in [the import reconciliation checklist](/blog/an-erp-import-reconciliation-checklist).
+
+## A worked comparison
+
+A shop with three CNC mills, two identical and one older.
+
+| Model | Capacity seen by the scheduler | What goes wrong |
+|---|---|---|
+| Three separate work centers | 8 + 8 + 8 hours, no sharing | Routings must name a machine, so load never balances |
+| One work center, 3 instances | 24 hours, all at the fast rate | The old mill is over-promised on every job that lands there |
+| One work center with 2 instances, plus a second work center, both in a pool | 16 hours fast, 8 hours at the slower factor | Nothing, and the pool re-shops on every reschedule |
+
+The third row costs about ten minutes more setup than the second and is the only one that stays true when the shop gets busy.
+
+## Decide it once, then write it down
+
+The decision is not obvious from the ERP export alone, which is why it belongs in the note beside your masks: which codes were merged, which were excluded, and why. The next ERP upgrade or export change will make someone ask, and the answer is not recoverable from the data. [Documenting your plant's conventions](/blog/documenting-your-plants-edgebic-conventions) covers what else belongs in that note.
+
+Bring your resource export and a supervisor who knows which machines are actually interchangeable to [a working session](/contact-us). That combination settles the question faster than any amount of reading, because the ERP will not tell you which two codes are the same machine. The rest of the architecture is on the [EDGEBIC ERP integration page](/edgebic-erp-integration), and the engine that consumes these work centers is on the [EDGEBIC product overview](/edgebic).
+
+<Accordion title="What happens if two ERP rows import to the same work center name?">
+The second row matches the first by name and comes back Reused or Updated rather than creating a duplicate, because work center names are the natural key and match case-insensitively. That sounds convenient, but on an update run the second row's values overwrite the first row's, so a merge done accidentally in the mapping produces one work center carrying whichever row happened to be last.
+</Accordion>
+
+<Accordion title="Should two identical machines be one work center or two?">
+One work center with an instance count of 2, when the machines are truly interchangeable and share a queue. The scheduler then loads both units, balances across them, and reports capacity as one number the supervisor recognizes. Two separate work centers are right when the routing genuinely names one machine or the other, or when the machines run different shifts.
+</Accordion>
+
+<Accordion title="When should you use a machine pool instead of an instance count?">
+Use a work center group when the machines are different but interchangeable, so the same operation takes different times on each. An instance count assumes identical units running at the same rate. A group holds separate work centers as members, each with its own speed factor and setup, and the scheduler shops the pool on every reschedule.
+</Accordion>

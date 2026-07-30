@@ -2,7 +2,7 @@
 title: "Standing Up the Kiosk and Logging a First Shift in EDGEBIC"
 description: "A shop-floor kiosk walkthrough: bring a terminal online, run one operation from setup to complete, count pieces, and hand off the shift with real actuals."
 published: 2026-08-02T12:00:00.000Z
-modified: 2026-08-02T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
 category: Worked Examples
 author: user-solutions
 cluster: edgebic-walkthroughs
@@ -21,14 +21,14 @@ faqQuestions:
   - question: "How does an operator log time on a shop-floor kiosk?"
     answer: "The operator taps through the states of a job: START SETUP to begin the changeover, START RUN when production begins, GOOD and SCRAP to count pieces, and COMPLETE OPERATION to finish. The kiosk stamps every punch with the server's clock, never the terminal's, so the times are consistent even if the terminal restarts. Behind the buttons, each tap opens or closes a production punch, and the first run punch stamps the operation's actual start date."
   - question: "Does the kiosk timestamp come from the terminal or the server?"
-    answer: "From the server, always. The operator taps a button and the system records the server's current time, so the terminal never sends a clock value. This matters after a crash or power cycle: on restart the kiosk detects the still-open punch and resumes the elapsed timer from the server's original open time, so no hours are lost and no client-clock drift creeps in. It also means an operator cannot accidentally backdate a punch by changing the terminal's time."
+    answer: "From the shared clock, always. Timestamps are taken when the tap lands, and nobody types a time during normal use, so the terminal never sends a clock value of its own. That means an operator cannot backdate a punch by changing the terminal's time, and two terminals on the same floor cannot disagree about when a shift started. Times are only ever typed in Manual Entry, when tap-as-you-go was not possible."
   - question: "What happens when the operator marks an operation complete at the kiosk?"
     answer: "The kiosk closes any open punch, rebuilds the daily hour breakdown from the closed run punches, and stamps the operation's actual end date with the server time. The next scheduler run then classifies that step as completed and preserves it exactly. The terminal returns to its idle screen and fetches the next scheduled job for the machine. In short, one COMPLETE tap turns a running operation into immutable history the reschedule will never move."
 qaQuestions:
   - question: "We are putting a tablet at each machine for the first time. What does day one actually look like for an operator?"
     answer: "It is four taps and some counting. The operator walks up to the terminal, which already shows the next scheduled job for that machine. They tap START SETUP for the changeover, then START RUN when they begin cutting, and the actual start date is stamped automatically. During the run they tap GOOD for each good piece and SCRAP with a reason for rejects, with a ten-second UNDO for fat fingers. At the end they tap COMPLETE OPERATION, which closes the punches, sets the actual end, and pulls up the next job. No typing of times, no timesheet, and the planner sees real hours instead of estimates."
   - question: "The tablet rebooted mid-job during our first shift. Did we lose the hours the operator had logged?"
-    answer: "No. On startup the kiosk checks for a punch that was open before the restart and, finding one, restores the screen to match it and resumes the elapsed timer from the server's original open time. Because punches are stamped server-side, the clock kept running while the terminal was down, so the elapsed time shown may look larger than the operator expected, and that is correct: the punch covers real wall-clock time. The logged pieces and the open run punch are intact, so the operator just keeps going."
+    answer: "The taps that already landed are safe. The kiosk reads and writes the shared database live rather than holding anything on the tablet, so every piece counted and every punch opened before the reboot is already recorded, and the timestamps came from the shared clock at the moment of each tap. What the terminal does not have is an offline mode, so anything the operator tried to tap while it was down did not register. After a restart, check the job's state on screen before carrying on, and fill any gap with MANUAL ENTRY at the terminal or from the planner's Log Actuals dialog. If a run punch was left open across the outage, a supervisor can correct it afterwards in the History drawer, where the change is kept alongside the original with a reason."
 ---
 
 **Standing up the shop-floor kiosk in EDGEBIC by User Solutions is turning a terminal into a place where operators tap through a job (setup, run, count, complete) and the system records real, server-timestamped actuals that the scheduler treats as immutable history.** This walkthrough brings one terminal online and runs a first operation end to end. It is part of our [worked examples series](/blog/edgebic-worked-examples), and it is the execution half of the [quote-to-ship walkthrough](/blog/quote-to-ship-in-edgebic), told from the machine's point of view. For the wider picture, the [shop-floor guide](/blog/edgebic-shop-floor-guide) covers the full data-collection story.
@@ -85,18 +85,18 @@ The planner opens the grid and sees planned versus actual side by side. Where th
 ## What This First Shift Proves
 
 1. **The floor logs by tapping, not typing.** Setup, run, count, complete: four states, no timesheet.
-2. **Every punch is server-stamped.** The terminal never sends a time, so the record survives crashes, wrong clocks, and reboots.
+2. **Every punch is stamped from the shared clock.** The terminal never sends a time of its own, so a wrong clock on the floor cannot distort the record.
 3. **The first run punch sets the actual start; complete sets the actual end.** The dates come from the operator's taps, automatically.
 4. **Scrap carries a reason; corrections are audited.** Quality data and honest counts come for free.
 5. **Complete makes history.** The reschedule preserves the finished operation exactly.
 
 ## Variations Worth Trying
 
-**Recover from a crash.** Power-cycle the terminal mid-run. On restart the kiosk detects the open punch, restores the running state, and resumes the elapsed timer from the server's original open time, so nothing is lost.
+**Lose the connection mid-run.** The kiosk reads and writes the shared database live and has no offline mode, so a terminal that drops off cannot punch until it is back. Nothing is buffered locally to sync later. Reconnect and punch normally, and use Manual Entry for any state change the outage forced you to miss. [What the kiosk does when the network drops](/blog/what-the-kiosk-does-when-the-network-drops) covers the fallback in full.
 
 **Enter hours from the desk.** For a machine without a terminal, the planner logs actuals from the desktop Log Actuals dialog, and auto-calc can derive hours from pieces or pieces from hours. The [how-to on logging actual hours and pieces](/blog/how-to-log-actual-hours-and-pieces-in-edgebic) covers that path.
 
-**Watch a preventive-maintenance banner.** If the machine's PM policy fields are set, the idle screen shows an approaching or overdue banner derived from the last PM date plus the interval, so the operator sees it before starting the next job.
+**Meet the routing-changed banner.** Edit a job's routing after it was scheduled, then reload the terminal. A yellow banner warns that the routing changed since the job was planned and lists what moved, such as the work center, the setup, or the cycle time. The operator acknowledges it and tells the planner. See [the BOR drift banner at the kiosk](/blog/the-bor-drift-banner-at-the-kiosk).
 
 ## The Bigger Point: A Schedule Is Only As True As Its Actuals
 
@@ -111,7 +111,7 @@ The operator taps through the states of a job: START SETUP to begin the changeov
 </Accordion>
 
 <Accordion title="Does the kiosk timestamp come from the terminal or the server?">
-From the server, always. The operator taps a button and the system records the server's current time, so the terminal never sends a clock value. This matters after a crash or power cycle: on restart the kiosk detects the still-open punch and resumes the elapsed timer from the server's original open time, so no hours are lost and no client-clock drift creeps in. It also means an operator cannot accidentally backdate a punch by changing the terminal's time.
+From the shared clock, always. Timestamps are taken when the tap lands, and nobody types a time during normal use, so the terminal never sends a clock value of its own. That means an operator cannot backdate a punch by changing the terminal's time, and two terminals on the same floor cannot disagree about when a shift started. Times are only ever typed in Manual Entry, when tap-as-you-go was not possible.
 </Accordion>
 
 <Accordion title="What happens when the operator marks an operation complete at the kiosk?">

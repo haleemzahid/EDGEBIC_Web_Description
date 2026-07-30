@@ -2,7 +2,7 @@
 title: "How Piece Counts Feed the EDGEBIC Schedule"
 description: "Pieces and hours are two views of the same work. Learn how EDGEBIC converts between them with an effective rate and how good piece counts roll into the plan."
 published: 2026-07-31T12:00:00.000Z
-modified: 2026-07-31T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
 category: Shop Floor Execution
 author: user-solutions
 cluster: edgebic-shop-floor
@@ -19,16 +19,16 @@ wordCount: 1740
 readingTime: 9
 faqQuestions:
   - question: "How does EDGEBIC convert between pieces and hours?"
-    answer: "Each operation carries an effective rate in pieces per hour, computed from the routing's pieces per unit and hours required, adjusted by the work center's efficiency factor. With that rate, EDGEBIC derives one side from the other: hours entered give pieces, or pieces entered give hours. The rate is snapshotted onto each punch when it opens, so editing the routing later never rewrites the history of work already logged."
+    answer: "Each operation carries an effective rate in pieces per hour, computed from the routing's pieces per unit and hours required. With that rate, EDGEBIC derives one side from the other: hours entered give pieces, or pieces entered give hours. The rate is snapshotted onto each punch when it opens, so editing the routing later never rewrites the history of work already logged."
   - question: "Do scrap pieces count toward the job's produced quantity?"
     answer: "No. Only good pieces count toward the daily actual pieces and the job's produced quantity. Scrap is tracked separately, and every scrap piece carries a reason code so the cause is attributable. This keeps your produced-quantity figure honest and your scrap analysis meaningful. A day that ran 42 good and 1 scrap records 42 as the actual pieces for that day, with the single scrap logged under its reason."
   - question: "What if a work center has no cycle time in its routing?"
-    answer: "Then the effective rate is zero and the piece and hour sides are decoupled. The punch records hours only, and the piece counter stays at zero unless the operator enters counts manually. For hours-primary work centers this is fine, because hours are the metric that matters there. For pieces-primary work centers it means the operator must key in piece counts directly rather than have them derive from a rate."
+    answer: "Then the effective rate is zero and the piece and hour sides are decoupled. The punch records hours, and no pieces are derived from them. Where hours are the number your shop records this is fine, because hours are measured rather than calculated. Where pieces are the number you record, the counts are still captured at the terminal, but no hours derive from them until the routing carries a real cycle time."
 qaQuestions:
   - question: "Our observed rate came out lower than the routing standard on a job. Is the rate wrong?"
     answer: "Not necessarily. The effective rate on the routing is the standard, but the daily breakdown also computes an observed rate from what actually happened: good pieces divided by run hours for that day. If a quality hold or a slow run ate time, the observed rate for the day will sit below the standard, and that gap is real information, not an error. A run that logged 42 good pieces over 7.53 hours shows about 5.6 pieces per hour observed against a 7.1 standard, and the difference points you at the lost time to investigate."
   - question: "We log hours at one machine and pieces at another. Can EDGEBIC handle both in the same shop?"
-    answer: "Yes. The entry mode is per work center, not per plant. An hours-primary machine tracks the elapsed clock and derives pieces from the rate; a pieces-primary machine counts taps and derives hours from the rate; a both mode accepts each independently so you can compute variance. So a machine shop's mills can run hours-primary while a packaging line runs pieces-primary, and each rolls into the same daily actuals the scheduler reads. You choose the mode that matches how each work center is naturally measured."
+    answer: "Yes, and there is nothing to configure to make it work. The terminal captures both measures at every machine: the elapsed run clock advances on its own and the good counter is tapped per finished piece. So a machine shop's mills can be read by their hours while a packaging line is read by its counts, and each rolls into the same daily actuals the scheduler reads.\n\nThe choice shows up when the day is logged rather than at the machine. Leave Auto Calc Hours ticked in the daily grid and type the side your people actually count, and the other derives from the operation's rate. Untick it to record both independently when the gap between them is the signal you want. Consistency within a given operation matters more than which side you pick."
 ---
 
 **In EDGEBIC by User Solutions, pieces and hours are two views of the same work, linked by an effective rate. When an operator counts good pieces at the kiosk, EDGEBIC can derive the hours, roll the good pieces into the day's actuals, and feed that reality back into the schedule.** Piece counts production scheduling depends on this duality: some work centers are naturally measured in hours, others in pieces, and the plan needs both to speak the same language. This article explains how the conversion works and how good piece counts reach the plan.
@@ -40,26 +40,26 @@ A machine shop times its mills; a packaging line counts its cartons. Both are pr
 The link between pieces and hours is the effective rate, expressed in pieces per hour. EDGEBIC computes it from the routing:
 
 ```
-effective rate = (pieces per unit / hours required) x work center efficiency factor
+effective rate = pieces per unit / hours required
 ```
 
-So a step that produces one piece per unit and needs 0.14 hours per piece has a base rate of about 7.1 pieces per hour, adjusted by the machine's efficiency factor. With that rate in hand, the conversion is arithmetic: hours entered multiply by the rate to give pieces, and pieces entered divide by the rate to give hours.
+Both inputs come from the routing step that runs at the machine, which is where piece-rate math lives rather than on the work center record. So a step that produces one piece per unit and needs 0.14 hours per piece has a rate of about 7.1 pieces per hour. With that rate in hand, the conversion is arithmetic: hours entered multiply by the rate to give pieces, and pieces entered divide by the rate to give hours.
 
 Two design choices make this reliable.
 
 **The rate is snapshotted when a punch opens.** When an operator starts a run, the rate in force at that moment is frozen onto the punch. If a planner edits the routing next week, the history of work already logged does not change. Your past reports stay accurate because they use the rate that applied when the work happened, not today's. This is the same discipline that keeps [actuals immutable](/blog/why-actuals-are-immutable-in-edgebic).
 
-**A missing cycle time yields a zero rate, honestly.** If the routing has no hours required or no pieces per unit, the rate is zero rather than a fabricated number. The kiosk then shows the piece fields as zero, and the operator keys counts manually if the work center needs them. EDGEBIC does not invent a rate it cannot compute.
+**A missing cycle time yields a zero rate, honestly.** If the routing has no hours required or no pieces per unit, the rate is zero rather than a fabricated number. The derived side then stays at zero, while whatever was genuinely measured is still recorded. EDGEBIC does not invent a rate it cannot compute.
 
-## Entry Mode: Which Side You Log
+## Which Side You Log
 
-Each work center has an entry mode that decides what the kiosk shows and which quantity it derives.
+Which measure a shop treats as the recorded truth on an operation is a convention it adopts, not a per-machine setting.
 
-- **Hours-primary.** The kiosk tracks the elapsed clock. Pieces derive as elapsed hours times the rate. Right for time-metered work like a CNC mill.
-- **Pieces-primary.** The kiosk shows tap-to-increment counters. Hours derive as pieces divided by the rate. Right for count-metered work like assembly or packaging.
-- **Both.** Both are accepted independently, which lets EDGEBIC compute the variance between them for efficiency analysis.
+- **Hours-led.** The elapsed clock is the record. Pieces derive as hours times the rate. Right for time-metered work like a CNC mill.
+- **Pieces-led.** The counted output is the record. Hours derive as pieces divided by the rate. Right for count-metered work like assembly or packaging.
+- **Both recorded.** Each is entered independently, which lets you compare the two against the rate the operation was planned at.
 
-Because the mode is per work center, a single shop can mix them: mills hours-primary, a packaging line pieces-primary, all rolling into the same daily actuals. For the wider comparison of measuring capacity in hours versus pieces, see [pieces-based vs hours-based capacity](/blog/pieces-based-vs-hours-based-capacity-edgebic).
+The terminal captures both at every machine, so a single shop can mix them freely with nothing configured either way: mills read by hours, a packaging line read by counts, all rolling into the same daily actuals. The convention is expressed when the day is logged, through the **Auto Calc Hours** control in the daily grid, and the concept is covered in [what is an actual entry mode](/blog/what-is-an-actual-entry-mode-in-shop-floor-tracking). For the wider comparison of measuring capacity in hours versus pieces, see [pieces-based vs hours-based capacity](/blog/pieces-based-vs-hours-based-capacity-edgebic).
 
 ## Good Pieces Only
 
@@ -75,7 +75,7 @@ That difference is information, not error. If a run logged fewer pieces per hour
 
 ## A Worked Example
 
-A CNC turning job: 50 pieces of a turbine shaft, one piece per unit, 0.14 hours per piece, efficiency factor 1.0. Effective rate: about 7.1 pieces per hour. The work center is hours-primary.
+A CNC turning job: 50 pieces of a turbine shaft, one piece per unit, 0.14 hours per piece. Effective rate: about 7.1 pieces per hour. The shop logs this operation hours-led.
 
 The shift runs Monday 08:00 to 16:00:
 

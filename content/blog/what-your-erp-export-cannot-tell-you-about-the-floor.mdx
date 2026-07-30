@@ -1,0 +1,122 @@
+---
+title: "What Your ERP Export Cannot Tell You About the Floor"
+description: "An ERP export carries routings and demand but almost never carries capacity reality. Here are the seven fields you add after the import, and what each one is worth in schedule accuracy."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - what ERP data is missing for scheduling
+  - ERP export capacity data gaps
+  - finite capacity data not in ERP
+  - machine instance count scheduling
+  - setup and shift data after import
+  - EDGEBIC capacity setup after import
+targetPhrase: "ERP export capacity data gaps"
+wordCount: 1670
+readingTime: 8
+faqQuestions:
+  - question: "What scheduling data does an ERP export usually not contain?"
+    answer: "Seven things, in rough order of impact: how many identical machines a work center really holds, which shifts each center runs, sequence-dependent changeover times, which machines are genuinely interchangeable, which operators are certified for which work, transfer batch sizes for overlapping operations, and which centers are the real constraints. ERPs record transactions well and capacity reality poorly, because they were never asked to plan finitely."
+  - question: "Why do ERPs not hold machine instance counts?"
+    answer: "Because most ERP routing logic schedules against infinite capacity, where the number of machines does not change the answer. A work center that runs one machine and one that runs four both accept whatever work is assigned. Once a scheduler plans finitely the count becomes load-bearing, and a plant modeled as all-single-instance produces a plan that is systematically pessimistic."
+  - question: "How long does it take to fill in what the export cannot carry?"
+    answer: "Four to eight hours for a typical shop, done once, and it is best done with a supervisor beside you rather than from a spreadsheet. Machine counts and shift patterns take an afternoon and give most of the accuracy. Setup families, operator skills, and transfer batches are worth adding where they change the answer, which usually means at the two or three busiest work centers first."
+qaQuestions:
+  - question: "Our first schedule came back saying we need 14 weeks for work we normally clear in 6. The import reported zero failures. What did we get wrong?"
+    answer: "Almost certainly machine instance counts. When the work center export has no column for how many identical machines a center holds, every center defaults to one, so a cell with four presses is modeled with a quarter of its real capacity. Multiply that across a plant and the plan stretches by exactly the factor you are seeing. The check takes ten minutes: list your work centers, write the true machine count beside each, and compare against what was imported. The second most likely cause is shift coverage, where a two-shift plant was imported with a single eight hour pattern. Both are one-time corrections rather than modeling problems, and both are invisible in the import counts, because a wrong number is still a valid number. The arithmetic check on one known job is what catches this class of error."
+  - question: "Our ERP does hold setup times, so do we still need setup families? It feels like duplicating data we already have."
+    answer: "You need both, and they answer different questions. The ERP's setup time is a single number per operation: this job takes 1.5 hours to set up. A setup family says how long the changeover takes going from what ran last to what runs next, which is a different quantity entirely. In a paint shop, light to light might be five minutes and dark to light four hours, and there is no single setup number that describes both honestly. Import the ERP's setup time as the baseline, because it is genuinely useful and it is what applies when nothing sequence-dependent is at play. Then add a family matrix only at the work centers where sequence actually drives changeover, which in most shops is two or three centers, not forty. Doing it everywhere is the mistake that makes the exercise feel like duplicated data."
+---
+
+**An ERP export carries the routing and the demand well and the capacity reality almost not at all: machine counts, shift coverage, sequence-dependent changeovers, machine pools, operator certifications, transfer batches, and which work centers are the real constraints usually have to be entered after the import.** That is not a defect in your ERP. It is a consequence of most ERP routing logic planning against infinite capacity, where none of those seven fields would change the answer.
+
+EDGEBIC by User Solutions imports what the ERP does hold through saved Excel, CSV, and database masks, then plans finitely against the fields the ERP does not hold. Knowing which is which before the first import saves a week of wondering why a plausible import produced an implausible schedule. The mirror image of this post, the fields the ERP must supply, is [which ERP fields EDGEBIC needs to schedule](/blog/which-erp-fields-edgebic-needs-to-schedule).
+
+## The seven gaps, in order of impact
+
+| What is missing | Typical ERP behavior | Effect if left wrong |
+|---|---|---|
+| Machines per work center | No column, or one row per machine | Plan stretches by the true machine count |
+| Shift coverage per center | A plant-wide calendar at best | Second shift capacity is invisible |
+| Sequence-dependent changeover | One setup number per operation | Changeover cost is averaged and always wrong |
+| Interchangeable machines | An alternate field, often a comment | Work queues behind one machine while another idles |
+| Operator certifications | Held in HR, not in routings | A job plans on a shift with nobody qualified |
+| Transfer batch sizes | Not modeled | Operations that could overlap run strictly sequentially |
+| Which centers constrain | Not marked | The plan protects the wrong resource |
+
+The first two carry most of the error. The remaining five are worth adding where they change the answer, which usually means at two or three work centers rather than all of them.
+
+## Gap 1: how many identical machines a center holds
+
+This is the single most common cause of a first schedule that looks alarming. If the work center export has no machine count column, the value defaults to one machine per center, so a cell with four presses is modeled with a quarter of its capacity.
+
+The arithmetic is direct. Four identical machines on an 8 hour shift hold 32 hours of capacity, not 8. A job needing 24 hours fits in a day. Modeled as a single machine it needs three days, and every downstream operation moves with it. Across 40 work centers the plan is systematically pessimistic in a way no single job explains, which is exactly what makes it hard to diagnose from the schedule.
+
+Fixing it is an afternoon with a list of work centers and a supervisor. It is also the reason the machine count column belongs in the work center export permanently, even if you have to add it to the report by hand. The related trap, where the ERP holds two rows for what is really one cell, is covered in [when two ERP rows map to one work center](/blog/when-two-erp-rows-map-to-one-edgebic-work-center).
+
+## Gap 2: which shifts each center actually runs
+
+Most ERPs hold one plant calendar. Real plants run a second shift on three cells, weekends on one, and a maintenance window on the bottleneck every Tuesday morning.
+
+Shift assignment is per work center, which is what makes that describable. Set the standard pattern first, then override the exceptions, rather than trying to specify every calendar in advance. Where the ERP does hold a usable calendar it can be imported: see [importing shift calendars and plant holidays](/blog/importing-shift-calendars-and-plant-holidays-from-your-erp).
+
+The symptom of getting this wrong is subtle. The schedule is not obviously broken, it is just consistently a little late at the centers that really run longer than the model thinks, and consistently a little early at the ones that do not.
+
+## Gap 3: what a changeover actually costs
+
+An ERP setup time is one number per operation. A setup family matrix says what the changeover costs going from what ran last to what runs next, which is a different quantity.
+
+In a paint booth, white to light gray may be five minutes and black to white four hours. No single setup number describes both. The result of averaging them is a schedule that is wrong in both directions and a sequence nobody would choose.
+
+Import the ERP's setup time as the baseline, because it is real and it applies when sequence does not drive the changeover. Then add a family matrix only where sequence genuinely matters, which in most shops is the paint line, the heat treat oven, or the extruder, and not the other thirty seven centers. The concept is in [what a setup family is](/blog/what-is-a-setup-family-sequence-dependent-changeover).
+
+## Gap 4: which machines are genuinely interchangeable
+
+ERPs hold this thinly when they hold it at all: an alternate resource field, or a note on the operation naming a second machine. What the schedule needs is a pool with a speed factor per member, so an older machine that takes 40 percent longer is modeled as such rather than treated as equal.
+
+The payoff is that a job can move to a free member instead of queueing behind a busy one, and the pool is re-shopped on every reschedule rather than pinned to whichever machine won the first time. Carrying whatever the ERP does hold is covered in [mapping alternate work centers from your ERP](/blog/mapping-alternate-work-centers-from-your-erp).
+
+## Gap 5: who is certified to run what
+
+Certifications usually live in HR records or on a laminated board, not in routings. That is fine for compliance and useless for planning, because a schedule that plans an Inconel weld on a shift when nobody certified is present is a schedule that will slip without warning.
+
+Modeling operators and skills is worth doing where a certification is genuinely scarce. If three people can run every machine, skip it. If one person can do the aerospace welds, the schedule needs to know.
+
+## Gaps 6 and 7: overlap and constraints
+
+**Transfer batches** let a downstream operation start once a first batch of pieces is physically available rather than waiting for the whole order. ERPs almost never model this, and the effect on lead time is large on long runs. The concept is in [what a transfer batch is](/blog/what-is-a-transfer-batch).
+
+**Which centers constrain** is a flag rather than a field, and marking it changes how the plan protects that resource. Most shops know the answer already and have never written it down. If yours does not, the general method is in [production bottleneck identification](/blog/production-bottleneck-identification).
+
+## The order to fill them in
+
+Do not attempt all seven before the first schedule. Import what the ERP has, run a schedule, and let it tell you where the model disagrees with reality.
+
+1. **Machine counts and shift patterns.** Half a day, and most of the accuracy.
+2. **Run a schedule and compare it to what the shop actually does.** Where it disagrees, one of the first two is usually wrong.
+3. **Setup families at the two or three centers where sequence drives changeover.**
+4. **Machine pools where offloading is a real option.**
+5. **Operator skills where a certification is scarce.**
+6. **Transfer batches on the long runs.**
+
+Then confirm the result with your own actual hours rather than an estimate, which is one of the better reasons to import labor transactions early: [importing ERP labor transactions as actuals](/blog/importing-erp-labor-transactions-as-actuals) covers that path.
+
+## Why this is not a workaround
+
+The division holds up because each system is holding the data it is in a position to keep correct. The ERP knows what was ordered, what it costs, and what the routing says. The floor knows how many presses actually run and which changeover is expensive, and that knowledge changes faster than any ERP master record. Deciding which system owns which field explicitly, rather than by accident, is the exercise in [choosing the system of record for each scheduling field](/blog/choosing-the-system-of-record-for-each-scheduling-field).
+
+Bring a work center export and a supervisor who knows the floor to [a working session](/contact-us). The gap between what the file says and what the supervisor says is usually the whole story, and it takes about twenty minutes to surface. The import layer is on the [EDGEBIC ERP integration page](/edgebic-erp-integration), and the engine that uses these fields is on the [EDGEBIC product overview](/edgebic).
+
+<Accordion title="What scheduling data does an ERP export usually not contain?">
+Seven things, in rough order of impact: how many identical machines a work center really holds, which shifts each center runs, sequence-dependent changeover times, which machines are genuinely interchangeable, which operators are certified for which work, transfer batch sizes for overlapping operations, and which centers are the real constraints. ERPs record transactions well and capacity reality poorly, because they were never asked to plan finitely.
+</Accordion>
+
+<Accordion title="Why do ERPs not hold machine instance counts?">
+Because most ERP routing logic schedules against infinite capacity, where the number of machines does not change the answer. A work center that runs one machine and one that runs four both accept whatever work is assigned. Once a scheduler plans finitely the count becomes load-bearing, and a plant modeled as all-single-instance produces a plan that is systematically pessimistic.
+</Accordion>
+
+<Accordion title="How long does it take to fill in what the export cannot carry?">
+Four to eight hours for a typical shop, done once, and it is best done with a supervisor beside you rather than from a spreadsheet. Machine counts and shift patterns take an afternoon and give most of the accuracy. Setup families, operator skills, and transfer batches are worth adding where they change the answer, which usually means at the two or three busiest work centers first.
+</Accordion>

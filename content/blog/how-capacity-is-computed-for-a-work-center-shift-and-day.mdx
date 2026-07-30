@@ -2,7 +2,7 @@
 title: "How Capacity Is Computed for a Work Center, Shift, and Day"
 description: "The exact formula EDGEBIC uses to turn a shift into available hours: base shift time minus downtime and holidays, scaled by utilization and instances, minus what is already booked and any late-start penalty."
 published: 2026-08-03T12:00:00.000Z
-modified: 2026-08-03T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
 category: Scheduling Concepts
 author: user-solutions
 cluster: edgebic-scheduling-concepts
@@ -19,14 +19,14 @@ wordCount: 1550
 readingTime: 8
 faqQuestions:
   - question: "How does a scheduler calculate a work center's available hours for a day?"
-    answer: "EDGEBIC starts from the base shift hours for that weekday, subtracts holiday and downtime hours, multiplies by the utilization percentage, multiplies by the number of machine instances, then subtracts hours already allocated and any late-start penalty. A three-instance center on a seven-hour shift at 80 percent utilization with one hour of downtime and eight hours already booked offers 6.4 available hours."
+    answer: "EDGEBIC starts from the base shift hours for that weekday, subtracts holiday and downtime hours, multiplies by the utilization percentage, multiplies by the number of machine instances, then subtracts hours already allocated and any late-start penalty. A three-instance center on a seven-hour shift with one hour of downtime and eight hours already booked offers 10 available hours, since work centers run at 100 percent utilization in current versions."
   - question: "Why does the calculation multiply by instances and utilization separately?"
-    answer: "Because they answer different questions. Instances count how many physical machines run the shift, so two identical machines double the hours. Utilization is the fraction of the shift you plan against, deliberately below 100 percent to leave protective slack. Multiplying both means a work center's real offered capacity reflects how many machines exist and how hard you are willing to load them, not just the raw clock time of the shift."
+    answer: "Because they answer different questions. Instances count how many physical machines run the shift, so two identical machines double the hours. Utilization is a throttle on the shift itself, and in current versions it sits at 100 percent with no editor field on the work center screen. Multiplying both keeps the two ideas apart, so a capacity figure tells you how many machines exist as well as how long the shift is, rather than blending them into one opaque number."
   - question: "What is a late-start penalty in a capacity calculation?"
     answer: "It is the capacity lost when an operation cannot begin until partway through a shift. If a shift runs 08:00 to 16:00 but the operation's earliest start is 10:00, the first two hours of that shift are unusable for it, so EDGEBIC subtracts them. The rest of the shift is available, but the day-one slot is clipped to the hours that remain after the constrained start."
 qaQuestions:
   - question: "Our work center has two machines and an eight-hour shift, so why does the schedule think it only has about thirteen hours, not sixteen?"
-    answer: "Because raw clock time is not offered capacity. Two machines on an eight-hour shift is sixteen machine-hours only at 100 percent utilization with no downtime. If you run that center at 80 percent utilization to leave protective slack, EDGEBIC scales the sixteen hours down to 12.8, and any scheduled downtime or partial holiday comes off before that multiply. The thirteen-ish hours you see is the honest figure the scheduler will actually fill, which is deliberately below the theoretical maximum so the center is not planned to the edge."
+    answer: "Because raw clock time is not offered capacity. Two machines on an eight-hour shift is sixteen machine-hours only if the shift really runs its full length with nothing coming off it. Breaks are already netted out of the shift, and any scheduled downtime or partial holiday is subtracted before the multiply, so a shift defined as its productive window plus an hour of maintenance lands near thirteen. That is the honest figure the scheduler will actually fill. Work centers run at 100 percent utilization in current versions, so the difference lives in the shift definition, a downtime entry, or a per-day override rather than in a percentage on the machine record."
   - question: "A job cannot start until 10:00 and the schedule only gave it six hours on the first day. Where did the other two go?"
     answer: "They went to the late-start clip. The shift runs 08:00 to 16:00, but the operation's earliest start is 10:00, so the 08:00 to 10:00 window cannot be used by this operation and EDGEBIC subtracts it. Six hours remain on day one, which is exactly what the schedule allocated, and the rest of the work carries to the next available shift. This is not lost capacity in general, another job with an earlier start could use that 08:00 to 10:00 window, it is just unavailable to an operation that cannot begin until later."
 ---
@@ -51,7 +51,7 @@ Each term earns its place:
 
 - **Base shift hours** is the working length of the shift for that weekday, net of breaks. A shift defined 08:00 to 16:00 with a one-hour break contributes 7 hours.
 - **Holiday and downtime** come off the top. A whole-day holiday zeroes the shift; a partial holiday or a scheduled maintenance window reduces it.
-- **Utilization percentage** scales the shift to the fraction you are willing to plan against. Running at 80 percent leaves deliberate slack, which is the point of [protective capacity](/blog/protective-vs-productive-capacity).
+- **Utilization percentage** is the throttle applied to the shortened shift. Work centers created or imported in current versions run at 100 percent and the value is not editable on the work center screen, so deliberate slack is expressed through shift hours, downtime, or a per-day capacity override instead, which is the point of [protective capacity](/blog/protective-vs-productive-capacity).
 - **Number of instances** multiplies by how many physical machines run the shift. Two identical machines double the hours.
 - **Already allocated** subtracts what earlier operations have already booked in this bucket, so the number is what remains, not the gross.
 - **Late-start penalty** clips the first usable slot when an operation cannot begin at the shift's start.
@@ -60,9 +60,9 @@ The order matters. Holiday and downtime are subtracted before the multipliers be
 
 ## Why instances and utilization are separate
 
-It is tempting to fold these into one figure, but they answer different questions and behave differently. Instances is a count of physical capacity: how many machines exist and run this shift. Utilization is a policy: how hard you choose to load whatever machines you have. A work center might have three instances but be planned at 75 percent because you want a cushion for variability and breakdowns.
+It is tempting to fold these into one figure, but they answer different questions and behave differently. Instances is a count of physical capacity: how many machines exist and run this shift, and it is a number you set on the work center. Utilization is a throttle on the shift itself, and in current versions it sits at 100 percent with no editor field, so it is a term to read rather than a dial to turn.
 
-Keeping them separate means you can change one without disturbing the other. Add a fourth machine and instances goes up while your utilization policy holds. Decide to plan tighter and utilization rises while the machine count is untouched. The [hours-based capacity model](/blog/hours-based-vs-piece-based-capacity-modeling) uses both because both are real levers a planner controls.
+Keeping them separate still matters when you read a capacity figure, because it tells you which part of the number to question. If the offered hours look wrong, the machine count and the shift definition are where to look, not a hidden percentage. And when you do want a machine planned below its clock, the reduction goes into the shift hours, a downtime event, or a per-day capacity override, all of which the [hours-based capacity model](/blog/hours-based-vs-piece-based-capacity-modeling) honors.
 
 ## The late-start clip
 
@@ -72,7 +72,7 @@ This is a per-operation clip, not a permanent loss. A different job that can sta
 
 ## A worked example: one machine center, one day
 
-Take a milling center on a Monday. The day shift is 08:00 to 16:00 with a one-hour break, so 7 base hours. The center runs three machine instances at 80 percent utilization. Monday has a scheduled 1-hour maintenance downtime and no holiday, and 8 hours are already allocated to earlier jobs.
+Take a milling center on a Monday. The day shift is 08:00 to 16:00 with a one-hour break, so 7 base hours. The center runs three machine instances at the standard 100 percent utilization. Monday has a scheduled 1-hour maintenance downtime and no holiday, and 8 hours are already allocated to earlier jobs.
 
 Work the formula:
 
@@ -81,11 +81,11 @@ Work the formula:
 | Base shift hours | 8:00 to 16:00 minus 1h break | 7.0 h |
 | After holiday | no holiday | 7.0 h |
 | After downtime | 7.0 minus 1.0 | 6.0 h |
-| After utilization | 6.0 x 0.80 | 4.8 h |
-| After instances | 4.8 x 3 | 14.4 h |
-| After allocation | 14.4 minus 8.0 | 6.4 h |
+| After utilization | 6.0 x 1.00 | 6.0 h |
+| After instances | 6.0 x 3 | 18.0 h |
+| After allocation | 18.0 minus 8.0 | 10.0 h |
 
-So this bucket offers 6.4 available hours. If the next operation to reach this center also had a constrained start of, say, 10:00, a late-start penalty would come off that 6.4 as well. Every figure is traceable to a real cause: the break, the maintenance, the utilization policy, three machines, and the work already on the books.
+So this bucket offers 10.0 available hours. If the next operation to reach this center also had a constrained start of, say, 10:00, a late-start penalty would come off that 10.0 as well. Every figure is traceable to a real cause: the break, the maintenance, three machines, and the work already on the books.
 
 ## Why the calculation is the foundation
 
@@ -96,11 +96,11 @@ There is one important exception to the formula. When a planner enters a capacit
 For the wider context of why respecting this bucket matters at all, [finite versus infinite capacity scheduling](/blog/finite-vs-infinite-capacity-scheduling) makes the case, and the [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide) shows where capacity sits in the full pipeline. To see the formula run against your own shifts and machines, explore [the EDGEBIC engine](/edgebic) or [bring your data to a demo](/contact-us).
 
 <Accordion title="How does a scheduler calculate a work center's available hours for a day?">
-EDGEBIC starts from the base shift hours for that weekday, subtracts holiday and downtime hours, multiplies by the utilization percentage, multiplies by the number of machine instances, then subtracts hours already allocated and any late-start penalty. A three-instance center on a seven-hour shift at 80 percent utilization with one hour of downtime and eight hours already booked offers 6.4 available hours.
+EDGEBIC starts from the base shift hours for that weekday, subtracts holiday and downtime hours, multiplies by the utilization percentage, multiplies by the number of machine instances, then subtracts hours already allocated and any late-start penalty. A three-instance center on a seven-hour shift with one hour of downtime and eight hours already booked offers 10 available hours, since work centers run at 100 percent utilization in current versions.
 </Accordion>
 
 <Accordion title="Why does the calculation multiply by instances and utilization separately?">
-Because they answer different questions. Instances count how many physical machines run the shift, so two identical machines double the hours. Utilization is the fraction of the shift you plan against, deliberately below 100 percent to leave protective slack. Multiplying both means a work center's real offered capacity reflects how many machines exist and how hard you are willing to load them, not just the raw clock time of the shift.
+Because they answer different questions. Instances count how many physical machines run the shift, so two identical machines double the hours. Utilization is a throttle on the shift itself, and in current versions it sits at 100 percent with no editor field on the work center screen. Multiplying both keeps the two ideas apart, so a capacity figure tells you how many machines exist as well as how long the shift is, rather than blending them into one opaque number.
 </Accordion>
 
 <Accordion title="What is a late-start penalty in a capacity calculation?">

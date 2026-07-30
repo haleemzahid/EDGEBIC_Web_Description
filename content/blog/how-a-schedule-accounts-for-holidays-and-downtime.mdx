@@ -2,7 +2,7 @@
 title: "How a Schedule Accounts for Holidays and Downtime"
 description: "How EDGEBIC turns shifts, three levels of holidays, downtime windows, and capacity overrides into the effective hours a work center has on any given day."
 published: 2026-07-29T12:00:00.000Z
-modified: 2026-07-29T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
 category: Scheduling Concepts
 author: user-solutions
 cluster: edgebic-scheduling-concepts
@@ -21,16 +21,16 @@ faqQuestions:
   - question: "How does a scheduler calculate available hours for a work center?"
     answer: "EDGEBIC computes effective hours per work center, shift, and date from one formula: shift hours minus break, downtime, and any partial-holiday hours, multiplied by the number of machine instances, multiplied by the utilization percentage. A capacity override for a specific date replaces the formula outright. Both the scheduling engine and the capacity dashboard use the same calculation, so they never disagree on what a work center can do."
   - question: "What are the three levels of holidays in EDGEBIC?"
-    answer: "Plant-wide holidays close every work center and shift, such as a public holiday. Shift holidays close a single shift, such as a night-shift maintenance window. Work-center holidays close one machine, such as an annual teardown. They combine without double-counting: a plant-wide whole-day holiday blocks everything, while a shift or work-center holiday narrows the closure to just that shift or that machine."
+    answer: "Plant-wide holidays close every work center and shift, such as a public holiday. Shift holidays close a single shift, and work-center holidays close one machine. They combine without double-counting: a plant-wide whole-day holiday blocks everything, while the narrower scopes confine the closure to one shift or one machine. Only the plant-wide scope has a screen in the current release, though: the narrower two are honored by the engine but cannot be created, so a single shift or a single machine is closed with per-day capacity overrides instead."
   - question: "How is downtime different from a holiday?"
-    answer: "A holiday removes a whole day or blocks a partial window across shifts. Downtime subtracts hours from within a shift without eliminating it: a two-hour weekly lubrication on a machine reduces that shift's available hours by two but still leaves the rest of the shift schedulable. Downtime can be recurring, firing every week on a chosen day, or one-off for a specific date, and its hours come off before instances and utilization are applied."
+    answer: "A holiday removes a whole day or blocks a partial window across shifts. Downtime subtracts hours from within a shift without eliminating it: a two-hour lubrication reduces that shift's available hours by two but still leaves the rest of the shift schedulable, and the subtraction happens before instances and utilization are applied. The engine also understands downtime that recurs on a weekday, but the current release has no screen for creating downtime records, so in practice a standing weekly loss goes into the shift hours and a dated one goes into a per-day capacity override."
   - question: "How do I authorize Saturday overtime for one machine?"
     answer: "Use a daily capacity override for that work center, shift, and date. You enter the total hours the machine will be available that day, and the engine uses it verbatim without re-multiplying by instances or utilization, so you own the final number. The override wins over the standing formula and over any date-range override, and it makes a normally non-working Saturday schedulable for just that machine and shift."
 qaQuestions:
   - question: "A public holiday landed mid-week but the schedule still put jobs on that day. What did I configure wrong?"
-    answer: "Almost certainly the holiday was entered at the wrong level or was not marked whole-day. A plant-wide whole-day holiday makes every work center report zero hours and blocks all scheduling for that date. If you instead entered a shift holiday it only closes that one shift, and if you entered a work-center holiday it only closes that one machine, so the rest of the plant keeps scheduling. Check that the record is a plant-wide holiday with Applies to Whole Day set; for a recurring holiday, only the month and day matter, so confirm those are right or it fires on the wrong date every year."
+    answer: "Almost certainly the plan predates the holiday, or the record is not doing what you think. Saving a holiday never moves existing work, so rerun the schedule first. If jobs still land there, open the record and check three things: that it is marked active, that Closes the whole day is ticked if you meant a full closure rather than a window, and, for a recurring holiday, that the month and day are right, since only those two fields drive the recurrence and a mistyped date fires on the wrong day every year. Scope is rarely the culprit here, because the plant holiday screen is the only closure record you can create."
   - question: "We are retooling a welding cell for a week and can only guarantee 60 total hours across the whole week. How do I model that without editing every day?"
-    answer: "Use a date-range capacity override on that work center: set the start and end dates for the week and enter 60 as the total capacity. EDGEBIC distributes the total evenly across the available days and shifts in the window, so a five-weekday range with two shifts a day gives each shift slot 6 hours instead of its normal figure. Scheduling runs that week are automatically constrained to the retooling budget with no per-day editing, and if the range happens to include a plant holiday, that day is excluded from the count so the remaining days each get a slightly larger share."
+    answer: "Do the division once and enter it as per-day capacity overrides. Sixty hours across five weekdays is 12 a day, and on a two-shift work center that is 6 per shift slot, so you type 6 into each of the ten cells with a reason such as retooling week. Every scheduling run that week is then constrained to the budget. A date-range override that would hold the whole 60 in one record does exist in the engine, but it has no visible entry point in the current release, so the arithmetic is yours to do and the entry is a short typing job. Watch for a plant holiday inside the range: exclude it from your day count, or the remaining days will be short."
 ---
 
 **A schedule accounts for holidays and downtime by turning them into the effective hours a work center actually has on a given day. EDGEBIC by User Solutions computes those hours from one formula per work center, shift, and date, subtracting downtime and partial holidays, applying instances and utilization, and honoring any capacity override.** Before it allocates a single hour of work, the engine asks this calculation how much the machine can do, so every Gantt bar, every utilization percentage, and every due-date promise rests on the same numbers.
@@ -51,17 +51,17 @@ net   = gross - break - downtime - partial holiday hours
 capacity = max(0, net) x number of instances x (utilization % / 100)
 ```
 
-A machining center on an 08:00 to 16:30 shift with a 30-minute break, a 1-hour recurring Wednesday maintenance downtime, two instances, and 85 percent utilization comes out at 11.9 hours on a Wednesday: 8.5 gross, minus 0.5 break and 1.0 downtime for 7.0 net, times 2 instances times 0.85. That is the exact figure the engine schedules against and the exact figure the capacity dashboard shows, because both run the same calculation.
+A machining center on an 08:00 to 16:30 shift, 30 minutes of it lost to a break, an hour of Wednesday maintenance, two instances, and 85 percent utilization comes out at 11.9 hours on a Wednesday: 8.5 gross, minus 0.5 and 1.0 for 7.0 net, times 2 instances times 0.85. That is the exact figure the engine schedules against and the exact figure the capacity dashboard shows, because both run the same calculation. How those first two subtractions get told to the system is the practical question, and the answer is the shift hours themselves or a per-day override, not a downtime record.
 
-Before any of this, a date gate decides whether the work center is even open. A whole-day plant holiday, a work-center holiday, an idle window, or a non-working weekend all return "closed" and the date is skipped entirely, with capacity of zero.
+Before any of this, a date gate decides whether the work center is even open. A whole-day plant holiday, the work center's own availability flag or effective date, or a non-working weekend all return "closed" and the date is skipped entirely, with capacity of zero.
 
 ## Three levels of holidays that combine cleanly
 
 Not every closure is plant-wide, so EDGEBIC models holidays at three scopes:
 
-- **Plant-wide holiday.** Closes every work center and every shift. A public holiday, a company shutdown. It can be recurring (same month and day every year) or one-off, and it can be whole-day or a partial window.
-- **Shift holiday.** Closes a single shift on the machines that use it. A night-shift-only maintenance window, for example, leaves the day shift running.
-- **Work-center holiday.** Closes one machine on a specific date. An annual teardown on CNC-3 blocks that machine and leaves all others untouched.
+- **Plant-wide holiday.** Closes every work center and every shift. A public holiday, a company shutdown. It can be recurring (same month and day every year) or one-off, and it can be whole-day or a partial window. **This is the only one with a screen you can enter records on.**
+- **Shift holiday.** Closes a single shift on the machines that use it. Honored by the engine, but not creatable in the current release: express it as per-day capacity overrides of zero on that shift.
+- **Work-center holiday.** Closes one machine on a specific date. Also honored but not creatable: an annual teardown on CNC-3 is a per-day capacity override of zero on that work center.
 
 They combine without double-counting because they are resolved in priority. If a plant-wide whole-day holiday exists for a date, every work center reports zero and no allocations are created, regardless of what shift or machine holidays also exist. If there is no plant closure, a shift holiday narrows the block to its shift, and a work-center holiday narrows it to its machine. A partial-day holiday (say a 45-minute monthly union assembly from 10:00 to 10:45) does not close anything; it subtracts only the overlap between the holiday window and each shift's window from that shift's hours.
 
@@ -75,7 +75,7 @@ The two override paths at the top of the resolution chain exist for the cases th
 
 A **daily override** authorizes or restricts one cell. To open a normally non-working Saturday for a rush order, you enter the approved hours for that work center, shift, and date, say 4.0, with a reason. The engine uses 4.0 exactly, without re-multiplying by instances or utilization, so you enter the total you actually want the machine to have. This is the one place the planner, not the formula, owns the final number, and it wins over everything else for that cell.
 
-A **date-range override** models a period-wide budget. Retooling a welding cell for a week where you can only guarantee 60 total hours becomes a single record: the week's start and end dates and a capacity of 60. EDGEBIC counts the available days in the window (excluding any plant holidays), divides the 60 across them, then divides again by the shifts active each day. A five-weekday range with two shifts a day gives each shift slot 6 hours instead of its usual figure, and the whole week's scheduling is automatically constrained to the budget with no per-day editing. If a plant holiday falls inside the range, that day is dropped from the count and the remaining days each carry a slightly larger share.
+A **date-range override** models a period-wide budget: a start and end date and a total capacity, which the engine divides across the available days in the window and then again by the shifts active each day. It sits in the middle of the resolution chain and a per-day override beats it on any date both cover. It is worth knowing the rung exists, because it explains the ordering, but the current release exposes no entry point for creating one. In practice you do the division yourself and enter per-day overrides: retooling a welding cell on 60 hours across five weekdays and two shifts is 6 hours per shift slot, typed into ten cells with a shared reason, and any plant holiday inside the range should be left out of your day count.
 
 ## Why one chokepoint matters
 
@@ -92,11 +92,11 @@ EDGEBIC computes effective hours per work center, shift, and date from one formu
 </Accordion>
 
 <Accordion title="What are the three levels of holidays in EDGEBIC?">
-Plant-wide holidays close every work center and shift, such as a public holiday. Shift holidays close a single shift, such as a night-shift maintenance window. Work-center holidays close one machine, such as an annual teardown. They combine without double-counting: a plant-wide whole-day holiday blocks everything, while a shift or work-center holiday narrows the closure to just that shift or that machine.
+Plant-wide holidays close every work center and shift, such as a public holiday. Shift holidays close a single shift, and work-center holidays close one machine. They combine without double-counting: a plant-wide whole-day holiday blocks everything, while the narrower scopes confine the closure to one shift or one machine. Only the plant-wide scope has a screen in the current release, though: the narrower two are honored by the engine but cannot be created, so a single shift or a single machine is closed with per-day capacity overrides instead.
 </Accordion>
 
 <Accordion title="How is downtime different from a holiday?">
-A holiday removes a whole day or blocks a partial window across shifts. Downtime subtracts hours from within a shift without eliminating it: a two-hour weekly lubrication on a machine reduces that shift's available hours by two but still leaves the rest of the shift schedulable. Downtime can be recurring, firing every week on a chosen day, or one-off for a specific date, and its hours come off before instances and utilization are applied.
+A holiday removes a whole day or blocks a partial window across shifts. Downtime subtracts hours from within a shift without eliminating it: a two-hour lubrication reduces that shift's available hours by two but still leaves the rest of the shift schedulable, and the subtraction happens before instances and utilization are applied. The engine also understands downtime that recurs on a weekday, but the current release has no screen for creating downtime records, so in practice a standing weekly loss goes into the shift hours and a dated one goes into a per-day capacity override.
 </Accordion>
 
 <Accordion title="How do I authorize Saturday overtime for one machine?">

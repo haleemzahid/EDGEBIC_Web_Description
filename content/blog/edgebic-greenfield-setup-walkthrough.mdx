@@ -2,7 +2,7 @@
 title: "From Empty Plant to First Schedule: An EDGEBIC Greenfield Walkthrough"
 description: "Setting up scheduling software from scratch: follow one plant from an empty database to its first committed schedule in EDGEBIC, with every number shown."
 published: 2026-07-23T12:00:00.000Z
-modified: 2026-07-23T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
 category: Worked Examples
 author: user-solutions
 cluster: edgebic-walkthroughs
@@ -20,7 +20,7 @@ wordCount: 2250
 readingTime: 11
 faqQuestions:
   - question: "What data do I need before scheduling software can produce its first schedule?"
-    answer: "You need five things before a scheduling system can produce a real schedule: a unit of measure, at least one shift calendar, your work centers with instance counts and utilization settings, your products, and a routing that links operations in sequence. In this walkthrough those five pieces, plus one customer and one holiday, take a plant from an empty database to a committed two-day schedule for a 20-piece order."
+    answer: "You need five things before a scheduling system can produce a real schedule: a unit of measure, at least one shift calendar, your work centers with honest instance counts and shift assignments, your products, and a routing that links operations in sequence. In this walkthrough those five pieces, plus one customer and one holiday, take a plant from an empty database to a committed two-day schedule for a 20-piece order."
   - question: "How does EDGEBIC calculate how long each operation takes?"
     answer: "EDGEBIC computes each operation's workload as setup time plus run time per piece multiplied by quantity. A cut step with 0.5 hours of setup and 0.20 hours per piece needs 4.5 hours for 20 pieces. The engine then places those hours into real shift capacity, spilling across days when a step needs more hours than the remaining shift can hold."
   - question: "Does a plant holiday automatically block scheduling on that date?"
@@ -28,13 +28,13 @@ faqQuestions:
   - question: "How long does it take to see a first schedule in a new scheduling system?"
     answer: "With clean inputs, a first schedule appears the same day you enter your master data. The walkthrough in this article creates one unit of measure, one customer, one shift, one holiday, three work centers, two products, a four-step routing, and one order, then generates and commits a full finite capacity schedule in a single sitting. The heritage benchmark is the documented five-day RMDB implementation with Fourth Shift data at Plastilite."
 qaQuestions:
-  - question: "My milling area has two machines but we only plan it at 80 percent. How does that change the schedule versus planning at full capacity?"
-    answer: "It changes the daily ceiling the engine will load. In this walkthrough the milling work center has 2 instances on a 7-hour net shift at 80 percent utilization, so the engine offers 7 x 2 x 0.80 = 11.2 hours per day, not 14. An 11-hour milling step therefore spills across two days (5.6 hours on the first afternoon, 5.4 the next morning) instead of squeezing into one. That 20 percent reserve is what absorbs rework, maintenance, and the jobs you have not entered yet."
+  - question: "My milling area has two machines but we only want to plan it to about 80 percent. Where does that reserve go?"
+    answer: "Not into a percentage on the work center, because work centers run at 100 percent utilization and the value is not editable there. Put the reserve in the calendar instead: define milling's shift as the hours it genuinely delivers rather than the gross clock, or add a downtime event for the losses that recur, or set a per-day capacity override on the days you know will run short. In this walkthrough milling has 2 instances on a 7-hour net shift, so it offers 14 hours a day; describing the shift as 5.6 productive hours instead would offer 11.2, and every downstream date would shift accordingly."
   - question: "We are starting from nothing. In what order should we enter master data so nothing blocks anything else?"
     answer: "Follow the dependency chain: units of measure first (products need one), then customers, then the shift calendar, then holidays, then work centers (they attach to the shift), then products, then the routing (it references both products and work centers), and finally the order. In this walkthrough that exact order produces 13 database rows of master data and zero validation errors, and the very first scheduling run commits cleanly with three operation bars on the Gantt."
 ---
 
-**Setting up scheduling software from scratch takes less data than most planners expect: one shift calendar, a handful of work centers, a routing, and one order are enough for a real finite capacity schedule.** This walkthrough follows a fictional plant, Acme Bracket Co., from a completely empty database to its first committed schedule in [EDGEBIC by User Solutions](/edgebic). Every number is real: you will see exactly why the cut step takes 4.5 hours, why milling spills into a second day, and why quality control starts at 10:57 rather than 10:42. It is one of the [worked examples](/blog/edgebic-worked-examples) we publish so you can judge the scheduling engine by its arithmetic, not its adjectives.
+**Setting up scheduling software from scratch takes less data than most planners expect: one shift calendar, a handful of work centers, a routing, and one order are enough for a real finite capacity schedule.** This walkthrough follows a fictional plant, Acme Bracket Co., from a completely empty database to its first committed schedule in [EDGEBIC by User Solutions](/edgebic). Every number is real: you will see exactly why the cut step takes 4.5 hours, why milling spills into a second day, and why quality control starts at 10:15 rather than 10:00. It is one of the [worked examples](/blog/edgebic-worked-examples) we publish so you can judge the scheduling engine by its arithmetic, not its adjectives.
 
 If you already run RMDB, the concepts here will feel familiar; the [upgrade path is documented separately](/rmdb-to-edgebic). If you are new to the category, start with [what production scheduling is](/blog/what-is-production-scheduling) and come back.
 
@@ -47,7 +47,7 @@ Acme Bracket Co. opens its doors with nothing in the system. By the end of the w
 | Unit of measure | Each |
 | Customer | Global Mounts Ltd |
 | Products | Widget A (finished good, make-to-order) and Steel Plate 4mm (raw material, 10 on hand) |
-| Work centers | Cutting (1 instance), Milling (2 instances, planned at 80%), Quality Control (1 instance) |
+| Work centers | Cutting (1 instance), Milling (2 instances), Quality Control (1 instance) |
 | Shift | Day Shift, Monday to Friday, 08:00 to 16:00 with a 1-hour break = 7 net hours per day |
 | Holiday | Independence Day, falling on Day 4 of the schedule window |
 | Routing | 4 steps: Material, Cut, Mill, QC |
@@ -56,7 +56,7 @@ Acme Bracket Co. opens its doors with nothing in the system. By the end of the w
 Three details matter more than they look:
 
 1. **The shift yields 7 working hours, not 8.** EDGEBIC subtracts the break: 16:00 minus 08:00 minus 1:00 = 7.0 hours per weekday. Weekend days carry zero hours, so the plant is simply closed on Saturday and Sunday.
-2. **Milling has 2 machines planned at 80 percent.** Effective daily capacity is 7 x 2 x 0.80 = 11.2 hours. That 20 percent reserve is a deliberate planning choice, and you will see it decide where the milling step ends.
+2. **Milling has 2 machines.** Effective daily capacity is 7 x 2 = 14 hours, twice what Cutting offers. The instance count is the one field that multiplies capacity, and you will see it decide how the milling step splits.
 3. **The holiday is plant-wide.** It is not tied to any single work center, so on Day 4 every work center has zero capacity.
 
 ## Step 1: Enter Master Data in Dependency Order
@@ -101,27 +101,27 @@ The planner selects the order and clicks Schedule. The engine sorts the routing 
 
 **Cut: Day 1, 08:00 to 12:30.** Cutting has 7 hours available on Day 1 and needs only 4.5. One machine, one block, done by 12:30.
 
-**Mill: Day 1, 12:30 to Day 2, 10:42.** Here the finite capacity math earns its keep. Milling cannot start before 12:30 because Cut feeds it. From 12:30 to the 16:00 shift end there are 3.5 clock hours left, and with 2 instances at 80 percent that is 3.5 x 2 x 0.80 = **5.6 hours of work** the engine can place on Day 1. It load-balances the work: 2.8 hours on each machine, both running 12:30 to 15:18 of allocated effort. That leaves 11.0 minus 5.6 = **5.4 hours** for Day 2. Both instances pick up at 08:00 and carry 2.7 hours each, finishing the step at **10:42**.
+**Mill: Day 1, 12:30 to Day 2, 10:00.** Here the finite capacity math earns its keep. Milling cannot start before 12:30 because Cut feeds it. From 12:30 to the 16:00 shift end there are 3.5 clock hours left, and with 2 instances that is 3.5 x 2 = **7.0 hours of work** the engine can place on Day 1. It load-balances the work: 3.5 hours on each machine, both running 12:30 to 16:00. That leaves 11.0 minus 7.0 = **4.0 hours** for Day 2. Both instances pick up at 08:00 and carry 2.0 hours each, finishing the step at **10:00**.
 
-**Queue time pushes QC to 10:57.** The routing puts a 0.25-hour queue after milling: cooling, moving, waiting for the inspector. The engine adds it after the step ends, so QC's earliest start is 10:42 plus 15 minutes = 10:57.
+**Queue time pushes QC to 10:15.** The routing puts a 0.25-hour queue after milling: cooling, moving, waiting for the inspector. The engine adds it after the step ends, so QC's earliest start is 10:00 plus 15 minutes = 10:15.
 
-**QC: Day 2, 10:57 to 12:57.** Quality Control has 5.05 hours left in its Day 2 shift and needs 2.0. Done by lunchtime.
+**QC: Day 2, 10:15 to 12:15.** Quality Control has 4.75 hours left in its Day 2 shift and needs 2.0. Done by lunchtime.
 
 The Gantt chart tells the story at a glance:
 
 ```
            Day 1 (Mon)                  Day 2 (Tue)
-           08:00        12:30     10:42 10:57   12:57
+           08:00        12:30     10:00 10:15   12:15
 Cutting    [====== CUT 4.5h =====]
-Milling              [= MILL 5.6h =][= MILL 5.4h =]
+Milling              [= MILL 7.0h =][= MILL 4.0h =]
 QC                                          [QC 2h]
 ```
 
-The whole job runs Day 1, 08:00 to Day 2, 12:57: about 1.2 calendar days against a Day 8 due date, leaving **6.79 days of float**. The holiday on Day 4 never comes into play because the work finishes before it, but had milling run long, the engine would have skipped Day 4 entirely and resumed on Day 5.
+The whole job runs Day 1, 08:00 to Day 2, 12:15: about 1.2 calendar days against a Day 8 due date, leaving **6.82 days of float**. The holiday on Day 4 never comes into play because the work finishes before it, but had milling run long, the engine would have skipped Day 4 entirely and resumed on Day 5.
 
 ## Step 4: What Gets Committed, and What the Screens Show
 
-When the run completes, EDGEBIC commits the result in one transaction. The order flips to Scheduled. One production schedule record spans the job (Day 1, 08:00 to Day 2, 12:57), and three operation records sit underneath it: one each for Cut, Mill, and QC. The material step commits no operation row because it consumed no capacity. Under the milling operation sit four resource allocations (2 machines x 2 days), which is how the system remembers exactly which instance carried which hours on which date.
+When the run completes, EDGEBIC commits the result in one transaction. The order flips to Scheduled. One production schedule record spans the job (Day 1, 08:00 to Day 2, 12:15), and three operation records sit underneath it: one each for Cut, Mill, and QC. The material step commits no operation row because it consumed no capacity. Under the milling operation sit four resource allocations (2 machines x 2 days), which is how the system remembers exactly which instance carried which hours on which date.
 
 Three screens confirm the result:
 
@@ -129,15 +129,15 @@ Three screens confirm the result:
 - **The Job Gantt** shows three colored bars in the Cutting, Milling, and Quality Control rows, with the milling bar visibly spanning two days.
 - **The work center schedule view** for Milling shows both instances loaded on the Day 1 afternoon and the Day 2 morning.
 
-The dashboard's first KPI cards are already meaningful: 1 scheduled order, 1 on-time order, Cutting at roughly 64 percent utilization for the day (4.5 of 7 hours), Milling at roughly 78 percent (11 of 11.2 effective hours), and QC nearly idle at 14 percent.
+The dashboard's first KPI cards are already meaningful: 1 scheduled order, 1 on-time order, Cutting at roughly 64 percent utilization for the day (4.5 of 7 hours), Milling at roughly 79 percent (11 of 14 effective hours), and QC nearly idle at 14 percent.
 
 ## What This First Run Proves
 
 A greenfield walkthrough is a trust exercise. This one proves six specific behaviors you can verify yourself:
 
 1. **The shift calendar is arithmetic, not decoration.** 7 net hours per weekday, zero on weekends, and the engine never places a minute outside them.
-2. **Utilization caps are respected.** Milling's 80 percent setting reduces its offered capacity from 14 to 11.2 hours per day, and the two-day milling split follows directly from that number.
-3. **Dependencies cascade.** Cut's 12:30 finish becomes Mill's earliest start; Mill's 10:42 finish plus queue becomes QC's 10:57 start. Nothing is hand-placed.
+2. **Instance counts multiply capacity.** Milling's 2 machines offer 14 hours a day against Cutting's 7, and the two-day milling split follows from the 12:30 handoff rather than from any shortage of machines.
+3. **Dependencies cascade.** Cut's 12:30 finish becomes Mill's earliest start; Mill's 10:00 finish plus queue becomes QC's 10:15 start. Nothing is hand-placed.
 4. **Queue time is modeled explicitly.** The 15-minute gap between the milling bar and the QC bar is your routing data, visible on the timeline.
 5. **Holidays block capacity automatically.** Plant-wide dates disappear from every work center's calendar.
 6. **Multi-instance work centers load-balance.** The engine splits milling hours evenly across both machines each day so the step finishes as early as the capacity allows.
@@ -146,11 +146,11 @@ A greenfield walkthrough is a trust exercise. This one proves six specific behav
 
 The fastest way to learn a scheduling engine is to change one number and predict the outcome before rerunning. Three variations from this same data set:
 
-**Give QC a second instance.** The 2-hour inspection splits into 1 hour on each of two instances, and the job's finish moves from 12:57 to 11:57. One field changed, one hour saved.
+**Give QC a second instance.** The 2-hour inspection splits into 1 hour on each of two instances, and the job's finish moves from 12:15 to 11:15. One field changed, one hour saved.
 
-**Move the holiday onto Day 2.** Milling's second-day allocation is now blocked. The engine searches forward, places the remaining 5.4 hours on Day 3, and QC follows. Total span grows by about a day, and no bar ever overlaps the holiday.
+**Move the holiday onto Day 2.** Milling's second-day allocation is now blocked. The engine searches forward, places the remaining 4.0 hours on Day 3, and QC follows. Total span grows by about a day, and no bar ever overlaps the holiday.
 
-**Raise the quantity to 100.** Milling now needs 1.0 + 0.50 x 100 = 51 hours. At 11.2 effective hours per day that is roughly 4.6 working days, and the run will straddle the Day 4 holiday, which the engine skips. You can watch a single order occupy a work center for a week and see exactly why.
+**Raise the quantity to 100.** Milling now needs 1.0 + 0.50 x 100 = 51 hours. At 14 effective hours per day that is roughly 3.6 working days, and the run will straddle the Day 4 holiday, which the engine skips. You can watch a single order occupy a work center for a week and see exactly why.
 
 Each variation is a one-field edit followed by a reschedule, which is precisely the habit that makes a scheduling system stick: change, predict, verify.
 
@@ -163,7 +163,7 @@ User Solutions has been walking manufacturers through exactly this kind of setup
 Ready to run this walkthrough on your own products and work centers? [Contact US for a demo](/contact-us) and bring one routing: we will build your first schedule with you.
 
 <Accordion title="What data do I need before scheduling software can produce its first schedule?">
-You need five things before a scheduling system can produce a real schedule: a unit of measure, at least one shift calendar, your work centers with instance counts and utilization settings, your products, and a routing that links operations in sequence. In this walkthrough those five pieces, plus one customer and one holiday, take a plant from an empty database to a committed two-day schedule for a 20-piece order.
+You need five things before a scheduling system can produce a real schedule: a unit of measure, at least one shift calendar, your work centers with honest instance counts and shift assignments, your products, and a routing that links operations in sequence. In this walkthrough those five pieces, plus one customer and one holiday, take a plant from an empty database to a committed two-day schedule for a 20-piece order.
 </Accordion>
 
 <Accordion title="How does EDGEBIC calculate how long each operation takes?">
