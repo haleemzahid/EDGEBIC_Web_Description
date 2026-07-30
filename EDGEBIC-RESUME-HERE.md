@@ -1,0 +1,196 @@
+# EDGEBIC PROMOTION — RESUME IN A FRESH CHAT
+
+**Read this file first. It is the complete handoff.**
+Last session ended: 2026-08-10 · Last commit: `b0ffc64` · Branch `feature/edgebic-promotion`, pushed to origin, working tree clean.
+
+---
+
+## 1. WHERE THINGS STAND
+
+**1,686 EDGEBIC blog posts written, committed and pushed.** Target was 2,120.
+
+| | |
+|---|---|
+| Repo | `D:\Usersolutons\EDGEBIC Description\EDGEBIC_Web_Description` |
+| Branch | `feature/edgebic-promotion` (pushed; **not merged to main**) |
+| Remote | github.com/haleemzahid/EDGEBIC_Web_Description |
+| Posts | `content/blog/*.mdx` |
+| Source material | `D:\Usersolutons\ERP + FCP\FCP-Book` |
+| Canonical tracker | `EDGEBIC-PROMOTION-PROGRESS.md` (scoreboard + wave log + open items) |
+| Strategy / rules | `EDGEBIC-PROMOTION-STRATEGY.md`, `EDGEBIC-BLOG-TAXONOMY.md` |
+
+Verify the count yourself (never trust a remembered number):
+```powershell
+cd "D:\Usersolutons\EDGEBIC Description\EDGEBIC_Web_Description"
+Select-String -Path content/blog/*.mdx -Pattern "cluster:\s*'?(edgebic-[a-z-]+)'?\s*$" |
+  ForEach-Object { $_.Matches[0].Groups[1].Value } | Group-Object | Sort-Object Name |
+  ForEach-Object { "{0,-30} {1}" -f $_.Name, $_.Count }
+```
+
+---
+
+## 2. HOW MUCH IS ACTUALLY LEFT
+
+Nominal gap is 434. **Realistically it is 100–150.** Six clusters are done or proven
+exhausted — not "hard to extend," but demonstrated by matching every documented
+procedure to the post already covering it.
+
+| Cluster | Now | Target | Real remaining |
+|---|---|---|---|
+| how-to | 325 | 500 | **~30.** Three lanes were partitioned and swept: shop-floor returned **0 of 12** (all 56 UserGuide procedures matched to existing posts), reports 6 of 12, capacity 6 of 12. |
+| glossary | 279 | 350 | **~25.** Thinning; agents now lose half a candidate list to collisions. |
+| scheduling-concepts | 100 | 200 | **0 — MINED OUT.** Proven twice. |
+| planning | 50 | 80 | **0 — MINED OUT.** Proven. |
+| industry | 116 | 110 | **0 — over target.** |
+| visual-scheduling | 44 | 40 | **0 — over target.** |
+| troubleshooting | 120 | 120 | **0 — complete.** |
+| admin | 40 | 40 | **0 — complete.** |
+| platform | 177 | 180 | ~0. Closer agent found no writable candidate. |
+| walkthroughs | 49 | 50 | ~1 |
+| erp-integration | 142 | 150 | ~8, and the last agent said closing them needs either invented product detail or thinner angles than it would write. |
+| outcomes | 85 | 100 | ~10 |
+| optimization | 49 | 60 | ~11 |
+| shop-floor | 49 | 60 | ~11 |
+| quoting | 31 | 40 | ~9 |
+| migration | 30 | 40 | ~10 |
+
+**Do not pad to hit 2,120.** The documented source material does not contain
+2,120 non-duplicative posts. Padding is what produced the defects described next.
+
+---
+
+## 3. ⚠️ THE MOST IMPORTANT THING IN THIS FILE
+
+**The FCP-Book's R-series recipe appendices describe the ENGINE. The UserGuide
+describes the SHIPPED UI. When they disagree, the UserGuide wins — always.**
+
+Ignoring this produced **82 published posts that told planners to open tabs, set
+fields and click buttons that do not exist.** All 82 have been corrected. Five
+classes were found and closed:
+
+| Class | The false claim | Reality (UserGuide) |
+|---|---|---|
+| Security | In-app audit-log screen; per-user permission overrides | §27: "no viewing screen"; "permissions come only from roles" |
+| Maintenance | Work-center service-interval fields; kiosk PM banner | Zero hits for "preventive" anywhere; kiosk has ONE banner (routing-changed) |
+| Downtime | Downtime-events tab; downtime type field; shift-scoped closures | §05: "the current release has no screen to configure them" |
+| Entry mode | Per-work-center hours/pieces selector | Phrase absent entirely; kiosk always captures both |
+| Utilization | Editable utilization % and efficiency factor; a fabricated 50% default | §06: runs at 100%, "the value is not editable on this screen" |
+
+### 🛡️ GUARDS — real fields with confusingly similar names. Do NOT "correct" these:
+- **Work center GROUP per-member `Factor (×)`** — REAL and editable (UserGuide 07, incl. "never applied to setup time").
+- **Job-level `Schedule at Utilization`** — REAL.
+- **Kiosk pause reason codes** — REAL (four categories, seeded list).
+- **Job priority = plain positive number, lower first** — the blog is RIGHT; the UserGuide's own §30 quick-reference table is stale. Detailed sections beat summary tables.
+
+### Also confirmed NOT to exist (never write a how-to for these):
+Per-work-center holiday rows · date-range/monthly capacity override entry screen ·
+recurring in-shift downtime · critical-path highlighting (disabled behind a
+compile-time flag) · kiosk crash-recovery/open-punch restore · kiosk login
+(free-text name; certification is enforced at PLAN time only) · offline queue.
+
+---
+
+## 4. HOW TO RUN A FLIGHT
+
+Dispatch **up to 7 agents in parallel**, ~12 posts each. Partition tightly by
+domain so they cannot collide. Every brief must include:
+
+1. Read the standing briefs first:
+   - `wave4-flight5-brief.md` (hard rules) and `wave1-brief.md` (post shapes),
+     plus `wave3-glossary-brief.md` for glossary work.
+   - ⚠️ These live in the **session scratchpad**, which a fresh chat will not have.
+     Recreate them from §5 below, or tell the agent the rules inline.
+2. **Copy conventions from a live sibling on disk** — never trust a brief's stated
+   `category:` / `pillarSlug:`. Several briefs were wrong; disk is truth.
+3. **Collision sweep across ALL ~2,200 files**, by slug *and* by distinguishing
+   phrase. Cluster-only sweeps miss half the collisions.
+4. The UserGuide-wins rule and the guard list from §3.
+5. **"Report a shortfall rather than pad or invent."** This is the single most
+   valuable instruction — one agent's honest zero-output report is what uncovered
+   the entire contamination.
+
+Then: QA sweep → update `EDGEBIC-PROMOTION-PROGRESS.md` (scoreboard + wave-log row)
+→ commit → `git push origin feature/edgebic-promotion`.
+
+### QA gate (must all pass before commit)
+```powershell
+$root="D:\Usersolutons\EDGEBIC Description\EDGEBIC_Web_Description"; Set-Location $root
+[Environment]::CurrentDirectory=$root   # required: .NET IO uses process cwd, not PS location
+$new = git status --porcelain content/blog | Where-Object { $_ -match '^\?\?' } |
+       ForEach-Object { Join-Path $root (($_ -replace '^\?\?\s+','').Trim('"')) }
+foreach($f in $new){ $t=[System.IO.File]::ReadAllText($f)
+  if($t.Contains([char]0x2014)){ "EMDASH: $f" }
+  if($t -cmatch '\bFCP\b'){ "FCP: $f" }
+  if($t -match 'Capable[- ]to[- ]Promise|\bCTP\b'){ "CTP: $f" }
+  if($t -match 'Control Tower'){ "CT: $f" } }
+Select-String -Path $new -Pattern 'utilis|behaviour|catalogue|organis|colour|labour|prioritis|modelling|\bcancelled\b' -CaseSensitive
+# link resolution: every ]( /blog/x ) must match a real content/blog/x.mdx
+```
+Also verify: `author: user-solutions`, 3 faqQuestions + 2 qaQuestions, and that
+**0 existing files were modified** (unless doing an authorized correction pass).
+
+---
+
+## 5. NON-NEGOTIABLE CONTENT RULES
+
+- **Never write "FCP"** in user-facing copy. The product is **EDGEBIC**, "EDGEBIC by
+  User Solutions" on first mention.
+- **No em dashes** (U+2014). **US spelling** ("canceled", "catalog", "utilization").
+- **ERP integration = Excel/CSV/database import & export masks ONLY.** Never a
+  native, certified, or API connector. Frame as: export to file → import via saved
+  mask → schedule → export the plan back.
+- **Optimizer:** multi-run = "best of N tried, guaranteed never worse than the
+  baseline"; CP-SAT = "proven within X% of optimal". **Never "always optimal."**
+  The planner always presses Accept; it never auto-applies.
+- **No CTP / Capable-to-Promise.** No **Control Tower** (roadmap only).
+- **Costing is labor + material only** — no overhead, standard cost or contribution margin.
+- **Yield/scrap inflation is ROADMAP** (see open item below).
+- Concurrency is **last-write-wins**. Schedule export is a **grid snapshot**, not a
+  round-trip module.
+- **Heritage proof** (GE Railcar 30→90%, USS Nimitz 26,000+ tasks, Cummins 33
+  locations, Homestead 40h→2h, Technical Glass, Turner Bicycles) is attributed to
+  the **User Solutions / RMDB lineage**. Never invent a customer or a metric.
+- Frontmatter: `author: user-solutions`, 3 `faqQuestions` + 2 `qaQuestions`, FAQ
+  answers mirrored into `<Accordion>` blocks. **Preserve non-standard FAQ counts
+  where they already exist — never truncate published content to hit a number.**
+- Post shapes: how-to = bold-lead answer, Before You Start, numbered steps, How to
+  Check It Worked, Common Mistakes, Next Steps (~1,100–1,300 words). Glossary =
+  bold standalone definition first, How it works, A concrete example reusing the
+  book's own analogy, How EDGEBIC uses it (900–1,400). Walkthrough = end-to-end
+  narrated scenario with real numbers (1,500–2,000).
+
+---
+
+## 6. OPEN ITEMS FOR THE OWNER (not blocking, but decide)
+
+1. **Yield / scrap inflation** — flagged independently by three agents. The rulebook
+   treats upstream yield inflation as roadmap (first-pass yield is a *reporting*
+   figure), but `how-a-schedule-accounts-for-scrap-and-yield-loss` and
+   `edgebic-for-technical-ceramics-kiln-scheduling` lean on it as shipped. Rule one
+   way and align those two. New posts stay conservative meanwhile.
+2. **Fix the FCP-Book** — the R-series recipes teach flows the product lacks. This is
+   a documentation defect beyond the website; any future writer given R-series access
+   will repeat these mistakes.
+3. **Three files were left mid-check** when the last session ended (a small agent was
+   stopped): `how-to-set-work-center-efficiency-in-edgebic` (an undocumented 0.1–2.0
+   clamp on a pieces efficiency factor), `how-a-parallel-group-screens-out-a-slow-machine`
+   (a "minimum efficiency threshold, default 0.80" absent from UserGuide 12), and
+   `how-efficiency-scales-run-time-but-not-setup` (says alternates carry a speed factor;
+   UserGuide 12 ~line 331 says a factor on a *true alternative* does nothing). Verify
+   and correct — mind the group-Factor guard.
+4. **Human-only, still outstanding:** `pnpm exec tsc --noEmit`; visual QA of `/`,
+   `/edgebic`, `/rmdb-to-edgebic`, `/edgebic-erp-integration`; **merge to main**;
+   deploy; GSC page groups + sitemap; the screenshot capture session
+   (`EDGEBIC-IMAGE-PLAN.md` — no post has a `heroImage` yet).
+
+---
+
+## 7. FIRST PROMPT FOR THE NEW CHAT
+
+> Read `EDGEBIC-RESUME-HERE.md` in
+> `D:\Usersolutons\EDGEBIC Description\EDGEBIC_Web_Description`, then
+> `EDGEBIC-PROMOTION-PROGRESS.md`. Confirm the on-disk post count per cluster.
+> Then continue the EDGEBIC blog program: dispatch up to 7 parallel agents on the
+> clusters that still have real runway (see §2), following every rule in §3 and §5.
+> Agents must report honest shortfalls rather than pad or invent. QA, commit and
+> push each flight.
