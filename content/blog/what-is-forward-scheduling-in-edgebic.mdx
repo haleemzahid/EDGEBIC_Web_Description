@@ -1,0 +1,87 @@
+---
+title: "What Is Forward Scheduling in EDGEBIC?"
+description: "Forward scheduling starts a job as early as capacity allows and reports when it finishes. See how EDGEBIC's default direction places work and where the slack ends up."
+published: 2026-08-16T12:00:00.000Z
+modified: 2026-08-16T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - what is forward scheduling
+  - forward scheduling definition
+  - forward vs backward scheduling
+  - default scheduling direction
+  - earliest start scheduling
+  - production scheduling direction
+targetPhrase: "what is forward scheduling"
+wordCount: 1270
+readingTime: 6
+faqQuestions:
+  - question: "What is forward scheduling?"
+    answer: "Forward scheduling starts a job as early as capacity allows and reports the date it would finish. The engine takes the job's start anchor, places the first routing step in the earliest free slot on its work center, then places each following step as soon as its predecessor and any queue or transit rules allow. The finish date is an output of the process rather than an input to it, which is why forward scheduling answers the question 'if we start now, when is it done?'"
+  - question: "Is forward scheduling the default in EDGEBIC?"
+    answer: "Yes. Forward is the default scheduling direction, both as the site-wide setting and on individual orders and quotes. A planner can switch a specific order to backward when the question is 'can we deliver by this date', and the site default itself can be changed in the scheduling options. Direction is stored per order, so a plant can run mostly forward with a handful of just-in-time jobs alongside."
+  - question: "Where does the slack sit in a forward-scheduled job?"
+    answer: "At the end, between the finish date and the due date. Forward scheduling pulls all the work to the front of the available window, so any spare time collects after the last operation as a cushion against trouble. Backward scheduling does the reverse and puts the slack in front of the job, which minimizes work-in-process but leaves no recovery room if a step runs long."
+qaQuestions:
+  - question: "We schedule everything forward and jobs finish well before their due dates, so parts sit in the warehouse for weeks. Should we switch the whole plant to backward?"
+    answer: "Probably not the whole plant, and the reason is risk rather than dogma. Forward scheduling produces exactly the symptom you describe: work is pulled to the earliest possible slot, so finished parts wait. Backward scheduling fixes the inventory but spends the entire cushion in advance, because the plan is built so the last operation lands right on the due date. A step that runs an hour long then eats directly into the promise. The usual answer is selective: keep forward as the default for the bulk of the book where finishing early is harmless, and set backward on the products where holding cost, shelf life, or a customer's own delivery window makes early completion genuinely expensive. Direction is a per-order field precisely so that mix is possible."
+  - question: "If a job is set to backward and there is not enough time before the due date, does it error out?"
+    answer: "No. The engine attempts the backward pass, finds it cannot fit the work between now and the due date without starting in the past, and falls back to a forward run from the earliest legal start. What you get is a schedule you can act on plus a visible lateness figure, rather than a refusal. This fallback is one reason forward scheduling matters even in a plant that thinks of itself as running backward: it is the safety net underneath every backward job that does not fit. The fallback is also informative on a quote, because a backward simulation coming back with a finish date past the target is a direct, one-step answer to 'can you deliver by then'."
+---
+
+**Forward scheduling starts a job as early as available capacity allows and reports the date it will finish, making the finish date an output of the plan rather than an input to it. In EDGEBIC by User Solutions forward is the default direction: the engine takes the job's start anchor, drops the first routing step into the earliest genuinely free slot on its work center, and then places each subsequent step as soon as its predecessors and any queue, transit, or overlap rules permit, until the routing runs out and the job's finish date falls out of the process.**
+
+This entry is part of the EDGEBIC glossary series; for the broader vocabulary of production planning, see the [manufacturing glossary](/blog/manufacturing-glossary) and the generic industry definition of [forward scheduling](/blog/glossary-forward-scheduling).
+
+## How Forward Scheduling Works
+
+The mechanics are best understood as three nested loops, each of which decides one thing.
+
+**Between jobs**, the queue is sorted by priority, then by start date, then by due date. Each job is planned completely before the next one begins, and each job claims capacity as it goes. This ordering matters enormously on a loaded plant, because the job that goes first gets the good slots.
+
+**Within a job**, the routing's step sequence rules. A step cannot start before every step it depends on has finished, plus whatever queue time, transit days, or overlap rules the routing carries. Forward scheduling does not reorder your routing; it honors it.
+
+**Within a step**, the engine searches day by day and shift by shift for the earliest slot with free capacity on the step's work center, splitting across shifts and days as needed and spreading across machine instances where the work center has more than one.
+
+Notice what is absent from all three loops: the due date. In a pure forward pass the due date is not an input to placement at all. It becomes relevant only afterward, when the plan's finish is compared against the promise to produce a lateness figure. That separation is the point. Forward scheduling tells you what the plant can do, and then you find out whether that is good enough.
+
+## A Worked Example
+
+From the documentation's sample plant: **Day Shift** 08:00 to 16:00, one machine each on **Saw-1** and **CNC-Mill-1**, and JOB-2026-0102 building 50 of Bracket-B with two saw hours and eight mill hours, starting Monday July 20.
+
+The forward pass places the saw step Monday 08:00 to 10:00, the earliest free slot. The mill step is released at 10:00 and takes what Monday has left, six hours, running 10:00 to 16:00. The remaining two hours flow into Tuesday 08:00 to 10:00. Item Start, the moment the last work-center operation ends, is Tuesday July 21 at 10:00. The product carries one day of lead time, so Job End is Wednesday July 22. The due date is also Wednesday July 22, so Days Late reads 0.
+
+Now look at where the spare time sits. The job is delivery-ready Wednesday and due Wednesday, which happens to be tight, but had the due date been the following Monday the job would still have finished Wednesday and then waited. That waiting time is the forward-scheduling signature: the plan front-loads the work and lets the cushion accumulate at the end. [Slack time in forward versus backward scheduling](/blog/what-is-slack-time-in-forward-vs-backward-scheduling) traces where that cushion lands under each direction.
+
+## How EDGEBIC Uses Forward Scheduling
+
+Several product behaviors follow directly from forward being the default:
+
+- **It is the site default and the per-order default.** Scheduling direction is a field on the manufacturing order and on the quote, with a site-wide default in the scheduling options. Most plants leave the default alone and set backward on the specific products where finishing early is expensive.
+- **It is the fallback for a backward job that does not fit.** When a backward pass would require starting in the past, the engine runs forward from the earliest legal start instead. You get an actionable plan plus a visible lateness figure rather than an error.
+- **It is not the only path a job can take.** Direction sits inside a fixed order of precedence: an anchored job built around a bottleneck, recorded actuals, and planner pins all take priority over the direction setting. [Direction precedence in scheduling](/blog/what-is-direction-precedence-in-scheduling) sets out the full sequence.
+- **It drives the quote simulation.** A forward quote answers "if we start on this date, when will it finish", against your real current load. A backward quote answers "can we deliver by then". Both run the same engine on the same capacity.
+- **It is a greedy method, and the optimizer knows it.** Planning one job completely before looking at the next is fast and always respects every constraint, but a different ordering of jobs sometimes makes everyone on time. That is precisely what the optimizer searches for, without changing how any individual job is placed. See [greedy scheduling in manufacturing](/blog/what-is-greedy-scheduling-in-manufacturing).
+
+The practical habit worth forming is to read the forward result as two numbers rather than one. The finish date tells you what the plant can do; the gap between that date and the promise tells you how much room you have left. A forward job finishing three weeks early is not a triumph, it is inventory. A forward job finishing one hour early is not a comfort, it is a plan with no recovery room. The [forward scheduling explainer](/blog/edgebic-forward-scheduling-explained) walks the screens involved, and [the backward scheduling explainer](/blog/edgebic-backward-scheduling-explained) covers the other direction for the jobs that need it.
+
+<Accordion title="What is forward scheduling?">
+Forward scheduling starts a job as early as capacity allows and reports the date it would finish. The engine takes the job's start anchor, places the first routing step in the earliest free slot on its work center, then places each following step as soon as its predecessor and any queue or transit rules allow. The finish date is an output of the process rather than an input to it, which is why forward scheduling answers the question "if we start now, when is it done?"
+</Accordion>
+
+<Accordion title="Is forward scheduling the default in EDGEBIC?">
+Yes. Forward is the default scheduling direction, both as the site-wide setting and on individual orders and quotes. A planner can switch a specific order to backward when the question is "can we deliver by this date", and the site default itself can be changed in the scheduling options. Direction is stored per order, so a plant can run mostly forward with a handful of just-in-time jobs alongside.
+</Accordion>
+
+<Accordion title="Where does the slack sit in a forward-scheduled job?">
+At the end, between the finish date and the due date. Forward scheduling pulls all the work to the front of the available window, so any spare time collects after the last operation as a cushion against trouble. Backward scheduling does the reverse and puts the slack in front of the job, which minimizes work-in-process but leaves no recovery room if a step runs long.
+</Accordion>
+
+<Accordion title="We schedule everything forward and jobs finish well before their due dates, so parts sit in the warehouse for weeks. Should we switch the whole plant to backward?">
+Probably not the whole plant, and the reason is risk rather than dogma. Forward scheduling produces exactly the symptom you describe: work is pulled to the earliest possible slot, so finished parts wait. Backward scheduling fixes the inventory but spends the entire cushion in advance, because the plan is built so the last operation lands right on the due date. A step that runs an hour long then eats directly into the promise. The usual answer is selective: keep forward as the default for the bulk of the book where finishing early is harmless, and set backward on the products where holding cost, shelf life, or a customer's own delivery window makes early completion genuinely expensive. Direction is a per-order field precisely so that mix is possible.
+</Accordion>
+
+<Accordion title="If a job is set to backward and there is not enough time before the due date, does it error out?">
+No. The engine attempts the backward pass, finds it cannot fit the work between now and the due date without starting in the past, and falls back to a forward run from the earliest legal start. What you get is a schedule you can act on plus a visible lateness figure, rather than a refusal. This fallback is one reason forward scheduling matters even in a plant that thinks of itself as running backward: it is the safety net underneath every backward job that does not fit. The fallback is also informative on a quote, because a backward simulation coming back with a finish date past the target is a direct, one-step answer to "can you deliver by then".
+</Accordion>

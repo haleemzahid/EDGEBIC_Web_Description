@@ -1,0 +1,101 @@
+---
+title: "What Is Multi-Run Optimization in Scheduling?"
+description: "Multi-run optimization re-runs the real scheduler with many job orderings and keeps the best complete result. Definition, worked example, and what its badge claims."
+published: 2026-08-16T12:00:00.000Z
+modified: 2026-08-16T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - multi-run optimization scheduling
+  - best of n schedules
+  - job ordering optimization
+  - schedule search heuristic
+  - production schedule optimizer engine
+  - multi run vs solver scheduling
+targetPhrase: "multi-run optimization scheduling"
+wordCount: 1290
+readingTime: 6
+faqQuestions:
+  - question: "What is multi-run optimization?"
+    answer: "Multi-run optimization re-runs the real scheduling engine many times with different orderings of the job queue, measures each complete resulting schedule against the goal you chose, and keeps the best one. Because every candidate was produced by the same engine that builds your normal plan, every candidate respects every constraint. The search is over job order rather than over individual operations."
+  - question: "What does the badge Best of N schedules tried mean?"
+    answer: "It means the result you are looking at is the best of that many complete, real schedules the optimizer built and measured. It is an honest search with no claim of proof: a better schedule might exist that the search did not happen to try. That is a different and weaker claim than the mathematical solver's badge, which states that no schedule can beat the result by more than a stated percentage."
+  - question: "Why does changing job order change the schedule at all?"
+    answer: "Because the scheduler plans one job at a time and each job claims capacity as it goes. The job that goes first gets the earliest free slots on every work center it needs; whatever is left is what the next job can have. Reordering the queue therefore reshuffles who gets the good hours, and on a loaded plant that alone can be the difference between one job late and none."
+qaQuestions:
+  - question: "If multi-run just tries different orderings, why can we not do that by hand with the priority field?"
+    answer: "You can, and on a three-job week you probably should. The problem is scale and interaction. With ten jobs there are millions of orderings, and the good ones are rarely the ones intuition suggests, because the effect of moving a job forward depends on which work centers it touches and what else wanted those same hours. A planner adjusting priorities is exploring perhaps three or four orderings, chosen for plausible-sounding reasons, and then judging them by eye. The optimizer explores many more within the time budget and judges each by measured numbers against a stated goal. What it does not do is understand the reasons behind your priorities, which is why the sensible workflow is to keep priority as your expression of business intent and let the search work inside that rather than instead of it."
+  - question: "Is the multi-run engine worse than the mathematical solver? Should we always switch?"
+    answer: "Not worse, different, and the honest answer is to leave the default alone unless you have a reason. Multi-run is the default because it inherits every capability the scheduler has: whatever features your routings use, a multi-run candidate handles them, because it is the real engine producing it. The solver adds a proof of how close the answer is to the theoretical best, which is genuinely valuable, but it does not yet rearrange every scheduling feature natively, so jobs using those features are kept exactly as the scheduler planned them and optimized around. On a plant whose routings lean heavily on those features, the solver can end up with little to work with, while multi-run still searches the whole queue. Try both on your own data, read the badge each returns, and pick on results rather than on which sounds more advanced."
+---
+
+**Multi-run optimization re-runs the real scheduling engine many times with different orderings of the job queue, measures each complete resulting schedule against the goal you selected, and returns the best one it found. In EDGEBIC by User Solutions this is the default optimizer engine, and its defining property is that every candidate it considers is a genuine schedule built by the same engine that builds your normal plan, so no candidate can ever break a constraint the scheduler itself would have respected.**
+
+This entry is part of the EDGEBIC glossary series; for the broader vocabulary of production planning, see the [manufacturing glossary](/blog/manufacturing-glossary).
+
+## How Multi-Run Optimization Works
+
+To see why searching over job order is worth doing at all, you need the shape of the underlying scheduler. It is greedy: it works through jobs one at a time, most important first, and each job claims capacity as it is planned. That is fast, and it always respects every constraint, but it commits each job completely before looking at the next. The consequence is that the queue order silently decides who gets the good hours.
+
+Multi-run turns that weakness into a search space. The procedure is:
+
+1. Take the current plan as the baseline and measure it under the chosen goal.
+2. Generate a different ordering of the job queue.
+3. Run the real scheduler on that ordering, producing a complete schedule.
+4. Measure the result under the same goal.
+5. Repeat until the time budget runs out.
+6. Return the best candidate found, provided it beats the baseline.
+
+Two things about this deserve emphasis. Because step three is the genuine engine, a candidate cannot violate capacity, a calendar, a routing dependency, a setup rule, or the immutability of recorded work. There is no separate model to keep in step with the scheduler, and therefore no possibility of the two disagreeing. And because step six compares against the baseline, a search that finds nothing better returns your existing plan rather than a mediocre alternative.
+
+What it does not do is claim proof. Multi-run tried a finite number of orderings inside a finite budget. A better ordering may exist that it never generated. The badge says exactly that and nothing more.
+
+## A Worked Example
+
+From the documentation's sample plant, Monday July 20, with **Day Shift** running 08:00 to 16:00 and one machine each on **Saw-1** and **CNC-Mill-1**. Three jobs each run saw then mill:
+
+| Job | Saw | Mill | Due | Priority |
+|---|---|---|---|---|
+| JOB-2026-0121 | 6 h | 2 h | Fri Jul 24 | 1 |
+| JOB-2026-0122 | 2 h | 8 h | Wed Jul 22 | 2 |
+| JOB-2026-0123 | 3 h | 6 h | Wed Jul 22 | 3 |
+
+Scheduled in priority order, the six-hour saw job goes first and occupies the saw until 14:00. The two jobs actually due on Wednesday queue behind it, their mill work slides, and one of them finishes late.
+
+The optimizer runs on the on-time-first goal. It tries orderings, including due-date order, which puts the two Wednesday jobs on the saw first and the Friday job last. Measured against the goal, that candidate shows late jobs going from one to zero and a shorter makespan. The badge reads that this was the best of the complete schedules tried within the budget, and the Explain dialog names the winning ordering, in this case earliest due date first.
+
+Nothing about how any individual job is placed changed. The saw still runs at eight hours a day, the mill still splits work across Monday and Tuesday, and every dependency still holds. Only the order in which the three jobs went shopping for capacity changed, and that was enough.
+
+## How EDGEBIC Uses Multi-Run Optimization
+
+A few product specifics:
+
+- **It is the default engine.** The alternative, a mathematical solver, is selected in the scheduling options and changes the badge language rather than the screen. Both produce a proposal you accept or discard.
+- **Its badge is honest by design.** Best of a number tried is a search claim, not a proof claim. The solver's badge, proven within a percentage of optimal, is the stronger statement, and the product never presents multi-run results as optimal.
+- **The never-worse guarantee applies to it.** A candidate is only offered if it measurably beats your current plan under the goal you asked for; otherwise your plan stands and the optimizer says so.
+- **A longer budget means more candidates.** Budgets of ten, thirty, or sixty seconds are offered, with thirty as the default, and a longer budget simply lets more orderings be tried.
+- **It inherits every scheduler capability.** Because candidates come from the real engine, no routing feature is off limits and no job needs to be held aside.
+- **Nothing is saved until Accept.** The result is an [optimizer proposal](/blog/what-is-an-optimizer-proposal) held on screen, and canceling a run changes nothing at all.
+
+The useful mental model is that multi-run does not schedule better than your scheduler; it schedules the same way many times and picks the winner. That framing keeps expectations right and explains both its strength, total constraint fidelity, and its limit, no proof of optimality. See [greedy scheduling in manufacturing](/blog/what-is-greedy-scheduling-in-manufacturing) for the underlying method, [a warm start in production scheduling](/blog/what-is-a-warm-start-in-production-scheduling) for how the baseline enters the search, and [how the multi-run optimizer searches schedules](/blog/how-the-multi-run-optimizer-searches-schedules) for a closer look at the orderings it tries.
+
+<Accordion title="What is multi-run optimization?">
+Multi-run optimization re-runs the real scheduling engine many times with different orderings of the job queue, measures each complete resulting schedule against the goal you chose, and keeps the best one. Because every candidate was produced by the same engine that builds your normal plan, every candidate respects every constraint. The search is over job order rather than over individual operations.
+</Accordion>
+
+<Accordion title="What does the badge Best of N schedules tried mean?">
+It means the result you are looking at is the best of that many complete, real schedules the optimizer built and measured. It is an honest search with no claim of proof: a better schedule might exist that the search did not happen to try. That is a different and weaker claim than the mathematical solver's badge, which states that no schedule can beat the result by more than a stated percentage.
+</Accordion>
+
+<Accordion title="Why does changing job order change the schedule at all?">
+Because the scheduler plans one job at a time and each job claims capacity as it goes. The job that goes first gets the earliest free slots on every work center it needs; whatever is left is what the next job can have. Reordering the queue therefore reshuffles who gets the good hours, and on a loaded plant that alone can be the difference between one job late and none.
+</Accordion>
+
+<Accordion title="If multi-run just tries different orderings, why can we not do that by hand with the priority field?">
+You can, and on a three-job week you probably should. The problem is scale and interaction. With ten jobs there are millions of orderings, and the good ones are rarely the ones intuition suggests, because the effect of moving a job forward depends on which work centers it touches and what else wanted those same hours. A planner adjusting priorities is exploring perhaps three or four orderings, chosen for plausible-sounding reasons, and then judging them by eye. The optimizer explores many more within the time budget and judges each by measured numbers against a stated goal. What it does not do is understand the reasons behind your priorities, which is why the sensible workflow is to keep priority as your expression of business intent and let the search work inside that rather than instead of it.
+</Accordion>
+
+<Accordion title="Is the multi-run engine worse than the mathematical solver? Should we always switch?">
+Not worse, different, and the honest answer is to leave the default alone unless you have a reason. Multi-run is the default because it inherits every capability the scheduler has: whatever features your routings use, a multi-run candidate handles them, because it is the real engine producing it. The solver adds a proof of how close the answer is to the theoretical best, which is genuinely valuable, but it does not yet rearrange every scheduling feature natively, so jobs using those features are kept exactly as the scheduler planned them and optimized around. On a plant whose routings lean heavily on those features, the solver can end up with little to work with, while multi-run still searches the whole queue. Try both on your own data, read the badge each returns, and pick on results rather than on which sounds more advanced.
+</Accordion>

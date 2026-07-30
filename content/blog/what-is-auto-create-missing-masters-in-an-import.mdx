@@ -1,0 +1,98 @@
+---
+title: "What Is Auto-Create Missing Masters in an Import?"
+description: "Auto-create missing masters are the import options that let a sales-order or routing file create the products, customers, and work centers it names but that do not exist yet. Learn how EDGEBIC uses them."
+published: 2026-08-16T12:00:00.000Z
+modified: 2026-08-16T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - auto create missing products
+  - auto create missing customers
+  - auto create missing work centers
+  - import master data on the fly
+  - import mask options
+  - missing master record import
+targetPhrase: "auto-create missing masters"
+wordCount: 1150
+readingTime: 6
+faqQuestions:
+  - question: "What does auto-create missing masters mean in an import?"
+    answer: "It is a set of three import mask options that let a transactional file create the master records it references. Auto-Create Missing Products applies to sales-order and routing imports, Auto-Create Missing Customers applies to sales-order imports, and Auto-Create Missing Work Centers applies to routing imports. When a name in the file does not match an existing record, the record is created on the fly with the details available rather than the row failing. All three are on by default."
+  - question: "Why are the auto-create options on by default?"
+    answer: "Because they remove the ordering problem from onboarding. Without them you would have to load products before sales orders, and products and work centers before routings, in the right sequence, or every dependent row would fail. With them on you can load a sales-order file or a routing file first and the referenced masters appear as a side effect, which is how most sites get their first data in."
+  - question: "What does an auto-created record actually contain?"
+    answer: "Only what the file supplied plus system defaults. A work center created from a routing file has a name and little else: no shift assignment, no instance count beyond the default, no hourly rate. A product created from a sales-order file has an identifier and whatever optional fields the mask mapped. These are placeholders that let the transactional row land, and they need a follow-up pass in the master-data screens before they will schedule sensibly."
+qaQuestions:
+  - question: "A routing import created eleven work centers we did not want, mostly typos and old station names. How do we clean that up and stop it happening again?"
+    answer: "Deal with the cleanup and the prevention separately. For the cleanup, open the work-center list, sort by creation or scan for the unfamiliar names, and check each against your real station list. A work center created by mistake will have no shifts and no routing steps that you intended to send there, which makes it easy to identify. For the prevention, the reliable fix is upstream: the names in the routing file must match your work-center names exactly, so reconcile the source export against your station list before the next run rather than relying on the import to catch it. If you want the import itself to be the gate, untick Auto-Create Missing Work Centers on that mask; typo rows will then fail rather than create, and the failure message names the work center, which turns your run log into a spell-check report. Many sites use exactly that trick once their master data is stable."
+  - question: "We loaded a sales-order file and every job scheduled with no operations. Is auto-create to blame?"
+    answer: "It is the likely explanation, and it is a symptom rather than a fault. A sales-order file names products, and if a product does not exist yet it is created so the order line can land. What auto-create cannot invent is a routing, because nothing in a sales-order file describes how the product is made. The result is a job for a product with no bill of routing, which schedules as nothing to do. The fix is to load the routings for those products and then reschedule the affected jobs so they pick up real operations. It is worth checking the auto-created products carefully at that point, because a product created from a misspelled identifier will need its routing under the correct identifier, not under the typo, and you will want to retire the accidental one."
+---
+
+**Auto-create missing masters are the three import options that let a transactional file create the master records it names but that do not yet exist: Auto-Create Missing Products, Auto-Create Missing Customers, and Auto-Create Missing Work Centers.** They turn a row that would otherwise fail for referencing something unknown into a row that lands, with a placeholder master record created alongside it. All three are on by default, which is what makes it possible to load a sales-order or routing file into an empty system and get something useful.
+
+[EDGEBIC by User Solutions](/edgebic) offers them as checkboxes in the Import Options dialog for a saved mask. This article defines what each one covers and what an auto-created record does and does not contain. For the outcome each row reports, see the sibling term [import row status](/blog/what-is-an-import-row-status).
+
+## How It Works
+
+Transactional import files reference master data by name. A sales-order row names a product and, optionally, a customer. A routing row names an end product and, for an operation step, a work center. Before the row can be stored, those references have to resolve to real records.
+
+Each option covers a specific reference on specific import types:
+
+- **Auto-Create Missing Products.** Applies to SalesOrder and BOR imports. A product named in the file that does not exist is created. Default on.
+- **Auto-Create Missing Customers.** Applies to SalesOrder imports. A customer named in the file that does not exist is created. Default on.
+- **Auto-Create Missing Work Centers.** Applies to BOR imports. A work center named on an operation step that does not exist is created. Default on.
+
+What gets created is deliberately minimal: the identifier or name from the file, plus whatever optional fields the mask happened to map, plus system defaults for everything else. A work center born this way has a name and nothing that makes it schedulable, and a product born this way has an identifier and no routing. The record exists so the transactional row has something to attach to, not because the import knows anything about the thing.
+
+Turn an option off and the behavior inverts: a row referencing an unknown name fails, and the run log records the failure with the name that could not be resolved.
+
+## A Concrete Example
+
+Think of a receptionist logging visitors against a company directory. With auto-create on, a visitor from a firm not in the directory gets a new directory line opened with just the firm's name so the visit can be logged. With it off, the visitor is turned away and a note is made of the firm's name so somebody can decide whether it belongs in the directory at all. Both are reasonable; they suit different moments.
+
+At Acme Industries the planner loads a routing file for **Bracket-B** into a fresh system. The file names five work centers and the end product:
+
+| Reference in file | Existed? | Result |
+|---|---|---|
+| Bracket-B (end product) | No | product created, no routing yet |
+| Saw-1 | Yes | matched |
+| CNC-Mill-1 | Yes | matched |
+| Weld-1 | Yes | matched |
+| Paint-Booth-1 | No | work center created, name only |
+| Assembly-1 | No | work center created, name only |
+
+The five routing steps all import cleanly. Nothing schedules usefully yet, because Paint-Booth-1 and Assembly-1 have no shifts, so they have no capacity. The planner opens the work-center screen, assigns shifts and instance counts to the two new stations, and only then runs the scheduler.
+
+## How EDGEBIC Uses It
+
+The options exist because loading order is otherwise a real obstacle. Strictly, products come before sales orders, and products and work centers come before routings. Auto-create removes that ordering requirement, which is why the defaults are on: a site can load whatever file it has first and let the references fill themselves in.
+
+The trade-off is that a name is a weak identifier. A misspelled work center in a routing file will not fail, it will create a station, and the routing step will point at the station that does not exist on your floor. That is the one failure mode worth watching, and it is easy to spot because auto-created stations have no shift assignments and therefore no capacity at all.
+
+Many sites treat the options as a phase. Leave them on while data is being brought in and names are still settling. Once your master data is stable, untick them on the masks you run regularly, so an unfamiliar name becomes a failed row naming the offender rather than a silently created placeholder. Both settings are correct; they answer different questions about how much you trust the file.
+
+Whichever way they are set, an auto-created record is a starting point. Give products their routings and give work centers their shifts before you rely on the plan.
+
+For loading routings, see [how to import a routing from Excel](/blog/how-to-import-a-routing-from-excel-in-edgebic), and for loading demand see [how to import sales orders from Excel](/blog/how-to-import-sales-orders-from-excel-in-edgebic). For the mask that carries these options see [how import masks work in EDGEBIC](/blog/edgebic-import-masks-explained), and for the reference each file type must supply see [what is an import entity type](/blog/what-is-an-import-entity-type). Browse more definitions in the [manufacturing glossary](/blog/manufacturing-glossary).
+
+<Accordion title="What does auto-create missing masters mean in an import?">
+It is a set of three import mask options that let a transactional file create the master records it references. Auto-Create Missing Products applies to sales-order and routing imports, Auto-Create Missing Customers applies to sales-order imports, and Auto-Create Missing Work Centers applies to routing imports. When a name in the file does not match an existing record, the record is created on the fly with the details available rather than the row failing. All three are on by default.
+</Accordion>
+
+<Accordion title="Why are the auto-create options on by default?">
+Because they remove the ordering problem from onboarding. Without them you would have to load products before sales orders, and products and work centers before routings, in the right sequence, or every dependent row would fail. With them on you can load a sales-order file or a routing file first and the referenced masters appear as a side effect, which is how most sites get their first data in.
+</Accordion>
+
+<Accordion title="What does an auto-created record actually contain?">
+Only what the file supplied plus system defaults. A work center created from a routing file has a name and little else: no shift assignment, no instance count beyond the default, no hourly rate. A product created from a sales-order file has an identifier and whatever optional fields the mask mapped. These are placeholders that let the transactional row land, and they need a follow-up pass in the master-data screens before they will schedule sensibly.
+</Accordion>
+
+<Accordion title="A routing import created eleven work centers we did not want, mostly typos and old station names. How do we clean that up and stop it happening again?">
+Deal with the cleanup and the prevention separately. For the cleanup, open the work-center list, sort by creation or scan for the unfamiliar names, and check each against your real station list. A work center created by mistake will have no shifts and no routing steps that you intended to send there, which makes it easy to identify. For the prevention, the reliable fix is upstream: the names in the routing file must match your work-center names exactly, so reconcile the source export against your station list before the next run rather than relying on the import to catch it. If you want the import itself to be the gate, untick Auto-Create Missing Work Centers on that mask; typo rows will then fail rather than create, and the failure message names the work center, which turns your run log into a spell-check report. Many sites use exactly that trick once their master data is stable.
+</Accordion>
+
+<Accordion title="We loaded a sales-order file and every job scheduled with no operations. Is auto-create to blame?">
+It is the likely explanation, and it is a symptom rather than a fault. A sales-order file names products, and if a product does not exist yet it is created so the order line can land. What auto-create cannot invent is a routing, because nothing in a sales-order file describes how the product is made. The result is a job for a product with no bill of routing, which schedules as nothing to do. The fix is to load the routings for those products and then reschedule the affected jobs so they pick up real operations. It is worth checking the auto-created products carefully at that point, because a product created from a misspelled identifier will need its routing under the correct identifier, not under the typo, and you will want to retire the accidental one.
+</Accordion>
