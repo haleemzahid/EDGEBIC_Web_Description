@@ -1,13 +1,56 @@
 # EDGEBIC PROMOTION — RESUME IN A FRESH CHAT
 
 **Read this file first. It is the complete handoff.**
-Last session ended: 2026-08-13 (flight 14) · Branch `feature/edgebic-promotion`, pushed to origin, working tree clean.
+Last session ended: 2026-08-15 (flight 16) · Branch `feature/edgebic-promotion`, pushed to origin, working tree clean.
+
+---
+
+## 0. START HERE — ONE UNFINISHED ITEM AND THE HEADLINE FINDING
+
+**FIX FIRST (a session limit cut the agent off mid-task):**
+`content/blog/migrating-work-centers-and-shifts-to-edgebic.mdx` tells readers to
+**re-create shifts, holidays and calendars by hand**. That is FALSE — **Shift and
+PlantHoliday are two of the eight import masks** (UserGuide 25 line 15 lists them
+explicitly). The error is in the `description`, an faqQuestion (~L23), the bold lead
+(~L33), a paragraph at ~L41, and body prose at ~L58. Correct it to: they CAN be
+imported; hand-entry is a legitimate *choice* when you only have a few patterns, not a
+requirement. Then grep the corpus for the same error. **Do not overcorrect** — work
+center groups/members, operators, skills, certifications, rosters, time off, the setup
+matrix, departments, quotes and scenarios genuinely are NOT importable.
+
+**THE HEADLINE FINDING — flight 16 proved the corpus is saturated.**
+Seven agents were dispatched for ~95 posts; only 38 existed. Three lanes returned
+complete shortfalls with hard proof, not guesses:
+- **scheduling-ops how-to 0/15** — extracted all 483 bold UI labels from 8 UserGuide
+  chapters, tested each against the 27 MB corpus, found every real one already covered.
+- **optimization 0/6** — decomposed UserGuide 16 into 58 teachable atoms; all covered
+  3-6 times over. 80 optimizer-specific slugs exist across 5 clusters.
+- **platform 0/3** — every one of the 30 UserGuide sections already covered at overview
+  altitude.
+- **how-to routing/BOR 1/15**, and that one gap was real (product was the only
+  master-data entity without a delete how-to).
+Glossary was the exception: both lanes delivered 13/13, so **glossary is the one seam
+still worth mining**.
+
+**Treat these as CLOSED, not short:** how-to (four lanes swept across two flights,
+13 posts from ~66 slots), optimization (54), platform (177), scheduling-concepts (100),
+planning (50), industry (116), visual-scheduling (44), troubleshooting (120),
+admin (40), walkthroughs (50).
+
+**`tsc --noEmit` was run: 6 errors, NONE from this work.** All in `lib/auth/providers.ts`,
+`lib/db/example-data.ts`, `lib/ably/use-ticket-realtime.ts` and
+`scripts/get-real-license-key.ts` — files this branch has never touched, verified against
+`origin/main`. **Pre-existing on main; not a merge blocker from the blog work.**
+
+**My recommendation:** the remaining volume is not worth chasing. Ship what exists.
+The launch blockers in section 6 are where the value now sits — 1,800 accurate posts
+are sitting unmerged, unpublished, and with zero screenshots.
 
 ---
 
 ## 1. WHERE THINGS STAND
 
-**1,694 EDGEBIC blog posts written, committed and pushed.** Target was 2,120.
+**1,800 EDGEBIC blog posts written, committed and pushed.** Target was 2,120.
 
 > Flight 14 (8 migration posts) was written **directly by the main session with no agents**,
 > which is viable at roughly 8 posts per flight if agent dispatch is unavailable or unwanted.
