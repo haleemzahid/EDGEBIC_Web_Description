@@ -7,16 +7,10 @@ Last session ended: 2026-08-15 (flight 16) · Branch `feature/edgebic-promotion`
 
 ## 0. START HERE — ONE UNFINISHED ITEM AND THE HEADLINE FINDING
 
-**FIX FIRST (a session limit cut the agent off mid-task):**
-`content/blog/migrating-work-centers-and-shifts-to-edgebic.mdx` tells readers to
-**re-create shifts, holidays and calendars by hand**. That is FALSE — **Shift and
-PlantHoliday are two of the eight import masks** (UserGuide 25 line 15 lists them
-explicitly). The error is in the `description`, an faqQuestion (~L23), the bold lead
-(~L33), a paragraph at ~L41, and body prose at ~L58. Correct it to: they CAN be
-imported; hand-entry is a legitimate *choice* when you only have a few patterns, not a
-requirement. Then grep the corpus for the same error. **Do not overcorrect** — work
-center groups/members, operators, skills, certifications, rosters, time off, the setup
-matrix, departments, quotes and scenarios genuinely are NOT importable.
+**No open fixes.** The shifts-importable defect flagged at the end of flight 16 has been
+corrected across all four affected posts and the class is verified closed corpus-wide.
+Shift and PlantHoliday are two of the eight import masks; hand-entry is a legitimate
+*choice* when you have few patterns, never a requirement.
 
 **THE HEADLINE FINDING — flight 16 proved the corpus is saturated.**
 Seven agents were dispatched for ~95 posts; only 38 existed. Three lanes returned
