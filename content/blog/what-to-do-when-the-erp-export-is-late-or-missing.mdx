@@ -1,0 +1,99 @@
+---
+title: "What to Do When the ERP Export Is Late or Missing"
+description: "The nightly file did not arrive. Here is why yesterday's plan is still safe to work to, what not to do while you wait, and how to catch up cleanly when the file lands."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - ERP export late or missing
+  - missed nightly import
+  - catching up after a failed export
+  - hand entering orders temporarily
+  - import routine recovery
+  - stale schedule risk
+targetPhrase: "ERP export late or missing"
+wordCount: 1690
+readingTime: 9
+faqQuestions:
+  - question: "The nightly ERP export did not arrive. Is our schedule broken?"
+    answer: "No. In EDGEBIC by User Solutions the plan lives in EDGEBIC's own database, so a missing export means the plan is not up to date rather than unavailable. Yesterday's schedule is intact and the floor can work to it. What you have lost is new and changed demand: orders raised since the last import are not in the plan, and any due-date or quantity changes have not arrived. That distinction is what makes this a manageable interruption. Decide how long you can run on the current plan, which for most shops is a day or two, and chase the file rather than working around it."
+  - question: "Should I hand-enter the missing orders while I wait?"
+    answer: "Only the genuinely urgent ones, and only if you keep the job numbers identical to the source system. Hand entry is safe as long as identifiers match, because imports match records by natural business key: when the file finally arrives, a hand-entered order with the right job number is found and updated rather than duplicated. Get the number wrong and you create a second job for the same work, which then consumes capacity twice and quietly distorts every date around it. If you cannot confirm the identifier, wait for the file instead."
+  - question: "When the export finally arrives a day late, do I need to do anything special?"
+    answer: "No. Import it normally and then run the scheduler. The masks match on natural keys, so a late file simply brings everything to current: new orders are created, changed ones are updated, and unchanged ones are reused. Nothing needs replaying in order and there is no catch-up sequence. The one thing to confirm is that your update option is on, because a run that reports every row as reused has found your records and deliberately left them alone, which after a missed day is exactly the wrong outcome."
+qaQuestions:
+  - question: "Our export failed for three nights before anyone noticed. How much damage is that, and how do we stop it recurring?"
+    answer: "The damage is usually less than the fright, and the fix is a named reader rather than better software. Three missed nights means the plan is three days stale, so it does not know about orders raised in that window, quantity changes, or due dates that moved. The plan itself is still valid for the work it does know about, which is why the floor was probably fine: they were working real jobs in a sensible sequence, just without the newest demand competing for capacity. Import the current file, schedule, and read the resulting plan carefully, because three days of accumulated new work can reorder things noticeably and that is the correct answer rather than a fault. To prevent a recurrence, the effective control is a person who checks a specific thing each morning: the import log's row count against a normal night. An unattended job with no named reader is the failure mode that bites, because the logs faithfully record a broken week that nobody opened."
+  - question: "Can we make EDGEBIC pull the file itself so a late export does not stall us?"
+    answer: "No, and it is worth being straight about that because it shapes how you design the routine. The integration is file-based by design: something outside EDGEBIC produces an xlsx or csv, and an import mask loads it. There is no connector polling your ERP and no API sync, so if the file is not there, there is nothing to load. The practical response is to make the upstream job the reliable part. Put the export on a schedule that finishes well before the import window rather than immediately before it, so a slow night has slack. Have the export write to a stable path with a predictable name so a partial or missing file is obvious. And separate the two concerns in your monitoring: whether the file arrived is an upstream question, whether it loaded correctly is an import-log question. Teams that conflate those two spend their mornings guessing which half failed."
+---
+
+**A missing ERP export means your plan is stale, not broken: the schedule lives in EDGEBIC's own database, so yesterday's plan is intact and the floor can work to it.** In EDGEBIC by User Solutions the integration is file-based, so there is nothing to pull and nothing to retry automatically. The right response is to understand exactly what you have lost, avoid the one action that causes lasting damage, and import normally when the file lands.
+
+## What you have actually lost
+
+Only new and changed demand. Specifically:
+
+| Still true | Now unknown |
+|---|---|
+| Every job already in the plan, with its dates | Orders raised since the last import |
+| All recorded work logged in EDGEBIC | Quantity changes on existing orders |
+| Work center capacity, shifts and holidays | Due dates that moved |
+| Routings as last imported | Orders canceled at the source |
+| The sequence the floor is working to | New items and their routings |
+
+That list is the whole reason this is a manageable interruption rather than an outage. The plan on the Gantt is a real plan built from real capacity; it is simply missing the newest arrivals.
+
+## How long you can run on it
+
+Judge it by how fast your demand changes rather than by a rule.
+
+A shop importing weekly can usually miss a day without noticing, because the plan was built to cover a week of known work. A shop importing nightly because rush orders arrive daily will feel it by the second morning, as the plan starts competing for capacity that newly arrived urgent work should have taken.
+
+The signal to watch is not the calendar but the floor: when supervisors start being handed work that is not on the plan, the plan has stopped being the plan, and you are back to scheduling by conversation.
+
+## The one thing not to do
+
+Do not hand-enter missing orders with improvised job numbers.
+
+Imports match records by natural business key, so an order you typed with the source system's real job number will be found and updated when the file arrives. An order you typed with an invented number will not: the import creates a second job for the same work, both consume capacity, and every date around them shifts to accommodate demand that does not exist. That error survives the recovery and takes real effort to unpick.
+
+So the rule is narrow and safe: hand-enter only genuinely urgent work, and only when you can confirm the identifier exactly. If you cannot confirm it, wait. Keeping identifiers aligned is worth the discipline generally, which is the argument in [keeping job numbers aligned between ERP and EDGEBIC](/blog/keeping-job-numbers-aligned-between-erp-and-edgebic).
+
+## While you wait
+
+Three things are worth doing, and none of them involve the schedule.
+
+**Keep logging actuals.** Recorded work is independent of the import and it is what protects the plan through the eventual reschedule, since completed and in-progress steps pass through untouched. A stale plan with current actuals recovers cleanly; a stale plan with three days of unrecorded work does not.
+
+**Find out which half failed.** Whether the file arrived is an upstream question. Whether it loaded is an import-log question. Teams that conflate the two spend the morning guessing. Check for the file at its expected path first, then check the log folder only if it is there.
+
+**Tell the floor the plan is stale, not wrong.** Supervisors handle "this plan does not include Tuesday's new orders yet" far better than they handle discovering it themselves.
+
+## Recovering when the file lands
+
+Nothing special, in this order:
+
+1. **Import it normally** through the existing mask.
+2. **Confirm the update option is on.** A run reporting every row as reused has found your records and left them alone, which after a missed day is precisely the wrong result.
+3. **Read the log.** Compare the row count against a normal night, since a file produced during a failure window is itself a candidate for being incomplete.
+4. **Run the scheduler.** Imports change data and never schedule, so nothing moves until you do this.
+5. **Read the resulting plan properly.** Several days of accumulated demand can reorder things noticeably. That is the correct answer, not a fault, and it is worth a minute of review before the floor sees it.
+
+There is no replay sequence and no catch-up mode to worry about. Because matching is by natural key, one current file brings everything to current in a single pass, which is the same property that makes the weekly routine simple.
+
+## Making the upstream side reliable
+
+Since EDGEBIC cannot fetch the file, the durable fixes are all on the producing side:
+
+- **Schedule the export to finish well before the import window**, not immediately before it, so a slow night has slack.
+- **Write to a stable path with a predictable name**, so a missing or partial file is obvious rather than ambiguous.
+- **Name the person who checks each morning**, and tell them the specific thing to check, which is the row count against a normal night.
+
+That last one does more than the other two combined. The failure mode that actually costs a week is an unattended job with no named reader, and the fix is organizational rather than technical. [Who owns the ERP import routine on your team](/blog/who-owns-the-erp-import-routine-on-your-team) covers the assignment, and [reading the import log after a nightly ERP run](/blog/reading-the-import-log-after-a-nightly-erp-run) covers what they look at.
+
+## The takeaway
+
+A late or missing ERP export leaves your plan stale rather than broken, because the schedule lives in EDGEBIC and only new and changed demand is missing. Judge how long you can run on it by how fast your demand moves, keep logging actuals, and hand-enter only urgent orders where you can match the source job number exactly, since an invented identifier creates a duplicate that survives the recovery. When the file arrives, import it normally with updates on, read the log, schedule, then review the plan. See the platform on the [EDGEBIC overview](/edgebic), the upgrade path on the [RMDB to EDGEBIC guide](/rmdb-to-edgebic), and pair this with [scheduling a nightly ERP export import routine](/blog/scheduling-a-nightly-erp-export-import-routine) and [keeping ERP and EDGEBIC in sync](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine).

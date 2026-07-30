@@ -1,0 +1,72 @@
+---
+title: "What Is a Minimum Allocation Threshold in Scheduling?"
+description: "A minimum allocation threshold is the smallest booking a scheduler will write, stopping a plan from filling with second-long slivers of capacity. Learn why the floor exists."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - minimum allocation threshold
+  - smallest schedulable booking
+  - schedule fragmentation
+  - rounding tolerance scheduling
+  - capacity sliver
+  - allocation floor scheduling
+targetPhrase: "minimum allocation threshold"
+wordCount: 993
+readingTime: 5
+faqQuestions:
+  - question: "What is a minimum allocation threshold in scheduling?"
+    answer: "It is the smallest amount of time a scheduler is willing to book against a capacity slot. Below the floor, the engine skips the slot rather than writing a booking. The purpose is to stop a plan filling with meaningless fragments: if a shift has fifteen seconds of unbooked capacity left, placing a fifteen-second operation segment there produces a row nobody can act on and a bar too small to see. The floor keeps the plan made of intervals that mean something on a shop floor."
+  - question: "Why would an operation have a fraction of a second left to schedule?"
+    answer: "Because durations are computed from run time per unit multiplied by quantity, plus setup, and that arithmetic rarely lands on a clean number. An operation running 0.16 hours per piece on 51 pieces needs 8.16 hours. Booking eight hours into a full shift leaves 0.16 hours, which is fine. But some quantities leave remainders in the thousandths of an hour, a few seconds of work that exists only in the arithmetic. The threshold is what stops the engine chasing that remainder into the next day."
+  - question: "Does the threshold cause a schedule to lose hours?"
+    answer: "Only amounts far too small to matter, and only at the very end of an operation. The floor sits well under a minute, so the most an operation can lose to it is a rounding remainder that no timekeeping system on a shop floor could measure anyway. It never truncates real work: an operation with two hours left is not rounded away, it simply spills into the next available slot as normal. The threshold applies to fragments, not to remaining work in any meaningful sense."
+qaQuestions:
+  - question: "An operation shows as fully scheduled but my hand arithmetic says a tiny remainder is missing. Is that a bug?"
+    answer: "No, that is the completion tolerance doing its job. When the hours still to place fall below the allocation floor, the engine treats the operation as fully scheduled rather than searching the next day for a booking of a few seconds. So your arithmetic and the plan can differ in the thousandths of an hour. If the gap is larger than that, in tenths of an hour or more, the threshold is not the explanation and you should look at capacity, machine count, or the queue and transit settings on the step instead."
+  - question: "Should I be worried about very small bookings in my plan?"
+    answer: "Small is not the same as too small. A twelve-minute booking is perfectly legitimate and can be exactly right for a short changeover or a quick inspection, and it sits well above the floor. What the threshold prevents is bookings measured in seconds, which are arithmetic residue rather than work. If you are seeing lots of genuinely short bookings for one operation spread over many days, the cause is fragmented capacity, meaning the machine has many small gaps, and the fix is on the capacity side rather than anything to do with the floor."
+---
+
+**A minimum allocation threshold is the smallest amount of time a scheduler will write as a booking against a capacity slot, below which it skips the slot entirely rather than recording a fragment.** It exists so that a plan is made of intervals a shop floor can act on rather than residue from the arithmetic. EDGEBIC by User Solutions applies the floor while consuming shift capacity, and applies the same tolerance when deciding whether an operation has been fully placed.
+
+## How it works
+
+An operation's duration comes from arithmetic: run time per unit multiplied by order quantity, plus setup. That product almost never lands on a clean number of hours. An operation might need 8.16 hours, or 12.3375, or 19.004.
+
+The engine then walks candidate shift slots, booking whatever will fit in each, and subtracting from what remains. Two places in that loop can produce a number too small to be useful.
+
+The first is on the supply side. A capacity slot that has already absorbed most of a shift may have a tiny amount left, a few thousandths of an hour that survived earlier bookings and rounding. Writing an operation segment into that space would create a real row in the plan, with a start, an end, and a machine, representing a handful of seconds. Nobody can schedule around it, no operator can log against it, and on a Gantt it renders as a line thinner than the border of the bar next to it. So the engine tests the amount it is about to book against the floor and, if it falls below, skips that slot and moves to the next one.
+
+The second is on the demand side. After the last useful booking, the hours still to place may themselves be below the floor. Rather than searching the next day, and the day after, for somewhere to put twenty seconds of work, the engine treats the operation as fully placed. This is a completion tolerance rather than a truncation: the operation is considered done because what remains is smaller than the smallest thing the plan is capable of expressing.
+
+The floor sits well under a minute, which is the right order of magnitude. It has to be small enough that no genuine work is ever swallowed, and large enough that arithmetic residue never becomes a row. A short but real booking, twelve minutes for a quick inspection, sits far above it and is written normally.
+
+## A concrete example
+
+A work center runs one machine on an eight hour day shift. An operation needs 8.004 hours, which is eight hours plus about fourteen seconds, and the shift is otherwise empty.
+
+| Pass | Slot | Hours still to place | What the engine does | Remaining after |
+|---|---|---|---|---|
+| 1 | Mon Day, 8.0 h free | 8.004 | Books the full 8.0 hours | 0.004 |
+| 2 | Tue Day, 8.0 h free | 0.004 | Below the floor: operation treated as complete | 0.000 |
+
+The plan shows one clean booking, Monday 08:00 to 16:00. Without the tolerance, pass two would have written a Tuesday morning booking of fourteen seconds, and the operation's schedule window would have stretched across two days for no reason. The downstream step's earliest start would have moved from Monday evening to Tuesday morning, and a whole day of apparent delay would have entered the plan on the strength of fourteen seconds.
+
+The same floor works on the supply side. Suppose an earlier job left a slot with 0.004 hours unbooked. A later operation walking that slot is offered fourteen seconds. The engine skips it entirely rather than booking, so no sliver row appears and the operation's first real booking happens in the next slot with usable room. The sliver stays unbooked capacity, which is honest: it was never usable in the first place.
+
+Contrast that with a genuinely short booking. An operation with 0.2 hours left, twelve minutes, sits well above the floor. It is booked normally, appears as a real bar, and an operator can log against it. Nothing about the threshold makes short work invisible; it only excludes work too small to exist.
+
+## How EDGEBIC uses it
+
+The floor applies inside the allocation loop, at the point where hours are consumed from a capacity slot. The slot itself is described in [what is a shift resource allocation in scheduling](/blog/what-is-a-shift-resource-allocation-in-scheduling), and what it reports as free is defined in [what is available capacity in scheduling](/blog/what-is-available-capacity-in-scheduling).
+
+Because the floor prevents slivers, the leftover it declines to book shows up as unconsumed capacity rather than as a booking, which is one of several reasons a machine's day may not add exactly to its shift hours. The wider version of that question is covered in [what is an idle gap in a schedule](/blog/what-is-an-idle-gap-in-a-schedule).
+
+The hours the engine does write per day, per operation, are recorded in the structure described in [what is a daily hour breakdown](/blog/what-is-a-daily-hour-breakdown), which is where you would look if you wanted to reconcile a plan's hours by hand. When you do, expect agreement to the tenth of an hour rather than to the second, and remember which side of the floor the difference sits on before treating it as a discrepancy.
+
+## The takeaway
+
+A minimum allocation threshold is a small guard with a disproportionate effect on readability. It keeps the plan built from intervals a supervisor can act on, and it stops fourteen seconds of arithmetic residue from pushing an operation's window across a day boundary. When your own hours arithmetic differs from the plan by thousandths of an hour, the floor is the explanation; when it differs by tenths or more, look at capacity and the routing's between-step settings instead. For the neighboring mechanics see [what is available capacity in scheduling](/blog/what-is-available-capacity-in-scheduling) and [what is a shift resource allocation in scheduling](/blog/what-is-a-shift-resource-allocation-in-scheduling), then explore [EDGEBIC](/edgebic) or, if you are coming from the legacy product, [RMDB to EDGEBIC](/rmdb-to-edgebic).

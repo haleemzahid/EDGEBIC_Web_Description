@@ -1,0 +1,155 @@
+---
+title: "ERPNext to EDGEBIC: The Data Mapping Reference"
+description: "ERPNext data export scheduling doctype by doctype: map Items, Workstations, BOM operations and Work Orders into EDGEBIC import masks, with conversions and upsert rules."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: ERP Integration (EDGEBIC)
+author: user-solutions
+cluster: edgebic-erp-integration
+keywords:
+  - ERPNext data export scheduling
+  - ERPNext field mapping scheduling
+  - ERPNext BOM operations export
+  - import mask field reference
+  - ERPNext workstation export
+  - ERP data mapping scheduling
+targetPhrase: "ERPNext data export scheduling"
+wordCount: 1890
+readingTime: 10
+faqQuestions:
+  - question: "Which ERPNext doctypes do I export for EDGEBIC?"
+    answer: "Five, and only the first four are required. Item maps to the Product mask, Workstation maps to Workcenter, the operations inside your BOM map to the BOR routing mask, and Work Order maps to SalesOrder. Job Card or Timesheet data maps to the Actuals mask if you want recorded hours in EDGEBIC by User Solutions. Customer is a sixth option when you want customer names on jobs. Export each as a report view saved to xlsx or csv, which is the only integration mechanism involved: there is no connector and no API sync."
+  - question: "How do ERPNext BOM operations become an EDGEBIC routing?"
+    answer: "One row per operation, all of a finished item's operations in a single file. The BOM Operation rows carry the workstation, the operation name and the time in minutes, which become the routing step's work center, description and hours. Sequence follows the operation order, and you can let EDGEBIC chain the steps automatically rather than filling a next-step column yourself. The single-file rule matters: a BOR re-import replaces that item's entire routing per run, so splitting one item's operations across two files loses the first run's steps."
+  - question: "ERPNext stores operation time in minutes. How do I convert it?"
+    answer: "With the conversion factor on the mask column rather than by editing the file. EDGEBIC schedules in hours, so map the operation time column and set its conversion factor to 0.016667 for minutes to hours. Leave it empty if a column is already in hours. Getting this wrong is the single most common ERPNext mapping error, and it is loud rather than subtle: setup and run times land sixty times too large, and the schedule stretches to something obviously impossible. Fix the factor and re-import with updates enabled."
+qaQuestions:
+  - question: "We run ERPNext with its own production planning. Does EDGEBIC replace that, and what do we keep exporting?"
+    answer: "It sits beside it rather than replacing it, and the split is usually clean. ERPNext stays your system of record for items, BOMs, customers, sales orders and the financial side, so nothing about your ERPNext workflow changes. EDGEBIC takes over the finite capacity question that a general ERP planner tends to answer optimistically: given these machines, these shifts and everything already committed, when can this work actually run. The routine that follows is a weekly or nightly export of the four required doctypes, an import through your saved masks, then a scheduling run in EDGEBIC. The plan you get back is the one the floor works to, and you export it as a grid snapshot when someone needs it outside EDGEBIC. Keep exporting the same four every cycle rather than trying to be clever about deltas, because the masks match on natural keys and simply update what changed."
+  - question: "Our ERPNext work orders have both a planned start date and a delivery date. Which one goes where?"
+    answer: "Send both, and be deliberate about which is which, because they answer different questions. The SalesOrder mask takes a job date, which is the date the work is released or planned to start, and separately a due date, which is what the schedule measures lateness against. Map the ERPNext planned start to the job date and the delivery date to the due date. If you only have one of them, there are mask options that derive the other, so decide which single date you are supplying rather than letting the mask guess. This distinction is worth an extra five minutes at mapping time because it drives every lateness number you will look at afterward: a due date that is really an internal start date makes half your jobs appear late for no reason, and the schedule then gets blamed for a mapping decision."
+---
+
+**ERPNext data export scheduling comes down to five saved report exports: Item, Workstation, BOM operations, Work Order and optionally Job Card hours, mapped once into EDGEBIC import masks and re-run each cycle.** In EDGEBIC by User Solutions the integration is entirely file-based, using xlsx or csv exported from ERPNext and loaded through a saved mask, so there is no connector to install and nothing in ERPNext to modify.
+
+## What to export, and in what order
+
+Imports have dependencies, so the order is not optional. Work centers and items must exist before a routing can reference them.
+
+| # | ERPNext export | EDGEBIC entity type | Depends on |
+|---|---|---|---|
+| 1 | Item | Product | Nothing |
+| 2 | Workstation | Workcenter | Nothing |
+| 3 | BOM Operation rows | BOR (bill of routing) | Items and work centers |
+| 4 | Work Order | SalesOrder | Items |
+| 5 | Job Card or Timesheet (optional) | Actuals | Scheduled jobs |
+| 6 | Customer (optional) | Customer | Nothing |
+
+Those are the only entity types the masks accept, so anything else in ERPNext stays in ERPNext. Notably there is no import for departments, machine pools, operators and skills, or the sequence-dependent setup matrix: those are configured in EDGEBIC directly.
+
+## 1. Item to Product
+
+| EDGEBIC target field | Mandatory | Source column |
+|---|---|---|
+| `Product_Id` | Yes | Item Code. Natural key, matched case-insensitively |
+| `Product_Name` | | Item Name |
+| `Description` | | Description |
+| `UOM` | | Stock UOM |
+| `Unit_Price` | | Standard Selling Rate, if you want it for quoting |
+| `Lead_Time` | | Lead Time Days |
+| `Category` | | Item Group |
+| `Size`, `Weight`, `Country_Of_Origin` | | Optional descriptive columns |
+
+Export finished items and any sub-assemblies that have their own routing. Raw materials only need to come across if you want their unit cost to feed material cost in a quote.
+
+## 2. Workstation to Workcenter
+
+| EDGEBIC target field | Mandatory | What it drives |
+|---|---|---|
+| `Workcenter Id` | Yes | Natural key. Routing steps match on it |
+| `Workcenter Name` | | Label on the Gantt and in reports |
+| `Number_Of_Instances` | | How many identical machines the station holds. Blank defaults to 1 |
+| `Setup_Time_Hours` | | The flat setup default for this machine |
+| `Hourly_Rate` | | Drives labor cost in quotes |
+| `Capacity`, `Efficiency` | | Rated capacity and the efficiency applied to it |
+| `One_Per_Day_Flag` | | One job per instance per day, for a furnace or oven |
+| `Is_Bottleneck` | | Marks the constraint machine |
+| `Shift_Names` | | Which shifts this machine works |
+| `Color`, `Type`, `Is_Active`, `Min/Max_Batch_Size` | | Display and batching attributes |
+
+Two of these have no ERPNext source and are worth deciding by hand at mapping time. `Number_Of_Instances` matters most: an ERPNext workstation usually represents one machine, but if yours stands for a bank of three identical machines, say three here or the schedule will plan a third of your real capacity. `Is_Bottleneck` and `One_Per_Day_Flag` likewise come from what you know about the plant, and they are settable through this mask, which is the easiest route for both.
+
+## 3. BOM operations to BOR
+
+This is the export that repays care. Put every operation for one finished item in a single file, because a re-import replaces that item's entire routing per run.
+
+| EDGEBIC target field | Mandatory | Source column |
+|---|---|---|
+| `End_Prod` | Yes | The BOM's finished Item Code |
+| `Sub_Prod` | Yes | The component or operation subject |
+| `Op_Flag` | Yes | Marks the row as an operation rather than a material |
+| `No_Req` | Yes | Quantity or hours required |
+| `Seq_No` | | Operation sequence, from the BOM Operation order |
+| `Next_Seq` | | Leave unmapped and let EDGEBIC chain by sequence |
+| `Setup_Time` | | Setup portion, if your BOM separates it |
+| `Queue_Time` | | Buffer before the step |
+| `Flow_Step`, `Transit_Days` | | Overlap and transit, if you use them |
+| `Parallel_Op`, `Alt_Type`, `Res_Mult` | | Parallel and alternate behavior |
+| `Fam_Dept`, `Lead_Time`, `Unit_Cost`, `Sub_Name` | | Optional attributes |
+
+ERPNext BOM Operation rows give you the workstation, the operation name and the operation time, which is most of what a routing step needs. The auto-chaining option is worth leaving on: it links steps in sequence order so you never maintain a next-step column, which is the field most likely to drift.
+
+If your BOM records a single operation time that includes setup, split it deliberately rather than letting it all land as run time, since run time scales with order quantity and setup does not. [Handling combined setup and run time from your ERP](/blog/handling-combined-setup-and-run-time-from-your-erp) covers the split.
+
+## 4. Work Order to SalesOrder
+
+| EDGEBIC target field | Mandatory | Source column |
+|---|---|---|
+| `Product_Id(BOR)` | Yes | Production Item |
+| `Qty` | Yes | Quantity to manufacture |
+| `Job_Date` | Yes | Planned start date |
+| `Job_Number` | | Work Order name, so the two systems share an identifier |
+| `Due_Date` | | Expected delivery date |
+| `Sales_Order(Ref#)` | | Linked Sales Order, for traceability |
+| `Customer_Name` | | Customer, if you exported customers |
+| `Priority` | | A plain positive number, lower first |
+| `Order_Date`, `Unit_Price`, `User_Notes` | | Optional attributes |
+
+Map the job date and the due date to different sources deliberately. The due date is what lateness is measured against; the job date is when work may start. Mask options can derive one from the other when only one is present, so decide rather than let it be inferred. [Importing customer due dates vs internal need dates](/blog/importing-customer-due-dates-vs-internal-need-dates) is the fuller argument.
+
+Keeping `Job_Number` aligned with the ERPNext Work Order name pays for itself the first time someone has to reconcile the two systems.
+
+## 5. Job Card or Timesheet to Actuals
+
+Optional, and only useful once jobs are scheduled in EDGEBIC.
+
+| EDGEBIC target field | Mandatory | Source column |
+|---|---|---|
+| `Job_Number` | Yes | Must match a scheduled job |
+| `WorkCenter_Id` | Yes | Must match the operation's work center |
+| `Actual_Date` | Yes | The day the work happened |
+| `Actual_Hours`, `Actual_Pieces` | | Either or both; the other can be derived |
+| `Complete` | | Marks the operation finished |
+| `Actual_Start` | | Otherwise the earliest imported date can be used |
+
+Mask options let you derive hours from pieces or the reverse, mark operations complete on import, and accept that earlier steps have no actuals yet. Rows fail when the job number or work center does not match a scheduled operation, which is almost always a spelling difference rather than a missing record.
+
+## Conversions and upsert rules
+
+**Time units.** ERPNext operation times are in minutes. EDGEBIC schedules in hours, so set the column's conversion factor to `0.016667` for minutes and leave it empty for hours. Seconds use `0.000278`. This is the most common ERPNext mapping error, and it announces itself: times land sixty times too large.
+
+**Updates.** By default a row that matches an existing record is counted as reused and left alone. If your cycle is meant to refresh existing data, turn on the update option, or nothing will change on the second run.
+
+**Auto-create.** Products, customers and work centers named in a file but not yet present can be created on the fly, which is convenient during a first load and worth reviewing afterward so a typo does not quietly become a new work center.
+
+**Matching.** Every import matches on a natural business key and is not case-sensitive, so `WIDGET-A` finds `Widget-A`.
+
+## After the import
+
+Imports change data and never produce a plan, so run the scheduler afterward. Then check load before dates: a machine showing impossible hours usually means an instance count or a time conversion is wrong, and both are visible in load long before they are visible in a delivery date.
+
+Set the cycle up as a routine rather than a project, per [keeping ERP and EDGEBIC in sync](/blog/keeping-erp-and-edgebic-in-sync-weekly-import-routine). When you need the plan outside EDGEBIC, export the schedule grid as a snapshot, which is a share-and-analyze artifact rather than a file that loads back.
+
+## The takeaway
+
+ERPNext data export scheduling means five saved exports mapped once: Item to Product, Workstation to Workcenter, BOM operations to BOR with every operation for one item in a single file, Work Order to SalesOrder with the job and due dates mapped deliberately, and optionally Job Card hours to Actuals. Set the minutes conversion factor, decide instance counts and the bottleneck flag by hand, turn on updates for recurring runs, and always schedule after importing. See the platform on the [EDGEBIC overview](/edgebic), the upgrade path on the [RMDB to EDGEBIC guide](/rmdb-to-edgebic), and pair this with [which ERP fields EDGEBIC needs to schedule](/blog/which-erp-fields-edgebic-needs-to-schedule) and [why EDGEBIC connects to every ERP the same way](/blog/why-edgebic-connects-to-every-erp-the-same-way).

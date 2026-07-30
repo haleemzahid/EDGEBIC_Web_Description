@@ -1,0 +1,200 @@
+---
+title: "A Stock Build and a Customer Order Share One Machine: The First Run"
+description: "A first schedule run walkthrough in EDGEBIC: two jobs collide on one laser, a holiday costs a day, and the furnace turns out to own three weeks of the calendar."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Worked Examples
+author: user-solutions
+cluster: edgebic-walkthroughs
+pillarSlug: edgebic-worked-examples
+keywords:
+  - first schedule run walkthrough
+  - two jobs one work center
+  - stock build versus customer order
+  - due date sequencing
+  - finite capacity late job
+  - plant holiday schedule impact
+targetPhrase: "two jobs competing for one work center"
+wordCount: 2280
+readingTime: 12
+faqQuestions:
+  - question: "When two jobs want the same machine, how does EDGEBIC decide which goes first?"
+    answer: "The queue is sorted by priority, with the lower number planned first, then by start date, then by due date. Each job is planned completely before the next one begins, and each claims capacity as it goes. In this walkthrough both jobs carry the same priority and the same release date, so the tie falls to the due date: the stock replenishment build is due Friday and the customer order Monday, which puts the stock build on the laser first. Nobody chose that ordering by hand. It fell out of the dates, which is exactly why the sequence is worth reading rather than assuming."
+  - question: "Does a plant holiday shift a job by exactly one day?"
+    answer: "It removes that day's capacity, and the effect on the finish date depends on how much work was left. In this walkthrough the Wednesday holiday deletes 15 hours of laser capacity from a step that needed 50.3 hours across two machines, so the step's finish moves out by one full working day and every downstream step inherits the shift. A holiday landing on a step that had slack costs nothing at all. The rule to hold onto is that a closure removes hours, and only the schedule can tell you what those hours were carrying."
+  - question: "Why did the first schedule run show the customer order 28 days late?"
+    answer: "Because the heat treat step alone needs 201 hours, and the furnace supplies 15 hours a day across its two shifts, which is roughly three working weeks for that step by itself. The laser collision with the stock build cost about a day, the plant holiday cost another, and lot streaming actually saved two days on the press. None of that is the reason the job is late. The furnace owns 201 of the job's 343 work hours and 16 of its 24 working days. The value of the first run is that it says so before anyone confirms the date."
+qaQuestions:
+  - question: "Our instinct was to bump the customer order's priority above the stock build. Would that have fixed the date?"
+    answer: "It would have moved the customer order to the front of the laser queue and bought roughly a day, because that is all the stock build was holding: one Monday's worth of laser capacity on two machines. The job would still land three weeks and change past its due date, because the constraint is the furnace, not the laser. This is the most useful thing a first run teaches you: it shows where the time actually lives, so you spend your levers on the step that owns the calendar instead of the step that happened to be busy on day one. Reprioritizing is cheap and nearly free of side effects, so do it if you want the day, but do not expect it to answer the customer."
+  - question: "The stock build finished three days before its due date while the customer order blew through its date. Should the stock job have waited?"
+    answer: "Only if you are prepared to run the shelf down, and the schedule says that trade buys almost nothing. Holding the stock build releases one Monday of laser time, which pulls the customer order in by about a day against a shortfall of four weeks. Meanwhile the replenishment exists because the projection showed stock falling under its floor, so delaying it converts a solved problem into a second one. The right read is that the two jobs were never really in competition: they shared one machine for one day. Blaming the collision is comfortable because it is visible on day one, and the arithmetic points somewhere else entirely."
+---
+
+**Two jobs released on the same Monday, sharing one laser cutter, with a plant holiday in the middle of the week: this is what the first schedule run says, and why the answer is not what anyone expects.** EDGEBIC by User Solutions plans each job completely before starting the next, claiming real capacity as it goes, so a first run on a fresh week is the cheapest honest look you will get at a promise date. This walkthrough follows both jobs with real hours, and the interesting part is that the collision everyone worries about turns out to cost a single day while the step nobody was watching costs three weeks.
+
+The companion walkthrough on [scheduling a five-job week with mixed priorities](/blog/scheduling-a-five-job-week-with-mixed-priorities-edgebic) covers sequencing among many jobs. This one takes just two, and follows the whole routing to the end.
+
+## The Plant
+
+Six work centers. Every machine runs at full capacity, which is how work centers behave here, so there are no efficiency factors muddying the arithmetic.
+
+| Work center | Machines | Shifts | Hours per day |
+|---|---|---|---|
+| Laser Cut | 2 | Day | 15.0 across both |
+| Press Brake | 1 | Day | 7.5 |
+| Heat Treat furnace | 1 | Day + Night | 15.0 |
+| Weld Cell A | 1 | Day | 7.5 |
+| Weld Cell B | 1 | Day | 7.5 |
+| Deburr | 3 | Day | 22.5 across all three |
+
+The Day Shift runs Monday to Friday, 07:00 to 15:00, with a half-hour break: 7.5 working hours. The Night Shift runs Monday to Thursday only, and only the furnace uses it, which gives that machine 15 hours Monday through Thursday and 7.5 on Friday.
+
+One calendar event matters: **Wednesday June 18 is a plant holiday**. Adding one is a two-minute job, covered in [how to add a plant holiday](/blog/how-to-add-a-plant-holiday-in-edgebic).
+
+## The Two Jobs
+
+Both are released Monday June 16 and both carry the default priority.
+
+| Job | Product | Quantity | Due | Why it exists |
+|---|---|---|---|---|
+| Stock build | Bracket-50 | 300 | Fri June 20 | Replenishment: projected stock fell under its floor |
+| Customer order | Frame-400 | 100 | Mon June 23 | An accepted order for a customer |
+
+Bracket-50 has a two-step routing: Laser Cut, then Deburr. Frame-400 has five:
+
+| Step | Work center | Setup | Run per unit | Note |
+|---|---|---|---|---|
+| 1 | Laser Cut | 0.25 h | 0.50 h | Setup is overridden by the changeover matrix |
+| 2 | Press Brake | 0.25 h | 0.20 h | Transfer batch of 50 pieces |
+| 3 | Heat Treat | 1.00 h | 2.00 h | |
+| 4 | Weld Cell A + B | 0.50 h | 0.30 h | Dependent parallel, both cells together |
+| 5 | Deburr | 0.10 h | 0.10 h | |
+
+Bracket-50 belongs to a light steel changeover family and Frame-400 to a heavy fabrication family. The laser carries a sequence-dependent setup matrix, and that transition is charged at 20 minutes rather than the routing's flat 15. Setup matrices are the subject of the [paint shop changeover walkthrough](/blog/paint-shop-changeover-sequencing-example-edgebic); here it is a footnote worth five minutes, and it is included because a walkthrough that quietly rounds it away teaches the wrong habit.
+
+## Step One: Which Job Gets the Laser?
+
+Both jobs need the laser first, and both were released Monday. The queue sorts by priority, then start date, then due date. Priorities match, release dates match, so the due date breaks the tie: Friday beats Monday, and the **stock build goes first**.
+
+Nobody decided that. It fell out of the data, and it is the first thing worth reading rather than assuming, because a planner who expects the customer order to lead will misread everything downstream.
+
+The stock build's laser step needs `300 x 0.05 + 0.10 setup = 15.10 hours`. Monday supplies 15.0 across the two machines, so Monday is consumed entirely and 0.10 hours spills over: three minutes on each machine on Tuesday morning, finishing at **07:03 Tuesday**.
+
+Deburr then takes `300 x 0.02 + 0.05 = 6.05 hours` across three machines, about 2.0 hours each, and the stock build is **complete Tuesday June 17 at 09:04**, three days inside its Friday due date. That job is done and it never appears again, which is worth noticing: it held the shared machine for one day only.
+
+## Step Two: The Customer Order Starts a Day Behind
+
+Frame-400's laser step needs `100 x 0.50 = 50.0 hours` of run time. Setup comes from the changeover matrix rather than the routing, because the laser has just run the light steel family and is switching to heavy fabrication: 20 minutes, or 0.333 hours. Total **50.333 hours**.
+
+The laser has nothing left on Monday. What follows is the whole story of the front end of this job:
+
+| Day | Laser hours available | Cumulative |
+|---|---|---|
+| Tue June 17 | 14.90 (15.0 less the stock build's spillover) | 14.90 |
+| Wed June 18 | 0.00, plant holiday | 14.90 |
+| Thu June 19 | 15.00 | 29.90 |
+| Fri June 20 | 15.00 | 44.90 |
+| Mon June 23 | 5.43 needed, 2.72 per machine | 50.33 |
+
+The step finishes **Monday June 23 at 09:43**. Two facts are now on the record: the stock build cost this job Monday, and the holiday cost it Wednesday. Together, two working days.
+
+## Step Three: Lot Streaming Buys Two Days Back
+
+The press brake does not wait for all 100 pieces. Its routing step carries a transfer batch of 50, so it can start once the first 50 exist.
+
+Fifty pieces require `0.333 setup + 50 x 0.50 = 25.333 hours` of laser work, which across two machines is 12.67 hours each. Tuesday supplies 7.45 hours per machine, the holiday supplies nothing, and Thursday delivers the remaining 5.22 hours per machine by **12:13 Thursday June 19**.
+
+That is when the press starts. Without the transfer batch it would have waited until the laser finished at 09:43 the following Monday: **two working days of overlap, bought by one field on one routing step.** The piece-count mechanics are the subject of the [lot streaming overlap walkthrough](/blog/lot-streaming-overlap-walkthrough-edgebic).
+
+The press needs `100 x 0.20 + 0.25 = 20.25 hours` on one machine at 7.5 hours a day: 2.78 hours Thursday afternoon, 7.5 Friday, 7.5 Monday, and 2.47 on Tuesday, finishing **Tuesday June 24 at 09:28**.
+
+## Step Four: The Furnace, Where the Calendar Actually Goes
+
+Heat treat needs `100 x 2.00 + 1.00 setup = 201.0 hours`. The furnace runs 15 hours a day Monday to Thursday and 7.5 on Friday, so it supplies 67.5 hours in a full week.
+
+Two hundred and one hours does not fit in a week. It barely fits in three.
+
+| Window | Furnace hours | Cumulative |
+|---|---|---|
+| Tue June 24 from 09:28 to Fri June 27 | 50.5 | 50.5 |
+| Mon June 30 to Fri July 4 | 67.5 | 118.0 |
+| Mon July 7 to Fri July 11 | 67.5 | 185.5 |
+| Mon July 14 to Tue July 15 at 07:28 | 15.5 | 201.0 |
+
+Heat treat finishes **Tuesday July 15 at 07:28**. The step alone consumed 16 working days.
+
+This is the moment the run stops being about a machine collision. Nothing that happened on the laser is on the same scale as the furnace, and no amount of resequencing the front end changes a step that needs three weeks of its own machine.
+
+## Step Five: Finishing Out
+
+The weld step runs on both cells together as a dependent parallel pair, so each cell carries `100 x 0.30 + 0.50 = 30.5 hours` in the same window: 7.53 hours Tuesday afternoon, then 7.5 each on Wednesday, Thursday and Friday, and 0.47 on Monday, finishing **Monday July 21 at 07:28**. Synchronized pairs get their own treatment in the [multi-spindle walkthrough](/blog/synchronized-multi-spindle-scheduling-example-edgebic).
+
+Deburr needs `100 x 0.10 + 0.10 = 10.10 hours` across three machines, about 3.37 hours each, and the job is **complete Monday July 21 at 10:50**.
+
+## The Finished Plan
+
+| Job | Step | Work center | Start | End |
+|---|---|---|---|---|
+| Stock build | Laser Cut | Laser Cut | Mon Jun 16, 07:00 | Tue Jun 17, 07:03 |
+| Stock build | Deburr | Deburr | Tue Jun 17, 07:03 | Tue Jun 17, 09:04 |
+| Customer order | Laser Cut | Laser Cut | Tue Jun 17, 07:03 | Mon Jun 23, 09:43 |
+| Customer order | Press Brake | Press Brake | Thu Jun 19, 12:13 | Tue Jun 24, 09:28 |
+| Customer order | Heat Treat | Furnace | Tue Jun 24, 09:28 | Tue Jul 15, 07:28 |
+| Customer order | Weld | Cells A and B | Tue Jul 15, 07:28 | Mon Jul 21, 07:28 |
+| Customer order | Deburr | Deburr | Mon Jul 21, 07:28 | Mon Jul 21, 10:50 |
+
+The stock build made its date with three days to spare. The customer order was due Monday June 23 and lands Monday July 21: **28 calendar days late**, on the very first run, before anyone has confirmed anything.
+
+## Where the Time Really Went
+
+The job holds 343 work hours in total. Here is the honest accounting of the shortfall:
+
+| Cause | Cost to the finish date |
+|---|---|
+| Stock build held the laser Monday | About 1 working day |
+| Plant holiday Wednesday | 1 working day |
+| Changeover matrix charging 20 minutes instead of 15 | 5 minutes |
+| Lot streaming on the press | **Saved** 2 working days |
+| Heat treat needing 201 hours at 15 a day | 16 working days |
+
+The furnace owns 201 of the job's 343 work hours and 16 of its 24 working days. Everything else, including both of the things that looked like problems on Monday morning, is noise beside it.
+
+That inversion is the point of running the schedule before promising. A planner reading only the first two days would spend the week arguing about job sequencing on the laser and gain a day. A planner reading the whole plan goes straight at the furnace, or goes straight to the customer.
+
+## The Levers That Are Actually Worth Pulling
+
+Ranked by what the arithmetic says they are worth:
+
+1. **Add furnace capacity.** The furnace has no Friday night shift. Adding one gives 7.5 hours a week, which is worth roughly a day and a half across three weeks. More shifts on that machine is the only lever with real leverage on this job.
+2. **Test it before promising anything.** A what-if scenario can raise furnace capacity and report a real date and a real cost, without touching the plan. See [comparing two what-if scenarios for a capacity decision](/blog/comparing-two-what-if-scenarios-for-a-capacity-decision-edgebic).
+3. **Move the promise.** Four weeks of shortfall from a single long-cycle step is usually a conversation, not a scheduling problem. A late warning delivered in June is worth far more than a surprise in July.
+4. **Reprioritize the customer order above the stock build.** Cheap, easy, worth about a day. Do it if you want the day. Do not present it as the answer.
+
+What is not on the list is holding the stock build. It exists because projected stock fell under its floor, it finished three days early, and it held the shared machine for exactly one day. Cancelling a solved problem to buy 24 hours against a four-week gap is not a trade. The replenishment cycle itself is walked through in [a make-to-stock replenishment cycle](/blog/make-to-stock-replenishment-walkthrough-edgebic).
+
+## What This First Run Proves
+
+Three things, none of which any amount of experience on the floor would have told you as fast:
+
+- **Sequence comes from data, not intent.** Two same-priority jobs released together were ordered by due date, and the stock build led. Read the sequence before you reason about the result.
+- **A closure costs hours, not days, and only the plan knows what those hours were carrying.** The Wednesday holiday cost a full day here because it landed on a step with no slack.
+- **The constraint is rarely where the drama is.** A visible collision on day one cost a day; a quiet step in the middle of the routing cost three weeks.
+
+The alternative is a planning method that assumes infinite capacity, which would have declared this order comfortably on time in June and been wrong by four weeks. User Solutions has been building finite schedulers since 1991, and this is the whole argument for them in one run: the bad news arrives early enough to be useful.
+
+## The takeaway
+
+A first schedule run on two jobs sharing one machine is the cheapest honest answer available, and here it inverted every assumption: the laser collision cost a day, the plant holiday cost a day, lot streaming gave two days back, and the heat treat step quietly consumed three weeks and made the customer order 28 days late. Read the whole plan before you spend a lever, because the step that owns your calendar is usually not the one causing visible trouble on Monday morning. See more traced examples in the [EDGEBIC worked examples library](/blog/edgebic-worked-examples), follow the constraint-first version of this decision in the [bottleneck anchor walkthrough](/blog/toc-bottleneck-anchor-scheduling-example-edgebic), see the platform in full on the [EDGEBIC overview](/edgebic), and if you are moving up from Resource Manager DB, start with the [RMDB to EDGEBIC path](/rmdb-to-edgebic).
+
+<Accordion title="When two jobs want the same machine, how does EDGEBIC decide which goes first?">
+The queue is sorted by priority, with the lower number planned first, then by start date, then by due date. Each job is planned completely before the next one begins, and each claims capacity as it goes. In this walkthrough both jobs carry the same priority and the same release date, so the tie falls to the due date: the stock replenishment build is due Friday and the customer order Monday, which puts the stock build on the laser first. Nobody chose that ordering by hand. It fell out of the dates, which is exactly why the sequence is worth reading rather than assuming.
+</Accordion>
+
+<Accordion title="Does a plant holiday shift a job by exactly one day?">
+It removes that day's capacity, and the effect on the finish date depends on how much work was left. In this walkthrough the Wednesday holiday deletes 15 hours of laser capacity from a step that needed 50.3 hours across two machines, so the step's finish moves out by one full working day and every downstream step inherits the shift. A holiday landing on a step that had slack costs nothing at all. The rule to hold onto is that a closure removes hours, and only the schedule can tell you what those hours were carrying.
+</Accordion>
+
+<Accordion title="Why did the first schedule run show the customer order 28 days late?">
+Because the heat treat step alone needs 201 hours, and the furnace supplies 15 hours a day across its two shifts, which is roughly three working weeks for that step by itself. The laser collision with the stock build cost about a day, the plant holiday cost another, and lot streaming actually saved two days on the press. None of that is the reason the job is late. The furnace owns 201 of the job's 343 work hours and 16 of its 24 working days. The value of the first run is that it says so before anyone confirms the date.
+</Accordion>

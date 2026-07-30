@@ -1,0 +1,75 @@
+---
+title: "What Is a Load Factor in Constraint Scheduling?"
+description: "A load factor is one work center's demand hours for a job divided by the hours that work center can supply in a day. Learn how the ratio identifies the tightest resource."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - load factor in scheduling
+  - load factor calculation
+  - constraint identification
+  - bottleneck load factor
+  - demand hours versus capacity
+  - tightest resource in a routing
+targetPhrase: "load factor in scheduling"
+wordCount: 1038
+readingTime: 6
+faqQuestions:
+  - question: "What is a load factor in production scheduling?"
+    answer: "A load factor is the ratio of the hours one job demands from a work center to the hours that work center can supply in a single day. A load factor of 0.5 means the job needs half a day of that resource; a load factor of 3.0 means it needs three days. Because the ratio is computed per job and per quantity, the same work center can carry a low load factor on a small order and a very high one on a large order of the same product."
+  - question: "How is a load factor different from utilization?"
+    answer: "Utilization looks backward or across the whole plan: it asks what share of a work center's available hours are already booked by every job. A load factor looks at one job in isolation and asks how many days of that work center this single order consumes. Utilization tells you how busy a machine is. A load factor tells you which machine a particular job leans on hardest, which is a different and often more actionable question when you are deciding where to protect a schedule."
+  - question: "Why does the scheduler compare load factors across a routing?"
+    answer: "Because the tightest resource for a job is not always the machine a planner assumed. Comparing every work center in one routing on the same ratio surfaces the step that consumes the most days of its own capacity, which is the step most likely to set the job's finish date. When a planner pins a job to a constraint, the comparison is how the engine confirms that the pinned resource really is the tightest one for that job at that quantity rather than a habit inherited from a different product."
+qaQuestions:
+  - question: "Our press has a load factor of 4.0 on one job. Is that a problem?"
+    answer: "Not by itself. A load factor of 4.0 simply says this job needs four days of press capacity, which is normal for a large order on a single-shift machine. What matters is the comparison. If every other step on the routing sits below 0.5, the press alone will decide when the job finishes, so any delay there moves the promise date one for one. That is worth protecting deliberately. If a second step also sits near 4.0, you have two candidate constraints and the job will be sensitive to both, which usually argues for looking at capacity rather than sequencing."
+  - question: "The same product shows a different load factor on two orders. Why?"
+    answer: "Because quantity is in the numerator. Demand hours are run time per unit multiplied by the order quantity, plus setup, so a 500 piece order carries five times the run hours of a 100 piece order on the same routing. The denominator, the work center's daily hours, does not change with the order. So the ratio scales with quantity, and a step that is comfortable on small orders can become the tightest resource on a large one. That shift is exactly why the ratio is recomputed per job rather than stored once on the work center."
+---
+
+**A load factor is the ratio of the hours one job demands from a work center to the hours that work center can supply in a single day, so a value of 1.0 means the job consumes exactly one day of that resource and 3.0 means it consumes three.** The ratio is computed per job and per quantity, not once per machine, which is what makes it useful: it answers "which step does this particular order lean on hardest?" rather than "which machine is generally busy?" EDGEBIC by User Solutions computes a load factor for every work center in a job's routing whenever a job is scheduled against a pinned constraint, and uses the comparison to confirm which resource is genuinely the tightest for that order.
+
+## How it works
+
+The calculation has two halves, and both are plain arithmetic.
+
+The numerator is demand: the hours this job asks of this work center. That is the step's run time per unit multiplied by the order quantity, plus the step's setup time. A step running 0.16 hours per piece on a 50 piece order with a 0.5 hour setup demands 8.5 hours.
+
+The denominator is daily supply: the hours the work center can deliver on a normal working day. That comes from the shift calendar attached to the work center, multiplied by the number of machine instances it runs. A single machine on one eight hour shift supplies 8 hours a day. Two machines on the same shift supply 16.
+
+Divide demand by supply and you get the load factor. Because the numerator scales with order quantity and the denominator does not, the ratio is a property of the pairing of a job and a work center, never of the work center alone.
+
+The comparison is where the value sits. The engine computes the ratio for every work center that appears in the job's routing and then looks for the maximum. When a planner has pinned a job's operation to a constraint work center, the engine checks whether that pinned resource carries the highest load factor in the routing, within a tiny rounding tolerance. If it does, the planner's identification is confirmed for this job. If some other step carries a higher ratio, the pin is still honored, but the engine has quietly recorded that the tightest resource for this order is somewhere else.
+
+Nothing about the ratio changes how hours are placed on the calendar. Capacity, shifts, holidays, and machine instances still govern placement. The load factor is a diagnostic that tells the engine, and by extension you, where a job's schedule is most fragile.
+
+## A concrete example
+
+Take the sample plant: Day Shift 08:00 to 16:00, eight hours, one machine each on Saw-1, CNC-Mill-1, and Paint-Booth-1. A job for 50 brackets runs all three in sequence.
+
+| Work center | Demand hours (this job) | Daily supply | Load factor | Reading |
+|---|---|---|---|---|
+| Saw-1 | 2.0 | 8.0 | 0.25 | A quarter of a day |
+| CNC-Mill-1 | 8.0 | 8.0 | **1.00** | A full day, the highest |
+| Paint-Booth-1 | 3.0 | 8.0 | 0.375 | Under half a day |
+
+CNC-Mill-1 carries the maximum. If the planner pinned this job's milling operation to the mill as the plant constraint, the engine confirms it: for this job at this quantity, the mill is the tightest resource, and the job's finish date is more sensitive to a lost mill hour than to a lost saw hour.
+
+Now change one thing. Add a second machine to the mill, so it supplies 16 hours a day instead of 8. The demand stays 8 hours, so the mill's load factor halves to 0.50. Saw-1 is unchanged at 0.25 and the paint booth at 0.375. The mill is still the maximum, but the margin has narrowed sharply, and a slightly larger paint operation would flip which step is tightest.
+
+Change quantity instead. At 200 brackets rather than 50, the mill demands 32 hours against 8 supplied, a load factor of 4.0, while the saw rises to 1.0 and the booth to 1.5. Same routing, same machines, a completely different shape of risk. This is the whole reason the ratio is recomputed for every job instead of stored as a work center attribute.
+
+## How EDGEBIC uses it
+
+The load factor is an internal validation, not a field you type. It sits underneath constraint scheduling, where a planner marks one work center as the plant constraint and pins a job's operation there so the schedule is built outward from that point. The mechanics of that pin are covered in [what is an anchor step in scheduling](/blog/what-is-an-anchor-step-in-scheduling), and the reasoning behind choosing one constraint is covered in [what is a bottleneck work center](/blog/what-is-a-bottleneck-work-center).
+
+When a pinned job is scheduled, the engine builds the ratio table above and records whether the pinned resource holds the maximum. That verdict then feeds how tightly the constraint's capacity is packed, because a genuine constraint is worth protecting with a different allocation preference than an ordinary step. The related [theory of constraints](/blog/what-is-theory-of-constraints) practice of protecting exactly one resource is what makes the check meaningful: marking half the plant as constraints dilutes it to nothing.
+
+The two inputs are worth understanding on their own. Daily supply depends on machine count, which is explained in [per instance capacity in scheduling](/blog/what-is-per-instance-capacity-in-scheduling), and the plant-wide version of the same demand-versus-supply question is covered in [load versus capacity in scheduling](/blog/what-is-load-vs-capacity-in-scheduling).
+
+## The takeaway
+
+A load factor turns a vague question, which machine matters most on this job, into one number per work center that you can compare on a single line. It is per job and per quantity by design, because a step that is comfortable on a small order can be the tightest resource on a large one, and that shift is invisible if you only track how busy machines are in general. Understanding it makes constraint scheduling feel less like a ritual and more like arithmetic. To see the same demand-versus-supply logic across a whole plan, read [load versus capacity in scheduling](/blog/what-is-load-vs-capacity-in-scheduling) and [what is capacity utilization in scheduling](/blog/what-is-capacity-utilization-in-scheduling), then explore [EDGEBIC](/edgebic) or, if you are coming from the legacy product, [RMDB to EDGEBIC](/rmdb-to-edgebic).

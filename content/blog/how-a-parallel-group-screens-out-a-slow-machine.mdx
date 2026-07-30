@@ -1,98 +1,116 @@
 ---
-title: "How a Parallel Group Screens Out a Slow Machine"
-description: "A minimum efficiency threshold keeps low-performing machines out of a parallel group. How the screen works, what it costs you in capacity, and when to raise or lower it."
+title: "How to Keep a Slow Machine Out of a Machine Pool"
+description: "There is no automatic efficiency screen on a pool. Four real controls decide which machines a step can use: the member list, the Active flag, the per-member factor, and the selection strategy."
 published: 2026-08-07T12:00:00.000Z
-modified: 2026-08-07T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
 category: Scheduling Concepts
 author: user-solutions
 cluster: edgebic-scheduling-concepts
 pillarSlug: edgebic-scheduling-engine-guide
 keywords:
-  - parallel work center scheduling
-  - minimum efficiency threshold
-  - machine efficiency scheduling
-  - work center efficiency
+  - work center group members
+  - machine pool selection
+  - keeping a machine out of a pool
+  - selection strategy scheduling
+  - member active flag
   - finite capacity scheduling
-  - parallel machine selection
-targetPhrase: "minimum efficiency threshold"
-wordCount: 1550
+targetPhrase: "keep a machine out of a machine pool"
+wordCount: 1540
 readingTime: 8
 faqQuestions:
-  - question: "How does a scheduler stop a slow machine from joining a parallel operation?"
-    answer: "A parallel step carries a minimum efficiency threshold, a number between 0 and 1 that a candidate machine must meet before it can be added to the group. EDGEBIC compares the threshold against each candidate work center's efficiency figure, and any machine below the line is left out of the parallel list before the capacity search even runs. The default threshold is 0.80, so a machine rated below 80 percent efficiency is excluded unless you lower the setting."
-  - question: "Does excluding a machine make the job finish later?"
-    answer: "It can, and that is the trade-off the threshold exists to make explicit. A parallel group with three machines finishes sooner than one with two, so screening out the weakest machine costs elapsed time. What it buys is predictability, because a machine with a low efficiency rating consumes more scheduled hours per unit of real output and tends to be the one that slips. If elapsed time matters more than consistency on a given step, lower the threshold for that step."
-  - question: "What number does the threshold compare against?"
-    answer: "The candidate work center's own efficiency value in its master record. That means the screen is only as good as the efficiency data behind it. If every machine is left at 100 percent because nobody ever updated the field, the threshold never excludes anything and the setting is inert. Maintaining honest efficiency figures on each work center is what turns the threshold from a decoration into a real control."
+  - question: "Does a pool automatically exclude machines below an efficiency rating?"
+    answer: "No. There is no automatic efficiency screen and no threshold that filters candidates by a performance rating. In EDGEBIC by User Solutions a machine is in a pool because somebody put it there, and it leaves when somebody takes it out or unticks its Active flag. That is deliberate, because an automatic screen would silently remove capacity you believed you had, and the symptom would arrive later as work that will not fit with no visible cause. The controls are explicit instead: the member list, each member's Active flag, the factor describing relative speed, and the group's selection strategy."
+  - question: "What is the fastest way to stop a pool from using one machine?"
+    answer: "Untick that member's Active flag. It drops the machine from every group-bound step's candidate list on the next scheduling run, while operations already started on it stay exactly where they are. That combination is what makes it safe to do mid-week: you stop future work landing there without disturbing work in progress. Removing the member from the group entirely also works, and is the right move when the machine has left the pool permanently rather than for a fortnight."
+  - question: "How do I make a slow machine the last resort rather than excluding it?"
+    answer: "Describe its speed honestly and let the strategy do the work. Each member carries a factor that multiplies the step's base run hours for that machine, so a machine taking twenty five percent longer for this class of work carries 1.25. With the default earliest-completion strategy the engine computes real per-machine hours before choosing, so the slower machine naturally loses whenever a faster one can finish sooner, and wins only when it genuinely would finish first because the others are busy. That is usually what people actually wanted."
 qaQuestions:
-  - question: "My step is configured for three parallel machines but only two ever get used. Why?"
-    answer: "Check the third machine's efficiency figure against the step's minimum efficiency threshold. With the default threshold of 0.80, a machine carrying an efficiency of 0.60 is filtered out of the candidate list before the scheduler looks for capacity, so it never appears in the group no matter how free it is. The other common causes are the machine being marked inactive on the step's alternate list, or the machine not sharing a shift with the rest of the group on the day in question. Look at the efficiency value first, because it is the one that produces exactly this symptom of a machine that is available and still never chosen."
-  - question: "Should I lower the threshold to zero so the scheduler always uses every machine?"
-    answer: "Only if every machine on the step really is interchangeable in practice. Dropping the threshold to zero turns the screen off and lets the weakest machine take a share of every parallel step, which compresses the plan on paper. The risk is that the plan is compressed against a machine whose real throughput does not match its scheduled hours, so the group finishes late and the whole group's downstream steps move with it. A better middle path is to keep a threshold that reflects what you would actually accept, then fix the efficiency values so the screen makes decisions you agree with."
+  - question: "We have three mills in a pool and want the newest used first, with the old one only when the others are full. How do we set that up?"
+    answer: "Two settings, and no exclusion needed. Flag the newest mill as the group's Primary and set the selection strategy to primary-first, which stays on the designated machine whenever it has same-day capacity and falls back to the others only when it is fully booked. Only one member can be primary at a time, so ticking a second automatically unticks the first, which prevents an ambiguous half-configured state. Then set each member's factor to describe its real speed for this class of work, and give the old mill a higher priority number so it sorts last among the fallbacks, since priority breaks ties with lower numbers going first. The result is exactly the behavior you described, and it degrades sensibly: in a busy week the old mill picks up overflow rather than the work simply waiting, which is the whole reason to keep it in the pool. If you would rather the plant just take whatever finishes soonest, leave the strategy on earliest completion and skip the primary flag entirely."
+  - question: "Our third machine is in the pool, is free, and still never gets work. What do we check?"
+    answer: "Work down four things in this order, because each fails differently. First, the Active flag on that member: unticked means it left every candidate list on the last scheduling run, which produces precisely this symptom of an idle machine that is never chosen. Second, the selection strategy: under primary-first the engine stays on the designated machine whenever it has same-day capacity, so a free third machine is correct behavior rather than a fault. Third, the member's factor: a number well above one tells the engine this machine is much slower for this work, so earliest completion keeps preferring the others, and the question is whether that factor reflects reality. Fourth, whether a planner has pinned the step to a specific machine, because a manual pin always wins and survives rescheduling. Only after those four is it worth looking at shifts and calendars."
 ---
 
-**A minimum efficiency threshold is the rule that decides which machines are good enough to join a parallel operation. Each parallel routing step in EDGEBIC by User Solutions carries a threshold between 0 and 1, and every candidate work center must meet or beat it before the scheduler will add it to the group. The default is 0.80, so a machine rated below 80 percent efficiency is screened out before the capacity search runs at all.** It is a small setting with a large effect, because it decides whether a job spreads over three machines or two.
+**There is no automatic efficiency screen on a machine pool: nothing filters candidates by a performance rating, so a machine is in a pool because somebody put it there.** In EDGEBIC by User Solutions you keep a slow machine out, or make it a last resort, through four explicit controls: the member list, each member's Active flag, the factor that describes relative speed, and the group's selection strategy. The explicitness is the design, not a gap.
 
-Most discussion of parallel work centers is about how the hours get divided. The threshold is the earlier question: which machines were ever allowed in the division.
+## Why explicit rather than automatic
 
-## The screen runs before the capacity search
+It is tempting to want a threshold: set a minimum performance level and let the engine drop anything below it. Consider what that does on a busy week. A pool that quietly excludes a machine has removed real capacity from your plant, and the symptom surfaces later as jobs that will not fit, with no visible cause. You would be debugging a plan against a candidate list you cannot see.
 
-When a routing step is configured to run on more than one machine at once, the scheduler builds a candidate list from the step's alternate work centers. The efficiency screen is applied while that list is being assembled, not afterward. A machine whose efficiency rating falls below the step's threshold is dropped from the candidate list, and every later stage of the engine behaves as though that machine was never offered.
+Explicit membership inverts that. The candidate list is exactly what you configured, so when a machine is not being used, the reason is one of a handful of settings you can read in a few seconds.
 
-That ordering matters for diagnosis. A machine excluded by the threshold does not show up as a rejected candidate with an empty allocation. It simply is not in the group, on any day, no matter how much idle capacity it has. If you are hunting for why a machine you configured never receives work, the threshold is the first place to look, well before you start studying shift calendars.
+## The four controls
 
-The comparison itself is deliberately plain. The threshold is a ratio, the candidate's efficiency is a ratio, and the engine keeps machines whose efficiency is at or above the line.
+| Control | What it does | Use it when |
+| --- | --- | --- |
+| Member list | Which machines are in the pool at all | The machine is permanently in or out |
+| Active flag per member | Drops a machine from every group-bound step's candidate list on the next run | The machine is temporarily unavailable |
+| Factor per member | Multiplies the step's base run hours for that machine | The machine is slower or faster for this class of work |
+| Selection strategy | How the engine chooses among available members | You want a preferred machine, or simply the fastest finish |
 
-## What efficiency means here, and why the data matters
+## Removing a machine, temporarily or permanently
 
-Efficiency on a work center is the dial that says how much real output the machine produces relative to its nominal rate. A machine at 1.0 does a nominal hour of work in an hour. A machine at 0.60 needs longer to do the same work, so the scheduler has to reserve more calendar time to get the same pieces out.
+**Temporarily: untick Active.** The machine drops out of every group-bound step's candidate list on the next scheduling run, and operations already started on it stay exactly where they are. That pairing is what makes this safe mid-week: future work stops landing there without disturbing work in progress.
 
-That makes the screen only as trustworthy as the master data behind it. In shops where every machine was imported at 100 percent and never revisited, the threshold quietly excludes nothing, because nothing is below the line. In shops that maintain honest efficiency figures, usually derived from logged actuals against planned hours, the threshold becomes a genuine quality control on which equipment is allowed into a time-critical operation.
+**Permanently: remove the member.** The right move when a machine has left the pool for good.
 
-This is the same efficiency dial covered in [efficiency versus utilization](/blog/efficiency-vs-utilization-two-different-capacity-dials), used for a different purpose. There it stretches or compresses run time. Here it decides membership.
+One guard worth knowing: a group needs at least one active member to be schedulable at all. A fully deactivated pool fails visibly rather than quietly picking something else, which is what you want from a safety mechanism.
 
-## A worked example: three mills, one threshold
+## Making a slow machine a last resort instead
 
-A machining step needs 24 hours of run time on the primary mill, and the step is configured for independent parallel processing with two additional mills as candidates.
+Exclusion is often the wrong tool. If the machine can do the work, just not as fast, you usually want it available for overflow and ignored otherwise. Two settings achieve that.
 
-- Mill A, the primary, efficiency 1.00
-- Mill B, efficiency 0.85
-- Mill C, efficiency 0.60, an older machine that produces acceptable parts but slowly and with frequent stoppages
+**The factor.** Each member carries a factor multiplying the step's base run hours for that machine: 1.0 is baseline, 0.5 is twice as fast, 2.0 is twice as slow. It is never applied to setup time, which is carried separately as an optional setup override, so a machine can run fast and still set up slowly.
 
-With the default threshold of 0.80, the engine screens the list before searching for capacity. Mill A and Mill B pass. Mill C is 0.20 below the line and is removed.
+Use the factor for work-class differences, meaning this machine takes twenty five percent longer for *this kind of work*. If a machine is simply slower at everything, that belongs in its own work center configuration rather than in a pool factor, or the same slowness gets described twice. The distinction is covered in [how efficiency scales run time but not setup](/blog/how-efficiency-scales-run-time-but-not-setup).
 
-The 24 hours are then divided across two machines rather than three. On an eight-hour day shift, that is roughly 12 hours each, so the step consumes a day and a half of elapsed time instead of the one day that three machines would have produced. The threshold cost the plan about half a day on this step.
+**The strategy.** With the default earliest-completion strategy the engine computes real per-machine hours using each member's factor before choosing, so an honestly-described slow machine loses whenever a faster one finishes sooner, and wins only when it genuinely would finish first because the others are busy. That is usually the behavior people were reaching for when they asked about a threshold.
 
-Now lower the threshold on this step to 0.55 and reschedule. Mill C passes, the 24 hours spread across three machines, and the step finishes in a single day on paper. The question is whether Mill C really delivers eight hours of usable output in an eight-hour shift. If it does not, the group's true finish is later than the plan says, and because parallel work is coordinated, every downstream step moves with the slowest member. You did not gain half a day. You moved the loss out of the plan and onto the floor.
+## Choosing the strategy
 
-That is the entire trade-off in one example. A higher threshold produces a longer but more honest plan. A lower threshold produces a shorter plan that depends on your weakest machine performing.
+| Strategy | Behavior |
+| --- | --- |
+| Earliest completion | Picks whichever member finishes the operation soonest, accounting for speed and existing queue. The default |
+| Primary first | Stays on the designated primary whenever it has same-day capacity, falling back only when it is full |
+| Earliest start | Picks the member that can begin soonest |
 
-## When to raise the threshold, and when to lower it
+Primary first is the direct answer to "use the new machine unless it is full". Flag that machine as Primary, and note only one member can hold the flag: ticking a second unticks the first. Priority then breaks ties among the rest, lower numbers first, and also decides the fallback primary when no member carries the flag.
 
-Raise it when the step feeds a constraint or a promise date, when the parts are difficult and a marginal machine produces rework, or when you have enough capacity that spreading over one fewer machine costs you nothing you care about. A tight threshold on a feeding operation is a cheap way to keep the constraint fed with parts that do not come back.
+## Diagnosing a machine that never gets work
 
-Lower it when you are genuinely capacity-short and elapsed time is the binding problem, when the step is simple enough that a slow machine is only slow rather than unreliable, or when the low efficiency figure reflects a rate difference you have already priced into the routing. A machine that is honestly rated at 0.70 and behaves like 0.70 is a perfectly good group member, because the scheduler already reserves the extra time.
+1. **The Active flag.** Unticked means the machine left every candidate list on the last run, which is exactly this symptom.
+2. **The strategy.** Under primary first, a free third machine sitting idle while the primary works is correct.
+3. **The factor.** A number well above one keeps earliest completion preferring others. Check it against reality.
+4. **A manual pin.** A planner's machine pin always wins and survives rescheduling, so a pinned step will not shop the pool.
 
-The threshold sits on the step, not on the plant, so these are per-operation decisions. A finishing step that feeds a shipping deadline can hold a tight screen while a roughing step upstream lets everything in.
+Only then look at shifts and calendars.
 
-## How it interacts with the rest of the parallel machinery
+## Pools, parallel machines and alternates are different things
 
-The screen is one gate among several, and it fires first. After it, the group still has to clear the checks that decide whether the machines can actually run together: they need a shared shift on the target day, they need free instances, and for synchronized work they need a window where every member is simultaneously available. Those later gates are covered in [how dependent parallel mirroring locks machines together](/blog/how-dependent-parallel-mirroring-locks-machines-together) and in the comparison of [dependent and independent parallel](/blog/dependent-vs-independent-parallel-when-to-use-each).
+Worth separating, because the words get used interchangeably on a shop floor.
 
-The threshold also does not touch true alternate routing, where a machine is a fallback rather than a partner. A fallback machine is chosen when the primary has no capacity, and the choice runs through the alternate resolver instead of the parallel candidate list. If you want a slow machine available as an emergency route but never as a routine partner, configure it as an alternate rather than a parallel member and leave the threshold high.
+A **pool** is "any of these machines may run this step, pick one". That is a work center group, and everything above applies to it.
 
-All of this sits inside the wider engine described in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and it only produces a real decision because capacity is treated as [genuinely finite](/blog/finite-vs-infinite-capacity-scheduling). If capacity were infinite, adding a slow machine would be free. It is not, and the threshold is where you say so.
+**Parallel machines** run *together*: an independent parallel machine takes its own capacity-checked share of the work to shorten the operation, while a dependent parallel mirror runs in lockstep with the primary. To keep a slow machine out of a parallel step you simply do not add it as a parallel machine, since the candidate list there is whatever you configured on the step. The two modes are compared in [dependent and independent parallel](/blog/dependent-vs-independent-parallel-when-to-use-each) and the lockstep behavior in [how dependent parallel mirroring locks machines together](/blog/how-dependent-parallel-mirroring-locks-machines-together).
 
-To see how your own efficiency figures would shape parallel groups on your routings, [bring your data to a demo](/edgebic).
+A **true alternative** is *instead of*: one machine ends up doing the step. It carries its own setup and its own hours, entered directly, with no factor involved. If you want a slow machine available as an emergency route but never as a routine partner, a true alternative is the right shape.
 
-<Accordion title="How does a scheduler stop a slow machine from joining a parallel operation?">
-A parallel step carries a minimum efficiency threshold, a number between 0 and 1 that a candidate machine must meet before it can be added to the group. EDGEBIC compares the threshold against each candidate work center's efficiency figure, and any machine below the line is left out of the parallel list before the capacity search even runs. The default threshold is 0.80, so a machine rated below 80 percent efficiency is excluded unless you lower the setting.
+One last note on maintenance: interchangeable machines are better modeled as a group than as an alternate list hand-configured on every routing step, which drifts the first time somebody edits one copy. Binding a step to a group supersedes any manual alternate list on that step, because from then on the group is the alternate list. [How a work center group shops a pool of machines](/blog/how-a-work-center-group-shops-a-pool-of-machines) covers the shopping behavior.
+
+All of this only produces a real decision because capacity is treated as [genuinely finite](/blog/finite-vs-infinite-capacity-scheduling). If capacity were infinite, adding a slow machine would be free. It is not, which is why membership is a decision you make rather than one the engine makes quietly for you.
+
+## The takeaway
+
+Nothing screens machines out of a pool automatically, because a silent exclusion would remove capacity you thought you had. Keep a machine out by unticking its Active flag, which takes effect on the next run while leaving started work alone, or remove the member outright when the change is permanent. More often the better answer is to make it a last resort: describe its speed with an honest factor, which never touches setup, and let earliest completion prefer faster members, or flag a Primary and use primary first. When a pooled machine never gets work, check Active, then the strategy, then the factor, then a manual pin. See the platform on the [EDGEBIC overview](/edgebic), the upgrade path on the [RMDB to EDGEBIC guide](/rmdb-to-edgebic), and pair this with [the complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide).
+
+<Accordion title="Does a pool automatically exclude machines below an efficiency rating?">
+No. There is no automatic efficiency screen and no threshold that filters candidates by a performance rating. A machine is in a pool because somebody put it there, and it leaves when somebody takes it out or unticks its Active flag. That is deliberate, because an automatic screen would silently remove capacity you believed you had, and the symptom would arrive later as work that will not fit with no visible cause. The controls are explicit instead: the member list, each member's Active flag, the factor describing relative speed, and the group's selection strategy.
 </Accordion>
 
-<Accordion title="Does excluding a machine make the job finish later?">
-It can, and that is the trade-off the threshold exists to make explicit. A parallel group with three machines finishes sooner than one with two, so screening out the weakest machine costs elapsed time. What it buys is predictability, because a machine with a low efficiency rating consumes more scheduled hours per unit of real output and tends to be the one that slips. If elapsed time matters more than consistency on a given step, lower the threshold for that step.
+<Accordion title="What is the fastest way to stop a pool from using one machine?">
+Untick that member's Active flag. It drops the machine from every group-bound step's candidate list on the next scheduling run, while operations already started on it stay exactly where they are. That combination is what makes it safe to do mid-week: you stop future work landing there without disturbing work in progress. Removing the member from the group entirely also works, and is the right move when the machine has left the pool permanently rather than for a fortnight.
 </Accordion>
 
-<Accordion title="What number does the threshold compare against?">
-The candidate work center's own efficiency value in its master record. That means the screen is only as good as the efficiency data behind it. If every machine is left at 100 percent because nobody ever updated the field, the threshold never excludes anything and the setting is inert. Maintaining honest efficiency figures on each work center is what turns the threshold from a decoration into a real control.
+<Accordion title="How do I make a slow machine the last resort rather than excluding it?">
+Describe its speed honestly and let the strategy do the work. Each member carries a factor that multiplies the step's base run hours for that machine, so a machine taking twenty five percent longer for this class of work carries 1.25. With the default earliest-completion strategy the engine computes real per-machine hours before choosing, so the slower machine naturally loses whenever a faster one can finish sooner, and wins only when it genuinely would finish first because the others are busy. That is usually what people actually wanted.
 </Accordion>

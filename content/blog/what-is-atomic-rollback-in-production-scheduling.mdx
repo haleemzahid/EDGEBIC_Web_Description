@@ -1,0 +1,74 @@
+---
+title: "What Is Atomic Rollback in Production Scheduling?"
+description: "Atomic rollback means a scheduling attempt that fails partway leaves zero residue: every booking it made is removed and the capacity it claimed is released."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - atomic rollback scheduling
+  - all or nothing scheduling attempt
+  - failed schedule attempt residue
+  - capacity released on failure
+  - backward attempt abandoned
+  - partial booking cleanup
+targetPhrase: "atomic rollback in scheduling"
+wordCount: 1040
+readingTime: 6
+faqQuestions:
+  - question: "What is atomic rollback in production scheduling?"
+    answer: "Atomic rollback is the guarantee that a scheduling attempt which fails partway through leaves nothing behind. Any bookings the attempt already made are removed, and the machine capacity those bookings consumed is released, so the plan returns to exactly the state it was in before the attempt started. The alternative, leaving half-placed work in the plan, is far worse than a clean failure: it silently reserves capacity for an operation that will never run there, which pushes every later job on that machine out with nothing on screen to explain why."
+  - question: "Why does a scheduling attempt need to be all or nothing?"
+    answer: "Because some placements only make sense as a set. An operation running on three machines together is one physical event; two of the three machines booked is not a partial success, it is a plan that cannot be executed. The same applies to scheduling a whole routing backward from a due date: if the third step from the end will not fit, the two steps already placed behind it are meaningless. In both cases the correct outcome is to remove what was placed and try a different approach."
+  - question: "What happens after a rollback? Does the job just fail?"
+    answer: "Usually not. Rollback is a cleanup step, not the end of the story. After a backward attempt is rolled back, the engine schedules the job forward instead, which typically produces a workable if later plan. After a failed attempt to find a window for several machines at once, the search moves on to the next candidate date and tries again. Rollback exists precisely so that a second attempt starts from a clean plan rather than from one polluted by the first attempt's leftovers."
+qaQuestions:
+  - question: "I canceled a scheduling run halfway through. Did it leave the plan half-changed?"
+    answer: "No. Canceling a run is safe and nothing partial is kept, so your previous plan stands exactly as it was. That is the same guarantee at a larger scale than a single operation: the run either completes and writes its result or it does not write at all. This is worth knowing because the instinct on a long run is to let it finish out of fear that stopping it will corrupt something. It will not, so if you realize mid-run that you selected the wrong jobs, stopping is the right move."
+  - question: "How would I even notice if a system did not roll back cleanly?"
+    answer: "You would notice it as capacity that appears consumed with nothing to show for it. A machine's day would read as booked while the Gantt showed no bar occupying those hours, and the next job scheduled onto that machine would land later than the visible load justified. That class of symptom, load without a corresponding operation, is exactly what clean rollback prevents, and it is why the release of consumed capacity matters as much as the removal of the booking row. A leftover booking is visible; leftover capacity consumption is not."
+---
+
+**Atomic rollback is the guarantee that a scheduling attempt which fails partway through removes every booking it already made and releases the capacity those bookings consumed, returning the plan to exactly its pre-attempt state.** It is the difference between a clean failure you can act on and a plan quietly holding capacity for work that will never run. EDGEBIC by User Solutions applies it wherever a placement only makes sense as a complete set, which includes multi-machine operations and any attempt to schedule a routing backward from its due date.
+
+## How it works
+
+Most scheduling placements are independent: one operation onto one machine, and if it fails, nothing else is affected. Some placements are not. Two situations require a whole set to succeed or the whole set to be undone.
+
+**A multi-machine operation.** When several machines run one operation together, the engine has to place all of them in a window they are all open, all with room, all able to start at the same moment. It cannot know whether the last machine will fit until it has tried, and by then the earlier ones have already been booked. If the last one fails, the earlier bookings are not partial progress; they describe a physical event that will not happen. So the attempt keeps a record of everything it created, and on failure it walks that record and undoes each entry in the reverse of the order it was made.
+
+**A backward pass.** Scheduling a routing backward from its due date places the last operation first and works upstream. Each placement depends on the one after it. If a step several operations in will not fit before its successor needs it, the operations already placed behind it are meaningless: they were positioned to feed a plan that has just been shown to be infeasible. The attempt is abandoned completely, every placed step is removed, and the engine schedules the job forward instead.
+
+The undoing has two parts, and both matter. Removing the booking row is the visible half. Releasing the capacity that booking consumed is the invisible half, and it is the more dangerous one to get wrong. A leftover booking is at least something a planner can see and delete. Leftover capacity consumption shows up only as a machine that reads busier than its visible bars justify, which pushes every later job on that machine out with no explanation on screen.
+
+Reverse order is not incidental either. Undoing in the reverse of the order things were created means each release happens against the state that existed when the corresponding claim was made, which is what keeps the arithmetic exact when several claims touched the same slot.
+
+## A concrete example
+
+Take a job for 50 brackets, cut then milled, needing ten sequential hours of work. Its product carries a one day delivery tail, and the customer wants it Friday. So the machine work has to finish by the end of Thursday. Only one eight hour shift exists in the available window.
+
+The engine attempts the backward pass:
+
+| Phase | What happens | State of the plan |
+|---|---|---|
+| Place the mill backward from Thursday's end | Fits, six hours placed, capacity consumed | One booking exists |
+| Place the saw backward from the mill's start | Will not fit: not enough hours remain before the mill needs it | Attempt has failed |
+| **Rollback** | The mill booking is removed and its six hours of capacity are released | **Plan is byte-for-byte as it was** |
+| Forward fallback | Saw Thu 08:00 to 10:00, mill Thu 10:00 to 16:00 plus Fri 08:00 to 10:00 | Job is scheduled, one day late |
+
+The important line is the third. Without the rollback, the mill would carry a Thursday booking for an operation whose predecessor was never placed, and Thursday's mill capacity would be six hours smaller for every other job in the plant, permanently, on the strength of an attempt that failed.
+
+The multi-machine case has the same shape. A synchronized three-spindle drilling operation books spindle one, books spindle two, and then finds spindle three has no window. Both existing bookings are removed and both capacity claims released, in the reverse of the order they were made, and the search moves on to the next candidate date to try all three again from a clean plan.
+
+## How EDGEBIC uses it
+
+Atomic rollback sits under two features rather than being a feature itself. The multi-machine case is part of how synchronized work is placed, described in [what is dependent parallel processing](/blog/what-is-dependent-parallel-processing), and the common-window search it protects is covered in [what is a common shift requirement in parallel scheduling](/blog/what-is-a-common-shift-requirement-in-parallel-scheduling).
+
+The backward case is what makes the automatic fallback to forward scheduling honest. When a job cannot meet its due date working backward, the outcome described in [what is a backward infeasible job](/blog/what-is-a-backward-infeasible-job) is a clean forward plan rather than a hybrid of two half-attempts.
+
+The capacity that gets released is held in the structure described in [what is a shift resource allocation in scheduling](/blog/what-is-a-shift-resource-allocation-in-scheduling). Failing to release it would produce exactly the symptom named in [what is phantom capacity in scheduling](/blog/what-is-phantom-capacity-in-scheduling), a machine whose load does not match the work visibly on it, which is one of the harder problems to diagnose from a screen. And when an attempt genuinely cannot be rescued, the job is reported with a reason rather than aborting the rest of the run, as covered in [what is a scheduling failure category](/blog/what-is-a-scheduling-failure-category).
+
+## The takeaway
+
+Atomic rollback is a guarantee you should never have to think about, and that is the point. Its value shows up as an absence: no orphaned bookings, no capacity held for work that was never placed, no machine reading busier than its bars. The same principle scales up to a whole run, where cancelling midway keeps nothing partial and leaves your previous plan intact, which is worth knowing the next time you realize mid-run that you selected the wrong jobs. For the features it quietly protects see [what is dependent parallel processing](/blog/what-is-dependent-parallel-processing) and [what is a backward infeasible job](/blog/what-is-a-backward-infeasible-job), then explore [EDGEBIC](/edgebic) or, if you are moving from the legacy product, [RMDB to EDGEBIC](/rmdb-to-edgebic).

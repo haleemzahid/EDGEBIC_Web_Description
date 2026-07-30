@@ -1,8 +1,8 @@
 ---
 title: "How to Set Work Center Efficiency in EDGEBIC"
-description: "How to reflect a machine's realistic productive rate in EDGEBIC: the utilization multiplier behind the capacity formula, honest shift hours, and the pieces efficiency factor."
+description: "How to reflect a machine's realistic productive rate in EDGEBIC: the utilization multiplier behind the capacity formula, honest shift hours, capacity overrides, and where piece rates really live."
 published: 2026-07-28T12:00:00.000Z
-modified: 2026-07-28T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
 category: EDGEBIC How-To
 author: user-solutions
 cluster: edgebic-how-to
@@ -12,7 +12,7 @@ keywords:
   - work center utilization
   - realistic machine capacity
   - capacity multiplier scheduling
-  - pieces efficiency factor
+  - pieces based capacity
   - finite capacity planning load
 targetPhrase: "work center efficiency"
 wordCount: 1360
@@ -21,17 +21,17 @@ faqQuestions:
   - question: "How does EDGEBIC apply work center efficiency to capacity?"
     answer: "EDGEBIC computes available hours for each work center, shift, and date as shift hours minus downtime and partial holidays, multiplied by the instance count, then multiplied by a utilization percentage. That utilization multiplier is the scheduler's real efficiency knob. A work center at 80 percent on an 8-hour shift offers 6.4 hours, not 8. It is baked into the capacity number the moment a scheduling run starts."
   - question: "Where do I set the efficiency or utilization percentage on a work center?"
-    answer: "Current EDGEBIC builds run work centers at their full clock and do not expose an editable utilization field on the edit dialog. To plan a machine below its theoretical hours, shape the calendar with honest shift hours, add downtime allowances for recurring losses, or use per-day and date-range capacity overrides. All three are honored identically by the scheduler and the dashboards."
-  - question: "What is the difference between utilization and the pieces efficiency factor?"
-    answer: "Utilization throttles how many clock hours the scheduler books on any work center. The efficiency factor is a separate multiplier that applies only to pieces-based work centers: effective pieces per hour equals the base rate times the efficiency factor, clamped between 0.1 and 2.0. One shapes time; the other shapes output rate. A pieces line uses both."
+    answer: "Current EDGEBIC builds run work centers at their full clock and do not expose an editable utilization field on the edit dialog. To plan a machine below its theoretical hours, shape the calendar with honest shift hours, or use a per-day capacity override from the work center row's capacity button. Both are honored identically by the scheduler and the dashboards. Note that recurring in-shift downtime has no configuration screen in the current release, so a standing weekly loss is modeled with overrides or a partial plant holiday."
+  - question: "What is the difference between utilization and a machine's output rate?"
+    answer: "Utilization throttles how many clock hours the scheduler books on a work center, and it sits at 100 percent with no editor field for it. Output rate is a different thing entirely: for a machine scheduled by pieces, the pieces-per-hour rate and batch sizes are configured on the routing step that runs there, not on the work center editor. One shapes how many hours the machine offers; the other shapes how much work fits in an hour. A pieces line is affected by both."
 qaQuestions:
   - question: "Our press really only runs about 82 percent of the shift once you count changeovers and minor stops. How do I put that into EDGEBIC today?"
-    answer: "Express the 18 percent loss where the current build lets you edit it. The cleanest route is honest shift hours: if the press loses roughly 90 minutes of an 8-hour shift, define its shift as the productive window rather than the gross clock. For recurring, predictable losses like a daily warm-up, add a downtime event so the hours come off automatically. For a temporary dip, a per-day or date-range capacity override carries a reason and an audit trail. Avoid loading the press to a flat 100 percent and hoping the plan absorbs the drift, because a fully loaded plan has zero recovery room."
-  - question: "We entered 0.5 as an efficiency factor on a molding line and output predictions halved. Is that expected?"
-    answer: "Yes, and it is probably not what you wanted. The efficiency factor multiplies the base pieces-per-hour rate, so 0.5 tells EDGEBIC the line runs at half its rated output, which doubles the time every job needs. Reserve the efficiency factor for a genuine, sustained output derate, such as a tool running below spec. It is clamped between 0.1 and 2.0. If the real issue is lost time rather than a slower rate, model it through shift hours or downtime instead, and set the factor back to 1.0."
+    answer: "Express the 18 percent loss where the current build lets you edit it. The cleanest route is honest shift hours: if the press loses roughly 90 minutes of an 8-hour shift, define its shift as the productive window rather than the gross clock. For recurring, predictable losses like a daily warm-up, note that there is no screen for in-shift downtime in the current release, so the practical route is the same shift shaping or a per-day capacity override on the affected dates. For a temporary dip, a per-day or date-range capacity override carries a reason. Avoid loading the press to a flat 100 percent and hoping the plan absorbs the drift, because a fully loaded plan has zero recovery room."
+  - question: "We halved the pieces-per-hour rate on a molding line and every job took twice as long. Is that expected?"
+    answer: "Yes, and it is probably not what you wanted. The rate on the routing step says how much the line produces per hour, so halving it tells EDGEBIC the line runs at half its rated output, which doubles the time every job needs. Reserve a reduced rate for a genuine, sustained derate, such as a tool running below spec. If the real issue is lost time rather than a slower rate, the honest model is shorter shift hours or a per-day capacity override, and the rate should go back to what the line actually achieves when it is running."
 ---
 
-**In EDGEBIC by User Solutions, a work center's true efficiency is the utilization multiplier inside the capacity formula: available hours equal shift hours minus losses, times the instance count, times a utilization percentage.** That percentage is what turns a theoretical 8-hour shift into the hours the scheduler will actually book, and it is the single most misunderstood number in resource setup.
+**In EDGEBIC by User Solutions there is no editable efficiency or utilization field on a work center: current versions run every work center at 100 percent of its clock, and the value is not editable on that screen.** So reflecting a machine's realistic productive rate is done where it is visible and auditable instead, through honest shift hours and per-day capacity overrides. Knowing that up front saves a long hunt for a percentage box that is not there.
 
 The word "efficiency" gets used for two different things on a shop floor, and EDGEBIC keeps them separate. One is how much of the clock a machine really produces. The other, for output-rate machines, is how fast it runs. This page covers both, and how to set each one honestly in the current build. For the full formula behind every capacity figure, read [how EDGEBIC calculates work center capacity](/blog/how-edgebic-calculates-work-center-capacity).
 
@@ -51,31 +51,31 @@ available hours = (shift hours - downtime - partial-holiday overlap)
                   x utilization %
 ```
 
-The utilization percentage is the efficiency term. At 80 percent, a one-instance work center on an 8-hour shift offers 6.4 schedulable hours. At 100 percent it offers 8. The scheduler bakes this number into capacity at the start of a run, so a change takes effect only on the next **Drive Schedule** pass, never retroactively on bars already placed.
+The utilization term is an engine-level throttle on how much of the clock the scheduler may book, and in current versions it sits at 100 percent: a one-instance work center on an 8-hour shift offers 8 schedulable hours. It is useful to know the term exists, because it explains why the two levers that do work, shift hours and per-day overrides, change the answer. Capacity is resolved at the start of a run, so any change takes effect on the next **Drive Schedule** pass, never retroactively on bars already placed.
 
-One point trips up new administrators: a work center also carries a stored field labeled efficiency, but the scheduling engine does not read it when computing hours. The utilization multiplier is the operative control. If you set the stored efficiency field expecting capacity to change, nothing happens on the plan.
+One point trips up new administrators: a work center also carries a stored field labeled efficiency, but it is not an editable planner control on this screen and setting it is not how you throttle capacity. If you go looking for it expecting the plan to change, nothing happens.
 
 ## Setting a Realistic Rate in the Current Build
 
-Current EDGEBIC builds run work centers at their full clock and do not expose an editable utilization field on the work center dialog. That is deliberate: rather than hide lost time behind a single percentage, the app asks you to express it where it is visible and auditable. You have three honest levers.
+Current EDGEBIC builds run work centers at their full clock and do not expose an editable utilization field on the work center dialog. That is deliberate: rather than hide lost time behind a single percentage, the app asks you to express it where it is visible and auditable. You have three honest levers, and industry practice is worth stating alongside them, which is to load a resource to roughly 80 to 85 percent of the theoretical clock and keep the rest as buffer.
 
 ### 1. Shape the Shift Hours
 
 The most durable way to reflect a machine that produces only part of the clock is to define its shift as the productive window. If a cell loses the first 30 minutes to warm-up and the last 30 to cleanup, an 08:30 to 15:30 shift tells the truth better than an 08:00 to 16:00 shift loaded to 87.5 percent. Shift setup lives with the calendar, covered in [shifts and calendars explained](/blog/edgebic-shifts-and-calendars-explained).
 
-### 2. Add Downtime Allowances
+### 2. Take Maintenance Hours Out of the Day
 
-Recurring, predictable losses, such as a weekly lubrication run or a daily changeover window, belong in a downtime event. The scheduler subtracts the window's hours before it applies the instance and utilization math, so the loss is accounted for automatically every week. See [how to schedule a downtime event for a machine](/blog/how-to-schedule-a-downtime-event-for-a-machine-in-edgebic).
+Recurring, predictable losses, such as a weekly lubrication run, do get subtracted before the instance and utilization math, but there is an important limit in the current release: recurring in-shift downtime has no screen to configure it. The routes that work today are a per-day capacity override on the affected dates, or a partial plant holiday when the loss hits the whole site. See [how to take maintenance hours out of a machine's day](/blog/how-to-schedule-a-downtime-event-for-a-machine-in-edgebic), which covers both routes and the honest cost of modeling a standing weekly window.
 
 ### 3. Use Capacity Overrides
 
 For a temporary derate, a per-day or date-range capacity override sets the exact hours a machine will offer, carries a reason, and reverts when you reset it. This is the right tool for a partial-crew stretch or a machine running below spec while it waits for parts. See [how to set a work center to run at reduced capacity](/blog/how-to-set-a-work-center-to-run-at-reduced-capacity-in-edgebic).
 
-## The Pieces Efficiency Factor (Output-Rate Machines Only)
+## Output Rate on a Pieces-Based Machine
 
-Pieces-based work centers carry a second, genuine efficiency control: an efficiency factor on the output rate. Effective pieces per hour equals the base pieces-per-hour rate times the efficiency factor, and the factor is clamped between 0.1 and 2.0.
+For a machine you schedule by pieces rather than hours, the rate is a second lever, and it is worth knowing where it lives. Piece-rate math, meaning pieces per hour and batch sizes, is configured on the routing step that runs at that work center, not on the work center editor. Capacity Type and Unit of Measure appear on the work center grid as read-only columns.
 
-Use it when a line runs at a sustained rate different from its rated one. A molder rated at 120 pieces per hour that consistently holds 108 has an efficiency factor of 0.9. Set the factor to 1.0 for a machine running at spec. This factor changes output rate, not clock hours, so it belongs only on machines you schedule by pieces. For the difference between the two capacity models, read [pieces-based vs hours-based capacity](/blog/pieces-based-vs-hours-based-capacity-edgebic).
+So a line running at a sustained rate below its rated one is described by setting the rate the routing step actually achieves. A molder rated at 120 pieces per hour that consistently holds 108 is described honestly by the 108, in the same spirit as shaping shift hours rather than hiding the loss behind a percentage. Changing a rate changes how long each job takes, not how many clock hours the machine offers, so it is a different lever from the three above. For the difference between the two capacity models, read [pieces-based vs hours-based capacity](/blog/pieces-based-vs-hours-based-capacity-edgebic).
 
 ## What Changes When You Apply It
 
@@ -84,7 +84,7 @@ Use it when a line runs at a sustained rate different from its rated one. A mold
 | Shorter honest shift hours | Fewer schedulable hours per day at the next Drive Schedule run |
 | Downtime allowance added | Recurring hours come off automatically, every matching day |
 | Per-day or date-range override | Exact hours honored ahead of the shift formula, on the days it covers |
-| Pieces efficiency factor changed | Output rate rescales; every job on that line takes more or less time |
+| Routing step piece rate changed | Output rate rescales; every job on that line takes more or less time |
 
 Nothing moves until you rerun. Master-data edits never reschedule on their own.
 
@@ -98,7 +98,7 @@ Nothing moves until you rerun. Master-data edits never reschedule on their own.
 
 **Loading every machine to 100 percent and hoping the plan absorbs the drift.** A fully loaded plan has no recovery room, so a single breakdown cascades into every downstream promise. Build the 15 to 20 percent buffer in deliberately.
 
-**Confusing lost time with slow rate.** Halving a pieces efficiency factor doubles every job's time and models a slower machine, not an idle one. If the real problem is that the machine sits idle part of the shift, fix it with shift hours or downtime and leave the factor at 1.0.
+**Confusing lost time with slow rate.** Halving a routing step's piece rate doubles every job's time and models a slower machine, not an idle one. If the real problem is that the machine sits idle part of the shift, fix it with shift hours or a capacity override and leave the rate at what the line truly achieves.
 
 **Expecting the stored efficiency field to throttle capacity.** It does not feed the hours formula. Use the utilization-shaping levers above.
 

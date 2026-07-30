@@ -1,0 +1,75 @@
+---
+title: "What Is Global Instance Assignment in Scheduling?"
+description: "Global instance assignment keeps one job on the same machine instance for every shift it occupies on a work center, trading a little load balance for setup continuity."
+published: 2026-08-14T12:00:00.000Z
+modified: 2026-08-14T12:00:00.000Z
+category: Glossary (EDGEBIC)
+author: user-solutions
+cluster: edgebic-glossary
+keywords:
+  - global instance assignment
+  - machine instance stickiness
+  - setup continuity scheduling
+  - instance allocation across shifts
+  - same machine across days
+  - multi instance work center
+targetPhrase: "global instance assignment"
+wordCount: 1063
+readingTime: 6
+faqQuestions:
+  - question: "What is global instance assignment in scheduling?"
+    answer: "Global instance assignment is the rule that once a job has been placed on a particular machine instance within a work center, every later shift of that same job on that same work center goes to the same instance. The pairing is remembered for the length of one scheduling run. It exists so a multi-day operation does not hop between physically identical machines from shift to shift, which would mean tearing down and setting up again each time the job changed machines."
+  - question: "Why does a job stay on one machine even when another is free?"
+    answer: "Because the setup already sits on the machine it started on. If a job occupies instance two on Monday and instance one falls idle on Tuesday, moving the job to instance one would look better on a load chart while costing a real changeover on the floor. The assignment is held deliberately: continuity of the fixture, program, and tooling is usually worth more than an evenly balanced bar chart. The result is that a job can appear to skip a less loaded machine on later days."
+  - question: "Does global instance assignment survive a reschedule?"
+    answer: "The pairing is remembered for the duration of one scheduling run, not stored permanently on the job. A later run rebuilds the assignments from scratch, so a job can land on a different instance than it did before if the load picture has changed. Work that already has recorded actuals is a separate matter: recorded work is never moved, so an operation that physically ran on a given machine keeps that machine regardless of what a fresh assignment would prefer."
+qaQuestions:
+  - question: "One of my three machines looks idle while a job spills into a third day on another. Is that a bug?"
+    answer: "Almost certainly not. If the job started on instance two, it stays on instance two for every shift it needs on that work center, so an instance that frees up later in the run will not be pulled into an operation already underway elsewhere. The load chart will look uneven, and the operation will look longer than it needed to be. Both are true, and both are the price of not changing over mid job. If you genuinely want the hours split across machines from the start, the work center's allocation behavior is the setting to look at, not the assignment rule."
+  - question: "The machine my job was assigned to went down mid week. Will the schedule move the job?"
+    answer: "Not within the same run. The assignment is made once when the job first claims capacity on that work center and is then reused for every later shift, so a downtime entered after the assignment does not cause a reassignment inside that run. What fixes it is a fresh scheduling run: the next run rebuilds assignments against the current calendar and will place the job on an instance that is actually available. This is one of the clearest cases where re-running after a capacity change matters, because the plan on screen reflects the world as it was when the run happened."
+---
+
+**Global instance assignment is the rule that once a job has claimed a particular machine instance inside a work center, every later shift of that same job on that same work center is placed on the same instance, for the length of one scheduling run.** It trades a small amount of load balance for setup continuity: a two-day milling operation stays on the mill it started on rather than hopping between two physically identical mills and paying a changeover for the privilege. EDGEBIC by User Solutions makes the pairing once, the first time a job needs capacity on that work center, and then reuses it.
+
+## How it works
+
+A work center with more than one machine instance has to answer a question every time it books hours: which instance? On the first booking for a given job, the engine picks one, normally the least loaded instance available at that moment. It then remembers the pairing of job and work center to instance for the rest of the run.
+
+Every subsequent booking for that job on that work center reads the remembered pairing instead of choosing again. If the operation needs twelve hours and the shift only offers eight, the four hours that spill into the next day go to the same instance. If a queue time or a predecessor delay pushes part of the work into next week, that part still lands on the same instance.
+
+Two consequences follow, and both are visible.
+
+The first is intentional. Setup, fixtures, tooling, and machine programs stay where they are. A job that occupies one mill for three days is set up once. Splitting the same job across two mills day by day would mean a fresh setup on each machine each time the work moved, which is real lost capacity in exchange for a tidier looking chart.
+
+The second is the cost. Because the pairing is not revisited, a job can pass over an instance that has since become free. Later in the run, the remembered instance may be the busier of the two, and the operation stretches further into the future than the raw available hours suggest. The engine does not reassign to fix this, and it does not reassign if the remembered instance later becomes unavailable either. The pairing holds for the run.
+
+The scope matters: the pairing lives for one run only. It is not a durable property of the job. A later scheduling run rebuilds every assignment from the current load picture, so the same job can land on a different instance than it did last time. Recorded work is the exception, because completed and in-progress operations are never moved at all, so an operation that physically ran on a given machine keeps it.
+
+## A concrete example
+
+A work center runs three identical machines on a single eight hour Day Shift, so 24 hours a day of total capacity. A job needs 20 hours of that work center and is the second job scheduled that week.
+
+At the moment the job first claims capacity on Monday, instance one already carries a full eight hours from an earlier job, instance two has two hours, and instance three has none. The engine assigns the job to the least loaded available instance and remembers it.
+
+| Day | Inst. 1 load before | Inst. 2 load before | Inst. 3 load before | Job placed on | Hours booked |
+|---|---|---|---|---|---|
+| Mon | 8.0 (full) | 2.0 | 0.0 | Instance 3 | 8.0 |
+| Tue | 0.0 (idle) | 0.0 (idle) | 0.0 | Instance 3 | 8.0 |
+| Wed | 0.0 (idle) | 0.0 (idle) | 0.0 | Instance 3 | 4.0 |
+
+On Tuesday and Wednesday all three machines are idle. A pure load-balancing view would spread the remaining twelve hours across all three and finish the operation on Tuesday afternoon. Global instance assignment keeps it on instance three, so the operation finishes Wednesday at noon and the chart shows two machines apparently doing nothing.
+
+Whether that is right depends on the setup. If the changeover on this work center is thirty minutes, splitting across three machines would have cost an extra hour of setup to save half a day, which may well be worth it. If the changeover is four hours, splitting would have cost twelve hours of setup to save half a day, which clearly is not. The assignment rule takes the conservative side of that trade by default, and the work center's own allocation behavior is where the trade is actually configured.
+
+## How EDGEBIC uses it
+
+Instance assignment sits inside the allocation step, after the engine has found which shift slots have room and before the hours are written. The unit it hands out is explained in [what is a machine instance in scheduling](/blog/what-is-a-machine-instance-in-scheduling), and the arithmetic of what one instance can supply in a day is covered in [per instance capacity in scheduling](/blog/what-is-per-instance-capacity-in-scheduling).
+
+The rule interacts with the work center's own allocation behavior. A work center configured to dedicate a machine to one job for a whole day follows [the one per day rule in scheduling](/blog/what-is-the-one-per-day-rule-in-scheduling), which is a stronger form of the same idea: not merely the same machine for one job, but no other job on that machine that day. The reason continuity is worth paying for at all comes down to [setup time](/blog/what-is-setup-time-in-manufacturing), the hours a machine spends being made ready rather than producing.
+
+Because the pairing is rebuilt each run, the practical habit is the same one that governs every capacity change: make the change, then run the scheduler again. A plan on screen reflects the assignments made when that run happened.
+
+## The takeaway
+
+Global instance assignment is a small rule with a visible signature: one job, one machine, for as long as that job needs that work center inside a run. It looks like a load-balancing failure and is actually a setup decision, and knowing which it is stops a planner chasing a problem that does not exist. When the trade genuinely runs the wrong way for your changeovers, the answer is the work center's allocation behavior rather than the assignment rule. For the surrounding mechanics see [what is per instance capacity in scheduling](/blog/what-is-per-instance-capacity-in-scheduling) and [what is an instance collision](/blog/what-is-an-instance-collision), then explore [EDGEBIC](/edgebic) or, if you are moving from the legacy product, [RMDB to EDGEBIC](/rmdb-to-edgebic).
