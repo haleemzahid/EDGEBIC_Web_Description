@@ -8,7 +8,6 @@ import { NTClipboardHero } from '@/components/marketing/sections/ntclipboard-her
 import { NTClipboardSummary } from '@/components/marketing/sections/ntclipboard-summary';
 import { NTClipboardTestimonials } from '@/components/marketing/sections/ntclipboard-testimonials';
 import { NTClipboardToolBox } from '@/components/marketing/sections/ntclipboard-toolbox';
-import { ProductLineage } from '@/components/marketing/sections/product-lineage';
 import { createPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createPageMetadata({
@@ -26,7 +25,6 @@ export default function IndexPage(): React.JSX.Element {
   return (
     <>
       <NTClipboardHero />
-      <ProductLineage />
       <EdgebicAnnouncement />
       <ChallengesBenefitsSection />
       {/* <NTClipboardSummary /> */}

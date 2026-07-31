@@ -23,7 +23,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
               </p>
             </div> */}
 
-          <div className="mt-6 grid gap-4 lg:gap-6 grid-cols-1 lg:grid-cols-3 px-2 sm:px-0">
+          <div className="mt-6 grid grid-cols-1 gap-4 px-2 sm:px-0 md:grid-cols-2 lg:gap-6 xl:grid-cols-4">
             {/* Excel Templates - Operations Manager */}
             <div className="flex flex-col">
               {/* Option Label above card */}
@@ -303,6 +303,106 @@ export function NTClipboardToolBox(): React.JSX.Element {
                     {/* <div className="text-center text-3xl font-bold text-green-700">
                       $10K+
                     </div> */}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Platform - EDGEBIC. No product screenshot exists yet, so this
+                card carries a branded panel rather than borrowing one of the
+                other products' photographs. Swap in a real capture of the
+                Planner or the optimizer comparator when one is available. */}
+            <div className="flex flex-col">
+              {/* Option Label above card */}
+              <div className="mb-4 text-center">
+                <span className="text-lg font-bold text-[#003d5c]">
+                  Optimized, Plant Wide
+                </span>
+              </div>
+              <div className="group relative flex flex-1 flex-col overflow-hidden rounded-3xl border-2 border-cyan-500 bg-white shadow-lg transition-all hover:shadow-xl">
+                {/* Image Section */}
+                <div className="relative overflow-hidden rounded-lg">
+                  <div className="relative flex aspect-video items-center justify-center bg-slate-900">
+                    <div className="px-4 text-center">
+                      <p className="text-2xl font-bold tracking-tight text-white">
+                        EDGEBIC
+                      </p>
+                      <p className="mt-1 text-xs font-medium text-cyan-400">
+                        The next generation
+                      </p>
+                    </div>
+                  </div>
+                  <div className="bg-slate-50 px-4 py-2 text-center">
+                    <p className="text-sm font-bold italic text-slate-700">
+                      The whole plant, one live plan
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-1 flex-col p-6">
+                  <h3 className="mb-4 ">
+                    <span className="text-lg font-bold text-gray-900">
+                      {' '}
+                      EDGEBIC{' '}
+                    </span>
+                    <span className="text-sm"> (APS Platform)</span>
+                  </h3>
+
+                  {/* Feature Description with Icon */}
+                  <div className="mb-4 rounded-lg bg-cyan-50 p-3">
+                    <div className="flex items-start gap-2">
+                      <div className="mt-0.5">
+                        <CircleCheck className="size-5 text-cyan-600" />
+                      </div>
+                      <p className="text-sm text-cyan-900">
+                        The same finite capacity engine, rebuilt as one platform
+                        with optimization and a plan every workstation shares.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mb-6 flex-1 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Check className="size-4 text-green-500" />
+                      <span className="text-sm">
+                        Schedule optimization, never worse than your current
+                        plan
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="size-4 text-green-500" />
+                      <span className="text-sm">
+                        Multi-shift capacity, holidays and downtime
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="size-4 text-green-500" />
+                      <span className="text-sm">
+                        Planner view: jobs and machines on one screen
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="size-4 text-green-500" />
+                      <span className="text-sm">
+                        One live plan across every workstation
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="size-4 text-green-500" />
+                      <span className="text-sm">
+                        Includes everything in (RMDB) plus
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-auto">
+                    <Button
+                      variant="outline"
+                      className="mb-4 w-full border-green-200 text-lg font-bold text-green-700 hover:bg-green-50"
+                      asChild
+                    >
+                      <Link href="/edgebic">View Details</Link>
+                    </Button>
                   </div>
                 </div>
               </div>
