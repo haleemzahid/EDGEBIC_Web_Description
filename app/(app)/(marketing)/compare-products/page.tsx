@@ -9,98 +9,105 @@ import { GridSection } from '@/components/marketing/fragments/grid-section';
 import { Button } from '@/components/ui/button';
 
 export default function CompareProductsPage(): React.JSX.Element {
+  // Ordered so the shared engine comes first and the capabilities that only
+  // arrive further up the line come last. Every row is sourced from the
+  // per-product feature lists on the production planning solutions page.
   const features = [
-    'Shop Scheduling',
-    'Forward Scheduling',
-    'Reverse Scheduling',
-    'Finite Capacity',
-    'MRP/BOM',
-    'Multi-user',
-    'Security',
-    'SQL Database',
-    'Advanced Drag & Drop',
-    'Heat Map Reports',
-    'Schedule Key Dates',
-    'Live Embedded Excel',
-    'Business Intelligence',
-    'Advanced Analytics',
-    'ERP Integration'
+    'Finite Capacity Scheduling',
+    'Forward & Reverse Scheduling',
+    'Routings, Setup & Cycle Times',
+    'Queue & Move Times',
+    'Runs Inside Excel',
+    'SQL Server Database',
+    'Multi-user with Security',
+    'MRP, BOM & Material Planning',
+    'Tracking Actuals from the Floor',
+    'ERP Integration (Import/Export)',
+    'Drag & Drop Schedule Editing',
+    'Business Intelligence Dashboards',
+    'Schedule Optimization',
+    'Planner View (Jobs & Machines Together)',
+    'One Live Plan Across Workstations'
   ];
 
+  // The line in the order it was actually built: the spreadsheet, then the
+  // database, then the platform. The previous version of this table listed
+  // EDGEBI twice (once as a $1,000 starter linking to Job Scheduler Lite with
+  // every feature marked false) and did not mention EDGEBIC at all.
   const products = [
     {
-      name: 'EDGEBI  ',
-      tier: 'Starter',
-      price: '$1,000+',
-      description: 'Perfect for Job Shops & Small Manufacturers',
+      name: 'Resource Manager for Excel',
+      tier: 'Excel',
+      price: '$1,200',
+      description: 'Scheduling inside the spreadsheet you already run',
       image: '/images/Edgebic/2022-10/starter.png',
-      link: '/jsl-job-scheduler-lite',
+      link: '/resource-manager-for-excel-2',
       features: {
-        'Shop Scheduling': false,
-        'Forward Scheduling': false,
-        'Reverse Scheduling': false,
-        'Finite Capacity': false,
-        'MRP/BOM': false,
-        'Multi-user': false,
-        Security: false,
-        'SQL Database': false,
-        'Advanced Drag & Drop': false,
-        'Heat Map Reports': false,
-        'Schedule Key Dates': false,
-        'Live Embedded Excel': false,
-        'Business Intelligence': false,
-        'Advanced Analytics': false,
-        'ERP Integration': false
+        'Finite Capacity Scheduling': true,
+        'Forward & Reverse Scheduling': true,
+        'Routings, Setup & Cycle Times': true,
+        'Queue & Move Times': true,
+        'Runs Inside Excel': true,
+        'SQL Server Database': false,
+        'Multi-user with Security': false,
+        'MRP, BOM & Material Planning': false,
+        'Tracking Actuals from the Floor': false,
+        'ERP Integration (Import/Export)': false,
+        'Drag & Drop Schedule Editing': false,
+        'Business Intelligence Dashboards': false,
+        'Schedule Optimization': false,
+        'Planner View (Jobs & Machines Together)': false,
+        'One Live Plan Across Workstations': false
       }
     },
     {
-      name: 'Resource Manager DB',
-      tier: 'Advanced',
-      price: '$5,000+',
-      description: 'Ideal for Growing SMBs & Mid-Size Companies',
+      name: 'Resource Manager DB with EDGEBI',
+      tier: 'Database',
+      price: '$4,000+',
+      description: 'A SQL database, multiple users, and business intelligence',
       image: '/images/Edgebic/2022-11/advanced-1.png',
       link: '/resource-manager-db-2',
       features: {
-        'Shop Scheduling': true,
-        'Forward Scheduling': true,
-        'Reverse Scheduling': true,
-        'Finite Capacity': true,
-        'MRP/BOM': true,
-        'Multi-user': true,
-        Security: true,
-        'SQL Database': true,
-        'Advanced Drag & Drop': false,
-        'Heat Map Reports': false,
-        'Schedule Key Dates': false,
-        'Live Embedded Excel': false,
-        'Business Intelligence': false,
-        'Advanced Analytics': false,
-        'ERP Integration': true
+        'Finite Capacity Scheduling': true,
+        'Forward & Reverse Scheduling': true,
+        'Routings, Setup & Cycle Times': true,
+        'Queue & Move Times': true,
+        'Runs Inside Excel': false,
+        'SQL Server Database': true,
+        'Multi-user with Security': true,
+        'MRP, BOM & Material Planning': true,
+        'Tracking Actuals from the Floor': true,
+        'ERP Integration (Import/Export)': true,
+        'Drag & Drop Schedule Editing': true,
+        'Business Intelligence Dashboards': true,
+        'Schedule Optimization': false,
+        'Planner View (Jobs & Machines Together)': false,
+        'One Live Plan Across Workstations': false
       }
     },
     {
-      name: 'EDGEBI (Bundled w/ RMDB)',
-      tier: 'Premium',
+      name: 'EDGEBIC',
+      tier: 'Platform',
       price: '$25,000+',
-      description: 'Enterprise-Grade for Multi-Nationals',
+      description: 'Advanced planning and scheduling, rebuilt as one platform',
       image: '/images/Edgebic/2022-11/Premium-1.png',
-      link: '/edgebi',
+      link: '/edgebic',
       features: {
-        'Shop Scheduling': true,
-        'Forward Scheduling': true,
-        'Reverse Scheduling': true,
-        'Finite Capacity': true,
-        'MRP/BOM': true,
-        'Multi-user': true,
-        Security: true,
-        'SQL Database': true,
-        'Advanced Drag & Drop': true,
-        'Heat Map Reports': true,
-        'Schedule Key Dates': true,
-        'Live Embedded Excel': true,
-        'Business Intelligence': true,
-        'Advanced Analytics': true,
-        'ERP Integration': true
+        'Finite Capacity Scheduling': true,
+        'Forward & Reverse Scheduling': true,
+        'Routings, Setup & Cycle Times': true,
+        'Queue & Move Times': true,
+        'Runs Inside Excel': false,
+        'SQL Server Database': true,
+        'Multi-user with Security': true,
+        'MRP, BOM & Material Planning': true,
+        'Tracking Actuals from the Floor': true,
+        'ERP Integration (Import/Export)': true,
+        'Drag & Drop Schedule Editing': true,
+        'Business Intelligence Dashboards': true,
+        'Schedule Optimization': true,
+        'Planner View (Jobs & Machines Together)': true,
+        'One Live Plan Across Workstations': true
       }
     }
   ];
@@ -154,10 +161,13 @@ export default function CompareProductsPage(): React.JSX.Element {
         <div className="container mx-auto max-w-7xl px-4">
           <div className="mb-6 text-center">
             <h2 className="mb-4 text-3xl font-bold md:text-4xl">
-              Choose the Best Solution for Your Needs
+              One Engine, Three Generations
             </h2>
-            <p className="text-xl text-muted-foreground">
-              Compare features across our three product tiers
+            <p className="mx-auto max-w-3xl text-xl text-muted-foreground">
+              The same finite capacity engine runs through all three. Start in
+              Excel, move to the database when you outgrow it, and step up to
+              EDGEBIC when the plan needs optimizing and sharing across the
+              floor. Your routings come with you.
             </p>
           </div>
 
@@ -238,6 +248,26 @@ export default function CompareProductsPage(): React.JSX.Element {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          <div className="mx-auto mt-8 max-w-3xl space-y-2 text-sm leading-relaxed text-muted-foreground">
+            <p>
+              <strong className="text-slate-900">
+                Resource Manager for Excel
+              </strong>{' '}
+              is $1,200 for a single user, or $2,400 multi-user, where one
+              person holds edit control and the others view.
+            </p>
+            <p>
+              <strong className="text-slate-900">Resource Manager DB</strong>{' '}
+              starts at $4,000. The EDGEBI Suite runs on top of RMDB and is
+              priced separately from $5,000.
+            </p>
+            <p>
+              <strong className="text-slate-900">EDGEBIC</strong> is $25,000 for
+              advanced planning and scheduling. With optimization, MES,
+              inventory and material pegging it is $35,000.
+            </p>
           </div>
         </div>
       </section>
