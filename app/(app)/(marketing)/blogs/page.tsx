@@ -1,9 +1,9 @@
 import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { allPosts } from 'content-collections';
 import { CalendarDays, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 
+import { SORTED_POSTS } from '@/lib/blog/post-index';
 import {
   ALL_PRODUCTS,
   countByProduct,
@@ -68,10 +68,9 @@ export default async function BlogsPage(props: {
   const activeProduct = searchParams.product || ALL_PRODUCTS;
   const currentPage = Math.max(1, parseInt(searchParams.page || '1', 10) || 1);
 
-  // Sort all posts by published date, most recent first
-  const sortedPosts = [...allPosts].sort(
-    (a, b) => new Date(b.published).getTime() - new Date(a.published).getTime()
-  );
+  // Pre-sorted lightweight index, built once per process rather than copying
+  // and sorting every post (and its whole MDX body) on each request.
+  const sortedPosts = SORTED_POSTS;
 
   const productCounts = countByProduct(sortedPosts);
 
