@@ -183,7 +183,23 @@ foreach($f in $new){ $t=[System.IO.File]::ReadAllText($f)
   if($t -match 'Control Tower'){ "CT: $f" } }
 Select-String -Path $new -Pattern 'utilis|behaviour|catalogue|organis|colour|labour|prioritis|modelling|\bcancelled\b' -CaseSensitive
 # link resolution: every ]( /blog/x ) must match a real content/blog/x.mdx
+
+# MDX BRACE CHECK — a build breaker, added 2026-07-31 after it shipped once.
+# MDX parses { } in the BODY as a JavaScript expression. Prose like
+# SO-{year}-{four-digit sequence} fails acorn, and content-collections then drops
+# that ONE document silently: the build logs "Build failed with 1 error", the dev
+# server still serves the site, and only that post 404s. Wrap any braced literal in
+# backticks (`SO-{year}-{four-digit sequence}`) — inline code is not parsed as JSX.
+# Frontmatter is YAML and is never parsed by MDX, so leave braces there alone;
+# adding backticks there would pollute the FAQ JSON-LD.
+foreach($f in $new){
+  $body = ([System.IO.File]::ReadAllText($f) -split '(?m)^---\s*$')[2]
+  $body = $body -replace '(?s)```.*?```','' -replace '`[^`]*`','' -replace '\{/\*.*?\*/\}',''
+  if($body -match '\{'){ "BRACE (will break the MDX build): $f" } }
 ```
+After a content flight, confirm the doc count did not silently drop: the
+content-collections line must read `finished build of 3 collections and N
+documents` with **no** `acorn` / `Build failed` line above it.
 Also verify: `author: user-solutions`, 3 faqQuestions + 2 qaQuestions, and that
 **0 existing files were modified** (unless doing an authorized correction pass).
 
