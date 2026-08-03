@@ -1,0 +1,117 @@
+---
+title: "Why EDGEBIC Refuses a Stale Save Instead of Overwriting"
+description: "When two planners edit the same record, EDGEBIC refuses the second save rather than applying it over the first. How the version check works, what it covers, and where it deliberately does not."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - optimistic concurrency scheduling
+  - two planners same record
+  - record changed by another user
+  - concurrent edit protection
+  - multi user scheduling software
+  - shared scheduling database
+targetPhrase: "optimistic concurrency scheduling"
+wordCount: 1600
+readingTime: 8
+faqQuestions:
+  - question: "What happens if two planners edit the same work center at once in EDGEBIC?"
+    answer: "Both can open it and both can edit freely, because nobody is locked out while they work. The difference shows at the save. The record carries a version number, and the first save applies and moves the version forward. The second save still carries the version it loaded, which no longer matches, so no rows are updated and the save is refused with a message naming the record and asking you to reload. The first person's change survives intact, and the second person is told what happened instead of silently losing their edit."
+  - question: "Why does EDGEBIC not just lock the record while somebody is editing it?"
+    answer: "Because a lock held for the length of a human edit is worse than the problem it solves. A planner who opens a work center, takes a phone call, and goes to lunch would block everyone else for an hour, and a machine that crashes mid-edit would leave a record nobody can touch. Optimistic concurrency assumes collisions are rare, which they are, and only pays a cost when one actually happens. The trade is that you find out at the save rather than at the open, and in exchange nobody is ever waiting on somebody else's open window."
+  - question: "Does the refused save apply to everything in EDGEBIC?"
+    answer: "No, and the exceptions are deliberate. Master data records such as work centers, products, customers, departments, shifts, tools, operators and skills carry the check. Schedule rows, manufacturing orders and their allocation records deliberately do not, because the scheduling engine rewrites them wholesale on every run and a version check there would fire against the engine rather than against a person. Those are protected by the plant-wide rule that only one scheduling run happens at a time. A handful of edit screens also do not yet carry the version through, so their saves still behave as last-write-wins."
+qaQuestions:
+  - question: "I got 'modified by another user' but I am the only person signed in. How is that possible?"
+    answer: "Almost always this is the second consecutive save from one editor that has stayed open. The screen loaded the record at one version, saved successfully, and the record moved forward, but the open editor kept holding the version it originally loaded. The second save then carries a version that is genuinely out of date, even though the only person who moved it was you. Close the record and reopen it, or use the reload the prompt offers, and the next save works. It is worth reporting, because the fix belongs in the screen rather than in your working habits. The other, rarer explanation is a scheduled import that touched the same record while your form was open."
+  - question: "A bulk ERP import ran while I had a product open. Will my save be refused?"
+    answer: "No, and the import is the reason. Imports deliberately run as last-write-wins rather than carrying a version check, because refusing four thousand rows on the grounds that one planner had one product form open would be a far worse outcome than the race it prevents. An import is a bulk authority operation, so it applies. The consequence for you is that your subsequent save may write over a value the import just brought in, without being refused. If your ERP is the master of a field, the practical answer is to stop editing that field in EDGEBIC rather than to rely on a conflict check to referee it."
+---
+
+**When two planners edit the same record in EDGEBIC, the second save is refused rather than applied over the first, and the person who lost the race is told rather than left to find out later.** [EDGEBIC by User Solutions](/edgebic) does this with an optimistic version check that locks nobody out while they work and only intervenes at the moment a genuine collision occurs.
+
+This is the mechanism that makes a [shared scheduling database](/blog/edgebic-shared-database-multi-planner-explained) safe rather than merely possible. This post covers how it works, what it protects, and where it honestly does not.
+
+## Nobody Is Locked Out
+
+The obvious answer to two people editing one record is to lock it. Whoever opens it first owns it, and everyone else waits.
+
+That answer is worse than the problem. A planner who opens a work center, takes a phone call, then goes to lunch, has locked a record for an hour. A workstation that crashes mid-edit leaves a record nobody can touch until somebody clears it by hand. And the vast majority of the time the lock protects against a collision that was never going to happen, because two people rarely have a reason to edit the same product on the same afternoon.
+
+So EDGEBIC takes the optimistic route. Everyone opens what they like. Everyone edits freely. The check happens once, at the save, and costs nothing at all until two edits genuinely overlap.
+
+## How the Check Works
+
+Every protected record carries a version number you never see and never type. Loading the record hands your screen that number along with the data.
+
+When you save, EDGEBIC does not simply write the new values. It asks the database to apply them only if the record is still at the version your screen loaded. Two outcomes follow.
+
+If nothing moved, the record is still at that version, the write applies, and the version steps forward by one. Your colleagues' screens will pick that change up shortly afterward.
+
+If a colleague saved in between, the record is no longer at your version, so nothing matches, nothing is written, and the save is reported back as refused. You see a message naming the record and asking you to reload and try again.
+
+The important property is that the check and the write are the same operation. There is no window between "check whether anybody changed it" and "write my change" in which somebody could slip in. That is why this works reliably rather than merely usually.
+
+## A Worked Collision
+
+Two planners, Anna and Ben, both open the work center Mill-1 at nine o'clock.
+
+| Time | Anna | Ben |
+|---|---|---|
+| 09:00 | Opens Mill-1 | Opens Mill-1 |
+| 09:03 | Changes instances to 4 and saves. Applied. | Still typing |
+| 09:05 | Done | Changes the description and saves. Refused: the record was changed by another user |
+| 09:05 | | Reloads, sees instances is now 4, re-applies the description, saves. Applied |
+
+Anna's change survived. Ben lost thirty seconds of typing and learned something true about the state of the plant. Nothing was silently lost, and the final record carries both changes.
+
+Compare that with the alternative. Without the check, Ben's save writes his whole record, including the old instance count he loaded at nine o'clock, straight over Anna's change. Anna's edit is gone, nobody is told, and the discovery happens a week later when a schedule comes out wrong.
+
+## What It Covers
+
+The check applies to the master data most worth protecting from a silent overwrite:
+
+- Work centers and work center groups
+- Products
+- Departments and customers
+- Shifts
+- Routings and routing lists
+- Tools, operators and skills
+- Users and roles
+
+That list is the shared master data a plant argues about, which is exactly where a silent overwrite hurts most.
+
+## What It Deliberately Does Not Cover
+
+Two exclusions are on purpose and worth understanding, because both look like gaps until you see the reasoning.
+
+**Schedule rows, manufacturing orders and their allocation records.** These are rewritten wholesale by the scheduling engine on every run. Putting a version check on them would mean the engine collides with itself, raising conflicts mid-reschedule that no person caused and no person can resolve. Cross-machine safety for scheduling comes from a different and better-suited mechanism: only one scheduling run may be in progress across the whole plant at a time. [Why only one run happens at a time](/blog/why-only-one-edgebic-scheduling-run-happens-at-a-time) covers that.
+
+**Imports.** A scheduled ERP sync or a manual mask import runs as last-write-wins on purpose. Refusing four thousand product rows because one planner had one product form open would be a far worse outcome than the race it prevents. An import is a bulk authority operation and it applies. The practical consequence is that if your ERP is the master of a field, you should stop editing that field in EDGEBIC rather than relying on a conflict check to arbitrate.
+
+## Where It Is Honestly Incomplete
+
+A few edit screens carry the version on the way in but do not yet carry it back out and through the save, which means their saves still behave as last-write-wins. Routing steps, work center groups, and the user and role screens are in that group today.
+
+Naming that matters more than hiding it. It means a working agreement about ownership of master data is still doing real work rather than being a belt with braces, and it means that if two people are going to share responsibility for one area, routings are the place to be most careful.
+
+The concept in general terms is covered in [what last-write-wins concurrency is](/blog/what-is-last-write-wins-concurrency).
+
+## What to Do When It Fires
+
+The prompt asks you to reload, and reloading is the whole answer. Reload, look at what changed, re-apply your edit on top, and save again.
+
+Do not reach for a way to force the save through. There is no merge to perform and no override to find, and that is deliberate: an automatic merge of two people's intentions is a guess, and a guess about capacity or a routing step is worse than thirty seconds of retyping.
+
+If the message appears when you are demonstrably alone in the system, that is a different symptom with a different cause, and [another user changed this record](/blog/another-user-changed-this-record-edgebic) walks through it.
+
+## The Point of the Refusal
+
+The refusal is not the software being difficult. It is the software declining to make a decision it is not qualified to make.
+
+Two people changed the same thing. One of those changes is going to survive as written and the other needs a human to look at the result and decide. EDGEBIC picks the one that got there first, keeps it intact, and puts the question in front of the person who is still holding the other half. That is the only outcome where nobody's work disappears without anybody noticing.
+
+For how the same shared database keeps everyone's screens current in between saves, read [how an open screen notices someone else's edit](/blog/how-an-open-edgebic-screen-notices-someone-elses-edit). The [complete EDGEBIC guide](/blog/edgebic-complete-guide) maps the wider platform.

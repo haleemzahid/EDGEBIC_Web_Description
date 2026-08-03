@@ -1,0 +1,122 @@
+---
+title: "Confirming a Sub-Assembly Versus the End Product in EDGEBIC"
+description: "One dialog, two mechanisms. See why confirming an end product reduces the build directly while confirming a sub-assembly works through ordinary stock netting."
+published: 2026-08-17T12:00:00.000Z
+modified: 2026-08-17T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - sub-assembly confirmation
+  - report received quantity
+  - component stock netting
+  - end product versus sub assembly
+  - partial production reporting
+  - build only the shortfall
+targetPhrase: "sub-assembly confirmation"
+wordCount: 1390
+readingTime: 7
+faqQuestions:
+  - question: "What is the difference between confirming an end product and confirming a sub-assembly?"
+    answer: "Confirming an end product is a yield statement that directly reduces the job's remaining build, and it issues nothing out of stock. Confirming a sub-assembly is a stock statement: it adds the component to on-hand, and the existing consume-from-stock netting then covers what it can and explodes only the shortfall into work center steps. Same dialog, two mechanisms, and conflating them is the fastest way to get the arithmetic wrong."
+  - question: "Does confirming a sub-assembly reduce the parent job's quantity?"
+    answer: "No, and it must not. The parent still owes the customer its full quantity. What changes is how much of the sub-assembly branch has to be manufactured, because the received units cover part of the parent's component demand. The parent's own end-product quantity is only reduced by a confirmation entered on the End Product node, which is a different node and a different statement."
+  - question: "Why does a sub-assembly confirmation eventually cause an issue against stock?"
+    answer: "Because a sub-assembly is a component, and when the parent build draws a component out of stock that is ordinary bill-of-material consumption. The product being issued is the sub-assembly, not the finished item being built, so nothing is consuming itself. That is exactly the distinction that makes the issue legitimate here and forbidden on the end product."
+qaQuestions:
+  - question: "We received 20 sub-assemblies against a parent needing 50 and the branch still shows operations. Is the confirmation being ignored?"
+    answer: "It is being applied as partial cover, which is what you want. Twenty of the fifty are on the shelf, so the branch splits: the covered portion needs no manufacturing and the remaining thirty explode into their work center steps as normal. If you expected the whole branch to disappear you were expecting full cover, which needs on-hand at or above the parent's requirement. Check the component's on-hand rather than the confirmed number, because stock that arrived by any other route counts toward the same total."
+  - question: "The dialog asked whether we wanted to report a received quantity or log operation actuals. Which should we pick?"
+    answer: "Pick received quantity when the sub-assemblies physically exist as finished components, whatever route they arrived by, and you want the next reschedule to stop planning to build them. Pick operation actuals when you are recording that a particular work center step on the sub-assembly ran, with its hours or pieces. The first is a statement about inventory, the second is a statement about an operation. Reporting a received quantity for work that has only partly happened at one machine will overstate the component stock and under-plan the branch."
+---
+
+**In EDGEBIC by User Solutions, reporting a produced quantity on the End Product node and reporting a received quantity on a Sub-Assembly node use the same dialog and run on completely different mechanisms.** To a planner it is one feature. In the arithmetic they are two, and treating them as one is the single easiest way to misread what the schedule does next.
+
+This article draws the line, in both directions.
+
+## Two Statements, Not One
+
+Start with what each number is a statement about.
+
+An **end-product confirmation** says: this many good units of the order already exist. That is a yield statement about the job's own output. The remaining build is reduced directly, and nothing is issued out of stock, for the reasons set out in [why an end-product confirmation does not consume stock](/blog/why-an-end-product-confirmation-does-not-consume-stock).
+
+A **sub-assembly confirmation** says: this many of the component are on the shelf. That is a stock statement about a part. It adds the component to inventory and stops there. Everything that happens next is the machinery that already existed for handling stock.
+
+| | End product | Sub-assembly |
+|---|---|---|
+| The statement | This many units of the order exist | This many of the component are available |
+| Ledger effect | Receipt of the finished product | Receipt of the sub product |
+| Anything issued? | Never | Yes, later, when the parent draws it |
+| How the plan changes | Remaining build reduced directly | Ordinary netting builds only the shortfall |
+| Applies to started jobs? | Yes, deliberately | Follows the netting rules for fresh work |
+
+## Why the Sub-Assembly Case Needed No New Machinery
+
+Once a sub-assembly's receipt is posted, those units are indistinguishable from stock of that product that arrived by any other route. A previous run built them, a sister job over-produced, somebody bought them in. It does not matter. They are on-hand.
+
+From there the existing component logic does everything by itself. Before the routing explodes a sub-assembly branch into work center steps, it asks whether on-hand covers the requirement:
+
+- **Full cover.** The branch never explodes. The node stays a plain component and the schedule reserves no machine time for it at all.
+- **Partial cover.** The branch splits. The covered portion needs no manufacturing, and only the shortfall explodes into operations.
+- **No cover.** The branch explodes in full, exactly as it always did.
+
+For the mechanics of that decision see [EDGEBIC sub-assembly scheduling explained](/blog/edgebic-sub-assembly-scheduling-explained) and [how a sub-assembly feeds its parent job](/blog/how-a-sub-assembly-feeds-its-parent-job).
+
+## The Issue That Follows Is Legitimate
+
+When the parent build eventually draws the sub-assembly out of stock, an issue posts against the component. That looks superficially like the consumption forbidden on the end product, and it is not the same thing at all.
+
+The forbidden pattern is consuming finished goods in order to build more of those same finished goods, which describes a round trip that never happened. Here, the product issued is the **sub-assembly** and the product being built is the **parent**. That is ordinary bill-of-material consumption, the most routine transaction in manufacturing.
+
+The rule to carry: the identity of the product decides. Same product on both sides is nonsense. Different products is a bill of material doing its job.
+
+## A Worked Comparison
+
+One parent, one sub-assembly, and the same number reported in two places.
+
+**Setup.** Parent PA, order for 50. Each parent needs one sub-assembly SA. The SA branch is three operations, four hours per unit.
+
+**Case 1: report 20 on the End Product node.**
+
+The parent's remaining build drops from 50 to 30. Every operation in the parent's routing, including the whole SA branch beneath it, sizes against 30 parents. Twenty parents are finished goods and are no longer planned in any form.
+
+**Case 2: report 20 on the Sub-Assembly node.**
+
+The parent still owes 50. On-hand for SA rises by 20. On the next run, netting sees 20 of the 50 SA units covered, so the branch splits: 20 need no manufacturing and 30 explode into operations. The parent's own final assembly still runs for 50, because 50 parents still have to be assembled.
+
+| | Parent quantity built | SA units manufactured |
+|---|---|---|
+| Nothing reported | 50 | 50 |
+| 20 on End Product | 30 | 30 |
+| 20 on Sub-Assembly | 50 | 30 |
+
+Read the third row carefully. It is the one that catches people out. Confirming components does not reduce what the customer is owed. It reduces how much of one branch has to be made.
+
+## Choosing the Node
+
+The routing diagram on the Actual Live screen makes the choice visible, and the node you double-click is the whole decision.
+
+- **End Product node**, the card at the top. Use it when finished units of the order exist.
+- **Sub-Assembly node**, a component that has its own routing beneath it. Use it when finished components exist.
+- **Work center steps.** These are not confirmation targets. Reporting what happened at a machine is the per-operation actuals flow, and it records hours or pieces on that step. See [logging actuals from the planner](/blog/logging-actuals-from-the-planner-in-edgebic).
+
+On a sub-assembly node the system asks which of two things you meant: report a received quantity for the sub-assembly, or log per-operation actuals for one of its steps. That prompt exists because the two are genuinely easy to confuse, and answering it wrongly produces a plausible-looking schedule built on the wrong statement.
+
+For the step-by-step versions, see [how to report produced quantity on a job](/blog/how-to-report-produced-quantity-on-a-job-in-edgebic) and [how to report a sub-assembly as received](/blog/how-to-report-a-sub-assembly-as-received-in-edgebic).
+
+## Do Not Merge the Two Paths
+
+It is worth stating what happens if the distinction is collapsed, because both directions produce quiet, expensive errors.
+
+Make the end-product case behave like the sub-assembly case, and you reintroduce the round trip: a receipt and an issue that cancel each other, no remaining-quantity reduction, and a stock movement that describes nothing real.
+
+Make the sub-assembly case behave like the end-product case, and the arithmetic goes somewhere worse. A **child** arriving would reduce the **parent's** build quantity, so receiving 20 sub-assemblies against an order for 50 parents would silently drop the parent to 30 and short-ship the customer by 20 units.
+
+Both mistakes compile. Neither announces itself. That is why the two remain separate paths under one dialog.
+
+## The Bottom Line
+
+The dialog is shared because the planner's gesture is shared: double-click a node, type a number, press Report. What the number means is decided by which node you clicked. End product is a yield statement that cuts the build. Sub-assembly is a stock statement that lets netting cut the branch. Keep those apart and every downstream figure lands where you expect.
+
+More of the execution loop is in the [shop floor execution guide](/blog/edgebic-shop-floor-guide), and the platform overview is at [EDGEBIC](/edgebic).

@@ -1,0 +1,134 @@
+---
+title: "Production Confirmation in EDGEBIC: Report What Is Made, Build the Rest"
+description: "An order for 100 with 50 already on the pallet should not re-plan 100. See how production confirmation in EDGEBIC reduces the remaining build to the true open quantity."
+published: 2026-08-17T12:00:00.000Z
+modified: 2026-08-17T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - production confirmation
+  - reported produced quantity
+  - remaining quantity manufacturing
+  - open quantity work order
+  - partial production reporting
+  - build the remainder scheduling
+targetPhrase: "production confirmation"
+wordCount: 1420
+readingTime: 7
+faqQuestions:
+  - question: "What is production confirmation in EDGEBIC?"
+    answer: "Production confirmation is a planner-reported statement that a given number of good units for a job already exist. You open the job's Scheduled Job BOR, switch to Actual Live, double-click the End Product node, and enter the quantity produced so far. On the next reschedule the engine plans work for the remaining quantity only, so an order for 100 with 50 reported schedules the hours for 50."
+  - question: "Does reporting produced quantity change the order quantity?"
+    answer: "No, and that is the point. The order stays at its original quantity, which keeps the customer commitment, the paperwork, and the history intact. What changes is the quantity the scheduler builds for, which is the order quantity minus what has been confirmed. Editing the order quantity down to fake the same effect loses the record of what was actually ordered and breaks every downstream comparison against it."
+  - question: "Can I report production on a job that has already started?"
+    answer: "Yes. Production confirmation deliberately applies to started jobs, because a part-built job is exactly the job a planner reports production on. This is different from consume-from-stock netting, which refuses to run on a job with actuals so that logged work is never retroactively erased. Confirmation reduces the quantity and lets the per-operation actuals follow behind it."
+qaQuestions:
+  - question: "We reported 50 of 100 and the schedule still shows the full hours. What did we miss?"
+    answer: "Almost certainly the reschedule. The confirmation posts to the inventory ledger the moment you press Report, but the plan does not change until the engine runs again and reads it. Re-run scheduling for that job and the operations should shrink to the remaining quantity. If the hours still do not move, check that you double-clicked the End Product node rather than a work center step, because an operation-level actuals entry records hours on one step and is a different action entirely."
+  - question: "Our job has 40 confirmed and 30 units of the same part already sitting in stock. Do those two fight each other?"
+    answer: "They compose, in that order. The confirmation reduces the build first, so an order for 100 with 40 confirmed has 60 left to produce. Netting then looks at that 60 against the 30 on hand, consumes the 30, and leaves 30 to build. The scheduled hours cover 30 units. Read it as a chain rather than two competing subtractions, and the arithmetic is predictable every time: order, minus confirmed, minus consumed, is what gets planned."
+---
+
+**In EDGEBIC by User Solutions, production confirmation lets a planner report that part of a job is already made, and the next reschedule plans work for the remainder only.** An order for 100 with 50 units physically on a pallet does not need capacity reserved for 100. Until somebody tells the system, though, it will faithfully re-plan work that no longer needs doing.
+
+This article explains what a confirmation is, what it does to the plan, and the arithmetic that decides how many hours survive it.
+
+## The Problem It Solves
+
+A planner is standing in front of a job for 100 units. Fifty of them are past the last operation. The schedule still reserves capacity for all 100, because nothing in the system was ever told otherwise.
+
+The tempting fix is to edit the order quantity down to 50. That works exactly once, and then it costs you. The order no longer says what the customer ordered. Cost and margin comparisons drift. Anyone asking later why the job shipped 100 against an order for 50 has no record to read.
+
+Production confirmation separates the two numbers that were being conflated. The **order quantity** stays at 100, because that is the commitment. The **remaining quantity** becomes 50, because that is the work. The scheduler builds against the second one.
+
+## How to Report It
+
+There is exactly one entry point, and it is deliberately narrow.
+
+1. Open the job's **Scheduled Job BOR** and switch to **Actual Live**.
+2. Double-click the **End Product** node, the card at the top of the routing diagram.
+3. Enter the good quantity produced so far.
+4. Read the line showing how much remains to build after this entry, then press **Report**.
+5. Re-schedule the job.
+
+Step 5 is not optional. The confirmation is recorded immediately, but the plan does not change until the engine runs again and reads it. For the safe route through a re-run, see [how to reschedule only the jobs that changed](/blog/how-to-reschedule-only-the-jobs-that-changed-in-edgebic).
+
+The full task version of this is in [how to report produced quantity on a job](/blog/how-to-report-produced-quantity-on-a-job-in-edgebic).
+
+## What Actually Happens
+
+Two things, and only two.
+
+**A receipt is posted to the inventory ledger.** The confirmed units are pegged to the job and to the product, and on-hand rises by that quantity. Those units really are in the plant, so the stock figure should say so. Ledger movements are covered in [inventory transaction types in the EDGEBIC ledger](/blog/inventory-transaction-types-in-the-edgebic-ledger).
+
+**The remaining build shrinks.** On the next run, every operation in the routing is sized against the order quantity minus what has been confirmed, rather than the full order.
+
+Notice what is not on that list. Nothing is issued out of stock. An end-product confirmation is a **yield statement**, not a stock transaction, and the reason is worth reading in full in [why an end-product confirmation does not consume stock](/blog/why-an-end-product-confirmation-does-not-consume-stock).
+
+## A Worked Example
+
+Job J1, product FG, quantity 100. Three operations on one work center, one hour per piece each. Nothing in stock, no actuals yet.
+
+Full build: 3 operations times 100 pieces times 1 hour, which is 300 hours of scheduled work.
+
+The planner reports 50.
+
+| Step | Effect |
+|---|---|
+| Confirmation posted | Ledger receipt of 50 pegged to J1, on-hand rises from 0 to 50 |
+| Next reschedule reads it | Remaining build is 100 minus 50, which is 50 |
+| Every operation resizes | All three steps size against 50, not 100 |
+| Scheduled work | 150 hours |
+
+Half the capacity that was reserved for this job is released back to the plant, and the release is honest: it happened because the work is genuinely done, not because somebody trimmed an estimate.
+
+Report the full 100 instead and the job schedules zero operations. It still appears on the plan, carrying a single row that reserves no machine time, because a job that vanishes entirely from a scheduling run is indistinguishable from a job that failed to schedule.
+
+## Composing With Stock Already on Hand
+
+Confirmation and [consume-from-stock netting](/blog/consume-from-stock-netting-walkthrough-edgebic) are different mechanisms, and they run in a fixed order. Take an order for 100, with 50 confirmed and 30 units of the finished part already in stock:
+
+```
+order quantity              100
+minus confirmed              50   ->  60 left to produce
+minus consumed from stock    30   ->  30 left to build
+scheduled work                30 pieces of operations
+```
+
+The confirmation subtracts first, so netting is asked to cover what is genuinely still to produce rather than the original order. Only the stock consumption posts an issue against inventory; the confirmation does not.
+
+One consequence surprises people the first time. If the finished product is a stocked item, the units your confirmation just added to on-hand are ordinary stock from that moment on, and the next run can net them right back out against the same order. That is not a fault. Those units exist, and allocating existing units to an order is what netting is for.
+
+## It Applies to Started Jobs, On Purpose
+
+Netting refuses to run on a job that already carries actuals, and that rule exists to protect logged work from being retroactively erased by a stock balance.
+
+Production confirmation does the opposite deliberately. A part-built job is precisely the job a planner reports production on. The rule is: reduce the quantity, then let the per-operation actuals follow. So a job with 30 hours already logged on operation 20 can still take a confirmation, and the remaining hours on that in-progress step are recomputed against the reduced quantity rather than the original one.
+
+If the reduction were gated behind actuals, the feature would be unavailable on exactly the jobs it exists for.
+
+## It Survives a Reschedule Without Being Preserved
+
+The confirmed quantity is not stored on the job as a number somebody has to remember to protect. It is the sum of the confirmation receipts sitting in the ledger, recomputed on every scheduling run.
+
+That design pays off three times:
+
+- **No drift.** There is one truth, the ledger, so nothing can silently disagree with it.
+- **Reschedules are free.** A reschedule reverses consume issues, not receipts, so confirmations are untouched and re-summing them yields the same answer.
+- **Reversal is automatic.** Reopening or deleting the order reverses every entry pegged to it, so the confirmed quantity drops to zero on its own.
+
+The same principle governs [the inventory ledger as the authoritative on-hand](/blog/edgebic-inventory-ledger-explained): derive the number, do not cache it.
+
+## Completing the Job Afterwards
+
+A make-to-stock job posts a finished-goods receipt when it is marked complete. If confirmations already posted receipts along the way, completing must not post the whole quantity again.
+
+It does not. Completion posts only the unconfirmed remainder. Confirm 40 of 100 and completion receives 60, landing on-hand at exactly 100. Confirm all 100 and completion posts nothing at all, because the stock is already there.
+
+## The Bottom Line
+
+Production confirmation is the difference between a schedule that plans the order and a schedule that plans the work. Report the good units that exist, re-run, and the plan covers only what is left. The order keeps its original quantity, the ledger records what was made, and capacity that was quietly reserved for finished work goes back into the pool.
+
+Follow the rest of the execution loop in the [shop floor execution guide](/blog/edgebic-shop-floor-guide), or see the platform at [EDGEBIC](/edgebic).

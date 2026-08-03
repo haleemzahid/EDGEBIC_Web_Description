@@ -1,0 +1,116 @@
+---
+title: "Why Your ERP Sync Belongs on a Server, Not a Workstation"
+description: "By default any open EDGEBIC workstation can dispatch scheduled integrations. On a shared database that is the wrong place for them. What the always-on sync host does and how to hand hosting over to it."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: Admin & Deployment
+author: user-solutions
+cluster: edgebic-admin
+pillarSlug: edgebic-admin-guide
+keywords:
+  - always on ERP sync
+  - unattended integration host
+  - scheduled ERP sync server
+  - integration service manufacturing
+  - shared scheduling database
+  - overnight data sync
+targetPhrase: "always on ERP sync"
+wordCount: 1600
+readingTime: 8
+faqQuestions:
+  - question: "Where do EDGEBIC's scheduled integrations run by default?"
+    answer: "Inside the desktop application, on whichever workstations happen to be open and signed in. That is the right answer for a single-machine install, where there is exactly one application and hosting it there costs nothing. On a shared database it becomes the wrong answer, because whether your nightly ERP pull happens now depends on whether somebody left their PC on. The fix is to install the sync utility as a service on the server and turn hosting off on the workstations."
+  - question: "What is the EDGEBIC sync utility?"
+    answer: "A small Windows service that runs on your server and does two jobs: it dispatches scheduled and file-watched integrations around the clock, and it watches for changes made on workstations so that editing an integration on a planner's PC reaches the service without anybody restarting it. It has no user interface of its own. Everything you configure and everything you review, the definitions, the run history, the logs, stays in the EDGEBIC application on the workstations."
+  - question: "If a planner edits an integration on their PC, does the server pick it up?"
+    answer: "Yes, and without a restart. The sync utility also watches the shared database for changes, so a definition edited or added on any workstation reaches the service on its next check and it reloads its schedule accordingly. This is the same mechanism that keeps planners' screens current, applied to a process that has no screens. Practically, an administrator changes an interval at their desk and the server is running the new interval moments later."
+qaQuestions:
+  - question: "Our ERP drops an order file at two in the morning and the import only sometimes runs. Why?"
+    answer: "Because at two in the morning the import needs an EDGEBIC application that is open and signed in, and on the nights it works somebody left their PC on. Scheduled and file-watched integrations are dispatched by hosts, and by default the desktop application is one. When every workstation is closed there is no host, so nothing fires. It is not a silent failure either: nothing was attempted, so there is no failed run to find in the history, which is exactly why it is hard to diagnose from the inside. Install the sync utility on the server, turn workstation hosting off, and the two o'clock file is imported at two o'clock every night."
+  - question: "Can I cancel a run from my workstation if the server started it?"
+    answer: "No, and it is worth knowing before you need to. Cancel reaches runs started in the same application you are sitting at, so a run dispatched by the server cannot be stopped from a planner's PC. Live progress has the same boundary: a run happening on the server does not stream into a workstation's live log, and you see it by refreshing the run list and reading the row. That is why row caps and time limits matter more once hosting moves to a server. Set a sensible maximum run time on each integration and a runaway query stops itself rather than needing somebody to stop it."
+---
+
+**By default any open EDGEBIC workstation can dispatch scheduled integrations, which means an overnight ERP sync only happens if somebody left their PC on.** [EDGEBIC by User Solutions](/edgebic) ships an always-on sync utility for exactly this reason: a small service that runs on your server, dispatches integrations around the clock, and takes that responsibility off the workstations.
+
+This post is about that decision and its consequences. For the integration mechanism itself, the schedules, the masks, the run history and the simulator, read [administering scheduled ERP syncs](/blog/administering-scheduled-erp-syncs-in-edgebic).
+
+## The Default Is Right for One PC and Wrong for Five
+
+On a single-machine install there is exactly one EDGEBIC application, so hosting integrations inside it is the obvious answer. It costs nothing extra to install, nothing extra to administer, and there is no ambiguity about where anything runs.
+
+Move to a shared database and that same default produces three problems at once.
+
+**Nothing runs when nobody is signed in.** Scheduled integrations need a host, and if every workstation is closed at two in the morning there is no host. The nightly file sits there. There is no failed run in the history either, because nothing was attempted, which is precisely why this is hard to spot from inside the application.
+
+**Which machine ran it becomes arbitrary.** With three applications open, all three are eligible to dispatch. Only one actually runs a given integration, because a plant-wide hold per integration prevents duplicates, but which one wins depends on whose application ticked first. That makes an unattended process unpredictable in a way nobody wants to reason about.
+
+**Evidence lands in different places.** Each run's detailed log file is written on the machine that ran it. Reviewing last week's syncs then means reviewing three machines rather than one.
+
+## What the Sync Utility Is
+
+The sync utility is a Windows service you install on the same server as the database, or somewhere else that stays on. It has no user interface of its own, and it needs none, because everything you configure and everything you review still lives in the EDGEBIC application on the workstations.
+
+It does two jobs.
+
+It dispatches integrations, both the timed ones and the ones watching a folder for a file, twenty four hours a day regardless of whether anyone is signed in anywhere.
+
+And it watches the shared database for changes, so an integration edited or added on a planner's PC reaches the service on its next check and it reloads its schedule. That is the same mechanism that keeps planners' screens current, applied to a process with no screens. An administrator changing an interval at their desk sees the server running the new interval moments later, with no restart and no service ticket.
+
+## It Refuses to Start Rather Than Sync the Wrong Thing
+
+One behavior is worth calling out because it prevents a genuinely nasty failure.
+
+The service reads its data source configuration from the service account's own settings. If that configuration is missing or does not point at the shared database, it does not fall back to a local single-file database and quietly get on with it. It refuses to start.
+
+That matters because the fallback would be almost invisible. A service that started, ran happily, and imported everything into a private local file on the server would look healthy in every way except the one that counts: none of the data would ever reach the plant. Failing to start is loud, and loud is what you want here.
+
+The practical consequence during setup is to configure the data source under the account the service will run as, not under your own login.
+
+## Turning Workstation Hosting Off
+
+Once the server hosts, the workstations should stop. Each one carries a small setting, exposed in the application, that says whether this workstation hosts integrations. Turn it off on every planner's PC.
+
+The default is on, deliberately, so that a single-machine install keeps working with zero configuration and an upgrade changes nothing for shops that never had a server. If the setting file is missing or malformed, hosting stays on, because the safe failure is a workstation that hosts unnecessarily rather than a site where nothing hosts at all.
+
+| Deployment | Who should host |
+|---|---|
+| One workstation, local database | The workstation, by default. Nothing to change |
+| Several workstations, shared database, no server process | Workstations, but the gaps are real. Overnight work will not run |
+| Several workstations, shared database, sync utility installed | The server only. Turn hosting off on each workstation |
+
+## Why Restarting a Workstation Does Not Disturb the Server
+
+Every run recorded in the history is stamped with the identity of the host that executed it. That is not bookkeeping for its own sake; it prevents a specific and unpleasant failure.
+
+When an EDGEBIC host starts, it tidies up after itself: any run still marked as running must be a leftover from a crash, so it is flagged as interrupted. Correct with one host. Catastrophic with two, because a planner restarting their application at nine in the morning would flag the server's genuinely live import as a crash, and the history would then be a lie.
+
+Because runs carry a host identity, the tidy-up only reaps that host's own runs. A workstation restarting does not touch the server's rows. That is deliberate behavior, not a bug, and it is worth knowing when somebody asks why an interrupted row did not appear.
+
+## Two Limits to Plan Around
+
+Moving hosting to a server introduces a boundary between where a run happens and where you are sitting, and two things do not cross it.
+
+**Cancel does not reach another machine.** A cancel button reaches runs started in the same application you are using, so a run dispatched by the server cannot be stopped from a planner's PC.
+
+**Live progress does not stream across.** A run in flight on the server does not appear in a workstation's live log line by line. You see it by refreshing the run list and reading the row, which updates as the run progresses and completes.
+
+Neither is a reason to avoid the server. Both are a reason to lean on the guardrails that do work from anywhere: set a sensible maximum run time and a maximum row count on every integration. Then a runaway query stops itself, rather than needing somebody to be at the right machine to stop it.
+
+## Reading a Run You Did Not Start
+
+Run history is shared, so every run from every host appears on every workstation, with the host named on the row. The per-row outcomes, which source rows succeeded, which failed and why, are stored in the database and are readable from anywhere.
+
+The one exception is the detailed log file, which lives on the machine that produced it. When a workstation cannot reach it, the detail view says so and names the host rather than showing you a blank panel, and points you at the per-row outcomes that are reachable. An honest gap is more useful than an empty box. [Reading run logs and run history](/blog/reading-edgebic-run-logs-and-run-history) covers what each surface tells you.
+
+## Shutting the Service Down Cleanly
+
+When the service stops, it stops taking new work and gives runs already in flight ten seconds to finish. Anything still running past that is marked interrupted the next time the service starts.
+
+So a planned restart during a quiet window costs nothing. A restart in the middle of a large ERP pull leaves one interrupted row, which is visible, explicable and re-runnable. [Choosing a safe change window](/blog/choosing-a-safe-change-window-in-edgebic) covers picking that moment.
+
+## The Short Version
+
+If your integrations matter enough to schedule, they matter enough to run somewhere that is always on. Install the service on the server, configure its data source under the account it runs as, turn hosting off on the workstations, and set a run time limit and row cap on every integration.
+
+The full administrator reference is the [EDGEBIC admin guide](/blog/edgebic-admin-guide). For how to tell whether anything is actually hosting once you have made this change, read [how to tell whether anything is hosting your syncs](/blog/how-to-tell-whether-anything-is-actually-hosting-your-syncs).

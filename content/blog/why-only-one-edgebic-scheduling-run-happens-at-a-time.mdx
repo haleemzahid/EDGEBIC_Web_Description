@@ -1,0 +1,109 @@
+---
+title: "Why Only One EDGEBIC Scheduling Run Happens at a Time"
+description: "On a shared database, a plant-wide rule admits exactly one scheduling run. Why two overlapping runs would produce a plan that is nobody's answer, and what the second planner sees."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - one scheduling run at a time
+  - concurrent scheduling runs
+  - shared scheduling database
+  - scheduling run in progress
+  - multi user scheduling software
+  - finite capacity scheduling
+targetPhrase: "one scheduling run at a time"
+wordCount: 1550
+readingTime: 8
+faqQuestions:
+  - question: "What happens if two planners press Re-Schedule at the same time?"
+    answer: "The first one starts. The second waits about five seconds, then gets a message saying a scheduling run is already in progress on another workstation and asking them to wait and try again. Nothing is queued and nothing runs twice. The second planner presses the button again once the first run has finished, which for a typical plant is a couple of minutes later. The message is a normal outcome rather than an error, and it names the situation plainly so the planner knows to wait rather than to investigate."
+  - question: "Does a scheduling run block everyone else from using EDGEBIC?"
+    answer: "No. The plant-wide rule stops a second scheduling run, and nothing else. While a run is calculating, every other person keeps reading, editing and saving normally, because the run holds no database locks during its calculation phase. Only the short burst of writing at the end of the run is transactional, and it is measured in seconds rather than minutes. So a two-minute run is two minutes during which nobody else can schedule and everybody else can work."
+  - question: "Why does the second planner wait five seconds rather than being queued?"
+    answer: "Because somebody who clicked a button deserves an answer, not a frozen window. A queue would mean the second planner sits waiting for an unknown length of time with no idea whether the run ahead will take one minute or ten, and then gets a plan they may no longer want. Failing quickly with a clear message gives control back: they can wait and press it again, or go and do something else. Background operations that nobody is watching, such as an import, are the opposite case and are given a long wait instead."
+qaQuestions:
+  - question: "I got 'a scheduling run is already in progress on another workstation' but nobody admits to running one. What is going on?"
+    answer: "Two explanations, both mundane. Somebody may have started a run and walked away from the screen, since a large plant can take a few minutes to calculate and the message is naming a run that is genuinely in flight. Or a background job on the server, such as a material planning run, may hold the lock briefly. Wait a minute and press the button again. If it persists for much longer than a normal run takes, look at whether a workstation lost power in the middle of one, though even then the server releases the hold automatically when the connection drops, so the block should clear by itself rather than needing anybody to intervene."
+  - question: "Should we still nominate one person to own the scheduling run now that the software enforces one at a time?"
+    answer: "Yes, for a reason that is human rather than technical. The rule guarantees that two runs cannot produce one incoherent plan, which is real protection. What it cannot do is stop a run from being surprising. A run rewrites the forward plan, so anyone mid-way through staged Gantt edits, or reading a job list to promise a date, is suddenly working from something that moved. A named owner and a known cadence, every morning, or after each batch of new orders, means the plan changes when people expect it to. The lock protects the data; the working agreement protects the people."
+---
+
+**On a shared database, EDGEBIC allows exactly one scheduling run across the whole plant at a time, and the second person to press the button is told so within a few seconds.** [EDGEBIC by User Solutions](/edgebic) enforces this with a named plant-wide hold rather than by locking data, which is why a run in progress stops other runs without stopping anybody else's work.
+
+This is the mechanism that protects the schedule where the record-level version check deliberately does not. For that other half of the story, read [why EDGEBIC refuses a stale save](/blog/why-edgebic-refuses-a-stale-save).
+
+## What Two Overlapping Runs Would Produce
+
+A scheduling run is not an edit. It is a wholesale recalculation: it loads the entire world of orders, routings, work centers and calendars, computes a complete plan in memory, and then writes that plan over the top of the previous one.
+
+Two of those in flight at once do not produce two plans. They produce one plan that is neither person's answer. Planner A's run computes against the world as it stood at nine o'clock. Planner B's run, started ninety seconds later, computes against a slightly different world. Whichever finishes writing second lands on top of whichever finished first, but not cleanly, because the two runs write in overlapping bursts. What is left in the database is a mixture, and no report can tell you which parts came from which run.
+
+That is far worse than a schedule being wrong in a way somebody can explain. It is a schedule nobody can account for.
+
+## Why a Version Check Would Not Help Here
+
+The obvious question is why schedule rows do not simply carry the same version check that protects a work center or a product.
+
+The answer is that the check protects against a person, and here the writer is the engine. Every run rewrites schedule rows, allocation records and daily breakdowns wholesale, across many different write paths. Put a version check on those and the engine collides with itself: conflicts raised mid-run, caused by nobody, resolvable by nobody, and appearing at random depending on timing.
+
+So schedule data is protected by a different and better-fitting mechanism: guarantee that only one writer of that kind exists at a time, and the whole class of problem disappears without any per-record arbitration.
+
+## How the Hold Works
+
+Before it does anything, a scheduling run asks the server for a named plant-wide hold. The name is shared by every EDGEBIC installation pointed at that database, so the hold spans machines rather than just processes.
+
+If the hold is granted, the run proceeds. If somebody else has it, the request waits about five seconds and then gives up, and the planner sees:
+
+> A scheduling run is already in progress on another workstation. Please wait for it to complete and try again.
+
+Nothing is queued. Pressing the button again a minute later is the intended response.
+
+Two properties of the hold are worth knowing. It is arbitrated by the database server, so it genuinely spans every workstation rather than only coordinating within one machine. And it is released automatically if the holding workstation's connection dies, so a planner whose PC loses power mid-run does not leave the plant unable to schedule. The block clears by itself.
+
+## The Split That Keeps Everyone Working
+
+The most important design decision here is what the hold covers versus what the database transaction covers.
+
+| Phase | Duration | Plant-wide hold | Database transaction |
+|---|---|---|---|
+| Load the world and calculate | Minutes | Held | None open |
+| Write the resulting plan | Seconds | Held | Open, then committed |
+
+The hold spans both phases. The transaction spans only the writing.
+
+That is the difference between a system several people can work in and one they cannot. If the transaction covered the calculation as well, the run would hold database locks for the entire two minutes, and every other planner would find their saves hanging while somebody else's run finished. Instead, during a long calculation the database is completely undisturbed: orders are entered, actuals are logged, routings are edited, reports are run, all normally.
+
+The only thing another person cannot do during a run is start a second run.
+
+## What Else Takes a Plant-Wide Hold
+
+The same mechanism guards three other operations, each with a different waiting policy chosen for what the operation is.
+
+**A material planning run** takes its own hold and, if another host already has it, skips this interval rather than waiting. A second plan would only supersede the first, so skipping is the correct answer rather than a failure.
+
+**An import of a given mask** takes a hold specific to that mask, and waits patiently rather than failing. Imports are long-running batch work and the caller expects them to queue. This is what stops a manual import and a scheduled ERP sync from writing the same product rows at the same moment.
+
+**A given integration definition** takes a hold specific to itself with no wait at all, and reports back that it is already running. That is how a file-watch and a timed schedule pointed at the same integration avoid running it twice.
+
+The pattern behind all four is that the operation decides the waiting policy, because the right answer depends entirely on whether a human is watching. A planner staring at a button gets a fast answer. A background job that nobody is watching gets a long wait.
+
+## What Still Belongs to Your Working Agreement
+
+The rule stops two runs producing one incoherent plan. It does not stop a run from being a surprise.
+
+A run rewrites the forward plan. Anyone who had staged Gantt edits in progress, or was reading a job list to make a promise, is now looking at something that moved under them. That is not a fault, it is what a reschedule is for, but it is disruptive when it arrives unannounced.
+
+So most teams still nominate one owner of the run and a known cadence, whether that is first thing every morning or after each batch of new orders, plus a word before an unscheduled one. [How to reschedule safely](/blog/how-to-reschedule-safely-in-edgebic) covers the run itself.
+
+Think of it as two layers. The plant-wide hold protects the data from a class of failure no working agreement could prevent. The working agreement protects the people from being surprised, which no lock can do.
+
+## Reading the Message Correctly
+
+When a planner reports the in-progress message, the useful response is almost always "wait a minute and press it again." It is a normal outcome of two people wanting the same thing at once, not a sign of a problem.
+
+The rare case worth looking at is a block that persists far longer than a run normally takes. Even then, the server releases the hold when the holder's connection drops, so the situation resolves itself rather than requiring anybody to clear anything by hand.
+
+For the full set of behaviors that appear on a shared server, read [what changes when EDGEBIC moves to a shared database](/blog/what-changes-when-edgebic-moves-to-a-shared-database), and the [complete EDGEBIC guide](/blog/edgebic-complete-guide) maps the wider platform.

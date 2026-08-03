@@ -1,0 +1,133 @@
+---
+title: "One Fixture, Two Mills: How the Schedule Resolves the Clash"
+description: "Two jobs on two free machines that cannot both run. A worked example of how a shared fixture splits one of them across two days without changing its hours."
+published: 2026-08-17T12:00:00.000Z
+modified: 2026-08-17T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - shared fixture two machines
+  - fixture contention example
+  - tool pool hours scheduling
+  - job split across two days
+  - machine free but job waits
+  - finite tooling worked example
+targetPhrase: "shared fixture two machines"
+wordCount: 1520
+readingTime: 8
+faqQuestions:
+  - question: "What happens when two jobs on two different machines need the same fixture?"
+    answer: "They share one pool of fixture hours, so they cannot both have it. In EDGEBIC by User Solutions the first job books its hours from the fixture's daily pool, and the second job is only offered whatever is left. If that is less than it needs, the remainder spills to the next day the fixture has hours. Both machines may show free time; the fixture is what ran out, and the schedule moves work rather than pretending."
+  - question: "Why did my job split across two days when the machine was free all afternoon?"
+    answer: "Because the fixture's pool ran out before the machine's did. Every allocated machine-hour books one hour from the tool's pool, and that pool is shared with every other machine running the same tool. When today's remaining fixture hours are less than the operation needs, it takes what is there and the balance lands on the next available day. The total hours are unchanged, only their placement moved."
+  - question: "Does a fixture clash add hours to the job?"
+    answer: "No. This is the invariant worth trusting: a tool constraint changes when work happens, never how much work there is. A five-hour operation is still five hours after the fixture splits it three hours today and two tomorrow. Nothing is inflated, nothing is lost, and the job's total booked time matches its routing exactly."
+qaQuestions:
+  - question: "Our planner does not believe the split is real, because the Gantt shows the mill wide open Monday afternoon. How do we settle it?"
+    answer: "The Gantt is telling the truth about the mill and saying nothing about the fixture, which is exactly the blind spot the constraint exists to close. Ask the planner a floor question instead of a screen question: on Monday afternoon, where is the fixture? It is bolted to the other mill, running the first job. The mill is free and the operation still cannot start, which is what the plan is now saying.\n\nThe cheap proof is to run the same two jobs with the requirement cleared and then with it set. The before plan puts both jobs Monday 08:00 to 13:00 in parallel. The after plan hands the fixture over at 13:00. Nothing else in the model changed, so the difference is the fixture, and the second plan is the one the floor will actually execute."
+  - question: "The split is operationally awkward for us, because that operation cannot stop halfway. What are our options?"
+    answer: "Three, in rough order of cost. First, buy or free a second unit and raise the quantity, which doubles the pool and lets both jobs run together honestly. Second, resequence so the operation that cannot be interrupted takes the fixture first and gets a whole block, leaving the divisible work to absorb the split. Third, if the operation genuinely must be one unbroken run, that is a real constraint on your process and the honest fix is to give it a window where the fixture is uncontested rather than to hide the contention.\n\nWhat is not an option is telling the scheduler you own more fixtures than you do. That makes the split disappear from the plan and nowhere else."
+---
+
+**When two jobs on two different machines need the same fixture, they draw from one shared pool of fixture hours, so the first job takes what it needs and the second takes what is left, with the remainder spilling to the next day.** Both machines can show free hours the entire time. The fixture is what ran out. EDGEBIC by User Solutions resolves the clash by moving work, never by inventing tooling that does not exist.
+
+This is the headline case for the [tool constraint](/blog/the-tool-constraint-the-third-thing-an-operation-needs), and it is worth walking end to end with numbers, because the resolution is not intuitive the first time you see it.
+
+## The setup
+
+Two work centers, one machine each, both on a single day shift running 08:00 to 16:00, Monday through Friday. One fixture, quantity 1. Two jobs, each five hours of work.
+
+| Job | Work center | Hours | Required tool |
+|---|---|---|---|
+| JOB-0141 | CNC-Mill-1 | 5.0 | FIX-EM47 5-axis fixture |
+| JOB-0142 | CNC-Mill-2 | 5.0 | FIX-EM47 5-axis fixture |
+
+Monday offers sixteen machine-hours across the two mills, and there are ten hours of work. Machine capacity is not remotely tight.
+
+## Before the fixture is modeled: the deceptive plan
+
+With no tool requirement on either step, the two jobs are independent. Each finds its own machine free from 08:00 and takes it.
+
+- JOB-0141 on CNC-Mill-1: **Monday 08:00 to 13:00**
+- JOB-0142 on CNC-Mill-2: **Monday 08:00 to 13:00**
+
+Both bars start together, both machines sit idle all afternoon, and the plan looks comfortable. Every capacity number in it is arithmetically correct.
+
+On the floor, the second job never starts. The fixture is across the aisle, bolted to the other mill, and it will be there until 13:00. The plan was fiction from the moment it was printed, and nothing on the Gantt could have told you.
+
+## After: one pool, and the handover
+
+Create the fixture as a tool with a quantity of 1, set **Required tool:** on both routing steps, and reschedule. The fixture now has a pool for each day and shift: quantity multiplied by the window's working hours. Monday's day shift is eight hours long, so Monday's pool is eight fixture-hours, and it is shared by both mills.
+
+Every allocated machine-hour books exactly one fixture-hour. Watch the pool drain:
+
+```
+Monday day shift, FIX-EM47 pool = 1 unit x 8 hours = 8 fixture-hours
+
+JOB-0141 on CNC-Mill-1
+  pool 8h available, needs 5h
+  books 5 fixture-hours              pool remaining: 3h
+
+JOB-0142 on CNC-Mill-2
+  pool 3h available, needs 5h
+  books 3 fixture-hours              pool remaining: 0h
+  2h still required                  spills forward
+
+Tuesday day shift, pool resets to 8 fixture-hours
+JOB-0142 books its final 2 hours     pool remaining: 6h
+```
+
+The resulting plan:
+
+- JOB-0141 on CNC-Mill-1: **Monday 08:00 to 13:00**
+- JOB-0142 on CNC-Mill-2: **Monday 13:00 to 16:00**, then **Tuesday 08:00 to 10:00**
+
+The fixture is fully consumed on Monday, five hours to the first job and three to the second, and the second job's last two hours land Tuesday morning.
+
+## Read the plan carefully: what actually changed
+
+Three things are worth noticing, because each one is a common misreading.
+
+**Nothing got busier.** No machine gained work, no shift was shortened, no calendar changed. The only new information in the model is that the fixture exists and both steps need it.
+
+**Total hours are identical.** JOB-0142 is still five hours: three on Monday, two on Tuesday. The constraint moved work; it did not create or destroy any. If a tool change ever alters a job's total hours, something else changed at the same time.
+
+**CNC-Mill-2 is idle Monday morning while its job waits.** This is the part planners push back on, and it is the correct answer. The machine is genuinely free. The operation still cannot run, because the thing it needs is on the other machine. A plan that showed both jobs starting at 08:00 was hiding exactly this.
+
+## The handover happens at 13:00, and the plan says so
+
+The most useful way to describe the after plan to a supervisor is as a handover. At 13:00 Monday the fixture comes off CNC-Mill-1 and goes onto CNC-Mill-2. That sentence is a physical instruction someone can act on, and it is what the two adjacent bars mean.
+
+The before plan had no such moment in it, which is why the fixture handover used to be a conversation that happened at the machine, at 08:05, with two operators and one fixture.
+
+## Reschedule keeps the handover honest
+
+There is a second-order behavior worth knowing. If JOB-0141 is already scheduled and not yet started, and you run a reschedule that brings in JOB-0142, the surviving job re-reserves its fixture hours **before** any new work is placed. The new job therefore sees a Monday pool of three hours, not eight, and lands exactly where it did in the walkthrough above.
+
+Without that step a reschedule would happily plan new work straight over hours the existing plan is still holding, which is the most insidious way a tooling model can quietly stop being true. How surviving work is preserved generally is covered in [how a job resumes from where actuals left off](/blog/how-a-job-resumes-from-where-actuals-left-off).
+
+## The three levers on this outcome
+
+If the Tuesday spill is unacceptable, there are exactly three honest moves.
+
+1. **Raise the quantity**, if you genuinely own or can free a second unit. The pool doubles to sixteen hours and both jobs finish Monday at 13:00, which is the before plan made true rather than assumed.
+2. **Resequence**, so the job that most needs an uninterrupted block takes the fixture first.
+3. **Accept it**, and let the plan carry a date the floor can hit.
+
+What is not a lever is entering a quantity you do not own. That removes the split from the schedule and from nowhere else. Quantity and what a second unit really buys is the subject of [what changes when you own a second fixture](/blog/what-changes-when-you-own-a-second-fixture).
+
+Over 35-plus years, User Solutions has seen this exact clash cost shops a shift a week before anyone named it. The rest of the placement logic is in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and you can run your own before-and-after on a shared fixture in [EDGEBIC](/edgebic).
+
+<Accordion title="What happens when two jobs on two different machines need the same fixture?">
+They share one pool of fixture hours, so they cannot both have it. In EDGEBIC by User Solutions the first job books its hours from the fixture's daily pool, and the second job is only offered whatever is left. If that is less than it needs, the remainder spills to the next day the fixture has hours. Both machines may show free time; the fixture is what ran out, and the schedule moves work rather than pretending.
+</Accordion>
+
+<Accordion title="Why did my job split across two days when the machine was free all afternoon?">
+Because the fixture's pool ran out before the machine's did. Every allocated machine-hour books one hour from the tool's pool, and that pool is shared with every other machine running the same tool. When today's remaining fixture hours are less than the operation needs, it takes what is there and the balance lands on the next available day. The total hours are unchanged, only their placement moved.
+</Accordion>
+
+<Accordion title="Does a fixture clash add hours to the job?">
+No. This is the invariant worth trusting: a tool constraint changes when work happens, never how much work there is. A five-hour operation is still five hours after the fixture splits it three hours today and two tomorrow. Nothing is inflated, nothing is lost, and the job's total booked time matches its routing exactly.
+</Accordion>

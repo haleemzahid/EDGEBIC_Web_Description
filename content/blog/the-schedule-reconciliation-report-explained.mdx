@@ -1,0 +1,130 @@
+---
+title: "The Schedule Reconciliation Report in EDGEBIC, Explained"
+description: "Eight parameter checks over two exception grids. See how EDGEBIC reconciles the plan against the plant and shows only the rows that disagree."
+published: 2026-08-19T12:00:00.000Z
+modified: 2026-08-19T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - schedule reconciliation report
+  - exception based scheduling review
+  - plan versus actual reconciliation
+  - late jobs over-booked capacity
+  - schedule health checklist
+  - planner daily review
+targetPhrase: "schedule reconciliation report"
+wordCount: 1490
+readingTime: 8
+faqQuestions:
+  - question: "What is the Schedule Reconciliation report in EDGEBIC?"
+    answer: "It is a fixed checklist of eight questions asked of the whole schedule at once, each answering PASS or a count. It reconciles what the plan says against what the plant is and did, and shows only the rows that disagree. Two grids carry the exceptions: a Jobs grid with one row per problem manufacturing order, and a Capacity grid with one row per problem work center and day."
+  - question: "How is it different from just looking at the schedule?"
+    answer: "A planner with forty jobs can read the schedule. A planner with nine hundred cannot. This report does not show the schedule at all; it shows the disagreements. Healthy rows are computed and carried but hidden behind a default filter, so an empty grid is the success state rather than an error. That inversion is what makes it usable at a plant scale where reading the plan end to end is not an option."
+  - question: "What do the eight parameters check?"
+    answer: "P1 Late, jobs whose planned end is past the due date. P2 Pace, jobs behind on earned value or well over their hour estimate. P3 Actuals, jobs carrying critical data anomalies. P4 Over-booked, work center days booked past their real capacity. P5 Idle, open days with no load while a late job needs that machine. P6 Calendar, bookings landing on closed days. P7 Sequence, plans that state an order the plant cannot execute. P8 Material, jobs whose material position does not support the plan."
+qaQuestions:
+  - question: "Our reconciliation says three jobs are late but the Late Jobs report says four. Which do we believe?"
+    answer: "That gap should not happen, because the two use the same late predicate deliberately, and the equivalence is asserted by an automated test rather than left to convention. The usual explanation is that one of the four has finished. Reconciliation classifies a job whose operations are all done as completed late rather than late, so it appears under a different status while the Late Jobs report has no completeness gate. Read the fourth job's status in the reconciliation grid before assuming either number is wrong."
+  - question: "Every chip is green but we know a job is in trouble. Has the report missed it?"
+    answer: "Possibly, and the boundaries are worth knowing. The report works at the grain of a problem job or a problem work center day, so anything below that grain lives in the anomaly report instead. It also judges against dates, hours, calendars and material, so a job that is on time, correctly booked and materially supplied but commercially wrong to be running at all will pass everything. Reconciliation answers whether the plan matches the plant. It does not answer whether the plan is the right plan."
+---
+
+**In EDGEBIC by User Solutions, the Schedule Reconciliation report asks eight fixed questions of the entire schedule and shows only the rows that fail.** It is not another way to view the plan. It is a difference report: what the plan says, against what the plant is and did, with the agreements suppressed.
+
+The ask that produced it was specific. A planner with forty jobs can read the schedule. A planner with nine hundred cannot, and needs a checklist instead.
+
+## Exception-First, and Why That Inverts Everything
+
+Most scheduling screens show you everything and leave you to spot the problem. This one computes everything and shows you only the problems.
+
+Healthy rows are calculated and carried in the payload, then hidden behind a default filter. There is a toggle to reveal them, but the intended state is hidden. Which means **an empty grid is success**, not an error, and the walk finishes when both grids are empty.
+
+That inversion is the whole ergonomic argument. A report you have to read is a report that scales with the plant. A report you have to *clear* is a report whose workload scales with how wrong things are.
+
+## The Two Axes
+
+Problems come in two shapes, so there are two grids.
+
+**The Jobs axis.** One row per problem manufacturing order. Late, behind pace, carrying data it cannot trust, or finished late.
+
+**The Capacity axis.** One row per problem **bucket**, where a bucket is one work center on one calendar day. Over-booked, booked on a closed day, loaded past the warning band, or open with nothing on it.
+
+A job is a promise. A bucket is a day of a machine's life. Most real scheduling failures are one or the other, and the fix lives in a different place for each.
+
+## The Eight Parameters
+
+Each renders as a chip above the grids, carrying either PASS or a count. Clicking a chip switches to its grid and narrows it to exactly those rows.
+
+| Chip | Grid | A hit means | What you do |
+|---|---|---|---|
+| **P1 Late** | Jobs | The plan's own end date is past the customer's due date. Not a risk, an arithmetic fact | Expedite, re-sequence, or renegotiate the date |
+| **P2 Pace** | Jobs | Not late yet: behind on earned value with work genuinely due, or hours well over estimate | Add capacity while float remains, or re-estimate the routing |
+| **P3 Actuals** | Jobs | At least one critical anomaly on the job, so its data cannot be trusted | Fix the data before reading the rest of the row |
+| **P4 Over-booked** | Capacity | A day's load exceeds what the calendar actually opens for | Move a job off the day, or raise the daily capacity override |
+| **P5 Idle** | Capacity | A day is open with zero load, flagged harder when a late job still needs that machine | Pull work forward, especially the named job's step |
+| **P6 Calendar** | Capacity | Bookings land on a holiday or inside a downtime window | Reschedule the booking, or fix the calendar if the day should be open |
+| **P7 Sequence** | Jobs | The plan states an order the plant cannot execute | Re-schedule the job |
+| **P8 Material** | Jobs | Material does not support the plan: an unaccounted stock draw, a vendor past its promise, or an operation starting before its material lands | Fix the peg or the promise date, then reschedule |
+
+Alongside them sits a **schedule adherence** figure, which is the share of operations that started within an hour of plan over the review window. It is a KPI rather than a chip, because it measures a trend rather than posing a pass-or-fail question. See [what is schedule adherence](/blog/what-is-schedule-adherence).
+
+## Why P5 Is on a Problems Report
+
+Idle capacity is the parameter nobody expects and the one planners reach for second, after late jobs.
+
+An empty day is only interesting in context. A machine open on Tuesday with nothing on it is fine if nothing needs it. It is a different thing entirely when a late job has an unfinished operation queued for that exact machine. The report builds the late backlog first and then reads the empty buckets against it, so instead of a shrug you get an instruction naming the job whose step should be pulled forward.
+
+This is also why the jobs axis is computed before the capacity axis: P5's most valuable output depends on what P1 and P2 concluded.
+
+## Every Row Says What to Do
+
+Each exception row carries a reason string with two facts and one instruction, formatted the same way every time. Something like: over-booked by three and a half hours, finite capacity breached, move a job or raise the daily override.
+
+That is a deliberate product decision rather than a nicety. A status without a next step is a status the planner has to research, and a report that generates research is a report nobody opens twice. Working the report is reading the reason column and doing what it says.
+
+## Precedence: One Row, One Verdict
+
+A job is not "late and at risk". It is late.
+
+Jobs rank late, then anomaly, then at risk, then completed late, then completed, then on track. Buckets rank violation, then off-calendar, then hot, then idle, then low, then ok. Worst wins, and the worst thing is always the first row of the first tab.
+
+Two of those orderings are decisions rather than accidents.
+
+**Late outranks anomaly** because lateness is computed from planned dates and the due date alone. Nothing about hours or actuals enters it, so a job whose data is corrupt can still be provably late. An anomaly means "do not trust the pace numbers below this row", which is useless if it suppresses the one field that is still sound.
+
+**Off-calendar outranks over-booked on a closed day.** A booking on a holiday is technically also load above zero capacity, so calling it a violation would be arithmetically defensible. But the two produce different instructions, and naming the calendar problem is the actionable diagnosis. On an open day with a partial closure, over-booked is checked first.
+
+## It Invents No Numbers
+
+A reconciliation report has one catastrophic failure mode, and it is not a missed exception. It is disagreeing with another screen. The moment this report says three late and the Late Jobs report says four, a planner stops trusting both.
+
+So every figure here is either computed by a service some other surface already displays, or a classification on top of one.
+
+| Figure | Agrees with |
+|---|---|
+| The late set | [The Late Jobs report](/blog/how-to-run-the-late-jobs-report-in-edgebic) |
+| Planned and actual hours | The Job View header |
+| Pace, schedule performance | [The Earned Value report](/blog/how-to-run-the-earned-value-report-in-edgebic) |
+| Anomaly counts | [The Scheduler Anomalies report](/blog/how-to-run-and-read-the-anomaly-report-in-edgebic) |
+| Adherence | The planner dashboard tile |
+| Bucket capacity | The Resource Calendar and per-day capacity |
+
+Two of those agreements are held identical by automated tests rather than by review discipline, because "we copied the formula" decays the first time either copy is edited.
+
+## Where It Sits Among the Other Checks
+
+There are three overlapping nets and they catch different things.
+
+The **anomaly report** compares bookings against physical bounds: over-long bookings, instance collisions, missing master records, hour stores that disagree. It never asks whether the plant is open. See [how the anomaly report keeps a bad schedule off the floor](/blog/how-the-anomaly-report-keeps-a-bad-schedule-off-the-floor).
+
+**Reconciliation** compares the plan against the promise and against the calendar. A day booked to twelve hours on an eight-hour shift passes every anomaly check and fails P4, because P4 is the only check that judges load against what the calendar actually opens for. Idle capacity is likewise unique to it.
+
+The relationship is consumption, not duplication: P3, P6, P7 and P8 read the anomaly report's output, so fixing an anomaly clears the reconciliation row automatically. There is no second place to acknowledge it.
+
+## The Bottom Line
+
+Eight questions, two grids, one verdict per row, and a next step written on every one. Reconciliation does not replace reading the schedule; it replaces having to. When both grids are empty the plan and the plant agree, and that is a claim worth being able to make before a shift starts.
+
+For the daily routine see [how to run the Schedule Reconciliation report](/blog/how-to-run-the-schedule-reconciliation-report-in-edgebic), and for the wider loop, the [shop floor execution guide](/blog/edgebic-shop-floor-guide) or the platform at [EDGEBIC](/edgebic).

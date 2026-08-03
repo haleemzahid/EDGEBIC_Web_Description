@@ -1,0 +1,119 @@
+---
+title: "An Operation Moved and the Machine Was Free: Finding the Hidden Cause"
+description: "A job slid and every machine shows open hours. Tooling is the cause the Gantt cannot draw. How to rule it in or out in two minutes before you chase calendars."
+published: 2026-08-18T12:00:00.000Z
+modified: 2026-08-18T12:00:00.000Z
+category: Troubleshooting
+author: user-solutions
+cluster: edgebic-troubleshooting
+pillarSlug: edgebic-troubleshooting-guide
+keywords:
+  - job moved machine was free
+  - operation slid unexplained
+  - hidden scheduling constraint
+  - tooling caused a job to move
+  - job scheduled later than expected
+  - diagnose a schedule change
+targetPhrase: "job moved machine was free"
+wordCount: 1430
+readingTime: 7
+faqQuestions:
+  - question: "Why did my job move when the machine had free hours?"
+    answer: "Because something other than the machine ran out. The three usual candidates are a required tool, a required operator skill, and an upstream step that finished later than you thought. Tooling is the hardest of the three to spot in EDGEBIC by User Solutions because a shared fixture has no marker on the Gantt and no column in the Job View, so a machine lane can show open hours all afternoon while the fixture that operation needs is bolted to a different machine."
+  - question: "How do I tell whether tooling caused a job to move?"
+    answer: "Open the routing step and look at its required tool. If it is set to none, tooling is ruled out in seconds and you can move on. If it names a tool, find the other routing steps that require the same tool and look at what was scheduled against them in the same window. One of them almost certainly took the pool. The run's diagnostic log confirms it, because it records every window that was skipped for an empty tool pool."
+  - question: "Is there a tool indicator on the Gantt or in the Job View?"
+    answer: "No. Skill-required operations carry a marker on the Schedule View Gantt and a column in the Job View; tool-required operations do not, and there is no tool equivalent of a dispatch list or a resource calendar lens. To see where a fixture's hours went you read the routing steps that require it, the jobs scheduled against those steps, and the run's diagnostic log."
+qaQuestions:
+  - question: "Nothing changed in our data and the job still moved on this week's run. How is that possible?"
+    answer: "Something changed even if you did not change it, and with tooling the most common source is another job. A fixture's pool is shared, so a new order that landed anywhere in the plant this week, on any machine, can take hours your job was previously getting. Your routing, your machine, and your calendars are all identical and the plan is still different, correctly.\n\nThe check is to look at the same tool's pool across the same window in both runs. If a job appeared on some other machine that also requires the fixture, it is the answer. This is the ordinary behavior of any shared resource; it just feels stranger with tooling because the competing job may be in a completely different department."
+  - question: "We confirmed the fixture is the cause. Do we have to accept the new date?"
+    answer: "You have four moves, and only one of them is dishonest. You can raise the quantity if you genuinely own or can free another unit, which is the real fix and the schedule will tell you what it buys. You can resequence, so the job that matters most takes the fixture first. You can split the routing so the operation only holds the fixture for the part of its duration that genuinely needs it, which frees real hours. Or you can accept the date, which is at least a date the floor can hit.\n\nWhat you cannot usefully do is raise the quantity to a number you do not own. That removes the slide from the plan and changes nothing about the fixture, so the collision simply moves back to the machine on the morning it starts."
+---
+
+**When an operation moves and every machine shows free hours, the constraint that bound it was not a machine, and a shared tool is the candidate the Gantt cannot draw for you.** EDGEBIC by User Solutions puts a marker on skill-required operations and does not put one on tool-required operations, so a fixture clash is the one cause that leaves no visual trace. Two minutes of checking rules it in or out before you spend an hour on calendars.
+
+This is the tooling-specific version of a symptom covered more broadly in the [EDGEBIC troubleshooting guide](/blog/edgebic-troubleshooting-guide).
+
+## First: Check the Step's Required Tool
+
+Start here, because it is the cheapest possible test and it either eliminates a whole family of causes or hands you the answer.
+
+Open the routing step in the **BOR** tab and look at **Required tool:** in the **Basic Information** section. In the BOR Designer, the same setting is on the node's properties panel as **Required Tool**.
+
+- **It reads `(none)`.** Tooling is ruled out for this step entirely. Move on to skills, upstream steps, and calendars.
+- **It names a tool.** Keep reading. You are probably two minutes from the answer.
+
+The reason this ordering pays is that the tooling symptom is indistinguishable from a machine-capacity symptom right up until you look, and the machine investigation is much slower.
+
+## Cause 1: Another Job Took the Pool
+
+The headline case, and by a wide margin the most common.
+
+A tool has a pool of hours for each day and shift: the quantity multiplied by that window's working hours. Every allocated machine-hour books one hour from it, and that pool is shared by **every** work center running the same tool. When it runs out, the next operation is simply not offered the window, and it slides.
+
+**How to tell:** find the other routing steps that require the same tool, and look at what is scheduled against them in the window your job wanted. If a job on a different machine is sitting there, it took the hours.
+
+**The confusing part** is that the competing job may be somewhere you would never look. A fixture shared between a mill cell and an inspection bench means the job that moved your job could be in another department entirely. Nothing links the two bars on screen.
+
+**Fix:** this is not a defect, it is the constraint working. The options are to raise the quantity if you own another unit, to resequence so the more urgent job takes the fixture first, or to accept the date. What a second unit really buys is measurable: see [what changes when you own a second fixture](/blog/what-changes-when-you-own-a-second-fixture).
+
+## Cause 2: The Tool Is Away
+
+If the operation did not just slide a few hours but jumped clean over several days, check the tool's downtime.
+
+Open the **Daily Hours** tab, the **Tools** inner tab, select the tool, and read its downtime grid. On every date inside a range the pool is zero regardless of quantity, so operations requiring the tool skip those days entirely.
+
+**How to tell:** the gap in the schedule matches a downtime range exactly, and work resumes on the first day after it.
+
+**The classic off-by-one:** both dates are inclusive. If work resumed one day later than you expected, the end date is almost certainly one day too far out. It should be the last day the tool is genuinely absent, not the day it comes back. See [how to record tool downtime](/blog/how-to-record-tool-downtime-for-calibration-in-edgebic).
+
+## Cause 3: A Step You Forgot Requires It
+
+A quieter version of cause 1. If a tool is required on more steps than you remember, its pool is under more pressure than you expect, and the job that moved may be competing with an operation nobody thinks of as a fixture job.
+
+**How to tell:** attempt to delete the tool. The delete is refused and the message counts the routing steps that still require it. If that number is larger than your mental model, that is the finding, and nothing was changed by the attempt.
+
+**Fix:** decide whether each of those steps genuinely holds the tool. A step that carries the requirement but only needs the fixture for part of its duration books the whole step's hours, which overstates contention. Splitting it into a short tool-bearing step and a longer one without is the honest fix, and it frees real pool hours.
+
+## Cause 4: Surviving Work Re-Reserved Its Hours
+
+On a reschedule, work that survives the run re-reserves its tool hours **before** any new work is placed. That is correct and necessary, but it can look surprising if you were expecting a rescheduled job to find the pool empty.
+
+**How to tell:** the job that took the pool is one that was already scheduled and not yet started, and it did not move in this run.
+
+**Fix:** none needed. Without this behavior a reschedule would plan new work straight over hours the existing plan is still holding, which is the most insidious way a tooling model can quietly stop being true. Rescheduling behavior generally is in [how to reschedule safely](/blog/how-to-reschedule-safely-in-edgebic).
+
+## Confirming It with the Run Log
+
+If you want proof rather than a strong inference, the run's diagnostic log carries tooling-tagged lines that record exactly what happened: every booking made, with the running pool value, and every window that was skipped because the pool was empty or the tool was in downtime.
+
+That log is the only place tool consumption is written down. There is no persisted record of which fixture went where, no tool lane on the Gantt, and no report that answers "where is FIX-EM47 on Thursday." Reading the routing steps and the log is the method.
+
+## Ruling Tooling Out Fast
+
+If the step's required tool is `(none)`, work down the usual list instead:
+
+1. **A required skill.** Skill-required operations do carry a marker on the Gantt and a column in the Job View, so this one is visible. See [how EDGEBIC books operator hours](/blog/how-edgebic-books-operator-hours).
+2. **An upstream step.** The operation cannot start before its predecessor ends, and the predecessor may have moved for its own reasons.
+3. **Calendars and capacity on the machine.** The [zero-capacity checklist](/blog/capacity-shows-zero-for-a-work-center-edgebic) walks that chain in order of likelihood.
+
+## Stop It Coming Back
+
+Three habits retire most of this page:
+
+1. **Record which machines a tool fits in its notes field.** EDGEBIC does not model tool-to-machine compatibility, so the notes are the only place a planner can learn where a fixture can turn up. That is what turns "why did this move" into "of course, the other mill."
+2. **Keep the requirement on exactly the steps that physically hold the tool.** Too few understates contention; too many manufactures slides that should not exist.
+3. **Enter calibration and repair windows the moment they are booked**, and reschedule. A known absence that was never entered will keep producing surprises until it does.
+
+<Accordion title="Why did my job move when the machine had free hours?">
+Because something other than the machine ran out. The three usual candidates are a required tool, a required operator skill, and an upstream step that finished later than you thought. Tooling is the hardest of the three to spot in EDGEBIC by User Solutions because a shared fixture has no marker on the Gantt and no column in the Job View, so a machine lane can show open hours all afternoon while the fixture that operation needs is bolted to a different machine.
+</Accordion>
+
+<Accordion title="How do I tell whether tooling caused a job to move?">
+Open the routing step and look at its required tool. If it is set to none, tooling is ruled out in seconds and you can move on. If it names a tool, find the other routing steps that require the same tool and look at what was scheduled against them in the same window. One of them almost certainly took the pool. The run's diagnostic log confirms it, because it records every window that was skipped for an empty tool pool.
+</Accordion>
+
+<Accordion title="Is there a tool indicator on the Gantt or in the Job View?">
+No. Skill-required operations carry a marker on the Schedule View Gantt and a column in the Job View; tool-required operations do not, and there is no tool equivalent of a dispatch list or a resource calendar lens. To see where a fixture's hours went you read the routing steps that require it, the jobs scheduled against those steps, and the run's diagnostic log.
+</Accordion>

@@ -1,0 +1,99 @@
+---
+title: "Exploding a Parent's Demand Into Component Demand in EDGEBIC"
+description: "How a planned order becomes requirements on its components: quantity-per, why the explosion dates at the parent's release, and why it explodes the quantity you will actually start."
+published: 2026-08-06T12:00:00.000Z
+modified: 2026-08-06T12:00:00.000Z
+category: Inventory & Planning
+author: user-solutions
+cluster: edgebic-planning
+pillarSlug: edgebic-planning-guide
+keywords:
+  - BOM explosion
+  - component demand
+  - quantity per parent
+  - planned order release
+  - dependent demand
+  - bill of materials
+targetPhrase: "BOM explosion"
+wordCount: 1470
+readingTime: 7
+faqQuestions:
+  - question: "What does a BOM explosion actually calculate?"
+    answer: "It multiplies a parent's planned order quantity by the quantity-per of each component on its bill, and places the result as a dated requirement on that component. A planned order for 30 pumps, each taking two housings, explodes into a requirement for 60 housings. Every requirement carries the parent that caused it, so a planner can always answer where a component demand came from without reconstructing the arithmetic."
+  - question: "Why does the explosion use the release date rather than the due date?"
+    answer: "Because components are needed when the parent starts, not when it finishes. The plan has already shifted the parent's release earlier by its own lead time, and that release date is when the material must be in hand. Dating components at the parent's receipt would order every one of them to arrive exactly when they were due to be consumed, one lead time too late, and the same error would repeat at every level below."
+  - question: "Does the explosion use the net requirement or the order quantity?"
+    answer: "The order quantity, after lot sizing and yield allowance. That is what the plant would actually start, so multiplying it by the quantity-per gives the real component requirement with scrap included. Exploding the raw net requirement instead would buy material for the units that ship rather than for the units that get made, and the shortfall would surface at the end of every job."
+qaQuestions:
+  - question: "One routing draws the same seal at two different operations. Does the explosion take the larger number or add them?"
+    answer: "It adds them. A pump needing one seal at weld and two at assembly needs three, and the per-parent quantity is the sum across every operation that draws it. Taking the larger would leave the job two seals short at whichever operation ran second. If a step quantity is zero or negative it reads as one rather than silently dropping the component from the bill."
+  - question: "Where does EDGEBIC get the bill of materials from if there is no separate BOM screen?"
+    answer: "From the routing. A routing step that names a product and no work center is a component of the end item that routing belongs to, and that is exactly the same test the scheduling engine uses when it consumes the material. That single rule covers bought material and sub-assemblies together, because the difference between them is whether the component has a routing of its own, which the plan derives rather than asking you to declare."
+---
+
+**A BOM explosion turns a parent's planned order into dated requirements on its components: the order quantity multiplied by the quantity-per of each component, placed at the date the parent starts.** In [EDGEBIC by User Solutions](/edgebic), that one multiplication is what makes a component's demand visible before the parent is ever built, and two decisions inside it are what make the resulting dates and quantities usable rather than merely present.
+
+This post walks the explosion step by step: where the bill comes from, which date it uses, which quantity it multiplies, and why every requirement names its parent. It sits under the [EDGEBIC planning guide](/blog/edgebic-planning-guide) and follows [what multi-level MRP does that reorder-point planning cannot](/blog/what-multi-level-mrp-does-that-reorder-point-planning-cannot-in-edgebic).
+
+## The Bill Comes Out of the Routing
+
+There is no separate bill-of-materials screen to maintain in EDGEBIC, and that is deliberate. The bill is read out of the routings you already keep.
+
+A routing step that names a product and no work center is a component of the end item that routing belongs to. That is the test, and it is the same one the scheduling engine applies at the point where it actually consumes the material, so the plan and the plant are reading the same rule rather than two rules that agree until they do not.
+
+One rule covers both kinds of component. Bought material and sub-assemblies look identical on the bill; the difference is whether the component has a routing of its own, and the plan derives that rather than asking anyone to declare it. A component with a routing gets planned as a make item; one without gets planned as a buy item. For the structure this builds, see [multi-level BOM in MRP](/blog/multi-level-bom-mrp) and the [bill of materials glossary entry](/blog/glossary-bill-of-materials).
+
+Two subtleties inside that rule are load-bearing.
+
+**Quantities add, they do not replace.** Several operations in one routing can each draw the same component. A pump needing one seal at weld and two at assembly needs three, so the per-parent quantity is the sum across every step that draws it. A step quantity of zero or below reads as one rather than removing the component from the bill.
+
+**One routing per product.** A product can hold more than one routing, and reading two of them would multiply the quantity-per of every component beneath it, so the plant buys twice what it will draw. EDGEBIC resolves the routing through the same rule the scheduler uses, so the plan and the plant cannot quietly disagree about which one is in force.
+
+## It Explodes the Release, Not the Receipt
+
+This is the decision that gets dates right, and getting it wrong compounds downwards.
+
+A parent's planned order has two dates. The **due date** is when the finished parent is needed. The **release date** is that date shifted earlier by the parent's own lead time: when the work has to start. Components are needed at the release, because that is when somebody picks them up.
+
+Take a pump with a five-day lead time that takes two housings, and a housing with a three-day lead time. A pump shortage lands in the bucket starting 20 August.
+
+| Step | Item | Quantity | Date | Derivation |
+|---|---|---|---|---|
+| 1 | Pump receipt | 30 | 20 Aug | when the pumps are needed |
+| 2 | Pump release | 30 | 13 Aug | 20 Aug less the pump's 5-day lead time |
+| 3 | Housing requirement | 60 | 13 Aug | 30 x 2 per pump, at the pump's release |
+| 4 | Housing release | 60 | 10 Aug | 13 Aug less the housing's 3-day lead time |
+
+Date the explosion at the pump's receipt instead and the housings are ordered to arrive on the 20th, a week after the pumps needed them. The same error then repeats at every level below, so a four-level product arrives with its raw material a month late by design. For how the offset itself works, read [how lead time offsets a replenishment release date](/blog/how-lead-time-offsets-a-replenishment-release-date-in-edgebic).
+
+## It Explodes the Quantity You Will Actually Start
+
+The second decision is which number gets multiplied.
+
+The raw net requirement is what the plan is short. The **planned order release** is what the plant would genuinely start: the net requirement after the lot rule has rounded it into a buildable batch and a yield allowance has been added for scrap. The explosion multiplies that number.
+
+The reason is direct. If a step yields 92 percent, starting 100 units ships 92, and the components for all 100 have to be there. Explode the net requirement and you buy for the units that ship rather than the units that get made, so the shortfall reappears at the end of every job, every time. For how those two adjustments are calculated, see [how lot sizing and yield inflation shape order quantities](/blog/how-lot-sizing-and-yield-inflation-shape-order-quantities-in-edgebic).
+
+## Every Requirement Names Its Parent
+
+A number nobody can trace is worse than no number, because it costs confidence in every other figure on the screen. So each component requirement carries the parent that caused it as it travels.
+
+That link is what the **Pegging** grid on the **MRP Worklist** displays: the component, the need date, the quantity, and the parent that required it. When a plate shows a requirement for 110 units, you can see at a glance that 30 came from one end item and 80 from another, rather than reconstructing the arithmetic by hand. The concept is covered generally in [pegging in MRP](/blog/pegging-mrp-trace-orders) and the [pegging glossary entry](/blog/glossary-pegging).
+
+## A Worked Explosion, Level by Level
+
+Two end items, both releasing orders on 12 August: 30 widgets and 10 gearboxes. A widget takes one plate. A gearbox takes one casing, a casing takes two subframes, and a subframe takes four plates.
+
+| Item planned | Requirement it receives | What its release explodes to |
+|---|---|---|
+| Widget | independent demand only | plate + 30 |
+| Gearbox | independent demand only | casing + 10 |
+| Casing | 10 | subframe + 20 |
+| Subframe | 20 | plate + 80 |
+| Plate | 30 + 80 = 110 | nothing, it is bought |
+
+The plate is netted once, against 110, with two pegs on it. Note the ordering: the plate is planned last, after everything that could demand it. That ordering is not an optimization, it is the correctness condition, and it is the subject of [low-level codes and why every item is planned exactly once](/blog/low-level-codes-and-why-every-item-is-planned-once-in-edgebic).
+
+## What to Check When an Explosion Produces Nothing
+
+If a parent plans an order and no component demand appears beneath it, work through four things in order. Does the routing have material steps at all, meaning steps that name a product and no work center? No material steps means no bill and nothing to explode. Does the product hold more than one routing, so the resolver picked one you did not expect? Is the quantity-per set on the step? And is the parent's own demand actually inside the planning horizon, because a parent whose demand fell off the end of the window plans no order, explodes nothing, and leaves every component beneath it looking comfortable for a reason that has nothing to do with the components.

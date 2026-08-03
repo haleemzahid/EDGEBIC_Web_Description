@@ -1,0 +1,116 @@
+---
+title: "What the EDGEBIC Refresh Button Actually Does"
+description: "The refresh button forces a full re-read from the database, which is not the same as closing a screen and reopening it. Why the distinction matters on a shared database, and when to press it."
+published: 2026-08-10T12:00:00.000Z
+modified: 2026-08-10T12:00:00.000Z
+category: EDGEBIC Platform
+author: user-solutions
+cluster: edgebic-platform
+pillarSlug: edgebic-complete-guide
+keywords:
+  - refresh scheduling data
+  - stale data production scheduling
+  - hard reload scheduling software
+  - shared scheduling database
+  - manufacturing software refresh
+  - multi user scheduling software
+targetPhrase: "refresh scheduling data"
+wordCount: 1500
+readingTime: 7
+faqQuestions:
+  - question: "What does the refresh button in EDGEBIC actually do?"
+    answer: "It forces a full re-read from the database and then re-runs the screen's own loader. That is stronger than it sounds, because the application keeps shared lists such as work centers and products in memory for the life of the session, and a normal load reads from that memory rather than from the database. Refresh discards that assumption, goes back to the database, and rebuilds the screen from what is genuinely stored. The tooltip describes it as a backup for missed live updates, which is exactly what it is."
+  - question: "Why is refreshing different from closing the screen and reopening it?"
+    answer: "Because reopening a screen does not necessarily re-read the database. Shared lists are loaded once per session and held in memory, and a screen opening for the second time reads that warm copy. So a tab you close and reopen can show you exactly the same stale work center name it showed before, which is the single most confusing thing about the difference. Refresh is the only action that forces the underlying lists back to the database, which is why it is a button and not just advice to reopen the tab."
+  - question: "Should EDGEBIC just refresh everything on a timer?"
+    answer: "No, and that is a deliberate rule rather than an oversight. A forced refresh re-reads whole tables, while the automatic update path sends only what changed. Putting refresh on a timer would multiply a heavy operation by every open tab on every workstation, permanently, to solve a problem the cheap path already solves. Refresh is the backup you reach for when you suspect something is stale, and nothing in the product is designed to be correct only if somebody remembers to click it."
+qaQuestions:
+  - question: "A colleague renamed a work center and I still see the old name. I closed the tab and reopened it and it is still wrong. What now?"
+    answer: "Press refresh on that screen rather than reopening it again. Reopening a tab rebuilds the view from lists the application already holds in memory, and if those lists are the stale part, reopening shows you the same stale name a second time. Refresh forces those lists back to the database first, then rebuilds the screen, so it is the only action that can fix this. If the name is still wrong after a refresh, the problem is upstream of your workstation: check that the rename was actually saved rather than left in an unsaved editor on the other machine."
+  - question: "I have unsaved edits on screen. Is it safe to press refresh?"
+    answer: "Yes, because refresh routes through the same unsaved-changes prompt you get when you navigate away from a dirty screen. You are offered Save, Discard or Stay. Stay abandons the refresh and leaves your edits untouched, Save commits them and waits for the save to finish before the reload runs, and Discard throws them away deliberately. The one case worth being careful with is a screen that offers no such prompt, which is why the button is deliberately absent from a few surfaces rather than being everywhere by default."
+---
+
+**The refresh button in EDGEBIC forces a full re-read from the database, which is a genuinely different thing from closing a screen and opening it again.** [EDGEBIC by User Solutions](/edgebic) keeps shared lists in memory for the life of a session, so a reopened tab can quietly serve the same stale data it showed a minute ago. Refresh is the one action that goes back to the database.
+
+This post explains that difference, because it is the least obvious thing about working on a [shared database](/blog/edgebic-shared-database-multi-planner-explained) and the cause of more confused support calls than any other single behavior.
+
+## The Automatic Path Comes First
+
+Most of the time you should never need this button.
+
+When somebody saves, the change reaches other workstations by itself: the write leaves a marker, every workstation checks those markers every few seconds, and the families that moved are re-read and merged into whatever lists are open. [How an open screen notices someone else's edit](/blog/how-an-open-edgebic-screen-notices-someone-elses-edit) covers that path in full.
+
+It is cheap, it is targeted, and it is the primary mechanism. Refresh exists for the cases it does not reach.
+
+## Why the Backup Is Needed at All
+
+Three situations leave a screen showing something old with nothing to tell you so.
+
+A family of data with no live list to update. Routing screens read current data when you navigate to them, so they signal nothing, which is correct until you have one already open.
+
+A surface reading from somewhere other than the shared database, such as a local settings file, which is outside the propagation path entirely.
+
+And any change made to the database by something other than EDGEBIC, which naturally leaves no marker for anybody to notice.
+
+In every one of those cases there is no error, no banner and no clue. Stale data looks exactly like current data, which is why a deliberate "go and read it again" control is worth having.
+
+## The Part That Surprises People
+
+Here is the mechanism that makes reopening a tab an unreliable fix.
+
+EDGEBIC loads shared lists, work centers, products, departments, customers, shifts and holidays, once per session and holds them in memory. Every screen that needs a work center dropdown binds to that one list rather than querying for its own copy. That is what makes the application fast and what makes a change appear everywhere at once when it does arrive.
+
+The consequence is that a normal screen load reads that in-memory list. It does not go to the database, because it has no reason to think it needs to. So:
+
+| Action | What it reads |
+|---|---|
+| Opening a screen for the first time | The database, because the list is loaded then |
+| Closing and reopening that screen | The list already in memory |
+| Pressing refresh on that screen | The database, forced, then the screen rebuilds from it |
+
+That middle row is the whole point. A planner who closes the Work Centers tab and reopens it, sees the old name again, and concludes the rename never saved, has been misled by a perfectly reasonable assumption.
+
+## What Refresh Does, In Order
+
+Pressing the button does four things.
+
+First, it checks for unsaved edits and, if the screen has them, shows you the same Save, Discard or Stay prompt you get when navigating away from a dirty screen. Stay abandons the refresh entirely and your edits are untouched. Save commits them and waits for the save to complete before continuing, rather than racing it. Discard throws them away, deliberately and on your instruction.
+
+Second, it forces the shared lists that this screen depends on to re-read from the database, discarding what was in memory.
+
+Third, it re-runs the screen's own loader over that freshly read data.
+
+Fourth, it re-enables the button, which was disabled for the duration so a double-click cannot start two reloads.
+
+If forcing a list fails, for example because of a momentary connection problem, the reload still runs. A cache that will not refresh is not allowed to stop the screen from loading.
+
+## Where the Button Is, and Where It Is Not
+
+The button appears at the top of the persistent working screens: work centers, products, customers, departments, shifts, holidays, work center groups, manufacturing orders, quotes, routings, the schedule and Gantt boards, the work center schedule, the resource calendar, the dashboard, actual live, and the integration screen.
+
+Every report gets it too, from one control on the report window rather than one per report, so a report opened over a wide date range can be re-run without closing it.
+
+It is deliberately absent from three kinds of surface. Transient dialogs and pickers construct and load fresh every time they open, so they are never stale. The settings screen reads local configuration rather than database data. And one or two screens sit so close to another screen's refresh button that two icons a few pixels apart would read as two different actions when they are not.
+
+## When to Press It
+
+Four moments earn a click.
+
+Before you make a promise from a number. If you are about to commit a delivery date from a screen that has been open since morning, refresh first. The habit costs a second.
+
+When a colleague tells you they changed something and you cannot see it. That is the exact symptom this button was built for.
+
+After an ERP sync you know has run. Imports move a lot of data at once, and if you had a screen open throughout, a refresh is the shortest way to be sure you are looking at the result.
+
+And when two people are looking at the same thing and disagree. Refresh both screens before investigating anything else, because the age of a view explains this far more often than a genuine fault. [The schedule looks different on two screens](/blog/the-schedule-looks-different-on-two-screens-edgebic) covers that case in detail.
+
+## What It Is Not
+
+Refresh is a backup, not a foundation. Nothing in EDGEBIC is designed to be correct only if somebody remembers to press it, and it is deliberately not on a timer.
+
+The reason is cost. Forcing a re-read pulls whole lists back from the database, while the automatic path sends only what actually changed. On a timer, across every open tab on every workstation, that would be a permanent and pointless load on the server to solve a problem the cheap path already solves.
+
+Press it when you suspect something. Do not build a working practice that depends on it.
+
+For the wider set of behaviors that change on a shared server, read [what changes when EDGEBIC moves to a shared database](/blog/what-changes-when-edgebic-moves-to-a-shared-database), and the [complete EDGEBIC guide](/blog/edgebic-complete-guide) maps the platform as a whole.

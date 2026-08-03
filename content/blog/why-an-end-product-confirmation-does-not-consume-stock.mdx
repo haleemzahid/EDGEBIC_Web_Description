@@ -1,0 +1,129 @@
+---
+title: "Why an End-Product Confirmation Does Not Consume Stock"
+description: "Reporting produced quantity adds finished goods to stock and takes nothing out. See why EDGEBIC posts a receipt with no matching issue, and what breaks if it did not."
+published: 2026-08-17T12:00:00.000Z
+modified: 2026-08-17T12:00:00.000Z
+category: Shop Floor Execution
+author: user-solutions
+cluster: edgebic-shop-floor
+pillarSlug: edgebic-shop-floor-guide
+keywords:
+  - yield confirmation manufacturing
+  - production receipt no issue
+  - self consume finished goods
+  - reported quantity inventory effect
+  - completion receipt remainder
+  - production confirmation ledger
+targetPhrase: "yield confirmation manufacturing"
+wordCount: 1330
+readingTime: 7
+faqQuestions:
+  - question: "Why does reporting produced quantity add stock but never remove any?"
+    answer: "Because you do not consume finished goods in order to build more of the same finished goods. Reporting 50 units of an order for 100 is a statement that 50 exist and 50 remain to be built. Posting a receipt for 50 and an issue for 50 would describe a round trip that never happened, net the on-hand movement to zero, and leave the remaining quantity to be derived somewhere else anyway. The receipt stands alone and the schedule subtracts the quantity."
+  - question: "Is the confirmation a yield statement or a stock statement?"
+    answer: "For the end product it is a yield statement: this many good units of this order already exist. For a sub-assembly it is a stock statement: this many of the component are on the shelf. The two use the same dialog and mean genuinely different things, which is why the end product gets a quantity reduction with no issue while a sub-assembly rides the ordinary consume-from-stock path and issues legitimately when the parent draws it."
+  - question: "Does completing the job post the finished goods twice?"
+    answer: "No. Completion posts only the unconfirmed remainder. Confirm 40 units of an order for 100 and completion receives 60, so on-hand lands at exactly 100. Confirm all 100 and completion posts no receipt at all, because the stock is already there. The two entry types are kept distinct in the ledger so the completion step can tell what has already been reported and top up rather than duplicate."
+qaQuestions:
+  - question: "We reported 2 units on a stocked product and the next run drew those same 2 back out of stock. Is that a bug?"
+    answer: "It is expected behavior, and it is worth understanding rather than fighting. The receipt is real on-hand from the moment it posts, and on-hand is on-hand: nothing marks those units as reserved for the order that made them. So ordinary netting sees available stock and allocates it to the job that needs it, which happens to be the same job. That is a genuine allocation of existing units, not the self-consume the design forbids. The net position is still correct, with the remaining build reduced by both the confirmation and the allocation."
+  - question: "Could we just post a manual receipt instead of using the confirmation dialog?"
+    answer: "You would get the stock but not the schedule change. A manual receipt raises on-hand and stops there. A production confirmation raises on-hand and is pegged to the job in a way the scheduler reads on the next run to reduce the remaining build. There is also a reconciliation consequence: completion tops up only the unconfirmed remainder by counting confirmation entries specifically, so a manual receipt on a make-to-stock job would sit alongside a full completion receipt and leave inventory overstated."
+---
+
+**In EDGEBIC by User Solutions, reporting produced quantity on a job's end product posts a receipt into inventory and issues nothing back out.** No matching consumption, no offsetting entry, no round trip. That asymmetry looks like an omission until you work through what the alternative would say, and then it reads as the only defensible option.
+
+This is the rule at the center of production confirmation, and getting it wrong quietly corrupts both the plan and the stock figure.
+
+## The Tempting Symmetry, and Why It Fails
+
+The reasoning that leads people astray is short and sounds sensible: a confirmation puts stock on the books, stock gets consumed by jobs, therefore the confirmed units should be consumed too.
+
+Follow it through on an order for 100 with 50 reported. You would post a receipt of 50, then an issue of 50. The on-hand movement nets to zero. The ledger carries two rows describing a journey the units never took: made, then eaten by the job that made them. And the remaining quantity, the whole reason for reporting in the first place, has to come from somewhere else anyway, because the two entries canceled each other out.
+
+Now state the world plainly instead. **Fifty exist, and fifty remain to be built.** That is one fact about stock and one fact about work. It maps onto one receipt and one subtraction, not two ledger rows that annihilate.
+
+So the receipt stands alone and raises on-hand, exactly as it should, because those fifty units really are in the plant. The remaining build is reduced by arithmetic in the scheduler rather than by a transaction in inventory.
+
+## Yield Statement Versus Stock Statement
+
+The clean way to hold the distinction is to ask what the number is a statement *about*.
+
+| | End product | Sub-assembly |
+|---|---|---|
+| What it says | This many good units of the order already exist | This many of the component are on the shelf |
+| Inventory effect | A receipt of the finished product | A receipt of the sub product |
+| Is anything issued? | Never | Yes, later, when the parent build draws it |
+| How the plan changes | The remaining build is reduced directly | Ordinary consume-from-stock netting builds only the shortfall |
+
+A **yield statement** is about the order's own output. A **stock statement** is about a component's availability. The dialog is the same in both cases and the difference in what happens afterwards is total. That split is covered in [confirming a sub-assembly versus the end product](/blog/confirming-a-sub-assembly-versus-the-end-product).
+
+The sub-assembly's eventual issue is not a counterexample. When a parent build draws a component out of stock, that is ordinary bill-of-material consumption, and the product being issued is not the product being built. See [how a sub-assembly feeds its parent job](/blog/how-a-sub-assembly-feeds-its-parent-job).
+
+## What Confirming 50 of 100 Looks Like in the Ledger
+
+One row. That is the whole inventory footprint of an end-product confirmation on a non-stocked product.
+
+| Field | Value |
+|---|---|
+| Type | Production confirmation |
+| Quantity | Positive 50 |
+| Pegged to | The job and the finished product |
+| On-hand effect | Rises from 0 to 50 |
+| Cost effect | None |
+
+The cost line deserves a note. A confirmation records units, not a purchase, so it does not carry a unit cost and does not move the product's moving-average cost. Letting a planner's yield report drift the costing of a part would be a strange thing for a progress entry to do.
+
+To read these entries for a part, use [how to audit the inventory ledger for a part](/blog/how-to-audit-the-inventory-ledger-for-a-part-in-edgebic).
+
+## The Distinct Entry Type Is Doing Real Work
+
+A confirmation is a positive movement, and so is the automatic finished-goods receipt a make-to-stock job posts when it is marked complete. It would be easy to record both as the same kind of entry. They are deliberately kept apart, and the reason is a failure that would be nearly impossible to trace.
+
+Completion is guarded so a job cannot receive its finished goods twice. That guard looks for an existing completion receipt on the job. If confirmations were recorded as ordinary receipts, the guard would find one, conclude the job had already been received, and return early.
+
+The consequence: a job for 100 with 40 confirmed would land 40 units in inventory and the remaining 60 would never be received at all. Nothing would error. The shortage would appear weeks later as inventory that is quietly light by exactly the unconfirmed quantity, with no obvious cause.
+
+With the types kept distinct, completion counts what has been confirmed and posts only the difference.
+
+| Confirmed before completion | Completion receipt | Final on-hand |
+|---|---|---|
+| 0 of 100 | 100 | 100 |
+| 40 of 100 | 60 | 100 |
+| 100 of 100 | none | 100 |
+
+Every row lands on 100. The confirmations move the timing of when stock appears, never the total.
+
+## The Stocked-Product Round Trip
+
+One behavior surprises planners and is worth stating before it does.
+
+If the finished product is a stocked item, the receipt your confirmation just posted is ordinary on-hand from that instant. Nothing reserves it for the order that produced it. So on the next run, [consume-from-stock netting](/blog/consume-from-stock-netting-walkthrough-edgebic) sees available stock and allocates it, and the order that made those units is usually the order that needs them.
+
+Order 5, confirm 2:
+
+```
+remaining after confirmation   5 - 2 = 3
+stock available                2   (the confirmation's own receipt)
+consumed from stock            2   -> a real issue posts
+remaining to build             1
+on-hand after the run          0
+```
+
+The planner reports 2 produced and then watches those 2 get drawn back out. This is not the self-consume the design forbids. The issue is a genuine allocation of units that already existed to an order that needs them, and the arithmetic still lands correctly: one unit left to build.
+
+## What This Means Day to Day
+
+Three things to carry.
+
+**Reporting production raises stock.** If your finished part is stocked, expect the on-hand figure to move the moment you press Report, before anything is scheduled or completed.
+
+**Reporting production never depletes anything.** If you see an issue appear against the finished product after a confirmation, it came from netting allocating stock to an order, not from the confirmation itself.
+
+**Completing after confirming is safe.** The totals reconcile. There is no double count to watch for and no manual adjustment to make.
+
+## The Bottom Line
+
+A confirmation on the end product is a statement about yield, and yield does not consume itself. One receipt, no issue, a smaller remaining build, and a completion step that tops up only what was never reported. Keep those four facts together and the ledger reads correctly on the first pass.
+
+For the wider execution loop see the [shop floor execution guide](/blog/edgebic-shop-floor-guide), and for the platform itself, [EDGEBIC](/edgebic).

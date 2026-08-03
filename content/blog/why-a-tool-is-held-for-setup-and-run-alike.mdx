@@ -1,0 +1,109 @@
+---
+title: "Why a Tool Is Held for Setup and Run Alike"
+description: "An operator can tend two machines at once. A fixture cannot be half mounted. Why tools book at the full rate for every hour, with no attention fraction and no escape."
+published: 2026-08-18T12:00:00.000Z
+modified: 2026-08-18T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - tool held during setup and run
+  - operator attention fraction
+  - secondary resource booking rate
+  - lights out run fixture
+  - tool booking one to one
+  - tooling versus labor constraint
+targetPhrase: "tool held during setup and run"
+wordCount: 1490
+readingTime: 8
+faqQuestions:
+  - question: "Why does a tool get held during setup as well as the run?"
+    answer: "Because the fixture is physically bolted on for the whole operation. In EDGEBIC by User Solutions there is no attention fraction for tools the way there is for operators, since a fixture cannot be half mounted. Every allocated machine-hour books exactly one tool-hour at the full rate, setup and run alike, so a five-hour operation consumes five hours of that tool's pool no matter how those hours divide between preparing and cutting."
+  - question: "How is a tool different from an operator in the schedule?"
+    answer: "An operator has a roster, a certification, and an attention fraction that says how much of a person the operation consumes, so one operator can tend several lights-out machines. A tool has none of that. It has a quantity and its absences, and it books at one hour per machine-hour with no scaling. The human knobs describe how much of a person is used; none of them transfer to an object clamped to a table."
+  - question: "Does a lights-out overnight run release the fixture?"
+    answer: "No. This is the case that surprises people. An unattended run books zero operator time because nobody is standing there, but the fixture is still mounted on the machine and unavailable to anything else. The tool books its full hours through the night, which is correct: the part is still in it. Lights-out saves labor, not tooling."
+qaQuestions:
+  - question: "Our operator model has a step at zero attention because it runs unattended. Does that mean the tool constraint is skipped too?"
+    answer: "No, and the two behave differently on purpose. The labor constraint has an escape: a step with no setup time and an attention fraction of zero consumes no person at all, so the scheduler skips the operator check entirely for it. That reflects reality, because there genuinely is nobody there.\n\nA tool has no equivalent escape, because there is no way for a fixture to be zero-mounted. A step that requires a tool carries that constraint on every check, unconditionally, including a step with zero setup and zero operator attention. If you have modeled a lights-out operation and expected the fixture to free up along with the operator, the plan is right and the expectation was wrong: the fixture is on the machine all night."
+  - question: "We move the part off the fixture partway through a long operation. Can we model that?"
+    answer: "Not within one step, and the modeling answer is to split the step. The tool is held for the entire duration of any step that names it, so a six-hour operation that only needs the fixture for the first two hours will book six fixture-hours if it carries the requirement, which overstates contention.\n\nSplit it into two routing steps: a two-hour step that requires the tool and a four-hour step that does not. The machine hours are unchanged, the fixture now books two hours instead of six, and the freed four hours become genuinely available to other jobs. This is the same reasoning that says only the steps that physically hold a fixture should name it."
+---
+
+**A tool is held at the full rate for every hour of the operation, setup and run alike, because a fixture cannot be partly mounted.** Every allocated machine-hour books exactly one hour from the tool's pool, with no scaling and no exemption. That is the sharpest difference between the tooling constraint and the labor constraint, and it is worth understanding, because the two look similar and behave differently in the one case that matters most.
+
+EDGEBIC by User Solutions treats machines, people, and tools as three independent dimensions on a routing step. The [tool constraint](/blog/the-tool-constraint-the-third-thing-an-operation-needs) is the third of them, and the newest, and it is the simplest of the three by a wide margin.
+
+## The one-to-one rule
+
+The whole booking model fits in a sentence: **one machine-hour consumes one tool-hour.**
+
+There is no percentage, no factor, no distinction between the setup portion and the run portion. A five-hour operation that carries a tool requirement books five hours from that tool's pool. Two of those hours might be setup and three might be cutting, and the tool does not care, because it was clamped to the table for all five.
+
+Compare that with the two other dimensions on the same step:
+
+| Dimension | What it books | Can the rate vary? |
+|---|---|---|
+| Machine | Hours of that work center's capacity | Yes, through instances, utilization, and efficiency |
+| Operator | Hours of a qualified person's time | Yes, through an attention fraction: setup at full rate, run scaled |
+| Tool | Hours of the tool's pool | No. Always one for one |
+
+The tool column is short because a tool is a simple object. It has a count and its absences, and that is the model.
+
+## Why an operator has an attention fraction and a tool does not
+
+The labor constraint exists to answer a genuinely variable question: how much of a person does this operation consume?
+
+The honest answer is often "less than all of them." A modern CNC needs a skilled operator for the setup and then very little for the nine hours it runs unattended overnight. One person can start seven such machines in a shift. The attention fraction captures that: setup books a whole person, and the run books whatever fraction of a person the operation actually needs, which can legitimately be zero.
+
+None of that transfers to a fixture. There is no sense in which a fixture is 30 percent mounted, or in which one fixture tends two machines the way one operator does. It is bolted to a table, holding a part, and it is unavailable to everything else in the plant until it comes off. So the tool model has no attention fraction, and it has no roster and no named-unit pinning either, for the same reason: those are all descriptions of how a *person* participates.
+
+## The case where the two diverge: lights-out
+
+This is the practical payoff of the distinction, and the thing most worth taking away.
+
+Consider a nine-hour unattended run. Setup takes one hour with an operator present. The remaining eight hours run overnight with nobody in the building. The part is held in the shared fixture the whole time.
+
+- **The operator books one hour.** The setup. The night hours consume no person, correctly, and that same operator is free to set up other machines.
+- **The tool books nine hours.** All of it. The fixture is on the machine from the moment setup starts until the part comes out in the morning.
+
+If you have modeled lights-out running and expected the fixture to become available along with the operator, the plan is right and the expectation is wrong. Lights-out buys you labor, not tooling. A shop that runs unattended overnight to stretch its people can be surprised to find that its fixtures did not stretch at all, and that they are now the tighter constraint precisely because the labor constraint was relieved.
+
+## There is no zero-involvement escape
+
+The labor constraint has a documented exemption: a step with no setup time and an attention fraction of zero genuinely involves no person, so the scheduler skips the operator check for it entirely. There is nothing to check.
+
+The tool constraint has no such exemption, and this is deliberate. A step that names a tool carries that constraint on every check, unconditionally, including a step with zero setup and zero operator attention. There is no configuration that makes a required tool stop being required.
+
+That means the two constraints can disagree about the same step, and when they do, the tool is the one still saying no. A step with a skill and a tool, zero setup, and zero attention will skip the operator gate and honor the tool gate. It sounds like an edge case; it is exactly the description of an unattended run on a shared fixture, which is a Tuesday in a lot of shops.
+
+## The modeling consequence: name the steps that hold it
+
+Because the booking is one for one across the whole step, the accuracy of your tooling model comes down to one decision: **which steps name the tool.**
+
+Get it wrong in one direction, by naming only the first of three consecutive fixtured operations, and the plan believes the fixture is free while it is still holding a part. Contention is understated and the schedule quietly over-promises.
+
+Get it wrong in the other direction, by putting the requirement on a six-hour step that only needs the fixture for two, and the plan books four hours of a scarce fixture that was actually available. Contention is overstated and work slides for no reason.
+
+The fix for the second case is to split the step: a short step that requires the tool and a longer one that does not. The machine hours are unchanged and the fixture's pool is told the truth. Adding a step is covered in [how to add a step to an existing routing](/blog/how-to-add-a-step-to-an-existing-routing-in-edgebic).
+
+## What this buys you
+
+The one-to-one rule is what makes tool contention arithmetic rather than judgment. A day's pool is quantity multiplied by working hours; a day's demand is the sum of the machine hours booked by every step naming that tool. Both sides are plain numbers, and when demand exceeds supply the schedule moves work instead of hoping.
+
+It is also why the constraint is cheap to trust. There is no fraction to tune, no roster to maintain, and no attention model to argue about. You tell EDGEBIC how many you own and when they are away, and it will not sell more of them than exist.
+
+Over 35-plus years, User Solutions has learned that the constraints worth modeling are the ones with a simple, honest rule. The rest of the placement pipeline is in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and how the labor side scales is in [how EDGEBIC books operator hours](/blog/how-edgebic-books-operator-hours). See both dimensions on one step in [EDGEBIC](/edgebic).
+
+<Accordion title="Why does a tool get held during setup as well as the run?">
+Because the fixture is physically bolted on for the whole operation. In EDGEBIC by User Solutions there is no attention fraction for tools the way there is for operators, since a fixture cannot be half mounted. Every allocated machine-hour books exactly one tool-hour at the full rate, setup and run alike, so a five-hour operation consumes five hours of that tool's pool no matter how those hours divide between preparing and cutting.
+</Accordion>
+
+<Accordion title="How is a tool different from an operator in the schedule?">
+An operator has a roster, a certification, and an attention fraction that says how much of a person the operation consumes, so one operator can tend several lights-out machines. A tool has none of that. It has a quantity and its absences, and it books at one hour per machine-hour with no scaling. The human knobs describe how much of a person is used; none of them transfer to an object clamped to a table.
+</Accordion>
+
+<Accordion title="Does a lights-out overnight run release the fixture?">
+No. This is the case that surprises people. An unattended run books zero operator time because nobody is standing there, but the fixture is still mounted on the machine and unavailable to anything else. The tool books its full hours through the night, which is correct: the part is still in it. Lights-out saves labor, not tooling.
+</Accordion>

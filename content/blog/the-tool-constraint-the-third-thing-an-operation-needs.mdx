@@ -1,0 +1,112 @@
+---
+title: "The Tool Constraint: The Third Thing an Operation Needs"
+description: "A tool constraint models the fixture, mold, or gauge shared across every machine, so the schedule sees the one clash a normal Gantt cannot show you."
+published: 2026-08-17T12:00:00.000Z
+modified: 2026-08-17T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - tool constraint scheduling
+  - shared fixture scheduling
+  - secondary resource constraint
+  - tooling capacity manufacturing
+  - fixture contention schedule
+  - mold and die scheduling constraint
+targetPhrase: "tool constraint scheduling"
+wordCount: 1500
+readingTime: 8
+faqQuestions:
+  - question: "What is a tool constraint in production scheduling?"
+    answer: "A tool constraint is the third thing an operation can need after a machine and a person: the fixture, mold, jig, die, or gauge that must be physically mounted before the operation can run. In EDGEBIC by User Solutions a tool is a plant-wide pool with a quantity, not a resource owned by one machine, so every operation that requires it draws from the same pool no matter which work center it runs on. That shared pool is what turns a fixture into a real scheduling limit."
+  - question: "Why can a normal Gantt not show a shared fixture clash?"
+    answer: "Because a Gantt draws capacity machine by machine, and a shared fixture belongs to no single machine. Look at Monday and both mills show free hours, which is true of each machine individually. What the picture cannot say is that the two jobs need the same fixture and there is only one of it. The clash lives in a dimension the machine lanes do not represent, so it stays invisible until the floor discovers it."
+  - question: "Do I have to configure tools for EDGEBIC to schedule?"
+    answer: "No. The tool constraint is strictly opt-in, step by step. With no tools created, or on any routing step whose required tool is set to none, EDGEBIC schedules exactly as it did before. Nothing about existing plans changes until you create a tool and point a routing step at it, which is what makes the feature safe to adopt on one operation at a time."
+qaQuestions:
+  - question: "We already model our big fixture as a work center that the routing passes through. Is that not the same thing?"
+    answer: "It gets you a capacity ceiling, but it costs you accuracy in two places. A work center is a machine: it has shifts, instances, a calendar, and its own capacity bucket, and every job that routes through it consumes an extra step in the routing, which distorts step counts, lead-time reporting, and the routing diagram. You also have to keep that pseudo-machine's calendar in step with the real machines, or the fixture becomes available on days the mills are closed.\n\nA tool record carries only what a tool actually has: a quantity and its absences. It attaches to the step that mounts it rather than adding a step, and it is drawn from by every work center at once without you wiring anything. If you already run the work-center workaround it will keep working, but the tool record is the model that matches the object."
+  - question: "How do I decide whether something is a tool or just part of a machine's capacity?"
+    answer: "Ask whether it travels. A jig that lives bolted to one machine and never moves is not a scheduling constraint at all: that machine's own capacity already models it perfectly, and adding a tool record only adds maintenance. The moment an asset is shared, so a job on machine A can deny it to a job on machine B, the machine's capacity bucket stops being able to describe it and a tool record earns its keep.\n\nThe practical test is a question to the floor: has anyone ever waited on this thing while their machine sat idle? If yes, it is a tool. If it has never once been the reason work stopped, leave it out of the model."
+---
+
+**A tool constraint models the fixture, mold, jig, die, or gauge an operation must physically mount, as a plant-wide pool shared across every machine rather than capacity belonging to one.** That single modeling choice is the entire point. The expensive five-axis fixture that fits three mills is one object, and it can be bolted to exactly one of them at a time. EDGEBIC by User Solutions treats it that way, so a plan can never put two fixture jobs on two machines in the same window and print clean.
+
+An operation can need three different things before it can start. The machine has always been scheduled. The person arrived with [operator skills and rosters](/blog/how-to-set-up-operators-skills-and-rosters-in-edgebic). The tool is the third, and it behaves unlike either of the other two.
+
+## What a tool is, and what it deliberately is not
+
+A tool is a scarce shared physical asset with two properties and nothing else: how many identical units you own, and when it is away. That is the whole model.
+
+It is **not** attached to a work center. You never tell EDGEBIC which machines a fixture fits. The fit is expressed entirely by which routing steps require it, so if only the two mill steps name the fixture, the scheduler will never plan it anywhere else. Recording the physical fit in the tool's notes field is for your planners, not for the engine.
+
+That absence is not an omission. It is the model. Because a tool belongs to no machine, its scarcity cannot be expressed in any machine's capacity bucket, and putting it in one would defeat the purpose.
+
+| A machine has | A tool has |
+|---|---|
+| Shifts and a calendar | A quantity |
+| Instances | Downtime ranges |
+| Utilization and efficiency dials | Nothing else |
+| Its own capacity bucket per work center | One pool drawn on by every work center |
+
+## The clash a machine-by-machine view cannot show
+
+Consider two mills, one 8-hour day shift each, and two five-hour jobs, one on each mill. Sixteen machine-hours are available Monday and ten hours of work needs doing. Both jobs schedule Monday 08:00 to 13:00 and both machines look comfortably free all afternoon.
+
+Every number in that plan is correct, and the plan is fiction. Both steps mount the same fixture, and there is one of it. One of those jobs is going to be a machine, an operator, a work order, and no fixture.
+
+This is the defining property of the tool dimension. Capacity questions are normally answered per machine: how much can *this* work center do. A fixture's scarcity is invisible from any single machine's ledger precisely because the whole point of it is that it moves between them. Mill-1 sees eight free hours. Mill-2 sees eight free hours. Both statements are true and the plan is still impossible.
+
+## How the constraint changes the answer
+
+When the fixture is modeled as a tool, the two mills stop being independent. The fixture has a pool of hours for each day and shift, and every allocated machine-hour books exactly one tool-hour from it. When the pool runs out, the next operation is simply not offered that window, even though its machine is standing empty.
+
+With one fixture and an eight-hour day shift, the pool is eight fixture-hours on Monday. The first job takes five. The second job gets the remaining three on Monday and its last two hours the next morning. Its total work is unchanged at five hours. Only *when* it happens moved.
+
+That is the rule worth memorizing: **a tool constraint changes when, never how much.** No hours appear, none vanish. Work relocates to windows where the fixture is genuinely available. The whole discipline of [finite capacity](/blog/finite-vs-infinite-capacity-in-practice) applied to an object that is not a machine.
+
+## Three dimensions on one step, independently keyed
+
+A routing step can name a work center or a machine pool, a required skill, and a required tool. They compose without interfering, because each is exhausted separately and all three are checked in the same window.
+
+- The **work center** or pool answers which machine.
+- The **required skill** answers which human.
+- The **required tool** answers which fixture.
+
+The scheduler needs room in all three before it will place the operation. A step may need any combination of them, including none. The tool picker is not gated on the skill field, unlike the operator pin, which unlocks only once a skill is chosen. Machines, people, and tools are three genuinely independent questions.
+
+When a step targets a machine pool, the pool's member selection already accounts for the tool. A machine whose windows the fixture can never cover loses at selection time rather than being chosen and then failing.
+
+## Where a tool requirement is visible today
+
+Worth being precise about, because the answer is narrower than you might assume.
+
+| Surface | What you see |
+|---|---|
+| **Daily Hours** then the **Tools** tab | The catalog itself. Each tool in the list with its quantity, inactive ones flagged, and each tool's downtime ranges |
+| **BOR** tab, **Basic Information** section | The step's **Required tool:** picker, with a hint icon explaining the pool |
+| **BOR Designer** properties panel | The same setting, labeled **Required Tool**, on ordinary work-center nodes |
+| Scheduling run messages | A failure names the tool and how to fix it; the run's diagnostic log records every booking and every window skipped for an empty pool |
+
+Tool-required operations do **not** carry a marker on the Schedule View Gantt or a column in the Job View, the way skill-required operations do. There is no tool equivalent of a dispatch list or a resource calendar lens. To see where a fixture's hours went, read the routing steps that require it and the jobs scheduled against those steps, or read the tooling lines in the run's diagnostic log.
+
+That gap is worth planning around rather than being surprised by. It also makes the next post in this series useful: an operation sliding for no visible reason is a normal symptom of a healthy tool constraint, and knowing to look at tooling saves the hour you would otherwise spend on the machine's calendar.
+
+## When a tool record earns its keep
+
+Reach for one only when the asset genuinely travels between machines. If a jig lives permanently on one machine, it is not a scheduling constraint: that machine's own capacity already models it, and a tool record adds maintenance for nothing. Tools pay for themselves when they are shared, and the clearest signal is a floor memory of someone waiting on a fixture while their machine stood idle.
+
+Over 35-plus years, User Solutions has watched shops discover that their real bottleneck was never a machine. The full placement pipeline is in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide), and you can model your own shared fixture and read the contention in the dates in [EDGEBIC](/edgebic).
+
+<Accordion title="What is a tool constraint in production scheduling?">
+A tool constraint is the third thing an operation can need after a machine and a person: the fixture, mold, jig, die, or gauge that must be physically mounted before the operation can run. In EDGEBIC by User Solutions a tool is a plant-wide pool with a quantity, not a resource owned by one machine, so every operation that requires it draws from the same pool no matter which work center it runs on. That shared pool is what turns a fixture into a real scheduling limit.
+</Accordion>
+
+<Accordion title="Why can a normal Gantt not show a shared fixture clash?">
+Because a Gantt draws capacity machine by machine, and a shared fixture belongs to no single machine. Look at Monday and both mills show free hours, which is true of each machine individually. What the picture cannot say is that the two jobs need the same fixture and there is only one of it. The clash lives in a dimension the machine lanes do not represent, so it stays invisible until the floor discovers it.
+</Accordion>
+
+<Accordion title="Do I have to configure tools for EDGEBIC to schedule?">
+No. The tool constraint is strictly opt-in, step by step. With no tools created, or on any routing step whose required tool is set to none, EDGEBIC schedules exactly as it did before. Nothing about existing plans changes until you create a tool and point a routing step at it, which is what makes the feature safe to adopt on one operation at a time.
+</Accordion>
