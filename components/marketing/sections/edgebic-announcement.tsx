@@ -39,7 +39,7 @@ export function EdgebicAnnouncement(): React.JSX.Element {
       <div className="container mx-auto max-w-7xl px-4">
         <div className="max-w-3xl">
           <p className="mb-3 text-sm font-semibold tracking-wide text-cyan-400">
-            Introducing our next generation
+            The current generation of Resource Manager DB
           </p>
           <h2
             id="edgebic-announcement-heading"
@@ -48,9 +48,10 @@ export function EdgebicAnnouncement(): React.JSX.Element {
             EDGEBIC: 35 years of scheduling, rebuilt as one platform
           </h2>
           <p className="text-lg leading-relaxed text-slate-300">
-            The successor to RMDB and EDGEBI keeps the finite capacity engine
-            that has planned work for GE, Cummins, BAE Systems and the US Navy,
-            and puts a modern planning surface on top of it.
+            EDGEBIC keeps the finite capacity engine that has planned work for
+            GE, Cummins, BAE Systems and the US Navy, and puts a modern
+            planning surface on top of it. Two editions: scheduling on its own,
+            or scheduling with the material side.
           </p>
         </div>
 
@@ -73,6 +74,12 @@ export function EdgebicAnnouncement(): React.JSX.Element {
             className="inline-flex items-center rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
           >
             Discover EDGEBIC
+          </Link>
+          <Link
+            href={Routes.CompareProducts}
+            className="font-semibold text-cyan-400 transition-colors hover:text-cyan-300"
+          >
+            Compare the two editions
           </Link>
           <Link
             href={Routes.RmdbToEdgebic}

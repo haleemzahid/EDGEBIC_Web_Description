@@ -9,105 +9,89 @@ import { GridSection } from '@/components/marketing/fragments/grid-section';
 import { Button } from '@/components/ui/button';
 
 export default function CompareProductsPage(): React.JSX.Element {
-  // Ordered so the shared engine comes first and the capabilities that only
-  // arrive further up the line come last. Every row is sourced from the
-  // per-product feature lists on the production planning solutions page.
+  // Scheduling capabilities first, since both editions share them, then the
+  // material and inventory side that only Complete adds. A reader should be
+  // able to find the dividing line without reading every row.
   const features = [
     'Finite Capacity Scheduling',
-    'Forward & Reverse Scheduling',
+    'Forward & Backward Scheduling',
+    'Schedule Optimization',
+    'Multi-Shift Capacity, Holidays & Downtime',
     'Routings, Setup & Cycle Times',
-    'Queue & Move Times',
-    'Runs Inside Excel',
-    'SQL Server Database',
-    'Multi-user with Security',
-    'MRP, BOM & Material Planning',
+    'Sequence-Dependent Setup',
+    'Work Center Groups & Alternates',
+    'Planner View (Jobs & Machines Together)',
+    'Drag & Drop Schedule Editing',
+    'One Live Plan Across Workstations',
     'Tracking Actuals from the Floor',
     'ERP Integration (Import/Export)',
-    'Drag & Drop Schedule Editing',
-    'Business Intelligence Dashboards',
-    'Schedule Optimization',
-    'Planner View (Jobs & Machines Together)',
-    'One Live Plan Across Workstations'
+    'Multi-Level MRP & Dependent Demand',
+    'Inventory Ledger & Projected Balance',
+    'Master Production Schedule',
+    'Purchasing, Suppliers & Receiving',
+    'Material Pegging',
+    'Sales Orders & Firm Demand'
   ];
 
-  // The line in the order it was actually built: the spreadsheet, then the
-  // database, then the platform. The previous version of this table listed
-  // EDGEBI twice (once as a $1,000 starter linking to Job Scheduler Lite with
-  // every feature marked false) and did not mention EDGEBIC at all.
+  // Two editions of one product. Everything scheduling is shared; Complete adds
+  // the material and inventory side. Legacy products (RMX, RMDB, EDGEBI) keep
+  // their pages for the customers running them, but they are no longer sold and
+  // so are not compared here.
   const products = [
     {
-      name: 'Resource Manager for Excel',
-      tier: 'Excel',
-      price: '$1,200',
-      description: 'Scheduling inside the spreadsheet you already run',
-      image: '/images/Edgebic/2022-10/starter.png',
-      link: '/resource-manager-for-excel-2',
-      features: {
-        'Finite Capacity Scheduling': true,
-        'Forward & Reverse Scheduling': true,
-        'Routings, Setup & Cycle Times': true,
-        'Queue & Move Times': true,
-        'Runs Inside Excel': true,
-        'SQL Server Database': false,
-        'Multi-user with Security': false,
-        'MRP, BOM & Material Planning': false,
-        'Tracking Actuals from the Floor': false,
-        'ERP Integration (Import/Export)': false,
-        'Drag & Drop Schedule Editing': false,
-        'Business Intelligence Dashboards': false,
-        'Schedule Optimization': false,
-        'Planner View (Jobs & Machines Together)': false,
-        'One Live Plan Across Workstations': false
-      }
-    },
-    {
-      name: 'Resource Manager DB with EDGEBI',
-      tier: 'Database',
-      price: '$4,000+',
-      description: 'A SQL database, multiple users, and business intelligence',
+      name: 'EDGEBIC APS',
+      tier: 'Scheduling',
+      price: '$25,000',
+      description: 'A plan the shop can actually run',
       image: '/images/Edgebic/2022-11/advanced-1.png',
-      link: '/resource-manager-db-2',
+      link: '/edgebic',
       features: {
         'Finite Capacity Scheduling': true,
-        'Forward & Reverse Scheduling': true,
+        'Forward & Backward Scheduling': true,
+        'Schedule Optimization': true,
+        'Multi-Shift Capacity, Holidays & Downtime': true,
         'Routings, Setup & Cycle Times': true,
-        'Queue & Move Times': true,
-        'Runs Inside Excel': false,
-        'SQL Server Database': true,
-        'Multi-user with Security': true,
-        'MRP, BOM & Material Planning': true,
+        'Sequence-Dependent Setup': true,
+        'Work Center Groups & Alternates': true,
+        'Planner View (Jobs & Machines Together)': true,
+        'Drag & Drop Schedule Editing': true,
+        'One Live Plan Across Workstations': true,
         'Tracking Actuals from the Floor': true,
         'ERP Integration (Import/Export)': true,
-        'Drag & Drop Schedule Editing': true,
-        'Business Intelligence Dashboards': true,
-        'Schedule Optimization': false,
-        'Planner View (Jobs & Machines Together)': false,
-        'One Live Plan Across Workstations': false
+        'Multi-Level MRP & Dependent Demand': false,
+        'Inventory Ledger & Projected Balance': false,
+        'Master Production Schedule': false,
+        'Purchasing, Suppliers & Receiving': false,
+        'Material Pegging': false,
+        'Sales Orders & Firm Demand': false
       }
     },
     {
-      name: 'EDGEBIC',
-      tier: 'Platform',
-      price: '$25,000+',
-      description: 'Advanced planning and scheduling, rebuilt as one platform',
+      name: 'EDGEBIC Complete',
+      tier: 'Planning & Materials',
+      price: '$35,000',
+      description: 'The whole planning stack, one system',
       image: '/images/Edgebic/2022-11/Premium-1.png',
       link: '/edgebic',
       features: {
         'Finite Capacity Scheduling': true,
-        'Forward & Reverse Scheduling': true,
+        'Forward & Backward Scheduling': true,
+        'Schedule Optimization': true,
+        'Multi-Shift Capacity, Holidays & Downtime': true,
         'Routings, Setup & Cycle Times': true,
-        'Queue & Move Times': true,
-        'Runs Inside Excel': false,
-        'SQL Server Database': true,
-        'Multi-user with Security': true,
-        'MRP, BOM & Material Planning': true,
+        'Sequence-Dependent Setup': true,
+        'Work Center Groups & Alternates': true,
+        'Planner View (Jobs & Machines Together)': true,
+        'Drag & Drop Schedule Editing': true,
+        'One Live Plan Across Workstations': true,
         'Tracking Actuals from the Floor': true,
         'ERP Integration (Import/Export)': true,
-        'Drag & Drop Schedule Editing': true,
-        'Business Intelligence Dashboards': true,
-        'Schedule Optimization': true,
-        'Planner View (Jobs & Machines Together)': true,
-        'One Live Plan Across Workstations': true
+        'Multi-Level MRP & Dependent Demand': true,
+        'Inventory Ledger & Projected Balance': true,
+        'Master Production Schedule': true,
+        'Purchasing, Suppliers & Receiving': true,
+        'Material Pegging': true,
+        'Sales Orders & Firm Demand': true
       }
     }
   ];
@@ -161,13 +145,13 @@ export default function CompareProductsPage(): React.JSX.Element {
         <div className="container mx-auto max-w-7xl px-4">
           <div className="mb-6 text-center">
             <h2 className="mb-4 text-3xl font-bold md:text-4xl">
-              One Engine, Three Generations
+              Two Editions, One Engine
             </h2>
             <p className="mx-auto max-w-3xl text-xl text-muted-foreground">
-              The same finite capacity engine runs through all three. Start in
-              Excel, move to the database when you outgrow it, and step up to
-              EDGEBIC when the plan needs optimizing and sharing across the
-              floor. Your routings come with you.
+              Both editions share the same finite capacity engine and every
+              scheduling capability. The difference is the material side: take
+              APS to plan and schedule what you already know you need to build,
+              or Complete to work out what to build and what to buy as well.
             </p>
           </div>
 
@@ -252,21 +236,25 @@ export default function CompareProductsPage(): React.JSX.Element {
 
           <div className="mx-auto mt-8 max-w-3xl space-y-2 text-sm leading-relaxed text-muted-foreground">
             <p>
-              <strong className="text-slate-900">
-                Resource Manager for Excel
-              </strong>{' '}
-              is $1,200 for a single user, or $2,400 multi-user, where one
-              person holds edit control and the others view.
+              <strong className="text-slate-900">EDGEBIC APS</strong> is $25,000
+              and covers finite capacity scheduling and optimization.
             </p>
             <p>
-              <strong className="text-slate-900">Resource Manager DB</strong>{' '}
-              starts at $4,000. The EDGEBI Suite runs on top of RMDB and is
-              priced separately from $5,000.
+              <strong className="text-slate-900">EDGEBIC Complete</strong> is
+              $35,000 and adds MRP, inventory, purchasing and material pegging
+              on top of everything in APS.
             </p>
             <p>
-              <strong className="text-slate-900">EDGEBIC</strong> is $25,000 for
-              advanced planning and scheduling. With optimization, MES,
-              inventory and material pegging it is $35,000.
+              EDGEBIC is the current generation of Resource Manager DB. If you
+              run RMDB, EDGEBI or Resource Manager for Excel today, your
+              routings and work centers come with you.{' '}
+              <Link
+                href="/rmdb-to-edgebic"
+                className="font-semibold text-cyan-700 underline-offset-4 hover:underline"
+              >
+                See what changes when you upgrade
+              </Link>
+              .
             </p>
           </div>
         </div>
