@@ -8,7 +8,7 @@
 > [EDGEBIC-BLOG-TAXONOMY.md](EDGEBIC-BLOG-TAXONOMY.md) (the 2,120-post plan + voice
 > standards), and [EDGEBIC-IMAGE-PLAN.md](EDGEBIC-IMAGE-PLAN.md) (screenshots).
 
-**Last updated**: 2026-08-09 · **Branch**: `feature/edgebic-promotion` (pushed to origin; not merged to main)
+**Last updated**: 2026-08-23 · **Branch**: `feature/edgebic-promotion` (1 unpushed commit; ~1,300 uncommitted files; not merged to main)
 
 > 🔴 **SOURCE-RELIABILITY RULE (established flight 12, after three defects traced to it).**
 > The FCP-Book's **R-series recipe appendices contradict the UserGuide** in several places,
@@ -79,42 +79,60 @@
 - [ ] GSC: create page groups "EDGEBIC pages", "Legacy products", "Blog" — record baseline clicks/impressions here
 - [ ] Submit updated sitemap in GSC
 
-## BLOG PRODUCTION SCOREBOARD (target 2,120 — update counts per publishing batch)
+## BLOG PRODUCTION SCOREBOARD - CLOSED 2026-08-23
 
-| Cluster | Slug | Target | Written | Published | Indexed |
-|---|---|---|---|---|---|
-| 17 | edgebic-platform | 180 | 177 | 0 | 0 |
-| 18 | edgebic-scheduling-concepts | 200 | 100 | 0 | 0 | ⛔ mined out |
-| 19 | edgebic-how-to | 500 | 336 | 0 | 0 | 🟡 ~30 real remaining (3 lanes swept) |
-| 20 | edgebic-walkthroughs | 50 | 50 | 0 | 0 |
-| 21 | edgebic-erp-integration | 150 | 149 | 0 | 0 |
-| 22 | edgebic-industry | 110 | 116 | 0 | 0 | ✅ over target |
-| 23 | edgebic-glossary | 350 | 349 | 0 | 0 | 🟡 ~25 real remaining, thinning |
-| 24 | edgebic-troubleshooting | 120 | 120 | 0 | 0 | ✅ complete |
-| 25 | edgebic-outcomes | 100 | 99 | 0 | 0 |
-| 26 | edgebic-optimization | 60 | 54 | 0 | 0 |
-| 27 | edgebic-visual-scheduling | 40 | 44 | 0 | 0 | ✅ over target |
-| 28 | edgebic-shop-floor | 60 | 59 | 0 | 0 |
-| 29 | edgebic-quoting | 40 | 38 | 0 | 0 |
-| 30 | edgebic-planning | 80 | 50 | 0 | 0 | ⛔ mined out |
-| 31 | edgebic-migration | 40 | 39 | 0 | 0 |
-| 32 | edgebic-admin | 40 | 40 | 0 | 0 | ✅ complete |
-| | **TOTAL** | **2,120** | **1,820** | **0** | **0** |
+> ⛔ **THE WRITING PROGRAM IS CLOSED.** The 2,120 target is retired. Do not open a new
+> writing flight. See `EDGEBIC-RESUME-HERE.md` §0 for the closure proof.
 
-**Nominal gap is 426; realistic remaining is ~107.** Six clusters are complete, over
-target, or proven exhausted by procedure census rather than guessed. Real runway:
-how-to ~30, glossary ~25, optimization ~5 (thinner than earlier estimates — 49 posts
-already cover most of UserGuide 16), shop-floor ~11, outcomes ~10, quoting ~9,
-erp-integration ~8, migration ~2, walkthroughs ~1. **Do not pad to hit 2,120** — the
-documented source material does not contain 2,120 non-duplicative posts.
+| Cluster | Slug | Orig. target | Written | Published | Indexed | Status |
+|---|---|---|---|---|---|---|
+| 17 | edgebic-platform | 180 | 182 | 0 | 0 | over target |
+| 18 | edgebic-scheduling-concepts | 200 | 106 | 0 | 0 | CLOSED, proven 3x |
+| 19 | edgebic-how-to | 500 | 352 | 0 | 0 | CLOSED, 151-procedure sweep |
+| 20 | edgebic-walkthroughs | 50 | 50 | 0 | 0 | met |
+| 21 | edgebic-erp-integration | 150 | 151 | 0 | 0 | met |
+| 22 | edgebic-industry | 110 | 116 | 0 | 0 | over target |
+| 23 | edgebic-glossary | 350 | 351 | 0 | 0 | CLOSED |
+| 24 | edgebic-troubleshooting | 120 | 123 | 0 | 0 | over target |
+| 25 | edgebic-outcomes | 100 | 100 | 0 | 0 | met |
+| 26 | edgebic-optimization | 60 | 54 | 0 | 0 | CLOSED, UG16 exhausted |
+| 27 | edgebic-visual-scheduling | 40 | 50 | 0 | 0 | over target |
+| 28 | edgebic-shop-floor | 60 | 64 | 0 | 0 | SATURATED, 245 atoms tested |
+| 29 | edgebic-quoting | 40 | 39 | 0 | 0 | 1 slot declined (undocumented button) |
+| 30 | edgebic-planning | 80 | 62 | 0 | 0 | CLOSED |
+| 31 | edgebic-migration | 40 | 41 | 0 | 0 | over target |
+| 32 | edgebic-admin | 40 | 43 | 0 | 0 | over target |
+| | **TOTAL** | ~~2,120~~ | **1,884** | **0** | **0** | **CLOSED** |
 
-**"Written" count is derivable from disk** (don't trust memory, count files):
-PowerShell: `Select-String -Path content/blog/*.mdx -Pattern "cluster: 'edgebic-" | Group-Object { ($_.Line -split "'")[1] } | Sort-Object Name | Format-Table Name, Count`
+**Nominal gap was 246; real gap was 4, all in UserGuide 36.** All four were written.
+Chapters 31-37 postdate the corpus (Aug 3 vs Jul 16), which is why earlier sweeps of
+UG01-30 missed them. **When the UserGuide gains chapters, sweep only those chapters.**
+
+### Structural health (verified 2026-08-23, all from disk)
+
+| Metric | Before | After |
+|---|---|---|
+| Orphaned posts (zero inbound links) | 358 | **0** |
+| Broken internal `/blog/` links | 82 | **0** |
+| Posts with no `pillarSlug` | 537 | **0** |
+| Em dashes corpus-wide | 9,829 | **0** |
+| Clusters without a hub post | 3 | **0** |
+| Corpus total | 2,404 | **2,418** (1,884 EDGEBIC) |
+
+Hubs created: `edgebic-erp-integration-guide`, `edgebic-migration-guide`,
+`edgebic-glossary-index`. The industry pillar now links all 115 verticals (it linked 0).
+
+**Counts are derivable from disk - never trust a number in this file without re-deriving:**
+```bash
+cd content/blog && grep -h -oE "^cluster:\s*'?edgebic-[a-z-]+" *.mdx \
+  | sed "s|cluster:\s*'\?||" | sort | uniq -c | sort -rn
+```
 
 ## WAVE LOG (append one row per completed batch)
 
 | Date | Wave | Posts added | Clusters touched | Commit | Notes |
 |---|---|---|---|---|---|
+| 2026-08-23 | 18 / closure + structural | 14 | how-to (4), planning (2), glossary (1), erp-integration (1), scheduling-concepts (1), outcomes (1), quoting (1), migration (1), plus 3 new cluster HUBS | uncommitted | **THE CLOSURE FLIGHT. The writing programme is now formally closed; do not open another.** 15 agents ran a closure proof rather than a writing flight: all 612 UserGuide headings extracted, 302 boilerplate stripped, the remaining 310 teachable units scored against the corpus, and all 151 explicit "How to:" procedures mapped to distinguishing regexes and swept. 29 survived title screening; 26 resolved to real covering posts. **246 nominal slots reduced to 4 real ones, ALL in UserGuide 36.** ROOT CAUSE OF EVERY RESIDUAL GAP: chapters 31-37 are dated Aug 3, the rest Jul 16 - they postdate the corpus, and earlier sweeps only covered UG01-30. RULE FOR NEXT TIME: when the UserGuide gains chapters, sweep ONLY those chapters. Optimization, shop-floor and platform lanes returned honest zeros with fresh evidence. **STRUCTURAL WORK (the larger half): orphans 358 to 0, broken internal links 82 to 0, posts with no pillarSlug 537 to 0, em dashes 9,829 to 0, clusters without a hub 3 to 0.** Created `edgebic-erp-integration-guide`, `edgebic-migration-guide`, `edgebic-glossary-index`; wired pillarSlug into 540 files; the industry pillar now links all 115 verticals (it linked 0). **CONTENT DEFECTS CLOSED:** yield/scrap ruled from UserGuide 31 (inflation ships on replenishment SUGGESTIONS only, never a routing step or hand-entered order) and 6 posts corrected, 4 of them newly discovered; 9 RMDB-era posts carrying BAPI/RESTlet/SuiteTalk connector overclaims reframed (several were in FAQ answers feeding JSON-LD); the three flight-13 mid-check files verified, only 1 was actually wrong. **Q9 RESOLVED and the premise was mostly false:** UserGuide 36 documents a shipped Integration module (watched file OR read-only external SQL query, on an interval, through an existing mask, with run history), so the ODBC/direct-database thread is continuity, not a regression; only the API paths do not carry forward. **SEO/SCHEMA:** Organization JSON-LD gained a stable @id, legalName, address, contactPoint, knowsAbout, awards and G2/Capterra sameAs; SoftwareApplication `operatingSystem` corrected from 'Web' to Windows; both EDGEBIC editions now emit real prices; robots.ts names 21 AI crawler agents explicitly; llms.txt and llms-full.txt rewritten EDGEBIC-first with pricing, and 211 URLs normalised off the redirecting www host. **METHOD WARNINGS FOR FUTURE SESSIONS:** (1) a crashed `grep -rliF` loop returned FALSE ZEROS for every subsequent phrase, nearly shipping a duplicate - sanity-check any sweep against a phrase known to exist before trusting a zero; (2) bulk regex is the dominant defect source - a `catalogue`->`catalog` pass mangled `catalogued` into `catalogd`, and a bare em-dash pass created false compounds (`conflict-but`) inside `description:` and FAQ frontmatter; both were caught only by a dedicated read-only verification agent, which was worth more than any single writing agent; (3) a shared scratchpad caused two agents to overwrite each other's helper scripts - use per-agent filenames. QA: 0 em-dash, 0 FCP, 0 British spellings, 0 CTP/ControlTower, 0 body braces, 0 broken links, 1,884/1,884 with pillarSlug. |
 | 2026-08-16 | 17 / flight 17 | 20 | glossary (20) | see git log | **Content programme closed.** Two agents on a fresh partition (enum/status vocabularies vs conceptual/process terms), 10 each, no shortfall — glossary 329 to 349 of 350. The enum lane ran dry mid-flight and the agent pivoted honestly to shipped FIELD-level terms with zero coverage: the import-mask option family (UpdateExistingRecords, AutoCreateMissingMasters, AutoGenerateNextInSeq, MarkCompleteOnImport, AutoCalcHours, ReplaceExisting, Alt_Type, Op_Flag) plus two Settings fields. Both agents report their lanes now closed. METHOD NOTE for any future session: slug-prefix sweeping DOES NOT WORK on this corpus — `cluster` is a frontmatter field, not a filename prefix, so `ls | grep '^edgebic-glossary'` returns 1 file. Use `grep -l '^cluster: edgebic-glossary'`. A naive sweep would badly underestimate coverage and write duplicates. NEW OWNER DECISION: **permission override** has now been independently rejected by THREE agents on the same grounds — UserGuide §30's admin table lists it, but §27 states permissions come only from roles. A genuine unresolved contradiction in the source. QA: 0 em-dash/FCP/British/CTP/ControlTower, 0 stray pillarSlug, 5 questions on every post, 117/117 links resolve. |
 | 2026-08-15 | 16 / flight 16 | 38 + 1 correction | glossary (26), outcomes (4), erp-integration (3), quoting (2), how-to (1), migration (1), shop-floor (1) | see git log | **The flight that proved saturation.** 7 agents dispatched for ~95 posts; 38 written. Three lanes returned COMPLETE shortfalls with rigorous proof: scheduling-ops how-to 0/15 (extracted all 483 bold UI labels from 8 UserGuide chapters and tested each against the 27MB corpus), optimization 0/6 (decomposed UserGuide 16 into 58 teachable atoms, every one covered 3-6 times over; 80 optimizer slugs exist across 5 clusters), platform 0/3. How-to routing/BOR returned 1/15. Glossary was the surprise: both lanes delivered 13/13, so that seam was underestimated. TWO ACCURACY DEFECTS CAUGHT, both the engine-vs-UI pattern: (1) `stopping-the-optimizer-early-still-gives-a-valid-plan` claimed Cancel returns a usable incumbent plan, but UserGuide 16 L45 says Cancel gives `Stopped, nothing was changed` - it contradicted its own sibling post; retitled and rebuilt, and a second error found in it (overnight-budget advice when budgets are 10/30/60s). (2) `migrating-work-centers-and-shifts-to-edgebic` says shifts/holidays must be hand-recreated, but Shift and PlantHoliday are 2 of the 8 import masks - STILL UNFIXED, see open items. Also ran `tsc --noEmit`: 6 errors, ALL in application code this branch never touched (auth providers, Ably hook, example data, license script) - pre-existing on main, not a merge blocker from this work. QA: 0 em-dash/FCP/British/CTP/ControlTower, 289/289 links resolve. |
 | 2026-08-14 | 15 / flight 15 | 68 + 5 corrections | glossary (24), outcomes (10), how-to (10), shop-floor (9), optimization (5), quoting (5), erp-integration (4), walkthroughs (1) | see git log | Found uncommitted on disk at session start and secured. Also closed the three files left mid-verification at the end of flight 13 (the undocumented 0.1-2.0 efficiency clamp, the parallel-group `minimum efficiency threshold` absent from UserGuide 12, and the alternate speed-factor claim) plus the shop-floor kiosk glossary and a transit-time post. Corpus verification after: audit-log-screen 0, per-user-override 0; the remaining entry-mode/PM/downtime matches are all CORRECTIVE framing (the rewritten posts lead with the correction, which also captures the search traffic for the misconception). QA: 0 em-dash/FCP/British/CTP/ControlTower across all 73 files, author 73/73. |

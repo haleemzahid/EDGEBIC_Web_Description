@@ -1,105 +1,96 @@
-# EDGEBIC PROMOTION — RESUME IN A FRESH CHAT
+# EDGEBIC PROMOTION - RESUME IN A FRESH CHAT
 
 **Read this file first. It is the complete handoff.**
-Last session ended: 2026-08-15 (flight 16) · Branch `feature/edgebic-promotion`, pushed to origin, working tree clean.
+Last session ended: 2026-08-23 · Branch `feature/edgebic-promotion` · **working tree DIRTY, ~1,300 uncommitted files** · not merged to main.
 
 ---
 
-## 0. START HERE — ONE UNFINISHED ITEM AND THE HEADLINE FINDING
+## 0. START HERE - THE PROGRAM IS CONTENT-COMPLETE
 
-**No open fixes.** The shifts-importable defect flagged at the end of flight 16 has been
-corrected across all four affected posts and the class is verified closed corpus-wide.
-Shift and PlantHoliday are two of the eight import masks; hand-entry is a legitimate
-*choice* when you have few patterns, never a requirement.
+**Stop writing posts. The corpus is closed at 1,884 EDGEBIC posts against a 2,120 target,
+and that is the correct outcome, not a shortfall.**
 
-**THE HEADLINE FINDING — flight 16 proved the corpus is saturated.**
-Seven agents were dispatched for ~95 posts; only 38 existed. Three lanes returned
-complete shortfalls with hard proof, not guesses:
-- **scheduling-ops how-to 0/15** — extracted all 483 bold UI labels from 8 UserGuide
-  chapters, tested each against the 27 MB corpus, found every real one already covered.
-- **optimization 0/6** — decomposed UserGuide 16 into 58 teachable atoms; all covered
-  3-6 times over. 80 optimizer-specific slugs exist across 5 clusters.
-- **platform 0/3** — every one of the 30 UserGuide sections already covered at overview
-  altitude.
-- **how-to routing/BOR 1/15**, and that one gap was real (product was the only
-  master-data entity without a delete how-to).
-Glossary was the exception: both lanes delivered 13/13, so **glossary is the one seam
-still worth mining**.
+The 2026-08-23 session ran a systematic closure proof rather than another writing flight:
+all 612 UserGuide headings extracted, 302 boilerplate stripped, the remaining **310
+teachable units** scored against all 2,404 files, and the **151 explicit "How to:"
+procedures** each mapped to a distinguishing regex and swept corpus-wide. Twenty-nine
+survived title-level screening; twenty-six resolved to real covering posts.
 
-**Treat these as CLOSED, not short:** how-to (four lanes swept across two flights,
-13 posts from ~66 slots), optimization (54), platform (177), scheduling-concepts (100),
-planning (50), industry (116), visual-scheduling (44), troubleshooting (120),
-admin (40), walkthroughs (50).
+**Result: 246 nominal remaining slots reduced to 4 real ones.** All four were in
+**UserGuide 36 (Integrations)**. That is the whole mechanism behind every residual gap:
+**chapters 31-37 are dated Aug 3, the rest Jul 16.** They were added AFTER most of the
+corpus was written, and earlier sweeps only covered UG01-30.
 
-**`tsc --noEmit` was run: 6 errors, NONE from this work.** All in `lib/auth/providers.ts`,
-`lib/db/example-data.ts`, `lib/ably/use-ticket-realtime.ts` and
-`scripts/get-real-license-key.ts` — files this branch has never touched, verified against
-`origin/main`. **Pre-existing on main; not a merge blocker from the blog work.**
+> ⚠️ **THE RULE THAT MATTERS FOR NEXT TIME:** when the UserGuide gains chapters, sweep
+> ONLY those chapters. Do not re-sweep the whole book, and do not trust a nominal
+> cluster-target gap as evidence that writable material exists.
 
-**My recommendation:** the remaining volume is not worth chasing. Ship what exists.
-The launch blockers in section 6 are where the value now sits — 1,800 accurate posts
-are sitting unmerged, unpublished, and with zero screenshots.
+Padding to 2,120 would require inventing product behavior. That is precisely what
+produced the 82 defective posts this program spent multiple flights correcting.
 
 ---
 
 ## 1. WHERE THINGS STAND
 
-**1,800 EDGEBIC blog posts written, committed and pushed.** Target was 2,120.
-
-> Flight 14 (8 migration posts) was written **directly by the main session with no agents**,
-> which is viable at roughly 8 posts per flight if agent dispatch is unavailable or unwanted.
-> It also **reconstructed the missing flight-13 wave-log row and fixed the scoreboard**, which
-> was a full flight stale (it still read 1,630). Verify counts from disk, never from a summary.
-
 | | |
 |---|---|
 | Repo | `D:\Usersolutons\EDGEBIC Description\EDGEBIC_Web_Description` |
-| Branch | `feature/edgebic-promotion` (pushed; **not merged to main**) |
-| Remote | github.com/haleemzahid/EDGEBIC_Web_Description |
-| Posts | `content/blog/*.mdx` |
-| Source material | `D:\Usersolutons\ERP + FCP\FCP-Book` |
-| Canonical tracker | `EDGEBIC-PROMOTION-PROGRESS.md` (scoreboard + wave log + open items) |
-| Strategy / rules | `EDGEBIC-PROMOTION-STRATEGY.md`, `EDGEBIC-BLOG-TAXONOMY.md` |
+| Branch | `feature/edgebic-promotion` - **1 unpushed commit (`f411eac`)**, not merged |
+| Corpus | **2,418 posts total; 1,884 in `edgebic-*` clusters** |
+| Source material | `D:\Usersolutons\ERP + FCP\FCP-Book` (UserGuide 01-37) |
+| Canonical tracker | `EDGEBIC-PROMOTION-PROGRESS.md` |
+| Rules | Section 3 and 5 of THIS file (still fully in force) |
 
-Verify the count yourself (never trust a remembered number):
-```powershell
-cd "D:\Usersolutons\EDGEBIC Description\EDGEBIC_Web_Description"
-Select-String -Path content/blog/*.mdx -Pattern "cluster:\s*'?(edgebic-[a-z-]+)'?\s*$" |
-  ForEach-Object { $_.Matches[0].Groups[1].Value } | Group-Object | Sort-Object Name |
-  ForEach-Object { "{0,-30} {1}" -f $_.Name, $_.Count }
+**Verify counts from disk, never from a summary.** This file was itself a full flight
+stale before the 2026-08-23 session corrected it.
+
+```bash
+cd "d:/Usersolutons/EDGEBIC Description/EDGEBIC_Web_Description/content/blog"
+grep -h -oE "^cluster:\s*'?edgebic-[a-z-]+" *.mdx | sed "s|cluster:\s*'\?||" | sort | uniq -c | sort -rn
 ```
+
+### Structural health (all verified 2026-08-23)
+
+| Metric | Value |
+|---|---|
+| Orphaned posts (zero inbound links) | **0** (was 358) |
+| Broken internal `/blog/` links | **0** (was 82) |
+| Posts with no `pillarSlug` | **0** (was 537) |
+| Em dashes corpus-wide | **0** (was 9,829) |
+| Clusters without a hub post | **0** (was 3) |
+
+Three hubs were created to close that last row: `edgebic-erp-integration-guide`,
+`edgebic-migration-guide`, `edgebic-glossary-index`.
 
 ---
 
 ## 2. HOW MUCH IS ACTUALLY LEFT
 
-Nominal gap is 434. **Realistically it is 100–150.** Six clusters are done or proven
-exhausted — not "hard to extend," but demonstrated by matching every documented
-procedure to the post already covering it.
+**Zero. Every cluster is at or past target. Do not run another writing flight.**
 
-| Cluster | Now | Target | Real remaining |
-|---|---|---|---|
-| how-to | 325 | 500 | **~30.** Three lanes were partitioned and swept: shop-floor returned **0 of 12** (all 56 UserGuide procedures matched to existing posts), reports 6 of 12, capacity 6 of 12. |
-| glossary | 279 | 350 | **~25.** Thinning; agents now lose half a candidate list to collisions. |
-| scheduling-concepts | 100 | 200 | **0 — MINED OUT.** Proven twice. |
-| planning | 50 | 80 | **0 — MINED OUT.** Proven. |
-| industry | 116 | 110 | **0 — over target.** |
-| visual-scheduling | 44 | 40 | **0 — over target.** |
-| troubleshooting | 120 | 120 | **0 — complete.** |
-| admin | 40 | 40 | **0 — complete.** |
-| platform | 177 | 180 | ~0. Closer agent found no writable candidate. |
-| walkthroughs | 49 | 50 | ~1 |
-| erp-integration | 142 | 150 | ~8, and the last agent said closing them needs either invented product detail or thinner angles than it would write. |
-| outcomes | 85 | 100 | ~10 |
-| optimization | 49 | 60 | **~5, not 11.** Flight 14 checked this against UserGuide 16: the 49 posts already cover nearly all of it. The genuinely uncovered angles are the missing **Least setup time** goal (hidden until setup data exists), the CP-SAT component being absent so the badge silently falls back to multi-run, the "Nearest challenger" line, the arrow-and-word Change cells, and first-run prerequisites. |
-| shop-floor | 49 | 60 | ~11 |
-| quoting | 31 | 40 | ~9 |
-| migration | 38 | 40 | **~2.** Flight 14 took 8. The seam was migrating the features whose data is NOT importable; that seam is now worked. |
+| Cluster | Posts | Status |
+|---|---|---|
+| edgebic-how-to | 352 | CLOSED - proven by full 151-procedure sweep |
+| edgebic-glossary | 351 | CLOSED - 292 book terms + ~40 APICS terms tested |
+| edgebic-platform | 182 | Over target |
+| edgebic-erp-integration | 151 | Target met |
+| edgebic-troubleshooting | 123 | Over target |
+| edgebic-industry | 116 | Over target |
+| edgebic-scheduling-concepts | 106 | CLOSED - proven three times |
+| edgebic-outcomes | 100 | Target met |
+| edgebic-shop-floor | 64 | SATURATED - 245 UI atoms tested, zero writable |
+| edgebic-planning | 62 | Over target |
+| edgebic-optimization | 54 | CLOSED - UG16 exhausted |
+| edgebic-walkthroughs | 50 | Target met |
+| edgebic-visual-scheduling | 50 | Over target |
+| edgebic-admin | 43 | Over target |
+| edgebic-migration | 41 | Over target |
+| edgebic-quoting | 39 | 1 slot declined: UG documents the `Delete All` button but not its behavior |
 
-**Do not pad to hit 2,120.** The documented source material does not contain
-2,120 non-duplicative posts. Padding is what produced the defects described next.
-
----
+> ⚠️ **A PRIOR VERSION OF THIS TABLE WAS A TRAP.** It listed optimization at 49 with
+> "~5 remaining" and named the five angles. All five had already been written in flight
+> 15 (`6098fff`); an agent burned a full run rediscovering that. **The table above is
+> derived from disk. Re-derive it yourself before believing any gap.**
 
 ## 3. ⚠️ THE MOST IMPORTANT THING IN THIS FILE
 
@@ -256,26 +247,53 @@ Also verify: `author: user-solutions`, 3 faqQuestions + 2 qaQuestions, and that
 2. **Fix the FCP-Book** — the R-series recipes teach flows the product lacks. This is
    a documentation defect beyond the website; any future writer given R-series access
    will repeat these mistakes.
-3. **Three files were left mid-check** when the last session ended (a small agent was
-   stopped): `how-to-set-work-center-efficiency-in-edgebic` (an undocumented 0.1–2.0
-   clamp on a pieces efficiency factor), `how-a-parallel-group-screens-out-a-slow-machine`
-   (a "minimum efficiency threshold, default 0.80" absent from UserGuide 12), and
-   `how-efficiency-scales-run-time-but-not-setup` (says alternates carry a speed factor;
-   UserGuide 12 ~line 331 says a factor on a *true alternative* does nothing). Verify
-   and correct — mind the group-Factor guard.
-4. **Human-only, still outstanding:** `pnpm exec tsc --noEmit`; visual QA of `/`,
-   `/edgebic`, `/rmdb-to-edgebic`, `/edgebic-erp-integration`; **merge to main**;
-   deploy; GSC page groups + sitemap; the screenshot capture session
-   (`EDGEBIC-IMAGE-PLAN.md` — no post has a `heroImage` yet).
+3. **Three mid-check files — RESOLVED 2026-08-22.** All three were verified against the
+   UserGuide. Only `how-to-set-work-center-efficiency-in-edgebic` was actually wrong: its
+   FAQ still taught an editable throttle ("a work center at 80 percent on an 8-hour shift
+   offers 6.4 hours"), which is the exact fabricated-editable-percentage class this program
+   already closed 82 posts over. UserGuide 06 is explicit that work centers run at 100% and
+   "the value is not editable on this screen." Corrected. The other two were already right
+   and were left untouched. **Note the near-miss:** the nonexistent 0.1-2.0 clamp was
+   plausible because the REAL work center GROUP `Factor (x)` description uses 0.5 and 2.0 as
+   illustrative endpoints. That guard held.
+4. **Tools & Fixtures may not ship.** UserGuide 37 opens by stating Tools & Fixtures are on
+   a pre-release feature branch and "may not be present in your installed build", yet ~12
+   posts document them as shipped. Structurally the same risk class as the 82 defects, not
+   yet triggered. **Needs an owner ruling.**
+5. **The 5-day implementation promise.** Legacy RMDB-era claims were shifted to past tense
+   where sentences were already being edited, but not restated as current EDGEBIC
+   commitments. Whether EDGEBIC carries that promise is commercial, not documentation.
+6. **The UserGuide's summary tables are systematically stale.** The "detailed section beats
+   summary table" precedent has now been needed three times: job priority (§30 table),
+   alternate speed factors (UG 07 line 202 vs UG 12 line 331), and the `Is_Bottleneck` flag
+   (UG 14 line 105 vs UG 06). Worth reporting to whoever maintains the book.
+7. **Human-only, still outstanding:**
+   - `pnpm exec tsc --noEmit` — baseline is **6 pre-existing errors** in `lib/auth/providers.ts`,
+     `lib/db/example-data.ts`, `lib/ably/use-ticket-realtime.ts`, `scripts/get-real-license-key.ts`,
+     all verified untouched by this branch. Anything outside those four is new.
+   - **Commit the ~1,300-file working tree.** Keep the em dash sweep (514 legacy files) as its
+     own commit so the release diff stays reviewable.
+   - **Push `f411eac`** — it is local-only and it is the two-editions commit.
+   - Visual QA of `/`, `/edgebic`, `/rmdb-to-edgebic`, `/edgebic-erp-integration`.
+   - **Merge to main** — still a clean fast-forward; `main` has not moved since 2026-06-05.
+   - Deploy, then GSC sitemap + page groups.
+   - **Screenshots: 0 of 1,884 posts have a `heroImage`.** See `EDGEBIC-IMAGE-PLAN.md`; needs
+     the running EDGEBIC application, so it cannot be done from the repo. Do NOT hold the
+     merge for it.
 
 ---
 
 ## 7. FIRST PROMPT FOR THE NEW CHAT
 
+> ⚠️ **Do not dispatch a writing flight.** The corpus is content-complete and proven
+> saturated (see §0). The previous "dispatch 7 agents on the clusters with runway"
+> instruction is retired; following it now produces padding, which is what caused the
+> 82-post defect class.
+
 > Read `EDGEBIC-RESUME-HERE.md` in
 > `D:\Usersolutons\EDGEBIC Description\EDGEBIC_Web_Description`, then
-> `EDGEBIC-PROMOTION-PROGRESS.md`. Confirm the on-disk post count per cluster.
-> Then continue the EDGEBIC blog program: dispatch up to 7 parallel agents on the
-> clusters that still have real runway (see §2), following every rule in §3 and §5.
-> Agents must report honest shortfalls rather than pad or invent. QA, commit and
-> push each flight.
+> `EDGEBIC-PROMOTION-PROGRESS.md`. Confirm the on-disk post count per cluster from disk.
+> The writing program is closed. The remaining work is SHIPPING: settle the open rulings
+> in §6, run tsc, commit the working tree, push, merge to main, deploy, submit the
+> sitemap. Only write a new post if a NEW UserGuide chapter has appeared since Aug 3
+> 2026, and then sweep only that chapter.
