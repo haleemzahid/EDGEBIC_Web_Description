@@ -1,0 +1,90 @@
+---
+title: "Plan on Lead Time vs Require on Hand: the Material Availability Choice"
+description: "A product's Material Availability setting decides whether a job without covering supply is planned on an assumption or reported as a shortage. Here is what each choice does to the plan."
+published: 2026-08-22T12:00:00.000Z
+modified: 2026-08-22T12:00:00.000Z
+category: Scheduling Concepts
+author: user-solutions
+cluster: edgebic-scheduling-concepts
+pillarSlug: edgebic-scheduling-engine-guide
+keywords:
+  - material availability policy
+  - plan on lead time
+  - require on hand
+  - material shortage scheduling
+  - long lead item planning
+  - supply assumption in a schedule
+targetPhrase: "material availability policy"
+wordCount: 1350
+readingTime: 7
+faqQuestions:
+  - question: "What does the Material Availability setting on a product do?"
+    answer: "It decides how the scheduler treats a job whose material has no covering supply. Use site policy takes whatever the site is configured to do. Plan on lead time means the material bar runs for the item's lead time and the job schedules on from there, producing a date that assumes material nobody has ordered yet. Require on hand is stricter: a job that cannot be covered from the rack is reported as a material shortage rather than planned against an assumption. In EDGEBIC by User Solutions it is a per-item override, so you can be strict about one long-lead component without changing anything else."
+  - question: "Why would a plan quietly assume material that was never ordered?"
+    answer: "Because lead-time fallback is the default behavior and it is deliberately quiet. When a job needs material with no purchase-order line covering the shortfall, EDGEBIC records a loud warning in the scheduling diagnostics log naming the job, the component and the shortfall, then falls back to running the material bar for the item's lead time. On the planning surfaces there is no amber marker, because there is nothing to wait on. An unordered material therefore looks exactly like a material you already have, which is why the diagnostics log and the Scheduled Receipts report matter."
+  - question: "Should every product be set to Require on hand?"
+    answer: "No, and setting it everywhere would make the plan less useful rather than more honest. Lead-time planning is the right default for the many items you reliably reorder, because it produces a workable date and the diagnostics log still tells you what is unordered. Require on hand is for the specific items where a wrong assumption is expensive: a long-lead casting, a single-source component, anything that must physically be in the rack before you would promise a date on it. It is offered as a per-item override precisely because it is meant to be used selectively."
+qaQuestions:
+  - question: "Our dates look great and then material lands late every time. Is this the setting that explains it?"
+    answer: "Often, yes, and the mechanism is worth understanding rather than just flipping a switch. Under lead-time planning, a job with no covering purchase order is scheduled as though the material will arrive after the item's stated lead time. That is a plan, not a promise, and the dates it produces are only as good as the assumption that somebody will actually place the order in time.\n\nSo you get a schedule that looks clean and then meets reality at the receiving dock. Two changes fix it. Make the Scheduled Receipts report part of the routine before you publish a schedule, so unordered material is caught while there is still time to order it. And set Require on hand on the handful of items where the assumption is the one that keeps hurting you, so those jobs surface as shortages instead of quietly borrowing a date."
+  - question: "If we set Require on hand, what actually changes on screen for a job that cannot be covered?"
+    answer: "The job stops being planned against an assumption and is reported as a material shortage instead. The value of that is not the report itself, it is what the report displaces: a confident date that nobody should have believed.\n\nIt is worth being clear about the trade. Lead-time planning always gives you a date, and some of those dates are fiction. Require on hand refuses to give you a date it cannot stand behind, so you get fewer dates and more honest ones. Which behavior you want depends entirely on the item. For a stock fastener you reorder weekly, a lead-time date is fine and a shortage report is noise. For a casting with a twelve-week lead and one supplier, the shortage report is the only useful output."
+---
+
+**A product's Material Availability setting decides one thing: whether a job whose material has no covering supply gets a date based on an assumption, or gets reported as a shortage instead.** It is a per-item override of the site policy, with three values: **Use site policy**, **Plan on lead time**, and **Require on hand**. The choice looks small on the product form and it changes what a schedule is claiming.
+
+## The failure mode this setting exists to address
+
+Start with what happens by default, because it is the part people are surprised by.
+
+A job needs a component. No purchase-order line covers the shortfall. EDGEBIC does not invent a peg and does not silently pretend the material is there. It writes a loud warning into the scheduling diagnostics log, naming the job, the component and the shortfall quantity, and telling you to raise a purchase order or the job will be short. Then it falls back to lead-time behavior: the material bar runs for the item's lead time, and the job schedules on from there.
+
+The result is a plan, not a promise. The dates assume material nobody has ordered.
+
+What makes this genuinely dangerous is that the fallback is quiet on the planning surfaces. No amber marker appears, because there is nothing to wait on. An unordered material looks exactly like a material you already have. The warning is real and it is in the diagnostics log, but the Gantt does not carry it.
+
+## What each value does
+
+**Use site policy** defers to whatever the site is configured to do. This is the right value for the overwhelming majority of items, because a policy you set once and apply everywhere is easier to reason about than a hundred individual decisions.
+
+**Plan on lead time** is the permissive behavior described above. A job without covering supply still gets a date, computed from the item's lead time. You keep a complete, workable plan, and you accept that some of its dates rest on orders that have not been placed.
+
+**Require on hand** is the strict behavior. A job that cannot be covered from the rack is reported as a material shortage rather than planned against an assumption. You get fewer dates, and the ones you get are backed by stock that physically exists.
+
+## Why the choice belongs on the item, not only on the site
+
+Because the cost of a wrong assumption is not uniform.
+
+For a stock fastener you reorder every week, an assumed lead-time date is almost always right, and a shortage report for it would be noise that trains people to ignore shortage reports. For a casting with a long lead time and one supplier, the same assumption is the difference between a promise you keep and one you do not.
+
+Making Material Availability a per-item override is what lets both be true at once. You set a sane site policy for the bulk of the catalog, then override the handful of items where being wrong is expensive. That is the same shape as the rest of the engine, where the general rule is set once and the exceptions are named explicitly, the way a [material step gates an operation](/blog/how-a-material-step-schedules-as-an-instant-gate) rather than consuming capacity it does not need.
+
+## The routine that catches the rest
+
+The setting is not a substitute for looking. Because lead-time fallback is quiet, the check has to be deliberate.
+
+Open the Material Pegging report. It lists jobs that are pegged, so a job you expected to see and do not is a job with no covering supply. Cross-check the Scheduled Receipts report for that material: nothing inbound at all is your answer. Then raise the purchase order, set a realistic promised date, set the status to Open, and reschedule. The job now pegs honestly, and it probably moves later, which is the entire point.
+
+Making Scheduled Receipts part of the routine before publishing a schedule is the habit that closes the gap. [What material pegging means in EDGEBIC](/blog/what-material-pegging-means-in-edgebic) covers how the pegs themselves are formed, and [how a plan absorbs a late material delivery](/blog/how-a-plan-absorbs-a-late-material-delivery) covers what happens when the supply exists but slips.
+
+## Why model it this way
+
+There is a version of this that would be worse in both directions, and the design avoids both.
+
+A scheduler that always assumed material would produce beautiful, useless plans. A scheduler that always demanded stock on hand would refuse to plan most of the work in most plants, because most plants schedule against supply that is inbound rather than received. Neither extreme is a plan you can run a shop with.
+
+The answer is to make the assumption explicit and adjustable, to log it loudly when it is being made, and to let the item decide. That is what the three values give you: a default that keeps the plan complete, a strict mode for the items that deserve it, and a diagnostics log that never lets the assumption go unrecorded even when the Gantt looks calm.
+
+For how material planning and finite scheduling relate as two passes over the same data, the [complete scheduling engine guide](/blog/edgebic-scheduling-engine-guide) shows where the material pass sits. To see the setting change a date on your own long-lead items, explore [EDGEBIC](/edgebic) or [bring your data to a demo](/contact-us).
+
+<Accordion title="What does the Material Availability setting on a product do?">
+It decides how the scheduler treats a job whose material has no covering supply. Use site policy takes whatever the site is configured to do. Plan on lead time means the material bar runs for the item's lead time and the job schedules on from there, producing a date that assumes material nobody has ordered yet. Require on hand is stricter: a job that cannot be covered from the rack is reported as a material shortage rather than planned against an assumption. In EDGEBIC by User Solutions it is a per-item override, so you can be strict about one long-lead component without changing anything else.
+</Accordion>
+
+<Accordion title="Why would a plan quietly assume material that was never ordered?">
+Because lead-time fallback is the default behavior and it is deliberately quiet. When a job needs material with no purchase-order line covering the shortfall, EDGEBIC records a loud warning in the scheduling diagnostics log naming the job, the component and the shortfall, then falls back to running the material bar for the item's lead time. On the planning surfaces there is no amber marker, because there is nothing to wait on. An unordered material therefore looks exactly like a material you already have, which is why the diagnostics log and the Scheduled Receipts report matter.
+</Accordion>
+
+<Accordion title="Should every product be set to Require on hand?">
+No, and setting it everywhere would make the plan less useful rather than more honest. Lead-time planning is the right default for the many items you reliably reorder, because it produces a workable date and the diagnostics log still tells you what is unordered. Require on hand is for the specific items where a wrong assumption is expensive: a long-lead casting, a single-source component, anything that must physically be in the rack before you would promise a date on it. It is offered as a per-item override precisely because it is meant to be used selectively.
+</Accordion>

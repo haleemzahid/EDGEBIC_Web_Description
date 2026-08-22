@@ -4,11 +4,32 @@ import { getBaseUrl } from '@/lib/urls/get-base-url';
 type OrganizationSchema = {
   '@context': 'https://schema.org';
   '@type': 'Organization';
+  '@id': string;
   name: string;
+  legalName: string;
+  alternateName: string[];
   url: string;
   logo: string;
   description: string;
   email: string;
+  telephone: string;
+  foundingDate: string;
+  address: {
+    '@type': 'PostalAddress';
+    addressLocality: string;
+    addressRegion: string;
+    addressCountry: string;
+  };
+  contactPoint: {
+    '@type': 'ContactPoint';
+    contactType: string;
+    telephone: string;
+    email: string;
+    areaServed: string;
+    availableLanguage: string;
+  }[];
+  knowsAbout: string[];
+  award: string[];
   sameAs?: string[];
 };
 
@@ -20,8 +41,7 @@ type WebSiteSchema = {
   description: string;
   inLanguage: string;
   publisher: {
-    '@type': 'Organization';
-    name: string;
+    '@id': string;
   };
 };
 
@@ -31,12 +51,20 @@ type SoftwareApplicationSchema = {
   name: string;
   description: string;
   applicationCategory: string;
+  applicationSubCategory?: string;
   operatingSystem: string;
   url: string;
+  publisher: {
+    '@id': string;
+  };
+  featureList?: string[];
+  softwareRequirements?: string;
   offers?: {
     '@type': 'Offer';
     price: string;
     priceCurrency: string;
+    availability: string;
+    url: string;
   };
 };
 
@@ -135,7 +163,11 @@ export function OrganizationJsonLd({
     AppInfo.SOCIAL_LINKS.LINKEDIN,
     AppInfo.SOCIAL_LINKS.FACEBOOK,
     AppInfo.SOCIAL_LINKS.X,
-    AppInfo.SOCIAL_LINKS.YOUTUBE
+    AppInfo.SOCIAL_LINKS.YOUTUBE,
+    // Review directories carry more weight than social profiles when an
+    // answer engine is confirming the vendor exists and is established.
+    AppInfo.PROFILE_LINKS.CAPTERRA,
+    AppInfo.PROFILE_LINKS.G2
   ];
 
   const links = socialLinks && socialLinks.length > 0 ? socialLinks : defaultSocialLinks;
@@ -143,11 +175,44 @@ export function OrganizationJsonLd({
   const schema: OrganizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
+    // Stable node id so every other schema on the site can point at one
+    // company entity instead of describing a new one per page.
+    '@id': `${baseUrl}/#organization`,
     name: AppInfo.COMPANY_NAME,
+    legalName: AppInfo.COMPANY_LEGAL_NAME,
+    alternateName: [...AppInfo.COMPANY_ALTERNATE_NAMES],
     url: baseUrl,
     logo: `${baseUrl}/logos/edgebic-logo.png`,
     description: AppInfo.APP_DESCRIPTION,
     email: AppInfo.CONTACT_EMAIL,
+    telephone: AppInfo.PHONE,
+    foundingDate: AppInfo.FOUNDING_YEAR,
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: AppInfo.ADDRESS.LOCALITY,
+      addressRegion: AppInfo.ADDRESS.REGION,
+      addressCountry: AppInfo.ADDRESS.COUNTRY
+    },
+    contactPoint: [
+      {
+        '@type': 'ContactPoint',
+        contactType: 'sales',
+        telephone: AppInfo.PHONE,
+        email: AppInfo.SALES_EMAIL,
+        areaServed: 'Worldwide',
+        availableLanguage: 'English'
+      },
+      {
+        '@type': 'ContactPoint',
+        contactType: 'technical support',
+        telephone: AppInfo.PHONE,
+        email: AppInfo.SUPPORT_EMAIL,
+        areaServed: 'Worldwide',
+        availableLanguage: 'English'
+      }
+    ],
+    knowsAbout: [...AppInfo.KNOWS_ABOUT],
+    award: [...AppInfo.AWARDS],
     sameAs: links
   };
 
@@ -160,13 +225,14 @@ export function WebSiteJsonLd() {
   const schema: WebSiteSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: AppInfo.APP_NAME,
+    // The site is the company's, not a single product's. Naming it after the
+    // product made every page claim the site itself was called RMDB.
+    name: AppInfo.COMPANY_NAME,
     url: baseUrl,
     description: AppInfo.APP_DESCRIPTION,
     inLanguage: 'en-US',
     publisher: {
-      '@type': 'Organization',
-      name: AppInfo.COMPANY_NAME
+      '@id': `${baseUrl}/#organization`
     }
   };
 
@@ -178,27 +244,58 @@ export function SoftwareApplicationJsonLd({
   description,
   url,
   price,
-  priceCurrency = 'USD'
+  priceCurrency = 'USD',
+  operatingSystem = 'Windows',
+  applicationSubCategory,
+  featureList,
+  softwareRequirements,
+  offerUrl
 }: {
   name: string;
   description: string;
   url: string;
   price?: string;
   priceCurrency?: string;
+  operatingSystem?: string;
+  applicationSubCategory?: string;
+  featureList?: string[];
+  softwareRequirements?: string;
+  offerUrl?: string;
 }) {
+  const baseUrl = getBaseUrl();
+  const absoluteUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
+
   const schema: SoftwareApplicationSchema = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
     name,
     description,
     applicationCategory: 'BusinessApplication',
-    operatingSystem: 'Web',
-    url,
+    // No default: this varies per product. The simulation products are not
+    // scheduling software, so a shared default would misdescribe them.
+    ...(applicationSubCategory && { applicationSubCategory }),
+    // These are installed Windows applications, not web apps. Declaring
+    // 'Web' told every crawler the wrong thing about what the product is.
+    operatingSystem,
+    url: absoluteUrl,
+    publisher: {
+      '@id': `${baseUrl}/#organization`
+    },
+    ...(featureList && { featureList }),
+    ...(softwareRequirements && { softwareRequirements }),
     ...(price && {
       offers: {
         '@type': 'Offer',
         price,
-        priceCurrency
+        priceCurrency,
+        availability: 'https://schema.org/InStock',
+        // Defaults to the product's own page. Only EDGEBIC is bought from
+        // /pricing, so a hardcoded pricing URL would be wrong elsewhere.
+        url: offerUrl
+          ? offerUrl.startsWith('http')
+            ? offerUrl
+            : `${baseUrl}${offerUrl}`
+          : absoluteUrl
       }
     })
   };

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 
+import { ScreenshotSlideshow } from '@/components/marketing/fragments/screenshot-slideshow';
 import { FAQJsonLd, SoftwareApplicationJsonLd } from '@/components/seo';
 import {
   Accordion,
@@ -8,11 +9,12 @@ import {
   AccordionItem,
   AccordionTrigger
 } from '@/components/ui/accordion';
+import { AppInfo } from '@/constants/app-info';
 import { Routes } from '@/constants/routes';
 import { createProductMetadata } from '@/lib/seo/metadata';
 
 export const metadata = createProductMetadata({
-  name: 'EDGEBIC — Next-Generation Finite Capacity Planning & Scheduling Software',
+  name: 'EDGEBIC - Next-Generation Finite Capacity Planning & Scheduling Software',
   description:
     'EDGEBIC by User Solutions is the next-generation finite capacity planning and scheduling platform: the successor to RMDB and EDGEBI. Drag-and-drop graphical routing designer, TOC bottleneck scheduling, multi-shift allocation, mathematical schedule optimization, shop-floor kiosk tracking, and flexible ERP integration through Excel/CSV import masks.',
   path: '/edgebic',
@@ -126,10 +128,47 @@ const PLATFORM_FEATURES: Array<{ title: string; body: string }> = [
 export default function EdgebicPage(): React.JSX.Element {
   return (
     <>
+      {/* One entry per edition. A single node could not carry two prices, and
+          the price is the thing an answer engine is asked for most often. */}
       <SoftwareApplicationJsonLd
-        name="EDGEBIC"
-        description="Next-generation finite capacity planning and scheduling platform from User Solutions: successor to RMDB and EDGEBI with a graphical routing designer, TOC scheduling, and mathematical schedule optimization."
+        name={AppInfo.EDITIONS.APS.NAME}
+        description={AppInfo.EDITIONS.APS.DESCRIPTION}
         url="/edgebic"
+        price={AppInfo.EDITIONS.APS.PRICE}
+        applicationSubCategory="Production Scheduling Software"
+        offerUrl="/pricing"
+        operatingSystem="Windows"
+        softwareRequirements="Windows with .NET 8; SQLite for single-user, SQL Server for multi-user deployments"
+        featureList={[
+          'Graphical drag-and-drop routing designer',
+          'Forward and backward finite capacity scheduling',
+          'Theory of Constraints anchor scheduling around bottlenecks',
+          'Parallel work centers, true alternates and work center groups',
+          'Sequence-dependent setup matrix with setup families',
+          'Lot streaming with transfer batches and start-to-start overlap',
+          'Operator skills, certifications and shift rosters',
+          'Two-layer schedule optimizer with Google OR-Tools CP-SAT',
+          'Shop-floor kiosk for operator punches and piece counts',
+          'Quoting with what-if scenarios and quote-to-order conversion',
+          'ERP integration via Excel, CSV and database import-export'
+        ]}
+      />
+      <SoftwareApplicationJsonLd
+        name={AppInfo.EDITIONS.COMPLETE.NAME}
+        description={AppInfo.EDITIONS.COMPLETE.DESCRIPTION}
+        url="/edgebic"
+        price={AppInfo.EDITIONS.COMPLETE.PRICE}
+        applicationSubCategory="Production Scheduling Software"
+        offerUrl="/pricing"
+        operatingSystem="Windows"
+        softwareRequirements="Windows with .NET 8; SQLite for single-user, SQL Server for multi-user deployments"
+        featureList={[
+          'Everything in EDGEBIC APS',
+          'Material requirements planning (MRP)',
+          'Inventory management',
+          'Purchasing',
+          'Material pegging so material availability constrains the schedule'
+        ]}
       />
       <FAQJsonLd
         questions={FAQS.map((faq) => ({
@@ -142,33 +181,42 @@ export default function EdgebicPage(): React.JSX.Element {
         {/* Hero */}
         <section className="py-8">
           <div className="container mx-auto max-w-7xl px-4">
-            <p className="mb-3 text-sm font-semibold text-cyan-700">
-              New from User Solutions
-            </p>
-            <h1 className="mb-4 max-w-4xl text-3xl font-bold text-slate-900 md:text-4xl lg:text-5xl">
-              EDGEBIC: 35 years of scheduling experience, one next-generation
-              platform
-            </h1>
-            <p className="max-w-3xl text-lg leading-relaxed text-slate-700">
-              EDGEBIC is the next-generation finite capacity planning and
-              scheduling platform from User Solutions, Inc. It is the successor
-              to Resource Manager DB (RMDB) and EDGEBI: the proven scheduling
-              engine and the graphical experience, rebuilt as one modern
-              application, with a new generation of capabilities on top.
-            </p>
-            <div className="mt-6 flex flex-wrap items-center gap-5">
-              <Link
-                href={Routes.Contact}
-                className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
-              >
-                Schedule a Live Demo
-              </Link>
-              <Link
-                href={Routes.RmdbToEdgebic}
-                className="font-semibold text-cyan-700 transition-colors hover:text-cyan-800"
-              >
-                Upgrading from RMDB or EDGEBI?
-              </Link>
+            <div className="grid items-center gap-10 lg:grid-cols-2">
+              <div>
+                <p className="mb-3 text-sm font-semibold text-cyan-700">
+                  New from User Solutions
+                </p>
+                <h1 className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl lg:text-5xl">
+                  EDGEBIC: 35 years of scheduling experience, one
+                  next-generation platform
+                </h1>
+                <p className="text-lg leading-relaxed text-slate-700">
+                  EDGEBIC is the next-generation finite capacity planning and
+                  scheduling platform from User Solutions, Inc. It is the
+                  successor to Resource Manager DB (RMDB) and EDGEBI: the proven
+                  scheduling engine and the graphical experience, rebuilt as one
+                  modern application, with a new generation of capabilities on
+                  top.
+                </p>
+                <div className="mt-6 flex flex-wrap items-center gap-5">
+                  <Link
+                    href={Routes.Contact}
+                    className="inline-flex items-center gap-2 rounded bg-cyan-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-cyan-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
+                  >
+                    Schedule a Live Demo
+                  </Link>
+                  <Link
+                    href={Routes.RmdbToEdgebic}
+                    className="font-semibold text-cyan-700 transition-colors hover:text-cyan-800"
+                  >
+                    Upgrading from RMDB or EDGEBI?
+                  </Link>
+                </div>
+              </div>
+              <ScreenshotSlideshow
+                heightClassName="h-[280px] lg:h-[360px]"
+                priority
+              />
             </div>
           </div>
         </section>

@@ -218,7 +218,12 @@ Also verify: `author: user-solutions`, 3 faqQuestions + 2 qaQuestions, and that
   The planner always presses Accept; it never auto-applies.
 - **No CTP / Capable-to-Promise.** No **Control Tower** (roadmap only).
 - **Costing is labor + material only** — no overhead, standard cost or contribution margin.
-- **Yield/scrap inflation is ROADMAP** (see open item below).
+- **Yield/scrap inflation:** a product's **Yield** field (Inventory Planning MTS/MTO) inflates
+  the *suggested* build quantity only (lot sizing first, then `ceil(need / yield)`; at 90%
+  yield a need for 100 suggests 112). **There is no yield on a routing step**, the scheduler
+  never inflates a quantity through a routing, and a hand-entered order is not inflated.
+  First-pass yield as a *reporting* figure is the OEE Quality % off kiosk good/scrap punches.
+  (Ruled 2026-08-22 from UserGuide 31; R-series A4 per-step `BOR.FirstPassYield` is overruled.)
 - Concurrency is **last-write-wins**. Schedule export is a **grid snapshot**, not a
   round-trip module.
 - **Heritage proof** (GE Railcar 30→90%, USS Nimitz 26,000+ tasks, Cummins 33
@@ -237,11 +242,17 @@ Also verify: `author: user-solutions`, 3 faqQuestions + 2 qaQuestions, and that
 
 ## 6. OPEN ITEMS FOR THE OWNER (not blocking, but decide)
 
-1. **Yield / scrap inflation** — flagged independently by three agents. The rulebook
-   treats upstream yield inflation as roadmap (first-pass yield is a *reporting*
-   figure), but `how-a-schedule-accounts-for-scrap-and-yield-loss` and
-   `edgebic-for-technical-ceramics-kiln-scheduling` lean on it as shipped. Rule one
-   way and align those two. New posts stay conservative meanwhile.
+1. **Yield / scrap inflation — RESOLVED 2026-08-22.** Ruled from UserGuide 31: product-level
+   **Yield** inflates the *replenishment suggestion* only (documented: 90% yield, order for
+   100 starts 112); there is no per-step routing yield anywhere in the UserGuide, so the
+   scheduler does not inflate through a routing and a hand-entered order is not inflated.
+   Six posts were corrected to match (the two named here plus
+   `edgebic-for-abrasives-manufacturing-scheduling`,
+   `edgebic-for-sawmills-and-lumber-processing-scheduling`, `what-is-yield-in-manufacturing`,
+   `a-product-yield-value-is-out-of-range-edgebic`). See §5 for the writing rule.
+   **Residual for the owner:** R-series `31-mrp-erp-roadmap.md` A4 still claims per-step
+   `BOR.FirstPassYield` inflation shipped in July 2026. If that is true, the UserGuide is
+   missing the field and both need updating before any post may claim it.
 2. **Fix the FCP-Book** — the R-series recipes teach flows the product lacks. This is
    a documentation defect beyond the website; any future writer given R-series access
    will repeat these mistakes.

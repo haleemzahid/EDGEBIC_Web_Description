@@ -21,15 +21,37 @@
 > Every agent brief now carries this. Worth reporting to whoever maintains the book: the
 > recipes appear to document intended or partially-built behavior, not shipped behavior.
 >
-> ⚠️ **OPEN CONTENT-ACCURACY ITEM FOR THE OWNER — yield / scrap inflation.** Two separate
-> agents (flights 3 and 11) have now flagged the same inconsistency. The rulebook treats
-> upstream yield inflation (inflating start quantity so scrap still ships the ordered qty)
-> as **roadmap**, with first-pass yield presently a *reporting* figure only. But
-> `/blog/how-a-schedule-accounts-for-scrap-and-yield-loss` and
-> `edgebic-for-technical-ceramics-kiln-scheduling` both lean on it as shipped behavior.
-> The site is currently inconsistent on this point. Needs an owner ruling: either confirm
-> it ships (and let posts claim it) or soften those two posts. Agents have been instructed
-> to stay conservative in the meantime, so newer posts do NOT claim it.
+> ✅ **RESOLVED 2026-08-22 — yield / scrap inflation.** Ruled from the UserGuide, which is
+> authoritative over the R-series. **Product-level yield inflation SHIPS, but only on the
+> replenishment side.** UserGuide 31 §"set a product's inventory planning fields" gives the
+> field: **Yield** sits in **Inventory Planning (MTS / MTO)** on the product, and "the build
+> quantity is inflated so the shippable quantity is still met — at 90% yield, an order for
+> 100 starts 112". The **Suggested** lens is defined as "the quantity to actually order or
+> build, after lot-sizing and yield are applied" (UserGuide 31 lens reference), and the
+> glossary entry agrees. So: replenishment/MRP suggestions are inflated; lot sizing runs
+> first, yield second.
+> **What does NOT ship:** there is no yield or scrap field on a routing step anywhere in the
+> UserGuide (BOR chapters 10–12, scheduling 14, backward scheduling 15, manufacturing orders
+> 13 and products 04 contain no occurrence of "yield" or "scrap"). The scheduler does not
+> inflate a quantity as it flows down a routing; it loads each operation against the quantity
+> the order carries. An order entered by hand is not inflated. The R-series
+> `31-mrp-erp-roadmap.md` item A4 claims per-step `BOR.FirstPassYield` inflation "landed July
+> 2026"; the UserGuide documents no such field, so **the UserGuide wins and that claim is not
+> usable in copy.**
+> **Reporting half stands:** kiosk good/scrap counters (scrap always carries a reason, and
+> never counts toward produced quantity) feed the OEE **Quality %** = good / (good + scrap +
+> rework) and the scrap Pareto. That is measurement, not inflation.
+> **Writing rule going forward:** yield inflates a *suggested* build quantity on a stocked
+> product. Never write that the schedule, the routing, or the engine inflates a quantity for
+> scrap. For make-to-order work, sizing the order quantity for scrap is a planner decision.
+> **Corpus aligned 2026-08-22** (6 posts edited): `how-a-schedule-accounts-for-scrap-and-yield-loss`,
+> `edgebic-for-technical-ceramics-kiln-scheduling`, `edgebic-for-abrasives-manufacturing-scheduling`,
+> `edgebic-for-sawmills-and-lumber-processing-scheduling`, `what-is-yield-in-manufacturing`,
+> `a-product-yield-value-is-out-of-range-edgebic`. The planning-cluster posts
+> (`how-to-set-a-product-yield-for-scrap-inflation-in-edgebic`,
+> `how-lot-sizing-and-yield-inflation-shape-order-quantities-in-edgebic`,
+> `what-is-a-replenishment-suggestion`, `edgebic-for-li-ion-battery-yield-and-scrap` and peers)
+> were already correctly scoped and were left untouched.
 
 ---
 
@@ -193,7 +215,7 @@ claims; answer and then correct the named posts.
 | Q6 | **Does a partial CSV import truly leave omitted cells unchanged?** | Stated as safe in setup-matrix guidance. | 1 Wave-2 post |
 | Q7 | **Do the shipped Setup Matrix tab labels match** (Families / Product Assignments / Family Matrix / Product Overrides; Setup Source + Setup Reason columns)? | Used verbatim in two posts. | 2 Wave-2 posts |
 | **Q8** | **DOC BUG (not a content issue): Chapter 27 claims the two forecast-consumption rules produce different gross-requirement totals, but by the formulas the book itself states they are algebraically identical; Chapter 28 concedes as much.** Either the docs or the code is wrong. | We declined to repeat the claim; posts present both formulas and frame the choice as recording intent. Engineering should resolve the source. | `how-forecast-consumption-works-in-edgebic` (already written safely) |
-| Q9 | **Positioning: older RMDB posts describe SAP/NetSuite integration via BAPI, RESTlet and ODBC; EDGEBIC posts describe Excel/CSV/database import masks.** No factual conflict, but a prospect reading both may ask whether the new flagship integrates less deeply. | Cross-content narrative gap on the highest-intent ERP queries. | ERP cluster + `/edgebic-erp-integration` page |
+| ~~Q9~~ | ~~Positioning: older RMDB posts describe SAP/NetSuite integration via BAPI, RESTlet and ODBC; EDGEBIC posts describe Excel/CSV/database import masks.~~ **RESOLVED 2026-08-22 by a consistency pass over 9 RMDB-era posts.** Fix had three moves: (1) a "Which generation this describes" callout on the 4 posts making present-tense product-level connector claims; (2) reframing so the API paths are described as what the *ERP vendor* publishes, with the file/database route named as the one User Solutions uses and why it is durable; (3) naming the ODBC/direct-database story as continuity, not regression, since EDGEBIC's Integration module runs a database query or watched file on a schedule through the same import mask. No RMDB history was deleted and no connector was claimed. | Closed. `/edgebic-erp-integration` needed no change; it already answered the native-connector objection correctly. | 9 blog posts (see below) |
 | Q10 | **Is the routing comparison report planner-reachable, and do snapshot integrity findings surface in the UI or only in logs?** | Two posts tell planners to run/watch for these. | 2 Wave-2 posts |
 | Q11 | **Is the auto-filled actuals badge (docs dated 2026-07-07) in the customer build?** Same shipping-build question Q1 answered for groups/operators. | Written as current UI throughout the actuals chapter. | 4 Wave-2 actuals posts |
 | Q12 | **Confirm counts against the shipping build**: 18 vs 19 report panes; 21 vs 22 glossary providers (the Q1 decision may make it 22); Column Details coverage across reports. | Used as concrete numbers in several posts. | 4 Wave-2 reports/glossary posts |

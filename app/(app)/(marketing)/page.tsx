@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import { ChallengesBenefitsSection } from '@/components/marketing/sections/challenges-benefits-section';
 // import { AwardsSection } from '@/components/marketing/sections/awards-section';
-import { EdgebicAnnouncement } from '@/components/marketing/sections/edgebic-announcement';
+// import { EdgebicAnnouncement } from '@/components/marketing/sections/edgebic-announcement';
 import { ManufacturingFeatureSection } from '@/components/marketing/sections/manufacturing-feature-section';
 import { NTClipboardHero } from '@/components/marketing/sections/ntclipboard-hero';
 import { NTClipboardSummary } from '@/components/marketing/sections/ntclipboard-summary';
@@ -25,7 +25,7 @@ export default function IndexPage(): React.JSX.Element {
   return (
     <>
       <NTClipboardHero />
-      <EdgebicAnnouncement />
+      {/* <EdgebicAnnouncement /> */}
       <ChallengesBenefitsSection />
       {/* <NTClipboardSummary /> */}
       <ManufacturingFeatureSection />

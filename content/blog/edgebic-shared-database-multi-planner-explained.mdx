@@ -2,7 +2,7 @@
 title: "How Several Planners Share One EDGEBIC Database"
 description: "How multi-user scheduling works in EDGEBIC: one shared database, per-user screen layouts, sign-in identity, refresh behavior, and what happens when two people save the same row."
 published: 2026-08-08T12:00:00.000Z
-modified: 2026-08-08T12:00:00.000Z
+modified: 2026-08-22T12:00:00.000Z
 category: EDGEBIC Platform
 author: user-solutions
 cluster: edgebic-platform
@@ -15,20 +15,20 @@ keywords:
   - manufacturing software multi user
   - finite capacity scheduling
 targetPhrase: "multi user scheduling software"
-wordCount: 1400
-readingTime: 7
+wordCount: 1600
+readingTime: 8
 faqQuestions:
   - question: "How do several people use EDGEBIC at the same time?"
     answer: "Each person runs the EDGEBIC application on their own PC, and all of those installations point at the same SQL Server database. There is no separate server application to install for the schedule itself: the shared database is what makes it one plan. A planner in the office and a supervisor on the floor open the same jobs, the same capacity, and the same routings, and each of them sees their own screen layouts on top of that shared data."
   - question: "Can more than one person use the single-file database?"
     answer: "No. The default single-file database is a single-workstation setup by design, which is why it needs no server and no setup at all. Sharing a schedule between people means moving to SQL Server, which is a change made on the DataSource tab and takes effect after a restart. Switching providers does not move your data, so the move is planned as a backup, a switch, and a rebuild of master data from imports."
   - question: "What happens if two planners save the same record at the same time?"
-    answer: "The last save wins. If two people edit the same record and both save, the second save overwrites the first, and nobody is warned. That makes ownership a working practice rather than a setting: agree who owns which products, work centers, and jobs, and the collision essentially stops happening. It is also why a scheduling run is something a team coordinates rather than something two people start independently."
+    answer: "On most master data the second save is now refused rather than silently applied. EDGEBIC records a version on each record and your screen carries the version it loaded, so if a colleague saved first your save is rejected with a message naming the record and asking you to reload and try again. Nothing is quietly overwritten and nobody is left unaware. The check is switched on editor by editor, so a handful of screens still behave the older way where the second save wins, which is why agreeing who owns which products, work centers, and jobs is still worth doing."
 qaQuestions:
   - question: "Our supervisor says the schedule on his screen does not match the planner's. Both are on the same database. What is going on?"
     answer: "Almost always it is the age of what is on screen rather than a disagreement in the data. Screens load their data when you open them, and the dashboard in particular does not refresh on its own: each tab loads as you switch to it and reloads on demand. So a supervisor who opened a view at seven and has left it open all morning is looking at seven o'clock, and the planner who re-ran the scheduler at ten is looking at ten. The fix is a refresh rather than an investigation. Worth knowing as the exception: an open job view or the live actuals screen does update by itself when a kiosk save lands, because that is the one flow where stale data would have someone standing at a machine reading yesterday."
   - question: "Do we need to stop the other planners while someone runs the scheduler?"
-    answer: "You do not have to, but a shop with two or three planners should still treat a run as a coordinated act rather than something anyone starts whenever. The reason is not a technical lock, it is that a scheduling run rewrites the forward plan, and anyone who was mid-way through staged Gantt edits, or reading a job list to make a promise, is now working from something that has moved under them. The common working pattern is one owner of the run, a known cadence, whether that is every morning or after every batch of new orders, and a quick word before an unscheduled one. Everything else, entering orders, logging actuals, editing routings, happily runs in parallel."
+    answer: "You cannot start a second one anyway. EDGEBIC takes a plant-wide hold for the length of a scheduling run, so a second person who clicks Re-Schedule mid-run is told that a run is already in progress on another workstation and asked to try again shortly. The answer comes back in a few seconds rather than making them sit out somebody else's run.\n\nWhat is left is a human coordination question, and that is the part worth agreeing on. A run rewrites the forward plan, so anyone who was mid-way through staged Gantt edits, or reading a job list to make a promise, is now working from something that has moved under them. The common working pattern is one owner of the run, a known cadence, whether that is every morning or after every batch of new orders, and a quick word before an unscheduled one. Everything else, entering orders, logging actuals, editing routings, happily runs in parallel."
 ---
 
 **EDGEBIC by User Solutions supports several planners working from one schedule by having every installation point at the same SQL Server database.** Each person runs the application on their own PC. What is shared is the data. What is personal is the way each person's screens are arranged.
@@ -76,17 +76,21 @@ One flow deliberately breaks that pattern. An open job view or the live actuals 
 
 ## Two People, One Record
 
-EDGEBIC's contract when two saves collide is last-write-wins: if two people edit the same record and both save, the second save overwrites the first, silently. No exception, no merge, no warning.
+For most of the master data a team edits day to day, a stale save is refused rather than silently applied. EDGEBIC stamps a version on a record every time it is saved, your screen carries the version it loaded, and the save checks that the two still agree. If a colleague saved first, yours is rejected and you are told which record moved, so you reload, see their change, re-apply yours, and save again. Nothing is lost and nobody is left unaware.
 
-That is a real property to design your working practice around rather than a gap to be nervous about, and it is worth being plain about the consequences.
+That protection was switched on editor by editor rather than all at once, which is the honest limit worth knowing. The main master-data screens carry it today: work centers, products, departments, customers, shifts, and the routing list header. A few others, work center groups and the user and role editors among them, still behave the older way, where the second save wins and neither person is told. The difference is nothing deeper than which editors have been moved onto the version check so far, and the remaining ones are being closed the same way.
 
-The practical answer is ownership. Agree who owns which slice of the master data, one person for work centers, one for routings, one for the order book, and collisions essentially stop occurring, because two people rarely have a reason to edit the same product on the same afternoon. Where two planners genuinely share a screen, the master production schedule is the usual example, the discipline is to refresh before acting on what you see, because the risk is not the save mechanism, it is deciding from a stale number.
+Scheduling data is a deliberate exception rather than a gap. Schedules, orders, and their resource rows are rewritten wholesale by the scheduling engine across many paths at once, so a per-record version check there would raise conflicts in the middle of a perfectly legitimate run. Those are protected by the plant-wide hold on the run itself, described below.
 
-The concept in general terms is covered in [what is last-write-wins concurrency](/blog/what-is-last-write-wins-concurrency).
+Ownership is still the practical answer on top of all of it. Agree who owns which slice of the master data, one person for work centers, one for routings, one for the order book, and collisions essentially stop occurring, because two people rarely have a reason to edit the same product on the same afternoon. Where two planners genuinely share a screen, the master production schedule is the usual example, the discipline is to refresh before acting on what you see, because the version check protects the record, not your judgment about a stale number.
+
+The older behavior, which is still what the remaining screens do, is covered in [what is last-write-wins concurrency](/blog/what-is-last-write-wins-concurrency).
 
 ## Coordinating the Scheduling Run
 
-Nothing stops two people running the scheduler. Most teams still put one person in charge of it, and the reason is human rather than technical.
+Two people cannot run the scheduler at once. EDGEBIC takes a plant-wide hold when a run starts and releases it once the run has finished writing, so the second person to click Re-Schedule is told that a run is already in progress on another workstation and asked to try again shortly. The answer comes back within a few seconds; nobody watches a frozen window for the length of somebody else's run. The hold is also released automatically if the machine holding it drops off the network, so a crash mid-run cannot lock the plant out.
+
+Most teams still put one person in charge of the run, and that reason is human rather than technical.
 
 A run rewrites the forward plan. Anyone who had staged Gantt edits in progress, or was reading a job list to promise a date, is suddenly working from something that moved. So the common pattern is a named owner, a known cadence, every morning, or after each batch of new orders, and a word before an unscheduled run. The [reschedule safely guide](/blog/how-to-reschedule-safely-in-edgebic) covers the run itself.
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
+// import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -28,6 +28,151 @@ import {
   CardTitle
 } from '@/components/ui/card';
 import { YouTubeFacade } from '@/components/ui/youtube-facade';
+
+type MatrixRow = {
+  feature: string;
+  description: string;
+  aps: boolean;
+};
+
+/** Included in both EDGEBIC APS and EDGEBIC Complete. */
+const APS_FEATURES: MatrixRow[] = [
+  {
+    feature: 'Finite Capacity Scheduling',
+    description:
+      'Schedules orders against the real capacity of the plant: shift calendars, holidays, downtime, machine instances and operator skills. Forward from a start date or backward (just-in-time) from a due date, per job or group of orders.',
+    aps: true
+  },
+  {
+    feature: 'Schedule Optimization',
+    description:
+      'The optimizer evaluates dozens of complete schedules and keeps the best one. The result is never worse than the plan you already had.',
+    aps: true
+  },
+  {
+    feature: 'Multi-Shift Capacity',
+    description:
+      'Day, night and weekend patterns per work center, with holidays, downtime and per-day overrides the engine actually respects.',
+    aps: true
+  },
+  {
+    feature: 'Visual Routing Designer (Bill of Resources)',
+    description:
+      'Build routings as a flow chart: every operation is a node and every dependency is an arrow, so you can lay out your whole factory the way you would sketch it on a whiteboard.',
+    aps: true
+  },
+  {
+    feature: 'The Planner View with Drag and Drop',
+    description:
+      'Your jobs and your machines on one screen. Drag an operation from a job straight onto the machine that will run it. Every change is staged, so nothing commits until you save.',
+    aps: true
+  },
+  {
+    feature: 'Multi-User Live Plan',
+    description:
+      'Planners and supervisors share one live plan on SQL Server, and open screens pick up shop-floor changes on their own.',
+    aps: true
+  },
+  {
+    feature: 'Sequence-Dependent Setup, Groups and Alternates',
+    description:
+      'Setup times that depend on what ran before, work center groups, and alternate routings the scheduler can choose between.',
+    aps: true
+  },
+  {
+    feature: 'Tracking Actuals',
+    description:
+      'Update any step without updating the others: the system assumes predecessors are done and rebalances the rest of the schedule.',
+    aps: true
+  },
+  {
+    feature: 'ERP Integration',
+    description:
+      'Import items, work centers, routings and orders through Excel, CSV and database import-export, apply the finite capacity scheduling your ERP cannot, and send realistic dates back out.',
+    aps: true
+  }
+];
+
+/** The material side: EDGEBIC Complete only. */
+const COMPLETE_FEATURES: MatrixRow[] = [
+  {
+    feature: 'Multi-Level MRP',
+    description:
+      'Material requirements planning with dependent demand across every BOM level: work out what to build and what to buy, and when.',
+    aps: false
+  },
+  {
+    feature: 'Inventory Management',
+    description:
+      'On-hand ledger, projected balance and available to promise, so the plan always knows what is really in stock.',
+    aps: false
+  },
+  {
+    feature: 'Master Production Schedule',
+    description:
+      'A top-level build plan that drives scheduling and material requirements together.',
+    aps: false
+  },
+  {
+    feature: 'Purchasing, Suppliers and Receiving',
+    description:
+      'Raise purchase orders from scheduled demand, track suppliers, and receive against open orders.',
+    aps: false
+  },
+  {
+    feature: 'Material Pegging',
+    description:
+      'A job waits for the delivery that covers it, so material availability constrains the schedule instead of surprising the floor.',
+    aps: false
+  },
+  {
+    feature: 'Sales Orders and Firm Demand',
+    description:
+      'Capture firm customer demand and let it drive the plan alongside forecast.',
+    aps: false
+  }
+];
+
+function FeatureRow({
+  row,
+  index,
+  shaded
+}: {
+  row: MatrixRow;
+  index: number;
+  shaded: boolean;
+}): React.JSX.Element {
+  return (
+    <tr className={`border-b border-slate-100 ${shaded ? 'bg-slate-50' : ''}`}>
+      <td className="p-4 align-middle">
+        <details
+          data-feature={`feature-${index}`}
+          className="group"
+        >
+          <summary className="flex cursor-pointer items-center gap-2 font-medium text-slate-900 hover:text-blue-600">
+            <span className="text-sm transition-transform group-open:rotate-90">
+              ▶
+            </span>
+            {row.feature}
+          </summary>
+          <div className="mt-2 pl-6 text-sm text-slate-600">
+            {row.description}
+          </div>
+        </details>
+      </td>
+      <td className="p-4 text-center align-middle">
+        {row.aps ? (
+          <CheckCircle className="mx-auto size-6 text-green-600" />
+        ) : (
+          <span className="text-xl text-slate-400">-</span>
+        )}
+      </td>
+      <td className="p-4 text-center align-middle">
+        <CheckCircle className="mx-auto size-6 text-green-600" />
+      </td>
+    </tr>
+  );
+}
 
 export function ProductionPlanningSolutions(): React.JSX.Element {
   const router = useRouter();
@@ -138,7 +283,7 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
               Choose the Right Solution for Your Business
             </h2>
             <p className="mb-3 text-center text-lg text-slate-600">
-              Compare features across our product range to find the perfect fit.
+              Compare the two EDGEBIC editions to find the perfect fit.
             </p>
 
             {/* Expand/Collapse Controls */}
@@ -174,360 +319,64 @@ export function ProductionPlanningSolutions(): React.JSX.Element {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px] table-fixed rounded-lg border border-slate-200 bg-white">
+              <table className="w-full min-w-[700px] table-fixed rounded-lg border border-slate-200 bg-white">
                 <colgroup>
-                  <col className="w-[40%]" />
-                  <col className="w-[20%]" />
-                  <col className="w-[20%]" />
-                  <col className="w-[20%]" />
+                  <col className="w-1/2" />
+                  <col className="w-1/4" />
+                  <col className="w-1/4" />
                 </colgroup>
                 <thead>
                   <tr className="border-b border-slate-200">
                     <th className="p-4 text-left font-semibold text-slate-900">
                       Features
                     </th>
-                    <th className="p-4 text-center font-semibold text-orange-600">
-                      Resource Manager/Excel <small>(RMX)</small>
+                    <th className="p-4 text-center">
+                      <span className="block text-lg font-bold text-slate-900">
+                        EDGEBIC APS
+                      </span>
+                      <span className="text-sm font-normal text-slate-500">
+                        $25,000 · Advanced planning and scheduling
+                      </span>
                     </th>
-                    <th className="p-4 text-center font-semibold text-green-600">
-                      Resource Manager DB <small>(RMDB)</small>
-                    </th>
-                    <th className="p-4 text-center font-semibold text-emerald-800">
-                      EDGEBI Suite <small> (Requires RMDB) </small>
+                    <th className="p-4 text-center">
+                      <span className="block text-lg font-bold text-cyan-700">
+                        EDGEBIC Complete
+                      </span>
+                      <span className="text-sm font-normal text-slate-500">
+                        $35,000 · Planning, materials and inventory
+                      </span>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {[
-                    {
-                      feature: 'Bill-Of-Resources (BOR)',
-                      description:
-                        'Instead of a rigid routing and standalone Bill-Of-Material, our BOR feature allows the user to easily configure their complete Supply Chain with Materials, Workcenters, and even Outside Processes for an entire end-to-end scheduling.',
-                      jsl: true,
-                      rmdb: true,
-                      edgebi: true
-                    },
-                    {
-                      feature: 'Finite Capacity',
-                      description:
-                        'Only schedules to what is available. Customizable Workcenter Calendars and Daily Calendar. Color coded. Graphics.',
-                      jsl: true,
-                      rmdb: true,
-                      edgebi: true
-                    },
-                    {
-                      feature: 'Tracking Actuals',
-                      description:
-                        'You can update as much detail as you want or not at all. We allow you to update any step in process, without updating any other step, and we will assume all predecessors are done and will simply rebalance the schedule.',
-                      jsl: true,
-                      rmdb: true,
-                      edgebi: true
-                    },
-                    {
-                      feature: 'Mixed Mode Scheduling',
-                      description:
-                        'Forward based on start date or Reverse based on due date or even Time Fenced. Per job or group of orders. Prioritize at any level. Planned vs Actual for Powerful "What-If" analysis.',
-                      jsl: true,
-                      rmdb: true,
-                      edgebi: true
-                    },
-                    {
-                      feature: 'Rescheduling',
-                      description:
-                        'On all Jobs or user selectable. Lock key jobs in to deliver on-time. Adjust other variables to reflect reality including: Shop Calendar, Labor, Workcenter, even Outside Processing. In addition to all user direct interaction with rescheduling, you can also Import Actuals and complete rescheduling on demand and/or automatically (for example, at night after ERP runs MRP).',
-                      jsl: true,
-                      rmdb: true,
-                      edgebi: true
-                    },
-                    {
-                      feature: 'Inventory Management',
-                      description:
-                        'Low maintenance. Safety Stocks, Yield Factors, Purchasing UOM, ATP, Reporting.',
-                      jsl: true,
-                      rmdb: true,
-                      edgebi: true
-                    },
-                    {
-                      feature: 'Material Planning Basic',
-                      description:
-                        'With the unique BOR capabilities, know exactly what material is needed where and when. Can combine different orders for common material consolidations in whatever time frame is best.',
-                      jsl: true,
-                      rmdb: true,
-                      edgebi: true
-                    },
-                    {
-                      feature: 'Customizable',
-                      description:
-                        "For RMX and RMDB/EDGEBI, you can include all Excel features (formatting, reports, etc.) as a 'standard' report for you. For RMDB/EDGEBI there is another level for customization by the many user fields available, as well as being able to customized Excel Output. Finally, we are open to including your ideas directly in system.",
-                      jsl: true,
-                      rmdb: true,
-                      edgebi: true
-                    },
-                    {
-                      feature: 'Purchase Orders',
-                      description:
-                        'For those who need some help optimizing MRP, even if you have existing ERP or Accounting system, we can supplement such system with a Just In Time report to use to drive your ERP/Accounting Purchasing.',
-                      jsl: true,
-                      rmdb: true,
-                      edgebi: true,
-                      jslCustom:
-                        'RMX Single User: $1,200. Multi-User (one person live with edit control, other users view only): $2,400. Includes 2 hours custom support.'
-                    },
-                    {
-                      feature: 'Drag and Drop',
-                      description:
-                        'Besides using an easy, drag and drop graphical interface for initial system setup (Building BORs, etc.), we have worked on a drag and drop approach to easily and quickly update the planned schedule with reality. This includes updating any job any step with any dates (planned or actual), quantity produced or received (materials, workcenter hours and/or workcenter pieces, and complete workcenter replacements, even entire routing replacements. One button to rebalance entire schedule!',
-                      jsl: false,
-                      rmdb: true,
-                      rmdbLow: true,
-                      edgebi: true
-                    },
-                    {
-                      feature: 'Materials Planning Advanced',
-                      description:
-                        'MRP Calculations, Shortage Reports, Lot and Batch Sizing, much more.',
-                      jsl: false,
-                      rmdb: true,
-                      edgebi: true
-                    },
-                    {
-                      feature: 'Integration with other systems',
-                      description:
-                        'Import and Export to Excel and direct importing via ODBC drivers. Integrates easily with most ERP and custom systems.',
-                      jsl: false,
-                      rmdb: true,
-                      edgebi: true
-                    },
-                    {
-                      feature: 'Advanced Planning & Scheduling',
-                      description:
-                        'Alternate Routings, Multiple Constraints, Multiple Priorities, Rescheduling on demand, much more.',
-                      jsl: false,
-                      rmdb: true,
-                      edgebi: true,
-                      rmdbCustom:
-                        'RMDB Basic includes all the above for $4,000. Includes 4 hours of custom support.'
-                    },
-                    {
-                      feature: 'Heat Map Report',
-                      description:
-                        'Visual representation of capacity loading across your schedule.',
-                      jsl: false,
-                      rmdb: false,
-                      edgebi: true
-                    },
-                    {
-                      feature: 'Schedule Key Dates',
-                      description:
-                        'Critical date tracking and reporting functionality.',
-                      jsl: false,
-                      rmdb: false,
-                      edgebi: true
-                    },
-
-                    {
-                      feature: 'Advanced Drag and Drop',
-                      description:
-                        'Alternate Routings, Multiple Constraints, Multiple Priorities, Rescheduling on demand, much more.',
-                      jsl: false,
-                      rmdb: false,
-                      edgebi: true,
-                      rmdbCustom:
-                        'RMDB Full includes all the above, plus EDGEBIC (single named user for both) for $9,500.',
-                      edgebiCustom: true
-                    }
-                  ].map((row, i) => {
-                    const hasPricing =
-                      row.jslCustom ||
-                      row.rmdbCustom ||
-                      (row as any).edgebiCustom;
-                    return (
-                      <React.Fragment key={i}>
-                        <tr
-                          className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-slate-50' : ''}`}
-                        >
-                          <td className="p-4 align-middle">
-                            <details
-                              data-feature={`feature-${i}`}
-                              className="group"
-                            >
-                              <summary className="flex cursor-pointer items-center gap-2 font-medium text-slate-900 hover:text-blue-600">
-                                <span className="text-sm transition-transform group-open:rotate-90">
-                                  ▶
-                                </span>
-                                {row.feature}
-                              </summary>
-                              <div className="mt-2 pl-6 text-sm text-slate-600">
-                                {row.description}
-                              </div>
-                            </details>
-                          </td>
-                          <td className="p-4 text-center align-middle">
-                            {row.jsl ? (
-                              <div className="flex justify-center">
-                                <Image
-                                  src="/images/rmx-gauge.png"
-                                  alt="Feature availability"
-                                  width={120}
-                                  height={80}
-                                  className="object-contain"
-                                />
-                              </div>
-                            ) : (
-                              <span className="text-xl text-slate-400">-</span>
-                            )}
-                          </td>
-                          <td className="p-4 text-center align-middle">
-                            {row.rmdb ? (
-                              <div className="flex justify-center">
-                                <Image
-                                  src={
-                                    row.rmdbLow
-                                      ? '/images/rmx-gauge.png'
-                                      : '/images/rmdb-gauge.png'
-                                  }
-                                  alt="Feature availability"
-                                  width={120}
-                                  height={80}
-                                  className="object-contain"
-                                />
-                              </div>
-                            ) : (
-                              <span className="text-xl text-slate-400">-</span>
-                            )}
-                          </td>
-                          <td className="p-4 text-center align-middle">
-                            {row.edgebi ? (
-                              <div className="flex justify-center">
-                                <Image
-                                  src="/images/edge-gauge.png"
-                                  alt="Feature availability"
-                                  width={120}
-                                  height={80}
-                                  className="object-contain"
-                                />
-                              </div>
-                            ) : (
-                              <span className="text-xl text-slate-400">-</span>
-                            )}
-                          </td>
-                        </tr>
-                        {hasPricing && (
-                          <tr className="border-b-2 border-slate-200 bg-slate-100/60">
-                            <td className="p-3 pl-8 text-sm font-semibold text-slate-500">
-                              Pricing
-                            </td>
-                            <td className="p-3 text-center">
-                              {row.jslCustom && (
-                                <details className="group mx-auto w-full rounded-lg border-2 border-orange-300 bg-gradient-to-b from-orange-50 to-white shadow-sm">
-                                  <summary className="cursor-pointer list-none rounded-md bg-orange-500 px-4 py-1.5 text-sm font-bold text-white transition-colors hover:bg-orange-600">
-                                    <span className="flex items-center justify-center gap-1">
-                                      <span className="text-[10px] transition-transform group-open:rotate-90">
-                                        ▶
-                                      </span>
-                                      RMX Pricing
-                                    </span>
-                                  </summary>
-                                  <div className="space-y-1 p-3 text-sm">
-                                    <div className="flex justify-between gap-3">
-                                      <span className="text-slate-600">
-                                        Single User
-                                      </span>
-                                      <span className="font-bold text-slate-900">
-                                        $1,200
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between gap-3">
-                                      <span className="text-slate-600">
-                                        Multi-User
-                                      </span>
-                                      <span className="font-bold text-slate-900">
-                                        $2,400
-                                      </span>
-                                    </div>
-                                    <p className="mt-2 text-[11px] leading-tight text-slate-500">
-                                      (one person live with edit control, other
-                                      users view only)
-                                    </p>
-                                    <p className="mt-1 text-[11px] font-medium text-orange-600">
-                                      Includes 2 hours custom support
-                                    </p>
-                                  </div>
-                                </details>
-                              )}
-                            </td>
-                            <td className="p-3 text-center">
-                              {row.rmdbCustom && (
-                                <details className="group mx-auto w-full rounded-lg border-2 border-green-300 bg-gradient-to-b from-green-50 to-white shadow-sm">
-                                  <summary className="cursor-pointer list-none rounded-md bg-green-600 px-4 py-1.5 text-sm font-bold text-white transition-colors hover:bg-green-700">
-                                    <span className="flex items-center justify-center gap-1">
-                                      <span className="text-[10px] transition-transform group-open:rotate-90">
-                                        ▶
-                                      </span>
-                                      {row.rmdbCustom.includes('Full')
-                                        ? 'RMDB Full Pricing'
-                                        : 'RMDB Basic Pricing'}
-                                    </span>
-                                  </summary>
-                                  <p className="p-3 text-sm leading-snug text-slate-700">
-                                    {row.rmdbCustom}
-                                  </p>
-                                </details>
-                              )}
-                            </td>
-                            <td className="p-3 text-center">
-                              {(row as any).edgebiCustom && (
-                                <details className="group mx-auto w-full rounded-lg border-2 border-emerald-300 bg-gradient-to-b from-emerald-50 to-white shadow-sm">
-                                  <summary className="cursor-pointer list-none rounded-md bg-emerald-700 px-4 py-1.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800">
-                                    <span className="flex items-center justify-center gap-1">
-                                      <span className="text-[10px] transition-transform group-open:rotate-90">
-                                        ▶
-                                      </span>
-                                      EDGEBI Pricing
-                                    </span>
-                                  </summary>
-                                  <div className="space-y-1 p-3 text-sm">
-                                    <div className="flex justify-between gap-3">
-                                      <span className="text-slate-600">
-                                        5 Users
-                                      </span>
-                                      <span className="font-bold text-slate-900">
-                                        $5,000
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between gap-3">
-                                      <span className="text-slate-600">
-                                        10 Users
-                                      </span>
-                                      <span className="font-bold text-slate-900">
-                                        $10,000
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between gap-3">
-                                      <span className="text-slate-600">
-                                        20 Users
-                                      </span>
-                                      <span className="font-bold text-slate-900">
-                                        $15,000
-                                      </span>
-                                    </div>
-                                    <p className="mt-2 text-[11px] font-medium text-emerald-700">
-                                      Includes 4 hours of custom support
-                                    </p>
-                                  </div>
-                                </details>
-                              )}
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
-                    );
-                  })}
+                  {APS_FEATURES.map((row, i) => (
+                    <FeatureRow
+                      key={row.feature}
+                      row={row}
+                      index={i}
+                      shaded={i % 2 === 0}
+                    />
+                  ))}
+                  <tr className="border-b border-slate-200 bg-cyan-50/60">
+                    <td
+                      colSpan={3}
+                      className="p-3 pl-6 text-sm font-semibold text-cyan-800"
+                    >
+                      The material side: EDGEBIC Complete only
+                    </td>
+                  </tr>
+                  {COMPLETE_FEATURES.map((row, i) => (
+                    <FeatureRow
+                      key={row.feature}
+                      row={row}
+                      index={APS_FEATURES.length + i}
+                      shaded={i % 2 === 0}
+                    />
+                  ))}
                 </tbody>
                 <tfoot>
                   <tr className="border-t border-slate-200">
                     <td className="p-4"></td>
-                    <td className="p-4 text-center"></td>
                     <td className="p-4 text-center">
                       <Button
                         size="default"

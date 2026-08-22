@@ -1,4 +1,3 @@
-import path from 'path';
 import { defineCollection, defineConfig } from '@content-collections/core';
 import { compileMDX } from '@content-collections/mdx';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
@@ -97,7 +96,7 @@ export const posts = defineCollection({
       ...data,
       author,
       slug: `/${data._meta.path}`,
-      slugAsParams: data._meta.path.split(path.sep).slice(1).join('/'),
+      slugAsParams: data._meta.path.split('/').slice(1).join('/'),
       body: {
         raw: data.content,
         code: body
@@ -129,7 +128,7 @@ export const docs = defineCollection({
     return {
       ...data,
       slug: `/${data._meta.path}`,
-      slugAsParams: data._meta.path.split(path.sep).slice(1).join('/'),
+      slugAsParams: data._meta.path.split('/').slice(1).join('/'),
       body: {
         raw: data.content,
         code: body

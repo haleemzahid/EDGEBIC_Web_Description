@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { Check } from 'lucide-react';
 
-import { GridSection } from '@/components/marketing/fragments/grid-section';
 import { Routes } from '@/constants/routes';
 
 /**
@@ -69,12 +68,9 @@ const editions: Edition[] = [
 
 export function NTClipboardToolBox(): React.JSX.Element {
   return (
-    <GridSection
-      hideVerticalGridLines
-      containerProps={{ className: 'px-0 sm:container' }}
-    >
-      <div className="px-4 py-12 sm:px-0">
-        <div className="mx-auto max-w-3xl text-center">
+    <section className="w-full">
+      <div className="px-4 pb-12 pt-0 sm:px-6">
+        {/* <div className="w-full text-center">
           <h2 className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl">
             Two editions, one engine
           </h2>
@@ -84,7 +80,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
             BAE Systems and the US Navy. Start with scheduling, or take the
             material side with it.
           </p>
-        </div>
+        </div> */}
 
         {/*
           Row-aligned on purpose. The list is the grid and each edition is a
@@ -92,7 +88,7 @@ export function NTClipboardToolBox(): React.JSX.Element {
           buttons sit on the same baselines no matter how long the copy in one
           column runs.
         */}
-        <ul className="mx-auto mt-12 grid max-w-5xl gap-x-12 gap-y-14 md:grid-cols-2 md:grid-rows-[auto_auto_auto_auto_1fr_auto] md:gap-y-0">
+        <ul className="mx-auto mt-4 grid max-w-5xl gap-x-12 gap-y-14 md:grid-cols-2 md:grid-rows-[auto_auto_auto_auto_1fr_auto] md:gap-y-0">
           {editions.map((edition) => (
             <li
               key={edition.name}
@@ -183,6 +179,6 @@ export function NTClipboardToolBox(): React.JSX.Element {
           .
         </p>
       </div>
-    </GridSection>
+    </section>
   );
 }

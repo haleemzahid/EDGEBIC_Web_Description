@@ -1,8 +1,8 @@
 ---
 title: "How a Scheduler Handles a Shared Tool or Fixture"
-description: "How to schedule a shared fixture, die, or mold in a finite capacity plan: model the tool as a work center the routing passes through so contention becomes real."
+description: "How to schedule a shared fixture, die, or mold in a finite capacity plan: give the tool a quantity, require it on the routing step, and let contention across every machine become real."
 published: 2026-08-01T12:00:00.000Z
-modified: 2026-08-01T12:00:00.000Z
+modified: 2026-08-22T12:00:00.000Z
 category: Scheduling Concepts
 author: user-solutions
 cluster: edgebic-scheduling-concepts
@@ -11,74 +11,98 @@ keywords:
   - shared tool scheduling
   - fixture scheduling manufacturing
   - shared fixture constraint
-  - model a tool as a work center
+  - required tool routing step
   - die mold scheduling
   - secondary resource scheduling
 targetPhrase: "shared tool scheduling"
 qaQuestions:
   - question: "We have three mills but only two fixtures for our biggest part family. The mills run at 60% but we miss dates. How do I model this?"
-    answer: "Model the fixture set as a work center with two instances and route every operation that needs it through that work center in addition to its mill. The two-instance fixture work center caps simultaneous use at two, no matter which mill runs the job, so the plan can never schedule three fixture jobs at once. The mills stay under-loaded on paper, but the plan now shows the real ceiling: two fixture jobs in parallel. Jobs beyond that wait for a fixture to come free, which is exactly what happens on the floor."
+    answer: "Create one tool record for the fixture set with a quantity of 2, then set the required tool on each routing step that mounts it. You never tell EDGEBIC which mills the fixture fits, and you do not add a step to the routing: the requirement rides the operations you already have, and all three mills draw on the same pool. From the next scheduling run the plan can never place more fixture work in a window than two units can cover, however many mills are idle. The mills stay under-loaded on paper because the fixture was always the binding resource, and jobs beyond the second one slide to when a unit frees up, which is exactly what happens on the floor."
   - question: "Our mold changeover is four hours and one mold serves two presses. How do I keep the plan from booking both presses for it at once?"
-    answer: "Represent the mold as a one-instance, one-per-day work center and route both presses' jobs through it. With a single instance the plan allows only one job on the mold at a time, and one-per-day matches the reality that a four-hour changeover locks the mold for the day. The two presses then compete for the single mold slot instead of both claiming it. Put the changeover hours on the routing step's setup so the plan accounts for the swap time."
+    answer: "Create the mold as a tool with a quantity of 1 and require it on both presses' steps. One unit means one operation at a time anywhere in the plant, so the two presses compete for the single mold instead of both claiming it, and the second job slides to when the first releases it. Put the four changeover hours on the routing step's setup time: a tool is held for setup and run alike at the full rate, because a mold cannot be half mounted, so the changeover consumes mold hours as well as press hours. If the mold later goes out for repair, record those dates as a downtime range and the schedule steps around them."
 wordCount: 1560
 readingTime: 8
 faqQuestions:
   - question: "How does a scheduler handle a shared tool or fixture?"
-    answer: "The most reliable approach in EDGEBIC is to model the shared tool as its own work center that the routing step must pass through, alongside the machine. Give the tool work center as many instances as you own copies of the tool, so if you have two fixtures it has two instances. Because a work center is a real capacity bucket, the plan then treats the tool as a finite resource: two jobs can use it at once, a third waits. Contention shows up as a real start-time shift rather than a floor surprise."
+    answer: "EDGEBIC models the tool as a plant-wide pool rather than as capacity belonging to any one machine. You create the tool once with a quantity, which is how many identical units you physically own, and then set the required tool on every routing step that mounts it. For each day and shift the tool has a pool of hours equal to its quantity times that window, and every allocated machine-hour books exactly one tool-hour from it. When the pool runs out the next operation is not offered that window, even though its machine is standing empty, so contention shows up as a real start-time shift rather than a floor surprise."
   - question: "Does EDGEBIC model tooling as a separate resource class?"
-    answer: "EDGEBIC does not have a dedicated shared-tooling resource type that automatically attaches a fixture to every routing step. A tool physical-type label exists, but it carries no scheduling logic on its own. The supported way to make a shared tool a true constraint is to model it as a work center that operations route through, which uses the finite capacity engine you already trust to prevent double-booking. That workaround captures the constraint without a special module."
+    answer: "Yes. A tool is its own record carrying a quantity and its downtime dates, and it belongs to no work center, so every machine in the plant draws on the same pool. That is the whole point, because a fixture's scarcity is invisible from any single machine's capacity. Do not model a tool as a work center instead. A work center has shifts, instances, and its own capacity bucket, so turning a fixture into a pseudo machine invents capacity that does not exist and hides the very contention you are trying to see."
   - question: "How do I schedule tool maintenance so it blocks jobs that need the tool?"
-    answer: "If you have modeled the tool as a work center, block its maintenance the same way you block any machine: give that tool work center a capacity override or a holiday on the maintenance day, so it offers zero hours and no job can route through it. Any operation that needs the tool then slides past the maintenance window automatically. This keeps planned tool downtime in the schedule instead of treating it as an emergency when it arrives."
+    answer: "Record it as a downtime range on the tool itself, on the Tools tab under Daily Hours. Both dates are inclusive, so a range ending Friday means the tool is still away on Friday and back the following working day. Inside the range the tool contributes zero hours whatever its quantity says, so on the next scheduling run every operation requiring it slides past the window automatically. This keeps planned tool downtime in the schedule instead of treating it as an emergency when it arrives."
 ---
 
-**A finite capacity scheduler handles a shared tool or fixture most reliably when you model the tool as its own work center that the routing passes through, giving it as many instances as you own copies of the tool.** EDGEBIC by User Solutions does not attach a dedicated tooling-resource type to every operation automatically, so the honest, shipped way to make a fixture, die, or mold a real constraint is to turn it into a work center. Because a work center is a genuine capacity bucket, the finite capacity engine then prevents the plan from booking more jobs on the tool than you have copies of it. The contention becomes a visible start-time shift instead of a floor collision.
+**A finite capacity scheduler handles a shared tool or fixture by modeling it as a plant-wide pool with a quantity of its own, required by the routing steps that mount it, so every machine in the plant draws on the same pool.** EDGEBIC by User Solutions ships that as a first-class constraint: a tool carries how many units you own and when it is away, and a routing step names it in a **Required tool:** field. If two jobs on two different machines both need the one five-axis fixture, the second one waits. The contention becomes a visible start-time shift instead of a floor collision.
 
 ## Why a shared tool needs modeling at all
 
 A shared fixture, die, or mold is a resource just like a machine, but shops rarely track it as one. The machine schedule looks fine, the mills sit at 60 percent, and yet dates slip. The reason is that two jobs on two different machines both need the same fixture, and only one fixture exists. On paper both jobs are feasible; on the floor one of them waits.
 
-That wait never appears in a machine utilization report, because no machine is overloaded. It shows up only as unexplained work in process and missed dates. A plan that does not know about the shared tool will happily promise both jobs at once and be wrong the moment the floor reaches for the second fixture. The generic problem, and how to spot it, is covered in [when tooling is your bottleneck](/blog/tooling-bottleneck-scheduling).
+That wait never appears in a machine utilization report, because no machine is overloaded. It shows up only as unexplained work in process and missed dates. This is the one clash a machine-by-machine Gantt structurally cannot draw: the fixture belongs to no lane, so both lanes are honestly free and the plan is still impossible. The generic problem, and how to spot it, is covered in [when tooling is your bottleneck](/blog/tooling-bottleneck-scheduling).
 
-## What EDGEBIC does and does not do
+## What a tool is, and what it deliberately is not
 
-Be clear about the honest state. EDGEBIC has a physical-type label for a resource that can read "tool," but that label carries no scheduling logic. There is no automatic secondary-resource layer that pegs a specific die to a routing step and checks its calendar behind the scenes. Dedicated shared-tooling as a distinct resource class is a roadmap item, not shipped behavior.
+A tool in EDGEBIC is a scarce shared physical asset: the fixture, mold, jig, die, or gauge that must be mounted before the operation can run at all. It carries two things and nothing else.
 
-What is shipped, and what you should use, is the finite capacity engine itself. A work center is already a resource that the engine will never over-book: it has instances, shifts, and capacity, and an operation that routes through it consumes real hours. So you make the tool a work center. That is not a hack around a missing feature; it is using the constraint model you already have to represent a constraint the engine treats as first class.
+**Quantity** is how many identical units you own plant-wide. One fixture means strictly one operation at a time anywhere in the plant; three identical gauges mean up to three operations can each hold one, across any mix of machines. **Downtime** is a date range when the tool is away for calibration, repair, or a loan. Both dates are inclusive, so the tool is back the day after the end date, and inside the range it contributes nothing whatever its quantity says.
 
-## Model the tool as a work center the routing passes through
+What a tool deliberately does not have is a work center. You never tell EDGEBIC which machines a fixture fits: that is expressed entirely by which routing steps require it, so if only the two mill steps name the fixture, the scheduler will never plan it anywhere else. Record the physical fit in the tool's notes for your planners; the engine does not need it. Nor does a tool have the dials a machine has, the shifts and instances and utilization behind [how a scheduler picks an instance](/blog/how-edgebic-picks-an-instance-load-balancing-vs-one-per-day). It has a count and its absences, because that is all a physical object actually has.
 
-The pattern is direct. Create a work center that stands for the shared tool, for example "Fixture Set A." Set its instance count to the number of physical copies you own: two fixtures means two instances. Then add that work center to the routing of every operation that requires the tool, so the step passes through both its machine and the tool work center.
+One data-entry mistake follows directly. Quantity is units you own, never machines the tool fits. A fixture that bolts to three mills but exists as one object is quantity 1; entering 3 tells the scheduler you can run three jobs at once, and the plan goes straight back to being fiction.
 
-With the tool as a two-instance work center, the plan allows at most two jobs to hold the fixture at any moment. A third fixture job cannot schedule until one of the two frees up, no matter how many mills are idle. The ceiling you feel on the floor is now the ceiling the plan enforces.
+## Requiring the tool on the step
 
-Two settings sharpen the model. If the tool locks for a whole day once it is set, such as a mold with a long changeover, set the tool work center to one job per instance per day, so the plan will not try to share a single copy across two jobs in the same day. This one-per-day behavior matches a paint booth or a press mold, where a color or die change ties up the resource for the shift. And put the changeover hours on the routing step's setup time so the plan accounts for the swap. Work centers, instances, and the one-per-day flag are covered in [how a scheduler picks an instance](/blog/how-edgebic-picks-an-instance-load-balancing-vs-one-per-day).
+Tools live under the **Daily Hours** tab on the **Tools** inner tab: a catalog with a name, an asset code, a quantity, an active flag, and a grid of downtime ranges.
+
+The requirement itself lives on the routing step, not on the machine. In the BOR grid it is the **Required tool:** picker in the step's Basic Information section; in the BOR Designer it is the **Required Tool** property on the selected node. Leaving it at **(none)** means no constraint, which is what makes the feature safe to adopt one operation at a time.
+
+The picker is not gated on the step's required skill, unlike the operator fields: machines, people, and tools are three independent questions and a step may need any combination. And the tool is held for setup and run alike at the full rate, because a fixture cannot be half mounted the way one operator can tend two machines. Every allocated machine-hour books exactly one tool-hour.
 
 ## A worked example
 
-A shop has three mills, Mill-1, Mill-2, Mill-3, each free most of the week. It owns two copies of Fixture Set A. Four jobs this week all need Fixture Set A, each four hours, all releasable Monday.
+Three mills, each free most of the week and each running one eight-hour day shift. The shop owns one copy of Fixture Set A. Three jobs this week all need it, four hours each, all releasable Monday.
 
-Model Fixture Set A as a work center with two instances. Route all four jobs through their mill plus Fixture Set A.
+Before the tool exists the jobs are independent: twenty-four machine-hours against twelve hours of work, so all three run Monday 08:00 to 12:00 and every mill looks free all afternoon. On the floor, two of those three never start.
 
-Monday, the plan places Job 1 on Mill-1 and Job 2 on Mill-2, both holding a fixture, 08:00 to 12:00. Job 3 wants Mill-3 at 08:00, but both fixture instances are taken until 12:00, so the forward search moves Job 3 to 12:00, when a fixture frees. Job 4 follows at 12:00 on the second freed fixture.
+Now create Fixture Set A with a quantity of 1, set **Required tool:** on all three steps, and reschedule. Monday's fixture pool is eight hours, one unit times the eight-hour window. Job 1 takes the first four, 08:00 to 12:00. Job 2 takes the remaining four, 12:00 to 16:00, and the pool is spent. Job 3 is not offered a Monday window at all, no matter that its mill has eight untouched hours, and lands Tuesday 08:00 to 12:00.
 
-The mills show plenty of idle time, yet the plan spreads the four jobs across the day because the fixture, not the mill, is the binding resource. That is the true picture. Without the fixture work center, the plan would stack all four Monday morning and the floor would have two jobs waiting for a fixture by 08:05.
+The total work is unchanged at twelve hours. Only when it happens moved, and that is the rule worth memorizing: a tool constraint changes when, never how much. Buy a second fixture, set the quantity to 2, and Monday's pool doubles to sixteen hours; all three jobs fit Monday again, which is the honest version of the first plan rather than the wishful one.
 
-## What this buys you, and its limits
+## Downtime, and the failure that is deliberate
 
-The payoff is a schedule that reflects the real ceiling. You can now see whether a third fixture would pay off, sequence jobs to reduce fixture contention, and quote lead times that hold. Blocking planned tool maintenance is a matter of giving the tool work center a capacity override or holiday on the maintenance day, so operations route around it automatically.
+Record a calibration window as a downtime range and the pool is zero on every date inside it, so operations requiring the tool skip those days and resume the first day after the range ends. A calibration you know about but never entered protects nothing.
 
-The limit is honesty about the model. The tool work center does not track a mold's physical location or its shot-count maintenance trigger on its own, and it will not automatically follow a specific fixture between machines beyond the capacity cap you set. For most shops the cap is the constraint that matters, and modeling it as a work center captures it cleanly. If you need richer tool tracking, treat this pattern as the reliable base and plan the rest as a manual master-data discipline.
+The third way a tool moves a job is louder. If a step requires a tool that is inactive, unknown, or has a quantity of zero, the run stops that job and records a message naming the tool. Other jobs are unaffected. That refusal is a feature: the alternative is quietly planning an operation onto a machine that physically cannot run it, which produces a schedule that looks perfect and collapses at the machine.
 
-The broader idea is the same one behind every finite constraint: name the scarce resource, give it real capacity, and let the engine refuse to over-book it. See how a fixture work center behaves against your own routings in [EDGEBIC](/edgebic), and read how the engine allocates finite capacity in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide). For the constraint mindset in general, [production bottleneck identification](/blog/production-bottleneck-identification) is a useful companion.
+## If you already model a fixture as a work center
+
+Turning a fixture into a pseudo work center that routings pass through was a reasonable way to get a capacity ceiling, and any routing built that way still schedules. Moving it onto a tool record is an upgrade rather than a repair, and it is worth making.
+
+The pattern is easy to spot: a work center with no machine behind it, named after a fixture or a mold, that operations route through in addition to their real machine, whose instance count is the number of tool copies rather than machines, and whose shifts are a hand-kept copy of another work center's calendar. Every routing that uses it carries an extra step that was never a real operation.
+
+Moving over is three moves, in order:
+
+1. Create the tool under **Daily Hours** then **Tools**, quantity set to the number of physical units you own, and carry the maintenance you were keeping on the pseudo work center's calendar across as downtime ranges.
+2. Set **Required tool:** on the steps that actually mount it, which are the real operations, not the detour step.
+3. Remove the stand-in work center from those routings, then reschedule.
+
+The gain is accuracy where the workaround quietly cost you it. Step counts, routing diagrams, and lead-time reporting stop carrying an operation that does not exist. The pseudo machine's calendar stops needing to be kept in step with the real machines, which was what let the fixture look available on days the mills were closed. And the requirement rides the job's preserved routing, so it survives a reschedule without you maintaining anything.
+
+## Where a tool requirement is visible
+
+Be precise here, because the answer is narrower than you might assume. The Tools tab shows the catalog, each tool with its quantity and downtime ranges. The routing step shows its **Required tool:** setting in both BOR editors. The scheduling run reports failures by name and records every booking and every skipped window in its diagnostic log.
+
+Tool-required operations do not carry a marker on the Schedule View Gantt or a column in the Job View, the way skill-required operations do, and there is no tool equivalent of a dispatch list or a resource calendar lens. To see where a fixture's hours went, read the routing steps that require it and the jobs scheduled against those steps. An operation sliding for no visible reason is a normal symptom of a healthy tool constraint, and knowing to look at tooling saves the hour you would otherwise spend on the machine's calendar.
+
+The broader idea is the same one behind every finite constraint: name the scarce resource, give it real capacity, and let the engine refuse to over-book it. Model your own shared fixture and read the contention in the dates in [EDGEBIC](/edgebic), and see how the engine allocates finite capacity in the [scheduling engine guide](/blog/edgebic-scheduling-engine-guide). For the constraint mindset in general, [production bottleneck identification](/blog/production-bottleneck-identification) is a useful companion.
 
 <Accordion title="How does a scheduler handle a shared tool or fixture?">
-The most reliable approach in EDGEBIC is to model the shared tool as its own work center that the routing step must pass through, alongside the machine. Give the tool work center as many instances as you own copies of the tool, so if you have two fixtures it has two instances. Because a work center is a real capacity bucket, the plan then treats the tool as a finite resource: two jobs can use it at once, a third waits. Contention shows up as a real start-time shift rather than a floor surprise.
+EDGEBIC models the tool as a plant-wide pool rather than as capacity belonging to any one machine. You create the tool once with a quantity, which is how many identical units you physically own, and then set the required tool on every routing step that mounts it. For each day and shift the tool has a pool of hours equal to its quantity times that window, and every allocated machine-hour books exactly one tool-hour from it. When the pool runs out the next operation is not offered that window, even though its machine is standing empty, so contention shows up as a real start-time shift rather than a floor surprise.
 </Accordion>
 
 <Accordion title="Does EDGEBIC model tooling as a separate resource class?">
-EDGEBIC does not have a dedicated shared-tooling resource type that automatically attaches a fixture to every routing step. A tool physical-type label exists, but it carries no scheduling logic on its own. The supported way to make a shared tool a true constraint is to model it as a work center that operations route through, which uses the finite capacity engine you already trust to prevent double-booking. That workaround captures the constraint without a special module.
+Yes. A tool is its own record carrying a quantity and its downtime dates, and it belongs to no work center, so every machine in the plant draws on the same pool. That is the whole point, because a fixture's scarcity is invisible from any single machine's capacity. Do not model a tool as a work center instead. A work center has shifts, instances, and its own capacity bucket, so turning a fixture into a pseudo machine invents capacity that does not exist and hides the very contention you are trying to see.
 </Accordion>
 
 <Accordion title="How do I schedule tool maintenance so it blocks jobs that need the tool?">
-If you have modeled the tool as a work center, block its maintenance the same way you block any machine: give that tool work center a capacity override or a holiday on the maintenance day, so it offers zero hours and no job can route through it. Any operation that needs the tool then slides past the maintenance window automatically. This keeps planned tool downtime in the schedule instead of treating it as an emergency when it arrives.
+Record it as a downtime range on the tool itself, on the Tools tab under Daily Hours. Both dates are inclusive, so a range ending Friday means the tool is still away on Friday and back the following working day. Inside the range the tool contributes zero hours whatever its quantity says, so on the next scheduling run every operation requiring it slides past the window automatically. This keeps planned tool downtime in the schedule instead of treating it as an emergency when it arrives.
 </Accordion>
